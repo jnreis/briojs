@@ -1,7 +1,7 @@
 import { get, set, subPath, deepEqual } from './utils'
 
 type error = 'allowEvent' | 'callback'
-type eventName = 'beforeCreate' | 'created' | 'beforeRead' | 'read' | 'beforeUpdate' | 'updated' | 'beforeDelete' | 'deleted'
+type eventName = 'beforeCreate' | 'created' | 'beforeUpdate' | 'updated' | 'beforeDelete' | 'deleted'
 type listeners = {
     [path: string]: {
         [eventName: string]: Set<callback>
@@ -25,8 +25,6 @@ export function state(value: any) {
     let events = {
         beforeCreate: true,
         created: true,
-        beforeRead: true,
-        read: true,
         beforeUpdate: true,
         updated: true,
         beforeDelete: true,
@@ -95,9 +93,9 @@ export function state(value: any) {
             else if (event == 'updated') {
                 // Skip event if data is not the same
                 // If this happens, it means that the data was changed by another event
-                if (!deepEqual(cData, nData)) continue
+                if ((cData === undefined && cData === nData) || !deepEqual(cData, nData)) continue
             }
-            else if (['beforeRead','read','created','beforeDelete'].includes(event)) {
+            else if (['created','beforeDelete'].includes(event)) {
                 // Skip event if data is undefined
                 if (cData === undefined) continue
             }
@@ -108,7 +106,7 @@ export function state(value: any) {
             else if (event == 'deleted') {
                 // Skip event if data is not undefined
                 // If this happens, it means that the data was changed by another event
-                if (cData !== undefined) continue
+                if (cData !== undefined && nData !== undefined) continue
             }
 
             // Notify every listener of the event on the path
@@ -121,23 +119,25 @@ export function state(value: any) {
     return {
         isState: true,
         on,
-        get: async (path = '') => {
-            await notify('beforeRead', path)
-            const d = get(path, data)
-            await notify('read', path)
-            return d
+        get: (path = '') => {
+            return get(path, data)
         },
         set: async (path: string, newData: any) => {
-            const nData = {value: newData}
             const noPath = get(path, data) === undefined
-            await notify(noPath ? 'beforeCreate' : 'beforeUpdate', path, nData)
+            const nData = {value: newData}
+            // Determine event
+            let event: eventName = noPath ? 'beforeCreate' : 'beforeUpdate';
+            if (newData === undefined) {
+                event = 'beforeDelete';
+            }
+            await notify(event, path, nData)
             set(path, data, newData)
-            await notify(noPath ? 'created' : 'updated', path, nData)
-        },
-        delete: async (path = '') => {
-            await notify('beforeDelete', path)
-            set(path, data, undefined)
-            await notify('deleted', path)
-        },
+            // Determine event
+            event = noPath ? 'created' : 'updated';
+            if (newData === undefined) {
+                event = 'deleted'
+            }
+            await notify(event, path, nData)
+        }
     }
 }

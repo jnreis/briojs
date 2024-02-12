@@ -62,7 +62,7 @@ export function state(value: any) {
     }
 
     // Notifies the listeners of an event on a path
-    async function notify(event: eventName, path: string, newData: any = { value: undefined }) {
+    function notify(event: eventName, path: string, newData: any = { value: undefined }) {
         // Check if the event is allowed
         if (!allowEvent(event)) {
             throw new Error(errors('allowEvent', event))
@@ -111,7 +111,7 @@ export function state(value: any) {
 
             // Notify every listener of the event on the path
             for (const callback of listeners[p][event]) {
-                await callback(nData, cData)
+                callback(nData, cData)
             }
         }
     }
@@ -122,7 +122,7 @@ export function state(value: any) {
         get: (path = '') => {
             return get(path, data)
         },
-        set: async (path: string, newData: any) => {
+        set: (path: string, newData: any) => {
             const noPath = get(path, data) === undefined
             const nData = {value: newData}
             // Determine event
@@ -130,14 +130,27 @@ export function state(value: any) {
             if (newData === undefined) {
                 event = 'beforeDelete';
             }
-            await notify(event, path, nData)
+            notify(event, path, nData)
             set(path, data, newData)
             // Determine event
             event = noPath ? 'created' : 'updated';
             if (newData === undefined) {
                 event = 'deleted'
             }
-            await notify(event, path, nData)
+            notify(event, path, nData)
         }
     }
 }
+
+// export function state2(value: any = undefined) {
+//     let data = {value}
+//     const handler = {
+//         get(target, property, receiver) {
+//             console.log('get target', target)
+//             console.log('get property', property)
+//             console.log('get receiver', receiver)
+//             return target[property]
+//         }
+//     }
+//     return new Proxy(data, handler)
+// }

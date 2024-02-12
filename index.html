@@ -4,9 +4,169 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Vite + TS</title>
+    <title>Frame</title>
+
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        background-color: #eceff3;
+      }
+
+      .items-wrapper {
+        display: grid;
+        width: 400px;
+        gap: 10px;
+        background: #9b95d9;
+        padding: 10px;
+      }
+
+      .items {
+        padding: 0 10px;
+        background-color: #eceff3;
+      }
+    </style>
   </head>
   <body>
+
+    <!-- Syntax option 2 -->
+    <div scope="{
+      count: 0, 
+      first: 'John', 
+      last: 'Doe', 
+      value: 'abc', 
+      checked: true, 
+      vehicle: ['Car'], 
+      pick: 'one', 
+      increment: e => {
+        count++;
+      },
+      double: () => {
+        return count * 2;
+      },
+      isOpen: false,
+      toggle: () => {
+        isOpen = !isOpen;
+      },
+      item: '',
+      items: [{value: 'a'}, {value: 'b'}, {value: 'c'}],
+      obj: { a: 1, b: 2, c: 3 },
+    }">
+      <p>Hello, ${ first } ${ last }!</p>
+
+      <!-- <input type="text" model="items[0]"> -->
+
+      <!-- Just the value -->
+      <!-- <div class="items-wrapper">
+        <div class="items" each="values of items">
+          <p>${ item }</p>
+        </div>
+      </div> -->
+
+      <!-- Index and value -->
+      <!-- <div class="items-wrapper">
+        <div class="items" each="[index, value] of items.entries()">
+          <p>${ item }</p>
+        </div>
+      </div> -->
+
+      <!-- Just object key -->
+      <div class="items-wrapper">
+        <div class="items" each="item2, index in items">
+          <p>${ item2.value }</p>
+          <input type="text" model="items[index].value">
+          <button on-click="items.splice(index, 1)">Remove</button>
+        </div>
+      </div>
+
+      <!-- Add new item to items -->
+      <input type="text" model="item" style="margin-top: 10px;">
+      <button on-click="items.push({value: item}); item = '';">Add</button>
+
+      <!-- <p>${count}</p> -->
+
+      <!-- <input type="text" model-trim="first" bind-placeholder="first"> -->
+
+      <!-- <input type="text" model="last"> -->
+
+      <!-- <input type="text" model-number="count"> -->
+
+      <!-- <button on-click-stop="increment">Increment</button> -->
+
+      <!-- <h4>Select</h4>
+      <select name="names" id="names" model="first">
+        <option value="John">John</option>
+        <option value="James">James</option>
+        <option value="Jane">Jane</option>
+      </select> -->
+
+      <!-- <h4>Checkbox</h4>
+      <input type="checkbox" name="vehicle1" value="Bike" model="checked">
+      <label for="vehicle1"> I have a bike</label><br>
+      <input type="checkbox" name="vehicle2" value="Car" model="checked">
+      <label for="vehicle2"> I have a car</label><br>
+      <input type="checkbox" name="vehicle3" value="Boat" model="checked">
+      <label for="vehicle3"> I have a boat</label><br> -->
+
+      <!-- <h4>Multiple Checkboxes</h4>
+      <input type="checkbox" name="vehicle" value="Bike" model="vehicle">
+      <label for="vehicle1"> I have a bike</label><br>
+      <input type="checkbox" name="vehicle" value="Car" model="vehicle">
+      <label for="vehicle2"> I have a car</label><br>
+      <input type="checkbox" name="vehicle" value="Boat" model="vehicle">
+      <label for="vehicle3"> I have a boat</label><br> -->
+
+      <!-- <h4>Radio</h4>
+      <input type="radio" id="one" model="pick" value="one">
+      <label for="one">One</label><br>
+      <input type="radio" id="two" model="pick" value="two">
+      <label for="two">Two</label><br> -->
+
+      <!-- <h4>Textarea</h4>
+      <textarea model="first">Hello, I'm a textarea</textarea> -->
+
+      <!-- <div show="count % 2 == 0">
+        <h2>If condition</h2>
+        <div if="count % 3 == 0">
+          <h2>Show condition</h2>
+        </div>
+      </div>
+
+      <p>You clicked ${ count } times</p>
+      <div scope="{ increment: () => count++ }">
+        <p>Inner count: ${ count }</p>
+        <button on-click-self="increment">Increment count <span>span</span></button>
+      </div>
+    </div> -->
+
+
+
+    <!-- <div scope="{}">
+      <button ref="button1" on-click="console.log($refs)">Fron a parent scope</button>
+      <div scope="{refs: 123}">
+        <div ref="divRef">
+          <button ref="button1" on-click="console.log($refs.button1[1])">Inside Ref</button>
+        </div>
+        <button ref="button1" on-click="console.log($refs)">Outside Ref</button>
+      </div>
+      <button ref="button3" on-click="console.log($refs)">Fron a parent scope</button>
+    </div> -->
+
+    <!-- <ul x-data="{ colors: ['Red', 'Orange', 'Yellow'] }">
+      <template x-for="color in colors">
+        <p x-text="color"></p>
+      </template>
+      <input type="text" x-model="colors[1]">
+    </ul> -->
+
+
+    <!-- <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script> -->
+
     <script type="module" src="/src/index.ts"></script>
   </body>
 </html>

@@ -7,38 +7,35 @@ export type RawObject = {
 }
 
 export type RawElement = {
-    // [prop: string]: HTMLElement | Text | string | string[] | undefined,
+    // [prop: string]: HTMLElement | ObjectType | string | SpecialPropsValue[] | undefined,
     id: string,
-    node: HTMLElement,
-    scopes: string[],
-    // special attributes
-    scope?: string,
-    if?: string,
-    show?: string,
-    each?: string,
-    ref?: string,
-    html?: string,
-    text?: string,
-    model?: {
-        prop: string, // two-way binding
-        modifiers: string[],
-    }[],
-    bind?: {
-        prop: string, // one-way binding
-        modifiers: string[],
-    }[],
-    on?: {
-        event: string, // event attributes
-        modifiers: string[],
-    }[],
+    
+    // Magic attributes
+    $el: HTMLElement, // the element itself
+    $refs: ObjectType, // available to all elements in the same $props context. Except for nested contexts.
+    $props: ObjectType, // context
+    
+    // Magic methods
+    $emit: Function, // emit an event
+    $uid: Function, // uses the id generated to the scope name
+
+    // UIDs
+    uids: ObjectType, // context
+
+    // Raw attributes
+    attrs: ObjectType,
 }
 
-export type RawElementProps = 'bind'|'on'|'model';
+export type SpecialProps = 'bind'|'on'|'model';
+export type SpecialPropsValue = {
+    attrName: string,
+    attrValue: string,
+}
 
 export type RawText = {
     id: string,
-    node: Text,
-    scopes: string[],
+    $el: Text,
+    attrs: ObjectType,
 }
 
 export type ScopeObject = {

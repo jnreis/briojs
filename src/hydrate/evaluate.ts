@@ -1,15 +1,21 @@
-const evalCache: Record<string, Function> = Object.create(null);
+import { PROPS, newObject } from "../tools";
+import { $uid } from "./directives";
 
-export const evaluate = (scope: any, exp: string, el?: Node) =>
-    execute(scope, `return(${exp})`, el);
+const EXPRESSION = 'expression';
 
-export const execute = (scope: any, exp: string, el?: Node) => {
+const evalCache: Record<string, Function> = newObject();
+
+export const evaluate = (vNode: any, exp: string) => 
+    execute(vNode, `return(${exp})`);
+
+export const execute = (vNode: any, exp: string) => {
     const fn = evalCache[exp] || (evalCache[exp] = toFunction(exp));
     try {
-        return fn(scope, el);
+        const { $props, $refs, $el, $emit, uids } = vNode;
+        return fn($props, $refs, $el, $emit, $uid(uids));
     } catch (e) {
         if (import.meta.env.DEV) {
-            console.warn(`Error when evaluating expression "${exp}":`);
+            console.warn(`Error when evaluating ${EXPRESSION} "${exp}":`);
         }
         console.error(e);
     }
@@ -17,9 +23,9 @@ export const execute = (scope: any, exp: string, el?: Node) => {
 
 const toFunction = (exp: string): Function => {
     try {
-        return new Function("$sc", "$el", `with($sc){${exp}}`);
+        return new Function(`$${PROPS}`, `$refs`, `$el`, `$emit`, `$uid`, `with($${PROPS}){${exp}}`);
     } catch (e) {
-        console.error(`${(e as Error).message} in expression: ${exp}`);
+        console.error(`${(e as Error).message} in ${EXPRESSION}: ${exp}`);
         return () => {};
     }
 };

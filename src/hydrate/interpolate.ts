@@ -1,7 +1,6 @@
 import { ObjectType } from "./index.d";
 
-import { scope } from ".";
-import { findDelimitedContent } from "../tools";
+import { findDelimitedContent, has } from "../tools";
 
 type DelimitedContent = {
     start: number;
@@ -15,7 +14,7 @@ type Options = {
     endDelimiter?: string;
 };
 
-export function interpolate(input: string, scopes: string[], options: Options = {}) {
+export const interpolate = (input: string, props: string[], options: Options = {}) => {
     const { wrap = false, startDelimiter = "${", endDelimiter = "}" } = options;
 
     if (wrap) input = startDelimiter + input + endDelimiter;
@@ -54,13 +53,10 @@ export function interpolate(input: string, scopes: string[], options: Options = 
         content = content.replace(
             // /\b(\w+)\b(?=(?:(?:[^'`"]*[`'"]){2})*[^'`"]*$)/g,
             /(?<!\.)\b(\w+)\b(?!:)(?=(?:(?:[^'`"]*[`'"]){2})*[^'`"]*$)/g,
-            // new RegExp(pattern, 'g'),
             (match, prop) => {
-                for (const id of scopes) {
-                    if (prop in scope[id]) {
-                        usedProps = true;
-                        return `$sc['${id}']['${prop}']`;
-                    }
+                if (has(props, prop)) {
+                    usedProps = true;
+                    return `$props['${prop}']`;
                 }
                 return match; // If variable not found in scopes, return unchanged
             }

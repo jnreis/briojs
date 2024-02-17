@@ -1,52 +1,25 @@
 import { RawElement, ObjectType } from '../index.d';
 
-import { scope, inScope, getPropName, watch, rawNodeProp } from '..';
-import { evaluate } from '../evaluate';
-import { interpolate } from '../interpolate';
-import { isFn, isStringFn, delAttr, inArray, listen } from '../../tools';
+import { watch, saveProp, getPropOrExp } from '..';
+import { isFunction, isStringFunction, delAttr, inArray, listen, getType, FUNCTION } from '../../tools';
 
-export function hydrateOn(rawNode: RawElement, name: string, value: string, settings = { wrap: true }) {
+export const hydrateOn = (rawNode: RawElement, attrName: string, attrValue: string) => {
 
-    const [_, event, ...modifiers] = name.split('-')
+    const [_, event, ...modifiers] = attrName.split('-')
+    const {id, $el} = rawNode;
 
-    // Get the prop name
-    const propName = getPropName(value);
+    // Wrap the expression in a function if it's not already
+    const exp = isStringFunction(attrValue) ? attrValue : `$event=>{${attrValue}}`;
 
-    // Check if the prop name is valid
-    if (!propName) throw new Error(`The value of the event listener must be a valid prop, but got ${value} instead.`);
+    // Get the function from the expression
+    let fn = getPropOrExp(rawNode, attrValue, exp);
 
-    const { scopes, node } = rawNode;
-
-    // Get the scope where the prop is defined, if any
-    const sid = inScope(scopes, propName);
-
-    // The event listener function
-    let fn: any;
-
-    // Check if value matches a prop in the scope
-    const prop = sid && scope[sid][value];
-    if (prop) {
-        // Check if prop is a function
-        if (!isFn(prop)) throw new Error(`Only functions can be used as event listeners, but got ${typeof prop} instead.`);
-
-        // Use the function as is
-        fn = prop;
-    }
-    else {
-        // Interpolate the value
-        const interpolated = interpolate(value, scopes, settings);
-
-        // Wrap the interpolated value in a function
-        if (!isStringFn(interpolated.output)) {
-            interpolated.output = `$e => { ${interpolated.output} }`;
-        }
-
-        // Evaluate the expression
-        fn = evaluate(scope, interpolated.output, node);
-    }
+    // Check if `fn` is a function
+    if (!isFunction(fn))
+        throw new Error(`Only ${FUNCTION}s can be used as event listeners, but got ${getType(fn)} instead.`);
 
     // Wrap the function to handle modifiers
-    const wrappedFn = ($e: Event) => {
+    const listenFn = function($e: Event) {
         // https://developer.mozilla.org/en-US/docs/Web/API/Event/preventDefault
         if (inArray(modifiers, 'prevent')) $e.preventDefault();
 
@@ -69,14 +42,14 @@ export function hydrateOn(rawNode: RawElement, name: string, value: string, sett
     });
 
     // Add the event listener
-    const cleanup = listen(rawNode.node, event, wrappedFn, options);
+    const cleanup = listen($el, event, listenFn, options);
 
     // Add the cleanup function to the effect object
-    watch(rawNode.id, event, cleanup, false, false);
+    watch(id, event, cleanup, false, false);
 
     // Save to the rawNode
-    rawNodeProp(rawNode, 'on', {event, modifiers});
+    saveProp(rawNode, attrName, attrValue);
 
     // Remove the attribute from the node
-    delAttr(rawNode.node, name);
+    delAttr($el, attrName);
 }

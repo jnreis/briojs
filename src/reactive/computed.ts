@@ -30,13 +30,13 @@ type Options = {
  * @param {(args: ComputedArguments) => void} wrappedFunction
  * @param {Options} options
  */
-export function computed(
+export const computed = (
     wrappedFunction: WrappedFunction,
     options: Options = {}
-) {
+) => {
     const { autoRun = true, callback, bind, disableTracking = false } = options;
 
-    function observeComputation(fun: Function | null, argsList: any[] = []) {
+    const observeComputation = (fun: Function | null, argsList: any[] = []) => {
         const target = callback || wrapper;
         // Track object and object properties accessed during this function call
         if (!disableTracking) {
@@ -78,7 +78,7 @@ export function computed(
  *
  * @param {Function} computedFunction
  */
-export function dispose(computedFunction: any) {
+export const dispose = (computedFunction: any) => {
     computedFunction[trackerSymbol] = null;
     return (computedFunction.__disposed = true);
 }

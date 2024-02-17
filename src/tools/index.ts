@@ -5,26 +5,28 @@ import { isObject } from "./typeCheck";
  * @param length
  * @param callback
  */
-export function uid(length: number, callback: (uid: string) => boolean): string {
+export const uid = (length: number, callback: (uid: string) => boolean): string => {
     while (true) {
-        const uid = [...Array(length)].map(() => Math.random().toString(36)[2]).join('')
+        const uid = [...Array(length)].map(() => Math.random().toString(36)[2]).join('');
         if (callback(uid)) {
-            return uid
+            return uid;
         }
     }
 }
 
-export function has(data: string | string[], item: string) {
-    return data.includes(item);
+export const has = (value: any, item: string) => {
+    return value && value.includes(item);
 }
 
-export function entries(obj: any) {
-    return isObject(obj) ? Object.entries(obj) : obj.entries();
+export const entries = (value: any): [string, any][] => {
+    return isObject(value) ? Object.entries(value) : value.entries();
 }
 
 // Export everything from the following files
 export * from './array';
+export * from './constants';
 export * from './dom';
 export * from './number';
+export * from './object';
 export * from './string';
 export * from './typeCheck';

@@ -1,10 +1,12 @@
+import { isNull } from "../tools";
+
 let queue: any[] | null = null;
 export const __batched = Symbol();
 
 /**
  * Will perform batched computations instantly.
  */
-export function batch() {
+export const batch = () => {
     if (!queue) {
         return;
     }
@@ -16,12 +18,12 @@ export function batch() {
     queue = null;
 }
 
-export function enqueue(task: any, _batch: true | number) {
+export const enqueue = (task: any, _batch: true | number) => {
     if (task[__batched]) {
         return;
     }
     // If the queue is empty, create a new one and schedule a batch
-    if (queue === null) {
+    if (isNull(queue)) {
         queue = [];
         if (_batch === true) {
             queueMicrotask(batch);
@@ -29,5 +31,5 @@ export function enqueue(task: any, _batch: true | number) {
             setTimeout(batch, _batch);
         }
     }
-    queue.push(task);
+    (queue as any[]).push(task);
 }

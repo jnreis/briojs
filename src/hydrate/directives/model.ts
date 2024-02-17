@@ -1,70 +1,90 @@
 import { RawElement, ObjectType } from '../index.d';
 
-import { watch, watchProp, rawNodeProp, modelValue, getPropRef } from '..';
+import { watch, saveProp, modelValue, getPropRef } from '..';
 import {
     listen, delAttr, onCompositionStart, onCompositionEnd,
-    inArray, isArray, arrayAdd, arrayRemove, entries, isFn
+    inArray, isArray, arrayAdd, arrayRemove, entries, getAttr, isNull,
+    SELECT, INPUT, TEXTAREA, CHECKBOX, RADIO, VALUE, CHANGE, lower, ARRAY, INVALID_PROP_OR_EXPRESSION
 } from '../../tools';
 
-export function hydrateModel(rawNode: RawElement, name: string, propExp: string) {
+export const hydrateModel = (rawNode: RawElement, attrName: string, attrValue: string) => {
 
-    const [model, ...modifiers] = name.split('-');
+    const [MODEL, ...modifiers] = attrName.split('-');
 
-    // Get the model value
-    const [getProp, setProp] = getPropRef(rawNode, propExp);
+    // Get the prop reference
+    const [prop, setProp] = getPropRef(rawNode, attrValue);
 
-    if (!(getProp && setProp)) throw new Error(`The variable ${propExp} does not exist in the scope.`);
+    if (!(prop && setProp)) throw new Error(`${MODEL}: ${INVALID_PROP_OR_EXPRESSION}.\n${attrValue}`);
 
-    const el = rawNode.node as any;
-    const type = el.type;
-    const tag = el.tagName;
+    const {id} = rawNode;
+
+    const node = rawNode.$el as any;
+    const type = node.type;
+    const tag = lower(node.tagName);
+
+    if (tag == INPUT && !inArray([CHECKBOX,RADIO], type)) {
+        const theValueAttr = getAttr(node, VALUE);
+        if (!isNull(theValueAttr)) {
+            // Save the original value
+            saveProp(rawNode, VALUE, theValueAttr as string);
+        }
+    }
 
     // UPDATES THE DOM
     const watchFn = () => {
-        const value = getProp();
+        const value = prop();
 
-        if (inArray(['INPUT','TEXTAREA'], tag)) {
-            if (type == 'checkbox') {
-                if (isArray(value)) el.checked = inArray(value, el.value);
-                else el.checked = value == el.value;
+        if (inArray([INPUT,TEXTAREA], tag)) {
+            if (type == CHECKBOX && isArray(value)) {
+                if (isNull(getAttr(node, VALUE)))
+                    throw new Error(`Checkbox ${VALUE} attribute is required when using an ${ARRAY} ${MODEL}.`);
+
+                node.checked = inArray(value, node[VALUE]);
             }
-            else if (type == 'radio') {
-                el.checked = value == el.value;
+            else if (type == RADIO || type == CHECKBOX) {
+                node.checked = value === node[VALUE] || value === true && node[VALUE] == 'on';
             }
             else {
                 // Composition is still in progress
-                if (el.composing) return;
+                if (node.composing) return;
 
                 // If the element is focused and the value hasn't changed, return
-                if (document.activeElement === el && el.value === value) return;
+                if (document.activeElement === node && node[VALUE] === value) return;
 
                 // Update the value
-                if (el.value !== value) el.value = value;
+                if (node[VALUE] !== value) node[VALUE] = value;
             }
         }
-        else if (tag == 'SELECT') {
+        else if (tag == SELECT) {
             // Update the value
-            if (el.value !== value) el.value = value;
+            if (node[VALUE] !== value) node[VALUE] = value;
         }
         else {
-            throw new Error(`The model directive can only be used on input, select, and textarea elements.`);
+            throw new Error(`The ${MODEL} directive can only be used on ${INPUT}, ${SELECT}, and ${TEXTAREA} elements.`);
         }
     };
     // Add the effect to the effect object
-    watch(rawNode.id, model, watchFn);
+    watch(id, MODEL, watchFn);
 
 
     // UPDATES THE PROP IN THE SCOPE
     const events: ObjectType = {};
-    let eventFn = () => setProp(modelValue(el.value, modifiers));
+    let eventFn = () => setProp(modelValue(node[VALUE], modifiers));
 
-    if (inArray(['INPUT','TEXTAREA'], tag)) {
+    if (inArray([INPUT,TEXTAREA], tag)) {
         // Checkbox with array model
-        if (type == 'checkbox' && isArray(getProp())) {
+        if (type == CHECKBOX) {
             eventFn = () => {
-                const v = modelValue(el.value, modifiers);
-                if (el.checked) arrayAdd(getProp(), v);
-                else arrayRemove(getProp(), v);
+                // When the checkbox doesn't have a value attribute, use the checked property instead
+                let value = isNull(getAttr(node, VALUE)) ? node.checked : modelValue(node[VALUE], modifiers);
+
+                const array = prop();
+                if (isArray(array)) {
+                    if (node.checked) arrayAdd(array, value);
+                    else arrayRemove(array, value);
+                } else {
+                    setProp(value);
+                }
             }
         }
 
@@ -73,20 +93,20 @@ export function hydrateModel(rawNode: RawElement, name: string, propExp: string)
     }
 
     // Event name
-    let event = (inArray(modifiers, 'lazy') || inArray(['radio','checkbox'], type) || tag == 'SELECT')
-        ? 'change' 
-        : 'input';
+    let event = (inArray(modifiers, 'lazy') || inArray([RADIO,CHECKBOX], type) || tag == SELECT)
+        ? CHANGE 
+        : INPUT;
 
     events[event] = eventFn;
 
     // Add the event listeners
     for (const [eventName, fn] of entries(events)) {
-        watch(rawNode.id, `${model}:${eventName}`, listen(el, eventName, fn), false, false);
+        watch(id, eventName, listen(node, eventName, fn), false, false);
     }
 
     // Save to the rawNode
-    rawNodeProp(rawNode, 'model', {event, modifiers});
+    saveProp(rawNode, attrName, attrValue);
 
     // Remove the attribute from the node
-    delAttr(rawNode.node, name);
+    delAttr(node, attrName);
 }

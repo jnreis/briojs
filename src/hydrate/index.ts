@@ -1,31 +1,44 @@
 import type {
     RawObject, EffectObject, ScopeObject,
-    RawText, RawElement, RawElementProps
+    RawText, RawElement, ObjectType
 } from "./index.d";
 
 import { observe, computed, dispose } from "../reactive";
 
 import {
     uid, toNumber,
-    isFn, isNumeric, inArray,
-    walk, q, getAttr, getType,
+    isFunction, isNumeric, inArray,
+    walk, walkControl, q, getAttr, has, trim, setAttr, delAttr, isTextNode, isElementNode,
+    NUMBER, TEXT, EACH, PROPS, INIT, emit, isObject, isArray
 } from "../tools";
 
 import {
     hydrateBind,
     hydrateEach,
+    hydrateHtml,
     hydrateIf,
     hydrateModel,
-    hydrateScope,
+    hydrateProps,
     hydrateOn,
     hydrateShow,
+    hydrateText,
+    hydrateInit,
+    hydrateEffect,
+    hydrateTeleport,
+    hydrateUid
 } from "./directives";
 
 import { evaluate } from "./evaluate";
-import { interpolate } from "./interpolate";
 
 // Raw values are evaluated only once in production mode, but are evaluated every time they are updated in development mode
-export const raw : RawObject = observe({});
+export const raw : RawObject = {};
+export const stores: ObjectType = {};
+export const internal: ObjectType = {
+    rawNode: null,
+    props: null,
+
+    init: false,
+};
 export const scope: ScopeObject = observe({});
 // Effects are functions that are called when a dependency changes
 // Most of the raw values are expressions, or references to a prop or method in the scope
@@ -44,72 +57,185 @@ export const scope: ScopeObject = observe({});
 //  text must be an expression that returns text
 export const effect: EffectObject = {};
 
-export function newID() {
+export const newID = () => {
     return uid(6, (id) => !isNumeric(id[0]) && !(id in raw))
 }
 
-export function hydrate(nodes?: Node[], context: any = null) {
+export const hydrate = (nodes?: Node[], parent: any = null) => {
     // Find all top level scope nodes
-    if (!nodes) nodes = getTopLevelScopes();
+    if (!nodes) nodes = getTopLevelContext(PROPS);
     for (const topNode of nodes) {
-        // TODO: Recursively hydrate the nodes
-        walk(topNode, context, (node, context) => {
-            if (node instanceof Text) {
-                return hydrateText(node, context);
+        // Recursively hydrate the nodes
+        walk(topNode, parent, (node, parent) => {
+            if (isTextNode(node)) {
+                return hydrateTextNode(node as Text, parent);
             }
-            else if (node instanceof HTMLElement) {
-                return hydrateElement(node, context);
+            else if (isElementNode(node)) {
+                return hydrateElement(node as HTMLElement, parent);
             }
-            return context;
+            return parent;
         });
     }
 }
 
-function newRawNode(node: Node, parent: RawElement | null) {
-    const id = (node as any).rawNodeID || newID();
-    (node as any).rawNodeID = id;
-    return {
-        id,
-        node,
-        scopes: [...(parent?.scopes || [])],
-    }
+// Remove all the effects and the raw object from the node and its children
+export const dehydrate = (node: Node, removeRawNode = true) => {
+    // Dehydrate the node and its children
+    walk(node, true, (n, ctx) => {
+        const nid = (n as any).vNodeID;
+
+        // Remove the effects
+        if (nid in effect) {
+            for (const key in effect[nid]) {
+                // Call the cleanup function
+                effect[nid][key]();
+            }
+            // Remove the effect object
+            delete effect[nid];
+        }
+
+        // Remove the context
+        if (removeRawNode && nid in raw) {
+            delete raw[nid];
+        }
+
+        return ctx;
+    });
 }
 
-function hydrateText(node: Text, parent: RawElement | null) {
+// Restore the original state of the node.
+// Note: `dehydrate` must be called before `restore` to remove the effects.
+export const restore = (node: Node) => {
+
+    walk(node, true, (n, ctx) => {
+        const nid = (n as any).vNodeID;
+
+        // Add the raw attributes back to the node
+        if (nid in raw) {
+            // Restore the original text content
+            if (isTextNode(n)) {
+                n.textContent = raw[nid].attrs.text;
+            }
+            else {
+                const rawNode = raw[nid] as any;
+                // Restore the original attributes
+                [PROPS, 'if', 'show', 'each', 'ref', 'html', TEXT].forEach((prop) => {
+                    if (prop in rawNode) {
+                        setAttr(n as HTMLElement, prop, rawNode[prop]);
+                    }
+                });
+                // Restore the original special attributes
+                ['model', 'bind', 'on'].forEach((prop) => {
+                    if (prop in rawNode) {
+                        for (let {attrName, attrValue} of rawNode[prop]) {
+                            // These attributes are set differently
+                            if (inArray(['value','checked','style','class'], attrName)) {
+                                (n as any)[attrName == 'class' ? 'className' : attrName] = attrValue;
+                            }
+                            // Set the attribute
+                            setAttr(n as HTMLElement, attrName, attrValue);
+                            // Bind may leave a property behind, remove it
+                            if (prop == 'bind') {
+                                delAttr(n as HTMLElement, attrName.split('-')[1]);
+                            }
+                        }
+                    }
+                });
+            }
+            // Remove the raw object
+            delete raw[nid];
+        }
+
+        return ctx;
+    });
+}
+
+export const newRawNode = ($el: Node) => {
+    const id = ($el as any).vNodeID || newID();
+    ($el as any).vNodeID = id;
+
+    let vNode: ObjectType = {
+        id,
+        // Magic attributes
+        $el,
+        // Raw attributes
+        attrs: {},
+    };
+
+    if (isElementNode($el)) {
+        vNode = {
+            ...vNode,
+            // Magic attributes
+            $refs: {},
+            $props: {},
+            uids: {},
+            $uid: (scopeName: string) => {
+                // TODO: create a function that returns the scope name plus a unique id
+                return `${scopeName}-SOME_UNIQUE_ID`;
+            },
+            // Magic methods
+            $emit: (eventName: string, eventData?: any) => {
+                emit($el as HTMLElement, eventName, eventData);
+            }
+        };
+    }
+
+    return vNode;
+}
+
+const hydrateTextNode = (node: Text, parent: RawElement | null) => {
     // * Empty text nodes are ignored by the walk function
 
-    const rawNode = newRawNode(node, parent) as RawText;
+    const rawNode = newRawNode(node) as RawText;
 
-    const text = node.textContent || '';
-    if (!text) return;
+    const TEXT_CONTENT = `${TEXT}Content`;
 
-    const { usedProps, output } = interpolate(text, rawNode.scopes, { wrap: true });
+    const text = node[TEXT_CONTENT] || '';
+    if (!text || !(has(text, '${') && has(text, '}'))) return parent;
 
     // Evaluate the expression
-    const fn = evaluate(scope, `()=>$el.textContent=\`${output}\``, node);
+    const fn = evaluate(parent || rawNode, `()=>$el.${TEXT_CONTENT}=\`${text}\``);
 
     // Add the rawNode to the raw object
-    watch(rawNode.id, 'text', fn, usedProps);
+    watch(rawNode.id, TEXT, fn);
+
+    // Add the text to the rawNode
+    saveProp(rawNode as any, TEXT, text);
 
     raw[rawNode.id] = rawNode;
 
     return parent;
 }
 
-export function hydrateElement(node: HTMLElement, parent: any) {
+export const hydrateElement = (node: HTMLElement, parent: RawElement | null) => {
 
-    const rawNode = newRawNode(node, parent) as RawElement;
+    const rawNode = newRawNode(node) as RawElement;
 
-    // Hydrate scope, if any
-    hydrateScope(rawNode);
-    
+    // Hydrate props scope, if any
+    hydrateProps(rawNode, parent);
+
+    // Hydrate uid scope, if any
+    hydrateUid(rawNode, parent);
+
+    // Hydrate init
+    const init = getAttr(node, INIT);
+    if (init) {
+        hydrateInit(rawNode, INIT, init);
+    }
+
+    // Hydrate each
+    const props = getAttr(node, EACH);
+    if (props) {
+        hydrateEach(rawNode, EACH, props)
+        walkControl.skip = true;
+        return parent;
+    }
+
     // Hydrate props
     for (let { name, value } of [...node.attributes]) {
-        // Skip scope prop
-        if (inArray(['scope','ref'], name)) continue;
 
         // Trim the prop value
-        value = value.trim();
+        value = trim(value);
 
         // Hydrate event listener
         if (name.startsWith('on-')) {
@@ -136,43 +262,49 @@ export function hydrateElement(node: HTMLElement, parent: any) {
             hydrateShow(rawNode, name, value)
         }
 
-        // TODO: each prop
-        else if (name == 'each') {
-            hydrateEach(rawNode, name, value)
-        }
-
-        // TODO: html prop
+        // Hydrate html prop
         else if (name == 'html') {
-            // htmlProp(vNode, name, value)
+            hydrateHtml(rawNode, name, value)
         }
 
-        // TODO: text prop
-        else if (name == 'text') {
-            // textProp(vNode, name, value)
+        // Hydrate text prop
+        else if (name == TEXT) {
+            hydrateText(rawNode, name, value)
+        }
+
+        // Hydrate effect prop
+        else if (name == 'effect') {
+            hydrateEffect(rawNode, name, value)
+        }
+
+        // Hydrate teleport prop
+        else if (name == 'teleport') {
+            hydrateTeleport(rawNode, name, value)
         }
     }
 
-    // Add the rawNode to the raw object
-    raw[rawNode.id] = rawNode
+    // Check if any changes were made to the rawNode
+    if (rawNode.attrs.length) return parent;
 
-    if (Object.keys(rawNode).length == 3) return parent;
+    // Add the rawNode to the raw object
+    raw[rawNode.id] = rawNode;
+
     return rawNode;
 }
 
-export function modelValue(value: any, modifiers: string[]) {
-    if (inArray(modifiers, 'trim')) value = value.trim();
-    if (inArray(modifiers, 'number')) value = toNumber(value);
+export const modelValue = (value: any, modifiers: string[]) => {
+    if (inArray(modifiers, 'trim')) value = trim(value);
+    if (inArray(modifiers, NUMBER)) value = toNumber(value);
     return value;
 }
 
-export function rawNodeProp(rawNode: RawElement, prop: RawElementProps, value: any) {
-    if (!rawNode[prop]) rawNode[prop] = [];
-    rawNode[prop] = value;
+export const saveProp = (rawNode: RawElement, prop: string, value: string) => {
+    rawNode.attrs[prop] = value;
 }
 
-export function getPropName(exp: string) {
+export const getPropName = (exp: string) => {
     // Get the direct name of the prop
-    const name = exp.trim().split(/[\s[.]/)[0];
+    const name = trim(exp).split(/[\s[.]/)[0];
     // Check if the name is valid (starts with a letter, $, or _ and contains only letters, numbers, $, and _)
     return /^([a-zA-Z_$][\w$]*)$/.test(name)
         // Return the name if valid
@@ -186,11 +318,12 @@ type GetPropRef = [
     ((value: any) => void) | null
 ];
 
-export function getPropRefError(prop: string) {
-    return `The variable ${prop} does not exist in the scope.`;
-}
-
-export function getPropRef(rawNode: RawElement | RawText, propExp: string): GetPropRef {
+/**
+ * Gets the reference to a prop. 
+ * It returns a getter and a setter if the prop is in $props, only a getter if the prop is a function, or null if the prop is not in $props.
+ * @return [getter | null, setter | null]
+ */
+export const getPropRef = (rawNode: RawElement, propExp: string): GetPropRef => {
 
     const propRef: GetPropRef = [null, null];
 
@@ -200,62 +333,32 @@ export function getPropRef(rawNode: RawElement | RawText, propExp: string): GetP
     // Check if the prop name is valid
     if (!propName) return propRef;
 
-    const { scopes, node } = rawNode;
+    const {$props} = rawNode;
 
-    // Check if the prop is in scope
-    if (!inScope(scopes, propName)) return propRef;
+    // Check if the prop is in the $props
+    if (!(propName in $props)) return propRef;
 
-    // Interpolate the expression
-    const { output } = interpolate(propExp, scopes, { wrap: true });
-
-    // Evaluate the interpolated expression
-    const value = evaluate(scope, output, node);
+    // Evaluate the expression
+    const value = evaluate(rawNode, propExp);
 
     // Check if value is a function. Getter only
-    if (isFn(value)) return [value, null];
+    if (isFunction(value)) return [value, null];
 
     // Getter and setter
-    const exp = `[()=>${output},v=>${output}=v]`;
+    const exp = `[()=>${propExp},v=>${propExp}=v]`;
 
     // Return the getter and setter
-    return evaluate(scope, exp, node);
+    return evaluate(rawNode, exp);
 }
 
-type WatchPropOptions = {
-    wrap?: boolean,
-    runFunction?: boolean
-};
-
-export function watchProp(rawNode: RawElement | RawText, propName: string, callback: (value: any) => void, options: WatchPropOptions = {}) {
-    const { wrap = true, runFunction = true } = options;
-    const { scopes, node } = rawNode;
-
-    // Interpolate the value
-    const { output } = interpolate(propName, scopes, { wrap });
-
-    // Get the scope where the prop is defined, if any
-    const sid = inScope(scopes, propName);
-
-    // The function to run when the prop changes
-    return () => {
-        let value: any;
-
-        // Get the value from the scope
-        if (sid) value = scope[sid][propName];
-
-        // Evaluate the expression
-        else value = evaluate(scope, output, node);
-
-        // Run the function if the value is a function
-        if (runFunction && isFn(value)) value = value();
-
-        // Notify the callback every time the value changes
-        callback(value);
-    }
-
+export const getPropOrExp = (rawNode: RawElement, prop: string, exp?: string) => {
+    const {$props} = rawNode;
+    return (prop in $props)
+        ? $props[prop]
+        : evaluate(rawNode, exp || prop);
 }
 
-export function watch(id: string, prop: string, fn: (...args: any) => any, isComputed = true, autoRun = true) {
+export const watch = (id: string, prop: string, fn: (...args: any) => any, isComputed = true, autoRun = true) => {
     // Create the effect object if it doesn't exist
     if (!effect[id]) effect[id] = {};
     // Set the cleanup function
@@ -269,19 +372,20 @@ export function watch(id: string, prop: string, fn: (...args: any) => any, isCom
     effect[id][prop] = cleanup;
 }
 
-// Check if value matches a prop in the scope
-export function inScope(scopes: string[], prop: string) {
-    return scopes.find(id => prop in scope[id]);
-}
-
-// Find top level scopes
-export function getTopLevelScopes(attr = 'scope') {
-    const scopes: HTMLElement[] = []
-    // Only add top level scopes
-    q(`[${attr}]:not([${attr}] [${attr}])`).forEach((el) => {
-        if (getAttr(el as HTMLElement, attr)) {
-            scopes.push(el as HTMLElement)
+// Find top level context nodes
+export const getTopLevelContext = (attrName: string) => {
+    const $props: HTMLElement[] = []
+    // Only add top level context nodes
+    q(`[${attrName}]:not([${attrName}] [${attrName}])`).forEach((el) => {
+        if (getAttr(el as HTMLElement, attrName)) {
+            $props.push(el as HTMLElement)
         }
     })
-    return scopes
+    return $props
+}
+
+export const store = (storeName: string, data: any) => {
+    if (internal.init) throw new Error('Store must be defined before hydrating the elements.');
+    if (!isObject(data) || isArray(data)) throw new Error('Store data must be an object or array.');
+    stores[storeName] = observe(data);
 }

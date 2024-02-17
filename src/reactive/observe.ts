@@ -5,11 +5,13 @@ import {
     setHiddenKey,
 } from "./tools";
 import { enqueue, __batched } from "./batch";
+import { UNDEFINED, entries, has, isArray, isFunction, isMap, isSet } from "../tools";
 
 export const computedStack: ((...argsList: any[]) => any)[] = []
 export const trackerSymbol = Symbol('tracker')
 
 const observedSymbol = Symbol("__observed");
+const HANDLER = '__handler';
 
 /**
  * @typedef {Object} Options - Observe options.
@@ -46,7 +48,7 @@ type Options = {
  * @param {Options} options - Options
  * @returns {O} - A proxy wrapping the object.
  */
-export function observe(obj: any, options: Options = {}): any {
+export const observe = (obj: any, options: Options = {}): any => {
     // 'deep' is slower but reasonable; 'shallow' a performance enhancement but with side-effects
     const { props, ignore, batch, deep = true, bubble, bind } = options;
 
@@ -59,15 +61,15 @@ export function observe(obj: any, options: Options = {}): any {
     const isWatched = (prop: string | Symbol, value: any) =>
         prop !== observedSymbol &&
         (!props ||
-            (props instanceof Array && props.includes(prop as string)) ||
-            (typeof props === "function" && props(prop as string, value))) &&
+            (isArray(props) && has(props, prop as string)) ||
+            (isFunction(props) && (props as Function)(prop as string, value))) &&
         (!ignore ||
-            (!(ignore instanceof Array && ignore.includes(prop as string)) &&
-                !(typeof ignore === "function" && ignore(prop as string, value))));
+            (!(isArray(ignore) && has(ignore, prop as string)) &&
+                !(isFunction(ignore) && (ignore as Function)(prop as string, value))));
 
     // If the deep flag is set, observe nested objects/arrays
     if (deep && !(obj instanceof Node)) {
-        Object.entries(obj).forEach(function ([key, val]) {
+        for (const [key, val] of entries(obj)) {
             if (isObj(val) && isWatched(key, val)) {
                 obj[key] = observe(val, options);
                 // If bubble is set, we add keys to the object used to bubble up the mutation
@@ -75,7 +77,7 @@ export function observe(obj: any, options: Options = {}): any {
                     defineBubblingProperties(obj[key], key, obj);
                 }
             }
-        });
+        };
     }
 
     // For each observed object, each property is mapped with a set of computed functions depending on this property.
@@ -115,16 +117,16 @@ export function observe(obj: any, options: Options = {}): any {
             }
 
             // Handle Set and Map methods
-            if (obj instanceof Set || obj instanceof Map) {
+            if (isSet(obj) || isMap(obj)) {
                 return (...args: string[]) => (obj as any)[prop](...args);
             }
 
             return obj[prop];
         },
         set(_, prop, value) {
-            if (prop === "__handler") {
+            if (prop === HANDLER) {
                 // Don't track bubble handlers
-                setHiddenKey(obj, "__handler", value);
+                setHiddenKey(obj, HANDLER, value);
             } else if (!isWatched(prop, value)) {
                 // If the prop is ignored
                 obj[prop] = value;
@@ -152,9 +154,8 @@ export function observe(obj: any, options: Options = {}): any {
                 while (parent) {
                     // If a handler explicitly returns 'false' then stop propagation
                     if (
-                        parent.__handler &&
-                        parent.__handler(ancestry, value, oldValue, proxy) ===
-                            false
+                        parent[HANDLER] &&
+                        parent[HANDLER](ancestry, value, oldValue, proxy) === false
                     ) {
                         break;
                     }
@@ -181,10 +182,10 @@ export function observe(obj: any, options: Options = {}): any {
                         } else if (dependent !== computedStack[0]) {
                             // Run the computed function
                             if (
-                                typeof batch !== "undefined" &&
+                                typeof batch !== UNDEFINED &&
                                 batch !== false
                             ) {
-                                enqueue(dependent, batch);
+                                enqueue(dependent, batch as any);
                                 dependent[__batched] = true;
                             } else {
                                 dependent();
@@ -196,6 +197,40 @@ export function observe(obj: any, options: Options = {}): any {
 
             return true;
         },
+        deleteProperty(_, prop) {
+            // Check if the property is being deleted
+            if (prop === observedSymbol) {
+                return true; // Allow deleting the observedSymbol itself
+            }
+
+            // Delete the property from the original object
+            const deleted = delete obj[prop];
+
+            // If the property was successfully deleted
+            if (deleted) {
+                // Handle any dependents or notifications related to the deletion
+                const dependents = propertiesMap.get(prop);
+                if (dependents) {
+                    // Iterate over the dependents (computed functions)
+                    dependents.forEach((dependent: any) => {
+                        // Run the computed function
+                        if (!dependent.__disposed) {
+                            if (typeof batch !== UNDEFINED && batch !== false) {
+                                enqueue(dependent, batch as any);
+                                dependent[__batched] = true;
+                            } else {
+                                dependent();
+                            }
+                        }
+                    });
+                    // Remove the property's dependents
+                    propertiesMap.delete(prop);
+                }
+            }
+
+            return deleted; // Return true/false indicating whether the deletion was successful
+        },
+
     });
 
     if (bind) {

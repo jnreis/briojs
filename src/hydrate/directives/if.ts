@@ -1,32 +1,26 @@
 import { RawElement } from "../index.d";
 
-import { watch, watchProp } from "..";
-import { delAttr } from "../../tools";
+import { hydrationWrapper } from ".";
+import { appendChild, getParent, insertBefore, nextSibling } from "../../tools";
 
-export function hydrateIf(rawNode: RawElement, attrName: string, attrValue: string) {
+export const hydrateIf = (rawNode: RawElement, attrName: string, attrValue: string) => {
 
-    const el = rawNode.node as any;
+    const callback = (node: HTMLElement) => {
+        // Store references to parent and siblings
+        const parentEl = getParent(node);
+        const nextEl = nextSibling(node);
 
-    // Store references to parent and siblings
-    const parentEl = el.parentElement;
-    const nextEl = el.nextSibling;
-
-    const watchFn = watchProp(rawNode, attrValue, (value: any) => {
-        if (value) {
-            // Add the node before the next sibling
-            if (nextEl) parentEl?.insertBefore(el, nextEl);
-            // Add the node as the last child
-            else parentEl?.appendChild(el);
+        // Return the watch function
+        return (value: any) => {
+            if (value) {
+                // Add the node before the next sibling
+                if (nextEl) insertBefore(parentEl as HTMLElement, node, nextEl);
+                // Add the node as the last child
+                else appendChild(parentEl as HTMLElement, node);
+            }
+            else node.remove();
         }
-        else el.remove();
-    });
+    }
 
-    // Add the effect to the effect object
-    watch(rawNode.id, attrName, watchFn);
-
-    // Save to the rawNode
-    rawNode.if = attrValue;
-
-    // Remove the attribute from the node
-    delAttr(rawNode.node, attrName);
+    hydrationWrapper(rawNode, attrName, attrValue, callback);
 }

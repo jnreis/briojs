@@ -1,43 +1,38 @@
-const BIND_IGNORED = ["String", "Number", "Object", "Array", "Boolean", "Date"];
+import { ARRAY, BOOLEAN, DATE, NUMBER, OBJECT, STRING, defineProp, getOwnProp, getProto, isFunction, lower } from "../tools";
 
-export function isObj(object: any) {
-    return object && typeof object === "object";
+const BIND_IGNORED = [STRING,NUMBER,OBJECT,ARRAY,BOOLEAN,DATE];
+
+export const isObj = (object: any) => {
+    return object && typeof object === OBJECT;
 }
 
-export function setHiddenKey(object: any, key: string, value: any) {
-    Object.defineProperty(object, key, {
+export const setHiddenKey = (object: any, key: string, value: any) => {
+    defineProp(object, key, {
         value,
         enumerable: false,
         configurable: true,
     });
 }
 
-export function defineBubblingProperties(
+export const defineBubblingProperties = (
     object: any,
     key: string,
     parent: any
-) {
+) => {
     setHiddenKey(object, "__key", key);
     setHiddenKey(object, "__parent", parent);
 }
-export function getInstanceMethodKeys(object: any) {
+
+export const getInstanceMethodKeys = (object: any) => {
     return getOwnProp(object)
         .concat(
             getProto(object) &&
-                BIND_IGNORED.indexOf(getProto(object).constructor.name) < 0
+                BIND_IGNORED.indexOf(lower(getProto(object).constructor.name)) < 0
                 ? getOwnProp(getProto(object))
                 : []
         )
         .filter(
             (prop) =>
-                prop !== "constructor" && typeof object[prop] === "function"
+                prop !== "constructor" && isFunction(object[prop])
         );
-}
-
-export function getProto(object: any) {
-    return Object.getPrototypeOf(object);
-}
-
-export function getOwnProp(object: any) {
-    return Object.getOwnPropertyNames(object);
 }

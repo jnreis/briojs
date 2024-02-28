@@ -1,4 +1,4 @@
-import { isNull } from "../tools";
+import { isNull } from "../tools/typeCheck";
 
 let queue: any[] | null = null;
 export const __batched = Symbol();

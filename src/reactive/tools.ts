@@ -1,4 +1,7 @@
-import { ARRAY, BOOLEAN, DATE, NUMBER, OBJECT, STRING, defineProp, getOwnProp, getProto, isFunction, lower } from "../tools";
+import { defineProp, getOwnProp, getProto } from "../tools/object";
+import { lower } from "../tools/string";
+import { isFunction } from "../tools/typeCheck";
+import { ARRAY, BOOLEAN, DATE, NUMBER, OBJECT, STRING } from "../tools/constants";
 
 const BIND_IGNORED = [STRING,NUMBER,OBJECT,ARRAY,BOOLEAN,DATE];
 

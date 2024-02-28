@@ -4,9 +4,9 @@ export default defineConfig({
   build: {
     lib: {
         entry: 'src/index.ts',
-        name: 'frame',
+        name: 'briojs',
         formats: ['es', 'umd', 'iife', 'cjs'],
-        fileName: 'frame'
+        fileName: 'briojs'
     },
   }
 })

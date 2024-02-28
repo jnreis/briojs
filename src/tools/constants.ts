@@ -1,40 +1,51 @@
-export const NUMBER = 'number';
-export const STRING = 'string';
-export const BOOLEAN = 'boolean';
-export const UNDEFINED = 'undefined';
-export const NULL = 'null';
-export const SYMBOL = 'symbol';
-export const BIGINT = 'bigint';
+export let NUMBER = 'number';
+export let STRING = 'string';
+export let BOOLEAN = 'boolean';
+export let UNDEFINED = 'undefined';
+export let NULL = 'null';
+export let SYMBOL = 'symbol';
+export let BIGINT = 'bigint';
 
-export const OBJECT = 'object';
-export const ARRAY = 'array';
-export const MAP = 'map';
-export const SET = 'set';
-export const WEAKMAP = 'weakmap';
-export const WEAKSET = 'weakset';
+export let OBJECT = 'object';
+export let ARRAY = 'array';
+export let MAP = 'map';
+export let SET = 'set';
+export let WEAKMAP = 'weakmap';
+export let WEAKSET = 'weakset';
 
-export const FUNCTION = 'function';
-export const ASYNC_FUNCTION = 'asyncfunction';
-export const PROMISE = 'promise';
-export const REGEXP = 'regexp';
-export const DATE = 'date';
-export const ERROR = 'error';
+export let FUNCTION = 'function';
+export let ASYNC_FUNCTION = 'asyncfunction';
+export let PROMISE = 'promise';
+export let REGEXP = 'regexp';
+export let DATE = 'date';
+export let ERROR = 'error';
 
-export const INPUT = 'input';
-export const TEXTAREA = 'textarea';
-export const SELECT = 'select';
-export const CHECKBOX = 'checkbox';
-export const RADIO = 'radio';
-export const VALUE = 'value';
-export const CHANGE = 'change';
-export const CHECKED = 'checked';
+export let INPUT = 'input';
+export let TEXTAREA = 'textarea';
+export let SELECT = 'select';
+export let CHECKBOX = 'checkbox';
+export let RADIO = 'radio';
+export let VALUE = 'value';
+export let CHANGE = 'change';
+export let CHECKED = 'checked';
 
-export const STYLE = 'style';
-export const CLASS = 'class';
+export let STYLE = 'style';
+export let CLASS = 'class';
 
-export const PROPS = 'props';
-export const INIT = 'init';
-export const TEXT = 'text';
-export const EACH = 'each';
+export let PROPS = 'props';
+export let INIT = 'init';
+export let TEXT = 'text';
+export let EACH = 'each';
 
-export const INVALID_PROP_OR_EXPRESSION = 'Invalid property or expression';
+export let DIRECTIVE = 'directive';
+export let ATTRIBUTE = 'attribute';
+export let REQUIRE = 'require';
+export let EXPRESSION = 'expression';
+
+export let CREATE = 'create';
+export let UPDATE = 'update';
+export let DELETE = 'delete';
+
+export let INVALID_PROP_OR_EXPRESSION = `Invalid property or ${EXPRESSION}`;
+
+export let RESERVED_NAMES = ['$el','$emit','$props','$refs','$root','$store','$uid','$watch'];

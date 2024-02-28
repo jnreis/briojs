@@ -1,16 +1,14 @@
-import {
-    isObj,
-    defineBubblingProperties,
-    getInstanceMethodKeys,
-    setHiddenKey,
-} from "./tools";
 import { enqueue, __batched } from "./batch";
-import { UNDEFINED, entries, has, isArray, isFunction, isMap, isSet } from "../tools";
+import { isObj, defineBubblingProperties, getInstanceMethodKeys, setHiddenKey } from "./tools";
+
+import { entries, has } from "../tools";
+import { isArray, isFunction, isMap, isSet } from "../tools/typeCheck";
+import { UNDEFINED } from "../tools/constants";
 
 export const computedStack: ((...argsList: any[]) => any)[] = []
 export const trackerSymbol = Symbol('tracker')
 
-const observedSymbol = Symbol("__observed");
+export const observedSymbol = Symbol("__observed");
 const HANDLER = '__handler';
 
 /**
@@ -58,14 +56,10 @@ export const observe = (obj: any, options: Options = {}): any => {
     }
 
     // If the prop is explicitely not excluded
-    const isWatched = (prop: string | Symbol, value: any) =>
+    const isWatched = (prop: string | symbol, value: any) =>
         prop !== observedSymbol &&
-        (!props ||
-            (isArray(props) && has(props, prop as string)) ||
-            (isFunction(props) && (props as Function)(prop as string, value))) &&
-        (!ignore ||
-            (!(isArray(ignore) && has(ignore, prop as string)) &&
-                !(isFunction(ignore) && (ignore as Function)(prop as string, value))));
+        (!props || arrayHas(props, prop) || isValidFn(props, prop, value)) &&
+        (!ignore || (!arrayHas(ignore, prop) && !isValidFn(ignore, prop, value)));
 
     // If the deep flag is set, observe nested objects/arrays
     if (deep && !(obj instanceof Node)) {
@@ -79,6 +73,28 @@ export const observe = (obj: any, options: Options = {}): any => {
             }
         };
     }
+
+    const runComputedFunction = (dependent: any) => {
+        // Run the computed function
+        if (typeof batch !== UNDEFINED && batch !== false) {
+            enqueue(dependent, batch as any);
+            dependent[__batched] = true;
+        } else {
+            dependent();
+        }
+    };
+
+    const eachDependent = (prop: string | symbol, removeProp: boolean, callback: any) => {
+        const dependents = propertiesMap.get(prop);
+        if (dependents) {
+            // Retrieve the computed functions depending on the prop
+            for (const dependent of dependents) {
+                callback(dependent, dependents);
+            }
+        }
+        // Remove the property's dependents
+        if (removeProp) propertiesMap.delete(prop);
+    };
 
     // For each observed object, each property is mapped with a set of computed functions depending on this property.
     // Whenever a property is set, we re-run each one of the functions stored inside the matching Set.
@@ -98,21 +114,9 @@ export const observe = (obj: any, options: Options = {}): any => {
                     const tracker = (computedFn as ComputedFunction)[
                         trackerSymbol
                     ];
-                    if (tracker) {
-                        let trackerSet = tracker.get(obj);
-                        if (!trackerSet) {
-                            trackerSet = new Set();
-                            tracker.set(obj, trackerSet);
-                        }
-                        trackerSet.add(prop);
-                    }
+                    if (tracker) setTracker(tracker, obj, prop);
                     // Link the computed function and the property being accessed
-                    let propertiesSet = propertiesMap.get(prop);
-                    if (!propertiesSet) {
-                        propertiesSet = new Set();
-                        propertiesMap.set(prop, propertiesSet);
-                    }
-                    propertiesSet.add(computedFn);
+                    setTracker(propertiesMap, prop, computedFn);
                 }
             }
 
@@ -127,13 +131,12 @@ export const observe = (obj: any, options: Options = {}): any => {
             if (prop === HANDLER) {
                 // Don't track bubble handlers
                 setHiddenKey(obj, HANDLER, value);
-            } else if (!isWatched(prop, value)) {
+            }
+            else if (!isWatched(prop, value)) {
                 // If the prop is ignored
                 obj[prop] = value;
-            } else if (
-                (Array.isArray(obj) && prop === "length") ||
-                obj[prop] !== value
-            ) {
+            }
+            else if ((isArray(obj) && prop === "length") || obj[prop] !== value) {
                 // If the new/old value are not equal
                 const deeper = deep && isObj(value);
 
@@ -153,10 +156,7 @@ export const observe = (obj: any, options: Options = {}): any => {
                 let parent = obj;
                 while (parent) {
                     // If a handler explicitly returns 'false' then stop propagation
-                    if (
-                        parent[HANDLER] &&
-                        parent[HANDLER](ancestry, value, oldValue, proxy) === false
-                    ) {
+                    if (parent[HANDLER] && parent[HANDLER](ancestry, value, oldValue, proxy) === false) {
                         break;
                     }
                     // Continue propagation, traversing the mutated property's object hierarchy & call any __handlers along the way
@@ -168,67 +168,34 @@ export const observe = (obj: any, options: Options = {}): any => {
                     }
                 }
 
-                const dependents = propertiesMap.get(prop);
-                if (dependents) {
-                    // Retrieve the computed functions depending on the prop
-                    for (const dependent of dependents) {
-                        const tracker = dependent[trackerSymbol];
-                        const trackedObj = tracker && tracker.get(obj);
-                        const tracked = trackedObj && trackedObj.has(prop);
-                        // If the function has been disposed or if the prop has not been used
-                        // during the latest function call, delete the function reference
-                        if (dependent.__disposed || (tracker && !tracked)) {
+                // Notify the dependents
+                setTimeout(() => {
+                    eachDependent(prop, false, (dependent: any, dependents: any) => {
+                        if (dependent.__disposed) {
                             dependents.delete(dependent);
-                        } else if (dependent !== computedStack[0]) {
-                            // Run the computed function
-                            if (
-                                typeof batch !== UNDEFINED &&
-                                batch !== false
-                            ) {
-                                enqueue(dependent, batch as any);
-                                dependent[__batched] = true;
-                            } else {
-                                dependent();
-                            }
                         }
-                    }
-                }
+                        else if (dependent !== computedStack[0]) {
+                            runComputedFunction(dependent);
+                        }
+                    });
+                }, 0);
             }
 
             return true;
         },
         deleteProperty(_, prop) {
-            // Check if the property is being deleted
-            if (prop === observedSymbol) {
-                return true; // Allow deleting the observedSymbol itself
-            }
-
-            // Delete the property from the original object
+            // Delete the property
             const deleted = delete obj[prop];
 
-            // If the property was successfully deleted
             if (deleted) {
-                // Handle any dependents or notifications related to the deletion
-                const dependents = propertiesMap.get(prop);
-                if (dependents) {
-                    // Iterate over the dependents (computed functions)
-                    dependents.forEach((dependent: any) => {
-                        // Run the computed function
-                        if (!dependent.__disposed) {
-                            if (typeof batch !== UNDEFINED && batch !== false) {
-                                enqueue(dependent, batch as any);
-                                dependent[__batched] = true;
-                            } else {
-                                dependent();
-                            }
-                        }
-                    });
-                    // Remove the property's dependents
-                    propertiesMap.delete(prop);
-                }
+                // Notify the dependents and remove the property from the properties map to prevent any further calls
+                eachDependent(prop, true, (dependent: any) => {
+                    if (!dependent.__disposed) runComputedFunction(dependent);
+                });
             }
 
-            return deleted; // Return true/false indicating whether the deletion was successful
+            // Return the result of the deletion
+            return deleted;
         },
 
     });
@@ -236,9 +203,22 @@ export const observe = (obj: any, options: Options = {}): any => {
     if (bind) {
         // Need this for binding es6 classes methods which are stored in the object prototype
         getInstanceMethodKeys(obj).forEach(
-            (key) => (obj[key] = obj[key].bind(proxy))
+            (key: string) => (obj[key] = obj[key].bind(proxy))
         );
     }
 
     return proxy;
 }
+
+// Helper functions
+const arrayHas = (poi: PropsOrIgnore, prop: string | symbol) => isArray(poi) && has(poi, prop as string);
+const isValidFn = (poi: PropsOrIgnore, prop: string | symbol, value: any) => isFunction(poi) && (poi as Function)(prop as string, value);
+const setTracker = (source: WeakMap<any,any> | Map<any,any>, key: any, value: any) => {
+    let trackerSet = source.get(key);
+    if (!trackerSet) {
+        trackerSet = new Set();
+        source.set(key, trackerSet);
+    }
+    // Only add it if it's not already there
+    if (!trackerSet.has(value)) trackerSet.add(value);
+};

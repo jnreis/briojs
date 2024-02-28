@@ -1,34 +1,25 @@
-import { RawElement } from "../index.d";
+import { VNode } from "..";
+import { getRefOrExp } from "../evaluate";
 
-import { getPropOrExp, saveProp, watch } from "..";
-import { delAttr } from "../../tools";
+import { saveAttr, saveEffect } from "../hydrate";
 
-export const hydrationWrapper = (
-    rawNode: RawElement,
+export let hydrationWrapper = (
+    vnode: VNode,
     attrName: string,
     attrValue: string,
     callback: (node: HTMLElement) => (...args: any) => any
 ) => {
 
-    const {id, $el} = rawNode;
-
     // The callback returns the function to watch (watchFn).
     // The `watchFn` receives the prop or expression.
     // If the prop or expression contains observed value(s), the `watchFn` will be called when the observed value(s) change.
-    const watchFn = callback($el);
+    let watchFn = callback(vnode.$el);
 
     // Watch the prop or expression
-    watch(id, attrName, () => watchFn(getPropOrExp(rawNode, attrValue)));
+    saveEffect(vnode, attrName, () => watchFn(getRefOrExp(vnode, attrValue)));
 
-    // Save to the rawNode
-    saveProp(
-        rawNode, 
-        attrName, 
-        attrValue
-    );
-
-    // Remove the attribute from the node
-    delAttr($el, attrName);
+    // Save attribute
+    saveAttr(vnode, attrName, attrValue);
 }
 
 

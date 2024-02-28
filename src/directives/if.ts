@@ -1,14 +1,14 @@
-import { RawElement } from "../index.d";
+import { VNode } from "..";
 
 import { hydrationWrapper } from ".";
-import { appendChild, getParent, insertBefore, nextSibling } from "../../tools";
+import { appendChild, getParent, insertBefore, nextSibling } from "../tools/dom";
 
-export const hydrateIf = (rawNode: RawElement, attrName: string, attrValue: string) => {
+export let hydrateIf = (vnode: VNode, attrName: string, attrValue: string) => {
 
-    const callback = (node: HTMLElement) => {
+    let callback = (node: HTMLElement) => {
         // Store references to parent and siblings
-        const parentEl = getParent(node);
-        const nextEl = nextSibling(node);
+        let parentEl = getParent(node);
+        let nextEl = nextSibling(node);
 
         // Return the watch function
         return (value: any) => {
@@ -22,5 +22,5 @@ export const hydrateIf = (rawNode: RawElement, attrName: string, attrValue: stri
         }
     }
 
-    hydrationWrapper(rawNode, attrName, attrValue, callback);
+    hydrationWrapper(vnode, attrName, attrValue, callback);
 }

@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Frame</title>
+    <title>Brio.js</title>
 
     <style>
       body {
@@ -14,20 +14,44 @@
         justify-content: center;
         align-items: center;
         height: 100vh;
-        background-color: #eceff3;
+        color: #fff;
+        background-color: #181818;
+      }
+
+      button {
+        padding: 10px 20px;
+        background-color: rgba(255, 255, 255, 0.3);
+        box-shadow: 0 0 5px 0 rgba(0, 0, 0, 0.2);
+        color: #fff;
+        border: none;
+        cursor: pointer;
+      }
+
+      button:hover {
+        background-color: rgba(255, 255, 255, 0.4);
+      }
+
+      button:active {
+        background-color: rgba(255, 255, 255, 0.5);
+      }
+
+      input {
+        padding: 10px;
+        box-shadow: 0 0 5px 0 rgba(0, 0, 0, 0.2);
+        border: none;
       }
 
       .items-wrapper {
         display: grid;
         width: 400px;
         gap: 10px;
-        background: #9b95d9;
+        background: #7e7ab2;
         padding: 10px;
       }
 
       .items {
         padding: 10px;
-        background-color: #eceff3;
+        background-color: rgba(0, 0, 0, 0.2);
       }
 
       .items p {
@@ -39,40 +63,44 @@
 
     <!-- Syntax option 2 -->
     <div props="{
-      count: 0, 
+      count: 110, 
       first: 'John', 
       last: 'Doe', 
       value: 'abc', 
       checked: true, 
       vehicle: [], 
       pick: 'one', 
-      set increment(v) {
-        $props.count += v;
+      get double() {
+        return this.count * 2;
       },
-      double() {
-        return $props.count * 2;
+      set double(value) {
+        this.count = value / 2;
       },
       isOpen: false,
-      toggle: () => {
-        isOpen = !isOpen;
+      toggle() {
+        this.isOpen = !this.isOpen;
+      },
+      func() {
+        console.log(this);
       },
       item: '',
-      items: [9, 8, 7],
-      obj: { a: 1, b: 2, c: 3 },
-      get creator() {
-        return `<strong>Jhonathan Reis</strong>`
-      },
-    }" uid="['field']" bind-class="$uid('field')">
-      <h1 bind-class="$uid('field')">Brio.js</h1>
+      items: ['Apple','Banana','Cherry'],
+      obj: { a: 1, b: 2, c: 3},
+    }">
+      <h1>Brio.js</h1>
       <!-- <p>Hi. <span html="`<strong>${ first } ${ last }</strong>`"></span></p> -->
       <!-- <p bind-class="4 * count">Hello, ${ first } ${ last }!</p> -->
 
       <p>
-        Count is: ${count}. The double is: ${double()}
-        <strong>Anything</strong>
+        Count is: ${count}. The double is: ${double}
+        <strong>Global Count: ${$store.count}</strong>
       </p>
 
-      <button bind-class="count" on-click="increment = 1">Increment count</button>
+      <p>${ first }</p>
+
+      <input type="text" model="first">
+
+      <button on-click="count++">Increment count</button>
 
       <!-- Just the value -->
       <!-- <div class="items-wrapper">
@@ -89,18 +117,24 @@
       </div> -->
 
       <!-- Just object key -->
-      <!-- <div class="items-wrapper">
-        <div bind-id="item" class="items" each="item, key in items">
-          <p>${key}. ${ item }</p>
-          <input type="text" model-number="items[key]">
-          <button on-click="items.splice(key, 1)">Remove</button>
+      <div class="items-wrapper">
+        <div class="items" each="v, i in obj">
+          <!-- <p>${i}: ${v}</p> -->
+          <li each="f, i in items">${i}: ${ f}</li>
+          <input type="text" model="obj[i]">
+          <button on-click="delete obj[i]">Remove</button>
+          <button on-click="console.log(obj)">Log items</button>
         </div>
 
-        <form on-submit-prevent="items.push(item);  item = '';" style="display: flex; margin-top: 10px; gap: 10px;">
-          <input type="text" model-number="item" style="width: 100%;">
+
+        <form 
+          on-submit-prevent="obj[item] = item; item = ''"
+          style="display: flex; margin-top: 10px; gap: 10px;"
+        >
+          <input type="text" model="item" style="width: 100%;">
           <button type="submit">Add</button>
         </form>
-      </div> -->
+      </div>
 
       <!-- <p>${count}</p> -->
 
@@ -165,11 +199,9 @@
       Number: <span text="number"></span>
     </div> -->
 
-    <hr>
+    <!-- <hr> -->
 
-    
-    
-    <div props="{p1: true}" ref="prop1">
+    <!-- <div props="{p1: true}" ref="prop1">
       <button on-click="console.log($props, $refs, $el, $uid, p1)">Log Magic attributes</button>
       <button ref="button1" on-click="console.log($refs)">From a parent scope</button>
       <div props="{refs: 123}" ref="prop2">
@@ -179,17 +211,37 @@
         <button ref="button1" on-click="console.log($refs)">Outside Ref</button>
       </div>
       <button ref="button3" on-click="console.log($refs)">From a parent scope</button>
-    </div>
+    </div> -->
 
-    <hr>
+    <!-- <hr> -->
+
+    <!-- <div props="c1">
+      <h2>Counter 1: ${count}</h2>
+      <button on-mousedown="increment">Increment</button>
+      <div props="c1">
+        <h2>Counter 2 (nested): ${count}</h2>
+        <button on-click="count++">Increment using `button` tag</button>
+        <a on-mousedown="count++">Increment using `a` tag</a>
+      </div>
+    </div> -->
 
     <script>
       document.addEventListener('brio:init', () => {
-        Brio.store('count', { value: 0 });
-      })
+        Brio.store.count = 80;
+        Brio.props('c1', () => ({
+          count: 0,
+          increment() {
+            count++;
+          }
+        }));
+      });
     </script>
 
     <!-- TODO: $uid() and uid -->
+    <!-- <div x-data="{count: 0}">
+      <h2>Counter 2: <span x-text="count"></span></h2>
+      <button @click="count++">Increment</button>
+    </div> -->
 
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 

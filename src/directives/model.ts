@@ -1,43 +1,44 @@
-import { RawElement, ObjectType } from '../index.d';
+import { VNode, ObjectType } from '..';
 
-import { watch, saveProp, modelValue, getPropRef } from '..';
-import {
-    listen, delAttr, onCompositionStart, onCompositionEnd,
-    inArray, isArray, arrayAdd, arrayRemove, entries, getAttr, isNull,
-    SELECT, INPUT, TEXTAREA, CHECKBOX, RADIO, VALUE, CHANGE, lower, ARRAY, INVALID_PROP_OR_EXPRESSION
-} from '../../tools';
+import { ref } from '../evaluate';
+import { modelValue, saveAttr, saveEffect } from '../hydrate';
+import { entries } from '../tools';
+import { inArray, arrayAdd, arrayRemove } from '../tools/array';
+import { listen, onCompositionStart, onCompositionEnd, getAttr } from '../tools/dom';
+import { capitalize, lower } from '../tools/string';
+import { isNull, isArray, isUndefined } from '../tools/typeCheck';
+import { SELECT, INPUT, TEXTAREA, CHECKBOX, RADIO, VALUE, CHANGE, ARRAY, INVALID_PROP_OR_EXPRESSION, DIRECTIVE, ATTRIBUTE, REQUIRE } from '../tools/constants';
 
-export const hydrateModel = (rawNode: RawElement, attrName: string, attrValue: string) => {
+export let hydrateModel = (vnode: VNode, attrName: string, attrValue: string) => {
 
-    const [MODEL, ...modifiers] = attrName.split('-');
+    let [MODEL, ...modifiers] = attrName.split('-');
 
     // Get the prop reference
-    const [prop, setProp] = getPropRef(rawNode, attrValue);
+    let value = ref(vnode, attrValue);
 
-    if (!(prop && setProp)) throw new Error(`${MODEL}: ${INVALID_PROP_OR_EXPRESSION}.\n${attrValue}`);
+    if (isUndefined(value))
+        throw new Error(`${INVALID_PROP_OR_EXPRESSION} provided to ${MODEL}. ${attrValue}`);
 
-    const {id} = rawNode;
-
-    const node = rawNode.$el as any;
-    const type = node.type;
-    const tag = lower(node.tagName);
+    let node = vnode.$el as any;
+    let type = node.type;
+    let tag = lower(node.tagName);
 
     if (tag == INPUT && !inArray([CHECKBOX,RADIO], type)) {
-        const theValueAttr = getAttr(node, VALUE);
+        let theValueAttr = getAttr(node, VALUE);
         if (!isNull(theValueAttr)) {
-            // Save the original value
-            saveProp(rawNode, VALUE, theValueAttr as string);
+            // Save the original `value` attribute
+            saveAttr(vnode, VALUE, theValueAttr as string);
         }
     }
 
     // UPDATES THE DOM
-    const watchFn = () => {
-        const value = prop();
+    let watchFn = () => {
+        let value = ref(vnode, attrValue);
 
         if (inArray([INPUT,TEXTAREA], tag)) {
             if (type == CHECKBOX && isArray(value)) {
                 if (isNull(getAttr(node, VALUE)))
-                    throw new Error(`Checkbox ${VALUE} attribute is required when using an ${ARRAY} ${MODEL}.`);
+                    throw new Error(`${capitalize(CHECKBOX)} ${VALUE} ${ATTRIBUTE} is ${REQUIRE}d when using an ${ARRAY} ${MODEL}.`);
 
                 node.checked = inArray(value, node[VALUE]);
             }
@@ -60,16 +61,16 @@ export const hydrateModel = (rawNode: RawElement, attrName: string, attrValue: s
             if (node[VALUE] !== value) node[VALUE] = value;
         }
         else {
-            throw new Error(`The ${MODEL} directive can only be used on ${INPUT}, ${SELECT}, and ${TEXTAREA} elements.`);
+            throw new Error(`The ${MODEL} ${DIRECTIVE} can only be used on ${INPUT}, ${SELECT}, and ${TEXTAREA} elements.`);
         }
     };
     // Add the effect to the effect object
-    watch(id, MODEL, watchFn);
-
+    saveEffect(vnode, MODEL, watchFn);
 
     // UPDATES THE PROP IN THE SCOPE
-    const events: ObjectType = {};
-    let eventFn = () => setProp(modelValue(node[VALUE], modifiers));
+    let events: ObjectType = {};
+    let setValue = ref(vnode, attrValue, true);
+    let eventFn = () => setValue(modelValue(node[VALUE], modifiers));
 
     if (inArray([INPUT,TEXTAREA], tag)) {
         // Checkbox with array model
@@ -78,12 +79,12 @@ export const hydrateModel = (rawNode: RawElement, attrName: string, attrValue: s
                 // When the checkbox doesn't have a value attribute, use the checked property instead
                 let value = isNull(getAttr(node, VALUE)) ? node.checked : modelValue(node[VALUE], modifiers);
 
-                const array = prop();
+                let array = ref(vnode, attrValue);
                 if (isArray(array)) {
                     if (node.checked) arrayAdd(array, value);
                     else arrayRemove(array, value);
                 } else {
-                    setProp(value);
+                    setValue(value);
                 }
             }
         }
@@ -100,13 +101,11 @@ export const hydrateModel = (rawNode: RawElement, attrName: string, attrValue: s
     events[event] = eventFn;
 
     // Add the event listeners
-    for (const [eventName, fn] of entries(events)) {
-        watch(id, eventName, listen(node, eventName, fn), false, false);
+    for (let [eventName, fn] of entries(events)) {
+        let cleanup = listen(node, eventName, fn);
+        vnode.effect[eventName] = cleanup;
     }
 
-    // Save to the rawNode
-    saveProp(rawNode, attrName, attrValue);
-
-    // Remove the attribute from the node
-    delAttr(node, attrName);
+    // Save to the vnode
+    saveAttr(vnode, attrName, attrValue);
 }

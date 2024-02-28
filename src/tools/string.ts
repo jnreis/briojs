@@ -1,43 +1,55 @@
 import { has } from '.';
+import { FUNCTION } from './constants';
 
-export const hasSubstring = (haystack: string, needle: string, caseInsensitive = false) => {
+export let hasSubstring = (haystack: string, needle: string, caseInsensitive = false) => {
     if (caseInsensitive) {
         return has(lower(haystack), lower(needle));
     }
     return has(haystack, needle);
 }
 
-export const lower = (str: string) => {
+export let lower = (str: string) => {
     return str.toLowerCase();
 }
 
-export const upper = (str: string) => {
+export let upper = (str: string) => {
     return str.toUpperCase();
 }
 
-export const capitalize = (str: string) => {
+export let capitalize = (str: string) => {
     return upper(str[0]) + str.slice(1);
 }
 
-export const reverse = (str: string) => {
+export let reverse = (str: string) => {
     return str.split('').reverse().join('');
 }
 
-export const trim = (str: string) => {
+export let lastIndex = (str: string, search: string) => {
+    return str.lastIndexOf(search);
+}
+
+export let trim = (str: string) => {
     return str.trim();
 }
 
 // Check if a string is a function
-export const isStringFunction = (value: string) => {
+export let isStringFunction = (value: string) => {
     return /^(function\s*\([^)]*\)\s*{[^}]*}|(?:\([^()]*\)|\w+)\s*=>)/.test(trim(value));
 }
 
-export const isStringArrowFunction = (value: string) => {
+export let isStringArrowFunction = (value: string) => {
     return /^(?:\([^()]*\)|\w+)\s*=>/.test(trim(value));
 }
 
-export const validateBracketPair = (str: string) => {
-    const pairs = ['{}', '[]', '()'];
+export let makeFunctionAnonymous = (fn: Function) => {
+    let name = fn.name;
+    let body = fn.toString()
+    
+    return new RegExp(`${name}\\s*\\(`).test(body) ? body.replace(name, FUNCTION) : body;
+};
+
+export let validateBracketPair = (str: string) => {
+    let pairs = ['{}', '[]', '()'];
     let found = true;
 
     while (found) {
@@ -54,8 +66,8 @@ export const validateBracketPair = (str: string) => {
     return str.split('');
 }
 
-export const getDelimitersIndexes = (subject: string, startingWith: string, endingWith: string) => {
-    const pairs: number[][] = []
+export let getDelimitersIndexes = (subject: string, startingWith: string, endingWith: string) => {
+    let pairs: number[][] = []
     let lastDelimiter = '';
 
     let index = 0;
@@ -93,9 +105,9 @@ export const getDelimitersIndexes = (subject: string, startingWith: string, endi
     return pairs;
 }
 
-export const getDelimitedContent = (subject: string, startingWith: string, endingWith: string) => {
-    const content: string[] = [];
-    const pairs = getDelimitersIndexes(subject, startingWith, endingWith);
+export let getDelimitedContent = (subject: string, startingWith: string, endingWith: string) => {
+    let content: string[] = [];
+    let pairs = getDelimitersIndexes(subject, startingWith, endingWith);
 
     pairs.forEach(pair => {
         content.push(subject.substring(pair[0], pair[1]));
@@ -104,14 +116,14 @@ export const getDelimitedContent = (subject: string, startingWith: string, endin
     return content;
 }
 
-export const findDelimitedContent = (
+export let findDelimitedContent = (
     input: string,
     startDelimiter: string,
     endDelimiter: string,
     includeDelimiters = false
 ) => {
-    const pairs = [];
-    const stack = [];
+    let pairs = [];
+    let stack = [];
 
     for (let i = 0; i < input.length; i++) {
         if (input.substring(i, i + startDelimiter.length) === startDelimiter) {
@@ -119,12 +131,12 @@ export const findDelimitedContent = (
         }
         else if (input.substring(i, i + endDelimiter.length) === endDelimiter) {
             if (stack.length > 0) {
-                const start = stack.pop() as number;
-                const end = i;
-                const pair = includeDelimiters
+                let start = stack.pop() as number;
+                let end = i;
+                let pair = includeDelimiters
                     ? { start, end: end + endDelimiter.length }
                     : { start: start + startDelimiter.length, end };
-                const content = input.substring(pair.start, pair.end);
+                let content = input.substring(pair.start, pair.end);
                 pairs.push({ ...pair, content });
             }
             // You may want to handle the case where a closing delimiter doesn't have a matching opening delimiter.
@@ -136,17 +148,17 @@ export const findDelimitedContent = (
     return pairs;
 }
 
-export const findTopmostDelimitedContent = (
+export let findTopmostDelimitedContent = (
     input: string,
     startDelimiter: string,
     endDelimiter: string
 ) => {
-    const items = findDelimitedContent(input, startDelimiter, endDelimiter);
-    const topItems: { start: number; end: number; content: string }[] = [];
+    let items = findDelimitedContent(input, startDelimiter, endDelimiter);
+    let topItems: { start: number; end: number; content: string }[] = [];
 
     items.forEach((item) => {
         if (topItems.length) {
-            const lastItem = topItems[topItems.length - 1];
+            let lastItem = topItems[topItems.length - 1];
             if (lastItem.start > item.start && lastItem.end < item.end) {
                 topItems.pop();
             }
@@ -157,6 +169,6 @@ export const findTopmostDelimitedContent = (
     return topItems;
 }
 
-export const replaceSubstring = (subject: string, startsAt: number, endsAt: number, replacement: string) => {
+export let replaceSubstring = (subject: string, startsAt: number, endsAt: number, replacement: string) => {
     return subject.slice(0, startsAt) + replacement + subject.slice(endsAt);
 }

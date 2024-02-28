@@ -15,7 +15,7 @@ import { computedStack, trackerSymbol } from "./observe";
  * Specify a callback that will be re-runned each time a dependency changes instead of the computed function.
  */
 
-type WrappedFunction = (...args: any[]) => any;
+export type WrappedFunction = (...args: any[]) => any;
 type Options = {
     autoRun?: boolean;
     callback?: WrappedFunction;
@@ -30,10 +30,7 @@ type Options = {
  * @param {(args: ComputedArguments) => void} wrappedFunction
  * @param {Options} options
  */
-export const computed = (
-    wrappedFunction: WrappedFunction,
-    options: Options = {}
-) => {
+export const computed = (wrappedFunction: WrappedFunction, options: Options = {}) => {
     const { autoRun = true, callback, bind, disableTracking = false } = options;
 
     const observeComputation = (fun: Function | null, argsList: any[] = []) => {
@@ -66,9 +63,7 @@ export const computed = (
         observeComputation(null, argsList);
 
     // If autoRun, then call the function at once
-    if (autoRun) {
-        wrapper();
-    }
+    if (autoRun) wrapper();
 
     return wrapper;
 }

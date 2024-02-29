@@ -2,12 +2,12 @@ import { VNode, ObjectType } from '..';
 
 import { ref } from '../evaluate';
 import { modelValue, saveAttr, saveEffect } from '../hydrate';
-import { entries } from '../tools';
+import { entries, has } from '../tools';
 import { inArray, arrayAdd, arrayRemove } from '../tools/array';
 import { listen, onCompositionStart, onCompositionEnd, getAttr } from '../tools/dom';
 import { capitalize, lower } from '../tools/string';
-import { isNull, isArray, isUndefined } from '../tools/typeCheck';
-import { SELECT, INPUT, TEXTAREA, CHECKBOX, RADIO, VALUE, CHANGE, ARRAY, INVALID_PROP_OR_EXPRESSION, DIRECTIVE, ATTRIBUTE, REQUIRE } from '../tools/constants';
+import { isNull, isArray, getType } from '../tools/typeCheck';
+import { SELECT, INPUT, TEXTAREA, CHECKBOX, RADIO, VALUE, CHANGE, ARRAY, DIRECTIVE, ATTRIBUTE, REQUIRE, OBJECT, UNDEFINED, SYMBOL } from '../tools/constants';
 
 export let hydrateModel = (vnode: VNode, attrName: string, attrValue: string) => {
 
@@ -16,14 +16,20 @@ export let hydrateModel = (vnode: VNode, attrName: string, attrValue: string) =>
     // Get the prop reference
     let value = ref(vnode, attrValue);
 
-    if (isUndefined(value))
-        throw new Error(`${INVALID_PROP_OR_EXPRESSION} provided to ${MODEL}. ${attrValue}`);
-
     let node = vnode.$el as any;
     let type = node.type;
     let tag = lower(node.tagName);
 
-    if (tag == INPUT && !inArray([CHECKBOX,RADIO], type)) {
+    if (!has([INPUT,TEXTAREA,SELECT], tag))
+        return console.error(`The ${MODEL} ${DIRECTIVE} can only be used on ${INPUT}, ${SELECT}, and ${TEXTAREA} elements.`);
+
+    let msg = `The ${MODEL} ${VALUE} for ${tag}${tag == TEXTAREA ? '' : ' '+type} cannot be of type ${getType(value)}.`;
+
+    if (has([OBJECT,UNDEFINED,SYMBOL], getType(value)) || type != CHECKBOX && isArray(value)) {
+        return console.error(msg);
+    }
+
+    if (tag == INPUT && !has([CHECKBOX,RADIO], type)) {
         let theValueAttr = getAttr(node, VALUE);
         if (!isNull(theValueAttr)) {
             // Save the original `value` attribute
@@ -37,8 +43,8 @@ export let hydrateModel = (vnode: VNode, attrName: string, attrValue: string) =>
 
         if (inArray([INPUT,TEXTAREA], tag)) {
             if (type == CHECKBOX && isArray(value)) {
-                if (isNull(getAttr(node, VALUE)))
-                    throw new Error(`${capitalize(CHECKBOX)} ${VALUE} ${ATTRIBUTE} is ${REQUIRE}d when using an ${ARRAY} ${MODEL}.`);
+                if (!getAttr(node, VALUE))
+                    return console.error(`${capitalize(CHECKBOX)} ${VALUE} ${ATTRIBUTE} is ${REQUIRE}d when using an ${ARRAY} ${MODEL}.`);
 
                 node.checked = inArray(value, node[VALUE]);
             }
@@ -59,9 +65,6 @@ export let hydrateModel = (vnode: VNode, attrName: string, attrValue: string) =>
         else if (tag == SELECT) {
             // Update the value
             if (node[VALUE] !== value) node[VALUE] = value;
-        }
-        else {
-            throw new Error(`The ${MODEL} ${DIRECTIVE} can only be used on ${INPUT}, ${SELECT}, and ${TEXTAREA} elements.`);
         }
     };
     // Add the effect to the effect object

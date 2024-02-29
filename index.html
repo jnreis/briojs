@@ -68,7 +68,7 @@
       last: 'Doe', 
       value: 'abc', 
       checked: true, 
-      vehicle: [], 
+      vehicle: ['Bike', 'Boat'], 
       pick: 'one', 
       get double() {
         return this.count * 2;
@@ -85,14 +85,14 @@
       },
       item: '',
       items: ['Apple','Banana','Cherry'],
-      obj: { a: 1, b: 2, c: 3},
+      obj: { a: 'a', b: 'b', c: 'c' },
     }">
       <h1>Brio.js</h1>
       <!-- <p>Hi. <span html="`<strong>${ first } ${ last }</strong>`"></span></p> -->
       <!-- <p bind-class="4 * count">Hello, ${ first } ${ last }!</p> -->
 
       <p>
-        Count is: ${count}. The double is: ${double}
+        Count is: ${count} ${isOpen}. The double is: ${double}
         <strong>Global Count: ${$store.count}</strong>
       </p>
 
@@ -119,11 +119,10 @@
       <!-- Just object key -->
       <div class="items-wrapper">
         <div class="items" each="v, i in obj">
-          <!-- <p>${i}: ${v}</p> -->
-          <li each="f, i in items">${i}: ${ f}</li>
-          <input type="text" model="obj[i]">
+          <p>${i}: ${v}</p>
+          <input type="text" model="v">
           <button on-click="delete obj[i]">Remove</button>
-          <button on-click="console.log(obj)">Log items</button>
+          <button on-click="console.log(obj, v)">Log items</button>
         </div>
 
 
@@ -136,58 +135,61 @@
         </form>
       </div>
 
-      <!-- <p>${count}</p> -->
+      <p>${count}</p>
 
-      <!-- <input type="text" model-trim="first" bind-placeholder="first"> -->
+      <input type="text" model-trim="first" bind-placeholder="first">
 
-      <!-- <input type="text" model="last"> -->
+      <input type="text" model="last">
 
-      <!-- <input type="number" model-number="count"> -->
+      <input type="number" model-number="count">
 
-      <!-- <button on-click-stop="increment">Increment</button> -->
+      <button on-click-stop="increment">Increment</button>
 
-      <!-- <h4>Select</h4>
+      <h4>Select: ${first}</h4>
       <select name="names" id="names" model="first">
         <option value="John">John</option>
         <option value="James">James</option>
         <option value="Jane">Jane</option>
-      </select> -->
+      </select>
 
-      <!-- <h4>Checkbox</h4>
+      <h4>Checkbox: ${checked}</h4>
       <input type="checkbox" name="vehicle1" value="Bike" model="checked">
       <label for="vehicle1"> I have a bike</label><br>
       <input type="checkbox" name="vehicle2" model="checked">
       <label for="vehicle2"> I have a car</label><br>
       <input type="checkbox" name="vehicle3" value="Boat" model="checked">
-      <label for="vehicle3"> I have a boat</label><br> -->
+      <label for="vehicle3"> I have a boat</label><br>
 
-      <!-- <h4>Multiple Checkboxes</h4>
+      <h4>Multiple Checkboxes: ${vehicle}</h4>
       <input type="checkbox" name="vehicle" value="Bike" model="vehicle">
       <label for="vehicle1"> I have a bike</label><br>
-      <input type="checkbox" name="vehicle" value model="vehicle">
+      <input type="checkbox" name="vehicle" value="Car" model="vehicle">
       <label for="vehicle2"> I have a car</label><br>
       <input type="checkbox" name="vehicle" value="Boat" model="vehicle">
-      <label for="vehicle3"> I have a boat</label><br> -->
+      <label for="vehicle3"> I have a boat</label><br>
 
-      <!-- <h4>Radio</h4>
+      <h4>Radio: ${pick}</h4>
       <input type="radio" id="one" model="pick" value="one">
       <label for="one">One</label><br>
       <input type="radio" id="two" model="pick" value="two">
-      <label for="two">Two</label><br> -->
+      <label for="two">Two</label><br>
 
-      <!-- <h4>Textarea</h4>
-      <textarea model="first">Hello, I'm a textarea</textarea> -->
+      <h4>Textarea: ${first}</h4>
+      <textarea model="first">Hello, I'm a textarea</textarea>
 
-      <!-- <div show="count % 2 == 0">
+      <div show="count % 2 == 0">
         <h2>Show condition</h2>
         <div if="count % 3 == 0">
           <h2>If condition</h2>
         </div>
-      </div> -->
+      </div>
+
+      <button on-click="vehicle = ['Car','Boat']">Reassign</button>
+      <button on-click="console.log($props.vehicle)">Log Props</button>
     </div>
 
 
-    <!-- <div props="{ number: 5 }">
+    <div props="{ number: 5 }">
       <div ref="button" props="{
         count: 2,
         person: 'John',
@@ -197,11 +199,11 @@
       </div>
    
       Number: <span text="number"></span>
-    </div> -->
+    </div>
 
-    <!-- <hr> -->
+    <hr>
 
-    <!-- <div props="{p1: true}" ref="prop1">
+    <div props="{p1: true}" ref="prop1">
       <button on-click="console.log($props, $refs, $el, $uid, p1)">Log Magic attributes</button>
       <button ref="button1" on-click="console.log($refs)">From a parent scope</button>
       <div props="{refs: 123}" ref="prop2">
@@ -211,11 +213,11 @@
         <button ref="button1" on-click="console.log($refs)">Outside Ref</button>
       </div>
       <button ref="button3" on-click="console.log($refs)">From a parent scope</button>
-    </div> -->
+    </div>
 
-    <!-- <hr> -->
+    <hr>
 
-    <!-- <div props="c1">
+    <div props="c1">
       <h2>Counter 1: ${count}</h2>
       <button on-mousedown="increment">Increment</button>
       <div props="c1">
@@ -223,7 +225,7 @@
         <button on-click="count++">Increment using `button` tag</button>
         <a on-mousedown="count++">Increment using `a` tag</a>
       </div>
-    </div> -->
+    </div>
 
     <script>
       document.addEventListener('brio:init', () => {
@@ -231,7 +233,7 @@
         Brio.props('c1', () => ({
           count: 0,
           increment() {
-            count++;
+            this.count++;
           }
         }));
       });

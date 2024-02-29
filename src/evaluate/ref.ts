@@ -3,7 +3,7 @@ import { VNode } from "..";
 import { evaluate } from ".";
 import { PropRef, trackAccessedProps } from "../reactivity";
 import { trim } from "../tools/string";
-import { has } from "../tools";
+import { has, uid } from "../tools";
 import { isUndefined } from "../tools/typeCheck";
 
 
@@ -60,6 +60,8 @@ export let pathSegments = (exp: string) => {
     return m ? [...m] : [];
 }
 
+let setVariable = 'v'+uid(4, ()=>true);
+
 export let ref = (vnode: VNode, exp: string, set: boolean = false) => {
 
     // If the expression contains a function or an assignment, return
@@ -68,7 +70,7 @@ export let ref = (vnode: VNode, exp: string, set: boolean = false) => {
     let path = splitPath(exp);
 
     if (path.length && (has(['$store','$props'], path[0]) || path[0] in vnode.$props)) {
-        if (set) exp = `v=>${exp}=v`;
+        if (set) exp = `${setVariable}=>${exp}=${setVariable}`;
         return evaluate(vnode, exp);
     }
 }

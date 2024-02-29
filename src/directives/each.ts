@@ -1,7 +1,7 @@
 import { ObjectType, VNode } from '..';
 
 import { ref, validVariableName } from '../evaluate';
-import { watch, watchAll } from '../reactivity';
+import { watch } from '../reactivity';
 import { hydrate, dehydrate, vnodes, saveAttr, internal, saveVNode } from '../hydrate';
 import { entries, has } from '../tools';
 import { appendChild, removeChild, insertBefore, getParent, nextSibling } from '../tools/dom';
@@ -84,11 +84,9 @@ export let hydrateEach = (vnode: VNode, parent: VNode | null, attrName: string, 
         internal.each = {
             $el: _el,
             $root: parent,
-            $props: {
-                [item]: v,
-                [index]: i,
-                [KEY]: i,
-            },
+            [item]: v,
+            [index]: i,
+            [KEY]: i,
         };
 
 
@@ -98,14 +96,15 @@ export let hydrateEach = (vnode: VNode, parent: VNode | null, attrName: string, 
         let _vnode = vnodes.get(_el);
 
         if (_vnode) {
-            // Make sure the index never changes
-            _vnode.effect.eachIndex = watch(_vnode.$props, index, ({newValue}) => {
-                if (newValue !== (_vnode as any).$props[KEY])
-                    (_vnode as any).$props[index] = (_vnode as any).$props[KEY];
+            let p = _vnode.$props;
+            // Make sure the `index` never changes
+            _vnode.effect.i = watch(p, index, ({newValue}) => {
+                if (newValue !== p[KEY])
+                    p[index] = p[KEY];
             });
-
-            _vnode.effect.eachIndex = watch(_vnode.$props, item, ({newValue}) => {
-                value[(_vnode as any).$props[KEY]] = newValue;
+            // Keep the `item` in sync with the `value`
+            _vnode.effect.v = watch(p, item, ({newValue}) => {
+                value[p[KEY]] = newValue;
             });
         }
 
@@ -165,7 +164,7 @@ export let hydrateEach = (vnode: VNode, parent: VNode | null, attrName: string, 
 
 
     // Watch the prop for changes
-    let cleanup = watchAll(value, ({operation, prop, newValue}) => {
+    let cleanup = watch(value, "", ({operation, prop, newValue}) => {
         if (has([CREATE,UPDATE,DELETE], operation)) {
             // Perform the operation
             operations[operation](prop, newValue);

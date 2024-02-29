@@ -50,7 +50,7 @@ export let hydrateProps = (vnode: VNode, parent: VNode | null) => {
 
     // Merge `each` context
     if (isEach) {
-        newContext = {...newContext, ...each.$props};
+        newContext = {...newContext, ...each};
     }
 
     // Remove reserved keys from the new context

@@ -1,4 +1,4 @@
-export * from './types';
+export type * from './types';
 
 import { hydrate, props, internal, store } from "./hydrate";
 import { emit } from "./tools/dom";
@@ -14,7 +14,4 @@ internal.init = true;
 hydrate();
 
 
-// TODO: BUGS
-// - [ ] The `each` directive doesn't work with nested `each` directives
-
-
+// * BUG LIST

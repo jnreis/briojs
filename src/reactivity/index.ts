@@ -42,28 +42,46 @@ export let getListener = (observedState: any) => {
     return listeners.get(observedState) as ListenerObject;
 }
 
-// Add a listener to an observed state
-export let addStateListener = (observedState: any, fn: ListenerFunction) => {
-    getListener(observedState).state.add(fn);
-}
+// // Add a listener to an observed state
+// export let addStateListener = (observedState: any, fn: ListenerFunction) => {
+//     getListener(observedState).state.add(fn);
+// }
 
-// Remove a listener from an observed state
-export let removeStateListener = (observedState: any, fn: ListenerFunction) => {
-    listeners.get(observedState)?.state.delete(fn);
-}
+// // Remove a listener from an observed state
+// export let removeStateListener = (observedState: any, fn: ListenerFunction) => {
+//     getListener(observedState).state.delete(fn);
+// }
 
 // Add a listener to a property of an observed state
-export let addPropertyListener = (observedState: any, prop: string|number, fn: ListenerFunction) => {
-    let dependency = getListener(observedState);
-    if (!dependency.props[prop]) {
-        dependency.props[prop] = new Set();
-    }
-    dependency.props[prop].add(fn);
+export let addPropertyListener = (observedState: any, prop: string, fn: ListenerFunction) => {
+
+    // Get the listener object for the observed state
+    let listener = getListener(observedState);
+
+    // If the property doesn't exist in the listener, add it
+    if (!listener.props[prop])
+        listener.props[prop] = new Set();
+
+    // Add the listener to the property
+    listener.props[prop].add(fn);
+
+    // If the property is also a state, add the listener to the state
+    if (listeners.has(observedState[prop]))
+        getListener(observedState[prop]).state.add(fn);
 }
 
 // Remove a listener from a property of an observed state
-export let removePropertyListener = (fn: ListenerFunction) => {
+export let removePropertyListeners = (observedState: any, prop: string) => {
+    let listener = getListener(observedState);
+    if (listener.props[prop]) {
+        listener.props[prop].clear();
+    }
+}
+
+// Remove a listener from all states and properties
+export let removeListener = (fn: ListenerFunction) => {
     listeners.forEach(listener => {
+        listener.state.delete(fn);
         for (let prop in listener.props) {
             listener.props[prop].delete(fn);
         }
@@ -77,5 +95,5 @@ export let removePropertyListener = (fn: ListenerFunction) => {
 export { state } from './state';
 export { computed, removeComputed } from './computed';
 export { effect } from './effect';
-export { watch, watchAll } from './watch';
+export { watch } from './watch';
 export { trackAccessedProps, type PropRef } from './track';

@@ -1,7 +1,7 @@
 import { VNode } from "..";
 
-import { saveAttr } from "../hydrate";
-import { evaluate } from "../evaluate";
+import { saveAttr } from "../hydration";
+import { evaluate } from "../evaluation";
 import { isFunction } from "../tools/typeCheck";
 
 export let hydrateInit = (vnode: VNode, attrName: string, attrValue: string) => {

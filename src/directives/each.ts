@@ -1,21 +1,23 @@
 import { ObjectType, VNode } from '..';
 
-import { ref, validVariableName } from '../evaluate';
+import { ref, validVariableName } from '../evaluation';
 import { watch } from '../reactivity';
-import { hydrate, dehydrate, vnodes, saveAttr, internal, saveVNode } from '../hydrate';
+import { hydrate, dehydrate, vnodes, saveAttr, saveVNode } from '../hydration';
 import { entries, has } from '../tools';
 import { appendChild, removeChild, insertBefore, getParent, nextSibling } from '../tools/dom';
 import { trim } from '../tools/string';
 import { isArray, isObject } from '../tools/typeCheck';
-import { ARRAY, OBJECT, EACH, DIRECTIVE, REQUIRE, CREATE, UPDATE, DELETE } from '../tools/constants';
+import { ARRAY, OBJECT, EACH, DIRECTIVE, REQUIRE, CREATE, UPDATE, DELETE, $PROPS, $EL, $ROOT, EFFECT } from '../tools/constants';
+
+export let _each: ObjectType = {};
 
 export let hydrateEach = (vnode: VNode, parent: VNode | null, attrName: string, attrValue: string) => {
 
-    let {$el} = vnode;
+    let $el = vnode[$EL];
 
     // Since the element of the `each` directive is only used as a template, it doesn't have $props of its own.
     // Use the parent's $props instead.
-    if (parent) vnode.$props = parent.$props;
+    if (parent) vnode[$PROPS] = parent[$PROPS];
 
     // Split the alias and the prop expression
     let [alias, propExp] = attrValue.split(' in ').map(trim);
@@ -81,9 +83,9 @@ export let hydrateEach = (vnode: VNode, parent: VNode | null, attrName: string, 
         let _el = $el.cloneNode(true);
 
         // When hydrating props, use the new context
-        internal.each = {
-            $el: _el,
-            $root: parent,
+        _each = {
+            [$EL]: _el,
+            [$ROOT]: parent,
             [item]: v,
             [index]: i,
             [KEY]: i,
@@ -96,14 +98,14 @@ export let hydrateEach = (vnode: VNode, parent: VNode | null, attrName: string, 
         let _vnode = vnodes.get(_el);
 
         if (_vnode) {
-            let p = _vnode.$props;
+            let p = _vnode[$PROPS];
             // Make sure the `index` never changes
-            _vnode.effect.i = watch(p, index, ({newValue}) => {
+            _vnode[EFFECT].i = watch(p, index, ({newValue}) => {
                 if (newValue !== p[KEY])
                     p[index] = p[KEY];
             });
             // Keep the `item` in sync with the `value`
-            _vnode.effect.v = watch(p, item, ({newValue}) => {
+            _vnode[EFFECT].v = watch(p, item, ({newValue}) => {
                 value[p[KEY]] = newValue;
             });
         }
@@ -124,7 +126,7 @@ export let hydrateEach = (vnode: VNode, parent: VNode | null, attrName: string, 
 
         // Update the context
         if (_vnode) {
-            let _props = _vnode.$props;
+            let _props = _vnode[$PROPS];
             _props[item] = v;
             _props[index] = i;
             _props[KEY] = i;
@@ -174,5 +176,5 @@ export let hydrateEach = (vnode: VNode, parent: VNode | null, attrName: string, 
     });
 
     // Save the effect to the vnode
-    vnode.effect[attrName] = cleanup;
+    vnode[EFFECT][attrName] = cleanup;
 }

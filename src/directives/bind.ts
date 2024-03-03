@@ -1,7 +1,7 @@
 import { VNode } from '..';
 
 import { hydrationWrapper } from '.';
-import { modelValue } from '../hydrate';
+import { modelValue } from '../hydration';
 import { inArray } from '../tools/array';
 import { setAttr, delAttr } from '../tools/dom';
 import { VALUE, CHECKED, STYLE, CLASS } from '../tools/constants';

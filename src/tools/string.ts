@@ -32,6 +32,10 @@ export let trim = (str: string) => {
     return str.trim();
 }
 
+export let startsWith = (str: string, search: string) => {
+    return str.startsWith(search);
+}
+
 // Check if a string is a function
 export let isStringFunction = (value: string) => {
     return /^(function\s*\([^)]*\)\s*{[^}]*}|(?:\([^()]*\)|\w+)\s*=>)/.test(trim(value));

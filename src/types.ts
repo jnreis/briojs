@@ -23,3 +23,8 @@ export type ObjectType = {
 }
 
 export type WatchCallback = (newValue: any, oldValue: any, key: string|number) => void;
+
+export type ValidateAttribute = (attrName: string) => boolean;
+export type HydrateDirective = (vnode: VNode, attrName: string, attrValue: string) => void;
+
+export type MagicMethod = (vnode: VNode) => (...args: any) => any;

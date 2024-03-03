@@ -1,7 +1,20 @@
-import { VNode } from "..";
-import { getRefOrExp } from "../evaluate";
+import { VNode, ValidateAttribute, HydrateDirective } from "..";
 
-import { saveAttr, saveEffect } from "../hydrate";
+import { hydrateOn } from './on';
+import { hydrateBind } from './bind';
+import { hydrateModel } from './model';
+
+import { hydrateIf } from './if';
+import { hydrateShow } from './show';
+import { hydrateHtml } from './html';
+import { hydrateText } from './text';
+import { hydrateEffect } from './effect';
+import { hydrateTeleport } from './teleport';
+
+import { getRefOrEvaluate } from "../evaluation";
+import { saveAttr, saveEffect } from "../hydration";
+import { startsWith } from "../tools/string";
+import { $EL, EFFECT, TELEPORT, TEXT } from "../tools/constants";
 
 export let hydrationWrapper = (
     vnode: VNode,
@@ -13,27 +26,37 @@ export let hydrationWrapper = (
     // The callback returns the function to watch (watchFn).
     // The `watchFn` receives the prop or expression.
     // If the prop or expression contains observed value(s), the `watchFn` will be called when the observed value(s) change.
-    let watchFn = callback(vnode.$el);
+    let watchFn = callback(vnode[$EL]);
 
     // Watch the prop or expression
-    saveEffect(vnode, attrName, () => watchFn(getRefOrExp(vnode, attrValue)));
+    saveEffect(vnode, attrName, () => watchFn(getRefOrEvaluate(vnode, attrValue)));
 
     // Save attribute
     saveAttr(vnode, attrName, attrValue);
 }
 
+let attrNameStartsWith = (prefix: string) => (attrName: string) => startsWith(attrName, prefix);
+let attrNameEquals = (name: string) => (attrName: string) => attrName == name;
 
-export * from './bind';
-export * from './each';
-export * from './effect';
-export * from './html';
-export * from './if';
-export * from './init';
-export * from './model';
-export * from './on';
-export * from './props';
-export * from './refs';
-export * from './show';
-export * from './teleport';
-export * from './text';
-export * from './uid';
+export let _directives: [ValidateAttribute, HydrateDirective][] = [
+
+    // Dynamic directives
+    // These directives have dynamic attribute names
+    [attrNameStartsWith('on-'), hydrateOn], // on-[eventName][modifiers]
+    [attrNameStartsWith('bind-'), hydrateBind], // bind-[attributeName][modifiers]
+    [attrNameStartsWith('model'), hydrateModel], // model-[modifiers]
+
+    // Regular directives
+    // These directives have static attribute names
+    [attrNameEquals('if'), hydrateIf],
+    [attrNameEquals('show'), hydrateShow],
+    [attrNameEquals('html'), hydrateHtml],
+    [attrNameEquals(TEXT), hydrateText],
+    [attrNameEquals(EFFECT), hydrateEffect],
+    [attrNameEquals(TELEPORT), hydrateTeleport]
+];
+
+export { hydrateEach } from './each';
+export { hydrateProps } from './props';
+export { hydrateInit } from './init';
+export { hydrateUid } from './uid';

@@ -1,13 +1,13 @@
 import { VNode, ObjectType } from '..';
 
-import { ref } from '../evaluate';
-import { modelValue, saveAttr, saveEffect } from '../hydrate';
+import { ref } from '../evaluation';
+import { modelValue, saveAttr, saveEffect } from '../hydration';
 import { entries, has } from '../tools';
 import { inArray, arrayAdd, arrayRemove } from '../tools/array';
 import { listen, onCompositionStart, onCompositionEnd, getAttr } from '../tools/dom';
 import { capitalize, lower } from '../tools/string';
 import { isNull, isArray, getType } from '../tools/typeCheck';
-import { SELECT, INPUT, TEXTAREA, CHECKBOX, RADIO, VALUE, CHANGE, ARRAY, DIRECTIVE, ATTRIBUTE, REQUIRE, OBJECT, UNDEFINED, SYMBOL } from '../tools/constants';
+import { SELECT, INPUT, TEXTAREA, CHECKBOX, RADIO, VALUE, CHANGE, ARRAY, DIRECTIVE, ATTRIBUTE, REQUIRE, OBJECT, UNDEFINED, SYMBOL, $EL, EFFECT } from '../tools/constants';
 
 export let hydrateModel = (vnode: VNode, attrName: string, attrValue: string) => {
 
@@ -16,7 +16,7 @@ export let hydrateModel = (vnode: VNode, attrName: string, attrValue: string) =>
     // Get the prop reference
     let value = ref(vnode, attrValue);
 
-    let node = vnode.$el as any;
+    let node = vnode[$EL] as any;
     let type = node.type;
     let tag = lower(node.tagName);
 
@@ -106,7 +106,7 @@ export let hydrateModel = (vnode: VNode, attrName: string, attrValue: string) =>
     // Add the event listeners
     for (let [eventName, fn] of entries(events)) {
         let cleanup = listen(node, eventName, fn);
-        vnode.effect[eventName] = cleanup;
+        vnode[EFFECT][eventName] = cleanup;
     }
 
     // Save to the vnode

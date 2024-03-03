@@ -1,4 +1,4 @@
-import { ObjectType } from "..";
+import { VNode } from "..";
 
-export let $uid = (uids: ObjectType) => 
-    (uidName: string) => `${uidName}-${uids[uidName]}`;
+export let $uid = (vnode: VNode) => 
+    (uidName: string) => `${uidName}-${vnode.uid[uidName]}`;

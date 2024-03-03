@@ -87,12 +87,12 @@
       items: ['Apple','Banana','Cherry'],
       obj: { a: 'a', b: 'b', c: 'c' },
     }">
-      <h1>Brio.js</h1>
+      <h1 uppercase>Brio.js</h1>
       <!-- <p>Hi. <span html="`<strong>${ first } ${ last }</strong>`"></span></p> -->
       <!-- <p bind-class="4 * count">Hello, ${ first } ${ last }!</p> -->
 
       <p>
-        Count is: ${count} ${isOpen}. The double is: ${double}
+        ${$upper('Count')} is: ${count} ${isOpen}. The double is: ${double}
         <strong>Global Count: ${$store.count}</strong>
       </p>
 
@@ -229,13 +229,21 @@
 
     <script>
       document.addEventListener('brio:init', () => {
-        Brio.store.count = 80;
-        Brio.props('c1', () => ({
+        Brio.store.count = 83;
+        Brio.addProps('c1', () => ({
           count: 0,
           increment() {
             this.count++;
           }
         }));
+        Brio.addDirective(
+          attrName => attrName == 'uppercase', 
+          (vnode, attrName, attrValue) => {
+            vnode.$el.textContent = vnode.$el.textContent.toUpperCase();
+            vnode.attr[attrName] = attrValue;
+          }
+        );
+        Brio.addMethod('$upper', (vnode) => (text) => text.toUpperCase());
       });
     </script>
 

@@ -1,10 +1,11 @@
 import { VNode, ObjectType } from '..';
 
-import { saveAttr } from '../hydrate';
+import { saveAttr } from '../hydration';
 import { listen } from '../tools/dom';
 import { isStringFunction } from '../tools/string';
 import { isFunction } from '../tools/typeCheck';
-import { evaluate, ref } from '../evaluate';
+import { evaluate, ref } from '../evaluation';
+import { $EL, EFFECT } from '../tools/constants';
 
 export let hydrateOn = (vnode: VNode, attrName: string, attrValue: string) => {
 
@@ -56,10 +57,10 @@ export let hydrateOn = (vnode: VNode, attrName: string, attrValue: string) => {
     };
 
     // Add the event listener
-    let cleanup = listen(vnode.$el, event, listenFn, opts);
+    let cleanup = listen(vnode[$EL], event, listenFn, opts);
 
     // Add the cleanup function to the effect object
-    vnode.effect[attrName] = cleanup;
+    vnode[EFFECT][attrName] = cleanup;
 
     // Save to the vnode
     saveAttr(vnode, attrName, attrValue);

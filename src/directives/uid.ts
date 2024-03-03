@@ -1,11 +1,13 @@
-import { VNode } from '..';
+import { VNode, ObjectType } from '..';
 
-import { evaluate } from '../evaluate';
-import { uids, saveAttr } from '../hydrate';
+import { evaluate } from '../evaluation';
+import { saveAttr } from '../hydration';
 import { getAttr } from '../tools/dom';
 import { trim } from '../tools/string';
 import { isArray, isString } from '../tools/typeCheck';
 import { ARRAY, DIRECTIVE, STRING } from '../tools/constants';
+
+let _uid: ObjectType = {};
 
 export let hydrateUid = (vnode: VNode, parent: VNode | null) => {
 
@@ -29,9 +31,9 @@ export let hydrateUid = (vnode: VNode, parent: VNode | null) => {
     newUid = newUid.reduce((acc: any, uid: string) => {
         // If the UID is in the parent context, increment it by 1 in the new context.
         // Otherwise, set it to 1
-        if (uid in uids) uids[uid]++;
-        else uids[uid] = 1;
-        acc[uid] = uids[uid];
+        if (uid in _uid) _uid[uid]++;
+        else _uid[uid] = 1;
+        acc[uid] = _uid[uid];
         return acc;
     }, {});
 

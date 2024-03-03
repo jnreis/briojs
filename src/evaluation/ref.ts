@@ -1,28 +1,10 @@
 import { VNode } from "..";
 
 import { evaluate } from ".";
-import { PropRef, trackAccessedProps } from "../reactivity";
 import { trim } from "../tools/string";
 import { has, uid } from "../tools";
 import { isUndefined } from "../tools/typeCheck";
-
-
-/**
- * Get the reference of a property in a vnode
- * @param vnode 
- * @param exp - The expression to evaluate
- * @returns [object, property] or [0, 0]
- */
-export let getPropRef = (vnode: VNode, exp: string): PropRef => {
-    let ref = trackAccessedProps(() => evaluate(vnode, exp));
-
-    // ! DEVELOPMENT ONLY
-    if (ref.length > 1) console.warn(`The expression "${exp}" has more than one reference.`, ref);
-
-    // If one reference is found, return it.
-    // Otherwise, return an empty reference.
-    return ref.length == 1 ? ref[0] : [0, 0];
-}
+import { $PROPS, $STORE } from "../tools/constants";
 
 /**
  * Get the reference or evaluate the expression
@@ -30,21 +12,9 @@ export let getPropRef = (vnode: VNode, exp: string): PropRef => {
  * @param exp - The expression to evaluate
  * @returns The reference or the evaluated expression
  */
-export let getRefOrExp = (vnode: any, exp: string) => {
+export let getRefOrEvaluate = (vnode: any, exp: string) => {
     let value = ref(vnode, exp);
     return isUndefined(value) ? evaluate(vnode, exp) : value;
-}
-
-export let getPropOrExp = (vnode: VNode, prop: string, exp?: string) => {
-    // Get the last part of the path
-    let propName = splitPath(prop).pop()!;
-
-    // Get the props
-    let {$props} = vnode;
-
-    return (propName in $props)
-        ? $props[propName]
-        : evaluate(vnode, exp || prop);
 }
 
 /**
@@ -60,7 +30,7 @@ export let pathSegments = (exp: string) => {
     return m ? [...m] : [];
 }
 
-let setVariable = 'v'+uid(4, ()=>true);
+let setVariable = uid();
 
 export let ref = (vnode: VNode, exp: string, set: boolean = false) => {
 
@@ -69,7 +39,7 @@ export let ref = (vnode: VNode, exp: string, set: boolean = false) => {
 
     let path = splitPath(exp);
 
-    if (path.length && (has(['$store','$props'], path[0]) || path[0] in vnode.$props)) {
+    if (path.length && (has([$STORE,$PROPS], path[0]) || path[0] in vnode[$PROPS])) {
         if (set) exp = `${setVariable}=>${exp}=${setVariable}`;
         return evaluate(vnode, exp);
     }

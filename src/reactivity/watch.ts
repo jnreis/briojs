@@ -1,5 +1,6 @@
 import { ListenerFunction, listeners, getListener } from '.';
 import { computed, removeComputed } from './computed';
+import { ARRAY, OBJECT } from '../tools/constants';
 
 /**
  * Watches for changes to a specific key/index or an entire observed object/array and executes a callback when changes are detected.
@@ -14,7 +15,7 @@ export let watch = (observedState: any, prop: string | number | null, callback: 
     // If no key/index is specified, watch for all changes to the observed object/array
     if (!prop && prop !== 0) {
         if (!listeners.has(observedState))
-            return console.error('Cannot watch an unobserved object/array.');
+            return console.error(`Cannot watch an unobserved ${OBJECT}/${ARRAY}.`);
 
         // Add the callback to the observed object/array listeners
         getListener(observedState).state.add(callback);
@@ -33,22 +34,3 @@ export let watch = (observedState: any, prop: string | number | null, callback: 
     // Return the disposer function to stop watching
     return () => removeComputed(cleanup);
 }
-
-// /**
-//  * Watches for all changes to an observed object/array and executes a callback when any property is modified.
-//  * @param observedState
-//  * @param fn
-//  * @returns cleanup - The disposer function to stop watching
-//  */
-// export let watchState = (observedValue: any, fn: ListenerFunction) => {
-
-//     if (!listeners.has(observedValue)) {
-//         return console.error('Cannot watch an unobserved object/array.');
-//     }
-
-//     // Add the callback to the observed object/array listeners
-//     getListener(observedValue).state.add(fn);
-
-//     // Return the disposer function to stop watching
-//     return () => getListener(observedValue).state.delete(fn);
-// }

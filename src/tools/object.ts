@@ -67,3 +67,9 @@ export let setHiddenKey = (object: any, key: string, value: any) => {
         configurable: true,
     });
 }
+
+export let deleteKeys = (object: any) => {
+    getKeys(object).forEach((key) => {
+        delete object[key];
+    });
+}

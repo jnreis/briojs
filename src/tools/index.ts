@@ -6,12 +6,13 @@ import { isArray, isDate, isFunction, isMap, isObject, isRegExp, isSet } from ".
  * @param length
  * @param callback
  */
-export let uid = (length: number, callback: (uid: string) => boolean): string => {
+export let uid = (length: number = 8, callback?: (uid: string) => boolean): string => {
     while (true) {
-        let uid = [...Array(length)].map(() => Math.random().toString(36)[2]).join('');
-        if (callback(uid)) {
-            return uid;
-        }
+        let uid = 'b' + [...Array(length -1)].map(() => Math.random().toString(36)[2]).join('');
+        // If no callback is provided, return the uid
+        if (!callback) return uid;
+        // If a callback is provided, return the uid if the callback returns true
+        if (callback(uid)) return uid;
     }
 }
 

@@ -3,9 +3,7 @@ export let arrayUnique = (array: any[]) => {
 }
 
 export let arrayAdd = (array: any[], value: any) => {
-    if (inArray(array, value)) return false;
-    array.push(value);
-    return true;
+    return array.push(value);
 }
 
 export let arrayRemove = (array: any[], value: any) => {

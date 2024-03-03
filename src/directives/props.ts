@@ -1,19 +1,22 @@
-import { VNode } from '..';
+import { ObjectType, VNode } from '..';
 
-import { hydrateRefs } from '.';
-import { evaluate } from '../evaluate';
-import { internal, saveAttr } from '../hydrate';
+import { _each } from './each';
+import { hydrateRefs } from './refs';
+import { _reservedNames } from '../api';
+import { evaluate } from '../evaluation';
+import { saveAttr } from '../hydration';
 import { state } from '../reactivity';
 import { has } from '../tools';
 import { getAttr } from '../tools/dom';
-import { createContext, getKeys } from '../tools/object';
+import { createContext, deleteKeys, getKeys } from '../tools/object';
 import { trim } from '../tools/string';
 import { getType, isFunction, isObject } from '../tools/typeCheck';
-import { OBJECT, PROPS, RESERVED_NAMES } from '../tools/constants';
+import { $EL, $PROPS, $REFS, $ROOT, OBJECT, PROPS } from '../tools/constants';
+
+export let _props: ObjectType = {};
 
 export let hydrateProps = (vnode: VNode, parent: VNode | null) => {
-    let {$el} = vnode;
-    let {each, props} = internal;
+    let $el = vnode[$EL];
 
     // Get the context expression
     let contextExp = trim(getAttr($el as HTMLElement, PROPS) || '');
@@ -21,22 +24,22 @@ export let hydrateProps = (vnode: VNode, parent: VNode | null) => {
     // Set the parent if the element is an item of the `each` directive
     // This is done because an element of the `each` directive is only a copy of the original dehydrated `each` element.
     // Which means that the element it is not yet in the DOM or in the VNodes map, therefore it doesn't have a parent.
-    let isEach = each && each.$el == $el;
-    if (isEach) parent = each.$root;
+    let isEach = _each[$EL] == $el;
+    if (isEach) parent = _each[$ROOT];
 
     // Parent context
-    let parentProps = parent?.$props || {};
+    let parentProps = parent ? parent[$PROPS] : {};
 
     // Check if the context expression is empty. If so, use the parent context
     if (!contextExp && !isEach) {
-        vnode.$props = parentProps;
-        vnode.$refs = parent?.$refs || {};
+        vnode[$PROPS] = parentProps;
+        vnode[$REFS] = parent ? parent[$REFS] : {};
         return;
     }
 
     let newContext: any = {};
     // Check if the context is in the `props` object
-    if (contextExp in props) newContext = props[contextExp];
+    if (contextExp in _props) newContext = _props[contextExp];
     // Evaluate the context expression
     else if (contextExp) newContext = evaluate(parent || vnode, contextExp);
 
@@ -50,11 +53,11 @@ export let hydrateProps = (vnode: VNode, parent: VNode | null) => {
 
     // Merge `each` context
     if (isEach) {
-        newContext = {...newContext, ...each};
+        newContext = {...newContext, ..._each};
     }
 
     // Remove reserved keys from the new context
-    RESERVED_NAMES.forEach(key => {
+    _reservedNames.forEach(key => {
         if (key in newContext) delete newContext[key];
     });
 
@@ -62,7 +65,7 @@ export let hydrateProps = (vnode: VNode, parent: VNode | null) => {
     let context = state(parent ? createContext(parentProps, newContext) : newContext);
 
     // Add the context to the vnode
-    vnode.$props = context;
+    vnode[$PROPS] = context;
 
     // Save attribute
     saveAttr(vnode, PROPS, contextExp);
@@ -74,5 +77,5 @@ export let hydrateProps = (vnode: VNode, parent: VNode | null) => {
     if (has(getKeys(context), 'init')) context.init();
 
     // Reset each context
-    internal.each = null;
+    deleteKeys(_each);
 }

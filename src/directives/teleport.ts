@@ -1,7 +1,9 @@
 import { VNode } from "..";
 
-import { saveAttr } from "../hydrate";
+import { saveAttr } from "../hydration";
+import { $EL, TELEPORT } from "../tools/constants";
 import { q, appendChild } from "../tools/dom";
+import { capitalize } from "../tools/string";
 
 export let hydrateTeleport = (vnode: VNode, attrName: string, attrValue: string) => {
 
@@ -10,12 +12,12 @@ export let hydrateTeleport = (vnode: VNode, attrName: string, attrValue: string)
 
     if (!target) {
         // ! DEVELOPMENT ONLY
-        console.warn(`Teleport target not found: ${attrValue}`);
+        console.warn(`${capitalize(TELEPORT)} target not found: ${attrValue}`);
         return;
     }
 
     // Teleport the node
-    appendChild(target, vnode.$el);
+    appendChild(target, vnode[$EL]);
 
     // Save to the vnode
     saveAttr(vnode, attrName, attrValue);

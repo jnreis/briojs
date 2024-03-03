@@ -1,3 +1,4 @@
+import { INPUT } from "./constants";
 import { isElementNode } from "./typeCheck";
 
 export let q = (selector: string, root: Node = document) => {
@@ -73,6 +74,6 @@ export let onCompositionEnd = (e: Event) => {
     let target = e.target as any;
     if (target.composing) {
         target.composing = false;
-        emit(target, 'input');
+        emit(target, INPUT);
     }
 }

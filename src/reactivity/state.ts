@@ -1,7 +1,7 @@
 import {
     ListenerFunction, 
     listeners, getListener, removePropertyListeners, computedStack, 
-    IGNORE, CALLBACK } from '.';
+    CALLBACK } from '.';
 // import { trackProps, accessedProps } from './track';
 import { deepEqual, has } from '../tools';
 import { getKeys } from '../tools/object';
@@ -11,22 +11,22 @@ import { CREATE, DELETE, UPDATE } from '../tools/constants';
 
 /**
  * State wrapps an object/array in a Proxy to track changes and notify listeners.
- * @param value The object/array to observe
+ * @param target The object/array to observe
  * @returns observedState
 */
-export let state = (value: any) => {
+export let state = (target: any) => {
 
     // If the object/array is already observed, return it
-    if (listeners.has(value) || !isArrayOrObject(value)) return value;
+    if (listeners.has(target) || !isArrayOrObject(target)) return target;
 
     // Proxy handler
     let handler = {
         get(target: any, prop: string, receiver: any) {
 
-            if (has(getKeys(target), prop) && !ignore(receiver)) {
-                // Get the last item in the computed stack and 
+            if (has(getKeys(target), prop)) {
+                // Get the last item in the computed stack and add the accessed property to it
                 if (computedStack.length > 0) {
-                    computedStack[computedStack.length - 1].push([observedState, prop]);
+                    computedStack[computedStack.length - 1].push([receiver, prop]);
                 }
 
                 // // Register the accessed property
@@ -39,7 +39,7 @@ export let state = (value: any) => {
             return Reflect.get(target, prop, receiver);
         },
         set(target: any, prop: string, newValue: any, receiver: any) {
-            let oldValue = observedState[prop];
+            let oldValue = receiver[prop];
 
             // If the new/old value are equal, return
             if (deepEqual(oldValue, newValue)) return true;
@@ -78,15 +78,15 @@ export let state = (value: any) => {
         },
     };
 
-    for (let key in value) {
+    for (let key in target) {
         // Recursively observe nested arrays/objects
-        if (isArrayOrObject(value[key])) {
-            value[key] = state(value[key]);
+        if (isArrayOrObject(target[key])) {
+            target[key] = state(target[key]);
         }
     }
 
     // Create a proxy for the object/array
-    const observedState = new Proxy(value, handler);
+    const observedState = new Proxy(target, handler);
 
     // Add the observed object/array to the listeners
     getListener(observedState);
@@ -95,7 +95,7 @@ export let state = (value: any) => {
     let notifyListeners = (prop: any, newValue: any, oldValue: any) => {
 
         // Don't notify about array length changes
-        if ((isArray(observedState) && prop == 'length')) return;
+        if ((isArray(target) && prop == 'length')) return;
 
         let operation = isUndefined(oldValue) ? CREATE : isUndefined(newValue) ? DELETE : UPDATE;
 
@@ -131,7 +131,7 @@ export let state = (value: any) => {
 let isArrayOrObject = (value: any) => 
     isArray(value) || isObject(value);
 
-let ignore = (receiver: any) => IGNORE in receiver;
+// let ignore = (receiver: any) => IGNORE in receiver;
 
 let notifyStateListeners = (observedState: any, context: any) =>
     getListener(observedState).state.forEach((fn: ListenerFunction) => fn(context));

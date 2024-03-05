@@ -5,18 +5,24 @@ import { addMethod } from './method'
 import { addProps } from './props'
 import { addDirective } from "./directive";
 
-// import { hydrate, hydrateTextNode, hydrateElementNode, dehydrate, saveAttr, saveEffect, saveVNode, closestVNode, newVNode } from "../hydration";
-// import { evaluate, ref, getRefOrEvaluate } from "../evaluation";
-
 import { state, computed, removeComputed, effect, watch } from "../reactivity";
 import { emit, listen } from "../tools/dom";
-import { $EL, $EMIT, $PROPS, $REFS, $ROOT, $STORE, $UID, $WATCH } from "../tools/constants";
+import { $EL, $PROPS, $REFS, $ROOT, $STORE } from "../tools/constants";
 
 // Brio settings
 export let _settings = {
     init: false,
     dev: false,
-}
+};
+
+// List of reserved names
+// * NOTE: _reservedNames will also include custom methods.
+export let _reservedNames: string[] = [
+    // Brio magic properties
+    $STORE, $EL, $REFS, $PROPS, $ROOT,
+
+    // Brio magic methods are added during initialization
+];
 
 // Brio API
 export let api: ObjectType = {
@@ -38,14 +44,4 @@ export let api: ObjectType = {
     removeComputed,
     effect,
     watch,
-}
-
-// List of reserved names
-// * NOTE: _reservedNames will also include custom methods.
-export let _reservedNames = [
-    // Brio magic properties
-    $STORE, $EL, $REFS, $PROPS, $ROOT,
-
-    // Brio magic methods.
-    $EMIT, $UID, $WATCH
-];
+};

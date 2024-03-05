@@ -2,6 +2,7 @@ import { VNode } from "..";
 
 import { hydrationWrapper } from ".";
 import { appendChild, getParent, insertBefore, nextSibling } from "../tools/dom";
+import { transitionControls } from "./transition";
 
 export let hydrateIf = (vnode: VNode, attrName: string, attrValue: string) => {
 
@@ -10,6 +11,8 @@ export let hydrateIf = (vnode: VNode, attrName: string, attrValue: string) => {
         let parentEl = getParent(node);
         let nextEl = nextSibling(node);
 
+        let transition = transitionControls(vnode);
+
         // Return the watch function
         return (value: any) => {
             if (value) {
@@ -17,8 +20,10 @@ export let hydrateIf = (vnode: VNode, attrName: string, attrValue: string) => {
                 if (nextEl) insertBefore(parentEl as HTMLElement, node, nextEl);
                 // Add the node as the last child
                 else appendChild(parentEl as HTMLElement, node);
+                // Play the `in` transitions, if any
+                transition.in();
             }
-            else node.remove();
+            else transition.out(() => node.remove());
         }
     }
 

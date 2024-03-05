@@ -3,6 +3,7 @@ import { VNode, ValidateAttribute, HydrateDirective } from "..";
 import { hydrateOn } from './on';
 import { hydrateBind } from './bind';
 import { hydrateModel } from './model';
+import { hydrateTransition } from "./transition";
 
 import { hydrateIf } from './if';
 import { hydrateShow } from './show';
@@ -42,8 +43,8 @@ export let _directives: [ValidateAttribute, HydrateDirective][] = [
 
     // Dynamic directives
     // These directives have dynamic attribute names
-    [attrNameStartsWith('on-'), hydrateOn], // on-[eventName][modifiers]
-    [attrNameStartsWith('bind-'), hydrateBind], // bind-[attributeName][modifiers]
+    [attrNameStartsWith('on-'), hydrateOn], // on-[eventName]-[modifiers]
+    [attrNameStartsWith('bind-'), hydrateBind], // bind-[attributeName]-[modifiers]
     [attrNameStartsWith('model'), hydrateModel], // model-[modifiers]
 
     // Regular directives
@@ -53,7 +54,10 @@ export let _directives: [ValidateAttribute, HydrateDirective][] = [
     [attrNameEquals('html'), hydrateHtml],
     [attrNameEquals(TEXT), hydrateText],
     [attrNameEquals(EFFECT), hydrateEffect],
-    [attrNameEquals(TELEPORT), hydrateTeleport]
+    [attrNameEquals(TELEPORT), hydrateTeleport],
+
+    // Process `transition` after `if` and `show`
+    [attrNameStartsWith('transition-'), hydrateTransition], // transition-[transitionName]-[modifiers]
 ];
 
 export { hydrateEach } from './each';

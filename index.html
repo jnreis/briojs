@@ -57,6 +57,7 @@
       .items p {
         margin-top: 0;
       }
+
     </style>
   </head>
   <body>
@@ -76,23 +77,30 @@
       set double(value) {
         this.count = value / 2;
       },
-      isOpen: false,
+      isOpen: true,
       toggle() {
         this.isOpen = !this.isOpen;
       },
       func() {
         console.log(this);
       },
+      slide($el) {
+        $el.animate([{transform: 'translateX(300px)'}], {duration: 1500, iterations: Infinity, direction: 'alternate', easing: 'ease-in-out'});
+      },
+      animation1: null,
       item: '',
       items: ['Apple','Banana','Cherry'],
       obj: { a: 'a', b: 'b', c: 'c' },
     }">
-      <h1 uppercase>Brio.js</h1>
+      <button on-click="toggle">Toggle</button>
+      <!-- <h1 uppercase init="$el.animate([{transform: 'translateX(300px)'}], {duration: 2000, iterations: Infinity, direction: 'alternate', easing: 'ease-in-out'})">Brio.js</h1> -->
+      <!-- <h2 effect="$animate([{opacity: '0.05'}], {direction: 'alternate', iterations: Infinity, duration: 1000})">The $animate method</h2> -->
+      <h2 style="text-align: center;" transition-fade transition-scale transition-blur transition-slide show="isOpen">Hello 👋</h2>
       <!-- <p>Hi. <span html="`<strong>${ first } ${ last }</strong>`"></span></p> -->
       <!-- <p bind-class="4 * count">Hello, ${ first } ${ last }!</p> -->
 
       <p>
-        ${$upper('Count')} is: ${count} ${isOpen}. The double is: ${double}
+        Count is: ${count} ${isOpen}. The double is: ${double}
         <strong>Global Count: ${$store.count}</strong>
       </p>
 
@@ -101,6 +109,7 @@
       <input type="text" model="first">
 
       <button on-click="count++">Increment count</button>
+
 
       <!-- Just the value -->
       <!-- <div class="items-wrapper">
@@ -236,14 +245,14 @@
             this.count++;
           }
         }));
-        Brio.addDirective(
-          attrName => attrName == 'uppercase', 
-          (vnode, attrName, attrValue) => {
-            vnode.$el.textContent = vnode.$el.textContent.toUpperCase();
-            vnode.attr[attrName] = attrValue;
-          }
-        );
-        Brio.addMethod('$upper', (vnode) => (text) => text.toUpperCase());
+        // Brio.addDirective(
+        //   attrName => attrName == 'uppercase', 
+        //   (vnode, attrName, attrValue) => {
+        //     vnode.$el.textContent = vnode.$el.textContent.toUpperCase();
+        //     vnode.attr[attrName] = attrValue;
+        //   }
+        // );
+        // Brio.addMethod('$upper', (vnode) => (text) => text.toUpperCase());
       });
     </script>
 
@@ -255,6 +264,54 @@
 
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
-    <script type="module" src="/src/index.ts"></script>
+    <style defer>
+      /* Example CSS classes with animations */
+      @keyframes slideIn {
+          from {
+              transform: translateX(-100%);
+          }
+          to {
+              transform: translateX(0);
+          }
+      }
+
+      .slide-in {
+          animation: slideIn 1s ease-in-out forwards;
+      }
+
+      /* Define fadeIn and fadeOut keyframes */
+      @keyframes fadeIn {
+          from {
+              opacity: 0;
+              transform: scale(0.95);
+          }
+          to {
+              opacity: 1;
+              transform: scale(1);
+          }
+      }
+
+      @keyframes fadeOut {
+          from {
+              opacity: 1;
+              transform: scale(1);
+          }
+          to {
+              opacity: 0;
+              transform: scale(0.95);
+          }
+      }
+
+      /* Define fadeIn and fadeOut classes */
+      .fadeIn {
+          animation: fadeIn 0.5s ease-in forwards;
+      }
+
+      .fadeOut {
+          animation: fadeOut 0.5s ease-in forwards;
+      }
+    </style>
+
+    <script type="module" src="/src/cdn.ts"></script>
   </body>
 </html>

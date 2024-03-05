@@ -15,6 +15,11 @@ export type VNode = {
 
     // Reactivity effects
     effect: ObjectType,
+
+    animate?: {
+        in: () => Animation,
+        out: () => Animation,
+    }[],
 }
 
 export type ObjectType = {

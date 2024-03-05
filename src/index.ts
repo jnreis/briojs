@@ -1,18 +1,24 @@
 export type * from './types';
 
-import { _settings, api } from './api';
+import { _reservedNames, _settings } from "./api";
+import { _methods } from './methods';
 import { hydrate } from "./hydration";
 import { emit } from "./tools/dom";
 
-// console.log(vnodes);
-
-// Add the Brio API to the window object
-(window as any).Brio = api;
 
 // Hydrate elements with a valid `props` attribute
-emit(document.body, 'brio:init');
-_settings.init = true;
-hydrate();
+export let start = () => {
+    if (!_settings.init) {
+        _methods.forEach(([name, _]) => _reservedNames.push(name));
+        emit(document.body, 'brio:init');
+        _settings.init = true;
+        hydrate();
+    }
+}
+
+export { api } from './api';
+
+
 
 
 

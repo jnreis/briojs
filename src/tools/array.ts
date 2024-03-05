@@ -24,3 +24,11 @@ export let arrayFrom = (arrayLike: any) => {
 export let arrayFill = (length: number, value: any = null) => {
     return arrayFrom({ length }).map((_, i) => value || i);
 }
+
+export let arrayMerge = (...arrays: any[][]) => {
+    return arrays.reduce((acc, array) => acc.concat(array), []);
+}
+
+export let arrayReverse = (array: any[]) => {
+    return array.slice().reverse();
+}

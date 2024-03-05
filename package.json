@@ -1,26 +1,21 @@
 {
   "name": "briojs",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.2.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "node scripts/build.js",
     "preview": "vite preview"
   },
   "devDependencies": {
-    "htm": "^3.1.1",
-    "preact": "^10.19.3",
     "typescript": "^5.3.3",
     "vite": "^5.0.8"
-  },
-  "dependencies": {
-    "@preact/signals": "^1.2.2",
-    "micro-observer": "^0.0.20"
   },
   "exports": {
     ".": {
       "types": "./types/index.d.ts"
     }
-  }
+  },
+  "viteBuild": {}
 }

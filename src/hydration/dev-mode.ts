@@ -7,12 +7,12 @@ function rehydrateFramework(mutation: MutationRecord, observer: MutationObserver
 // Function to initialize mutation observer
 function initializeMutationObserver() {
     // Options for the observer (observe changes to attributes and textContent)
-    const observerConfig = { attributes: true, childList: true, subtree: true, characterData: true };
+    let observerConfig = { attributes: true, childList: true, subtree: true, characterData: true };
 
     // Create a new observer instance
-    const observer = new MutationObserver(function(mutations: MutationRecord[], observer: MutationObserver) {
+    let observer = new MutationObserver(function(mutations: MutationRecord[], observer: MutationObserver) {
         // Loop through each mutation
-        for(const mutation of mutations) {
+        for(let mutation of mutations) {
             // Check if attributes or text content have changed
             if (mutation.type === 'attributes' || mutation.type === 'characterData') {
                 // Re-hydrate the framework

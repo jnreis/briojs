@@ -4,6 +4,8 @@ import { store } from "./store";
 import { addMethod } from './method'
 import { addProps } from './props'
 import { addDirective } from "./directive";
+import { addTransition } from "./transition";
+import { animate, afterAnimations } from "./animate";
 
 import { state, computed, removeComputed, effect, watch } from "../reactivity";
 import { emit, listen } from "../tools/dom";
@@ -33,6 +35,11 @@ export let api: ObjectType = {
     addProps,
     addMethod,
     addDirective,
+    addTransition,
+
+    // Animate helpers
+    animate,
+    afterAnimations,
 
     // Helper functions
     emit,

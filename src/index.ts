@@ -8,10 +8,20 @@ import { emit } from "./tools/dom";
 
 // Hydrate elements with a valid `props` attribute
 export let start = () => {
+
+    // If Brio is not initialized
     if (!_settings.init) {
+
+        // Add custom methods to the reserved names
         _methods.forEach(([name, _]) => _reservedNames.push(name));
+
+        // Emit the `brio:init` event
         emit(document.body, 'brio:init');
+
+        // Mark Brio as initialized
         _settings.init = true;
+
+        // Hydrate the DOM
         hydrate();
     }
 }
@@ -48,7 +58,7 @@ export { api } from './api';
 
 // - [ ] Add a "morph" modifier to the `html` directive to preserve the element's state when the template changes.
 
-// - [ ] Implement a transition directive to animate elements when they are added or removed from the DOM.
+// - [x] Implement a transition directive to animate elements when they are added or removed from the DOM.
 
 // - [ ] Implement a $async method to work with async functions and promises.
 

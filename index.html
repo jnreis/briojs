@@ -60,7 +60,7 @@
 
     </style>
   </head>
-  <body>
+  <body props="{}" bind-hidden="false" hidden>
 
     <!-- Syntax option 2 -->
     <div props="{
@@ -84,23 +84,37 @@
       func() {
         console.log(this);
       },
+      options: {
+        duration: 1500, 
+        iterations: Infinity, 
+        direction: 'alternate', 
+        easing: 'ease-in-out'
+      },
       slide($el) {
-        $el.animate([{transform: 'translateX(300px)'}], {duration: 1500, iterations: Infinity, direction: 'alternate', easing: 'ease-in-out'});
+        $el.animate([
+          {transform: ' translateX(2rem) translateY(2rem) scale(0.85)'}
+        ], this.options);
       },
       animation1: null,
       item: '',
       items: ['Apple','Banana','Cherry'],
       obj: { a: 'a', b: 'b', c: 'c' },
     }">
-      <button on-click="toggle">Toggle</button>
+      <button on-click="toggle">${isOpen ? 'In' : 'Out'}</button>
       <!-- <h1 uppercase init="$el.animate([{transform: 'translateX(300px)'}], {duration: 2000, iterations: Infinity, direction: 'alternate', easing: 'ease-in-out'})">Brio.js</h1> -->
       <!-- <h2 effect="$animate([{opacity: '0.05'}], {direction: 'alternate', iterations: Infinity, duration: 1000})">The $animate method</h2> -->
-      <h2 style="text-align: center;" transition-fade transition-scale transition-blur transition-slide show="isOpen">Hello 👋</h2>
+      <div style="display: flex;">
+        <h2
+          style="text-align: center;"
+          show="isOpen"
+          transition="isOpen" fade slide="50px" skew blur duration="500"
+        >Hello 👋</h2>
+      </div>
       <!-- <p>Hi. <span html="`<strong>${ first } ${ last }</strong>`"></span></p> -->
       <!-- <p bind-class="4 * count">Hello, ${ first } ${ last }!</p> -->
 
       <p>
-        Count is: ${count} ${isOpen}. The double is: ${double}
+        Count is: ${count}. The double is: ${double}
         <strong>Global Count: ${$store.count}</strong>
       </p>
 

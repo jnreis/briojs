@@ -1,100 +1,117 @@
 import { ObjectType, VNode } from "..";
 
-import { evaluate } from "../evaluation";
+import { hydrationWrapper } from ".";
+import { animate } from "../api/animate";
+import { getAttr } from "../tools/dom";
+import { toNumber } from "../tools/number";
+import { isNull } from "../tools/typeCheck";
 import { saveAttr } from "../hydration";
-import { $animate } from "../methods/animate";
-import { has } from "../tools";
-import { ATTRIBUTE, OBJECT, VALUE } from "../tools/constants";
-import { capitalize } from "../tools/string";
-import { isObject } from "../tools/typeCheck";
+
+let TRANSFORM = 'transform';
+
+// Core transitions
+export let _transitions: [
+    string, // The name of the transition
+    string, // The CSS property
+    (attrValue: string|number) => string|number, // The value of the CSS property
+][] = [
+    ['fade', 'opacity', value => value],
+    ['blur', 'filter', value => ` blur(${value || '8px'})`],
+    ['slide', TRANSFORM, value => ` translate(${value || '0,16px'})`],
+    ['scale', TRANSFORM, value => ` scale(${value || 0})`],
+    ['rotate', TRANSFORM, value => ` rotate(${value || '25deg'})`],
+    ['skew', TRANSFORM, value => ` skew(${value || '0,12deg'})`],
+];
 
 let _generatePropertyKeyframe = (element: HTMLElement, property: any, startValue: any) => {
     let currentValue = window.getComputedStyle(element)[property];
-    return [{[property]: startValue}, {[property]: currentValue}];
+    return [{[property]: currentValue}, {[property]: startValue}];
 }
 
 export let hydrateTransition = (vnode: VNode, attrName: string, attrValue: string) => {
 
-    let [TRANSITION, transitionName, ...modifiers] = attrName.split('-');
+    let $el = vnode.$el;
 
-    let TRANSFORM = 'transform';
+    let keyframes: ObjectType = {transform: ''};
 
-    let inOut = function (keyframes: Keyframe[], options: KeyframeAnimationOptions = {}) {
-        options = {fill: 'none', ...options};
-        return {
-            in: () => $animate(vnode)(keyframes, options),
-            out: () => $animate(vnode)(keyframes.reverse(), options),
+    // Apply requested transitions
+    _transitions.forEach(([name, propName, propValue]) => {
+
+        // Get the attribute value
+        let value = getAttr($el, name);
+
+        // If the attribute exists
+        if (!isNull(value)) {
+
+            // Save the attribute
+            saveAttr(vnode, name, value as string);
+
+            // Convert the value to a number, if possible
+            value = toNumber(value);
+
+            // Add the CSS property to the keyframes
+            if (!(propName in keyframes)) keyframes[propName] = '';
+
+            // Generate the keyframes
+            keyframes[propName] += ` ${propValue(value as string | number)}`;
         }
-    }
+    });
 
-    let transitions: ObjectType = {
-        fade(options: KeyframeAnimationOptions) {
-            let _opacity = _generatePropertyKeyframe(vnode.$el, 'opacity', 0);
-            return inOut(_opacity, options);
-        },
-        blur(options: KeyframeAnimationOptions) {
-            let _blur = _generatePropertyKeyframe(vnode.$el, 'filter', 'blur(8px)');
-            return inOut(_blur, options);
-        },
-        slide(options: KeyframeAnimationOptions) {
-            let axis = has(modifiers, 'x') ? 'X' : 'Y';
-            let _transform = _generatePropertyKeyframe(vnode.$el, TRANSFORM, `translate${axis}(${axis == 'X' ? '2rem' : '1rem'})`);
-            return inOut(_transform, options);
-        },
-        scale(options: KeyframeAnimationOptions) {
-            let _scale = _generatePropertyKeyframe(vnode.$el, TRANSFORM, 'scale(0)');
-            return inOut(_scale, options);
-        },
-    }
+    let options: ObjectType = {};
 
-    if (!transitions[transitionName])
-        return console.error(`${capitalize(TRANSITION)} ${transitionName} is not defined.`);
+    // Get the duration and easing, if available
+    ['duration', 'easing'].forEach(attr => {
 
-    let options = {};
-    if (attrValue) {
-        options = evaluate(vnode, attrValue);
-    
-        if (!isObject(options))
-            return console.error(`The ${VALUE} of the ${attrName} ${ATTRIBUTE} must be an ${OBJECT}.`);
-    }
+        // Get the attribute value
+        let value = getAttr($el, attr);
 
-    vnode.animate = vnode.animate || [];
+        // If the attribute exists and is not empty
+        if (value) {
+            // Convert the value to a number, if possible
+            options[attr] = toNumber(value);
 
-    // Get the index of the next animation
-    let animationIndex = vnode.animate.length;
-
-    // Save the transition to the vnode
-    vnode.animate![animationIndex] = transitions[transitionName](options);
-
-    // Save to the vnode
-    saveAttr(vnode, attrName, attrValue);
-}
-
-
-export let transitionControls = (vnode: VNode) => {
-
-    let transition = {
-        in: {
-            loaded: false,
-            list: [] as Animation[],
-        },
-        out: {
-            loaded: false,
-            list: [] as Animation[],
+            // Save the attribute
+            saveAttr(vnode, attr, value);
         }
+    });
+
+    // Create the transition
+    let transition = (keyframes: Keyframe[]) => {
+        let a = animate($el, keyframes, options);
+        // Prevent the animation from playing
+        a.pause();
+        return a;
     }
 
-    let play = (type: 'in'|'out', callback?: () => void) => {
-        if (!transition[type].loaded) {
-            transition[type].loaded = true;
-            transition[type].list = vnode.animate?.map(transition => transition[type]()) || [];
+    let transitions: any[] = [];
+
+    // Generate the transitions
+    for (let key in keyframes) {
+        // Generate the keyframe
+        let keyframe = _generatePropertyKeyframe($el, key, keyframes[key]);
+
+        // Create the transition and save it
+        transitions.push(transition(keyframe));
+    }
+
+    let init = false;
+
+    let callback = () => (value: any) => {
+        // Initial state
+        if (!init) {
+            init = true;
+
+            // If the value is not `true`, set the time to the end
+            if (!value) {
+                transitions.forEach(transition => {
+                    transition.currentTime = transition.effect.getComputedTiming().duration;
+                });
+            }
         }
-        transition[type].list.forEach(transition => transition.play());
-        Promise.all(transition[type].list.map(transition => transition.finished)).then(callback);
+
+        // Reverse: play the transitions in the opposite direction they are currently going in
+        transitions.forEach(transition => transition.reverse());
     }
 
-    return {
-        in: (callback?: () => void) => play('in', callback),
-        out: (callback?: () => void) => play('out', callback),
-    }
+    hydrationWrapper(vnode, attrName, attrValue, callback);
 }

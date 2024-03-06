@@ -55,9 +55,7 @@ export let _directives: [ValidateAttribute, HydrateDirective][] = [
     [attrNameEquals(TEXT), hydrateText],
     [attrNameEquals(EFFECT), hydrateEffect],
     [attrNameEquals(TELEPORT), hydrateTeleport],
-
-    // Process `transition` after `if` and `show`
-    [attrNameStartsWith('transition-'), hydrateTransition], // transition-[transitionName]-[modifiers]
+    [attrNameEquals('transition'), hydrateTransition], // transition
 ];
 
 export { hydrateEach } from './each';

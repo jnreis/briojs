@@ -7,7 +7,7 @@ import { addDirective } from "./directive";
 import { addTransition } from "./transition";
 import { animate, afterAnimations } from "./animate";
 
-import { state, computed, removeComputed, effect, watch } from "../reactivity";
+import { state, computed, removeComputed, effect, watch, storage, isStorage, getItem, setItem } from "../reactivity";
 import { emit, listen } from "../tools/dom";
 import { $EL, $PROPS, $REFS, $ROOT, $STORE } from "../tools/constants";
 
@@ -51,4 +51,8 @@ export let api: ObjectType = {
     removeComputed,
     effect,
     watch,
+    storage,
+    isStorage,
+    getItem,
+    setItem,
 };

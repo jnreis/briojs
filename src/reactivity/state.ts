@@ -5,7 +5,7 @@ import {
 // import { trackProps, accessedProps } from './track';
 import { deepEqual, has } from '../tools';
 import { getKeys } from '../tools/object';
-import { isArray, isObject, isUndefined } from '../tools/typeCheck';
+import { isArray, isObject, isUndefined, isFunction } from '../tools/typeCheck';
 import { CREATE, DELETE, UPDATE } from '../tools/constants';
 
 
@@ -44,6 +44,11 @@ export let state = (target: any) => {
             // If the new/old value are equal, return
             if (deepEqual(oldValue, newValue)) return true;
 
+            // Set the storage state if a callback is present
+            if (hasStorageCallback(newValue)) {
+                newValue = newValue(receiver, prop);
+            }
+
             // Observe the new value if it's an object/array
             newValue = state(newValue);
 
@@ -78,18 +83,23 @@ export let state = (target: any) => {
         },
     };
 
-    for (let key in target) {
-        // Recursively observe nested arrays/objects
-        if (isArrayOrObject(target[key])) {
-            target[key] = state(target[key]);
-        }
-    }
-
     // Create a proxy for the object/array
     const observedState = new Proxy(target, handler);
 
     // Add the observed object/array to the listeners
     getListener(observedState);
+
+    for (let prop in target) {
+        // Set the storage state if a callback is present
+        if (hasStorageCallback(target[prop])) {
+            target[prop] = target[prop](observedState, prop);
+        }
+
+        // Recursively observe nested arrays/objects
+        if (isArrayOrObject(target[prop])) {
+            target[prop] = state(target[prop]);
+        }
+    }
 
     // Function to notify computed functions about property changes
     let notifyListeners = (prop: any, newValue: any, oldValue: any) => {
@@ -135,3 +145,9 @@ let isArrayOrObject = (value: any) =>
 
 let notifyStateListeners = (observedState: any, context: any) =>
     getListener(observedState).state.forEach((fn: ListenerFunction) => fn(context));
+
+/**
+ * Checks if a value has the callback symbol.
+ */
+let hasStorageCallback = (value: any) =>
+    isFunction(value) && (value as any)[CALLBACK];

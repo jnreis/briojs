@@ -42,16 +42,6 @@ export let getListener = (observedState: any) => {
     return listeners.get(observedState) as ListenerObject;
 }
 
-// // Add a listener to an observed state
-// export let addStateListener = (observedState: any, fn: ListenerFunction) => {
-//     getListener(observedState).state.add(fn);
-// }
-
-// // Remove a listener from an observed state
-// export let removeStateListener = (observedState: any, fn: ListenerFunction) => {
-//     getListener(observedState).state.delete(fn);
-// }
-
 // Add a listener to a property of an observed state
 export let addPropertyListener = (observedState: any, prop: string, fn: ListenerFunction) => {
 
@@ -96,4 +86,5 @@ export { state } from './state';
 export { computed, removeComputed } from './computed';
 export { effect } from './effect';
 export { watch } from './watch';
-export { trackAccessedProps, type PropRef } from './track';
+export { storage, isStorage, getItem, setItem } from './storage';
+// export { trackAccessedProps, type PropRef } from './track';

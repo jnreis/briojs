@@ -64,7 +64,9 @@
 
     <!-- Syntax option 2 -->
     <div props="{
-      count: 110, 
+      count: $persist(110, 'theCount'), 
+      search: $session('search'),
+      search2: null,
       first: 'John', 
       last: 'Doe', 
       value: 'abc', 
@@ -99,7 +101,7 @@
       item: '',
       items: ['Apple','Banana','Cherry'],
       obj: { a: 'a', b: 'b', c: 'c' },
-    }">
+    }" init="console.log('$props', $props)">
       <button on-click="toggle">${isOpen ? 'In' : 'Out'}</button>
       <!-- <h1 uppercase init="$el.animate([{transform: 'translateX(300px)'}], {duration: 2000, iterations: Infinity, direction: 'alternate', easing: 'ease-in-out'})">Brio.js</h1> -->
       <!-- <h2 effect="$animate([{opacity: '0.05'}], {direction: 'alternate', iterations: Infinity, duration: 1000})">The $animate method</h2> -->
@@ -118,11 +120,11 @@
         <strong>Global Count: ${$store.count}</strong>
       </p>
 
-      <p>${ first }</p>
+      <p>${ first }, ${search2}</p>
 
-      <input type="text" model="first">
+      <input type="text" model="search">
 
-      <button on-click="count++">Increment count</button>
+      <button on-click="$props.search = $session('search replaced')">Add search</button>
 
 
       <!-- Just the value -->

@@ -16,7 +16,7 @@ export let uid = (length: number = 8, callback?: (uid: string) => boolean): stri
     }
 }
 
-export let has = (value: any, item: string) => {
+export let has = (value: any, item: string|symbol) => {
     return value && value.includes(item);
 }
 

@@ -39,6 +39,10 @@ export let getProto = (object: any) => {
     return Object.getPrototypeOf(object);
 }
 
+export let hasOwnProperty = (object: any, key: string) => {
+    return object.hasOwnProperty(key);
+}
+
 export let getOwnProp = (object: any) => {
     return Object.getOwnPropertyNames(object);
 }

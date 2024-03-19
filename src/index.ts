@@ -43,9 +43,6 @@ export { api } from './api';
 
 
 // TODO LIST
-// - [ ] (!!! TOP PRIORITY !!!) Support key modifiers for the `on` directive. For example: `on-keydown.enter="submit"`.
-//       - https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/key
-
 // - [ ] Implement a `mask` directive to format input values.
 
 // - [ ] Add a "morph" modifier to the `html` directive to preserve the element's state when the template changes.
@@ -66,6 +63,9 @@ export { api } from './api';
 
 // - [x] Implement a `enter` and `leave` directives to react when an element enters or leaves the viewport.
 //       It takes an optional options object. `[enter-options | leave-options]="{ root: null, rootMargin: '0px', threshold: 50, once: true}"`
+
+// - [x] (!!! TOP PRIORITY !!!) Support key modifiers for the `on` directive. For example: `on-keydown-enter="submit"`.
+//       - https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/key
 
 
 

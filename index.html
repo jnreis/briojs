@@ -124,7 +124,7 @@
 
       <p>${ first }, ${search2}</p>
 
-      <input type="text" model="search" on-keydown-shift-meta-s="console.warn('on-keydown-shift-meta-s')">
+      <input type="text" model="search" on-keyup-enter="console.warn('on-keyup-enter')">
 
       <button on-click="$props.search = $session('search replaced')">Add search</button>
 

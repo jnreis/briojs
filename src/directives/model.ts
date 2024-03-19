@@ -3,11 +3,11 @@ import { VNode, ObjectType } from '..';
 import { ref } from '../evaluation';
 import { modelValue, saveAttr, saveEffect } from '../hydration';
 import { entries, has } from '../tools';
-import { inArray, arrayAdd, arrayRemove } from '../tools/array';
+import { arrayAdd, arrayRemove } from '../tools/array';
 import { listen, onCompositionStart, onCompositionEnd, getAttr } from '../tools/dom';
 import { capitalize, lower } from '../tools/string';
 import { isNull, isArray, getType } from '../tools/typeCheck';
-import { SELECT, INPUT, TEXTAREA, CHECKBOX, RADIO, VALUE, CHANGE, ARRAY, DIRECTIVE, ATTRIBUTE, REQUIRE, OBJECT, UNDEFINED, SYMBOL, $EL, EFFECT } from '../tools/constants';
+import { SELECT, INPUT, TEXTAREA, CHECKBOX, RADIO, VALUE, CHANGE, ARRAY, DIRECTIVE, ATTRIBUTE, REQUIRE, OBJECT, UNDEFINED, SYMBOL, $EL, COMPOSING } from '../tools/constants';
 
 export let hydrateModel = (vnode: VNode, attrName: string, attrValue: string) => {
 
@@ -41,19 +41,19 @@ export let hydrateModel = (vnode: VNode, attrName: string, attrValue: string) =>
     let watchFn = () => {
         let value = ref(vnode, attrValue);
 
-        if (inArray([INPUT,TEXTAREA], tag)) {
+        if (has([INPUT,TEXTAREA], tag)) {
             if (type == CHECKBOX && isArray(value)) {
                 if (!getAttr(node, VALUE))
                     return console.error(`${capitalize(CHECKBOX)} ${VALUE} ${ATTRIBUTE} is ${REQUIRE}d when using an ${ARRAY} ${MODEL}.`);
 
-                node.checked = inArray(value, node[VALUE]);
+                node.checked = has(value, node[VALUE]);
             }
             else if (type == RADIO || type == CHECKBOX) {
                 node.checked = value === node[VALUE] || value === true && node[VALUE] == 'on';
             }
             else {
                 // Composition is still in progress
-                if (node.composing) return;
+                if (node[COMPOSING]) return;
 
                 // If the element is focused and the value hasn't changed, return
                 if (document.activeElement === node && node[VALUE] === value) return;
@@ -68,14 +68,14 @@ export let hydrateModel = (vnode: VNode, attrName: string, attrValue: string) =>
         }
     };
     // Add the effect to the effect object
-    saveEffect(vnode, MODEL, watchFn);
+    saveEffect(vnode, watchFn, false);
 
     // UPDATES THE PROP IN THE SCOPE
     let events: ObjectType = {};
     let setValue = ref(vnode, attrValue, true);
     let eventFn = () => setValue(modelValue(node[VALUE], modifiers));
 
-    if (inArray([INPUT,TEXTAREA], tag)) {
+    if (has([INPUT,TEXTAREA], tag)) {
         // Checkbox with array model
         if (type == CHECKBOX) {
             eventFn = () => {
@@ -97,7 +97,7 @@ export let hydrateModel = (vnode: VNode, attrName: string, attrValue: string) =>
     }
 
     // Event name
-    let event = (inArray(modifiers, 'lazy') || inArray([RADIO,CHECKBOX], type) || tag == SELECT)
+    let event = (has(modifiers, 'lazy') || has([RADIO,CHECKBOX], type) || tag == SELECT)
         ? CHANGE 
         : INPUT;
 
@@ -105,8 +105,7 @@ export let hydrateModel = (vnode: VNode, attrName: string, attrValue: string) =>
 
     // Add the event listeners
     for (let [eventName, fn] of entries(events)) {
-        let cleanup = listen(node, eventName, fn);
-        vnode[EFFECT][eventName] = cleanup;
+        saveEffect(vnode, listen(node, eventName, fn));
     }
 
     // Save to the vnode

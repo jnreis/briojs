@@ -3,26 +3,32 @@ import { VNode } from '..';
 import { hydrationWrapper } from '.';
 import { afterAnimations } from '../api/animate';
 import { getParent } from '../tools/dom';
+import { debounce } from '../tools';
+import { DISPLAY, STYLE } from '../tools/constants';
 
 export let hydrateShow = (vnode: VNode, attrName: string, attrValue: string) => {
 
-    let animationTimeout: any;
+    // The current value of the directive
+    let currentValue: any;
+
+    let show = debounce(($el: HTMLElement) => $el[STYLE][DISPLAY] = '', 0)
+
+    let hide = afterAnimations($el => {
+        // If the current value is still false after the animations, hide the node
+        if (!currentValue)
+            $el[STYLE][DISPLAY] = 'none';
+    });
 
     let callback = (node: HTMLElement) => (value: any) => {
         if (!getParent(node)) return;
 
-        // Clear the timeout
-        clearTimeout(animationTimeout);
+        // Update the current value
+        currentValue = value;
 
-        if (value) {
-            if (node.style.display == 'none')
-                node.style.display = '';
-        }
-        // Wait until the next frame to get the animation time. Otherwise, the time might be 0.
-        else setTimeout(() => {
-            // Remove the node after the animations are finished
-            animationTimeout = afterAnimations(node, () => node.style.display = 'none');
-        }, 0)
+        // Show
+        if (value) show(node);
+        // Hide
+        else hide(node);
     }
 
     hydrationWrapper(vnode, attrName, attrValue, callback);

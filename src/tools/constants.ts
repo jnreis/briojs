@@ -33,10 +33,14 @@ export let RADIO = 'radio';
 export let VALUE = 'value';
 export let CHANGE = 'change';
 export let CHECKED = 'checked';
+export let COMPOSING = 'composing';
 
 // HTML attributes
-export let STYLE = 'style';
+export let STYLE: 'style' = 'style';
 export let CLASS = 'class';
+export let GET_COMPUTED_STYLE: 'getComputedStyle' = 'getComputedStyle';
+export let DISPLAY: 'display' = 'display';
+export let OPACITY: 'opacity' = 'opacity';
 
 // Brio attributes
 export let PROPS: 'props' = 'props';
@@ -60,6 +64,8 @@ export let ATTRIBUTE: 'attribute' = 'attribute';
 export let REQUIRE: 'require' = 'require';
 export let EXPRESSION: 'expression' = 'expression';
 export let TELEPORT: 'teleport' = 'teleport';
+export let THRESHOLD: 'threshold' = 'threshold';
+export let OPTION: 'option' = 'option';
 
 // Operation types
 export let CREATE = 'create';

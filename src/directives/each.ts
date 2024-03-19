@@ -2,12 +2,12 @@ import { ObjectType, VNode } from '..';
 
 import { ref, validVariableName } from '../evaluation';
 import { watch } from '../reactivity';
-import { hydrate, dehydrate, vnodes, saveAttr, saveVNode } from '../hydration';
-import { entries, has } from '../tools';
+import { hydrate, dehydrate, vnodes, saveAttr, saveVNode, saveEffect } from '../hydration';
+import { entries, has, wait } from '../tools';
 import { appendChild, removeChild, insertBefore, getParent, nextSibling } from '../tools/dom';
 import { trim } from '../tools/string';
 import { isArray, isObject } from '../tools/typeCheck';
-import { ARRAY, OBJECT, EACH, DIRECTIVE, REQUIRE, CREATE, UPDATE, DELETE, $PROPS, $EL, $ROOT, EFFECT } from '../tools/constants';
+import { ARRAY, OBJECT, EACH, DIRECTIVE, REQUIRE, CREATE, UPDATE, DELETE, $PROPS, $EL, $ROOT } from '../tools/constants';
 
 export let _each: ObjectType = {};
 
@@ -100,14 +100,14 @@ export let hydrateEach = (vnode: VNode, parent: VNode | null, attrName: string, 
         if (_vnode) {
             let p = _vnode[$PROPS];
             // Make sure the `index` never changes
-            _vnode[EFFECT].i = watch(p, index, ({newValue}) => {
+            saveEffect(_vnode, watch(p, index, ({newValue}) => {
                 if (newValue !== p[KEY])
                     p[index] = p[KEY];
-            });
+            }));
             // Keep the `item` in sync with the `value`
-            _vnode[EFFECT].v = watch(p, item, ({newValue}) => {
+            saveEffect(_vnode, watch(p, item, ({newValue}) => {
                 value[p[KEY]] = newValue;
-            });
+            }));
         }
 
         // Add the node to the fragment
@@ -171,10 +171,10 @@ export let hydrateEach = (vnode: VNode, parent: VNode | null, attrName: string, 
             // Perform the operation
             operations[operation](prop, newValue);
             // Wait for the next tick to add the fragment to the DOM
-            setTimeout(paint, 0);
+            wait(paint);
         }
     });
 
     // Save the effect to the vnode
-    vnode[EFFECT][attrName] = cleanup;
+    saveEffect(vnode, cleanup);
 }

@@ -1,5 +1,7 @@
 // * TYPES
 
+import { size } from "../tools";
+
 export type PropRef = [any, string|number|symbol];
 
 
@@ -37,7 +39,7 @@ export let trackAccessedProps = (trigger: () => any): PropRef[] => {
     // This is because in a path like `a.b.c`, the last accessed property is `c` but the get trap will be called for `a`, `b` and `c`.
     let refs: PropRef[] = [];
     for (let ref of accessedProps) {
-        let i = refs.length - 1;
+        let i = size(refs) - 1;
         let r = refs[i];
         // Navigate if the last accessed property is equal to the current observed state
         if (r && r[0][r[1]] === ref[0]) refs[i] = ref;

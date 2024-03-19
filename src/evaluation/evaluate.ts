@@ -5,7 +5,7 @@ import { store } from "../api/store";
 import { _methods } from "../methods";
 import { newObject } from "../tools/object";
 import { $EL, $PROPS, $REFS, $ROOT, EXPRESSION } from "../tools/constants";
-import { arrayAdd } from "../tools/array";
+import { arrayAdd, each } from "../tools/array";
 
 let evalCache: Record<string, Function> = newObject();
 
@@ -17,9 +17,9 @@ let execute = (vnode: VNode, exp: string) => {
     try {
         let $s: any[] = [];
         // Properties in the vnode that start with "$" must be passed to the function
-        [$EL,$REFS,$PROPS,$ROOT].forEach(name => arrayAdd($s, vnode[name]));
+        each([$EL,$REFS,$PROPS,$ROOT], name => arrayAdd($s, vnode[name as keyof VNode]));
         // Methods must be passed to the function
-        _methods.forEach(([_, fn]) => arrayAdd($s, fn(vnode)));
+        each(_methods, ([_, fn]) => arrayAdd($s, fn(vnode)));
         // The store must be passed to the function
         return fn(store, ...$s);
     } catch (e) {

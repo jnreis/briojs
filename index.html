@@ -79,7 +79,7 @@
       set double(value) {
         this.count = value / 2;
       },
-      isOpen: true,
+      isOpen: false,
       toggle() {
         this.isOpen = !this.isOpen;
       },
@@ -108,12 +108,14 @@
       <div style="display: flex;">
         <h2
           style="text-align: center;"
-          show="isOpen"
-          transition="isOpen" fade slide="50px" skew blur duration="500"
+          transition="!search" fade slide="0,-16px"
+          if="search"
         >Hello 👋</h2>
       </div>
       <!-- <p>Hi. <span html="`<strong>${ first } ${ last }</strong>`"></span></p> -->
       <!-- <p bind-class="4 * count">Hello, ${ first } ${ last }!</p> -->
+
+      <button on-mycoolcustomevent007-window="console.log($event.detail)">Test event</button>
 
       <p>
         Count is: ${count}. The double is: ${double}
@@ -122,9 +124,17 @@
 
       <p>${ first }, ${search2}</p>
 
-      <input type="text" model="search">
+      <input type="text" model="search" on-keydown-shift-meta-s="console.warn('on-keydown-shift-meta-s')">
 
       <button on-click="$props.search = $session('search replaced')">Add search</button>
+
+      <div props="{ open: true }">
+        <button on-click="open = ! open">Toggle</button>
+     
+        <div style="background-color: bisque;" show="open" on-click-outside="open = false">
+            Contents...
+        </div>
+      </div>
 
 
       <!-- Just the value -->
@@ -213,18 +223,24 @@
       <button on-click="console.log($props.vehicle)">Log Props</button>
     </div>
 
+    <hr>
 
-    <div props="{ number: 5 }">
-      <div ref="button" props="{
-        count: 2,
-        person: 'John',
-      }">
-          <button init="count = number" effect="number = count" on-click="count++">Increment</button>
-          <p>Count: ${count}, ${JSON.stringify(person)}</p>
-      </div>
+    <!-- <div 
+      props="{ number: 5, show: false }" 
+      style="margin: 40px;"
+      enter="show = true" enter-options="{threshold: 1, rootMargin: '-100px 0px'}"
+      transition="show" opacity
+    >
+        <div ref="button" props="{
+          count: 2,
+          person: 'John',
+        }">
+            <button init="count = number" effect="number = count" on-click="count++">Increment</button>
+            <p>Count: ${count}, ${JSON.stringify(person)}</p>
+        </div>
    
       Number: <span text="number"></span>
-    </div>
+    </div> -->
 
     <hr>
 

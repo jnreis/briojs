@@ -3,7 +3,8 @@ import {
     listeners, getListener, removePropertyListeners, computedStack, 
     CALLBACK } from '.';
 // import { trackProps, accessedProps } from './track';
-import { deepEqual, has } from '../tools';
+import { deepEqual, has, size } from '../tools';
+import { each } from '../tools/array';
 import { getKeys } from '../tools/object';
 import { isArray, isObject, isUndefined, isFunction } from '../tools/typeCheck';
 import { CREATE, DELETE, UPDATE } from '../tools/constants';
@@ -25,8 +26,8 @@ export let state = (target: any) => {
 
             if (has(getKeys(target), prop)) {
                 // Get the last item in the computed stack and add the accessed property to it
-                if (computedStack.length > 0) {
-                    computedStack[computedStack.length - 1].push([receiver, prop]);
+                if (size(computedStack) > 0) {
+                    computedStack[size(computedStack) - 1].push([receiver, prop]);
                 }
 
                 // // Register the accessed property
@@ -119,7 +120,7 @@ export let state = (target: any) => {
 
         // Notify property listeners of the state
         if (listener.props[prop]) {
-            listener.props[prop].forEach((fn: ListenerFunction) => {
+            each(listener.props[prop] as any, (fn: ListenerFunction) => {
                 // Run the computed function or its callback
                 ((fn as any)[CALLBACK] ? (fn as any)[CALLBACK] : fn)(context);
             });
@@ -144,7 +145,7 @@ let isArrayOrObject = (value: any) =>
 // let ignore = (receiver: any) => IGNORE in receiver;
 
 let notifyStateListeners = (observedState: any, context: any) =>
-    getListener(observedState).state.forEach((fn: ListenerFunction) => fn(context));
+    each(getListener(observedState).state as any, (fn: ListenerFunction) => fn(context));
 
 /**
  * Checks if a value has the callback symbol.

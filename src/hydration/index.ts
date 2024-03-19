@@ -2,11 +2,10 @@ import type { ObjectType, VNodes, VNode } from "..";
 
 import { evaluate } from "../evaluation";
 import { effect } from "../reactivity";
-import { has } from "../tools";
-import { arrayAdd, inArray } from "../tools/array";
+import { has, size, uid } from "../tools";
+import { arrayAdd, each } from "../tools/array";
 import { q, walk, getAttr, delAttr, getParent, setAttr } from "../tools/dom";
 import { toNumber } from "../tools/number";
-import { getKeys } from "../tools/object";
 import { startsWith, trim } from "../tools/string";
 import { isTextNode, isElementNode } from "../tools/typeCheck";
 import { NUMBER, TEXT, EACH, PROPS, $PROPS, $EL, $ROOT, EFFECT, $REFS } from "../tools/constants";
@@ -145,7 +144,7 @@ export let hydrateTextNode = (node: Text) => {
         let fn = evaluate({...parent, [$EL]: vnode[$EL]}, `()=>${$EL}.${TEXT_CONTENT}=\`${text}\``);
 
         // Save effect
-        saveEffect(vnode, TEXT, fn);
+        saveEffect(vnode, fn, false);
 
         // Save attribute
         saveAttr(vnode, TEXT, text);
@@ -194,7 +193,7 @@ export let hydrateElementNode = (node: HTMLElement) => {
     }
 
     // Check if any changes were made to the vnode
-    if (getKeys(vnode.attr).length) {
+    if (size(vnode.attr)) {
         // Save the vnode
         saveVNode(vnode);
     }
@@ -203,8 +202,8 @@ export let hydrateElementNode = (node: HTMLElement) => {
 }
 
 // Create a effect from a function and save it to the vnode
-export let saveEffect = (vnode: VNode, effectName: string, fn: (...args: any) => any) => {
-    vnode[EFFECT][effectName] = effect(fn);
+export let saveEffect = (vnode: VNode, fn: (...args: any) => any, isCleanup = true) => {
+    vnode[EFFECT][uid()] = isCleanup ? fn : effect(fn);
 }
 
 /** Saves the attribute to the vnode and removes it from the node */
@@ -219,8 +218,8 @@ export let saveVNode = (vnode: VNode) => {
 }
 
 export let modelValue = (value: any, modifiers: string[]) => {
-    if (inArray(modifiers, 'trim')) value = trim(value);
-    if (inArray(modifiers, NUMBER)) value = toNumber(value);
+    if (has(modifiers, 'trim')) value = trim(value);
+    if (has(modifiers, NUMBER)) value = toNumber(value);
     return value;
 }
 
@@ -228,7 +227,7 @@ export let modelValue = (value: any, modifiers: string[]) => {
 export let getTopLevelContext = (attrName: string) => {
     let $props: HTMLElement[] = []
     // Only add top level context nodes
-    q(`[${attrName}]:not([${attrName}] [${attrName}])`).forEach((el) => {
+    each(q(`[${attrName}]:not([${attrName}] [${attrName}])`) as any, (el) => {
         if (getAttr(el as HTMLElement, attrName)) {
             arrayAdd($props, el as HTMLElement)
         }

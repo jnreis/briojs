@@ -6,6 +6,8 @@ import { getAttr } from "../tools/dom";
 import { toNumber } from "../tools/number";
 import { isNull } from "../tools/typeCheck";
 import { saveAttr } from "../hydration";
+import { GET_COMPUTED_STYLE, OPACITY } from "../tools/constants";
+import { each } from "../tools/array";
 
 let TRANSFORM = 'transform';
 
@@ -15,16 +17,16 @@ export let _transitions: [
     string, // The CSS property
     (attrValue: string|number) => string|number, // The value of the CSS property
 ][] = [
-    ['fade', 'opacity', value => value],
+    ['fade', OPACITY, value => value ? 1 - +value : 0], // 1 - 0 = 1 (show), 1 - 1 = 0 (hide)
     ['blur', 'filter', value => ` blur(${value || '8px'})`],
     ['slide', TRANSFORM, value => ` translate(${value || '0,16px'})`],
-    ['scale', TRANSFORM, value => ` scale(${value || 0})`],
+    ['scale', TRANSFORM, value => ` scale(${value || .85})`],
     ['rotate', TRANSFORM, value => ` rotate(${value || '25deg'})`],
-    ['skew', TRANSFORM, value => ` skew(${value || '0,12deg'})`],
+    ['skew', TRANSFORM, value => ` skew(${value || '0,8deg'})`],
 ];
 
 let _generatePropertyKeyframe = (element: HTMLElement, property: any, startValue: any) => {
-    let currentValue = window.getComputedStyle(element)[property];
+    let currentValue = window[GET_COMPUTED_STYLE](element)[property];
     return [{[property]: currentValue}, {[property]: startValue}];
 }
 
@@ -35,7 +37,7 @@ export let hydrateTransition = (vnode: VNode, attrName: string, attrValue: strin
     let keyframes: ObjectType = {transform: ''};
 
     // Apply requested transitions
-    _transitions.forEach(([name, propName, propValue]) => {
+    each(_transitions, ([name, propName, propValue]) => {
 
         // Get the attribute value
         let value = getAttr($el, name);
@@ -60,7 +62,7 @@ export let hydrateTransition = (vnode: VNode, attrName: string, attrValue: strin
     let options: ObjectType = {};
 
     // Get the duration and easing, if available
-    ['duration', 'easing'].forEach(attr => {
+    each(['duration', 'easing'], attr => {
 
         // Get the attribute value
         let value = getAttr($el, attr);
@@ -97,20 +99,20 @@ export let hydrateTransition = (vnode: VNode, attrName: string, attrValue: strin
     let init = false;
 
     let callback = () => (value: any) => {
-        // Initial state
-        if (!init) {
-            init = true;
-
-            // If the value is not `true`, set the time to the end
-            if (!value) {
-                transitions.forEach(transition => {
-                    transition.currentTime = transition.effect.getComputedTiming().duration;
-                });
+        each(transitions, transition => {
+            let playbackRate = transition.playbackRate;
+            // Play forward  OR  Play backward
+            if ((value && playbackRate < 0) || (!value && playbackRate > 0)) {
+                // Reverse the transition
+                transition.reverse();
             }
-        }
-
-        // Reverse: play the transitions in the opposite direction they are currently going in
-        transitions.forEach(transition => transition.reverse());
+            // Play the transition (forward)
+            else if (!init && value) {
+                transition.play();
+            }
+            // console.warn('transition', value, playbackRate, transition);
+        });
+        if (!init) init = true;
     }
 
     hydrationWrapper(vnode, attrName, attrValue, callback);

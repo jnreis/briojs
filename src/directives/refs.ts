@@ -3,7 +3,7 @@ import { VNode, ObjectType } from "..";
 import { q, delAttr, getAttr } from "../tools/dom";
 import { isArray } from "../tools/typeCheck";
 import { $EL, $REFS, PROPS } from "../tools/constants";
-import { arrayAdd } from "../tools/array";
+import { arrayAdd, each } from "../tools/array";
 
 export let hydrateRefs = (vnode: VNode) => {
 
@@ -12,7 +12,7 @@ export let hydrateRefs = (vnode: VNode) => {
 
     let query = q(`[ref]:not([${PROPS}]):not([${PROPS}] [ref])`, vnode[$EL]);
 
-    [vnode[$EL], ...query].forEach(ref => {
+    each([vnode[$EL], ...query], ref => {
         let refName = getAttr(ref as HTMLElement, 'ref');
         if (refName) {
             // Check if the ref already exists

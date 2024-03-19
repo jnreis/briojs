@@ -2,7 +2,7 @@ import { VNode } from "..";
 
 import { evaluate } from ".";
 import { trim } from "../tools/string";
-import { has, uid } from "../tools";
+import { has, size, uid } from "../tools";
 import { isUndefined } from "../tools/typeCheck";
 import { $PROPS, $STORE } from "../tools/constants";
 
@@ -39,7 +39,7 @@ export let ref = (vnode: VNode, exp: string, set: boolean = false) => {
 
     let path = splitPath(exp);
 
-    if (path.length && (has([$STORE,$PROPS], path[0]) || path[0] in vnode[$PROPS])) {
+    if (size(path) && (has([$STORE,$PROPS], path[0]) || path[0] in vnode[$PROPS])) {
         if (set) exp = `${setVariable}=>${exp}=${setVariable}`;
         return evaluate(vnode, exp);
     }

@@ -13,10 +13,6 @@ export let arrayRemove = (array: any[], value: any) => {
     return true;
 }
 
-export let inArray = (array: any[], value: any) => {
-    return new Set(array).has(value);
-}
-
 export let arrayFrom = (arrayLike: any) => {
     return Array.from(arrayLike);
 }
@@ -31,4 +27,8 @@ export let arrayMerge = (...arrays: any[][]) => {
 
 export let arrayReverse = (array: any[]) => {
     return array.slice().reverse();
+}
+
+export let each = (value: any[], callbackfn: (value: any, index: number, array: any[]) => void) => {
+    return value.forEach(callbackfn);
 }

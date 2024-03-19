@@ -1,5 +1,5 @@
 import { getKeys } from "./object";
-import { isArray, isDate, isFunction, isMap, isObject, isRegExp, isSet } from "./typeCheck";
+import { isArray, isDate, isFunction, isMap, isObject, isRegExp, isSet, isString } from "./typeCheck";
 
 /**
  * Generates random strings of a given length until a callback returns true.
@@ -24,6 +24,17 @@ export let entries = (value: any): [string, any][] => {
     return isObject(value) ? Object.entries(value) : value.entries();
 }
 
+/**
+ * Returns the size of a value
+ */
+export let size = (value: any): number => {
+    // If the value is an object, get the keys
+    let v = isObject(value) ? getKeys(value) : value;
+    return isArray(v) || isString(v) 
+        ? v.length // Object, Array, or String
+        : v.size; // Map, Set, or other iterable
+}
+
 
 /**
  * Performs a deep comparison between two values to determine if they are equivalent
@@ -35,7 +46,7 @@ export function deepEqual(a: any, b: any): boolean {
     // For objects
     if (isObject(a) && isObject(b)) {
         // Check if the objects have the same keys
-        if (getKeys(a).length !== getKeys(b).length) {
+        if (size(a) !== size(b)) {
             return false
         }
         // Check if the objects have the same values
@@ -50,11 +61,11 @@ export function deepEqual(a: any, b: any): boolean {
     // For arrays
     if ((isArray(a) && isArray(b))) {
         // Check if the arrays have the same length
-        if (a.length !== b.length) {
+        if (size(a) !== size(b)) {
             return false
         }
         // Check if the arrays have the same values
-        for (let i = 0; i < a.length; i++) {
+        for (let i = 0; i < size(a); i++) {
             if (!deepEqual(a[i], b[i])) {
                 return false
             }
@@ -77,4 +88,24 @@ export function deepEqual(a: any, b: any): boolean {
 
     // For all other values
     return a === b;
+}
+
+export let wait = (callback: () => void, ms = 0) => setTimeout(callback, ms);
+
+export let debounce = (callback: Function, delay: number) => {
+    let timeout: any;
+    return (...args: any[]) => {
+        clearTimeout(timeout);
+        timeout = wait(() => callback(...args), delay);
+    }
+}
+
+export let throttle = (callback: Function, delay: number) => {
+    let last: number = 0;
+    return (...args: any[]) => {
+        let now = Date.now();
+        if (now - last < delay) return;
+        last = now;
+        return callback(...args);
+    }
 }

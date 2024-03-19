@@ -12,6 +12,7 @@ import { createContext, deleteKeys, getKeys } from '../tools/object';
 import { trim } from '../tools/string';
 import { getType, isFunction, isObject } from '../tools/typeCheck';
 import { $EL, $PROPS, $REFS, $ROOT, OBJECT, PROPS } from '../tools/constants';
+import { each } from '../tools/array';
 
 export let _props: ObjectType = {};
 
@@ -57,7 +58,7 @@ export let hydrateProps = (vnode: VNode, parent: VNode | null) => {
     }
 
     // Remove reserved keys from the new context
-    _reservedNames.forEach(key => {
+    each(_reservedNames, key => {
         if (key in newContext) delete newContext[key];
     });
 

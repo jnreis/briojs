@@ -3,6 +3,7 @@ import {
     computedStack, removeListener, addPropertyListener,
     CALLBACK,
 } from '.';
+import { each } from '../tools/array';
 
 /**
  * Tracks accessed properties and executes a callback when any of the properties change.
@@ -22,7 +23,7 @@ export let computed = (fn: ListenerFunction, callback?: ListenerFunction): Liste
     fn({} as any);
 
     // Remove the array of accessed properties from the stack and add the computed function to each accessed property
-    computedStack.pop().forEach(([observedState, prop]: [any, string]) => {
+    each(computedStack.pop(), ([observedState, prop]: [any, string]) => {
         addPropertyListener(observedState, prop, fn);
     });
 

@@ -15,7 +15,7 @@ export let watch = (observedState: any, prop: string | number | null, callback: 
     // If no key/index is specified, watch for all changes to the observed object/array
     if (!prop && prop !== 0) {
         if (!listeners.has(observedState))
-            return console.error(`Cannot watch an unobserved ${OBJECT}/${ARRAY}.`);
+            throw new Error(`Cannot watch an unobserved ${OBJECT}/${ARRAY}.`);
 
         // Add the callback to the observed object/array listeners
         getListener(observedState).state.add(callback);

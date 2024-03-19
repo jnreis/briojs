@@ -31,7 +31,7 @@ export let api: ObjectType = {
     // Global data store
     store,
 
-    // To register props, custom methods, and custom directives during initialization
+    // Methods that may only be called before Brio is initialized
     addProps,
     addMethod,
     addDirective,

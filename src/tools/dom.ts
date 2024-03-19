@@ -1,4 +1,4 @@
-import { INPUT } from "./constants";
+import { COMPOSING, DISPLAY, GET_COMPUTED_STYLE, INPUT, OPACITY } from "./constants";
 import { isElementNode } from "./typeCheck";
 
 export let q = (selector: string, root: Node = document) => {
@@ -67,13 +67,19 @@ export let walk = (node: Node, callback: (node: Node) => boolean | null) => {
 }
 
 export let onCompositionStart = (e: Event) => {
-    (e.target as any).composing = true;
+    (e.target as any)[COMPOSING] = true;
 }
 
 export let onCompositionEnd = (e: Event) => {
     let target = e.target as any;
-    if (target.composing) {
-        target.composing = false;
+    if (target[COMPOSING]) {
+        target[COMPOSING] = false;
         emit(target, INPUT);
     }
+}
+
+export let isElementVisible = (node: HTMLElement) => {
+    // Check if element is hidden due to display, visibility, or opacity
+    const style = window[GET_COMPUTED_STYLE](node);
+    return !(!getParent(node) || style[DISPLAY] == 'none' || style.visibility == 'hidden' || style[OPACITY] == '0');
 }

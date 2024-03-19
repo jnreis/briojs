@@ -3,7 +3,6 @@ import { VNode, ValidateAttribute, HydrateDirective } from "..";
 import { hydrateOn } from './on';
 import { hydrateBind } from './bind';
 import { hydrateModel } from './model';
-import { hydrateTransition } from "./transition";
 
 import { hydrateIf } from './if';
 import { hydrateShow } from './show';
@@ -11,6 +10,8 @@ import { hydrateHtml } from './html';
 import { hydrateText } from './text';
 import { hydrateEffect } from './effect';
 import { hydrateTeleport } from './teleport';
+import { hydrateTransition } from "./transition";
+import { hydrateIntersection } from "./intersection";
 
 import { getRefOrEvaluate } from "../evaluation";
 import { saveAttr, saveEffect } from "../hydration";
@@ -30,7 +31,7 @@ export let hydrationWrapper = (
     let watchFn = callback(vnode[$EL]);
 
     // Watch the prop or expression
-    saveEffect(vnode, attrName, () => watchFn(getRefOrEvaluate(vnode, attrValue)));
+    saveEffect(vnode, () => watchFn(getRefOrEvaluate(vnode, attrValue)), false);
 
     // Save attribute
     saveAttr(vnode, attrName, attrValue);
@@ -55,7 +56,9 @@ export let _directives: [ValidateAttribute, HydrateDirective][] = [
     [attrNameEquals(TEXT), hydrateText],
     [attrNameEquals(EFFECT), hydrateEffect],
     [attrNameEquals(TELEPORT), hydrateTeleport],
-    [attrNameEquals('transition'), hydrateTransition], // transition
+    [attrNameEquals('transition'), hydrateTransition],
+    [attrNameEquals('enter'), hydrateIntersection],
+    [attrNameEquals('leave'), hydrateIntersection],
 ];
 
 export { hydrateEach } from './each';

@@ -1,4 +1,5 @@
 import { ObjectType } from "..";
+import { each } from "./array";
 import { CREATE } from "./constants";
 
 export let getKeys = (value: Object) => {
@@ -11,7 +12,7 @@ export let getAllKeys = (value: Object) => {
     // Recursively traverse the prototype chain
     let currentObj = value;
     while (currentObj) {
-        getKeys(currentObj).forEach((key) => keys.add(key));
+        each(getKeys(currentObj), (key) => keys.add(key));
         currentObj = getProto(currentObj);
     }
 
@@ -73,7 +74,7 @@ export let setHiddenKey = (object: any, key: string, value: any) => {
 }
 
 export let deleteKeys = (object: any) => {
-    getKeys(object).forEach((key) => {
+    each(getKeys(object), (key) => {
         delete object[key];
     });
 }

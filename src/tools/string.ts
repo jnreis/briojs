@@ -1,4 +1,5 @@
-import { has } from '.';
+import { has, size } from '.';
+import { each } from './array';
 import { FUNCTION } from './constants';
 
 export let hasSubstring = (haystack: string, needle: string, caseInsensitive = false) => {
@@ -59,7 +60,7 @@ export let validateBracketPair = (str: string) => {
     while (found) {
         found = false;
 
-        pairs.forEach(pair => {
+        each(pairs, pair => {
             if (has(str, pair)) {
                 str = str.replace(pair, '');
                 found = true;
@@ -75,30 +76,30 @@ export let getDelimitersIndexes = (subject: string, startingWith: string, ending
     let lastDelimiter = '';
 
     let index = 0;
-    while (index < subject.length) {
-        if (subject.substring(index, index + startingWith.length) === startingWith) {
+    while (index < size(subject)) {
+        if (subject.substring(index, index + size(startingWith)) === startingWith) {
             pairs.push([index, -1]);
             lastDelimiter = startingWith;
-            index += startingWith.length;
+            index += size(startingWith);
         }
-        else if (subject.substring(index, index + endingWith.length) === endingWith) {
+        else if (subject.substring(index, index + size(endingWith)) === endingWith) {
             if (lastDelimiter === endingWith) {
                 // Find the last opening delimiter that doesn't have a closing delimiter
-                for (let i = pairs.length - 1; i >= 0; i--) {
+                for (let i = size(pairs) - 1; i >= 0; i--) {
                     if (pairs[i][1] === -1) {
                         // If there is a last opening delimiter, set its closing delimiter
-                        pairs[i][1] = index + endingWith.length;
+                        pairs[i][1] = index + size(endingWith);
                         break;
                     }
                 }
             }
             // Check if there is a last opening delimiter that doesn't have a closing delimiter
-            else if (pairs.length > 0 && pairs[pairs.length - 1][1] === -1) {
-                pairs[pairs.length - 1][1] = index + endingWith.length;
+            else if (size(pairs) > 0 && pairs[size(pairs) - 1][1] === -1) {
+                pairs[size(pairs) - 1][1] = index + size(endingWith);
             }
 
             lastDelimiter = endingWith;
-            index += endingWith.length;
+            index += size(endingWith);
         }
         // Skip the next character
         else {
@@ -113,7 +114,7 @@ export let getDelimitedContent = (subject: string, startingWith: string, endingW
     let content: string[] = [];
     let pairs = getDelimitersIndexes(subject, startingWith, endingWith);
 
-    pairs.forEach(pair => {
+    each(pairs, pair => {
         content.push(subject.substring(pair[0], pair[1]));
     });
 
@@ -129,17 +130,17 @@ export let findDelimitedContent = (
     let pairs = [];
     let stack = [];
 
-    for (let i = 0; i < input.length; i++) {
-        if (input.substring(i, i + startDelimiter.length) === startDelimiter) {
+    for (let i = 0; i < size(input); i++) {
+        if (input.substring(i, i + size(startDelimiter)) === startDelimiter) {
             stack.push(i);
         }
-        else if (input.substring(i, i + endDelimiter.length) === endDelimiter) {
-            if (stack.length > 0) {
+        else if (input.substring(i, i + size(endDelimiter)) === endDelimiter) {
+            if (size(stack) > 0) {
                 let start = stack.pop() as number;
                 let end = i;
                 let pair = includeDelimiters
-                    ? { start, end: end + endDelimiter.length }
-                    : { start: start + startDelimiter.length, end };
+                    ? { start, end: end + size(endDelimiter) }
+                    : { start: start + size(startDelimiter), end };
                 let content = input.substring(pair.start, pair.end);
                 pairs.push({ ...pair, content });
             }
@@ -160,9 +161,9 @@ export let findTopmostDelimitedContent = (
     let items = findDelimitedContent(input, startDelimiter, endDelimiter);
     let topItems: { start: number; end: number; content: string }[] = [];
 
-    items.forEach((item) => {
-        if (topItems.length) {
-            let lastItem = topItems[topItems.length - 1];
+    each(items, (item) => {
+        if (size(topItems)) {
+            let lastItem = topItems[size(topItems) - 1];
             if (lastItem.start > item.start && lastItem.end < item.end) {
                 topItems.pop();
             }
@@ -175,4 +176,8 @@ export let findTopmostDelimitedContent = (
 
 export let replaceSubstring = (subject: string, startsAt: number, endsAt: number, replacement: string) => {
     return subject.slice(0, startsAt) + replacement + subject.slice(endsAt);
+}
+
+export let alphaOnly = (str: string) => {
+    return str.replace(/[^a-zA-Z0-9]/g, '');
 }

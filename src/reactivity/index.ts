@@ -1,5 +1,7 @@
 // * TYPES
 
+import { each } from '../tools/array';
+
 export type ListenerFunction = (context: {operation: string, observedState: any, prop: string, newValue: any, oldValue: any}) => any;
 export type ListenerFunctions = Set<ListenerFunction>;
 export type ListenerObject = {
@@ -70,7 +72,7 @@ export let removePropertyListeners = (observedState: any, prop: string) => {
 
 // Remove a listener from all states and properties
 export let removeListener = (fn: ListenerFunction) => {
-    listeners.forEach(listener => {
+    each(listeners as any, listener => {
         listener.state.delete(fn);
         for (let prop in listener.props) {
             listener.props[prop].delete(fn);

@@ -1,10 +1,8 @@
-export let arrayUnique = (array: any[]) => {
-    return [...new Set(array)];
-}
+export let arrayUnique = (array: any[]) =>
+    [...new Set(array)];
 
-export let arrayAdd = (array: any[], value: any) => {
-    return array.push(value);
-}
+export let arrayAdd = (array: any[], value: any) =>
+    array.push(value);
 
 export let arrayRemove = (array: any[], value: any) => {
     let index = array.indexOf(value);
@@ -13,22 +11,17 @@ export let arrayRemove = (array: any[], value: any) => {
     return true;
 }
 
-export let arrayFrom = (arrayLike: any) => {
-    return Array.from(arrayLike);
-}
+export let arrayFrom = (arrayLike: any) =>
+    Array.from(arrayLike);
 
-export let arrayFill = (length: number, value: any = null) => {
-    return arrayFrom({ length }).map((_, i) => value || i);
-}
+export let arrayFill = (length: number, value: any = null) =>
+    arrayFrom({ length }).map((_, i) => value || i);
 
-export let arrayMerge = (...arrays: any[][]) => {
-    return arrays.reduce((acc, array) => acc.concat(array), []);
-}
+export let arrayMerge = (...arrays: any[][]) =>
+    arrays.reduce((acc, array) => acc.concat(array), []);
 
-export let arrayReverse = (array: any[]) => {
-    return array.slice().reverse();
-}
+export let arrayReverse = (array: any[]) =>
+    array.slice().reverse();
 
-export let each = (value: any[], callbackfn: (value: any, index: number, array: any[]) => void) => {
-    return value.forEach(callbackfn);
-}
+export let each = (value: any[], callbackfn: (value: any, index: number, array: any[]) => void) =>
+    value.forEach(callbackfn);

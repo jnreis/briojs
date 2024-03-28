@@ -6,8 +6,8 @@ import { has, size, debounce, throttle, wait } from '../tools';
 import { each } from '../tools/array';
 import { $EL } from '../tools/constants';
 import { emit, isElementVisible, listen } from '../tools/dom';
-import { deleteKeys, getKeys } from '../tools/object';
-import { isStringFunction, lower } from '../tools/string';
+import { deleteKey, deleteKeys, getKeys } from '../tools/object';
+import { isStringFunction, lower, split } from '../tools/string';
 import { isFunction } from '../tools/typeCheck';
 
 let KEYUP = 'keyup';
@@ -53,7 +53,7 @@ let keysMap: ObjectType = {
 
 export let hydrateOn = (vnode: VNode, attrName: string, attrValue: string) => {
 
-    let [_, event, ...modifiers] = attrName.split('-');
+    let [_, event, ...modifiers] = split(attrName, '-');
 
     let $el = vnode[$EL];
 
@@ -199,5 +199,5 @@ export let hydrateOn = (vnode: VNode, attrName: string, attrValue: string) => {
 
 let delKey = (e: any, pressedKeys: ObjectType) => {
     let key = lower(e.key);
-    if (pressedKeys[key]) delete pressedKeys[key];
+    if (pressedKeys[key]) deleteKey(pressedKeys, key);
 }

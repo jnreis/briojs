@@ -8,7 +8,7 @@ import { q, walk, getAttr, delAttr, getParent, setAttr } from "../tools/dom";
 import { toNumber } from "../tools/number";
 import { startsWith, trim } from "../tools/string";
 import { isTextNode, isElementNode } from "../tools/typeCheck";
-import { NUMBER, TEXT, EACH, PROPS, $PROPS, $EL, $ROOT, EFFECT, $REFS } from "../tools/constants";
+import { NUMBER, TEXT, EACH, PROPS, $PROPS, $EL, $ROOT, EFFECT, $REFS, INIT } from "../tools/constants";
 
 import { _directives, hydrateEach, hydrateProps, hydrateInit, hydrateUid } from "../directives";
 
@@ -175,8 +175,8 @@ export let hydrateElementNode = (node: HTMLElement) => {
     hydrateProps(vnode, parent);
 
     // Hydrate init
-    let init = getAttr(node, 'init');
-    if (init) hydrateInit(vnode, 'init', init);
+    let init = getAttr(node, INIT);
+    if (init) hydrateInit(vnode, INIT, init);
 
     // Hydrate uid scope, if any
     hydrateUid(vnode, parent);

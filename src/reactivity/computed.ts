@@ -3,7 +3,7 @@ import {
     computedStack, removeListener, addPropertyListener,
     CALLBACK,
 } from '.';
-import { each } from '../tools/array';
+import { arrayAdd, each } from '../tools/array';
 
 /**
  * Tracks accessed properties and executes a callback when any of the properties change.
@@ -17,7 +17,7 @@ export let computed = (fn: ListenerFunction, callback?: ListenerFunction): Liste
     if (callback) (fn as any)[CALLBACK] = callback;
 
     // Add the new array to the computed stack
-    computedStack.push([]);
+    arrayAdd(computedStack, []);
 
     // Run the computed function to track accessed properties
     fn({} as any);

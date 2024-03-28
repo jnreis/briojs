@@ -4,7 +4,7 @@ import {
     CALLBACK } from '.';
 // import { trackProps, accessedProps } from './track';
 import { deepEqual, has, size } from '../tools';
-import { each } from '../tools/array';
+import { arrayAdd, each } from '../tools/array';
 import { getKeys } from '../tools/object';
 import { isArray, isObject, isUndefined, isFunction } from '../tools/typeCheck';
 import { CREATE, DELETE, UPDATE } from '../tools/constants';
@@ -27,12 +27,12 @@ export let state = (target: any) => {
             if (has(getKeys(target), prop)) {
                 // Get the last item in the computed stack and add the accessed property to it
                 if (size(computedStack) > 0) {
-                    computedStack[size(computedStack) - 1].push([receiver, prop]);
+                    arrayAdd(computedStack[size(computedStack) - 1], [receiver, prop]);
                 }
 
                 // // Register the accessed property
                 // if (trackProps) {
-                //     accessedProps.push([receiver, prop]);
+                //     arrayAdd(accessedProps, [receiver, prop]);
                 // }
             }
 
@@ -57,7 +57,7 @@ export let state = (target: any) => {
             // This is necessary because the reference to the observed array/object has changed.
             if (listeners.has(oldValue) && isArrayOrObject(newValue)) {
                 listeners.set(newValue, listeners.get(oldValue)!);
-                listeners.delete(oldValue);
+                listeners[DELETE](oldValue);
             }
 
             // Set the new value

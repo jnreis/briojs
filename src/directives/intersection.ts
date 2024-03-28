@@ -4,7 +4,7 @@ import { evaluate } from "../evaluation";
 import { saveAttr, saveEffect } from "../hydration";
 import { debounce } from "../tools";
 import { each } from "../tools/array";
-import { ATTRIBUTE, OBJECT, VALUE, OPTION } from "../tools/constants";
+import { ATTRIBUTE, OBJECT, VALUE, OPTION, MUST_BE } from "../tools/constants";
 import { getAttr } from "../tools/dom";
 import { isStringFunction } from "../tools/string";
 import { isNull, isObject } from "../tools/typeCheck";
@@ -29,7 +29,7 @@ export let hydrateIntersection = (vnode: VNode, attrName: string, attrValue: str
 
     // Make sure the options is an object
     if (!isObject(options))
-        return console.error(`The ${VALUE} of the ${attrOptions} ${ATTRIBUTE} must be an ${OBJECT}.`);
+        return console.error(`The ${VALUE} of the ${attrOptions} ${ATTRIBUTE} ${MUST_BE} an ${OBJECT}.`);
 
     // // Convert the threshold to a number between 0 and 1
     // if (THRESHOLD in options)

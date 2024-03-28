@@ -5,10 +5,11 @@ import { modelValue } from '../hydration';
 import { has } from '../tools';
 import { setAttr, delAttr } from '../tools/dom';
 import { VALUE, CHECKED, STYLE, CLASS } from '../tools/constants';
+import { split } from '../tools/string';
 
 export let hydrateBind = (vnode: VNode, attrName: string, attrValue: string) => {
 
-    let [_, prop, ...modifiers] = attrName.split('-');
+    let [_, prop, ...modifiers] = split(attrName, '-');
 
     let callback = (node: HTMLElement) => (value: any) => {
         // Apply modifiers

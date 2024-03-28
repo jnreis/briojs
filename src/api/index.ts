@@ -9,11 +9,11 @@ import { animate, afterAnimations } from "./animate";
 
 import { state, computed, removeComputed, effect, watch, storage, isStorage, getItem, setItem } from "../reactivity";
 import { emit, listen } from "../tools/dom";
-import { $EL, $PROPS, $REFS, $ROOT, $STORE } from "../tools/constants";
+import { $EL, $PROPS, $REFS, $ROOT, $STORE, INIT } from "../tools/constants";
 
 // Brio settings
 export let _settings = {
-    init: false,
+    [INIT]: false,
     dev: false,
 };
 

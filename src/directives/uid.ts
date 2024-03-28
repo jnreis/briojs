@@ -5,7 +5,7 @@ import { saveAttr } from '../hydration';
 import { getAttr } from '../tools/dom';
 import { trim } from '../tools/string';
 import { isArray, isString } from '../tools/typeCheck';
-import { ARRAY, DIRECTIVE, STRING } from '../tools/constants';
+import { ARRAY, DIRECTIVE, MUST_BE, STRING } from '../tools/constants';
 
 let _uid: ObjectType = {};
 
@@ -25,7 +25,7 @@ export let hydrateUid = (vnode: VNode, parent: VNode | null) => {
 
     // Check if the UID expression is not an array. If so, throw an error
     if (!isArray(newUid) || !newUid.every(isString))
-        throw new Error(`The 'uid' ${DIRECTIVE} must be an ${ARRAY} of ${STRING}(s).`);
+        throw new Error(`The 'uid' ${DIRECTIVE} ${MUST_BE} an ${ARRAY} of ${STRING}(s).`);
 
     // Convert the UID's to an object
     newUid = newUid.reduce((acc: any, uid: string) => {

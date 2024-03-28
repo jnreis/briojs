@@ -3,6 +3,7 @@ import { VNode, ValidateAttribute, HydrateDirective } from "..";
 import { hydrateOn } from './on';
 import { hydrateBind } from './bind';
 import { hydrateModel } from './model';
+import { hydrateMask } from "./mask";
 
 import { hydrateIf } from './if';
 import { hydrateShow } from './show';
@@ -47,6 +48,7 @@ export let _directives: [ValidateAttribute, HydrateDirective][] = [
     [attrNameStartsWith('on-'), hydrateOn], // on-[eventName]-[modifiers]
     [attrNameStartsWith('bind-'), hydrateBind], // bind-[attributeName]-[modifiers]
     [attrNameStartsWith('model'), hydrateModel], // model-[modifiers]
+    [attrNameStartsWith('mask'), hydrateMask], // mask-[modifiers]
 
     // Regular directives
     // These directives have static attribute names

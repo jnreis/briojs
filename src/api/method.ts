@@ -4,7 +4,7 @@ import { _reservedNames, _settings } from ".";
 import { _methods } from "../methods"
 import { has } from "../tools";
 import { arrayAdd } from "../tools/array";
-import { BEFORE_INIT, METHOD } from "../tools/constants";
+import { BEFORE_INIT, INIT, METHOD } from "../tools/constants";
 import { capitalize, startsWith } from "../tools/string";
 
 
@@ -12,7 +12,7 @@ export let addMethod = (name: string, fn: MagicMethod) => {
     let METHOD_CAP = capitalize(METHOD);
 
     // Can't add methods after init
-    if (_settings.init)
+    if (_settings[INIT])
         return console.error(`${METHOD_CAP} ${BEFORE_INIT}`);
 
     // Method already exists

@@ -4,7 +4,8 @@ import { _reservedNames, _settings } from "./api";
 import { hydrate } from "./hydration";
 import { _methods } from './methods';
 import { storageEvent } from './reactivity/storage';
-import { each } from './tools/array';
+import { each, arrayAdd } from './tools/array';
+import { INIT } from './tools/constants';
 import { emit } from "./tools/dom";
 
 
@@ -12,18 +13,18 @@ import { emit } from "./tools/dom";
 export let start = () => {
 
     // If Brio is not initialized
-    if (!_settings.init) {
+    if (!_settings[INIT]) {
         // Listen to storage events
         window.addEventListener('storage', storageEvent);
 
         // Add custom methods to the reserved names
-        each(_methods, ([name, _]) => _reservedNames.push(name));
+        each(_methods, ([name, _]) => arrayAdd(_reservedNames, name));
 
         // Emit the `brio:init` event
-        emit(document.body, 'brio:init');
+        emit(document.body, 'brio:'+INIT);
 
         // Mark Brio as initialized
-        _settings.init = true;
+        _settings[INIT] = true;
 
         // Hydrate the DOM
         hydrate();
@@ -43,8 +44,6 @@ export { api } from './api';
 
 
 // TODO LIST
-// - [ ] Implement a `mask` directive to format input values.
-
 // - [ ] Add a "morph" modifier to the `html` directive to preserve the element's state when the template changes.
 
 // - [ ] Give the option to use a custom prefix for Brio directives. For example: `b-[directive]
@@ -52,6 +51,8 @@ export { api } from './api';
 
 
 // * DONE LIST
+// - [x] Implement a `mask` directive to format input values.
+
 // - [x] Implement $persist to save state to localStorage. 
 //       - Include reactivity and cross-tab communication (storage event).
 

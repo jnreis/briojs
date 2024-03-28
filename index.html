@@ -62,6 +62,100 @@
   </head>
   <body props="{}" bind-hidden="false" hidden>
 
+    <!-- `bind` directive -->
+    <!-- <h2>`bind` directive</h2>
+    <p>bind-[attribute] allows you to set an HTML attribute on elements based on the result of JavaScript expressions.</p>
+    <p>For example, here's how you can bind the placeholder attribute of an input element:</p>
+    <p>
+      <code>
+        &lt;div props="{ placeholder: 'Type here...' }"&gt;<br>
+        &nbsp;&lt;input type="text" bind-placeholder="placeholder"&gt;<br>
+        &lt;/div&gt;
+      </code>
+    </p>
+    <div props="{ placeholder: 'Type here...' }">
+      <input type="text" bind-placeholder="placeholder">
+    </div>
+
+    <hr> -->
+
+    <!-- `each` directive -->
+    <!-- <h2>`each` directive</h2>
+    <p>The `each` directive allows you to repeat a block of HTML for each item in an array or object.</p>
+    <p>For example, here's how you can repeat a block of HTML for each color in an array:</p>
+    <p>
+      <code>
+        &lt;div props="{ colors: ['Red', 'White', 'Blue'] }"&gt;<br>
+        &nbsp;&lt;div each="color in colors" class="color"&gt;<br>
+        &nbsp;&nbsp;&nbsp;${color}<br>
+        &nbsp;&lt;/div&gt;<br>
+        &lt;/div&gt;
+      </code>
+    </p>
+    <div props="{ colors: ['Red', 'White', 'Blue'] }">
+      <div each="color in colors" class="color">
+        ${color}
+      </div>
+    </div>
+
+    <hr> -->
+
+    <!-- `effect` directive -->
+    <!-- <h2>`effect` directive</h2>
+    <p>The `effect` is a useful directive for re-evaluating an expression when one of its dependencies changes.</p>
+    <p>For example, here's how you can use the `effect` directive to update the title of the page when the `title` property changes:</p>
+    <p>
+      <code>
+        &lt;div props="{ title: 'Hello, World!' }" effect="document.title = title"&gt;<br>
+        &nbsp;&lt;input type="text" model="title"&gt;<br>
+        &lt;/div&gt;
+      </code>
+    </p>
+    <div props="{ title: 'Hello, World!' }" effect="document.title = title">
+      <input type="text" model="title">
+    </div>
+
+    <hr> -->
+
+    <!-- `html` directive -->
+    <!-- <h2>`html` directive</h2>
+    <p>The `html` directive allows you to set the inner HTML of an element based on the result of JavaScript expressions.</p>
+    <p>For example, here's how you can set the inner HTML of a span element:</p>
+    <p>
+      <code>
+        &lt;span html="`&lt;strong&gt;${ first } ${ last }&lt;/strong&gt;`"&gt;&lt;/span&gt;
+      </code>
+    </p>
+    <span html="`<strong>${ first } ${ last }</strong>`"></span>
+
+    <hr> -->
+
+    <!-- `if directive -->
+    <!-- <h2>`if` directive</h2>
+    <p>The `if` directive allows you to conditionally render a block of HTML based on the result of JavaScript expressions.</p>
+    <p>For example, here's how you can conditionally render a heading element:</p>
+    <p>
+      <code>
+        &lt;h2 if="search"&gt;Hello 👋&lt;/h2&gt;
+      </code>
+    </p>
+    <div style="display: flex;">
+      <h2
+        style="text-align: center;"
+        transition="!search" fade slide="0,-16px"
+        if="search"
+      >Hello 👋</h2>
+    </div> -->
+
+    
+
+
+
+
+
+
+
+
     <!-- Syntax option 2 -->
     <div props="{
       count: $persist(110, 'theCount'), 
@@ -124,9 +218,9 @@
 
       <p>${ first }, ${search2}</p>
 
-      <input type="text" model="search" on-keyup-enter="console.warn('on-keyup-enter')">
+      <input type="text" mask-dynamic="$mask.money()" model="search" on-keyup-enter="console.warn('on-keyup-enter')">
 
-      <button on-click="$props.search = $session('search replaced')">Add search</button>
+      <button on-click="$props.search = ''">Clear search</button>
 
       <div props="{ open: true }">
         <button on-click="open = ! open">Toggle</button>
@@ -178,7 +272,7 @@
 
       <input type="number" model-number="count">
 
-      <button on-click-stop="increment">Increment</button>
+      <button on-click="count++">Increment</button>
 
       <h4>Select: ${first}</h4>
       <select name="names" id="names" model="first">

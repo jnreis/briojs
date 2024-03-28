@@ -1,6 +1,7 @@
 // * TYPES
 
 import { size } from "../tools";
+import { arrayAdd } from "../tools/array";
 
 export type PropRef = [any, string|number|symbol];
 
@@ -44,7 +45,7 @@ export let trackAccessedProps = (trigger: () => any): PropRef[] => {
         // Navigate if the last accessed property is equal to the current observed state
         if (r && r[0][r[1]] === ref[0]) refs[i] = ref;
         // Otherwise, add the reference
-        else refs.push(ref);
+        else arrayAdd(refs, ref);
     }
 
     // Filter out the properties that are not in their observed state, and return the references.

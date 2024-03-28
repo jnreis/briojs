@@ -7,7 +7,7 @@ import { toNumber } from "../tools/number";
 import { isNull } from "../tools/typeCheck";
 import { saveAttr } from "../hydration";
 import { GET_COMPUTED_STYLE, OPACITY } from "../tools/constants";
-import { each } from "../tools/array";
+import { arrayAdd, each } from "../tools/array";
 
 let TRANSFORM = 'transform';
 
@@ -93,7 +93,7 @@ export let hydrateTransition = (vnode: VNode, attrName: string, attrValue: strin
         let keyframe = _generatePropertyKeyframe($el, key, keyframes[key]);
 
         // Create the transition and save it
-        transitions.push(transition(keyframe));
+        arrayAdd(transitions, transition(keyframe));
     }
 
     let init = false;

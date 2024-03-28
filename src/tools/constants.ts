@@ -34,6 +34,8 @@ export let VALUE = 'value';
 export let CHANGE = 'change';
 export let CHECKED = 'checked';
 export let COMPOSING = 'composing';
+export let SELECTION_START = 'selectionStart';
+export let ELEMENT = 'element';
 
 // HTML attributes
 export let STYLE: 'style' = 'style';
@@ -66,11 +68,14 @@ export let EXPRESSION: 'expression' = 'expression';
 export let TELEPORT: 'teleport' = 'teleport';
 export let THRESHOLD: 'threshold' = 'threshold';
 export let OPTION: 'option' = 'option';
+export let INIT: 'init' = 'init';
 
 // Operation types
 export let CREATE = 'create';
 export let UPDATE = 'update';
-export let DELETE = 'delete';
+export let DELETE: 'delete' = 'delete';
 
 // Error messages
-export let BEFORE_INIT = 'must be defined before initialization.';
+export let MUST_BE = 'must be';
+export let BEFORE_INIT = MUST_BE + ' defined before initialization.';
+export let CAN_ONLY_BE_USED_ON = 'can only be used on';

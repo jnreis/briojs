@@ -2,9 +2,7 @@ import { ObjectType } from "..";
 import { each } from "./array";
 import { CREATE } from "./constants";
 
-export let getKeys = (value: Object) => {
-    return Object.keys(value);
-}
+export let getKeys = (value: Object) => Object.keys(value);
 
 export let getAllKeys = (value: Object) => {
     let keys = new Set();
@@ -19,9 +17,8 @@ export let getAllKeys = (value: Object) => {
     return keys;
 }
 
-export let newObject = (proto: object | null = null) => {
-    return (Object as any)[CREATE](proto);
-}
+export let newObject = (proto: object | null = null) =>
+    (Object as any)[CREATE](proto);
 
 export let createContext = (parentContext: any, newContext = {}): any => {
     const mergedContext = newObject(parentContext);
@@ -32,27 +29,23 @@ export let createContext = (parentContext: any, newContext = {}): any => {
     return mergedContext;
 };
 
-export let getDescriptor = (value: any, key: string) => {
-    return Object.getOwnPropertyDescriptor(value, key);
-}
+export let getDescriptor = (value: any, key: string) =>
+    Object.getOwnPropertyDescriptor(value, key);
 
-export let getProto = (object: any) => {
-    return Object.getPrototypeOf(object);
-}
+export let getProto = (object: any) =>
+    Object.getPrototypeOf(object);
 
-export let hasOwnProperty = (object: any, key: string) => {
-    return object.hasOwnProperty(key);
-}
+export let hasOwnProperty = (object: any, key: string) =>
+    object.hasOwnProperty(key);
 
-export let getOwnProp = (object: any) => {
-    return Object.getOwnPropertyNames(object);
-}
+export let getOwnProp = (object: any) =>
+    Object.getOwnPropertyNames(object);
 
 export let defineProp = (object: any, key: string, descriptor: PropertyDescriptor) => {
     Object.defineProperty(object, key, descriptor);
 }
 
-export let createGetterSetter = (source: ObjectType, target: ObjectType, propertyName: string, alias: string = '') => {
+export let createGetterSetter = (source: ObjectType, target: ObjectType, propertyName: string, alias: string = '') =>
     defineProp(target, alias || propertyName, {
         // Getter returns the value of the property in `source`
         get() {
@@ -63,18 +56,25 @@ export let createGetterSetter = (source: ObjectType, target: ObjectType, propert
             source[propertyName] = value;
         }
     });
-}
 
-export let setHiddenKey = (object: any, key: string, value: any) => {
+export let setHiddenKey = (object: any, key: string, value: any) =>
     defineProp(object, key, {
         value,
         enumerable: false,
         configurable: true,
     });
-}
 
-export let deleteKeys = (object: any) => {
+export let deleteKey = (object: any, key: string|number) => delete object[key];
+
+/**
+ * Deletes all keys in an object
+ */
+export let deleteKeys = (object: any) =>
     each(getKeys(object), (key) => {
-        delete object[key];
+        deleteKey(object, key);
     });
-}
+
+export let objectMerge = (target: ObjectType, source: ObjectType) =>
+    each(getKeys(source), key => {
+        target[key] = source[key];
+    });

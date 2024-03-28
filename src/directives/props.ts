@@ -8,10 +8,10 @@ import { saveAttr } from '../hydration';
 import { state } from '../reactivity';
 import { has } from '../tools';
 import { getAttr } from '../tools/dom';
-import { createContext, deleteKeys, getKeys } from '../tools/object';
+import { createContext, deleteKey, deleteKeys, getKeys } from '../tools/object';
 import { trim } from '../tools/string';
 import { getType, isFunction, isObject } from '../tools/typeCheck';
-import { $EL, $PROPS, $REFS, $ROOT, OBJECT, PROPS } from '../tools/constants';
+import { $EL, $PROPS, $REFS, $ROOT, INIT, MUST_BE, OBJECT, PROPS } from '../tools/constants';
 import { each } from '../tools/array';
 
 export let _props: ObjectType = {};
@@ -49,7 +49,7 @@ export let hydrateProps = (vnode: VNode, parent: VNode | null) => {
 
     // Check if the context is not an object. If so, throw an error
     if (!isObject(newContext)) {
-        throw new Error(`The ${PROPS} must be an ${OBJECT}, but got ${getType(newContext)} instead.`);
+        throw new Error(`The ${PROPS} ${MUST_BE} an ${OBJECT}, but got ${getType(newContext)} instead.`);
     }
 
     // Merge `each` context
@@ -59,7 +59,7 @@ export let hydrateProps = (vnode: VNode, parent: VNode | null) => {
 
     // Remove reserved keys from the new context
     each(_reservedNames, key => {
-        if (key in newContext) delete newContext[key];
+        if (key in newContext) deleteKey(newContext, key);
     });
 
     // Create the new context
@@ -75,7 +75,7 @@ export let hydrateProps = (vnode: VNode, parent: VNode | null) => {
     hydrateRefs(vnode);
 
     // Init prop
-    if (has(getKeys(context), 'init')) context.init();
+    if (has(getKeys(context), INIT)) context[INIT]();
 
     // Reset each context
     deleteKeys(_each);

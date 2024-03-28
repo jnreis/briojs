@@ -5,13 +5,13 @@ import { modelValue, saveAttr, saveEffect } from '../hydration';
 import { entries, has } from '../tools';
 import { arrayAdd, arrayRemove } from '../tools/array';
 import { listen, onCompositionStart, onCompositionEnd, getAttr } from '../tools/dom';
-import { capitalize, lower } from '../tools/string';
+import { capitalize, lower, split } from '../tools/string';
 import { isNull, isArray, getType } from '../tools/typeCheck';
-import { SELECT, INPUT, TEXTAREA, CHECKBOX, RADIO, VALUE, CHANGE, ARRAY, DIRECTIVE, ATTRIBUTE, REQUIRE, OBJECT, UNDEFINED, SYMBOL, $EL, COMPOSING } from '../tools/constants';
+import { SELECT, INPUT, TEXTAREA, CHECKBOX, RADIO, VALUE, CHANGE, ARRAY, DIRECTIVE, ATTRIBUTE, REQUIRE, OBJECT, UNDEFINED, SYMBOL, $EL, COMPOSING, ELEMENT, CAN_ONLY_BE_USED_ON } from '../tools/constants';
 
 export let hydrateModel = (vnode: VNode, attrName: string, attrValue: string) => {
 
-    let [MODEL, ...modifiers] = attrName.split('-');
+    let [MODEL, ...modifiers] = split(attrName, '-');
 
     // Get the prop reference
     let value = ref(vnode, attrValue);
@@ -21,7 +21,7 @@ export let hydrateModel = (vnode: VNode, attrName: string, attrValue: string) =>
     let tag = lower(node.tagName);
 
     if (!has([INPUT,TEXTAREA,SELECT], tag))
-        return console.error(`The ${MODEL} ${DIRECTIVE} can only be used on ${INPUT}, ${SELECT}, and ${TEXTAREA} elements.`);
+        return console.error(`The ${MODEL} ${DIRECTIVE} ${CAN_ONLY_BE_USED_ON} ${INPUT}, ${SELECT}, and ${TEXTAREA} ${ELEMENT}s.`);
 
     let msg = `The ${MODEL} ${VALUE} for ${tag}${tag == TEXTAREA ? '' : ' '+type} cannot be of type ${getType(value)}.`;
 

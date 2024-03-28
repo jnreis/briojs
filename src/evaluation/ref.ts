@@ -1,7 +1,7 @@
 import { VNode } from "..";
 
 import { evaluate } from ".";
-import { trim } from "../tools/string";
+import { split, test, trim } from "../tools/string";
 import { has, size, uid } from "../tools";
 import { isUndefined } from "../tools/typeCheck";
 import { $PROPS, $STORE } from "../tools/constants";
@@ -23,7 +23,7 @@ export let getRefOrEvaluate = (vnode: any, exp: string) => {
  * @returns The parts of the path
  */
 export let splitPath = (exp: string) => 
-    trim(exp).split(/[\[\].]+/).filter(i => i);
+    split(trim(exp), /[\[\].]+/).filter(i => i);
 
 export let pathSegments = (exp: string) => {
     let m = trim(exp).match(/(\[?[^\[\]]+\]?)/g);
@@ -46,4 +46,4 @@ export let ref = (vnode: VNode, exp: string, set: boolean = false) => {
 }
 
 export let validVariableName = (name: string) => 
-    /^[a-zA-Z_$][0-9a-zA-Z_$]*$/.test(name);
+    test(name, /^[a-zA-Z_$][0-9a-zA-Z_$]*$/);

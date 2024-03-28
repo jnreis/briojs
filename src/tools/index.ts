@@ -16,13 +16,11 @@ export let uid = (length: number = 8, callback?: (uid: string) => boolean): stri
     }
 }
 
-export let has = (value: any, item: string|symbol) => {
-    return value && value.includes(item);
-}
+export let has = (value: any, item: string|symbol) =>
+    value && value.includes(item);
 
-export let entries = (value: any): [string, any][] => {
-    return isObject(value) ? Object.entries(value) : value.entries();
-}
+export let entries = (value: any): [string, any][] =>
+    isObject(value) ? Object.entries(value) : value.entries();
 
 /**
  * Returns the size of a value

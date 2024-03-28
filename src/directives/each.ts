@@ -5,9 +5,10 @@ import { watch } from '../reactivity';
 import { hydrate, dehydrate, vnodes, saveAttr, saveVNode, saveEffect } from '../hydration';
 import { entries, has, wait } from '../tools';
 import { appendChild, removeChild, insertBefore, getParent, nextSibling } from '../tools/dom';
-import { trim } from '../tools/string';
+import { split, trim } from '../tools/string';
 import { isArray, isObject } from '../tools/typeCheck';
 import { ARRAY, OBJECT, EACH, DIRECTIVE, REQUIRE, CREATE, UPDATE, DELETE, $PROPS, $EL, $ROOT } from '../tools/constants';
+import { deleteKey } from '../tools/object';
 
 export let _each: ObjectType = {};
 
@@ -20,10 +21,10 @@ export let hydrateEach = (vnode: VNode, parent: VNode | null, attrName: string, 
     if (parent) vnode[$PROPS] = parent[$PROPS];
 
     // Split the alias and the prop expression
-    let [alias, propExp] = attrValue.split(' in ').map(trim);
+    let [alias, propExp] = split(attrValue, ' in ').map(trim);
 
     // Split the alias into the `item` and the `index`
-    let [item, index] = alias.split(',').map(trim);
+    let [item, index] = split(alias, ',').map(trim);
 
     // Set the default value of the `index` alias
     if (!index) index = 'index';
@@ -146,7 +147,7 @@ export let hydrateEach = (vnode: VNode, parent: VNode | null, attrName: string, 
         dehydrate(_el);
 
         // Remove the node from the mountedItems set
-        delete mountedItems[i];
+        deleteKey(mountedItems, i);
     };
 
     let operations: ObjectType = {

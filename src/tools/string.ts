@@ -1,6 +1,9 @@
 import { has, size } from '.';
-import { each } from './array';
+import { arrayAdd, each } from './array';
 import { FUNCTION } from './constants';
+
+export let regexAlpha = /^[a-z]/i;
+export let regexNumeric = /^[0-9]/;
 
 export let hasSubstring = (haystack: string, needle: string, caseInsensitive = false) => {
     if (caseInsensitive) {
@@ -9,48 +12,39 @@ export let hasSubstring = (haystack: string, needle: string, caseInsensitive = f
     return has(haystack, needle);
 }
 
-export let lower = (str: string) => {
-    return str.toLowerCase();
-}
+export let lower = (str: string) => str.toLowerCase();
 
-export let upper = (str: string) => {
-    return str.toUpperCase();
-}
+export let upper = (str: string) => str.toUpperCase();
 
-export let capitalize = (str: string) => {
-    return upper(str[0]) + str.slice(1);
-}
+export let capitalize = (str: string) => upper(str[0]) + str.slice(1);
 
-export let reverse = (str: string) => {
-    return str.split('').reverse().join('');
-}
+export let split = (str: string, separator: string | RegExp, limit?: number | undefined) => str.split(separator, limit);
 
-export let lastIndex = (str: string, search: string) => {
-    return str.lastIndexOf(search);
-}
+export let reverse = (str: string) => split(str, '').reverse().join('');
 
-export let trim = (str: string) => {
-    return str.trim();
-}
+export let lastIndex = (str: string, search: string) => str.lastIndexOf(search);
 
-export let startsWith = (str: string, search: string) => {
-    return str.startsWith(search);
-}
+export let trim = (str: string) => str.trim();
+
+export let startsWith = (str: string, search: string) => str.startsWith(search);
+
+export let test = (str: string, regex: RegExp) => regex.test(str);
+
+export let isStringNumeric = (value: string) => test(value, regexNumeric);
+
+export let isStringAlpha = (value: string) => test(value, regexAlpha);
 
 // Check if a string is a function
-export let isStringFunction = (value: string) => {
-    return /^(function\s*\([^)]*\)\s*{[^}]*}|(?:\([^()]*\)|\w+)\s*=>)/.test(trim(value));
-}
+export let isStringFunction = (value: string) =>
+    test(trim(value), /^(function\s*\([^)]*\)\s*{[^}]*}|(?:\([^()]*\)|\w+)\s*=>)/);
 
-export let isStringArrowFunction = (value: string) => {
-    return /^(?:\([^()]*\)|\w+)\s*=>/.test(trim(value));
-}
+export let isStringArrowFunction = (value: string) => test(trim(value), /^(?:\([^()]*\)|\w+)\s*=>/);
 
 export let makeFunctionAnonymous = (fn: Function) => {
     let name = fn.name;
-    let body = fn.toString()
-    
-    return new RegExp(`${name}\\s*\\(`).test(body) ? body.replace(name, FUNCTION) : body;
+    let body = fn.toString();
+
+    return test(body, new RegExp(`${name}\\s*\\(`)) ? body.replace(name, FUNCTION) : body;
 };
 
 export let validateBracketPair = (str: string) => {
@@ -68,7 +62,7 @@ export let validateBracketPair = (str: string) => {
         });
     }
 
-    return str.split('');
+    return split(str, '');
 }
 
 export let getDelimitersIndexes = (subject: string, startingWith: string, endingWith: string) => {
@@ -78,7 +72,7 @@ export let getDelimitersIndexes = (subject: string, startingWith: string, ending
     let index = 0;
     while (index < size(subject)) {
         if (subject.substring(index, index + size(startingWith)) === startingWith) {
-            pairs.push([index, -1]);
+            arrayAdd(pairs, [index, -1]);
             lastDelimiter = startingWith;
             index += size(startingWith);
         }
@@ -115,24 +109,19 @@ export let getDelimitedContent = (subject: string, startingWith: string, endingW
     let pairs = getDelimitersIndexes(subject, startingWith, endingWith);
 
     each(pairs, pair => {
-        content.push(subject.substring(pair[0], pair[1]));
+        arrayAdd(content, subject.substring(pair[0], pair[1]));
     });
 
     return content;
 }
 
-export let findDelimitedContent = (
-    input: string,
-    startDelimiter: string,
-    endDelimiter: string,
-    includeDelimiters = false
-) => {
-    let pairs = [];
-    let stack = [];
+export let findDelimitedContent = (input: string, startDelimiter: string, endDelimiter: string, includeDelimiters = false) => {
+    let pairs: any[] = [];
+    let stack: number[] = [];
 
     for (let i = 0; i < size(input); i++) {
         if (input.substring(i, i + size(startDelimiter)) === startDelimiter) {
-            stack.push(i);
+            arrayAdd(stack, i);
         }
         else if (input.substring(i, i + size(endDelimiter)) === endDelimiter) {
             if (size(stack) > 0) {
@@ -142,7 +131,7 @@ export let findDelimitedContent = (
                     ? { start, end: end + size(endDelimiter) }
                     : { start: start + size(startDelimiter), end };
                 let content = input.substring(pair.start, pair.end);
-                pairs.push({ ...pair, content });
+                arrayAdd(pairs, { ...pair, content });
             }
             // You may want to handle the case where a closing delimiter doesn't have a matching opening delimiter.
         }
@@ -153,11 +142,7 @@ export let findDelimitedContent = (
     return pairs;
 }
 
-export let findTopmostDelimitedContent = (
-    input: string,
-    startDelimiter: string,
-    endDelimiter: string
-) => {
+export let findTopmostDelimitedContent = (input: string, startDelimiter: string, endDelimiter: string) => {
     let items = findDelimitedContent(input, startDelimiter, endDelimiter);
     let topItems: { start: number; end: number; content: string }[] = [];
 
@@ -168,16 +153,21 @@ export let findTopmostDelimitedContent = (
                 topItems.pop();
             }
         }
-        topItems.push(item);
+        arrayAdd(topItems, item);
     });
 
     return topItems;
 }
 
-export let replaceSubstring = (subject: string, startsAt: number, endsAt: number, replacement: string) => {
-    return subject.slice(0, startsAt) + replacement + subject.slice(endsAt);
-}
+export let replaceSubstring = (subject: string, startsAt: number, endsAt: number, replacement: string) =>
+    subject.slice(0, startsAt) + replacement + subject.slice(endsAt);
 
-export let alphaOnly = (str: string) => {
-    return str.replace(/[^a-zA-Z0-9]/g, '');
+export let alphaNumericOnly = (str: string) => str.replace(/[^a-z0-9]/gi, '');
+
+export let removeCharacterAtIndex = (str: string, index: number) => {
+    // Return the original string if the index is out of bounds
+    if (index < 0 || index >= str.length) return str;
+
+    // Use string concatenation to remove the character at the specified index
+    return replaceSubstring(str, index, index + 1, '');
 }

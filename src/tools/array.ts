@@ -1,3 +1,5 @@
+import { slice } from ".";
+
 export let arrayUnique = (array: any[]) =>
     [...new Set(array)];
 
@@ -21,7 +23,7 @@ export let arrayMerge = (...arrays: any[][]) =>
     arrays.reduce((acc, array) => acc.concat(array), []);
 
 export let arrayReverse = (array: any[]) =>
-    array.slice().reverse();
+    slice(array).reverse();
 
 export let each = (value: any[], callbackfn: (value: any, index: number, array: any[]) => void) =>
     value.forEach(callbackfn);

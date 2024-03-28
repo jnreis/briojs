@@ -9,6 +9,7 @@ import { getAttr } from "../tools/dom";
 import { isStringFunction } from "../tools/string";
 import { isNull, isObject } from "../tools/typeCheck";
 
+let DISCONNECT: 'disconnect' = 'disconnect';
 
 export let hydrateIntersection = (vnode: VNode, attrName: string, attrValue: string) => {
 
@@ -52,7 +53,7 @@ export let hydrateIntersection = (vnode: VNode, attrName: string, attrValue: str
             exp();
 
             // If the directive has the `once` option, disconnect the observer
-            if (options.once) observer.disconnect();
+            if (options.once) observer[DISCONNECT]();
         });
     }, options);
 
@@ -63,7 +64,7 @@ export let hydrateIntersection = (vnode: VNode, attrName: string, attrValue: str
     observe();
 
     // Save the effect
-    saveEffect(vnode, () => observer.disconnect());
+    saveEffect(vnode, () => observer[DISCONNECT]());
 
     // Save Attrinute
     saveAttr(vnode, attrName, attrValue);

@@ -22,6 +22,9 @@ export let has = (value: any, item: string|symbol) =>
 export let entries = (value: any): [string, any][] =>
     isObject(value) ? Object.entries(value) : value.entries();
 
+export let slice = (value: any, start?: number | undefined, end?: number | undefined) =>
+    value.slice(start, end);
+
 /**
  * Returns the size of a value
  */

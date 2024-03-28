@@ -1,4 +1,4 @@
-import { has, size } from '.';
+import { has, size, slice } from '.';
 import { arrayAdd, each } from './array';
 import { FUNCTION } from './constants';
 
@@ -16,7 +16,7 @@ export let lower = (str: string) => str.toLowerCase();
 
 export let upper = (str: string) => str.toUpperCase();
 
-export let capitalize = (str: string) => upper(str[0]) + str.slice(1);
+export let capitalize = (str: string) => upper(str[0]) + slice(str, 1);
 
 export let split = (str: string, separator: string | RegExp, limit?: number | undefined) => str.split(separator, limit);
 
@@ -159,15 +159,7 @@ export let findTopmostDelimitedContent = (input: string, startDelimiter: string,
     return topItems;
 }
 
-export let replaceSubstring = (subject: string, startsAt: number, endsAt: number, replacement: string) =>
-    subject.slice(0, startsAt) + replacement + subject.slice(endsAt);
+export let replaceSubstring = (subject: string, startsAt: number, endsAt: number, replacement = '') =>
+    slice(subject, 0, startsAt) + replacement + slice(subject, endsAt);
 
 export let alphaNumericOnly = (str: string) => str.replace(/[^a-z0-9]/gi, '');
-
-export let removeCharacterAtIndex = (str: string, index: number) => {
-    // Return the original string if the index is out of bounds
-    if (index < 0 || index >= str.length) return str;
-
-    // Use string concatenation to remove the character at the specified index
-    return replaceSubstring(str, index, index + 1, '');
-}

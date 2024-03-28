@@ -1,12 +1,12 @@
 import { ObjectType, VNode } from "..";
 import { evaluate } from "../evaluation";
 import { saveAttr, saveEffect } from "../hydration";
-import { size, wait } from "../tools";
+import { size, slice, wait } from "../tools";
 import { each } from "../tools/array";
 import { CAN_ONLY_BE_USED_ON, DIRECTIVE, ELEMENT, INPUT, SELECTION_START, TEXTAREA, VALUE } from "../tools/constants";
 import { listen } from "../tools/dom";
 import { deleteKey, getKeys } from "../tools/object";
-import { isStringAlpha, isStringFunction, isStringNumeric, removeCharacterAtIndex, split, startsWith, trim } from "../tools/string";
+import { isStringAlpha, isStringFunction, isStringNumeric, replaceSubstring, split, startsWith, trim } from "../tools/string";
 import { isUndefined } from "../tools/typeCheck";
 
 export let hydrateMask = (vnode: VNode, attrName: string, attrValue: string) => {
@@ -83,7 +83,7 @@ export let hydrateMask = (vnode: VNode, attrName: string, attrValue: string) => 
         sanitizedValue = sanitize(value);
 
         // Remove the negative sign, if it exists
-        if (isNegative) sanitizedValue = removeCharacterAtIndex(sanitizedValue, 0);
+        if (isNegative) sanitizedValue = replaceSubstring(sanitizedValue, 0, 1);
 
         // Split input into integer and decimal parts
         let [integerPart, decimalPart] = split(sanitizedValue, decimal),
@@ -169,7 +169,7 @@ export let hydrateMask = (vnode: VNode, attrName: string, attrValue: string) => 
                     if (w.some(c => wildcards[c](value, i))) validCharRemoved = true;
     
                     // Remove the character
-                    value = removeCharacterAtIndex(value, i);
+                    value = replaceSubstring(value, i, i+1);
                     cursorOffset--;
                 }
             }
@@ -182,7 +182,7 @@ export let hydrateMask = (vnode: VNode, attrName: string, attrValue: string) => 
         let cursorPosition = $el.selectionStart,
         input = $el.value,
         // Check how many valid characters are before the cursor
-        validCharsBeforeCursor = sanitize(input.slice(0, cursorPosition || size(input)));
+        validCharsBeforeCursor = sanitize(slice(input, 0, cursorPosition || size(input)));
         return validCharsBeforeCursor ? size(validCharsBeforeCursor) : 0;
     };
     /**

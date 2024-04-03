@@ -4,7 +4,7 @@ import { execSync } from 'child_process';
 const packageJsonPath = process.cwd() + '/package.json';
 const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
 
-let fileName = `${packageJson.name}@${packageJson.version}`;
+let fileName = 'brio';
 
 let libs = [
     {

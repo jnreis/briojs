@@ -2,6 +2,10 @@
   "name": "briojs",
   "private": true,
   "version": "0.2.0",
+  "description": "A simple, fast, and lightweight JavaScript framework for building web applications.",
+  "main": "./dist/brio.min.js",
+  "module": "./src/index.ts",
+  "types": "./src/types.d.ts",
   "type": "module",
   "scripts": {
     "dev": "vite",

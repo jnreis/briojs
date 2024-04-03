@@ -8,9 +8,8 @@ import { each, arrayAdd } from './tools/array';
 import { INIT } from './tools/constants';
 import { emit } from "./tools/dom";
 
-
 // Hydrate elements with a valid `props` attribute
-export let start = () => {
+export let start = (nodes?: Node[]) => {
 
     // If Brio is not initialized
     if (!_settings[INIT]) {
@@ -27,7 +26,7 @@ export let start = () => {
         _settings[INIT] = true;
 
         // Hydrate the DOM
-        hydrate();
+        hydrate(nodes);
     }
 }
 

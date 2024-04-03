@@ -1,24 +1,20 @@
 import { ObjectType, VNode } from '..';
 
 import { ref, validVariableName } from '../evaluation';
-import { watch } from '../reactivity';
-import { hydrate, dehydrate, vnodes, saveAttr, saveVNode, saveEffect } from '../hydration';
-import { entries, has, wait } from '../tools';
+import { state, watch } from '../reactivity';
+import { hydrate, dehydrate, vnodes, saveAttr, saveVNode, saveEffect, newVNode } from '../hydration';
+import { entries, has } from '../tools';
 import { appendChild, removeChild, insertBefore, getParent, nextSibling } from '../tools/dom';
 import { split, trim } from '../tools/string';
 import { isArray, isObject } from '../tools/typeCheck';
-import { ARRAY, OBJECT, EACH, DIRECTIVE, REQUIRE, CREATE, UPDATE, DELETE, $PROPS, $EL, $ROOT } from '../tools/constants';
-import { deleteKey } from '../tools/object';
+import { ARRAY, OBJECT, EACH, DIRECTIVE, REQUIRE, CREATE, UPDATE, DELETE, $PROPS, $EL, ATTR, PROPS } from '../tools/constants';
+import { createContext, deleteKey } from '../tools/object';
 
 export let _each: ObjectType = {};
 
-export let hydrateEach = (vnode: VNode, parent: VNode | null, attrName: string, attrValue: string) => {
+export let hydrateEach = (vnode: VNode, attrName: string, attrValue: string) => {
 
     let $el = vnode[$EL];
-
-    // Since the element of the `each` directive is only used as a template, it doesn't have $props of its own.
-    // Use the parent's $props instead.
-    if (parent) vnode[$PROPS] = parent[$PROPS];
 
     // Split the alias and the prop expression
     let [alias, propExp] = split(attrValue, ' in ').map(trim);
@@ -61,58 +57,51 @@ export let hydrateEach = (vnode: VNode, parent: VNode | null, attrName: string, 
     // Keep track of the mounted items
     let mountedItems: ObjectType = {};
 
-    // Create a new fragment to temporarily store the new nodes before adding them to the DOM
-    let fragment = document.createDocumentFragment();
-
-    // Add the nodes in the fragment to the DOM
-    let paint = () => {
-        // Check if the fragment is empty
-        if (!fragment.firstChild) return;
-
-        // Add the fragment before the next sibling
-        if (nextEl) insertBefore(parentEl, fragment, nextEl);
-
-        // Or add the fragment as the last child
-        else appendChild(parentEl, fragment);
-    };
-
     let KEY = Symbol('key');
 
     // Mount a new item
     let mount = (i: string | number, v: any) => {
-        // Create a new node for each item
-        let _el = $el.cloneNode(true);
 
-        // When hydrating props, use the new context
-        _each = {
-            [$EL]: _el,
-            [$ROOT]: parent,
+        // Create a new node
+        let _el = $el.cloneNode(true) as HTMLElement;
+
+        // Add the node to the DOM
+        if (nextEl) insertBefore(parentEl, _el, nextEl);
+        else appendChild(parentEl, _el);
+
+        // Create a new vnode
+        let _vnode = newVNode(_el);
+
+        // Save the vnode
+        saveVNode(_vnode);
+
+        // Create a new context
+        let _props = state(createContext(_vnode[$PROPS], {
             [item]: v,
             [index]: i,
             [KEY]: i,
-        };
+        }));
 
+        // Save the context to the vnode
+        _vnode[$PROPS] = _props;
+
+        // Make sure the `index` never changes
+        saveEffect(_vnode, watch(_props, index, ({newValue}) => {
+            if (newValue !== _props[KEY])
+                _props[index] = _props[KEY];
+        }));
+
+        // Keep the `item` in sync with the `value`
+        saveEffect(_vnode, watch(_props, item, ({newValue}) => {
+            value[_props[KEY]] = newValue;
+        }));
+
+        // Make this vnode a $root vnode so its children can inherit its context
+        // This is done to make sure this item and its children have access to [item] and [index].
+        _vnode[ATTR][PROPS] = '';
 
         // Hydrate the new node
         hydrate([_el]);
-
-        let _vnode = vnodes.get(_el);
-
-        if (_vnode) {
-            let p = _vnode[$PROPS];
-            // Make sure the `index` never changes
-            saveEffect(_vnode, watch(p, index, ({newValue}) => {
-                if (newValue !== p[KEY])
-                    p[index] = p[KEY];
-            }));
-            // Keep the `item` in sync with the `value`
-            saveEffect(_vnode, watch(p, item, ({newValue}) => {
-                value[p[KEY]] = newValue;
-            }));
-        }
-
-        // Add the node to the fragment
-        appendChild(fragment, _el);
 
         // Add the node to the mountedItems map
         mountedItems[i] = _el;
@@ -162,20 +151,17 @@ export let hydrateEach = (vnode: VNode, parent: VNode | null, attrName: string, 
         mount(i, v);
     }
 
-    // Add all the nodes to the DOM
-    paint();
-
 
     // Watch the prop for changes
     let cleanup = watch(value, "", ({operation, prop, newValue}) => {
         if (has([CREATE,UPDATE,DELETE], operation)) {
             // Perform the operation
             operations[operation](prop, newValue);
-            // Wait for the next tick to add the fragment to the DOM
-            wait(paint);
         }
     });
 
     // Save the effect to the vnode
     saveEffect(vnode, cleanup);
+
+    return false;
 }

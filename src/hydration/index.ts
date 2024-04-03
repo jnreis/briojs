@@ -8,9 +8,8 @@ import { q, walk, getAttr, delAttr, getParent, setAttr } from "../tools/dom";
 import { toNumber } from "../tools/number";
 import { startsWith, trim } from "../tools/string";
 import { isTextNode, isElementNode } from "../tools/typeCheck";
-import { NUMBER, TEXT, EACH, PROPS, $PROPS, $EL, $ROOT, EFFECT, $REFS, INIT } from "../tools/constants";
-
-import { _directives, hydrateEach, hydrateProps, hydrateInit, hydrateUid } from "../directives";
+import { NUMBER, TEXT, $PROPS, $EL, $ROOT, EFFECT, $REFS, TEXT_CONTENT, ATTR } from "../tools/constants";
+import { _directives } from "../directives";
 
 // Raw values are evaluated only once in production mode, but are evaluated every time they are updated in development mode
 export const vnodes : VNodes = new Map();
@@ -36,20 +35,22 @@ export let closestVNode = (node: Node) => {
     let _el = isElementNode(node) ? node : getParent(node);
     while (_el) {
         let vnode = vnodes.get(_el);
-        if (vnode) return vnode;
+        // Return the vnode if it has props
+        if (vnode && size(vnode[ATTR])) return vnode;
         _el = getParent(_el);
     }
-    return null;
 }
 
 export let hydrate = (nodes?: Node[]) => {
-    // Find all top level scope nodes
-    if (!nodes) nodes = getTopLevelContext(PROPS);
-    for (let topNode of nodes) {
+    // Get all the nodes if none are provided
+    if (!nodes) nodes = [document.body];
+
+    // Hydrate the nodes
+    for (let _node of nodes) {
         // Recursively hydrate the nodes
-        walk(topNode, (node: Node) => {
+        walk(_node, (node: Node) => {
             let result = false;
-            if (isTextNode(node) && trim(node.textContent || '')) {
+            if (isTextNode(node) && trim(node[TEXT_CONTENT] || '')) {
                 result = hydrateTextNode(node as Text);
             }
             else if (isElementNode(node)) {
@@ -94,15 +95,15 @@ export let restore = (node: Node) => {
         if (vnode) {
             // Restore the original text content
             if (isTextNode(n)) {
-                n.textContent = vnode.attr.text;
+                n[TEXT_CONTENT] = vnode[ATTR][TEXT];
             }
             else {
-                for (let key in vnode.attr) {
+                for (let key in vnode[ATTR]) {
                     // Set the attribute
-                    setAttr(n as HTMLElement, key, vnode.attr[key]);
+                    setAttr(n as HTMLElement, key, vnode[ATTR][key]);
 
                     // Bind may leave a property behind, remove it
-                    if (startsWith(key, 'bind-')) {
+                    if (startsWith(key, 'b-')) {
                         delAttr(n as HTMLElement, key.substring(5));
                     }
                 }
@@ -113,35 +114,52 @@ export let restore = (node: Node) => {
     });
 }
 
-export let newVNode = ($el: HTMLElement): VNode => ({
-    // Magic attributes
-    [$EL]: $el,
-    [$REFS]: {},
-    [$PROPS]: {},
-    [$ROOT]: $el,
+/**
+ * Create a new vnode or get the existing one
+ */
+export let newVNode = ($el: HTMLElement): VNode => {
 
-    // UIDs
-    uid: {},
-    // Raw attributes
-    attr: {},
+    let vnode: any = vnodes.get($el);
 
-    // Reactivity effects
-    [EFFECT]: {},
-});
+    // Get the existing vnode
+    if (!vnode) {
+        // Get the parent vnode, if any
+        let parent = closestVNode($el);
+
+        vnode = {
+            // Magic attributes: $el, $root, $refs, $props
+            [$EL]: $el,
+
+            // The closest element with a `props` attribute, or the element itself
+            [$ROOT]: parent ? parent[$EL] : $el,
+
+            // Raw attributes
+            [ATTR]: {},
+
+            // Reactivity effects
+            [EFFECT]: {},
+        }
+
+        each([$REFS, $PROPS, 'uid'], key => {
+            vnode[key] = parent ? parent[key as keyof VNode] : {};
+        });
+    }
+
+    // Create a new vnode
+    return vnode;
+}
 
 export let hydrateTextNode = (node: Text) => {
     // * Empty text nodes are ignored by the walk callback
 
-    let TEXT_CONTENT = `${TEXT}Content`;
     let text = (node as any)[TEXT_CONTENT];
 
     if (text && has(text, '${') && has(text, '}')) {
 
         let vnode = newVNode(node as any);
-        let parent = closestVNode(node) || vnode;
 
         // Evaluate the expression
-        let fn = evaluate({...parent, [$EL]: vnode[$EL]}, `()=>${$EL}.${TEXT_CONTENT}=\`${text}\``);
+        let fn = evaluate(vnode, `()=>${$EL}.${TEXT_CONTENT}=\`${text}\``);
 
         // Save effect
         saveEffect(vnode, fn, false);
@@ -158,42 +176,23 @@ export let hydrateTextNode = (node: Text) => {
 
 export let hydrateElementNode = (node: HTMLElement) => {
 
+    // Get the vnode or create a new one
     let vnode = newVNode(node);
-    let parent = closestVNode(node);
 
-    // Update the $root. The $root initially is the same as the $el
-    if (parent) vnode[$ROOT] = parent[$EL];
-
-    // Hydrate each
-    let each = getAttr(node, EACH);
-    if (each) {
-        hydrateEach(vnode, parent, EACH, each);
-        return false;
-    }
-
-    // Hydrate props scope, if any
-    hydrateProps(vnode, parent);
-
-    // Hydrate init
-    let init = getAttr(node, INIT);
-    if (init) hydrateInit(vnode, INIT, init);
-
-    // Hydrate uid scope, if any
-    hydrateUid(vnode, parent);
-
-    // Hydrate props
-    for (let { name, value } of [...node.attributes]) {
-
-        for (let [validateAttribute, hydrateDirective] of _directives) {
-            // Check if the attribute is a directive
-            if (validateAttribute(name))
-                // Hydrate the directive
-                hydrateDirective(vnode, name, trim(value || ''));
+    for (let [validateDirective, hydrateDirective] of _directives) {
+        // Check if the attribute is a directive
+        let attr = validateDirective(vnode);
+        if (attr) {
+            let [name, value] = attr;
+            // Hydrate the directive
+            if (hydrateDirective(vnode, name, trim(value)) === false)
+                // Return false to stop the walk callback from hydrating the rest of the directives or the children
+                return false;
         }
     }
 
     // Check if any changes were made to the vnode
-    if (size(vnode.attr)) {
+    if (size(vnode[ATTR])) {
         // Save the vnode
         saveVNode(vnode);
     }
@@ -208,8 +207,8 @@ export let saveEffect = (vnode: VNode, fn: (...args: any) => any, isCleanup = tr
 
 /** Saves the attribute to the vnode and removes it from the node */
 export let saveAttr = (vnode: VNode, attrName: string, attrValue: string) => {
-    vnode.attr[attrName] = attrValue;
-    if (isElementNode(vnode[$EL])) delAttr(vnode[$EL] as HTMLElement, attrName);
+    vnode[ATTR][attrName] = attrValue;
+    if (isElementNode(vnode[$EL])) delAttr(vnode[$EL], attrName);
 }
 
 // Save the vnode to the vnodes map
@@ -225,13 +224,13 @@ export let modelValue = (value: any, modifiers: string[]) => {
 
 // Find top level context nodes
 export let getTopLevelContext = (attrName: string) => {
-    let $props: HTMLElement[] = []
-    // Only add top level context nodes
+    let $props: HTMLElement[] = [];
+    // Query only top level nodes
     each(q(`[${attrName}]:not([${attrName}] [${attrName}])`) as any, (el) => {
         if (getAttr(el as HTMLElement, attrName)) {
             arrayAdd($props, el as HTMLElement)
         }
-    })
+    });
     return $props
 }
 

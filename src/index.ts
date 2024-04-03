@@ -51,6 +51,8 @@ export { api } from './api';
 
 
 // * DONE LIST
+// - [x] Implement a `ignore` directive to ignore the element and its children from being hydrated.
+
 // - [x] Implement a `mask` directive to format input values.
 
 // - [x] Implement $persist to save state to localStorage. 

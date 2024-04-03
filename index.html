@@ -60,103 +60,11 @@
 
     </style>
   </head>
-  <body props="{}" bind-hidden="false" hidden>
+  <body>
 
-    <!-- `bind` directive -->
-    <!-- <h2>`bind` directive</h2>
-    <p>bind-[attribute] allows you to set an HTML attribute on elements based on the result of JavaScript expressions.</p>
-    <p>For example, here's how you can bind the placeholder attribute of an input element:</p>
-    <p>
-      <code>
-        &lt;div props="{ placeholder: 'Type here...' }"&gt;<br>
-        &nbsp;&lt;input type="text" bind-placeholder="placeholder"&gt;<br>
-        &lt;/div&gt;
-      </code>
-    </p>
-    <div props="{ placeholder: 'Type here...' }">
-      <input type="text" bind-placeholder="placeholder">
-    </div>
+    <h1>Brio.js</h1>
+    <button on-click="console.log($props, $el, $root)">Outside a props</button>
 
-    <hr> -->
-
-    <!-- `each` directive -->
-    <!-- <h2>`each` directive</h2>
-    <p>The `each` directive allows you to repeat a block of HTML for each item in an array or object.</p>
-    <p>For example, here's how you can repeat a block of HTML for each color in an array:</p>
-    <p>
-      <code>
-        &lt;div props="{ colors: ['Red', 'White', 'Blue'] }"&gt;<br>
-        &nbsp;&lt;div each="color in colors" class="color"&gt;<br>
-        &nbsp;&nbsp;&nbsp;${color}<br>
-        &nbsp;&lt;/div&gt;<br>
-        &lt;/div&gt;
-      </code>
-    </p>
-    <div props="{ colors: ['Red', 'White', 'Blue'] }">
-      <div each="color in colors" class="color">
-        ${color}
-      </div>
-    </div>
-
-    <hr> -->
-
-    <!-- `effect` directive -->
-    <!-- <h2>`effect` directive</h2>
-    <p>The `effect` is a useful directive for re-evaluating an expression when one of its dependencies changes.</p>
-    <p>For example, here's how you can use the `effect` directive to update the title of the page when the `title` property changes:</p>
-    <p>
-      <code>
-        &lt;div props="{ title: 'Hello, World!' }" effect="document.title = title"&gt;<br>
-        &nbsp;&lt;input type="text" model="title"&gt;<br>
-        &lt;/div&gt;
-      </code>
-    </p>
-    <div props="{ title: 'Hello, World!' }" effect="document.title = title">
-      <input type="text" model="title">
-    </div>
-
-    <hr> -->
-
-    <!-- `html` directive -->
-    <!-- <h2>`html` directive</h2>
-    <p>The `html` directive allows you to set the inner HTML of an element based on the result of JavaScript expressions.</p>
-    <p>For example, here's how you can set the inner HTML of a span element:</p>
-    <p>
-      <code>
-        &lt;span html="`&lt;strong&gt;${ first } ${ last }&lt;/strong&gt;`"&gt;&lt;/span&gt;
-      </code>
-    </p>
-    <span html="`<strong>${ first } ${ last }</strong>`"></span>
-
-    <hr> -->
-
-    <!-- `if directive -->
-    <!-- <h2>`if` directive</h2>
-    <p>The `if` directive allows you to conditionally render a block of HTML based on the result of JavaScript expressions.</p>
-    <p>For example, here's how you can conditionally render a heading element:</p>
-    <p>
-      <code>
-        &lt;h2 if="search"&gt;Hello 👋&lt;/h2&gt;
-      </code>
-    </p>
-    <div style="display: flex;">
-      <h2
-        style="text-align: center;"
-        transition="!search" fade slide="0,-16px"
-        if="search"
-      >Hello 👋</h2>
-    </div> -->
-
-    
-
-
-
-
-
-
-
-
-    <!-- Syntax option 2 -->
     <div props="{
       count: $persist(110, 'theCount'), 
       search: $session('search'),
@@ -207,9 +115,9 @@
         >Hello 👋</h2>
       </div>
       <!-- <p>Hi. <span html="`<strong>${ first } ${ last }</strong>`"></span></p> -->
-      <!-- <p bind-class="4 * count">Hello, ${ first } ${ last }!</p> -->
+      <!-- <p b-class="4 * count">Hello, ${ first } ${ last }!</p> -->
 
-      <button on-mycoolcustomevent007-window="console.log($event.detail)">Test event</button>
+      <button on-click="console.log($event.detail)">Test event</button>
 
       <p>
         Count is: ${count}. The double is: ${double}
@@ -253,6 +161,12 @@
           <button on-click="delete obj[i]">Remove</button>
           <button on-click="console.log(obj, v)">Log items</button>
         </div>
+        <div class="items">
+          <p>Some other item</p>
+          <input type="text" model="item">
+          <button on-click="delete $props.item">Remove</button>
+          <button on-click="console.log($props, $props.item)">Log items</button>
+        </div>
 
 
         <form 
@@ -266,7 +180,7 @@
 
       <p>${count}</p>
 
-      <input type="text" model-trim="first" bind-placeholder="first">
+      <input type="text" model-trim="first" b-placeholder="first">
 
       <input type="text" model="last">
 
@@ -339,8 +253,10 @@
     <hr>
 
     <div props="{p1: true}" ref="prop1">
-      <button on-click="console.log($props, $refs, $el, $uid, p1)">Log Magic attributes</button>
-      <button ref="button1" on-click="console.log($refs)">From a parent scope</button>
+      <div b-class="p1">
+        <button on-click="console.log($props, $refs, $el, $root, $uid, p1)">Log Magic attributes</button>
+        <button ref="button1" on-click="console.log($refs)">From a parent scope</button>
+      </div>
       <div props="{refs: 123}" ref="prop2">
         <div ref="prop2div">
           <button ref="button1" on-click="console.log($refs, $props)">Inside Ref</button>
@@ -365,12 +281,14 @@
     <script>
       document.addEventListener('brio:init', () => {
         Brio.store.count = 83;
-        Brio.addProps('c1', () => ({
-          count: 0,
-          increment() {
-            this.count++;
-          }
-        }));
+        Brio.addProps('c1', () => {
+          return {
+            count: 0,
+            increment() {
+              this.count++;
+            }
+          };
+        });
         // Brio.addDirective(
         //   attrName => attrName == 'uppercase', 
         //   (vnode, attrName, attrValue) => {
@@ -389,54 +307,6 @@
     </div> -->
 
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-
-    <style defer>
-      /* Example CSS classes with animations */
-      @keyframes slideIn {
-          from {
-              transform: translateX(-100%);
-          }
-          to {
-              transform: translateX(0);
-          }
-      }
-
-      .slide-in {
-          animation: slideIn 1s ease-in-out forwards;
-      }
-
-      /* Define fadeIn and fadeOut keyframes */
-      @keyframes fadeIn {
-          from {
-              opacity: 0;
-              transform: scale(0.95);
-          }
-          to {
-              opacity: 1;
-              transform: scale(1);
-          }
-      }
-
-      @keyframes fadeOut {
-          from {
-              opacity: 1;
-              transform: scale(1);
-          }
-          to {
-              opacity: 0;
-              transform: scale(0.95);
-          }
-      }
-
-      /* Define fadeIn and fadeOut classes */
-      .fadeIn {
-          animation: fadeIn 0.5s ease-in forwards;
-      }
-
-      .fadeOut {
-          animation: fadeOut 0.5s ease-in forwards;
-      }
-    </style>
 
     <script type="module" src="/src/cdn.ts"></script>
   </body>

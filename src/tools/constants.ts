@@ -37,17 +37,19 @@ export let COMPOSING = 'composing';
 export let SELECTION_START = 'selectionStart';
 export let ELEMENT = 'element';
 
+// Brio attributes
+export let PROPS: 'props' = 'props';
+export let TEXT: 'text' = 'text';
+export let EACH: 'each' = 'each';
+export let PREFIX: 'prefix' = 'prefix';
+
 // HTML attributes
 export let STYLE: 'style' = 'style';
 export let CLASS = 'class';
 export let GET_COMPUTED_STYLE: 'getComputedStyle' = 'getComputedStyle';
 export let DISPLAY: 'display' = 'display';
 export let OPACITY: 'opacity' = 'opacity';
-
-// Brio attributes
-export let PROPS: 'props' = 'props';
-export let TEXT: 'text' = 'text';
-export let EACH: 'each' = 'each';
+export let TEXT_CONTENT = TEXT + 'Content' as 'textContent';
 
 // Brio magic properties/methods
 export let $STORE: '$store' = '$store';
@@ -60,9 +62,10 @@ export let $UID: '$uid' = '$uid';
 export let $WATCH: '$watch' = '$watch';
 
 // Miscellaneous
+export let ATTR: 'attr' = 'attr';
 export let EFFECT: 'effect' = 'effect';
 export let DIRECTIVE: 'directive' = 'directive';
-export let ATTRIBUTE: 'attribute' = 'attribute';
+export let ATTRIBUTE = ATTR + 'ibute' as 'attribute';
 export let REQUIRE: 'require' = 'require';
 export let EXPRESSION: 'expression' = 'expression';
 export let TELEPORT: 'teleport' = 'teleport';

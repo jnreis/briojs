@@ -1,4 +1,4 @@
-import { HydrateDirective, ValidateAttribute } from ".."
+import { HydrateDirective, ValidateDirective } from ".."
 
 import { _settings } from ".";
 import { _directives } from "../directives"
@@ -7,7 +7,7 @@ import { capitalize } from "../tools/string";
 import { BEFORE_INIT, DIRECTIVE, INIT } from "../tools/constants";
 
 
-export let addDirective = (validateAttribute: ValidateAttribute, hydrateDirective: HydrateDirective) => {
+export let addDirective = (validateAttribute: ValidateDirective, hydrateDirective: HydrateDirective) => {
     // Can't add directives after init
     if (_settings[INIT])
         return console.error(`${capitalize(DIRECTIVE)} ${BEFORE_INIT}`);

@@ -1,10 +1,14 @@
-import { VNode, ValidateAttribute, HydrateDirective } from "..";
+import { VNode, ValidateDirective, HydrateDirective } from "..";
 
 import { hydrateOn } from './on';
 import { hydrateBind } from './bind';
 import { hydrateModel } from './model';
 import { hydrateMask } from "./mask";
 
+import { hydrateEach } from './each';
+import { hydrateProps } from "./props";
+import { hydrateInit } from './init';
+import { hydrateUid } from "./uid";
 import { hydrateIf } from './if';
 import { hydrateShow } from './show';
 import { hydrateHtml } from './html';
@@ -17,7 +21,9 @@ import { hydrateIntersection } from "./intersection";
 import { getRefOrEvaluate } from "../evaluation";
 import { saveAttr, saveEffect } from "../hydration";
 import { startsWith } from "../tools/string";
-import { $EL, EFFECT, TELEPORT, TEXT } from "../tools/constants";
+import { $EL, EACH, EFFECT, PROPS, TELEPORT, TEXT } from "../tools/constants";
+import { findAttr, getAttr } from "../tools/dom";
+import { isNull } from "../tools/typeCheck";
 
 export let hydrationWrapper = (
     vnode: VNode,
@@ -38,20 +44,23 @@ export let hydrationWrapper = (
     saveAttr(vnode, attrName, attrValue);
 }
 
-let attrNameStartsWith = (prefix: string) => (attrName: string) => startsWith(attrName, prefix);
-let attrNameEquals = (name: string) => (attrName: string) => attrName == name;
+let attrNameStartsWith = (startName: string) => (vnode: VNode) =>
+    findAttr(vnode[$EL], (attrName: string) => startsWith(attrName, startName));
 
-export let _directives: [ValidateAttribute, HydrateDirective][] = [
+let attrNameEquals = (attrName: string) => (vnode: VNode): [string, string] | undefined => {
+    let attrValue = getAttr(vnode[$EL], attrName);
+    if (!isNull(attrValue)) return [attrName, attrValue as string];
+}
 
-    // Dynamic directives
-    // These directives have dynamic attribute names
-    [attrNameStartsWith('on-'), hydrateOn], // on-[eventName]-[modifiers]
-    [attrNameStartsWith('bind-'), hydrateBind], // bind-[attributeName]-[modifiers]
-    [attrNameStartsWith('model'), hydrateModel], // model-[modifiers]
-    [attrNameStartsWith('mask'), hydrateMask], // mask-[modifiers]
+export let _directives: [ValidateDirective, HydrateDirective][] = [
 
-    // Regular directives
-    // These directives have static attribute names
+    // Static directives
+    // These directives do not have modifiers
+    [attrNameEquals('ignore'), () => false],
+    [attrNameEquals(EACH), hydrateEach],
+    [attrNameEquals(PROPS), hydrateProps],
+    [attrNameEquals('init'), hydrateInit],
+    [attrNameEquals('uid'), hydrateUid],
     [attrNameEquals('if'), hydrateIf],
     [attrNameEquals('show'), hydrateShow],
     [attrNameEquals('html'), hydrateHtml],
@@ -61,9 +70,11 @@ export let _directives: [ValidateAttribute, HydrateDirective][] = [
     [attrNameEquals('transition'), hydrateTransition],
     [attrNameEquals('enter'), hydrateIntersection],
     [attrNameEquals('leave'), hydrateIntersection],
-];
 
-export { hydrateEach } from './each';
-export { hydrateProps } from './props';
-export { hydrateInit } from './init';
-export { hydrateUid } from './uid';
+    // Dynamic directives
+    // These directives may have modifiers
+    [attrNameStartsWith('on-'), hydrateOn], // on-[eventName]-[modifiers]
+    [attrNameStartsWith('b-'), hydrateBind], // b-[attributeName] (bind)
+    [attrNameStartsWith('model'), hydrateModel], // model-[modifiers]
+    [attrNameStartsWith('mask'), hydrateMask], // mask-[modifiers]
+];

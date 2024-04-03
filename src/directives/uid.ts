@@ -2,26 +2,18 @@ import { VNode, ObjectType } from '..';
 
 import { evaluate } from '../evaluation';
 import { saveAttr } from '../hydration';
-import { getAttr } from '../tools/dom';
-import { trim } from '../tools/string';
 import { isArray, isString } from '../tools/typeCheck';
 import { ARRAY, DIRECTIVE, MUST_BE, STRING } from '../tools/constants';
 
 let _uid: ObjectType = {};
 
-export let hydrateUid = (vnode: VNode, parent: VNode | null) => {
+export let hydrateUid = (vnode: VNode, attrName: string, attrValue: string) => {
 
-    // Get the UID expression
-    let uidExp = trim(getAttr(vnode.$el, 'uid') || '');
-
-    // Check if the UID expression is empty. If so, use the parent UID's
-    if (!uidExp) {
-        vnode.uid = parent?.uid || {};
-        return;
-    }
+    // Check if the UID expression is empty
+    if (!attrValue) return;
 
     // Evalute the UID expression
-    let newUid: any = evaluate(vnode, uidExp);
+    let newUid: any = evaluate(vnode, attrValue);
 
     // Check if the UID expression is not an array. If so, throw an error
     if (!isArray(newUid) || !newUid.every(isString))
@@ -41,5 +33,5 @@ export let hydrateUid = (vnode: VNode, parent: VNode | null) => {
     vnode.uid = newUid;
 
     // Save attribute
-    saveAttr(vnode, 'uid', uidExp);
+    saveAttr(vnode, attrName, attrValue);
 }

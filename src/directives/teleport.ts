@@ -10,11 +10,9 @@ export let hydrateTeleport = (vnode: VNode, attrName: string, attrValue: string)
     // Where to teleport the node to
     let target = q(attrValue)[0];
 
-    if (!target) {
-        // ! DEVELOPMENT ONLY
-        console.warn(`${capitalize(TELEPORT)} target not found: ${attrValue}`);
-        return;
-    }
+    // ! DEVELOPMENT ONLY
+    if (!target)
+        return console.warn(`${capitalize(TELEPORT)} target not found: ${attrValue}`);
 
     // Teleport the node
     appendChild(target, vnode[$EL]);

@@ -1,4 +1,4 @@
-import { COMPOSING, DISPLAY, GET_COMPUTED_STYLE, INPUT, OPACITY } from "./constants";
+import { ATTRIBUTE, COMPOSING, DISPLAY, GET_COMPUTED_STYLE, INPUT, OPACITY } from "./constants";
 import { isElementNode } from "./typeCheck";
 
 export let q = (selector: string, root: Node = document) =>
@@ -29,6 +29,12 @@ export let getAttr = (node: HTMLElement, attr: string) =>
 
 export let setAttr = (node: HTMLElement, attr: string, value: string) =>
     node.setAttribute(attr, value);
+
+export let findAttr = (node: HTMLElement, callback: Function): [string, string] | undefined => {
+    for (let { name, value } of [...node[ATTRIBUTE + 's' as 'attributes']]) {
+        if (callback(name, value)) return [name, value];
+    }
+}
 
 export let delAttr = (node: HTMLElement, attr: string) =>
     node.removeAttribute(attr);

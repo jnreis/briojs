@@ -1,82 +1,57 @@
 import { ObjectType, VNode } from '..';
 
-import { _each } from './each';
 import { hydrateRefs } from './refs';
 import { _reservedNames } from '../api';
 import { evaluate } from '../evaluation';
 import { saveAttr } from '../hydration';
 import { state } from '../reactivity';
 import { has } from '../tools';
-import { getAttr } from '../tools/dom';
-import { createContext, deleteKey, deleteKeys, getKeys } from '../tools/object';
-import { trim } from '../tools/string';
+import { createContext, deleteKey, getKeys } from '../tools/object';
 import { getType, isFunction, isObject } from '../tools/typeCheck';
-import { $EL, $PROPS, $REFS, $ROOT, INIT, MUST_BE, OBJECT, PROPS } from '../tools/constants';
+import { $EL, $PROPS, $ROOT, INIT, MUST_BE, OBJECT } from '../tools/constants';
 import { each } from '../tools/array';
 
 export let _props: ObjectType = {};
 
-export let hydrateProps = (vnode: VNode, parent: VNode | null) => {
-    let $el = vnode[$EL];
+export let hydrateProps = (vnode: VNode, attrName: string, attrValue: string) => {
 
-    // Get the context expression
-    let contextExp = trim(getAttr($el as HTMLElement, PROPS) || '');
+    // Save the attribute
+    saveAttr(vnode, attrName, attrValue);
 
-    // Set the parent if the element is an item of the `each` directive
-    // This is done because an element of the `each` directive is only a copy of the original dehydrated `each` element.
-    // Which means that the element it is not yet in the DOM or in the VNodes map, therefore it doesn't have a parent.
-    let isEach = _each[$EL] == $el;
-    if (isEach) parent = _each[$ROOT];
+    // Check if the props expression is empty. If so, return
+    if (!attrValue) return;
 
-    // Parent context
-    let parentProps = parent ? parent[$PROPS] : {};
-
-    // Check if the context expression is empty. If so, use the parent context
-    if (!contextExp && !isEach) {
-        vnode[$PROPS] = parentProps;
-        vnode[$REFS] = parent ? parent[$REFS] : {};
-        return;
-    }
-
-    let newContext: any = {};
-    // Check if the context is in the `props` object
-    if (contextExp in _props) newContext = _props[contextExp];
-    // Evaluate the context expression
-    else if (contextExp) newContext = evaluate(parent || vnode, contextExp);
+    // Check if the attribute value is a key in the _props object
+    let newContext: any = attrValue in _props
+        // Use the user-defined context
+        ? _props[attrValue]
+        // Evaluate the expression
+        : evaluate(vnode, attrValue);
 
     // Check if the context is a function. If so, call it
-    if (isFunction(newContext)) newContext = (newContext as Function)();
+    if (isFunction(newContext)) newContext = newContext();
 
-    // Check if the context is not an object. If so, throw an error
-    if (!isObject(newContext)) {
-        throw new Error(`The ${PROPS} ${MUST_BE} an ${OBJECT}, but got ${getType(newContext)} instead.`);
-    }
-
-    // Merge `each` context
-    if (isEach) {
-        newContext = {...newContext, ..._each};
-    }
+    // Check if the context is an object. If not, throw an error
+    if (!isObject(newContext))
+        throw new Error(`The ${attrName} ${MUST_BE} an ${OBJECT}, but got ${getType(newContext)} instead.`);
 
     // Remove reserved keys from the new context
     each(_reservedNames, key => {
         if (key in newContext) deleteKey(newContext, key);
     });
 
+    // Check if the vnode has a parent
+    let hasParent = vnode[$EL] !== vnode[$ROOT];
+
     // Create the new context
-    let context = state(parent ? createContext(parentProps, newContext) : newContext);
+    let context = state(hasParent ? createContext(vnode[$PROPS], newContext) : newContext);
 
     // Add the context to the vnode
     vnode[$PROPS] = context;
-
-    // Save attribute
-    saveAttr(vnode, PROPS, contextExp);
 
     // Hydrate the refs
     hydrateRefs(vnode);
 
     // Init prop
     if (has(getKeys(context), INIT)) context[INIT]();
-
-    // Reset each context
-    deleteKeys(_each);
 }

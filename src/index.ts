@@ -1,4 +1,4 @@
-export type * from './types';
+export type * from './types.d';
 
 import { _reservedNames, _settings } from "./api";
 import { hydrate } from "./hydration";
@@ -35,6 +35,14 @@ export { api } from './api';
 
 
 
+
+/**
+ * TO USE BRIO LOCALLY DURING DEVELOPMENT:
+ * - Make npm aware of the local package by running `npm link` in the Brio root folder.
+ * - In the project folder, run `npm link brio` to use the local package.
+ * - To unlink the local package, run `npm unlink brio` in the project folder.
+ * - To unlink the local package from npm, run `npm unlink` in the Brio root folder.
+ */
 
 
 

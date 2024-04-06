@@ -1,7 +1,5 @@
-import { VNode } from "..";
-
 import { saveEffect } from "../hydration";
-import { ListenerFunction, watch } from "../reactivity";
+import { watch } from "../reactivity";
 
 export let $watch = (vnode: VNode) => (observedState: any, prop: string | number, fn: ListenerFunction) => {
 

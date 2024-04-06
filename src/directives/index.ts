@@ -1,5 +1,3 @@
-import { VNode, ValidateDirective, HydrateDirective } from "..";
-
 import { hydrateOn } from './on';
 import { hydrateBind } from './bind';
 import { hydrateModel } from './model';

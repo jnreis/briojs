@@ -1,5 +1,3 @@
-import { MagicMethod } from '..';
-
 import { $emit } from './emit';
 import { $uid } from './uid';
 import { $watch } from './watch';

@@ -1,4 +1,3 @@
-import { ObjectType } from "..";
 import { each } from "./array";
 import { CREATE } from "./constants";
 
@@ -18,7 +17,7 @@ export let getAllKeys = (value: Object) => {
 }
 
 export let newObject = (proto: object | null = null) =>
-    (Object as any)[CREATE](proto);
+    Object[CREATE](proto);
 
 export let createContext = (parentContext: any, newContext = {}): any => {
     const mergedContext = newObject(parentContext);

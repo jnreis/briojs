@@ -1,5 +1,4 @@
 import {
-    ListenerFunction,
     computedStack, removeListener, addPropertyListener,
     CALLBACK,
 } from '.';

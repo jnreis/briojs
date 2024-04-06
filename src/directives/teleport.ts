@@ -1,5 +1,3 @@
-import { VNode } from "..";
-
 import { saveAttr } from "../hydration";
 import { $EL, TELEPORT } from "../tools/constants";
 import { q, appendChild } from "../tools/dom";

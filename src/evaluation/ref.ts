@@ -1,5 +1,3 @@
-import { VNode } from "..";
-
 import { evaluate } from ".";
 import { split, test, trim } from "../tools/string";
 import { has, size, uid } from "../tools";

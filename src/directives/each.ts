@@ -1,5 +1,3 @@
-import { ObjectType, VNode } from '..';
-
 import { ref, validVariableName } from '../evaluation';
 import { state, watch } from '../reactivity';
 import { hydrate, dehydrate, vnodes, saveAttr, saveVNode, saveEffect, newVNode } from '../hydration';

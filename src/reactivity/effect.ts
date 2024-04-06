@@ -1,4 +1,4 @@
-import { ListenerFunction, computed, removeComputed } from '.';
+import { computed, removeComputed } from '.';
 
 /**
  * Watches for changes on all the observed properties accessed during the function execution.

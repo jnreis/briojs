@@ -1,5 +1,3 @@
-import { VNode } from "..";
-
 import { hydrationWrapper } from ".";
 
 export let hydrateHtml = (vnode: VNode, attrName: string, attrValue: string) => {

@@ -5,7 +5,7 @@ import { isFunction, isObject } from "../tools/typeCheck";
 import { BEFORE_INIT, FUNCTION, INIT, MUST_BE, OBJECT, PROPS } from "../tools/constants";
 
 
-export let addProps = (propsName: string, fn: any) => {
+export let addProps = (propsName: string, fn: (...args: any) => ObjectType) => {
     let PROPS_CAP = capitalize(PROPS);
 
     // Can't add props after init

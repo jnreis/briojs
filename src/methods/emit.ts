@@ -1,4 +1,3 @@
-import { VNode } from "..";
 import { $EL } from "../tools/constants";
 import { emit } from "../tools/dom";
 import { alphaNumericOnly, lower } from "../tools/string";

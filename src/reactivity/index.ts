@@ -1,18 +1,4 @@
-// * TYPES
-
 import { each } from '../tools/array';
-
-export type ListenerFunction = (context: {operation: string, observedState: any, prop: string, newValue: any, oldValue: any}) => any;
-export type ListenerFunctions = Set<ListenerFunction>;
-export type ListenerObject = {
-    state: ListenerFunctions,
-    props: {
-        [prop: string|number]: ListenerFunctions
-    }
-};
-export type Listeners = Map<any, ListenerObject>;
-
-
 
 // * VARIABLES
 

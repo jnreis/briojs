@@ -1,5 +1,3 @@
-export type * from './types.d';
-
 import { _reservedNames, _settings } from "./api";
 import { hydrate } from "./hydration";
 import { _methods } from './methods';
@@ -35,14 +33,19 @@ export { api } from './api';
 
 
 
-/**
- * TO USE BRIO LOCALLY DURING DEVELOPMENT:
- * - Make npm aware of the local package by running `npm link` in the Brio root folder.
- * - In the project folder, run `npm link brio` to use the local package.
- * - To unlink the local package, run `npm unlink brio` in the project folder.
- * - To unlink the local package from npm, run `npm unlink` in the Brio root folder.
- */
+// TO USE BRIO LOCALLY DURING DEVELOPMENT:
+// - Make npm aware of the local package by running `npm link` in the Brio root folder.
+// - In the project folder, run `npm link brio` to use the local package.
+// - To unlink the local package, run `npm unlink brio` in the project folder.
+// - To unlink the local package from npm, run `npm unlink` in the Brio root folder.
 
+// If the types are not recognized, add this to the tsconfig.json file:
+// "compilerOptions": {
+//     "baseUrl": ".",
+//     "paths": {
+//       "briojs": ["node_modules/briojs/src"],
+//     }
+//   }
 
 
 
@@ -58,6 +61,8 @@ export { api } from './api';
 
 
 // * DONE LIST
+// - [x] Fix package.json to properly export the types.
+
 // - [x] Implement a `ignore` directive to ignore the element and its children from being hydrated.
 
 // - [x] Implement a `mask` directive to format input values.

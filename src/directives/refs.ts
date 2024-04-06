@@ -1,5 +1,3 @@
-import { VNode, ObjectType } from "..";
-
 import { q, delAttr, getAttr } from "../tools/dom";
 import { isArray } from "../tools/typeCheck";
 import { $EL, $REFS, PROPS } from "../tools/constants";

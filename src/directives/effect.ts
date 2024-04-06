@@ -1,5 +1,3 @@
-import { VNode } from "..";
-
 import { hydrationWrapper } from ".";
 import { isFunction } from "../tools/typeCheck";
 

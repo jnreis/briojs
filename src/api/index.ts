@@ -1,5 +1,3 @@
-import { ObjectType } from "..";
-
 import { store } from "./store";
 import { addMethod } from './method'
 import { addProps } from './props'
@@ -27,7 +25,7 @@ export let _reservedNames: string[] = [
 ];
 
 // Brio API
-export let api: ObjectType = {
+export let api = {
     // Global data store
     store,
 

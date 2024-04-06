@@ -1,5 +1,4 @@
 import {
-    ListenerFunction, 
     listeners, getListener, removePropertyListeners, computedStack, 
     CALLBACK } from '.';
 // import { trackProps, accessedProps } from './track';

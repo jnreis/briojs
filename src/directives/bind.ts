@@ -1,5 +1,3 @@
-import { VNode } from '..';
-
 import { hydrationWrapper } from '.';
 import { has, slice } from '../tools';
 import { setAttr, delAttr } from '../tools/dom';

@@ -1,5 +1,3 @@
-import { MagicMethod } from ".."
-
 import { _reservedNames, _settings } from ".";
 import { _methods } from "../methods"
 import { has } from "../tools";

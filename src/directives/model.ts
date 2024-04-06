@@ -1,5 +1,3 @@
-import { VNode, ObjectType } from '..';
-
 import { ref } from '../evaluation';
 import { modelValue, saveAttr, saveEffect } from '../hydration';
 import { entries, has } from '../tools';

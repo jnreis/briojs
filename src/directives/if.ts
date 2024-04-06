@@ -1,5 +1,3 @@
-import { VNode } from "..";
-
 import { hydrationWrapper } from ".";
 import { afterAnimations } from "../api/animate";
 import { appendChild, getParent, insertBefore, nextSibling } from "../tools/dom";

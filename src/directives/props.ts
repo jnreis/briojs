@@ -1,5 +1,3 @@
-import { ObjectType, VNode } from '..';
-
 import { hydrateRefs } from './refs';
 import { _reservedNames } from '../api';
 import { evaluate } from '../evaluation';

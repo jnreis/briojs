@@ -1,5 +1,3 @@
-import { VNode, ObjectType } from '..';
-
 import { evaluate } from '../evaluation';
 import { saveAttr } from '../hydration';
 import { isArray, isString } from '../tools/typeCheck';

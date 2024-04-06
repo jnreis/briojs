@@ -1,11 +1,12 @@
-import { VNode } from "..";
-
 import { _reservedNames } from "../api";
 import { store } from "../api/store";
 import { _methods } from "../methods";
 import { newObject } from "../tools/object";
 import { $EL, $PROPS, $REFS, $ROOT, EXPRESSION } from "../tools/constants";
 import { arrayAdd, each } from "../tools/array";
+
+// Inspired by code from petite-vue (https://github.com/vuejs/petite-vue/blob/main/src/eval.ts)
+// Original code licensed under MIT License
 
 let evalCache: Record<string, Function> = newObject();
 

@@ -1,4 +1,3 @@
-import { ObjectType, VNode } from "..";
 import { evaluate } from "../evaluation";
 import { saveAttr, saveEffect } from "../hydration";
 import { size, slice, wait } from "../tools";

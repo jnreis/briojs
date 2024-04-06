@@ -1,5 +1,3 @@
-import type { ObjectType, VNodes, VNode } from "..";
-
 import { evaluate } from "../evaluation";
 import { effect } from "../reactivity";
 import { has, size, uid } from "../tools";

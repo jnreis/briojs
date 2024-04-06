@@ -1,5 +1,3 @@
-import { ObjectType, VNode } from "..";
-
 import { hydrationWrapper } from ".";
 import { animate } from "../api/animate";
 import { getAttr } from "../tools/dom";

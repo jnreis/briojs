@@ -1,5 +1,3 @@
-import { VNode } from "..";
-
 import { saveAttr } from "../hydration";
 import { evaluate } from "../evaluation";
 import { isFunction } from "../tools/typeCheck";

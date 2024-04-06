@@ -1,4 +1,4 @@
-import { ListenerFunction, listeners, getListener } from '.';
+import { listeners, getListener } from '.';
 import { computed, removeComputed } from './computed';
 import { ARRAY, OBJECT } from '../tools/constants';
 

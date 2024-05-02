@@ -5,6 +5,7 @@ import { addDirective } from "./directive";
 import { addTransition } from "./transition";
 import { animate, afterAnimations } from "./animate";
 
+import { attrNameStartsWith, attrNameEquals } from '../directives';
 import { state, computed, removeComputed, effect, watch, storage, isStorage, getItem, setItem } from "../reactivity";
 import { emit, listen } from "../tools/dom";
 import { $EL, $PROPS, $REFS, $ROOT, $STORE, INIT } from "../tools/constants";
@@ -34,6 +35,10 @@ export let api = {
     addMethod,
     addDirective,
     addTransition,
+
+    // Hydration helpers
+    attrNameEquals,
+    attrNameStartsWith,
 
     // Animate helpers
     animate,

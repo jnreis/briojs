@@ -16,36 +16,15 @@ import { hydrateTeleport } from './teleport';
 import { hydrateTransition } from "./transition";
 import { hydrateIntersection } from "./intersection";
 
-import { getRefOrEvaluate } from "../evaluation";
-import { saveAttr, saveEffect } from "../hydration";
 import { startsWith } from "../tools/string";
 import { $EL, EACH, EFFECT, PROPS, TELEPORT, TEXT } from "../tools/constants";
 import { findAttr, getAttr } from "../tools/dom";
 import { isNull } from "../tools/typeCheck";
 
-export let hydrationWrapper = (
-    vnode: VNode,
-    attrName: string,
-    attrValue: string,
-    callback: (node: HTMLElement) => (...args: any) => any
-) => {
-
-    // The callback returns the function to watch (watchFn).
-    // The `watchFn` receives the prop or expression.
-    // If the prop or expression contains observed value(s), the `watchFn` will be called when the observed value(s) change.
-    let watchFn = callback(vnode[$EL]);
-
-    // Watch the prop or expression
-    saveEffect(vnode, () => watchFn(getRefOrEvaluate(vnode, attrValue)), false);
-
-    // Save attribute
-    saveAttr(vnode, attrName, attrValue);
-}
-
-let attrNameStartsWith = (startName: string) => (vnode: VNode) =>
+export let attrNameStartsWith = (startName: string) => (vnode: VNode) =>
     findAttr(vnode[$EL], (attrName: string) => startsWith(attrName, startName));
 
-let attrNameEquals = (attrName: string) => (vnode: VNode): [string, string] | undefined => {
+export let attrNameEquals = (attrName: string) => (vnode: VNode): [string, string] | undefined => {
     let attrValue = getAttr(vnode[$EL], attrName);
     if (!isNull(attrValue)) return [attrName, attrValue as string];
 }

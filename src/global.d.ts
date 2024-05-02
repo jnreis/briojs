@@ -52,8 +52,25 @@ type ObjectType = {
     [prop: string]: any
     [prop: symbol]: any
 }
+type HydrationTools = {
+    vnodes: VNodes,
+    wrapper: (vnode: VNode, attrName: string, attrValue: string, callback: (node: HTMLElement) => (...args: any) => any) => void,
+    hydrate: (nodes?: Node[] | undefined) => void,
+    dehydrate: (node: Node, removeVNode?: boolean) => void,
+    newVNode: ($el: HTMLElement) => VNode,
+    saveVNode: (vnode: VNode) => void,
+    saveEffect: (vnode: VNode, fn: (...args: any) => any, isCleanup?: boolean) => void,
+    saveAttr: (vnode: VNode, attrName: string, attrValue: string) => void,
+
+    ref: (vnode: VNode, exp: string, set?: boolean) => any,
+    evaluate: (vnode: VNode, exp: string) => any,
+
+    uid: (length?: number, callback?: ((uid: string) => boolean) | undefined) => string,
+    has: (value: any, item: string | symbol) => any,
+    size: (value: any) => number,
+}
 type ValidateDirective = (vnode: VNode) => [string, string] | undefined;
-type HydrateDirective = (vnode: VNode, attrName: string, attrValue: string) => any;
+type HydrateDirective = (vnode: VNode, attrName: string, attrValue: string, tools: HydrationTools) => any;
 type MagicMethod = (vnode: VNode) => (...args: any) => any;
 
 

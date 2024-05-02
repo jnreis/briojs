@@ -1,4 +1,4 @@
-import { hydrationWrapper } from '.';
+import { wrapper } from '../hydration';
 import { afterAnimations } from '../api/animate';
 import { getParent } from '../tools/dom';
 import { debounce } from '../tools';
@@ -29,5 +29,5 @@ export let hydrateShow = (vnode: VNode, attrName: string, attrValue: string) => 
         else hide(node);
     }
 
-    hydrationWrapper(vnode, attrName, attrValue, callback);
+    wrapper(vnode, attrName, attrValue, callback);
 }

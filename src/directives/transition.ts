@@ -1,9 +1,8 @@
-import { hydrationWrapper } from ".";
 import { animate } from "../api/animate";
 import { getAttr } from "../tools/dom";
 import { toNumber } from "../tools/number";
 import { isNull } from "../tools/typeCheck";
-import { saveAttr } from "../hydration";
+import { saveAttr, wrapper } from "../hydration";
 import { GET_COMPUTED_STYLE, OPACITY } from "../tools/constants";
 import { arrayAdd, each } from "../tools/array";
 
@@ -113,5 +112,5 @@ export let hydrateTransition = (vnode: VNode, attrName: string, attrValue: strin
         if (!init) init = true;
     }
 
-    hydrationWrapper(vnode, attrName, attrValue, callback);
+    wrapper(vnode, attrName, attrValue, callback);
 }

@@ -1,4 +1,4 @@
-import { hydrationWrapper } from '.';
+import { wrapper } from '../hydration';
 import { has, slice } from '../tools';
 import { setAttr, delAttr } from '../tools/dom';
 import { VALUE, CHECKED, STYLE, CLASS } from '../tools/constants';
@@ -17,5 +17,5 @@ export let hydrateBind = (vnode: VNode, attrName: string, attrValue: string) => 
             delAttr(node, prop);
     }
 
-    hydrationWrapper(vnode, attrName, attrValue || 'true', callback);
+    wrapper(vnode, attrName, attrValue || 'true', callback);
 }

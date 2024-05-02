@@ -1,4 +1,4 @@
-import { evaluate } from "../evaluation";
+import { evaluate, getRefOrEvaluate, ref } from "../evaluation";
 import { effect } from "../reactivity";
 import { has, size, uid } from "../tools";
 import { arrayAdd, each } from "../tools/array";
@@ -28,6 +28,25 @@ export let currentNode: ObjectType = {};
 //  ref must reference a prop
 //  html must be an expression that returns html
 //  text must be an expression that returns text
+
+export let wrapper = (
+    vnode: VNode,
+    attrName: string,
+    attrValue: string,
+    callback: (node: HTMLElement) => (...args: any) => any
+) => {
+
+    // The callback returns the function to watch (watchFn).
+    // The `watchFn` receives the prop or expression.
+    // If the prop or expression contains observed value(s), the `watchFn` will be called when the observed value(s) change.
+    let watchFn = callback(vnode[$EL]);
+
+    // Watch the prop or expression
+    saveEffect(vnode, () => watchFn(getRefOrEvaluate(vnode, attrValue)), false);
+
+    // Save attribute
+    saveAttr(vnode, attrName, attrValue);
+}
 
 export let closestVNode = (node: Node) => {
     let _el = isElementNode(node) ? node : getParent(node);
@@ -183,7 +202,7 @@ export let hydrateElementNode = (node: HTMLElement) => {
         if (attr) {
             let [name, value] = attr;
             // Hydrate the directive
-            if (hydrateDirective(vnode, name, trim(value)) === false)
+            if (hydrateDirective(vnode, name, trim(value), tools) === false)
                 // Return false to stop the walk callback from hydrating the rest of the directives or the children
                 return false;
         }
@@ -233,19 +252,20 @@ export let getTopLevelContext = (attrName: string) => {
 }
 
 
-// export let hydrationTools: ObjectType = {
-//     hydrate,
-//     dehydrate,
-//     hydrateTextNode,
-//     hydrateElementNode,
+export let tools: HydrationTools = {
+    vnodes,
+    wrapper,
+    hydrate,
+    dehydrate,
+    newVNode,
+    saveVNode,
+    saveEffect,
+    saveAttr,
 
-//     saveAttr,
-//     saveEffect,
-//     saveVNode,
-//     newVNode,
-//     closestVNode,
+    ref,
+    evaluate,
 
-//     evaluate,
-//     ref,
-//     getRefOrEvaluate,
-// };
+    uid,
+    has,
+    size,
+};

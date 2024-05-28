@@ -1,4 +1,6 @@
+import { arrayFrom } from "./array";
 import { getKeys } from "./object";
+import { toString } from "./string";
 import { isArray, isDate, isFunction, isMap, isObject, isRegExp, isSet, isString } from "./typeCheck";
 
 /**
@@ -8,7 +10,7 @@ import { isArray, isDate, isFunction, isMap, isObject, isRegExp, isSet, isString
  */
 export let uid = (length: number = 8, callback?: (uid: string) => boolean): string => {
     while (true) {
-        let uid = 'b' + [...Array(length -1)].map(() => Math.random().toString(36)[2]).join('');
+        let uid = 'b' + [...Array(length -1)].map(() => toString(Math.random(), 36)[2]).join('');
         // If no callback is provided, return the uid
         if (!callback) return uid;
         // If a callback is provided, return the uid if the callback returns true
@@ -76,12 +78,12 @@ export function deepEqual(a: any, b: any): boolean {
 
     // For sets or maps
     if ((isSet(a) && isSet(b)) || (isMap(a) && isMap(b))) {
-        return deepEqual(Array.from(a), Array.from(b));
+        return deepEqual(arrayFrom(a), arrayFrom(b));
     }
 
     // For functions or regexes
     if ((isFunction(a) && isFunction(b)) || (isRegExp(a) && isRegExp(b))) {
-        return a.toString() === b.toString()
+        return toString(a) === toString(b);
     }
 
     // For dates
@@ -91,8 +93,14 @@ export function deepEqual(a: any, b: any): boolean {
     return a === b;
 }
 
-export let wait = (callback: () => void, ms = 0) => setTimeout(callback, ms);
+export let wait = (callback: FunctionType, ms = 0) => setTimeout(callback, ms);
 
+/**
+ * Debounce: the callback function will only be called after the delay has passed since the last call.
+ * @param callback Function to debounce
+ * @param delay Time to wait before calling the function
+ * @returns A debounced function
+ */
 export let debounce = (callback: Function, delay: number) => {
     let timeout: any;
     return (...args: any[]) => {
@@ -101,6 +109,12 @@ export let debounce = (callback: Function, delay: number) => {
     }
 }
 
+/**
+ * Throttle: the callback function will only be called once every delay milliseconds.
+ * @param callback Function to throttle
+ * @param delay Time to wait before calling the function
+ * @returns A throttled function
+ */
 export let throttle = (callback: Function, delay: number) => {
     let last: number = 0;
     return (...args: any[]) => {
@@ -110,3 +124,11 @@ export let throttle = (callback: Function, delay: number) => {
         return callback(...args);
     }
 }
+
+/** Brio.js logger: Log an error or a warning message */
+export let logger = (message: string, details: string = '', type: 'error'|'warn' = 'error') => {
+    console[type](
+        `Brio.js ${type == 'error' ? 'detected an error' : 'is warning'}: ${message}`,
+        details && `\n${details}`,
+    );
+};

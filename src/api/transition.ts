@@ -1,19 +1,24 @@
-import { _transitions } from "../directives/transition"
+import { _settings } from ".";
+import { _engines } from "../methods/transition"
+import { logger } from "../tools";
 import { arrayAdd } from "../tools/array";
+import { BEFORE_INIT, INIT, INVALID, NAME, ON_COMPLETE, PLAY, REVERSE, TRANSITION_ENGINE, VALIDATE } from "../tools/constants";
 
+export let addTransitionEngine = (engine: AnimationEngine) => {
 
-export let addTransition = (transitionName: string, cssPropertyName: string, cssPropertyValue: (value: string|number) => string) => {
-    let transition = _transitions.find(transition => transition[0] == transitionName);
+    // Can't add transition engine after initialization
+    if (_settings[INIT])
+        return logger(`The ${TRANSITION_ENGINE} ${BEFORE_INIT}`);
 
-    // Overwrite core transition
-    if (transition) {
-        transition[1] = cssPropertyName;
-        transition[2] = cssPropertyValue;
-    }
-    // Add new transition
-    else arrayAdd(_transitions, [
-        transitionName,
-        cssPropertyName,
-        cssPropertyValue
-    ]);
+    // Validate the engine properties
+    if (!engine || ![NAME,VALIDATE,PLAY,REVERSE,ON_COMPLETE].every(key => key in engine))
+        return logger(INVALID + ' ' + TRANSITION_ENGINE, engine ? engine.name : '');
+
+    // Check if the engine already exists
+    let engineIndex = _engines.findIndex(item => item[NAME] == engine[NAME]);
+
+    // Overwrite the engine
+    if (engineIndex >= 0) _engines[engineIndex] = engine;
+    // Add new engine
+    else arrayAdd(_engines, engine);
 }

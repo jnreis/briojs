@@ -1,14 +1,12 @@
-import { store } from "./store";
+import { store, data } from "./store";
 import { addMethod } from './method'
 import { addProps } from './props'
 import { addDirective } from "./directive";
-import { addTransition } from "./transition";
-import { animate, afterAnimations } from "./animate";
+import { addTransitionEngine } from "./transition";
 
-import { attrNameStartsWith, attrNameEquals } from '../directives';
 import { state, computed, removeComputed, effect, watch, storage, isStorage, getItem, setItem } from "../reactivity";
 import { emit, listen } from "../tools/dom";
-import { $EL, $PROPS, $REFS, $ROOT, $STORE, INIT } from "../tools/constants";
+import { $PROPS, $REFS, $ROOT, $STORE, INIT } from "../tools/constants";
 
 // Brio settings
 export let _settings = {
@@ -20,29 +18,22 @@ export let _settings = {
 // * NOTE: _reservedNames will also include custom methods.
 export let _reservedNames: string[] = [
     // Brio magic properties
-    $STORE, $EL, $REFS, $PROPS, $ROOT,
+    $STORE, '$data', '$el', $REFS, $PROPS, $ROOT,
 
     // Brio magic methods are added during initialization
 ];
 
 // Brio API
-export let api = {
-    // Global data store
-    store,
+export let api: Api = {
+    // Global data stores
+    store, // reactive data store
+    data, // non-reactive data store
 
     // Methods that may only be called before Brio is initialized
     addProps,
     addMethod,
     addDirective,
-    addTransition,
-
-    // Hydration helpers
-    attrNameEquals,
-    attrNameStartsWith,
-
-    // Animate helpers
-    animate,
-    afterAnimations,
+    addTransitionEngine,
 
     // Helper functions
     emit,

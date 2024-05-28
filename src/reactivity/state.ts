@@ -1,7 +1,7 @@
 import {
     listeners, getListener, removePropertyListeners, computedStack, 
     CALLBACK } from '.';
-// import { trackProps, accessedProps } from './track';
+import { trackProps, accessedProps } from './track';
 import { deepEqual, has, size } from '../tools';
 import { arrayAdd, each } from '../tools/array';
 import { getKeys } from '../tools/object';
@@ -29,10 +29,10 @@ export let state = (target: any) => {
                     arrayAdd(computedStack[size(computedStack) - 1], [receiver, prop]);
                 }
 
-                // // Register the accessed property
-                // if (trackProps) {
-                //     arrayAdd(accessedProps, [receiver, prop]);
-                // }
+                // Register the accessed property
+                if (trackProps) {
+                    arrayAdd(accessedProps, [receiver, prop]);
+                }
             }
 
             // return value[prop];
@@ -95,8 +95,8 @@ export let state = (target: any) => {
             target[prop] = target[prop](observedState, prop);
         }
 
-        // Recursively observe nested arrays/objects
-        if (isArrayOrObject(target[prop])) {
+        // Recursively observe nested arrays/objects that are not already observed
+        if (!listeners.has(target[prop]) && isArrayOrObject(target[prop])) {
             target[prop] = state(target[prop]);
         }
     }
@@ -120,8 +120,8 @@ export let state = (target: any) => {
         // Notify property listeners of the state
         if (listener.props[prop]) {
             each(listener.props[prop] as any, (fn: ListenerFunction) => {
-                // Run the computed function or its callback
-                ((fn as any)[CALLBACK] ? (fn as any)[CALLBACK] : fn)(context);
+                // Run the computed function
+                fn(context);
             });
         }
 

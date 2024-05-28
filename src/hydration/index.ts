@@ -1,16 +1,17 @@
-import { evaluate, getRefOrEvaluate, ref } from "../evaluation";
+import { evaluate, makeFunction } from "../evaluation";
 import { effect } from "../reactivity";
 import { has, size, uid } from "../tools";
 import { arrayAdd, each } from "../tools/array";
 import { q, walk, getAttr, delAttr, getParent, setAttr } from "../tools/dom";
 import { toNumber } from "../tools/number";
-import { startsWith, trim } from "../tools/string";
+import { isStringFunction, split, startsWith, trim } from "../tools/string";
 import { isTextNode, isElementNode } from "../tools/typeCheck";
-import { NUMBER, TEXT, $PROPS, $EL, $ROOT, EFFECT, $REFS, TEXT_CONTENT, ATTR } from "../tools/constants";
-import { _directives } from "../directives";
+import { NUMBER, TEXT, $PROPS, $ROOT, $REFS, TEXT_CONTENT, ATTR, CLEANUP, VALUE, STATUS, SKIP, BEFORE, AFTER } from "../tools/constants";
+import { _directives, attrNameEquals, attrNameStartsWith } from "../directives";
 
 // Raw values are evaluated only once in production mode, but are evaluated every time they are updated in development mode
 export const vnodes : VNodes = new Map();
+export let vnodesQueue: Map<Node, ObjectType> = new Map();
 export let currentNode: ObjectType = {};
 
 // Effects are functions that are called when a dependency changes
@@ -33,26 +34,32 @@ export let wrapper = (
     vnode: VNode,
     attrName: string,
     attrValue: string,
-    callback: (node: HTMLElement) => (...args: any) => any
+    callback: (node: HTMLElement) => FunctionType
 ) => {
 
-    // The callback returns the function to watch (watchFn).
-    // The `watchFn` receives the prop or expression.
-    // If the prop or expression contains observed value(s), the `watchFn` will be called when the observed value(s) change.
-    let watchFn = callback(vnode[$EL]);
+    // Create a new lifecycle runner.
+    // The lifecycle runner is a function that executes the before, directive, and after lifecycle functions in sequence by calling the next function.
+    let runner = lifecycle(vnode, attrName, callback(vnode.$el));
 
-    // Watch the prop or expression
-    saveEffect(vnode, () => watchFn(getRefOrEvaluate(vnode, attrValue)), false);
+    // The context. Which most likely refers to reactive properties.
+    let [ctx] = evaluate(vnode, attrValue);
 
-    // Save attribute
-    saveAttr(vnode, attrName, attrValue);
+    // Get the dependencies, if any
+    let deps = attr(vnode, attrName).deps;
+
+    // Create a new effect, and save the cleanup function.
+    // This sets up the reactivity.
+    saveCleanup(vnode, effect(
+        () => runner(deps ? ctx : ctx()),
+        deps
+    ));
 }
 
 export let closestVNode = (node: Node) => {
     let _el = isElementNode(node) ? node : getParent(node);
     while (_el) {
         let vnode = vnodes.get(_el);
-        // Return the vnode if it has props
+        // Return the vnode if it has attributes
         if (vnode && size(vnode[ATTR])) return vnode;
         _el = getParent(_el);
     }
@@ -87,14 +94,11 @@ export let dehydrate = (node: Node, removeVNode = true) => {
 
         // Remove the effects
         if (vnode) {
-            for (let key in vnode[EFFECT]) {
-                // Call the cleanup function
-                vnode[EFFECT][key]();
-            }
+            // Call the cleanup functions
+            each(vnode[CLEANUP], cleanupFn => cleanupFn());
+
             // Remove the context
-            if (removeVNode) {
-                vnodes.delete(n);
-            }
+            if (removeVNode) vnodes.delete(n);
         }
 
         return true;
@@ -112,12 +116,12 @@ export let restore = (node: Node) => {
         if (vnode) {
             // Restore the original text content
             if (isTextNode(n)) {
-                n[TEXT_CONTENT] = vnode[ATTR][TEXT];
+                n[TEXT_CONTENT] = vnode[ATTR][TEXT][VALUE];
             }
             else {
                 for (let key in vnode[ATTR]) {
                     // Set the attribute
-                    setAttr(n as HTMLElement, key, vnode[ATTR][key]);
+                    setAttr(n as HTMLElement, key, vnode[ATTR][key][VALUE]);
 
                     // Bind may leave a property behind, remove it
                     if (startsWith(key, 'b-')) {
@@ -134,32 +138,52 @@ export let restore = (node: Node) => {
 /**
  * Create a new vnode or get the existing one
  */
-export let newVNode = ($el: HTMLElement): VNode => {
+export let newVNode = ($el: HTMLElement, status: 'ok' | 'temp' = 'ok'): VNode => {
 
     let vnode: any = vnodes.get($el);
 
     // Get the existing vnode
     if (!vnode) {
+        vnode = {
+            // Magic attributes: $el, $root, $refs, $props
+            $el, // the element itself
+            [$ROOT]: $el, // The closest element with a `props` attribute, or the element itself
+            [$REFS]: {}, // References to other elements available to all elements in the same $props context. Except for nested contexts.
+            [$PROPS]: {}, // context
+
+            // UIDs
+            uid: {}, // context
+
+            // Attributes or directives
+            [ATTR]: {},
+
+            // Cleanup functions
+            [CLEANUP]: [],
+        }
+    }
+
+    // Hydration status
+    vnode[STATUS] = status; /*
+    ok: the element is about to be hydrated or has been hydrated
+    temp: the element will be hydrated later
+    skip: skips the hydration process
+*/
+
+    // Update context data
+    if (status == 'ok') {
         // Get the parent vnode, if any
         let parent = closestVNode($el);
 
-        vnode = {
-            // Magic attributes: $el, $root, $refs, $props
-            [$EL]: $el,
+        if (parent) {
+            vnode[$ROOT] = parent.$el;
 
-            // The closest element with a `props` attribute, or the element itself
-            [$ROOT]: parent ? parent[$EL] : $el,
-
-            // Raw attributes
-            [ATTR]: {},
-
-            // Reactivity effects
-            [EFFECT]: {},
+            each([$REFS, $PROPS, 'uid'], key => {
+                vnode[key] = parent[key as keyof VNode];
+            });
         }
 
-        each([$REFS, $PROPS, 'uid'], key => {
-            vnode[key] = parent ? parent[key as keyof VNode] : {};
-        });
+        // Save the vnode
+        saveVNode(vnode);
     }
 
     // Create a new vnode
@@ -176,18 +200,16 @@ export let hydrateTextNode = (node: Text) => {
         let vnode = newVNode(node as any);
 
         // Evaluate the expression
-        let fn = evaluate(vnode, `()=>${$EL}.${TEXT_CONTENT}=\`${text}\``);
+        let [call] = evaluate(vnode, `$el.${TEXT_CONTENT}=\`${sanitizeAttrValue(text)}\``);
 
-        // Save effect
-        saveEffect(vnode, fn, false);
+        // Save the cleanup function
+        saveCleanup(vnode, effect(call));
 
         // Save attribute
         saveAttr(vnode, TEXT, text);
-
-        // Save the vnode
-        saveVNode(vnode);
     }
 
+    // Always return false because text nodes don't have attributes or children
     return false;
 }
 
@@ -198,39 +220,55 @@ export let hydrateElementNode = (node: HTMLElement) => {
 
     for (let [validateDirective, hydrateDirective] of _directives) {
         // Check if the attribute is a directive
-        let attr = validateDirective(vnode);
+        let attr = validateDirective(vnode, { equalsTo: attrNameEquals, startsWith: attrNameStartsWith });
         if (attr) {
             let [name, value] = attr;
+
+            // Save attribute
+            saveAttr(vnode, name, value);
+
             // Hydrate the directive
-            if (hydrateDirective(vnode, name, trim(value), tools) === false)
-                // Return false to stop the walk callback from hydrating the rest of the directives or the children
-                return false;
+            hydrateDirective(vnode, name, sanitizeAttrValue(value), tools);
+
+            // Stop the walk callback from hydrating the rest of the directives or the children elements
+            if (vnode[STATUS] == SKIP) break;
         }
     }
 
-    // Check if any changes were made to the vnode
-    if (size(vnode[ATTR])) {
-        // Save the vnode
-        saveVNode(vnode);
-    }
-
-    return true;
+    // Continue the walk callback to
+    return vnode[STATUS] != SKIP;
 }
 
-// Create a effect from a function and save it to the vnode
-export let saveEffect = (vnode: VNode, fn: (...args: any) => any, isCleanup = true) => {
-    vnode[EFFECT][uid()] = isCleanup ? fn : effect(fn);
+// Save the cleanup function to the vnode
+export let saveCleanup = (vnode: VNode, cleanupFn: FunctionType) => {
+    arrayAdd(vnode[CLEANUP], cleanupFn);
+}
+
+/** Get an attribute object. Create one if it doesn't exist. */
+export let attr = (vnode: VNode, attrName: string, attrValue: string = '') => {
+    if (!vnode[ATTR][attrName]) vnode[ATTR][attrName] = {
+        [VALUE]: attrValue || '',
+        [BEFORE]: [],
+        [AFTER]: [],
+    };
+    return vnode[ATTR][attrName];
 }
 
 /** Saves the attribute to the vnode and removes it from the node */
 export let saveAttr = (vnode: VNode, attrName: string, attrValue: string) => {
-    vnode[ATTR][attrName] = attrValue;
-    if (isElementNode(vnode[$EL])) delAttr(vnode[$EL], attrName);
+    // Save the attribute to the vnode
+    attr(vnode, attrName, attrValue);
+    // Remove the attribute from the node
+    if (isElementNode(vnode.$el)) delAttr(vnode.$el, attrName);
+}
+
+export let saveLifecycle = (vnode: VNode, attrName: string, lifecycleType: 'before'|'after', fn: MiddlewareFunction) => {
+    arrayAdd(attr(vnode, attrName)[lifecycleType], fn);
 }
 
 // Save the vnode to the vnodes map
 export let saveVNode = (vnode: VNode) => {
-    vnodes.set(vnode[$EL], vnode);
+    if (!vnodes.has(vnode.$el)) vnodes.set(vnode.$el, vnode);
 }
 
 export let modelValue = (value: any, modifiers: string[]) => {
@@ -251,6 +289,95 @@ export let getTopLevelContext = (attrName: string) => {
     return $props
 }
 
+/** Hydrate the lifecycle functions of a directive */
+let hydrateLifecycle = (vnode: VNode, attrName: string, lifecycleName: 'before'|'after') => {
+    let $el = vnode.$el;
+    let attrCycle = lifecycleName + '-' + attrName;
+
+    // Get the attribute value
+    let attrValue = getAttr($el, attrCycle);
+
+    // Evaluate the attribute value, if any
+    if (attrValue) {
+        let fn = evaluate(vnode, attrValue, '$ctx,$next,$remove', true)[0];
+        saveLifecycle(vnode, attrName, lifecycleName, fn);
+        delAttr($el, attrCycle);
+    }
+
+    // Get queued lifecycle functions
+    let qVnode = vnodesQueue.get($el);
+
+    if (qVnode && qVnode[ATTR][attrName]) {
+        each(qVnode[ATTR][attrName][lifecycleName], fn => {
+            saveLifecycle(vnode, attrName, lifecycleName, fn);
+        });
+    }
+}
+
+/** Set the lifecycle functions (before and after) of a directive, as well as the dependencies, and return the middleware runner */
+export let lifecycle = (vnode: VNode, attrName: string, directiveFn: MiddlewareFunction) => {
+
+    let $el = vnode.$el;
+    let _attr = attr(vnode, attrName);
+
+    // * Hydrate the lifecycle functions, if any
+    hydrateLifecycle(vnode, attrName, BEFORE);
+    hydrateLifecycle(vnode, attrName, AFTER);
+
+    // * Hydrate the dependencies, if any
+    let attrDeps = attrName + '-deps';
+    // Get attribute value
+    let depsValue = getAttr($el, attrDeps);
+    // Evaluate the attribute value, if any
+    if (depsValue) {
+        // If the value is not a function, make it a function
+        if (!isStringFunction(depsValue)) depsValue = makeFunction(depsValue, '', true);
+        // Evaluate and save the dependencies
+        _attr.deps = evaluate(vnode, depsValue, '', true)[0];
+        // Delete the attribute from the node
+        delAttr($el, attrDeps);
+    }
+
+    // Execute the middlewares
+    let runner = (context: any, index: number = 0) => {
+
+        let middlewares = [..._attr[BEFORE], directiveFn, ..._attr[AFTER]];
+
+        // Execute the middlewares in sequence
+        if (index < size(middlewares)) {
+            middlewares[index](
+                // * $ctx: the context contains the data that is passed to the middleware. It can be modified if it is an object.
+                context,
+                // * $next(): go to the next middleware.
+                (stop: boolean = false) => {
+                    if (!stop) runner(context, index + 1);
+                },
+                // * $remove(): remove the middleware.
+                () => {
+                    // Ignore the directive function
+                    if (middlewares[index] == directiveFn) return;
+
+                    // The size of the `before` array
+                    let beforeSize = size(_attr[BEFORE]);
+
+                    // Remove the middleware
+                    if (index < beforeSize) _attr[BEFORE].splice(index, 1);
+                    else _attr[AFTER].splice(index - beforeSize - 1, 1);
+                }
+            );
+        }
+    }
+
+    // Return the middleware runner
+    return runner;
+}
+
+/**
+ * Sanitize an attribute value by removing new lines and extra spaces. 
+ * This is necessary to properly evaluate certain expressions.
+ * Without this, the evaluate function may throw an error for some expressions.
+ */
+export let sanitizeAttrValue = (text: string) => split(text, '\n').map(trim).join('')
 
 export let tools: HydrationTools = {
     vnodes,
@@ -259,10 +386,9 @@ export let tools: HydrationTools = {
     dehydrate,
     newVNode,
     saveVNode,
-    saveEffect,
+    saveCleanup,
     saveAttr,
 
-    ref,
     evaluate,
 
     uid,

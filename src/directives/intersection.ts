@@ -1,54 +1,72 @@
 import { evaluate } from "../evaluation";
-import { saveAttr, saveEffect } from "../hydration";
-import { debounce } from "../tools";
-import { each } from "../tools/array";
-import { ATTRIBUTE, OBJECT, VALUE, OPTION, MUST_BE } from "../tools/constants";
-import { getAttr } from "../tools/dom";
-import { isStringFunction } from "../tools/string";
-import { isNull, isObject } from "../tools/typeCheck";
+import { lifecycle, saveCleanup } from "../hydration";
+import { debounce, has, size } from "../tools";
+import { arrayAdd, each } from "../tools/array";
+import { toNumber } from "../tools/number";
+import { split } from "../tools/string";
+import { isNumeric } from "../tools/typeCheck";
 
 let DISCONNECT: 'disconnect' = 'disconnect';
+let ONCE = 'once';
+let HALF = 'half';
+let FULL = 'full';
+let THRESHOLD = 'threshold';
+let MARGIN = 'margin';
 
 export let hydrateIntersection = (vnode: VNode, attrName: string, attrValue: string) => {
 
+    let [_, directiveName, ...modifiers] = split(attrName, '-');
+
+    // Parse modifiers: once, half, full, threshold, margin
+    let options: ObjectType = {};
+    let mods = [ONCE, HALF, FULL, THRESHOLD, MARGIN];
+    each(modifiers, (modifier, index) => {
+        if (modifier == ONCE) options[ONCE] = true;
+        else if (modifier == HALF) options[THRESHOLD] = 0.5;
+        else if (modifier == FULL) options[THRESHOLD] = 1;
+        else if (modifier == THRESHOLD) {
+            // Get the threshold value
+            let thresholdValue = modifiers[index + 1];
+            // If the next modifier is a number, set the threshold
+            if (isNumeric(thresholdValue)) options[THRESHOLD] = toNumber(thresholdValue);
+        }
+        else if (modifier == MARGIN) {
+            // Get the margin value(s) (up to 4 values)
+            let marginValue: string[] = [];
+            let i = index + 1;
+
+            // Run at most 4 times, or until the next modifier is found
+            while (i < index + 5 && i < size(modifiers) && !has(mods, modifiers[i])) {
+                arrayAdd(marginValue, modifiers[i]);
+                i++;
+            }
+            // Set the margin
+            if (size(marginValue)) options[MARGIN] = marginValue.join(' ');
+        }
+    });
+
     let $el = vnode.$el;
 
-    // The name of the options attribute
-    let attrOptions = `${attrName}-${OPTION}s`;
-
-    // The value of the options attribute
-    let optionsValue = getAttr($el, attrOptions);
-
-    // Save the options attribute, if it exists
-    if (!isNull(optionsValue))
-        saveAttr(vnode, attrOptions, optionsValue as string);
-
-    // Evaluate the options attribute
-    let options: ObjectType = evaluate(vnode, optionsValue || '{}');
-
-    // Make sure the options is an object
-    if (!isObject(options))
-        return console.error(`The ${VALUE} of the ${attrOptions} ${ATTRIBUTE} ${MUST_BE} an ${OBJECT}.`);
-
-    // // Convert the threshold to a number between 0 and 1
-    // if (THRESHOLD in options)
-    //     options[THRESHOLD] = toNumber(options[THRESHOLD]) / 100;
-
-    // Make sure the attrValue is a function
-    let exp: any;
-    if (!isStringFunction(attrValue))
-        exp = `()=>{${attrValue}}`;
-
     // Evaluate the expression
-    exp = evaluate(vnode, exp);
+    let [ call, isRef ] = evaluate(vnode, attrValue, '$entry', true);
+
+    // Create the lifecycle function
+    let exp: Function = lifecycle(vnode, attrName, (entry: IntersectionObserverEntry, next: FunctionType) => {
+        // Execute the expression
+        if (isRef) call()
+        else call(entry);
+
+        // Next lifecycle function
+        next();
+    });
 
     let observer = new IntersectionObserver(entries => {
         each(entries, entry => {
             // Ignore if intersecting and the directive is `leave`
-            if (entry.isIntersecting == (attrName == 'leave')) return;
+            if (entry.isIntersecting == (directiveName == 'leave')) return;
 
             // Execute the expression
-            exp();
+            exp(entry);
 
             // If the directive has the `once` option, disconnect the observer
             if (options.once) observer[DISCONNECT]();
@@ -61,9 +79,6 @@ export let hydrateIntersection = (vnode: VNode, attrName: string, attrValue: str
     // Observe the element
     observe();
 
-    // Save the effect
-    saveEffect(vnode, () => observer[DISCONNECT]());
-
-    // Save Attrinute
-    saveAttr(vnode, attrName, attrValue);
+    // Save the cleanup function
+    saveCleanup(vnode, () => observer[DISCONNECT]());
 }

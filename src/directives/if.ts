@@ -1,41 +1,35 @@
 import { wrapper } from "../hydration";
-import { afterAnimations } from "../api/animate";
+import { wait } from "../tools";
 import { appendChild, getParent, insertBefore, nextSibling } from "../tools/dom";
-import { debounce } from "../tools";
+import { isFunction } from "../tools/typeCheck";
 
 export let hydrateIf = (vnode: VNode, attrName: string, attrValue: string) => {
 
-    // The current value of the directive
-    let currentValue: any;
-
-    let add = debounce((parentEl: HTMLElement, node: HTMLElement, nextEl: HTMLElement) => {
-        // Add the node before the next sibling
-        if (nextEl) insertBefore(parentEl as HTMLElement, node, nextEl);
-        // Add the node as the last child
-        else appendChild(parentEl as HTMLElement, node);
-    }, 0);
-
-    let remove = afterAnimations($el => {
-        // If the current value is still false after the animations, hide the node
-        if (!currentValue)
-            $el.remove();
-    });
-
     let callback = (node: HTMLElement) => {
         // Store references to parent and siblings
-        let parentEl = getParent(node);
+        let parentEl = getParent(node) as HTMLElement;
         let nextEl = nextSibling(node);
 
         // Return the watch function
-        return (value: any) => {
+        return (ctx: any, next: FunctionType) => {
+            // Wait for the next tick.
+            // * This is necessary for some directives to work properly (e.g. `on-click-outside`)
+            wait(() => {
+                let value = isFunction(ctx) ? ctx() : ctx;
 
-            // Update the current value
-            currentValue = value;
+                // Add
+                if (value) {
+                    // Add the node before the next sibling
+                    if (nextEl) insertBefore(parentEl, node, nextEl);
+                    // Add the node as the last child
+                    else appendChild(parentEl, node);
+                }
+                // Remove
+                else node.remove();
 
-            // Add
-            if (value) add(parentEl, node, nextEl);
-            // Remove
-            else remove(node);
+                // Next lifecycle function
+                next();
+            });
         }
     }
 

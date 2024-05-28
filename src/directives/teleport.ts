@@ -1,5 +1,6 @@
-import { saveAttr } from "../hydration";
-import { $EL, TELEPORT } from "../tools/constants";
+import { lifecycle } from "../hydration";
+import { logger } from "../tools";
+import { NOT_FOUND, TELEPORT } from "../tools/constants";
 import { q, appendChild } from "../tools/dom";
 import { capitalize } from "../tools/string";
 
@@ -8,13 +9,16 @@ export let hydrateTeleport = (vnode: VNode, attrName: string, attrValue: string)
     // Where to teleport the node to
     let target = q(attrValue)[0];
 
-    // ! DEVELOPMENT ONLY
+    // If the target is not found, log a warning
     if (!target)
-        return console.warn(`${capitalize(TELEPORT)} target not found: ${attrValue}`);
+        return logger(capitalize(TELEPORT) + ` target ${NOT_FOUND}`, `${attrName}="${attrValue}"`, 'warn');
 
     // Teleport the node
-    appendChild(target, vnode[$EL]);
+    lifecycle(vnode, attrName, (target: Element, next: FunctionType) => {
+        // Append the node to the target
+        appendChild(target, vnode.$el);
 
-    // Save to the vnode
-    saveAttr(vnode, attrName, attrValue);
+        // Next lifecycle function
+        next();
+    })(target);
 }

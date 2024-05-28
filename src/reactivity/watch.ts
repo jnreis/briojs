@@ -1,5 +1,5 @@
-import { listeners, getListener } from '.';
-import { computed, removeComputed } from './computed';
+import { listeners, getListener, addPropertyListener, removeListener } from '.';
+import { logger } from '../tools';
 import { ARRAY, OBJECT } from '../tools/constants';
 
 /**
@@ -14,8 +14,10 @@ export let watch = (observedState: any, prop: string | number | null, callback: 
 
     // If no key/index is specified, watch for all changes to the observed object/array
     if (!prop && prop !== 0) {
-        if (!listeners.has(observedState))
-            throw new Error(`Cannot watch an unobserved ${OBJECT}/${ARRAY}.`);
+        if (!listeners.has(observedState)) {
+            logger(`Cannot watch an unobserved ${OBJECT}/${ARRAY}.`);
+            return () => {};
+        }
 
         // Add the callback to the observed object/array listeners
         getListener(observedState).state.add(callback);
@@ -24,13 +26,9 @@ export let watch = (observedState: any, prop: string | number | null, callback: 
         return () => getListener(observedState).state.delete(callback);
     }
 
-    let cleanup = computed(
-        // Access the specified key/index to establish dependency
-        () => observedState[prop],
-        // Execute the callback when the dependency changes
-        callback
-    );
+    // Watch for changes to a specific key/index
+    addPropertyListener(observedState, prop, callback);
 
     // Return the disposer function to stop watching
-    return () => removeComputed(cleanup);
+    return () => removeListener(callback);
 }

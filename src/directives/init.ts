@@ -1,14 +1,17 @@
-import { saveAttr } from "../hydration";
+import { lifecycle } from "../hydration";
 import { evaluate } from "../evaluation";
-import { isFunction } from "../tools/typeCheck";
 
 export let hydrateInit = (vnode: VNode, attrName: string, attrValue: string) => {
 
+    // Prepare the lifecycle functions, if any
+    lifecycle(vnode, attrName, (ctx, next) => {
+
+        // Call the expression
+        ctx();
+
+        // Next lifecycle function
+        next();
+    })
     // Evaluate the expression and run it only once
-    let value = evaluate(vnode, attrValue);
-
-    if (isFunction(value)) value();
-
-    // Save to the vnode
-    saveAttr(vnode, attrName, attrValue);
+    (evaluate(vnode, attrValue, '', true)[0]);
 }

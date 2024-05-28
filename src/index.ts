@@ -61,6 +61,15 @@ export { api } from './api';
 
 
 // * DONE LIST
+// - [x] Implement a `$before` and `$after` methods to run functions before and after a directive is executed.
+//       - Syntax: `$before|$after($el:Node, directiveName:string, middlewareFn:Function, removeFn:Function)`.
+//       - The function of the $before and $after methods receive $ctx and $next as arguments.
+//       - The remove argument is optional and is a mechanism to remove the function programmatically.
+
+// - [x] Implement a `before` and `after` directive to run functions before and after the element is hydrated.
+//       - Syntax: `before-<directive>="functionName"`, `after-<directive>="functionName"`.
+//         Example: `before-if="transitionOut"`, `after-if="transitionIn"`.
+
 // - [x] Fix package.json to properly export the types.
 
 // - [x] Implement a `ignore` directive to ignore the element and its children from being hydrated.
@@ -85,17 +94,17 @@ export { api } from './api';
 
 
 // * POSSIBLE FUTURE FEATURES LIST
-// - [ ] Implement a lightweigth $class method to generate utility classes on the fly, similar to Tailwind CSS.
-//       - It should take something like this: $class('bg-red-500', 'text-white', 'p-4', 'rounded-md') and generate the classes on the fly.
-
-// - [ ] Implement a $format method to format strings, numbers, and dates.
+// - [ ] Create a $fetch method to make HTTP requests.
 
 // - [ ] Implement a $async method to work with async functions and promises.
 
-// - [ ] Create a $fetch method to make HTTP requests.
-
 // - [ ] Implement a "dev mode" where the DOM is re-hydrated when Brio attributes are updated.
 
+// - [ ] Implement a $format method to format strings, numbers, and dates.
+
+// - [ ] Create a page builder based on Brio.
 // - [ ] Create an Astro plugin to use Brio with Astro.
 // - [ ] Create a WordPress plugin to use Brio with WordPress.
-// - [ ] Create a page builder based on Brio.
+
+// - [ ] Implement a lightweigth $class method to generate utility classes on the fly, similar to Tailwind CSS.
+//       - It should take something like this: $class('bg-red-500', 'text-white', 'p-4', 'rounded-md') and generate the classes on the fly.

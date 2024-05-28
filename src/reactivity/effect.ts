@@ -7,10 +7,10 @@ import { computed, removeComputed } from '.';
  * @param fn - The function to execute when the observed properties change.
  * @returns cleanup - The disposer function to stop watching
  */
-export let effect = (fn: ListenerFunction) => {
+export let effect = (fn: ListenerFunction, deps?: ListenerFunction) => {
 
     // Create a computed function to track dependencies
-    let cleanup = computed(fn);
+    let cleanup = computed(fn, deps);
 
     // Return the disposer function to stop watching
     return () => removeComputed(cleanup);

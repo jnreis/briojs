@@ -1,25 +1,25 @@
 import { _reservedNames, _settings } from ".";
 import { _methods } from "../methods"
-import { has } from "../tools";
+import { has, logger } from "../tools";
 import { arrayAdd } from "../tools/array";
 import { BEFORE_INIT, INIT, METHOD } from "../tools/constants";
-import { capitalize, startsWith } from "../tools/string";
+import { startsWith } from "../tools/string";
 
 
 export let addMethod = (name: string, fn: MagicMethod) => {
-    let METHOD_CAP = capitalize(METHOD);
+    let METHOD_NAME = `The ${METHOD} "${name}"`;
 
-    // Can't add methods after init
+    // Can't add methods after initialization
     if (_settings[INIT])
-        return console.error(`${METHOD_CAP} ${BEFORE_INIT}`);
+        return logger(`${METHOD_NAME} ${BEFORE_INIT}`);
 
     // Method already exists
     if (has(_reservedNames, name))
-        return console.error(`${METHOD_CAP} "${name}" already exists`);
+        return logger(`${METHOD_NAME} already exists`);
 
     // Methods must start with "$"
     if (!startsWith(name, "$"))
-        return console.error(`${METHOD_CAP} "${name}" must start with "$"`);
+        return logger(`${METHOD_NAME} must start with "$"`);
 
     // Add the method to the list of methods
     arrayAdd(_methods, [name, fn]);

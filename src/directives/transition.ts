@@ -1,10 +1,59 @@
-import { animate } from "../api/animate";
-import { getAttr } from "../tools/dom";
-import { toNumber } from "../tools/number";
-import { isNull } from "../tools/typeCheck";
-import { saveAttr, wrapper } from "../hydration";
-import { GET_COMPUTED_STYLE, OPACITY } from "../tools/constants";
-import { arrayAdd, each } from "../tools/array";
+import { evaluate } from "../evaluation";
+import { saveLifecycle } from "../hydration";
+import { $in, $out } from "../methods/transition";
+import { logger } from "../tools";
+import { AFTER, ATTR, BEFORE, DIRECTIVE, MUST_BE, OPACITY, TRANSITION } from "../tools/constants";
+
+export let hydrateTransition = (vnode: VNode, _: string, attrValue: string) => {
+
+    let _attrName = vnode[ATTR].if ? 'if' : vnode[ATTR].show ? 'show' : '';
+
+    if (!_attrName)
+        return logger(`The ${TRANSITION} ${DIRECTIVE} ${MUST_BE} accompanied by an "if" or "show" ${DIRECTIVE}.`);
+
+    // Evaluate the animation expression
+    let animation = evaluate(vnode, attrValue)[0]();
+
+    // Pause the animation
+    // The animation will be played when the lifecycle functions are called
+    animation.pause();
+
+    // Create instances of the $in and $out functions
+    let _out = $out();
+    let _in = $in();
+
+    // Save the lifecycle functions (before out, after in)
+    saveLifecycle(vnode, _attrName, BEFORE, (ctx, next) => _out(animation, ctx, next));
+    saveLifecycle(vnode, _attrName, AFTER, (ctx, next) => _in(animation, ctx, next));
+}
+
+/**
+    // Web Animations API (WAAPI)
+    $el.animate(
+        [{ transform: 'translateY(16px)', opacity: 0 }],
+        {duration: 400, fill: 'forwards'}
+    )
+
+    // Anime.js
+    anime({
+        targets: $el,
+        translateY: 16,
+        opacity: 0,
+        duration: 400,
+        easing: 'linear',
+        autoplay: false,
+    })
+
+    // GSAP
+    gsap.to($el, {
+        y: 16,
+        opacity: 0,
+        duration: .4,
+        ease: 'linear',
+        paused: true,
+    })
+ */
+
 
 let TRANSFORM = 'transform';
 
@@ -22,95 +71,7 @@ export let _transitions: [
     ['skew', TRANSFORM, value => ` skew(${value || '0,8deg'})`],
 ];
 
-let _generatePropertyKeyframe = (element: HTMLElement, property: any, startValue: any) => {
-    let currentValue = window[GET_COMPUTED_STYLE](element)[property];
-    return [{[property]: currentValue}, {[property]: startValue}];
-}
-
-export let hydrateTransition = (vnode: VNode, attrName: string, attrValue: string) => {
-
-    let $el = vnode.$el;
-
-    let keyframes: ObjectType = {transform: ''};
-
-    // Apply requested transitions
-    each(_transitions, ([name, propName, propValue]) => {
-
-        // Get the attribute value
-        let value = getAttr($el, name);
-
-        // If the attribute exists
-        if (!isNull(value)) {
-
-            // Save the attribute
-            saveAttr(vnode, name, value as string);
-
-            // Convert the value to a number, if possible
-            value = toNumber(value);
-
-            // Add the CSS property to the keyframes
-            if (!(propName in keyframes)) keyframes[propName] = '';
-
-            // Generate the keyframes
-            keyframes[propName] += ` ${propValue(value as string | number)}`;
-        }
-    });
-
-    let options: ObjectType = {};
-
-    // Get the duration and easing, if available
-    each(['duration', 'easing'], attr => {
-
-        // Get the attribute value
-        let value = getAttr($el, attr);
-
-        // If the attribute exists and is not empty
-        if (value) {
-            // Convert the value to a number, if possible
-            options[attr] = toNumber(value);
-
-            // Save the attribute
-            saveAttr(vnode, attr, value);
-        }
-    });
-
-    // Create the transition
-    let transition = (keyframes: Keyframe[]) => {
-        let a = animate($el, keyframes, options);
-        // Prevent the animation from playing
-        a.pause();
-        return a;
-    }
-
-    let transitions: any[] = [];
-
-    // Generate the transitions
-    for (let key in keyframes) {
-        // Generate the keyframe
-        let keyframe = _generatePropertyKeyframe($el, key, keyframes[key]);
-
-        // Create the transition and save it
-        arrayAdd(transitions, transition(keyframe));
-    }
-
-    let init = false;
-
-    let callback = () => (value: any) => {
-        each(transitions, transition => {
-            let playbackRate = transition.playbackRate;
-            // Play forward  OR  Play backward
-            if ((value && playbackRate < 0) || (!value && playbackRate > 0)) {
-                // Reverse the transition
-                transition.reverse();
-            }
-            // Play the transition (forward)
-            else if (!init && value) {
-                transition.play();
-            }
-            // console.warn('transition', value, playbackRate, transition);
-        });
-        if (!init) init = true;
-    }
-
-    wrapper(vnode, attrName, attrValue, callback);
-}
+// let _generatePropertyKeyframe = (element: HTMLElement, property: any, startValue: any) => {
+//     let currentValue = window[GET_COMPUTED_STYLE](element)[property];
+//     return [{[property]: currentValue}, {[property]: startValue}];
+// }

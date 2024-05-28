@@ -1,6 +1,6 @@
 import { q, delAttr, getAttr } from "../tools/dom";
 import { isArray } from "../tools/typeCheck";
-import { $EL, $REFS, PROPS } from "../tools/constants";
+import { $REFS, PROPS } from "../tools/constants";
 import { arrayAdd, each } from "../tools/array";
 
 export let hydrateRefs = (vnode: VNode) => {
@@ -8,9 +8,9 @@ export let hydrateRefs = (vnode: VNode) => {
     // Query all refs not inside another context
     let $refs: ObjectType = {};
 
-    let query = q(`[ref]:not([${PROPS}]):not([${PROPS}] [ref])`, vnode[$EL]);
+    let query = q(`[ref]:not([${PROPS}]):not([${PROPS}] [ref])`, vnode.$el);
 
-    each([vnode[$EL], ...query], ref => {
+    each([vnode.$el, ...query], ref => {
         let refName = getAttr(ref as HTMLElement, 'ref');
         if (refName) {
             // Check if the ref already exists

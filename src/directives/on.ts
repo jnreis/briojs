@@ -1,12 +1,12 @@
-import { evaluate, ref } from '../evaluation';
-import { saveAttr, saveEffect } from '../hydration';
+import { evaluate } from '../evaluation';
+import { lifecycle, saveCleanup } from '../hydration';
 import { has, size, debounce, throttle, wait } from '../tools';
 import { each } from '../tools/array';
-import { $EL } from '../tools/constants';
+import { BUT_GOT_INSTEAD, FUNCTION, MUST_BE } from '../tools/constants';
 import { emit, isElementVisible, listen } from '../tools/dom';
 import { deleteKey, deleteKeys, getKeys } from '../tools/object';
-import { isStringFunction, lower, split } from '../tools/string';
-import { isFunction } from '../tools/typeCheck';
+import { lower, split } from '../tools/string';
+import { getType } from '../tools/typeCheck';
 
 let KEYUP = 'keyup';
 let KEYDOWN = 'keydown';
@@ -53,19 +53,26 @@ export let hydrateOn = (vnode: VNode, attrName: string, attrValue: string) => {
 
     let [_, event, ...modifiers] = split(attrName, '-');
 
-    let $el = vnode[$EL];
+    let $el = vnode.$el;
 
     // The target element
     let target = $el;
 
-    let fn: any = ref(vnode, attrValue) || attrValue;
+    // Get the reference, if any
+    let [call, isRef] = evaluate(vnode, attrValue, '$event', true);
 
-    // If the `fn` is the reference of a function, make it executable
-    if (isFunction(fn))
-        fn = `${attrValue}($event)`;
+    // Check if the event handler is a function
+    if (isRef)
+        console.warn(`The event handler ${MUST_BE} a ${FUNCTION}, ${BUT_GOT_INSTEAD(getType(call()))}`);
 
-    // Evaluate the expression
-    fn = evaluate(vnode, isStringFunction(fn) ? fn : `$event=>{${fn}}`);
+    // Create the lifecycle function
+    let fn = lifecycle(vnode, attrName, ($event: any, next: FunctionType) => {
+        // Call the function
+        call($event);
+
+        // Next lifecycle function
+        next();
+    });
 
     // Other modifiers are passed as options to the event listener
     // https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener#options
@@ -119,7 +126,7 @@ export let hydrateOn = (vnode: VNode, attrName: string, attrValue: string) => {
         }, 600);
 
         // Add keys
-        saveEffect(vnode, listen(target, KEYDOWN, (e: any) => {
+        saveCleanup(vnode, listen(target, KEYDOWN, (e: any) => {
             let key = lower(e.key);
             if (!pressedKeys[key]) pressedKeys[key] = true;
         
@@ -142,7 +149,7 @@ export let hydrateOn = (vnode: VNode, attrName: string, attrValue: string) => {
         }));
 
         // Remove keys
-        saveEffect(vnode, listen(target, KEYUP, (e: any) => {
+        saveCleanup(vnode, listen(target, KEYUP, (e: any) => {
 
             // On keydown, remove the key before emitting the event
             if (KEYDOWN == eventName) delKey(e, pressedKeys);
@@ -155,7 +162,7 @@ export let hydrateOn = (vnode: VNode, attrName: string, attrValue: string) => {
         }));
 
         // Remove all keys when the target loses focus
-        saveEffect(vnode, listen(target, 'focus', () => {
+        saveCleanup(vnode, listen(target, 'focus', () => {
             deleteKeys(pressedKeys);
         }));
     }
@@ -188,11 +195,8 @@ export let hydrateOn = (vnode: VNode, attrName: string, attrValue: string) => {
         fn(e);
     };
 
-    // Create listener and save the effect
-    saveEffect(vnode, listen(target, event, listenFn, opts));
-
-    // Save to the vnode
-    saveAttr(vnode, attrName, attrValue);
+    // Create listener and save the cleanup function
+    saveCleanup(vnode, listen(target, event, listenFn, opts));
 }
 
 let delKey = (e: any, pressedKeys: ObjectType) => {

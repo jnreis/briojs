@@ -1,18 +1,17 @@
 // EXPORTS
+
+// API
 declare type start = (nodes?: Node[]) => void;
-declare type api = {
-    // Global data store
-    store: ObjectType,
+declare type Api = {
+    // Global data stores
+    store: ObjectType, // reactive data store
+    data: ObjectType, // non-reactive data store
 
     // Methods that may only be called before Brio is initialized
     addProps: (propsName: string, fn: (...args: any) => ObjectType) => void,
     addMethod: (name: string, fn: MagicMethod) => void,
     addDirective: (validateAttribute: ValidateDirective, hydrateDirective: HydrateDirective) => void,
-    addTransition: (transitionName: string, cssPropertyName: string, cssPropertyValue: (value: string | number) => string) => void,
-
-    // Animate helpers
-    animate: ($el: HTMLElement, keyframes: Keyframe[], options?: KeyframeAnimationOptions) => Animation,
-    afterAnimations: (callback: ($el: HTMLElement) => void) => ($el: HTMLElement) => void,
+    addTransitionEngine: (engine: AnimationEngine) => void,
 
     // Helper functions
     emit: (node: HTMLElement, eventName: string, eventData?: any) => boolean,
@@ -20,7 +19,7 @@ declare type api = {
 
     // Reactivity methods
     state: (target: any) => any,
-    computed: (fn: ListenerFunction, callback?: ListenerFunction | undefined) => ListenerFunction,
+    computed: (fn: ListenerFunction, deps?: ListenerFunction | undefined) => ListenerFunction,
     removeComputed: (fn: ListenerFunction) => void,
     effect: (fn: ListenerFunction) => () => void,
     watch: (observedState: any, prop: string | number | null, callback: ListenerFunction) => () => void,
@@ -29,53 +28,86 @@ declare type api = {
     getItem: (storage: any, key: string) => any,
     setItem: (storage: any, key: string, value: any) => any,
 }
+type MagicMethod = (vnode: VNode) => FunctionType;
 
 // GENERAL TYPES
 type VNodes = Map<Node, VNode>;
 type VNode = {
     // Magic attributes
     $el: HTMLElement, // the element itself
-    $refs: ObjectType, // available to all elements in the same $props context. Except for nested contexts.
-    $props: ObjectType, // context
     $root: HTMLElement, // the closest element with a `props` attribute or the element itself
+    $refs: ObjectType, // References to other elements available to all elements in the same $props context. Except for nested contexts.
+    $props: ObjectType, // context
 
     // UIDs
     uid: ObjectType, // context
 
-    // Raw attributes
-    attr: ObjectType,
+    // Attributes or directives
+    attr: {
+        [attrName: string]: {
+            value: string,
+            deps?: FunctionType,
+            before: MiddlewareFunction[],
+            after: MiddlewareFunction[],
+        }
+    },
 
-    // Reactivity effects
-    effect: ObjectType,
+    // Cleanup functions
+    cleanup: FunctionType[],
+
+    // Hydration status
+    status: 'ok' | 'temp' | 'skip', /*
+        ok: the element is about to be hydrated or has been hydrated
+        temp: the element will be hydrated later
+        skip: skips the hydration process
+    */
 }
 type ObjectType = {
     [prop: string]: any
     [prop: symbol]: any
 }
+type FunctionType = (...args: any) => any;
+
+
+// HYDRATION TYPES
+type DirectiveValidation = (attrName: string) => (vnode: VNode, tools: DirectiveValidationTools) => [string, string] | undefined;
+type DirectiveValidationTools = {
+    equalsTo: DirectiveValidation,
+    startsWith: DirectiveValidation
+};
+
+type ValidateDirective = (vnode: VNode, tools: DirectiveValidationTools) => [string, string] | undefined;
+type HydrateDirective = (vnode: VNode, attrName: string, attrValue: string, tools: HydrationTools) => any;
+
 type HydrationTools = {
     vnodes: VNodes,
-    wrapper: (vnode: VNode, attrName: string, attrValue: string, callback: (node: HTMLElement) => (...args: any) => any) => void,
+    wrapper: (vnode: VNode, attrName: string, attrValue: string, callback: (node: HTMLElement) => FunctionType) => void,
     hydrate: (nodes?: Node[] | undefined) => void,
     dehydrate: (node: Node, removeVNode?: boolean) => void,
+    saveCleanup: (vnode: VNode, fn: FunctionType) => void,
     newVNode: ($el: HTMLElement) => VNode,
     saveVNode: (vnode: VNode) => void,
-    saveEffect: (vnode: VNode, fn: (...args: any) => any, isCleanup?: boolean) => void,
     saveAttr: (vnode: VNode, attrName: string, attrValue: string) => void,
 
-    ref: (vnode: VNode, exp: string, set?: boolean) => any,
     evaluate: (vnode: VNode, exp: string) => any,
 
     uid: (length?: number, callback?: ((uid: string) => boolean) | undefined) => string,
     has: (value: any, item: string | symbol) => any,
     size: (value: any) => number,
 }
-type ValidateDirective = (vnode: VNode) => [string, string] | undefined;
-type HydrateDirective = (vnode: VNode, attrName: string, attrValue: string, tools: HydrationTools) => any;
-type MagicMethod = (vnode: VNode) => (...args: any) => any;
+
+type MiddlewareFunction = (ctx: any, next: (stop: boolean = false) => void, remove: () => void) => void;
 
 
 // REACTIVITY TYPES
-type ListenerFunction = (context: {operation: string, observedState: any, prop: string, newValue: any, oldValue: any}) => any;
+type ListenerContext = {
+    operation: string, 
+    observedState: any, 
+    prop: string, 
+    newValue: any, 
+    oldValue: any
+};
+type ListenerFunction = (context: ListenerContext) => any;
 type ListenerFunctions = Set<ListenerFunction>;
 type ListenerObject = {
     state: ListenerFunctions,
@@ -84,6 +116,18 @@ type ListenerObject = {
     }
 };
 type Listeners = Map<any, ListenerObject>;
+type PropRef = [any, string|number|symbol];
+
+
+// ANIMATION TYPES
+type AnimationFunction = (animation: any, next: FunctionType) => void;
+type AnimationEngine = {
+    name: string,
+    validate: (animation: any) => boolean,
+    play: AnimationFunction,
+    reverse: AnimationFunction,
+    onComplete: AnimationFunction,
+};
 
 
 // ASTRO HTML TYPES

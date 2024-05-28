@@ -1,55 +1,62 @@
 import { hydrateRefs } from './refs';
 import { _reservedNames } from '../api';
 import { evaluate } from '../evaluation';
-import { saveAttr } from '../hydration';
+import { lifecycle } from '../hydration';
 import { state } from '../reactivity';
-import { has } from '../tools';
-import { createContext, deleteKey, getKeys } from '../tools/object';
-import { getType, isFunction, isObject } from '../tools/typeCheck';
-import { $EL, $PROPS, $ROOT, INIT, MUST_BE, OBJECT } from '../tools/constants';
+import { has, logger } from '../tools';
+import { createContext, deleteKey, getKeys, objectMerge } from '../tools/object';
+import { getType, isObject } from '../tools/typeCheck';
+import { $PROPS, $ROOT, BUT_GOT_INSTEAD, DIRECTIVE, INIT, MUST_BE, OBJECT, SKIP, STATUS } from '../tools/constants';
 import { each } from '../tools/array';
 
 export let _props: ObjectType = {};
 
 export let hydrateProps = (vnode: VNode, attrName: string, attrValue: string) => {
 
-    // Save the attribute
-    saveAttr(vnode, attrName, attrValue);
-
     // Check if the props expression is empty. If so, return
     if (!attrValue) return;
 
-    // Check if the attribute value is a key in the _props object
-    let newContext: any = attrValue in _props
-        // Use the user-defined context
-        ? _props[attrValue]
-        // Evaluate the expression
-        : evaluate(vnode, attrValue);
+    // Create the context
+    let context: ObjectType = {};
 
-    // Check if the context is a function. If so, call it
-    if (isFunction(newContext)) newContext = newContext();
+    lifecycle(vnode, attrName, (context: ObjectType, next: FunctionType) => {
+        // Check if the attribute value is a key in the _props object
+        let newContext: any = attrValue in _props
+            // Use the user-defined context
+            ? _props[attrValue]()
+            // Evaluate the expression
+            : evaluate(vnode, attrValue)[0]();
 
-    // Check if the context is an object. If not, throw an error
-    if (!isObject(newContext))
-        throw new Error(`The ${attrName} ${MUST_BE} an ${OBJECT}, but got ${getType(newContext)} instead.`);
+        // Check if the context is an object. If not, throw an error
+        if (!isObject(newContext)) {
+            vnode[STATUS] = SKIP;
+            return logger(`The ${attrName} ${DIRECTIVE} ${MUST_BE} an ${OBJECT}, ${BUT_GOT_INSTEAD(getType(newContext))}`);
+        }
 
-    // Remove reserved keys from the new context
-    each(_reservedNames, key => {
-        if (key in newContext) deleteKey(newContext, key);
-    });
+        // Remove reserved keys from the new context
+        each(_reservedNames, key => {
+            if (key in newContext) deleteKey(newContext, key);
+        });
 
-    // Check if the vnode has a parent
-    let hasParent = vnode[$EL] !== vnode[$ROOT];
+        // Check if the vnode has a parent
+        let hasParent = vnode.$el !== vnode[$ROOT];
 
-    // Create the new context
-    let context = state(hasParent ? createContext(vnode[$PROPS], newContext) : newContext);
+        // Merge any keys passed in the context object from the before lifecycle
+        objectMerge(newContext, context);
 
-    // Add the context to the vnode
-    vnode[$PROPS] = context;
+        // Create the new context
+        context = state(hasParent ? createContext(vnode[$PROPS], newContext) : newContext);
 
-    // Hydrate the refs
-    hydrateRefs(vnode);
+        // Add the context to the vnode
+        vnode[$PROPS] = context;
 
-    // Init prop
-    if (has(getKeys(context), INIT)) context[INIT]();
+        // Hydrate the refs
+        hydrateRefs(vnode);
+    
+        // Init prop
+        if (has(getKeys(context), INIT)) context[INIT]();
+
+        // Next lifecycle function
+        next();
+    })(context);
 }

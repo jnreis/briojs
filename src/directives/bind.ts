@@ -1,20 +1,29 @@
 import { wrapper } from '../hydration';
 import { has, slice } from '../tools';
 import { setAttr, delAttr } from '../tools/dom';
-import { VALUE, CHECKED, STYLE, CLASS } from '../tools/constants';
+import { VALUE, CHECKED, STYLE, CLASS, SELECT } from '../tools/constants';
+import { isFunction } from '../tools/typeCheck';
 
 export let hydrateBind = (vnode: VNode, attrName: string, attrValue: string) => {
 
     let prop = slice(attrName, 2);
 
-    let callback = (node: HTMLElement) => (value: any) => {
-        // Set attribute
-        if (has([VALUE,CHECKED,STYLE,CLASS], prop))
+    let callback = (node: HTMLElement) => (ctx: any, next: FunctionType) => {
+
+        let value = isFunction(ctx) ? ctx() : ctx;
+
+        // Set property directly
+        if (has([VALUE, CHECKED, SELECT+'ed', STYLE, CLASS, 'src'], prop))
             (node as any)[prop == CLASS ? CLASS+'Name' : prop] = value;
-        else if (value)
-            setAttr(node, prop, value === true ? '' : value);
-        else
-            delAttr(node, prop);
+
+        // Set attribute
+        else if (value) setAttr(node, prop, value === true ? '' : value);
+
+        // Remove attribute
+        else delAttr(node, prop);
+
+        // Next lifecycle function
+        next();
     }
 
     wrapper(vnode, attrName, attrValue || 'true', callback);

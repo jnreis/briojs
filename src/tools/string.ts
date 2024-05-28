@@ -5,6 +5,8 @@ import { FUNCTION } from './constants';
 export let regexAlpha = /^[a-z]/i;
 export let regexNumeric = /^[0-9]/;
 
+export let toString = (value: any, radix?: number | undefined) => value.toString(radix);
+
 export let hasSubstring = (haystack: string, needle: string, caseInsensitive = false) => {
     if (caseInsensitive) {
         return has(lower(haystack), lower(needle));
@@ -17,6 +19,8 @@ export let lower = (str: string) => str.toLowerCase();
 export let upper = (str: string) => str.toUpperCase();
 
 export let capitalize = (str: string) => upper(str[0]) + slice(str, 1);
+
+export let uncapitalize = (str: string) => lower(str[0]) + slice(str, 1);
 
 export let split = (str: string, separator: string | RegExp, limit?: number | undefined) => str.split(separator, limit);
 
@@ -34,15 +38,24 @@ export let isStringNumeric = (value: string) => test(value, regexNumeric);
 
 export let isStringAlpha = (value: string) => test(value, regexAlpha);
 
-// Check if a string is a function
-export let isStringFunction = (value: string) =>
-    test(trim(value), /^(function\s*\([^)]*\)\s*{[^}]*}|(?:\([^()]*\)|\w+)\s*=>)/);
+/** Check if a string is a valid path */
+export let isPath = (exp: string) =>
+    test(exp, /^(\w|\s|\.|\$|`|'|"|(\[(.|\s)+?\]))*;?$/gm);
 
-export let isStringArrowFunction = (value: string) => test(trim(value), /^(?:\([^()]*\)|\w+)\s*=>/);
+/**
+ * Check if a string is an anonymous function or arrow function
+ * @param value - The string to check e.g. `function() {}` or `() => {}` or `async function() {}` or `async () => {}`
+ * @returns boolean
+ */
+export let isStringFunction = (value: string) =>
+    test(trim(value), /^((async\s+)?function\s*\([^)]*\)\s*{[^}]*}|(async\s*)?(?:\([^()]*\)|[$\w]+)\s*=>)/);
+
+/** Check if a string is an anonymous arrow function only */
+export let isStringArrowFunction = (value: string) => test(trim(value), /^(async\s*)?(?:\([^()]*\)|[$\w]+)\s*=>/);
 
 export let makeFunctionAnonymous = (fn: Function) => {
     let name = fn.name;
-    let body = fn.toString();
+    let body = toString(fn);
 
     return test(body, new RegExp(`${name}\\s*\\(`)) ? body.replace(name, FUNCTION) : body;
 };
@@ -163,3 +176,5 @@ export let replaceSubstring = (subject: string, startsAt: number, endsAt: number
     slice(subject, 0, startsAt) + replacement + slice(subject, endsAt);
 
 export let alphaNumericOnly = (str: string) => str.replace(/[^a-z0-9]/gi, '');
+
+export let camelCase = (...args: string[]) => uncapitalize(args.map(capitalize).join(''));

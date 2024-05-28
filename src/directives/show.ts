@@ -1,32 +1,25 @@
 import { wrapper } from '../hydration';
-import { afterAnimations } from '../api/animate';
 import { getParent } from '../tools/dom';
-import { debounce } from '../tools';
 import { DISPLAY, STYLE } from '../tools/constants';
+import { wait } from '../tools';
+import { isFunction } from '../tools/typeCheck';
 
 export let hydrateShow = (vnode: VNode, attrName: string, attrValue: string) => {
 
-    // The current value of the directive
-    let currentValue: any;
-
-    let show = debounce(($el: HTMLElement) => $el[STYLE][DISPLAY] = '', 0)
-
-    let hide = afterAnimations($el => {
-        // If the current value is still false after the animations, hide the node
-        if (!currentValue)
-            $el[STYLE][DISPLAY] = 'none';
-    });
-
-    let callback = (node: HTMLElement) => (value: any) => {
+    let callback = (node: HTMLElement) => (ctx: any, next: FunctionType) => {
         if (!getParent(node)) return;
 
-        // Update the current value
-        currentValue = value;
+        // Wait for the next tick.
+        // * This is necessary for some directives to work properly (e.g. `on-click-outside`)
+        wait(() => {
+            let value = isFunction(ctx) ? ctx() : ctx;
 
-        // Show
-        if (value) show(node);
-        // Hide
-        else hide(node);
+            // Show or hide the element
+            node[STYLE][DISPLAY] = value ? '' : 'none';
+
+            // Next lifecycle function
+            next();
+        });
     }
 
     wrapper(vnode, attrName, attrValue, callback);

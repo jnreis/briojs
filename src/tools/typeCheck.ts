@@ -16,7 +16,7 @@ import {
     WEAKMAP,
     WEAKSET
 } from "./constants";
-import { lower, test } from "./string";
+import { lower, test, toString } from "./string";
 import { getDescriptor } from "./object";
 import { slice } from ".";
 
@@ -37,7 +37,7 @@ export let isObject = (value: any): boolean => is(value, OBJECT);
 export let isArray = (value: any): boolean => is(value, ARRAY);
 
 // Check if a value is a function
-export let isFunction = (value: any) => is(value, FUNCTION);
+export let isFunction = (value: any) => is(value, FUNCTION) || isAsyncFunction(value);
 
 // Check if a value is a string arrow function
 export let isAsyncFunction = (value: any) => is(value, ASYNC_FUNCTION);
@@ -94,7 +94,7 @@ export let isPromise = (value: any) => is(value, PROMISE);
 export let isError = (value: any) => is(value, ERROR);
 
 // Check if a value is a class
-export let isClass = (value: any) => isFunction(value) && test(value.toString(), /^\s*class\s+/);
+export let isClass = (value: any) => isFunction(value) && test(toString(value), /^\s*class\s+/);
 
 export let isTextNode = (node: Node) => node instanceof Text;
 

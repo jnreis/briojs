@@ -1,4 +1,6 @@
 import { CALLBACK, watch } from ".";
+import { logger } from "../tools";
+import { INVALID, OBJECT } from "../tools/constants";
 import { getProto, hasOwnProperty } from "../tools/object";
 
 let GET_ITEM = 'getItem';
@@ -40,7 +42,7 @@ export let storage = (_storage: any, value: any, alias?: string) => {
 
     // Check if the storage object is valid
     if (!isStorage(_storage)) {
-        return console.error('Invalid storage object:', _storage);
+        return logger(INVALID + ` storage ${OBJECT}.`);
     }
 
     if (alias) {

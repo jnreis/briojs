@@ -63,9 +63,17 @@
   <body>
 
     <h1>Brio.js</h1>
-    <button on-click="console.log($props, $el, $root)">Outside a props</button>
+    <button on-click="console.log('on-click', $event)">Outside a props</button>
+
+    <button props="{ ranCount: 0 }" init="$before(document.querySelector('#button1'), 'on-click', ($ctx, $next, $remove) => {
+      console.log('$before button1 on-click directive', $ctx);
+      $next();
+      ranCount++;
+      if (ranCount == 3) $remove();
+    });">Add $before "From a parent scope"</button>
 
     <div props="{
+      animations: new Map(),
       count: $persist(110, 'theCount'), 
       search: $session(''),
       search2: null,
@@ -81,7 +89,7 @@
       set double(value) {
         this.count = value / 2;
       },
-      isOpen: false,
+      isOpen: true,
       toggle() {
         this.isOpen = !this.isOpen;
       },
@@ -100,19 +108,47 @@
         ], this.options);
       },
       animation1: null,
-      item: '',
+      item: 'abc',
       items: ['Apple','Banana','Cherry'],
-      obj: { a: 'a', b: 'b', c: 'c' },
+      obj: { a: '1', b: '2', c: '3' },
+      s: {
+        duper: {
+          nested: {
+            value: 'Hello'
+          }
+        }
+      },
+      t1: null,
     }" init="console.log('$props', $props)">
-      <button on-click="toggle">${isOpen ? 'In' : 'Out'}</button>
+      <button effect="console.log('effect', isOpen)" on-click="toggle" text="isOpen"></button>
       <!-- <h1 uppercase init="$el.animate([{transform: 'translateX(300px)'}], {duration: 2000, iterations: Infinity, direction: 'alternate', easing: 'ease-in-out'})">Brio.js</h1> -->
       <!-- <h2 effect="$animate([{opacity: '0.05'}], {direction: 'alternate', iterations: Infinity, duration: 1000})">The $animate method</h2> -->
       <div style="display: flex;">
-        <h2
-          style="text-align: center;"
-          transition="!search" fade slide="0,-16px"
-          if="search"
-        >Hello 👋</h2>
+        <h2 
+        init-animate="animations.set('t1', $el.animate(
+          [{ transform: 'translateY(16px)', opacity: 0 }],
+          {duration: 400, fill: 'forwards'}
+        )); animations.get('t1').pause();"
+        init-anime="animations.set('t1', anime({
+          targets: $el,
+          translateY: 16,
+          opacity: 0,
+          duration: 400,
+          easing: 'linear',
+          autoplay: false,
+        }))"
+        init-gsap="animations.set('t1', gsap.to($el, {
+          y: 16,
+          opacity: 0,
+          duration: .4,
+          ease: 'linear',
+          paused: true,
+        }))"
+        transition="$el.animate(
+          [{ transform: 'translateY(16px)', opacity: 0 }],
+          {duration: 400, fill: 'forwards'}
+        )"
+        if="isOpen" before-if2="$out(animations.get('t1'), $ctx, $next)" after-if2="$in(animations.get('t1'), $ctx, $next)">Hello 👋.</h2>
       </div>
       <!-- <p>Hi. <span html="`<strong>${ first } ${ last }</strong>`"></span></p> -->
       <!-- <p b-class="4 * count">Hello, ${ first } ${ last }!</p> -->
@@ -137,6 +173,11 @@
             Contents...
         </div>
       </div>
+
+
+
+      <label for="search">Nested reference: ${item}</label>
+      <input id="search" type="text" model="item">
 
 
       <!-- Just the value -->
@@ -195,12 +236,19 @@
         <option value="Jane">Jane</option>
       </select>
 
+      <h4>Multiple select: ${vehicle}</h4>
+      <select name="names" id="names" model="vehicle" multiple>
+        <option value="Bike">Bike</option>
+        <option value="Car">Car</option>
+        <option value="Boat">Boat</option>
+      </select>
+
       <h4>Checkbox: ${checked}</h4>
-      <input type="checkbox" name="vehicle1" value="Bike" model="checked">
+      <input type="checkbox" id="vehicle1" name="vehicle1" value="Bike" model="checked">
       <label for="vehicle1"> I have a bike</label><br>
-      <input type="checkbox" name="vehicle2" model="checked">
+      <input type="checkbox" id="vehicle2" name="vehicle2" model="checked">
       <label for="vehicle2"> I have a car</label><br>
-      <input type="checkbox" name="vehicle3" value="Boat" model="checked">
+      <input type="checkbox" id="vehicle3" name="vehicle3" value="Boat" model="checked">
       <label for="vehicle3"> I have a boat</label><br>
 
       <h4>Multiple Checkboxes: ${vehicle}</h4>
@@ -216,6 +264,8 @@
       <label for="one">One</label><br>
       <input type="radio" id="two" model="pick" value="two">
       <label for="two">Two</label><br>
+      <input type="radio" id="two" model="pick">
+      <label for="two">No value</label><br>
 
       <h4>Textarea: ${first}</h4>
       <textarea model="first">Hello, I'm a textarea</textarea>
@@ -255,11 +305,11 @@
     <div props="{p1: true}" ref="prop1">
       <div b-class="p1">
         <button on-click="console.log($props, $refs, $el, $root, $uid, p1)">Log Magic attributes</button>
-        <button ref="button1" on-click="console.log($refs)">From a parent scope</button>
+        <button id="button1" ref="button1" on-click="console.log($refs)">From a parent scope</button>
       </div>
       <div props="{refs: 123}" ref="prop2">
         <div ref="prop2div">
-          <button ref="button1" on-click="console.log($refs, $props)">Inside Ref</button>
+          <button ref="button1" on-click="console.log($refs, $props)" teleport="body" style="background-color: red;">Inside Ref</button>
         </div>
         <button ref="button1" on-click="console.log($refs)">Outside Ref</button>
       </div>
@@ -306,7 +356,9 @@
       <button @click="count++">Increment</button>
     </div> -->
 
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <!-- <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script> -->
+    <script defer src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.2/anime.min.js" integrity="sha512-aNMyYYxdIxIaot0Y1/PLuEu3eipGCmsEUBrUq+7aVyPGMFH8z0eTP0tkqAvv34fzN6z+201d3T8HPb1svWSKHQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
     <script type="module" src="/src/cdn.ts"></script>
   </body>

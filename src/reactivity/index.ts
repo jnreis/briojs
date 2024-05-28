@@ -2,24 +2,24 @@ import { each } from '../tools/array';
 
 // * VARIABLES
 
-// The reference to all observed objects/arrays and their listeners
-// These listeners receive every change to the observed object/array
+/** The reference to all observed objects/arrays and their listeners.
+    These listeners receive every change to the observed object/array. */
 export let listeners: Listeners = new Map();
 
-// Hold computed functions currently being executed
+/** Hold computed functions currently being executed */
 export let computedStack: any[] = [];
 
-// Internal callback symbol
+/** Internal callback symbol */
 export let CALLBACK = Symbol('callback');
 
-// Ignore access tracking
+/** Ignore access tracking */
 export let IGNORE = Symbol('ignore');
 
 
 
 // * HELPERS
 
-// Get the listener object for an observed state
+/** Get the listener object for an observed state */
 export let getListener = (observedState: any) => {
     if (!listeners.has(observedState)) {
         listeners.set(observedState, {
@@ -30,8 +30,8 @@ export let getListener = (observedState: any) => {
     return listeners.get(observedState) as ListenerObject;
 }
 
-// Add a listener to a property of an observed state
-export let addPropertyListener = (observedState: any, prop: string, fn: ListenerFunction) => {
+/** Add a listener to a property of an observed state */
+export let addPropertyListener = (observedState: any, prop: string | number, fn: ListenerFunction) => {
 
     // Get the listener object for the observed state
     let listener = getListener(observedState);
@@ -48,7 +48,7 @@ export let addPropertyListener = (observedState: any, prop: string, fn: Listener
         getListener(observedState[prop]).state.add(fn);
 }
 
-// Remove a listener from a property of an observed state
+/** Remove a listener from a property of an observed state */
 export let removePropertyListeners = (observedState: any, prop: string) => {
     let listener = getListener(observedState);
     if (listener.props[prop]) {
@@ -56,7 +56,7 @@ export let removePropertyListeners = (observedState: any, prop: string) => {
     }
 }
 
-// Remove a listener from all states and properties
+/** Remove a listener from all states and properties */
 export let removeListener = (fn: ListenerFunction) => {
     each(listeners as any, listener => {
         listener.state.delete(fn);
@@ -75,4 +75,4 @@ export { computed, removeComputed } from './computed';
 export { effect } from './effect';
 export { watch } from './watch';
 export { storage, isStorage, getItem, setItem } from './storage';
-// export { trackAccessedProps, type PropRef } from './track';
+export { getRefs, getRef } from './track';

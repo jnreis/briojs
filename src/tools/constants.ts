@@ -7,7 +7,7 @@ export let NULL: 'null' = 'null';
 export let SYMBOL: 'symbol' = 'symbol';
 export let BIGINT: 'bigint' = 'bigint';
 
-// Name of the objects
+// Name of the objects types
 export let OBJECT: 'object' = 'object';
 export let ARRAY: 'array' = 'array';
 export let MAP: 'map' = 'map';
@@ -54,7 +54,6 @@ export let TEXT_CONTENT = TEXT + 'Content' as 'textContent';
 // Brio magic properties/methods
 export let $STORE: '$store' = '$store';
 export let $PROPS: '$props' = '$props';
-export let $EL: '$el' = '$el';
 export let $REFS: '$refs' = '$refs';
 export let $ROOT: '$root' = '$root';
 export let $EMIT: '$emit' = '$emit';
@@ -63,7 +62,7 @@ export let $WATCH: '$watch' = '$watch';
 
 // Miscellaneous
 export let ATTR: 'attr' = 'attr';
-export let EFFECT: 'effect' = 'effect';
+export let CLEANUP: 'cleanup' = 'cleanup';
 export let DIRECTIVE: 'directive' = 'directive';
 export let ATTRIBUTE = ATTR + 'ibute' as 'attribute';
 export let REQUIRE: 'require' = 'require';
@@ -72,13 +71,36 @@ export let TELEPORT: 'teleport' = 'teleport';
 export let THRESHOLD: 'threshold' = 'threshold';
 export let OPTION: 'option' = 'option';
 export let INIT: 'init' = 'init';
+export let STATUS: 'status' = 'status';
+export let SKIP: 'skip' = 'skip';
+export let BEFORE: 'before' = 'before';
+export let AFTER: 'after' = 'after';
 
 // Operation types
 export let CREATE: 'create' = 'create';
 export let UPDATE: 'update' = 'update';
 export let DELETE: 'delete' = 'delete';
 
+// Animation & transition
+export let TRANSITION: 'transition' = 'transition';
+export let TRANSITION_ENGINE = TRANSITION + ' engine';
+export let PAUSE = 'pause';
+export let PLAY: 'play' = 'play';
+export let REVERSE: 'reverse' = 'reverse';
+export let REVERSED = REVERSE+'d';
+export let CURRENT_TIME = 'currentTime';
+export let DURATION = 'duration';
+export let EVENT_CALLBACK = 'eventCallback';
+export let COMPLETE = 'complete';
+export let ON_COMPLETE: 'onComplete' = 'onComplete';
+export let PLAYBACK_RATE = 'playbackRate';
+export let NAME: 'name' = 'name';
+export let VALIDATE: 'validate' = 'validate';
+
 // Error messages
 export let MUST_BE = 'must be';
-export let BEFORE_INIT = MUST_BE + ' defined before initialization.';
+export let BEFORE_INIT = MUST_BE + ` defined ${BEFORE} initialization.`;
 export let CAN_ONLY_BE_USED_ON = 'can only be used on';
+export let BUT_GOT_INSTEAD = (somethingElse: string) => `but got ${somethingElse} instead.`;
+export let NOT_FOUND = 'not found.';
+export let INVALID = 'Invalid';

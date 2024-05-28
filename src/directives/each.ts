@@ -1,18 +1,21 @@
-import { ref, validVariableName } from '../evaluation';
+import { evaluate } from '../evaluation';
 import { state, watch } from '../reactivity';
-import { hydrate, dehydrate, vnodes, saveAttr, saveVNode, saveEffect, newVNode } from '../hydration';
-import { entries, has } from '../tools';
+import { hydrate, dehydrate, vnodes, saveVNode, saveCleanup, newVNode, lifecycle, attr } from '../hydration';
+import { entries, has, logger } from '../tools';
 import { appendChild, removeChild, insertBefore, getParent, nextSibling } from '../tools/dom';
-import { split, trim } from '../tools/string';
+import { split, test, trim } from '../tools/string';
 import { isArray, isObject } from '../tools/typeCheck';
-import { ARRAY, OBJECT, EACH, DIRECTIVE, REQUIRE, CREATE, UPDATE, DELETE, $PROPS, $EL, ATTR, PROPS } from '../tools/constants';
+import { ARRAY, OBJECT, EACH, DIRECTIVE, REQUIRE, CREATE, UPDATE, DELETE, $PROPS, PROPS, STATUS, SKIP } from '../tools/constants';
 import { createContext, deleteKey } from '../tools/object';
 
 export let _each: ObjectType = {};
 
 export let hydrateEach = (vnode: VNode, attrName: string, attrValue: string) => {
 
-    let $el = vnode[$EL];
+    let $el = vnode.$el;
+
+    // Skip the node
+    vnode[STATUS] = SKIP;
 
     // Split the alias and the prop expression
     let [alias, propExp] = split(attrValue, ' in ').map(trim);
@@ -28,23 +31,19 @@ export let hydrateEach = (vnode: VNode, attrName: string, attrValue: string) => 
 
     // Check if the `item` alias is a valid variable name
     if (!validVariableName(item) || !validVariableName(index))
-        throw new Error(`${msg} a valid alias.`);
+        return logger(`${msg} a valid alias.`);
 
     // Get the value of the prop
-    let value = ref(vnode, propExp);
+    let [ ref, isRef ] = evaluate(vnode, propExp);
+
+    if (!isRef)
+        return logger(`${msg} a prop.`);
+
+    let value = ref();
 
     // Check if the prop is an array or an object
     if (!(isArray(value) || isObject(value)))
-        throw new Error(`${msg} an ${ARRAY} or an ${OBJECT}.`);
-
-    // Saves the `each` attribute to the vnode and removes it from the node.
-    // This is done to prevent the attribute from being re-evaluated.
-    // The un-evaluated node will be used as a template for the new items.
-    saveAttr(vnode, attrName, attrValue);
-
-    // Save the vnode
-    // This is because the vnode of a `each` directive skips the hydration process and never gets saved to the vnodes map, like other vnodes.
-    saveVNode(vnode);
+        return logger(`${msg} an ${ARRAY} or an ${OBJECT}.`);
 
     let nextEl = nextSibling($el);
     let parentEl = getParent($el)!;
@@ -57,8 +56,10 @@ export let hydrateEach = (vnode: VNode, attrName: string, attrValue: string) => 
 
     let KEY = Symbol('key');
 
+    type EachContext = [number, any];
+
     // Mount a new item
-    let mount = (i: string | number, v: any) => {
+    let mount = lifecycle(vnode, attrName, ([i, v]: EachContext, next: FunctionType) => {
 
         // Create a new node
         let _el = $el.cloneNode(true) as HTMLElement;
@@ -84,29 +85,32 @@ export let hydrateEach = (vnode: VNode, attrName: string, attrValue: string) => 
         _vnode[$PROPS] = _props;
 
         // Make sure the `index` never changes
-        saveEffect(_vnode, watch(_props, index, ({newValue}) => {
+        saveCleanup(_vnode, watch(_props, index, ({newValue}) => {
             if (newValue !== _props[KEY])
                 _props[index] = _props[KEY];
         }));
 
         // Keep the `item` in sync with the `value`
-        saveEffect(_vnode, watch(_props, item, ({newValue}) => {
+        saveCleanup(_vnode, watch(_props, item, ({newValue}) => {
             value[_props[KEY]] = newValue;
         }));
 
         // Make this vnode a $root vnode so its children can inherit its context
         // This is done to make sure this item and its children have access to [item] and [index].
-        _vnode[ATTR][PROPS] = '';
+        attr(_vnode, PROPS, '');
 
         // Hydrate the new node
         hydrate([_el]);
 
         // Add the node to the mountedItems map
         mountedItems[i] = _el;
-    };
+
+        // Next lifecycle function
+        next();
+    });
 
     // Update an existing item
-    let sync = (i: string | number, v: any) => {
+    let sync = lifecycle(vnode, attrName, ([i, v]: EachContext, next: FunctionType) => {
         // Get the existing node
         let _el = mountedItems[i];
 
@@ -119,10 +123,13 @@ export let hydrateEach = (vnode: VNode, attrName: string, attrValue: string) => 
             _props[index] = i;
             _props[KEY] = i;
         }
-    };
+
+        // Next lifecycle function
+        next();
+    });
 
     // Unmount an existing item
-    let unmount = (i: string | number, _: any) => {
+    let unmount = lifecycle(vnode, attrName, ([i, _]: EachContext, next: FunctionType) => {
         // Get the existing node
         let _el = mountedItems[i];
 
@@ -135,7 +142,10 @@ export let hydrateEach = (vnode: VNode, attrName: string, attrValue: string) => 
 
         // Remove the node from the mountedItems set
         deleteKey(mountedItems, i);
-    };
+
+        // Next lifecycle function
+        next();
+    });
 
     let operations: ObjectType = {
         [CREATE]: mount,
@@ -144,9 +154,9 @@ export let hydrateEach = (vnode: VNode, attrName: string, attrValue: string) => 
     };
 
     // Initialize all the items
-    for (let [i, v] of entries(value)) {
+    for (let entry of entries(value)) {
         // Create a new node for each item
-        mount(i, v);
+        mount(entry);
     }
 
 
@@ -154,12 +164,12 @@ export let hydrateEach = (vnode: VNode, attrName: string, attrValue: string) => 
     let cleanup = watch(value, "", ({operation, prop, newValue}) => {
         if (has([CREATE,UPDATE,DELETE], operation)) {
             // Perform the operation
-            operations[operation](prop, newValue);
+            operations[operation]([prop, newValue]);
         }
     });
 
-    // Save the effect to the vnode
-    saveEffect(vnode, cleanup);
-
-    return false;
+    // Save the cleanup function
+    saveCleanup(vnode, cleanup);
 }
+
+let validVariableName = (name: string) => test(name, /^[a-z_$][\w$]*$/i);

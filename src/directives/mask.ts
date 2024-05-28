@@ -1,11 +1,11 @@
 import { evaluate } from "../evaluation";
-import { saveAttr, saveEffect } from "../hydration";
-import { size, slice, wait } from "../tools";
+import { lifecycle, saveCleanup } from "../hydration";
+import { logger, size, slice, wait } from "../tools";
 import { each } from "../tools/array";
 import { CAN_ONLY_BE_USED_ON, DIRECTIVE, ELEMENT, INPUT, SELECTION_START, TEXTAREA, VALUE } from "../tools/constants";
 import { listen } from "../tools/dom";
 import { deleteKey, getKeys } from "../tools/object";
-import { isStringAlpha, isStringFunction, isStringNumeric, replaceSubstring, split, startsWith, trim } from "../tools/string";
+import { isStringAlpha, isStringNumeric, replaceSubstring, split, startsWith, trim } from "../tools/string";
 import { isUndefined } from "../tools/typeCheck";
 
 export let hydrateMask = (vnode: VNode, attrName: string, attrValue: string) => {
@@ -15,7 +15,7 @@ export let hydrateMask = (vnode: VNode, attrName: string, attrValue: string) => 
 
     // If the element has no value or selectionStart properties, return
     if (!(VALUE in $el && SELECTION_START in $el))
-        return console.error(`The ${MASK} ${DIRECTIVE} ${CAN_ONLY_BE_USED_ON} ${TEXTAREA} ${ELEMENT}s and some ${INPUT} types.`);
+        return logger(`The ${MASK} ${DIRECTIVE} ${CAN_ONLY_BE_USED_ON} ${TEXTAREA} ${ELEMENT}s and textual ${INPUT} types (text, email, etc.).`);
 
     let value: string;
     let previousValue: string;
@@ -207,14 +207,14 @@ export let hydrateMask = (vnode: VNode, attrName: string, attrValue: string) => 
     };
 
     if (modifier == 'dynamic') {
-        dynamicMask = evaluate(vnode, isStringFunction(attrValue) ? attrValue : `($mask)=>${attrValue}`);
+        dynamicMask = evaluate(vnode, attrValue, '$mask')[0];
     }
 
     // Get the initial value of the input
     wait(() => previousValue = $el.value);
 
     // This listener will `capture` and process the input value before any other listeners.
-    let cleanup = listen($el, INPUT, () => {
+    let cleanup = listen($el, INPUT, lifecycle(vnode, attrName, (_: any, next: FunctionType) => {
 
         // Get the current value of the input
         value = $el.value;
@@ -242,11 +242,11 @@ export let hydrateMask = (vnode: VNode, attrName: string, attrValue: string) => 
 
         // Set the cursor position
         setCursorPosition($el, newCursorPosition + cursorOffset);
-    }, true);
+
+        // Next lifecycle function
+        next();
+    }), true);
 
     // Save cleanup function
-    saveEffect(vnode, cleanup);
-
-    // Save the value of the `mask` attribute
-    saveAttr(vnode, attrName, attrValue);
+    saveCleanup(vnode, cleanup);
 }

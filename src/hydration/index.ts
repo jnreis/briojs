@@ -384,10 +384,13 @@ export let tools: HydrationTools = {
     wrapper,
     hydrate,
     dehydrate,
+    saveCleanup,
     newVNode,
     saveVNode,
-    saveCleanup,
+    attr,
     saveAttr,
+    lifecycle,
+    saveLifecycle,
 
     evaluate,
 

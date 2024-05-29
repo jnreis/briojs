@@ -87,7 +87,15 @@ type HydrationTools = {
     saveCleanup: (vnode: VNode, fn: FunctionType) => void,
     newVNode: ($el: HTMLElement) => VNode,
     saveVNode: (vnode: VNode) => void,
+    attr: (vnode: VNode, attrName: string, attrValue?: string) => {
+        value: string;
+        deps?: FunctionType | undefined;
+        before: MiddlewareFunction[];
+        after: MiddlewareFunction[];
+    },
     saveAttr: (vnode: VNode, attrName: string, attrValue: string) => void,
+    lifecycle: (vnode: VNode, attrName: string, directiveFn: MiddlewareFunction) => (context: any, index?: number) => void,
+    saveLifecycle: (vnode: VNode, attrName: string, lifecycleType: 'before' | 'after', fn: MiddlewareFunction) => void,
 
     evaluate: (vnode: VNode, exp: string) => any,
 

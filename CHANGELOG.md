@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.1] - 2024-05-29
+- Functions `attr`, `lifecycle`, and `saveLifecycle` were added to the hydration tools object.
+
 ## [0.3.0] - 2024-05-28
 - Major changes to the hydration and evaluation process. 
   - Hydration now has a robust lifecycle system based on middleware functions.

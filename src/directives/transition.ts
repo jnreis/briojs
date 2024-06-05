@@ -1,5 +1,5 @@
 import { evaluate } from "../evaluation";
-import { saveLifecycle } from "../hydration";
+import { saveInterceptor } from "../hydration";
 import { $in, $out } from "../methods/transition";
 import { logger } from "../tools";
 import { AFTER, ATTR, BEFORE, DIRECTIVE, MUST_BE, OPACITY, TRANSITION } from "../tools/constants";
@@ -15,16 +15,16 @@ export let hydrateTransition = (vnode: VNode, _: string, attrValue: string) => {
     let animation = evaluate(vnode, attrValue)[0]();
 
     // Pause the animation
-    // The animation will be played when the lifecycle functions are called
+    // The animation will be played when the interceptor functions are called
     animation.pause();
 
     // Create instances of the $in and $out functions
     let _out = $out();
     let _in = $in();
 
-    // Save the lifecycle functions (before out, after in)
-    saveLifecycle(vnode, _attrName, BEFORE, (ctx, next) => _out(animation, ctx, next));
-    saveLifecycle(vnode, _attrName, AFTER, (ctx, next) => _in(animation, ctx, next));
+    // Save the interceptor functions (before out, after in)
+    saveInterceptor(vnode, _attrName, BEFORE, (ctx, next) => _out(animation, ctx, next));
+    saveInterceptor(vnode, _attrName, AFTER, (ctx, next) => _in(animation, ctx, next));
 }
 
 /**

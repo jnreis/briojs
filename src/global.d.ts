@@ -47,8 +47,8 @@ type VNode = {
         [attrName: string]: {
             value: string,
             deps?: FunctionType,
-            before: MiddlewareFunction[],
-            after: MiddlewareFunction[],
+            before: Interceptor[],
+            after: Interceptor[],
         }
     },
 
@@ -70,13 +70,8 @@ type FunctionType = (...args: any) => any;
 
 
 // HYDRATION TYPES
-type DirectiveValidation = (attrName: string) => (vnode: VNode, tools: DirectiveValidationTools) => [string, string] | undefined;
-type DirectiveValidationTools = {
-    equalsTo: DirectiveValidation,
-    startsWith: DirectiveValidation
-};
-
-type ValidateDirective = (vnode: VNode, tools: DirectiveValidationTools) => [string, string] | undefined;
+/** 0: not a directive, 1: directive without modifiers, 2: directive with modifiers */
+type ValidateDirective = (vnode: VNode, attrName: string, attrValue: string) => 0|1|2;
 type HydrateDirective = (vnode: VNode, attrName: string, attrValue: string, tools: HydrationTools) => any;
 
 type HydrationTools = {
@@ -90,12 +85,12 @@ type HydrationTools = {
     attr: (vnode: VNode, attrName: string, attrValue?: string) => {
         value: string;
         deps?: FunctionType | undefined;
-        before: MiddlewareFunction[];
-        after: MiddlewareFunction[];
+        before: Interceptor[];
+        after: Interceptor[];
     },
     saveAttr: (vnode: VNode, attrName: string, attrValue: string) => void,
-    lifecycle: (vnode: VNode, attrName: string, directiveFn: MiddlewareFunction) => (context: any, index?: number) => void,
-    saveLifecycle: (vnode: VNode, attrName: string, lifecycleType: 'before' | 'after', fn: MiddlewareFunction) => void,
+    interceptor: (vnode: VNode, attrName: string, directiveFn: Interceptor) => (context: any, index?: number) => void,
+    saveInterceptor: (vnode: VNode, attrName: string, interceptorType: 'before' | 'after', fn: Interceptor) => void,
 
     evaluate: (vnode: VNode, exp: string) => any,
 
@@ -104,7 +99,8 @@ type HydrationTools = {
     size: (value: any) => number,
 }
 
-type MiddlewareFunction = (ctx: any, next: (stop: boolean = false) => void, remove: () => void) => void;
+type Interceptor = (ctx: any, next: NextFunction, remove: () => void) => void;
+type NextFunction = (stop: boolean = false) => void;
 
 
 // REACTIVITY TYPES
@@ -128,7 +124,7 @@ type PropRef = [any, string|number|symbol];
 
 
 // ANIMATION TYPES
-type AnimationFunction = (animation: any, next: FunctionType) => void;
+type AnimationFunction = (animation: any, next: NextFunction) => void;
 type AnimationEngine = {
     name: string,
     validate: (animation: any) => boolean,

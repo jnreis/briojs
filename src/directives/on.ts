@@ -1,5 +1,5 @@
 import { evaluate } from '../evaluation';
-import { lifecycle, saveCleanup } from '../hydration';
+import { interceptor, saveCleanup } from '../hydration';
 import { has, size, debounce, throttle, wait } from '../tools';
 import { each } from '../tools/array';
 import { BUT_GOT_INSTEAD, FUNCTION, MUST_BE } from '../tools/constants';
@@ -65,12 +65,12 @@ export let hydrateOn = (vnode: VNode, attrName: string, attrValue: string) => {
     if (isRef)
         console.warn(`The event handler ${MUST_BE} a ${FUNCTION}, ${BUT_GOT_INSTEAD(getType(call()))}`);
 
-    // Create the lifecycle function
-    let fn = lifecycle(vnode, attrName, ($event: any, next: FunctionType) => {
+    // Create an interceptor
+    let fn = interceptor(vnode, attrName, ($event, next) => {
         // Call the function
         call($event);
 
-        // Next lifecycle function
+        // Next interceptor function
         next();
     });
 

@@ -3,14 +3,12 @@ import { isFunction } from "../tools/typeCheck";
 
 export let hydrateHtml = (vnode: VNode, attrName: string, attrValue: string) => {
 
-    let callback = (node: HTMLElement) => (ctx: any, next: FunctionType) => {
+    wrapper(vnode, attrName, attrValue, (node) => (ctx, next) => {
 
         // Set the innerHTML
         node.innerHTML = isFunction(ctx) ? ctx() : ctx;
 
-        // Next lifecycle function
+        // Next function
         next();
-    }
-
-    wrapper(vnode, attrName, attrValue, callback);
+    });
 }

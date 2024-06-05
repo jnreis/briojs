@@ -104,9 +104,6 @@ export let state = (target: any) => {
     // Function to notify computed functions about property changes
     let notifyListeners = (prop: any, newValue: any, oldValue: any) => {
 
-        // Don't notify about array length changes
-        if ((isArray(target) && prop == 'length')) return;
-
         let operation = isUndefined(oldValue) ? CREATE : isUndefined(newValue) ? DELETE : UPDATE;
 
         let context = {operation, observedState, prop, newValue, oldValue};

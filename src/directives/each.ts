@@ -1,6 +1,6 @@
 import { evaluate } from '../evaluation';
 import { state, watch } from '../reactivity';
-import { hydrate, dehydrate, vnodes, saveVNode, saveCleanup, newVNode, lifecycle, attr } from '../hydration';
+import { hydrate, dehydrate, vnodes, saveVNode, saveCleanup, newVNode, interceptor, attr } from '../hydration';
 import { entries, has, logger } from '../tools';
 import { appendChild, removeChild, insertBefore, getParent, nextSibling } from '../tools/dom';
 import { split, test, trim } from '../tools/string';
@@ -59,7 +59,7 @@ export let hydrateEach = (vnode: VNode, attrName: string, attrValue: string) => 
     type EachContext = [number, any];
 
     // Mount a new item
-    let mount = lifecycle(vnode, attrName, ([i, v]: EachContext, next: FunctionType) => {
+    let mount = interceptor(vnode, attrName, ([i, v]: EachContext, next) => {
 
         // Create a new node
         let _el = $el.cloneNode(true) as HTMLElement;
@@ -105,12 +105,12 @@ export let hydrateEach = (vnode: VNode, attrName: string, attrValue: string) => 
         // Add the node to the mountedItems map
         mountedItems[i] = _el;
 
-        // Next lifecycle function
+        // Next function
         next();
     });
 
     // Update an existing item
-    let sync = lifecycle(vnode, attrName, ([i, v]: EachContext, next: FunctionType) => {
+    let sync = interceptor(vnode, attrName, ([i, v]: EachContext, next) => {
         // Get the existing node
         let _el = mountedItems[i];
 
@@ -124,12 +124,12 @@ export let hydrateEach = (vnode: VNode, attrName: string, attrValue: string) => 
             _props[KEY] = i;
         }
 
-        // Next lifecycle function
+        // Next function
         next();
     });
 
     // Unmount an existing item
-    let unmount = lifecycle(vnode, attrName, ([i, _]: EachContext, next: FunctionType) => {
+    let unmount = interceptor(vnode, attrName, ([i, _]: EachContext, next) => {
         // Get the existing node
         let _el = mountedItems[i];
 
@@ -143,7 +143,7 @@ export let hydrateEach = (vnode: VNode, attrName: string, attrValue: string) => 
         // Remove the node from the mountedItems set
         deleteKey(mountedItems, i);
 
-        // Next lifecycle function
+        // Next function
         next();
     });
 

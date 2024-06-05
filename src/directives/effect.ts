@@ -3,14 +3,12 @@ import { isFunction } from "../tools/typeCheck";
 
 export let hydrateEffect = (vnode: VNode, attrName: string, attrValue: string) => {
 
-    let callback = () => (ctx: any, next: FunctionType) => {
+    wrapper(vnode, attrName, attrValue, () => (ctx, next) => {
 
         // Call the expression
         if (isFunction(ctx)) ctx();
 
-        // Next lifecycle function
+        // Next function
         next();
-    };
-
-    wrapper(vnode, attrName, attrValue, callback);
+    });
 }

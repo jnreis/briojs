@@ -8,7 +8,7 @@ export let hydrateBind = (vnode: VNode, attrName: string, attrValue: string) => 
 
     let prop = slice(attrName, 2);
 
-    let callback = (node: HTMLElement) => (ctx: any, next: FunctionType) => {
+    wrapper(vnode, attrName, attrValue || 'true', (node) => (ctx, next) => {
 
         let value = isFunction(ctx) ? ctx() : ctx;
 
@@ -22,9 +22,7 @@ export let hydrateBind = (vnode: VNode, attrName: string, attrValue: string) => 
         // Remove attribute
         else delAttr(node, prop);
 
-        // Next lifecycle function
+        // Next function
         next();
-    }
-
-    wrapper(vnode, attrName, attrValue || 'true', callback);
+    });
 }

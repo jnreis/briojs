@@ -30,7 +30,7 @@ export let getAttr = (node: HTMLElement, attr: string) =>
 export let setAttr = (node: HTMLElement, attr: string, value: string) =>
     node.setAttribute(attr, value);
 
-export let findAttr = (node: HTMLElement, callback: Function): [string, string] | undefined => {
+export let findAttr = (node: HTMLElement, callback: FunctionType): [string, string] | undefined => {
     for (let { name, value } of [...node[ATTRIBUTE + 's' as 'attributes']]) {
         if (callback(name, value)) return [name, value];
     }

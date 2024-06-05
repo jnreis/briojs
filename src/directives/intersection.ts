@@ -1,5 +1,5 @@
 import { evaluate } from "../evaluation";
-import { lifecycle, saveCleanup } from "../hydration";
+import { interceptor, saveCleanup } from "../hydration";
 import { debounce, has, size } from "../tools";
 import { arrayAdd, each } from "../tools/array";
 import { toNumber } from "../tools/number";
@@ -50,13 +50,13 @@ export let hydrateIntersection = (vnode: VNode, attrName: string, attrValue: str
     // Evaluate the expression
     let [ call, isRef ] = evaluate(vnode, attrValue, '$entry', true);
 
-    // Create the lifecycle function
-    let exp: Function = lifecycle(vnode, attrName, (entry: IntersectionObserverEntry, next: FunctionType) => {
+    // Create an interceptor
+    let exp: Function = interceptor(vnode, attrName, (entry: IntersectionObserverEntry, next) => {
         // Execute the expression
         if (isRef) call()
         else call(entry);
 
-        // Next lifecycle function
+        // Next function
         next();
     });
 

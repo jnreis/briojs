@@ -6,7 +6,7 @@ import { isFunction } from '../tools/typeCheck';
 
 export let hydrateShow = (vnode: VNode, attrName: string, attrValue: string) => {
 
-    let callback = (node: HTMLElement) => (ctx: any, next: FunctionType) => {
+    wrapper(vnode, attrName, attrValue, (node) => (ctx, next) => {
         if (!getParent(node)) return;
 
         // Wait for the next tick.
@@ -17,10 +17,8 @@ export let hydrateShow = (vnode: VNode, attrName: string, attrValue: string) => 
             // Show or hide the element
             node[STYLE][DISPLAY] = value ? '' : 'none';
 
-            // Next lifecycle function
+            // Next function
             next();
         });
-    }
-
-    wrapper(vnode, attrName, attrValue, callback);
+    });
 }

@@ -5,13 +5,13 @@ import { isFunction } from "../tools/typeCheck";
 
 export let hydrateIf = (vnode: VNode, attrName: string, attrValue: string) => {
 
-    let callback = (node: HTMLElement) => {
+    wrapper(vnode, attrName, attrValue, (node) => {
         // Store references to parent and siblings
         let parentEl = getParent(node) as HTMLElement;
         let nextEl = nextSibling(node);
 
         // Return the watch function
-        return (ctx: any, next: FunctionType) => {
+        return (ctx, next) => {
             // Wait for the next tick.
             // * This is necessary for some directives to work properly (e.g. `on-click-outside`)
             wait(() => {
@@ -27,11 +27,9 @@ export let hydrateIf = (vnode: VNode, attrName: string, attrValue: string) => {
                 // Remove
                 else node.remove();
 
-                // Next lifecycle function
+                // Next function
                 next();
             });
         }
-    }
-
-    wrapper(vnode, attrName, attrValue, callback);
+    });
 }

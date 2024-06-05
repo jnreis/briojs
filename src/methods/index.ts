@@ -1,5 +1,5 @@
 import { $emit } from './dom';
-import { $lifecycle } from './hydration';
+import { $interceptor } from './hydration';
 import { $watch, $persist, $session } from './reactivity';
 import { $uid } from './tools';
 import { $in, $out } from './transition';
@@ -15,8 +15,8 @@ export let _methods: [string, MagicMethod][] = [
     ['$persist', $persist],
     ['$session', $session],
 
-    ['$'+BEFORE, $lifecycle(BEFORE)],
-    ['$'+AFTER, $lifecycle(AFTER)],
+    ['$'+BEFORE, $interceptor(BEFORE)],
+    ['$'+AFTER, $interceptor(AFTER)],
 
     ['$in', $in],
     ['$out', $out],

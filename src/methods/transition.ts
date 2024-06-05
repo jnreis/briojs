@@ -7,8 +7,8 @@ import { camelCase, capitalize } from "../tools/string";
 export let _engines: AnimationEngine[] = [
     {
         [NAME]: 'Web Animations API (WAAPI)',
-        [VALIDATE]: (animation: any) => animation instanceof Animation,
-        [PLAY]: (animation: any, next: FunctionType) => {
+        [VALIDATE]: (animation) => animation instanceof Animation,
+        [PLAY]: (animation, next) => {
             // Animation is set backwards
             if (animation[PLAYBACK_RATE] < 0) {
                 animation[REVERSE]();
@@ -21,7 +21,7 @@ export let _engines: AnimationEngine[] = [
             // Skip the animation, if it's completed
             else next();
         },
-        [REVERSE]: (animation: any, next: FunctionType) => {
+        [REVERSE]: (animation, next) => {
             // The animation is already at the beginning
             if (animation[CURRENT_TIME] == 0) next();
 
@@ -37,15 +37,15 @@ export let _engines: AnimationEngine[] = [
             // Skip the animation, if it's completed
             else next();
         },
-        [ON_COMPLETE]: (animation: any, next: FunctionType) => {
+        [ON_COMPLETE]: (animation, next) => {
             animation.onfinish = next;
         }
     },
     {
         [NAME]: 'Anime.js',
         // ? This validation can be improved
-        validate: (animation: any) => ['animatables', 'autoplay'].every(key => hasOwnProperty(animation, key)),
-        [PLAY]: (animation: any, next: FunctionType) => {
+        validate: (animation) => ['animatables', 'autoplay'].every(key => hasOwnProperty(animation, key)),
+        [PLAY]: (animation, next) => {
             // Animation is set backwards
             if (animation[REVERSED]) {
                 // Pause the animation before reversing
@@ -63,7 +63,7 @@ export let _engines: AnimationEngine[] = [
             // Skip the animation, if it's completed
             else next();
         },
-        [REVERSE]: (animation: any, next: FunctionType) => {
+        [REVERSE]: (animation, next) => {
             // Animation is set forward
             if (!animation[REVERSED]) {
                 // Pause the animation before reversing
@@ -81,21 +81,21 @@ export let _engines: AnimationEngine[] = [
             // Skip the animation, if it's completed
             else next();
         },
-        [ON_COMPLETE]: (animation: any, next: FunctionType) => {
+        [ON_COMPLETE]: (animation, next) => {
             animation[COMPLETE] = next;
         }
     },
     {
         [NAME]: 'GSAP',
         // ? This validation can be improved
-        [VALIDATE]: (animation: any) => [EVENT_CALLBACK, 'yoyo'].every(key => key in animation),
-        [PLAY]: (animation: any) => {
+        [VALIDATE]: (animation) => [EVENT_CALLBACK, 'yoyo'].every(key => key in animation),
+        [PLAY]: (animation) => {
             animation[PLAY]();
         },
-        [REVERSE]: (animation: any) => {
+        [REVERSE]: (animation) => {
             animation[REVERSE]();
         },
-        [ON_COMPLETE]: (animation: any, next: FunctionType) => {
+        [ON_COMPLETE]: (animation, next) => {
             animation[EVENT_CALLBACK](ON_COMPLETE, next);
             animation[EVENT_CALLBACK](camelCase('on', REVERSE, COMPLETE), next);
         },
@@ -103,11 +103,11 @@ export let _engines: AnimationEngine[] = [
 ]
 
 /** ANIMATION CONTROLS */
-let _animations: Map<any, FunctionType> = new Map();
+let _animations: Map<any, NextFunction> = new Map();
 
 export let getEngine = (animation: any) => _engines.find(engine => engine.validate(animation));
 
-let transition = (animation: any, next: FunctionType) => {
+let transition = (animation: any, next: NextFunction) => {
     // Get the animation engine
     let engine = getEngine(animation);
 
@@ -120,19 +120,19 @@ let transition = (animation: any, next: FunctionType) => {
     // Set the `onComplete` callback for the animation
     if (!_animations.has(animation)) {
         engine.onComplete(animation, () => {
-            // onComplete, call the `next` lifecycle function
+            // onComplete, call the `next` interceptor function
             _animations.get(animation)!();
         });
     }
 
-    // Pass the `next` lifecycle function to the `complete` callback
+    // Pass the `next` interceptor function to the `complete` callback
     _animations.set(animation, next);
 
     return engine;
 }
 
-/* The transition $in function should be with the `after` lifecycle function */
-export let $in = () => (animation: any, ctx: any, next: FunctionType) => {
+/* The transition $in function should be with the `after` interceptor function */
+export let $in = () => (animation: any, ctx: any, next: NextFunction) => {
 
     // Prepare the transition
     let engine = transition(animation, next);
@@ -143,8 +143,8 @@ export let $in = () => (animation: any, ctx: any, next: FunctionType) => {
     else next();
 }
 
-/* The transition $out function should be with the `before` lifecycle function */
-export let $out = () => (animation: any, ctx: any, next: FunctionType) => {
+/* The transition $out function should be with the `before` interceptor function */
+export let $out = () => (animation: any, ctx: any, next: NextFunction) => {
 
     // Skip the animation for the first time if the element is supposed to be removed
     if (!_animations.has(animation) && !ctx) next();

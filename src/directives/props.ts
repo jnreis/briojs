@@ -1,7 +1,7 @@
 import { hydrateRefs } from './refs';
 import { _reservedNames } from '../api';
 import { evaluate } from '../evaluation';
-import { lifecycle } from '../hydration';
+import { interceptor } from '../hydration';
 import { state } from '../reactivity';
 import { has, logger } from '../tools';
 import { createContext, deleteKey, getKeys, objectMerge } from '../tools/object';
@@ -19,7 +19,8 @@ export let hydrateProps = (vnode: VNode, attrName: string, attrValue: string) =>
     // Create the context
     let context: ObjectType = {};
 
-    lifecycle(vnode, attrName, (context: ObjectType, next: FunctionType) => {
+    // Create an interceptor
+    interceptor(vnode, attrName, (context: ObjectType, next) => {
         // Check if the attribute value is a key in the _props object
         let newContext: any = attrValue in _props
             // Use the user-defined context
@@ -41,7 +42,7 @@ export let hydrateProps = (vnode: VNode, attrName: string, attrValue: string) =>
         // Check if the vnode has a parent
         let hasParent = vnode.$el !== vnode[$ROOT];
 
-        // Merge any keys passed in the context object from the before lifecycle
+        // Merge any keys passed in the context object from the `before` interceptor functions
         objectMerge(newContext, context);
 
         // Create the new context
@@ -56,7 +57,7 @@ export let hydrateProps = (vnode: VNode, attrName: string, attrValue: string) =>
         // Init prop
         if (has(getKeys(context), INIT)) context[INIT]();
 
-        // Next lifecycle function
+        // Next function
         next();
     })(context);
 }

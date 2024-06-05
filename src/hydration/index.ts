@@ -6,8 +6,8 @@ import { q, walk, getAttr, delAttr, getParent, setAttr } from "../tools/dom";
 import { toNumber } from "../tools/number";
 import { isStringFunction, split, startsWith, trim } from "../tools/string";
 import { isTextNode, isElementNode } from "../tools/typeCheck";
-import { NUMBER, TEXT, $PROPS, $ROOT, $REFS, TEXT_CONTENT, ATTR, CLEANUP, VALUE, STATUS, SKIP, BEFORE, AFTER } from "../tools/constants";
-import { _directives, attrNameEquals, attrNameStartsWith } from "../directives";
+import { NUMBER, TEXT, $PROPS, $ROOT, $REFS, TEXT_CONTENT, ATTR, CLEANUP, VALUE, STATUS, SKIP, BEFORE, AFTER, ATTRIBUTE } from "../tools/constants";
+import { _directives } from "../directives";
 
 // Raw values are evaluated only once in production mode, but are evaluated every time they are updated in development mode
 export const vnodes : VNodes = new Map();
@@ -34,12 +34,12 @@ export let wrapper = (
     vnode: VNode,
     attrName: string,
     attrValue: string,
-    callback: (node: HTMLElement) => FunctionType
+    callback: (node: HTMLElement) => Interceptor
 ) => {
 
-    // Create a new lifecycle runner.
-    // The lifecycle runner is a function that executes the before, directive, and after lifecycle functions in sequence by calling the next function.
-    let runner = lifecycle(vnode, attrName, callback(vnode.$el));
+    // Create an interceptor
+    // The interceptor runner is a function that executes the `before`, `directive`, and `after` interceptor functions in sequence by calling a `next` function.
+    let runner = interceptor(vnode, attrName, callback(vnode.$el));
 
     // The context. Which most likely refers to reactive properties.
     let [ctx] = evaluate(vnode, attrValue);
@@ -218,21 +218,26 @@ export let hydrateElementNode = (node: HTMLElement) => {
     // Get the vnode or create a new one
     let vnode = newVNode(node);
 
-    for (let [validateDirective, hydrateDirective] of _directives) {
-        // Check if the attribute is a directive
-        let attr = validateDirective(vnode, { equalsTo: attrNameEquals, startsWith: attrNameStartsWith });
-        if (attr) {
-            let [name, value] = attr;
+    // Check all the attributes
+    for (let { name, value } of [...node[ATTRIBUTE + 's' as 'attributes']]) {
+        for (let [validateDirective, hydrateDirective] of _directives) {
+            // Check if the attribute is a directive
+            let isDirective = validateDirective(vnode, name, value);
+            if (isDirective > 0) {
 
-            // Save attribute
-            saveAttr(vnode, name, value);
+                // Save attribute
+                saveAttr(vnode, name, value);
 
-            // Hydrate the directive
-            hydrateDirective(vnode, name, sanitizeAttrValue(value), tools);
+                // Hydrate the directive
+                hydrateDirective(vnode, name, sanitizeAttrValue(value), tools);
 
-            // Stop the walk callback from hydrating the rest of the directives or the children elements
-            if (vnode[STATUS] == SKIP) break;
+                // Break the directives loop after the directive is hydrated
+                break;
+            }
         }
+        // Break the attributes loop if the vnode was marked as SKIP
+        // This will prevent the walk callback from hydrating the rest of the directives or the children elements
+        if (vnode[STATUS] == SKIP) break;
     }
 
     // Continue the walk callback to
@@ -262,8 +267,8 @@ export let saveAttr = (vnode: VNode, attrName: string, attrValue: string) => {
     if (isElementNode(vnode.$el)) delAttr(vnode.$el, attrName);
 }
 
-export let saveLifecycle = (vnode: VNode, attrName: string, lifecycleType: 'before'|'after', fn: MiddlewareFunction) => {
-    arrayAdd(attr(vnode, attrName)[lifecycleType], fn);
+export let saveInterceptor = (vnode: VNode, attrName: string, interceptorType: 'before'|'after', fn: Interceptor) => {
+    arrayAdd(attr(vnode, attrName)[interceptorType], fn);
 }
 
 // Save the vnode to the vnodes map
@@ -289,10 +294,10 @@ export let getTopLevelContext = (attrName: string) => {
     return $props
 }
 
-/** Hydrate the lifecycle functions of a directive */
-let hydrateLifecycle = (vnode: VNode, attrName: string, lifecycleName: 'before'|'after') => {
+/** Hydrate the interceptor functions of a directive */
+let hydrateInterceptor = (vnode: VNode, attrName: string, interceptorType: 'before'|'after') => {
     let $el = vnode.$el;
-    let attrCycle = lifecycleName + '-' + attrName;
+    let attrCycle = interceptorType + '-' + attrName;
 
     // Get the attribute value
     let attrValue = getAttr($el, attrCycle);
@@ -300,29 +305,29 @@ let hydrateLifecycle = (vnode: VNode, attrName: string, lifecycleName: 'before'|
     // Evaluate the attribute value, if any
     if (attrValue) {
         let fn = evaluate(vnode, attrValue, '$ctx,$next,$remove', true)[0];
-        saveLifecycle(vnode, attrName, lifecycleName, fn);
+        saveInterceptor(vnode, attrName, interceptorType, fn);
         delAttr($el, attrCycle);
     }
 
-    // Get queued lifecycle functions
+    // Get queued interceptor functions
     let qVnode = vnodesQueue.get($el);
 
     if (qVnode && qVnode[ATTR][attrName]) {
-        each(qVnode[ATTR][attrName][lifecycleName], fn => {
-            saveLifecycle(vnode, attrName, lifecycleName, fn);
+        each(qVnode[ATTR][attrName][interceptorType], fn => {
+            saveInterceptor(vnode, attrName, interceptorType, fn);
         });
     }
 }
 
-/** Set the lifecycle functions (before and after) of a directive, as well as the dependencies, and return the middleware runner */
-export let lifecycle = (vnode: VNode, attrName: string, directiveFn: MiddlewareFunction) => {
+/** Set the interceptor functions (before and after) of a directive, as well as the dependencies, and return the interceptor runner */
+export let interceptor = (vnode: VNode, attrName: string, directiveFn: Interceptor) => {
 
     let $el = vnode.$el;
     let _attr = attr(vnode, attrName);
 
-    // * Hydrate the lifecycle functions, if any
-    hydrateLifecycle(vnode, attrName, BEFORE);
-    hydrateLifecycle(vnode, attrName, AFTER);
+    // * Hydrate the interceptor functions, if any
+    hydrateInterceptor(vnode, attrName, BEFORE);
+    hydrateInterceptor(vnode, attrName, AFTER);
 
     // * Hydrate the dependencies, if any
     let attrDeps = attrName + '-deps';
@@ -338,29 +343,29 @@ export let lifecycle = (vnode: VNode, attrName: string, directiveFn: MiddlewareF
         delAttr($el, attrDeps);
     }
 
-    // Execute the middlewares
+    // Execute the interceptor functions
     let runner = (context: any, index: number = 0) => {
 
-        let middlewares = [..._attr[BEFORE], directiveFn, ..._attr[AFTER]];
+        let interceptorFns = [..._attr[BEFORE], directiveFn, ..._attr[AFTER]];
 
-        // Execute the middlewares in sequence
-        if (index < size(middlewares)) {
-            middlewares[index](
-                // * $ctx: the context contains the data that is passed to the middleware. It can be modified if it is an object.
+        // Execute the interceptor functions in sequence
+        if (index < size(interceptorFns)) {
+            interceptorFns[index](
+                // * $ctx: the context contains the data that is passed to the interceptor function. It can be modified if it is an object.
                 context,
-                // * $next(): go to the next middleware.
+                // * $next(): go to the next interceptor function.
                 (stop: boolean = false) => {
                     if (!stop) runner(context, index + 1);
                 },
-                // * $remove(): remove the middleware.
+                // * $remove(): remove the interceptor function.
                 () => {
                     // Ignore the directive function
-                    if (middlewares[index] == directiveFn) return;
+                    if (interceptorFns[index] == directiveFn) return;
 
                     // The size of the `before` array
                     let beforeSize = size(_attr[BEFORE]);
 
-                    // Remove the middleware
+                    // Remove the interceptor function
                     if (index < beforeSize) _attr[BEFORE].splice(index, 1);
                     else _attr[AFTER].splice(index - beforeSize - 1, 1);
                 }
@@ -368,7 +373,7 @@ export let lifecycle = (vnode: VNode, attrName: string, directiveFn: MiddlewareF
         }
     }
 
-    // Return the middleware runner
+    // Return the interceptor runner
     return runner;
 }
 
@@ -389,8 +394,8 @@ export let tools: HydrationTools = {
     saveVNode,
     attr,
     saveAttr,
-    lifecycle,
-    saveLifecycle,
+    interceptor,
+    saveInterceptor,
 
     evaluate,
 

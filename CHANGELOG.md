@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2024-06-04
+- Removed condition that prevented the "length" property of array from being notified.
+- Renamed the "lifecycle" related code to "interceptor" to better reflect its purpose.
+- Pass the "interceptor" function directly to the "wrapper" function to eliminate the need of an extra variable and implicitly type the function.
+
 ## [0.3.1] - 2024-05-29
 - Functions `attr`, `lifecycle`, and `saveLifecycle` were added to the hydration tools object.
 

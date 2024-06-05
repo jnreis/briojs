@@ -18,40 +18,33 @@ import { hydrateIntersection } from "./intersection";
 
 import { startsWith } from "../tools/string";
 import { EACH, PROPS, SKIP, STATUS, TELEPORT, TEXT, TRANSITION } from "../tools/constants";
-import { findAttr, getAttr } from "../tools/dom";
-import { isNull } from "../tools/typeCheck";
 
-export let attrNameStartsWith = (startName: string) => (vnode: VNode) =>
-    findAttr(vnode.$el, (attrName: string) => startsWith(attrName, startName));
-
-export let attrNameEquals = (attrName: string) => (vnode: VNode): [string, string] | undefined => {
-    let attrValue = getAttr(vnode.$el, attrName);
-    if (!isNull(attrValue)) return [attrName, attrValue as string];
-}
+export let addDirective = (directiveName: string) => (_: VNode, attrName: string) =>
+    attrName == directiveName ? 1 : startsWith(attrName, directiveName) ? 2 : 0;
 
 export let _directives: [ValidateDirective, HydrateDirective][] = [
 
     // Static directives
     // These directives do not have modifiers
-    [attrNameEquals('ignore'), (vnode: VNode) => vnode[STATUS] = SKIP],
-    [attrNameEquals(EACH), hydrateEach],
-    [attrNameEquals(PROPS), hydrateProps],
-    [attrNameEquals('init'), hydrateInit],
-    [attrNameEquals('uid'), hydrateUid],
-    [attrNameEquals('if'), hydrateIf],
-    [attrNameEquals('show'), hydrateShow],
-    [attrNameEquals('html'), hydrateHtml],
-    [attrNameEquals(TEXT), hydrateText],
-    [attrNameEquals('effect'), hydrateEffect],
-    [attrNameEquals(TELEPORT), hydrateTeleport],
-    [attrNameEquals(TRANSITION), hydrateTransition],
+    [addDirective('ignore'), (vnode: VNode) => vnode[STATUS] = SKIP],
+    [addDirective(EACH), hydrateEach],
+    [addDirective(PROPS), hydrateProps],
+    [addDirective('init'), hydrateInit],
+    [addDirective('uid'), hydrateUid],
+    [addDirective('if'), hydrateIf],
+    [addDirective('show'), hydrateShow],
+    [addDirective('html'), hydrateHtml],
+    [addDirective(TEXT), hydrateText],
+    [addDirective('effect'), hydrateEffect],
+    [addDirective(TELEPORT), hydrateTeleport],
+    [addDirective(TRANSITION), hydrateTransition],
 
     // Dynamic directives
     // These directives may have modifiers
-    [attrNameStartsWith('on-enter'), hydrateIntersection], // on-enter-[modifiers] e.g. enter-once-[half|full-[threshold-number]]-margin-value-value?-value?-value?
-    [attrNameStartsWith('on-leave'), hydrateIntersection], // on-leave-[modifiers]
-    [attrNameStartsWith('on-'), hydrateOn], // on-[eventName]-[modifiers]
-    [attrNameStartsWith('b-'), hydrateBind], // b-[attributeName] (bind)
-    [attrNameStartsWith('model'), hydrateModel], // model-[modifiers]
-    [attrNameStartsWith('mask'), hydrateMask], // mask-[modifiers]
+    [addDirective('on-enter'), hydrateIntersection], // on-enter-[modifiers] e.g. enter-once-[half|full-[threshold-number]]-margin-value-value?-value?-value?
+    [addDirective('on-leave'), hydrateIntersection], // on-leave-[modifiers]
+    [addDirective('on-'), hydrateOn], // on-[eventName]-[modifiers]
+    [addDirective('b-'), hydrateBind], // b-[attributeName] (bind)
+    [addDirective('model'), hydrateModel], // model-[modifiers]
+    [addDirective('mask'), hydrateMask], // mask-[modifiers]
 ];

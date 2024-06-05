@@ -1,5 +1,5 @@
 import { evaluate } from '../evaluation';
-import { lifecycle, modelValue, saveAttr, saveCleanup } from '../hydration';
+import { interceptor, modelValue, saveAttr, saveCleanup } from '../hydration';
 import { entries, has, logger } from '../tools';
 import { arrayAdd, arrayFrom, arrayRemove, each } from '../tools/array';
 import { listen, onCompositionStart, onCompositionEnd, getAttr } from '../tools/dom';
@@ -119,7 +119,7 @@ export let hydrateModel = (vnode: VNode, attrName: string, attrValue: string) =>
 
     // UPDATES THE PROP
     let events: ObjectType = {};
-    let eventFn = lifecycle(vnode, attrName, (_: FunctionType, next: FunctionType) => {
+    let eventFn = interceptor(vnode, attrName, (_: FunctionType, next) => {
         let value = call();
         let nodeValue = modelValue(node[VALUE], modifiers);
         // Handle array models
@@ -153,7 +153,7 @@ export let hydrateModel = (vnode: VNode, attrName: string, attrValue: string) =>
             events.compositionend = onCompositionEnd;
         }
 
-        // Next lifecycle function
+        // Next function
         next();
     });
 

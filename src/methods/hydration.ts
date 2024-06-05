@@ -1,11 +1,11 @@
-import { attr, newVNode, saveLifecycle, vnodes, vnodesQueue } from "../hydration"
+import { attr, newVNode, saveInterceptor, vnodes, vnodesQueue } from "../hydration"
 import { BUT_GOT_INSTEAD, ELEMENT, METHOD, REQUIRE } from "../tools/constants";
 import { getType, isElementNode } from "../tools/typeCheck";
 
-export let $lifecycle = (lifecycleType: 'before' | 'after') => (_: any) => ($el: HTMLElement, attrName: string, callback: FunctionType) => {
+export let $interceptor = (interceptorType: 'before' | 'after') => (_: any) => ($el: HTMLElement, attrName: string, fn: Interceptor) => {
     // Check if $el is an HTMLElement
     if (!isElementNode($el))
-        return console.error(`The $${lifecycleType} lifecycle ${METHOD} ${REQUIRE}s an HTML ${ELEMENT}, ${BUT_GOT_INSTEAD(getType($el))}`);
+        return console.error(`The $${interceptorType} interceptor ${METHOD} ${REQUIRE}s an HTML ${ELEMENT}, ${BUT_GOT_INSTEAD(getType($el))}`);
 
     let hasVNode = vnodes.has($el);
 
@@ -15,8 +15,8 @@ export let $lifecycle = (lifecycleType: 'before' | 'after') => (_: any) => ($el:
     // Create the attr object, if it doesn't exist
     attr(vnode, attrName);
 
-    // Save the lifecycle
-    saveLifecycle(vnode, attrName, lifecycleType, callback);
+    // Save the interceptor
+    saveInterceptor(vnode, attrName, interceptorType, fn);
 
     // Add the vnode to the queue
     if (!hasVNode) vnodesQueue.set($el, vnode);

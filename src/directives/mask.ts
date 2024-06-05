@@ -1,5 +1,5 @@
 import { evaluate } from "../evaluation";
-import { lifecycle, saveCleanup } from "../hydration";
+import { interceptor, saveCleanup } from "../hydration";
 import { logger, size, slice, wait } from "../tools";
 import { each } from "../tools/array";
 import { CAN_ONLY_BE_USED_ON, DIRECTIVE, ELEMENT, INPUT, SELECTION_START, TEXTAREA, VALUE } from "../tools/constants";
@@ -214,7 +214,7 @@ export let hydrateMask = (vnode: VNode, attrName: string, attrValue: string) => 
     wait(() => previousValue = $el.value);
 
     // This listener will `capture` and process the input value before any other listeners.
-    let cleanup = listen($el, INPUT, lifecycle(vnode, attrName, (_: any, next: FunctionType) => {
+    let cleanup = listen($el, INPUT, interceptor(vnode, attrName, (_, next) => {
 
         // Get the current value of the input
         value = $el.value;
@@ -243,7 +243,7 @@ export let hydrateMask = (vnode: VNode, attrName: string, attrValue: string) => 
         // Set the cursor position
         setCursorPosition($el, newCursorPosition + cursorOffset);
 
-        // Next lifecycle function
+        // Next function
         next();
     }), true);
 

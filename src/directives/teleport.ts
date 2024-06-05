@@ -1,4 +1,4 @@
-import { lifecycle } from "../hydration";
+import { interceptor } from "../hydration";
 import { logger } from "../tools";
 import { NOT_FOUND, TELEPORT } from "../tools/constants";
 import { q, appendChild } from "../tools/dom";
@@ -14,11 +14,11 @@ export let hydrateTeleport = (vnode: VNode, attrName: string, attrValue: string)
         return logger(capitalize(TELEPORT) + ` target ${NOT_FOUND}`, `${attrName}="${attrValue}"`, 'warn');
 
     // Teleport the node
-    lifecycle(vnode, attrName, (target: Element, next: FunctionType) => {
+    interceptor(vnode, attrName, (target: Element, next) => {
         // Append the node to the target
         appendChild(target, vnode.$el);
 
-        // Next lifecycle function
+        // Next function
         next();
     })(target);
 }

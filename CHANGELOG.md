@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2024-06-06
+- Added a new `$animate` magic method. It is a thin wrapper around the Web Animations API that allows `opacity`, `blur`, and all `transforms`, as well as `duration`, `easing`, `delay`, `endDelay`, and `pause` properties.
+- The `$in` and `$out` magic methods were updated to make the $ctx and $next parameters optional. This will facilitate the use of these methods in other contexts where programmatic transitions are needed.
+
 ## [0.5.0] - 2024-06-05
 - Added a new `addComponent` method to the API to register components during initialization.
 - Added a new `component` directive to load registered components.

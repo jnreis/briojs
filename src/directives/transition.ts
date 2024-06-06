@@ -2,7 +2,7 @@ import { evaluate } from "../evaluation";
 import { saveInterceptor } from "../hydration";
 import { $in, $out } from "../methods/transition";
 import { logger } from "../tools";
-import { AFTER, ATTR, BEFORE, DIRECTIVE, MUST_BE, OPACITY, TRANSITION } from "../tools/constants";
+import { AFTER, ATTR, BEFORE, DIRECTIVE, MUST_BE, TRANSITION } from "../tools/constants";
 
 export let hydrateTransition = (vnode: VNode, _: string, attrValue: string) => {
 
@@ -28,11 +28,14 @@ export let hydrateTransition = (vnode: VNode, _: string, attrValue: string) => {
 }
 
 /**
-    // Web Animations API (WAAPI)
+    // Web Animations API
     $el.animate(
         [{ transform: 'translateY(16px)', opacity: 0 }],
         {duration: 400, fill: 'forwards'}
     )
+
+    // Web Animations API - $animate helper
+    $animate($el, {translateY: '16px', opacity: '0'})
 
     // Anime.js
     anime({
@@ -40,8 +43,7 @@ export let hydrateTransition = (vnode: VNode, _: string, attrValue: string) => {
         translateY: 16,
         opacity: 0,
         duration: 400,
-        easing: 'linear',
-        autoplay: false,
+        easing: 'easeInOutQuad',
     })
 
     // GSAP
@@ -49,29 +51,6 @@ export let hydrateTransition = (vnode: VNode, _: string, attrValue: string) => {
         y: 16,
         opacity: 0,
         duration: .4,
-        ease: 'linear',
-        paused: true,
+        ease: "power1.inOut",
     })
- */
-
-
-let TRANSFORM = 'transform';
-
-// Core transitions
-export let _transitions: [
-    string, // The name of the transition
-    string, // The CSS property
-    (attrValue: string|number) => string|number, // The value of the CSS property
-][] = [
-    ['fade', OPACITY, value => value ? 1 - +value : 0], // 1 - 0 = 1 (show), 1 - 1 = 0 (hide)
-    ['blur', 'filter', value => ` blur(${value || '8px'})`],
-    ['slide', TRANSFORM, value => ` translate(${value || '0,16px'})`],
-    ['scale', TRANSFORM, value => ` scale(${value || .85})`],
-    ['rotate', TRANSFORM, value => ` rotate(${value || '25deg'})`],
-    ['skew', TRANSFORM, value => ` skew(${value || '0,8deg'})`],
-];
-
-// let _generatePropertyKeyframe = (element: HTMLElement, property: any, startValue: any) => {
-//     let currentValue = window[GET_COMPUTED_STYLE](element)[property];
-//     return [{[property]: currentValue}, {[property]: startValue}];
-// }
+*/

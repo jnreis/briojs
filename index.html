@@ -65,7 +65,7 @@
     <h1>Brio.js</h1>
     <button on-click="console.log('on-click', $event)">Outside a props</button>
 
-    <div component="inputs" props="{a: 'component'}">
+    <div component="input" props="{a: 'component'}">
       Fall back content for input
     </div>
 
@@ -123,35 +123,14 @@
         }
       },
       t1: null,
-    }" no-init="console.log('$props', $props)">
+    }" init="console.log('$props', $props); $data.a1 = $animate($refs.a1, {translateX: '200px', opacity: .05, pause: true})">
+    <button on-click="$out($data.a1, isOpen)">Play $out</button>
+    <button on-click="$in($data.a1, isOpen)">Play $in</button>
       <button no-effect="console.log('effect', isOpen)" on-click="toggle" text="isOpen"></button>
       <!-- <h1 uppercase init="$el.animate([{transform: 'translateX(300px)'}], {duration: 2000, iterations: Infinity, direction: 'alternate', easing: 'ease-in-out'})">Brio.js</h1> -->
       <!-- <h2 effect="$animate([{opacity: '0.05'}], {direction: 'alternate', iterations: Infinity, duration: 1000})">The $animate method</h2> -->
-      <div style="display: flex;">
-        <h2 
-        init-animate="animations.set('t1', $el.animate(
-          [{ transform: 'translateY(16px)', opacity: 0 }],
-          {duration: 400, fill: 'forwards'}
-        )); animations.get('t1').pause();"
-        init-anime="animations.set('t1', anime({
-          targets: $el,
-          translateY: 16,
-          opacity: 0,
-          duration: 400,
-          easing: 'linear',
-          autoplay: false,
-        }))"
-        init-gsap="animations.set('t1', gsap.to($el, {
-          y: 16,
-          opacity: 0,
-          duration: .4,
-          ease: 'linear',
-          paused: true,
-        }))"
-        transition="$el.animate(
-          [{ transform: 'translateY(16px)', opacity: 0 }],
-          {duration: 400, fill: 'forwards'}
-        )"
+      <div ref="a1" style="display: flex;">
+        <h2 transition="$animate($el, {translate: '', opacity: ''})"
         if="isOpen" before-if2="$out(animations.get('t1'), $ctx, $next)" after-if2="$in(animations.get('t1'), $ctx, $next)">Hello 👋.</h2>
       </div>
       <!-- <p>Hi. <span html="`<strong>${ first } ${ last }</strong>`"></span></p> -->

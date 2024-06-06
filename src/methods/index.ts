@@ -2,9 +2,9 @@ import { $emit } from './dom';
 import { $interceptor } from './hydration';
 import { $watch, $persist, $session } from './reactivity';
 import { $uid } from './tools';
-import { $in, $out } from './transition';
+import { $animate, $in, $out } from './transition';
 
-import { $EMIT, $UID, $WATCH, AFTER, BEFORE } from '../tools/constants';
+import { $ANIMATE, $EMIT, $UID, $WATCH, AFTER, BEFORE } from '../tools/constants';
 
 export let _methods: [string, MagicMethod][] = [
     [$EMIT, $emit],
@@ -20,4 +20,5 @@ export let _methods: [string, MagicMethod][] = [
 
     ['$in', $in],
     ['$out', $out],
+    [$ANIMATE, $animate]
 ];

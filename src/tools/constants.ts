@@ -49,6 +49,9 @@ export let CLASS: 'class' = 'class';
 export let GET_COMPUTED_STYLE: 'getComputedStyle' = 'getComputedStyle';
 export let DISPLAY: 'display' = 'display';
 export let OPACITY: 'opacity' = 'opacity';
+export let BLUR: 'blur' = 'blur';
+export let FILTER: 'filter' = 'filter';
+export let TRANSFORM: 'transform' = 'transform';
 export let TEXT_CONTENT = TEXT + 'Content' as 'textContent';
 
 // Brio magic properties/methods
@@ -59,6 +62,7 @@ export let $ROOT: '$root' = '$root';
 export let $EMIT: '$emit' = '$emit';
 export let $UID: '$uid' = '$uid';
 export let $WATCH: '$watch' = '$watch';
+export let $ANIMATE: '$animate' = '$animate';
 
 // Miscellaneous
 export let ATTR: 'attr' = 'attr';
@@ -85,12 +89,13 @@ export let DELETE: 'delete' = 'delete';
 // Animation & transition
 export let TRANSITION: 'transition' = 'transition';
 export let TRANSITION_ENGINE = TRANSITION + ' engine';
-export let PAUSE = 'pause';
+export let PAUSE: 'pause' = 'pause';
 export let PLAY: 'play' = 'play';
 export let REVERSE: 'reverse' = 'reverse';
 export let REVERSED = REVERSE+'d';
 export let CURRENT_TIME = 'currentTime';
-export let DURATION = 'duration';
+export let DURATION: 'duration' = 'duration';
+export let EASING: 'easing' = 'easing';
 export let EVENT_CALLBACK = 'eventCallback';
 export let COMPLETE = 'complete';
 export let ON_COMPLETE: 'onComplete' = 'onComplete';

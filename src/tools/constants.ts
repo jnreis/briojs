@@ -112,3 +112,4 @@ export let INVALID: 'Invalid' = 'Invalid';
 
 export let BUT_GOT_INSTEAD = (somethingElse: string) => `but got ${somethingElse} instead.`;
 export let API_ADD_ERROR = (apiModule: string, moduleName: string) => `The ${apiModule} "${moduleName}" ${BEFORE_INIT}`;
+export let NAME_ALREADY_IN_USE = (name: string) => `The name "${name}" is already in use.`;

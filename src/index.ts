@@ -1,8 +1,8 @@
-import { _reservedNames, _settings } from "./api";
+import { _settings, reservedNames, getReservedNames } from "./api";
 import { hydrate } from "./hydration";
 import { _methods } from './methods';
 import { storageEvent } from './reactivity/storage';
-import { each, arrayAdd } from './tools/array';
+import { arrayAdd, each } from "./tools/array";
 import { INIT } from './tools/constants';
 import { emit } from "./tools/dom";
 
@@ -14,14 +14,14 @@ export let start = (nodes?: Node[]) => {
         // Listen to storage events
         window.addEventListener('storage', storageEvent);
 
-        // Add custom methods to the reserved names
-        each(_methods, ([name, _]) => arrayAdd(_reservedNames, name));
-
         // Emit the `brio:init` event
         emit(document.body, 'brio:'+INIT);
 
         // Mark Brio as initialized
         _settings[INIT] = true;
+
+        // Save reserved names
+        each(getReservedNames(), reservedName => arrayAdd(reservedNames, reservedName));
 
         // Hydrate the DOM
         hydrate(nodes);

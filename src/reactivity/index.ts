@@ -74,5 +74,4 @@ export { state } from './state';
 export { computed, removeComputed } from './computed';
 export { effect } from './effect';
 export { watch } from './watch';
-export { storage, isStorage, getItem, setItem } from './storage';
-export { getRefs, getRef } from './track';
+export { storage } from './storage';

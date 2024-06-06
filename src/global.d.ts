@@ -9,10 +9,9 @@ declare type Api = {
     addMethod: (methodName: string, fn: MagicMethod) => void,
     addTransitionEngine: (engine: AnimationEngine) => void,
     // Add assets
-    addStoreItem: (key: string, value: any) => void,
-    addDataItem: (key: string, value: any) => void,
     addComponent: (componentName: string, html: string) => void,
     addProps: (propsName: string, fn: (...args: any) => ObjectType) => void,
+    addStore: (storeName: string, storeObject: ObjectType) => void,
 
     // Helper functions
     emit: (node: HTMLElement, eventName: string, eventData?: any) => boolean,
@@ -25,9 +24,6 @@ declare type Api = {
     effect: (fn: ListenerFunction) => () => void,
     watch: (observedState: any, prop: string | number | null, callback: ListenerFunction) => () => void,
     storage: (_storage: any, value: any, alias?: string | undefined) => void | ((observedState: any, prop: string) => any),
-    isStorage: (obj: any) => any,
-    getItem: (storage: any, key: string) => any,
-    setItem: (storage: any, key: string, value: any) => any,
 }
 type MagicMethod = (vnode: VNode) => FunctionType;
 

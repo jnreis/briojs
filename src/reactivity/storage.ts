@@ -11,7 +11,7 @@ let SET_ITEM = 'setItem';
  */
 export let isStorage = (obj: any) => {
     let proto = getProto(obj);
-    // Check if obj has a prototype
+    // Check if obj has the getItem and setItem methods
     return proto && hasOwnProperty(proto, GET_ITEM) && hasOwnProperty(proto, SET_ITEM);
 }
 

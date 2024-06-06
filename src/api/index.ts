@@ -4,10 +4,12 @@ import { addMethod } from './method';
 import { addDirective } from "./directive";
 import { addTransitionEngine } from "./transition";
 
-import { state, computed, removeComputed, effect, watch, storage, isStorage, getItem, setItem } from "../reactivity";
+import { state, computed, removeComputed, effect, watch, storage } from "../reactivity";
 import { emit, listen } from "../tools/dom";
-import { $PROPS, $REFS, $ROOT, $STORE, INIT } from "../tools/constants";
-import { addStoreItem, data, store } from './store';
+import { $PROPS, $REFS, $ROOT, INIT } from "../tools/constants";
+import { _storeNames, addStore } from './store';
+import { _methods } from '../methods';
+import { arrayMerge } from '../tools/array';
 
 // Brio settings
 export let _settings = {
@@ -15,28 +17,27 @@ export let _settings = {
     dev: false,
 };
 
-// List of reserved names
-// * NOTE: _reservedNames will also include custom methods.
-export let _reservedNames: string[] = [
-    // Brio magic properties
-    $STORE, '$data', '$el', $REFS, $PROPS, $ROOT,
+// Static list of reserved names including $el, $props, $refs, $root, and all global stores and magic methods
+export let reservedNames: string[] = [];
 
-    // Brio magic methods are added during initialization
-];
+/** Dynamic list of reserved names. This is only used during initialization. */
+export let getReservedNames = () => arrayMerge(
+    ['$el', $PROPS, $REFS, $ROOT], // Magic properties
+    _methods.map(([name, _]) => name), // Magic methods
+    _storeNames, // Global stores
+) as string[];
 
 // Brio API
 export let api: Api = {
     // Methods that may only be called before Brio is initialized
-    // Extend Brio
+    // To extend Brio
     addDirective,
     addMethod,
     addTransitionEngine,
-    // Add assets
-    addStoreItem: addStoreItem(store), // adds an item to the reactive data store
-    addDataItem: addStoreItem(data), // adds an item to the non-reactive data store
+    // To add assets
     addComponent,
     addProps,
-    // TODO: addTransition,
+    addStore,
 
     // Helper functions
     emit,
@@ -49,7 +50,4 @@ export let api: Api = {
     effect,
     watch,
     storage,
-    isStorage,
-    getItem,
-    setItem,
 };

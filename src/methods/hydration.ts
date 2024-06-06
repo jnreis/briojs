@@ -1,11 +1,12 @@
 import { attr, newVNode, saveInterceptor, vnodes, vnodesQueue } from "../hydration"
+import { logger } from "../tools";
 import { BUT_GOT_INSTEAD, ELEMENT, METHOD, REQUIRE } from "../tools/constants";
 import { getType, isElementNode } from "../tools/typeCheck";
 
 export let $interceptor = (interceptorType: 'before' | 'after') => (_: any) => ($el: HTMLElement, attrName: string, fn: Interceptor) => {
     // Check if $el is an HTMLElement
     if (!isElementNode($el))
-        return console.error(`The $${interceptorType} interceptor ${METHOD} ${REQUIRE}s an HTML ${ELEMENT}, ${BUT_GOT_INSTEAD(getType($el))}`);
+        return logger(`The $${interceptorType} ${METHOD} ${REQUIRE}s an HTML ${ELEMENT}, ${BUT_GOT_INSTEAD(getType($el))}`);
 
     let hasVNode = vnodes.has($el);
 

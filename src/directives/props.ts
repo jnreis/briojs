@@ -1,5 +1,5 @@
 import { hydrateRefs } from './refs';
-import { _reservedNames } from '../api';
+import { getReservedNames } from '../api';
 import { _props } from '../api/props';
 import { evaluate } from '../evaluation';
 import { interceptor } from '../hydration';
@@ -34,7 +34,7 @@ export let hydrateProps = (vnode: VNode, attrName: string, attrValue: string) =>
         }
 
         // Remove reserved keys from the new context
-        each(_reservedNames, key => {
+        each(getReservedNames(), key => {
             if (key in newContext) deleteKey(newContext, key);
         });
 

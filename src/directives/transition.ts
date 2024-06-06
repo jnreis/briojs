@@ -2,7 +2,7 @@ import { evaluate } from "../evaluation";
 import { saveInterceptor } from "../hydration";
 import { $in, $out } from "../methods/transition";
 import { logger } from "../tools";
-import { AFTER, ATTR, BEFORE, DIRECTIVE, MUST_BE, TRANSITION } from "../tools/constants";
+import { AFTER, ATTR, BEFORE, DIRECTIVE, MUST_BE, PAUSE, TRANSITION } from "../tools/constants";
 
 export let hydrateTransition = (vnode: VNode, _: string, attrValue: string) => {
 
@@ -16,7 +16,7 @@ export let hydrateTransition = (vnode: VNode, _: string, attrValue: string) => {
 
     // Pause the animation
     // The animation will be played when the interceptor functions are called
-    animation.pause();
+    animation[PAUSE]();
 
     // Create instances of the $in and $out functions
     let _out = $out();

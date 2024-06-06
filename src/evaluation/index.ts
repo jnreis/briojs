@@ -1,11 +1,11 @@
-import { _reservedNames } from "../api";
-import { store, data } from "../api/store";
+import { reservedNames } from "../api";
+import { _storeNames, stores } from "../api/store";
 import { _methods } from "../methods";
 import { newObject } from "../tools/object";
 import { $PROPS, $REFS, $ROOT, DELETE, EXPRESSION } from "../tools/constants";
 import { arrayAdd, each } from "../tools/array";
 import { isStringFunction, isPath, startsWith, test } from "../tools/string";
-import { getRef } from "../reactivity";
+import { getRef } from "../reactivity/track";
 import { isFunction } from "../tools/typeCheck";
 import { logger } from "../tools";
 
@@ -62,14 +62,14 @@ let execute = (vnode: VNode, exp: string) => {
 /** Convert an expression string to a function that takes the "reserved names" as arguments and uses the keys of the `$props` object as variables in its scope */
 let toFunction = (exp: string): FunctionType => {
     try {
-        return new Function(..._reservedNames, `with(${$PROPS}){return(${exp})}`) as FunctionType;
+        return new Function(...reservedNames, `with(${$PROPS}){return(${exp})}`) as FunctionType;
     } catch (e) {
         return getError(e as Error, exp);
     }
 };
 
 let getError = (e: Error, exp: string) => {
-    logger(`${e.message} in ${EXPRESSION}:`, exp);
+    logger(e.message + ` in ${EXPRESSION}:`, exp);
     return () => {};
 }
 
@@ -77,13 +77,16 @@ let getError = (e: Error, exp: string) => {
 let getArgValues = (vnode: VNode) => {
     // ! Props written without `$props` can not start with JS reserved keywords (arguments, await, true, false, break, case, catch, class, const, continue, default?, delete, do, else, eval, extends, finally, for, function, if, in, instanceof, let, new, null, return, static, super, switch, this, throw, try, typeof, var, void, while, with, yield)
     // ! E.g. `super` must be written as `$props.super`
-    let $s: any[] = [store, data];
+    let $s: any[] = [];
 
-    // Properties in the vnode that start with "$" must be passed to the function
-    each(['$el',$REFS,$PROPS,$ROOT], name => arrayAdd($s, vnode[name as keyof VNode]));
+    // Magic properties
+    each(['$el', $PROPS, $REFS, $ROOT], name => arrayAdd($s, vnode[name as keyof VNode]));
 
-    // Methods must be passed to the function
+    // Magic methods
     each(_methods, ([_, fn]) => arrayAdd($s, fn(vnode)));
+
+    // Global stores
+    each(_storeNames, store => arrayAdd($s, stores[store]));
 
     return $s;
 }

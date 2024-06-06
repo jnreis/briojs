@@ -1,7 +1,7 @@
 import { logger } from "../tools";
 import { COMPLETE, CURRENT_TIME, DURATION, EVENT_CALLBACK, NAME, NOT_FOUND, ON_COMPLETE, PAUSE, PLAY, PLAYBACK_RATE, REVERSE, REVERSED, TRANSITION_ENGINE, VALIDATE } from "../tools/constants";
 import { hasOwnProperty } from "../tools/object";
-import { camelCase, capitalize } from "../tools/string";
+import { camelCase } from "../tools/string";
 
 /** ANIMATION ENGINES */
 export let _engines: AnimationEngine[] = [
@@ -113,7 +113,7 @@ let transition = (animation: any, next: NextFunction) => {
 
     // If the engine is not found, skip the animation
     if (!engine) {
-        logger(capitalize(TRANSITION_ENGINE) + ` ${NOT_FOUND}`, animation);
+        logger(TRANSITION_ENGINE + ' ' + NOT_FOUND, animation);
         return;
     }
 

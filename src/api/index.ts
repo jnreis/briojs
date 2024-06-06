@@ -1,12 +1,13 @@
-import { store, data } from "./store";
-import { addMethod } from './method'
-import { addProps } from './props'
+import { addComponent } from './component';
+import { addProps } from './props';
+import { addMethod } from './method';
 import { addDirective } from "./directive";
 import { addTransitionEngine } from "./transition";
 
 import { state, computed, removeComputed, effect, watch, storage, isStorage, getItem, setItem } from "../reactivity";
 import { emit, listen } from "../tools/dom";
 import { $PROPS, $REFS, $ROOT, $STORE, INIT } from "../tools/constants";
+import { addStoreItem, data, store } from './store';
 
 // Brio settings
 export let _settings = {
@@ -25,15 +26,17 @@ export let _reservedNames: string[] = [
 
 // Brio API
 export let api: Api = {
-    // Global data stores
-    store, // reactive data store
-    data, // non-reactive data store
-
     // Methods that may only be called before Brio is initialized
-    addProps,
-    addMethod,
+    // Extend Brio
     addDirective,
+    addMethod,
     addTransitionEngine,
+    // Add assets
+    addStoreItem: addStoreItem(store), // adds an item to the reactive data store
+    addDataItem: addStoreItem(data), // adds an item to the non-reactive data store
+    addComponent,
+    addProps,
+    // TODO: addTransition,
 
     // Helper functions
     emit,

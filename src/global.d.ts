@@ -3,15 +3,16 @@
 // API
 declare type start = (nodes?: Node[]) => void;
 declare type Api = {
-    // Global data stores
-    store: ObjectType, // reactive data store
-    data: ObjectType, // non-reactive data store
-
     // Methods that may only be called before Brio is initialized
-    addProps: (propsName: string, fn: (...args: any) => ObjectType) => void,
-    addMethod: (name: string, fn: MagicMethod) => void,
-    addDirective: (validateAttribute: ValidateDirective, hydrateDirective: HydrateDirective) => void,
+    // Extend Brio
+    addDirective: (directiveName: string, hasModifiers: boolean, hydrateDirective: HydrateDirective) => void,
+    addMethod: (methodName: string, fn: MagicMethod) => void,
     addTransitionEngine: (engine: AnimationEngine) => void,
+    // Add assets
+    addStoreItem: (key: string, value: any) => void,
+    addDataItem: (key: string, value: any) => void,
+    addComponent: (componentName: string, html: string) => void,
+    addProps: (propsName: string, fn: (...args: any) => ObjectType) => void,
 
     // Helper functions
     emit: (node: HTMLElement, eventName: string, eventData?: any) => boolean,
@@ -70,8 +71,9 @@ type FunctionType = (...args: any) => any;
 
 
 // HYDRATION TYPES
+
 /** 0: not a directive, 1: directive without modifiers, 2: directive with modifiers */
-type ValidateDirective = (vnode: VNode, attrName: string, attrValue: string) => 0|1|2;
+type ValidateDirective = (vnode: VNode, attrName: string) => 0|1|2;
 type HydrateDirective = (vnode: VNode, attrName: string, attrValue: string, tools: HydrationTools) => any;
 
 type HydrationTools = {
@@ -149,8 +151,6 @@ declare namespace astroHTML.JSX {
         effect?: string;
         teleport?: string;
         transition?: string;
-        enter?: string;
-        leave?: string;
         model?: string;
         mask?: string;
     }

@@ -63,6 +63,7 @@ export let $WATCH: '$watch' = '$watch';
 // Miscellaneous
 export let ATTR: 'attr' = 'attr';
 export let CLEANUP: 'cleanup' = 'cleanup';
+export let COMPONENT: 'component' = 'component';
 export let DIRECTIVE: 'directive' = 'directive';
 export let ATTRIBUTE = ATTR + 'ibute' as 'attribute';
 export let REQUIRE: 'require' = 'require';
@@ -99,8 +100,10 @@ export let VALIDATE: 'validate' = 'validate';
 
 // Error messages
 export let MUST_BE = 'must be';
-export let BEFORE_INIT = MUST_BE + ` defined ${BEFORE} initialization.`;
+export let BEFORE_INIT = MUST_BE + ` defined ${BEFORE} initialization.` as 'must be defined before initialization';
 export let CAN_ONLY_BE_USED_ON = 'can only be used on';
-export let BUT_GOT_INSTEAD = (somethingElse: string) => `but got ${somethingElse} instead.`;
 export let NOT_FOUND = 'not found.';
-export let INVALID = 'Invalid';
+export let INVALID: 'Invalid' = 'Invalid';
+
+export let BUT_GOT_INSTEAD = (somethingElse: string) => `but got ${somethingElse} instead.`;
+export let API_ADD_ERROR = (apiModule: string, moduleName: string) => `The ${apiModule} "${moduleName}" ${BEFORE_INIT}`;

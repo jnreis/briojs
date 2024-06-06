@@ -65,6 +65,10 @@
     <h1>Brio.js</h1>
     <button on-click="console.log('on-click', $event)">Outside a props</button>
 
+    <div component="inputs" props="{a: 'component'}">
+      Fall back content for input
+    </div>
+
     <button props="{ ranCount: 0 }" init="$before(document.querySelector('#button1'), 'on-click', ($ctx, $next, $remove) => {
       console.log('$before button1 on-click directive', $ctx);
       $next();
@@ -119,8 +123,8 @@
         }
       },
       t1: null,
-    }" init="console.log('$props', $props)">
-      <button effect="console.log('effect', isOpen)" on-click="toggle" text="isOpen"></button>
+    }" no-init="console.log('$props', $props)">
+      <button no-effect="console.log('effect', isOpen)" on-click="toggle" text="isOpen"></button>
       <!-- <h1 uppercase init="$el.animate([{transform: 'translateX(300px)'}], {duration: 2000, iterations: Infinity, direction: 'alternate', easing: 'ease-in-out'})">Brio.js</h1> -->
       <!-- <h2 effect="$animate([{opacity: '0.05'}], {direction: 'alternate', iterations: Infinity, duration: 1000})">The $animate method</h2> -->
       <div style="display: flex;">
@@ -330,7 +334,8 @@
 
     <script>
       document.addEventListener('brio:init', () => {
-        Brio.store.count = 83;
+        Brio.addStoreItem('count', 83);
+        Brio.addDataItem('count', 38);
         Brio.addProps('c1', () => {
           return {
             count: 0,
@@ -339,6 +344,7 @@
             }
           };
         });
+        Brio.addComponent('input', `<input type="text" model="a" />`);
         // Brio.addDirective(
         //   attrName => attrName == 'uppercase', 
         //   (vnode, attrName, attrValue) => {

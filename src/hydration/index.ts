@@ -218,11 +218,16 @@ export let hydrateElementNode = (node: HTMLElement) => {
     // Get the vnode or create a new one
     let vnode = newVNode(node);
 
-    // Check all the attributes
-    for (let { name, value } of [...node[ATTRIBUTE + 's' as 'attributes']]) {
-        for (let [validateDirective, hydrateDirective] of _directives) {
+    // Check all the directives
+    // Its important to hydrate the directives in the correct order
+    for (let [validateDirective, hydrateDirective] of _directives) {
+
+        // Check all the attributes against the directive
+        for (let { name, value } of [...node[ATTRIBUTE + 's' as 'attributes']]) {
+
             // Check if the attribute is a directive
-            let isDirective = validateDirective(vnode, name, value);
+            let isDirective = validateDirective(vnode, name);
+
             if (isDirective > 0) {
 
                 // Save attribute
@@ -231,14 +236,18 @@ export let hydrateElementNode = (node: HTMLElement) => {
                 // Hydrate the directive
                 hydrateDirective(vnode, name, sanitizeAttrValue(value), tools);
 
-                // Break the directives loop after the directive is hydrated
-                break;
+                // Break the directives loop if the directive has no modifiers
+                // This is because directives with no modifiers are unique and no further processing is needed after hydrating them
+                if (isDirective == 1) break;
             }
         }
         // Break the attributes loop if the vnode was marked as SKIP
         // This will prevent the walk callback from hydrating the rest of the directives or the children elements
         if (vnode[STATUS] == SKIP) break;
     }
+
+    // Remove the vnode if no attributes were hydrated
+    if (!size(vnode[ATTR])) vnodes.delete(node);
 
     // Continue the walk callback to
     return vnode[STATUS] != SKIP;

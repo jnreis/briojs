@@ -2,7 +2,7 @@ import { _reservedNames, _settings } from ".";
 import { _methods } from "../methods"
 import { has, logger } from "../tools";
 import { arrayAdd } from "../tools/array";
-import { BEFORE_INIT, INIT, METHOD } from "../tools/constants";
+import { API_ADD_ERROR, INIT, METHOD } from "../tools/constants";
 import { startsWith } from "../tools/string";
 
 
@@ -11,7 +11,7 @@ export let addMethod = (name: string, fn: MagicMethod) => {
 
     // Can't add methods after initialization
     if (_settings[INIT])
-        return logger(`${METHOD_NAME} ${BEFORE_INIT}`);
+        return logger(API_ADD_ERROR(METHOD, name));
 
     // Method already exists
     if (has(_reservedNames, name))

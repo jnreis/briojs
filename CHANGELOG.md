@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2024-06-05
+- Added a new `addComponent` method to the API to register components during initialization.
+- Added a new `component` directive to load registered components.
+- Removed `store` and `data` objects from the API and replaced them with `addStoreItem` and `addDataItem` methods that can be called during initialization.
+- Standardized the error shown when adding things through the API after initialization.
+- Standardized `addDirective` validation function.
+- Fixed a hydration bug regard the order that the directives are hydrated.
+- Fixed a hydration bug regard saving vnodes with no hydrated attributes.
+
 ## [0.4.0] - 2024-06-04
 - Removed condition that prevented the "length" property of array from being notified.
 - Renamed the "lifecycle" related code to "interceptor" to better reflect its purpose.

@@ -126,9 +126,9 @@ export let throttle = (callback: Function, delay: number) => {
 }
 
 /** Brio.js logger: Log an error or a warning message */
-export let logger = (message: string, details: string = '', type: 'error'|'warn' = 'error') => {
+export let logger = (message: string, details: any = '', type: 'error'|'warn' = 'error') => {
     console[type](
-        `Brio.js ${type == 'error' ? 'detected an error' : 'is warning'}: ${message}`,
-        details && `\n${details}`,
+        `Brio.js ${type == 'error' ? 'detected an error' : 'is warning'}: ${message}\n`,
+        details
     );
 };

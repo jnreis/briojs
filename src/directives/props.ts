@@ -1,5 +1,6 @@
 import { hydrateRefs } from './refs';
 import { _reservedNames } from '../api';
+import { _props } from '../api/props';
 import { evaluate } from '../evaluation';
 import { interceptor } from '../hydration';
 import { state } from '../reactivity';
@@ -8,8 +9,6 @@ import { createContext, deleteKey, getKeys, objectMerge } from '../tools/object'
 import { getType, isObject } from '../tools/typeCheck';
 import { $PROPS, $ROOT, BUT_GOT_INSTEAD, DIRECTIVE, INIT, MUST_BE, OBJECT, SKIP, STATUS } from '../tools/constants';
 import { each } from '../tools/array';
-
-export let _props: ObjectType = {};
 
 export let hydrateProps = (vnode: VNode, attrName: string, attrValue: string) => {
 

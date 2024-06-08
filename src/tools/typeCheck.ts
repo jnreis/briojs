@@ -12,7 +12,6 @@ import {
     REGEXP,
     SET,
     STRING,
-    SYMBOL,
     WEAKMAP,
     WEAKSET
 } from "./constants";
@@ -83,9 +82,6 @@ export let isSet = (value: any) => is(value, SET);
 
 // Check if a value is a weak set
 export let isWeakSet = (value: any) => is(value, WEAKSET);
-
-// Check if a value is a symbol
-export let isSymbol = (value: any) => is(value, SYMBOL);
 
 // Check if a value is a promise
 export let isPromise = (value: any) => is(value, PROMISE);

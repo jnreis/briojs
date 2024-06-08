@@ -123,14 +123,14 @@
         }
       },
       t1: null,
-    }" init="console.log('$props', $props); $animation.a1 = $animate($refs.a1, {translateX: '200px', opacity: .05, pause: true})">
-    <button on-click="$out($animation.a1, isOpen)">Play $out</button>
-    <button on-click="$in($animation.a1, isOpen)">Play $in</button>
+    }" init="console.log('$props', $props); $store.a1 = $animate($refs.a1, {translateX: '200px', opacity: .05, pause: true})">
+    <button on-click="$out($store.a1, isOpen)">Play $out</button>
+    <button on-click="$in($store.a1, isOpen)">Play $in</button>
       <button no-effect="console.log('effect', isOpen)" on-click="toggle" text="isOpen"></button>
       <!-- <h1 uppercase init="$el.animate([{transform: 'translateX(300px)'}], {duration: 2000, iterations: Infinity, direction: 'alternate', easing: 'ease-in-out'})">Brio.js</h1> -->
       <!-- <h2 effect="$animate([{opacity: '0.05'}], {direction: 'alternate', iterations: Infinity, duration: 1000})">The $animate method</h2> -->
       <div ref="a1" style="display: flex;">
-        <h2 transition="$animate($el, {translate: '', opacity: ''})"
+        <h2 transition="$animate($el, {opacity: 0, hue: '180deg', translateY: '56px', rotate3d: '1,1,1,90deg', perspective: '10px', duration: 2000})"
         if="isOpen" before-if2="$out(animations.get('t1'), $ctx, $next)" after-if2="$in(animations.get('t1'), $ctx, $next)">Hello 👋.</h2>
       </div>
       <!-- <p>Hi. <span html="`<strong>${ first } ${ last }</strong>`"></span></p> -->
@@ -313,7 +313,6 @@
 
     <script>
       document.addEventListener('brio:init', () => {
-        Brio.addStore('$animation', { abc: '123'});
         Brio.addProps('c1', () => {
           return {
             count: 0,

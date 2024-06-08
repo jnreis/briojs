@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0] - 2024-06-07
+- Removed `$data` global store, since now it is possible to add global stores using the `addStore` method.
+- Refactored the `$animate` method.
+  - Now every option requires a value.
+  - Any CSS property is accepted.
+  - Support more shorthand properties:
+    - tranform options: translate, scale, rotate, skew, perspective
+    - filter options: blur, brightness, contrast, grayscale, hue-rotate (or just "hue"), saturate, sepia
+- Added a gzip version of the library to the build process.
+
 ## [0.7.0] - 2024-06-06
 - Added a new `addStore` magic method. It gives the ability to add global stores.
 - Removed the `addStoreItem`, `addDataItem`, `isStorage`, `getItem`, and `setItem` methods from the API.

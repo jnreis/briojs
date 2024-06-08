@@ -178,7 +178,7 @@ export let hydrateMask = (vnode: VNode, attrName: string, attrValue: string) => 
      * Get the number of valid characters before the cursor
      */
     let getCursorPosition = ($el: HTMLInputElement) => {
-        let cursorPosition = $el.selectionStart,
+        let cursorPosition = $el[SELECTION_START],
         input = $el.value,
         // Check how many valid characters are before the cursor
         validCharsBeforeCursor = sanitize(slice(input, 0, cursorPosition || size(input)));

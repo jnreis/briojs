@@ -1,11 +1,24 @@
+let dict: string[] = [
+    'number',
+    'str',
+    'ing',
+    'boo',
+    'lean',
+    'und',
+    'efi',
+    'ned',
+    'symbol',
+
+];
+
+export let decompress = (compressed: number[]) => {
+    return compressed.map(i => dict[i]).join('');
+}
+
 // Name of the primitive types
 export let NUMBER: 'number' = 'number';
 export let STRING: 'string' = 'string';
 export let BOOLEAN: 'boolean' = 'boolean';
-export let UNDEFINED: 'undefined' = 'undefined';
-export let NULL: 'null' = 'null';
-export let SYMBOL: 'symbol' = 'symbol';
-export let BIGINT: 'bigint' = 'bigint';
 
 // Name of the objects types
 export let OBJECT: 'object' = 'object';
@@ -56,13 +69,14 @@ export let TEXT_CONTENT = TEXT + 'Content' as 'textContent';
 
 // Brio magic properties/methods
 export let $STORE: '$store' = '$store';
-export let $PROPS: '$props' = '$props';
+export let $PROPS = '$'+PROPS as '$props';
 export let $REFS: '$refs' = '$refs';
 export let $ROOT: '$root' = '$root';
 export let $EMIT: '$emit' = '$emit';
 export let $UID: '$uid' = '$uid';
 export let $WATCH: '$watch' = '$watch';
 export let $ANIMATE: '$animate' = '$animate';
+export let $ANIMATION: '$animation' = '$animation';
 
 // Miscellaneous
 export let ATTR: 'attr' = 'attr';

@@ -45,7 +45,7 @@ export let size = (value: any): number => {
  * @param b Other value to compare
  * @returns True if the values are equivalent, else false
  */
-export function deepEqual(a: any, b: any): boolean {
+export let deepEqual = (a: any, b: any): boolean => {
     // For objects
     if (isObject(a) && isObject(b)) {
         // Check if the objects have the same keys

@@ -13,11 +13,10 @@ import { isObject } from "../tools/typeCheck";
 // export const data: ObjectType = {};
 
 /** The ordered list of global stores */
-export let _storeNames: string[] = [$STORE, '$data'];
+export let _storeNames: string[] = [$STORE];
 
 export let stores: ObjectType = {
     [$STORE]: state({}),
-    $data: {},
 };
 
 /** Adds an item to the data store */

@@ -168,7 +168,7 @@ export let hydrateOn = (vnode: VNode, attrName: string, attrValue: string) => {
     }
 
     // Wrap the function to handle modifiers
-    let listenFn = function(e: any) {
+    let listenFn = (e: any) => {
         // https://developer.mozilla.org/en-US/docs/Web/API/Event/preventDefault
         if (mods[PREVENT]) e.preventDefault();
 

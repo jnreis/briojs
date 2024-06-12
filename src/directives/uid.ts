@@ -5,7 +5,7 @@ import { logger } from '../tools';
 
 let _uid: ObjectType = {};
 
-export let hydrateUid = (vnode: VNode, _: string, attrValue: string) => {
+export let hydrateUid = (vnode: VNode, attrName: string, attrValue: string) => {
 
     // Check if the UID expression is empty
     if (!attrValue) return;
@@ -15,7 +15,7 @@ export let hydrateUid = (vnode: VNode, _: string, attrValue: string) => {
 
     // Check if the UID expression is not an array. If so, throw an error
     if (!isArray(newUid) || !newUid.every(isString))
-        return logger(`The 'uid' ${DIRECTIVE} ${MUST_BE} an ${ARRAY} of ${STRING}(s).`);
+        return logger(`The ${attrName} ${DIRECTIVE} ${MUST_BE} an ${ARRAY} of ${STRING}(s).`);
 
     // Convert the UID's to an object
     newUid = newUid.reduce((acc: any, uid: string) => {

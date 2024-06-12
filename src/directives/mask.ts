@@ -11,7 +11,7 @@ import { isUndefined } from "../tools/typeCheck";
 export let hydrateMask = (vnode: VNode, attrName: string, attrValue: string) => {
 
     let $el: any = vnode.$el;
-    let [MASK, modifier] = split(attrName, '-');
+    let [_B, MASK, modifier] = split(attrName, '-');
 
     // If the element has no value or selectionStart properties, return
     if (!(VALUE in $el && SELECTION_START in $el))

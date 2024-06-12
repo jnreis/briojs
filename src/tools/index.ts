@@ -1,4 +1,4 @@
-import { arrayFrom } from "./array";
+import { arrayFrom, join } from "./array";
 import { getKeys } from "./object";
 import { toString } from "./string";
 import { isArray, isDate, isFunction, isMap, isObject, isRegExp, isSet, isString } from "./typeCheck";
@@ -10,7 +10,7 @@ import { isArray, isDate, isFunction, isMap, isObject, isRegExp, isSet, isString
  */
 export let uid = (length: number = 8, callback?: (uid: string) => boolean): string => {
     while (true) {
-        let uid = 'b' + [...Array(length -1)].map(() => toString(Math.random(), 36)[2]).join('');
+        let uid = 'b' + join([...Array(length -1)].map(() => toString(Math.random(), 36)[2]), '');
         // If no callback is provided, return the uid
         if (!callback) return uid;
         // If a callback is provided, return the uid if the callback returns true

@@ -1,6 +1,6 @@
 import { interceptor } from "../hydration";
 import { logger } from "../tools";
-import { NOT_FOUND, TELEPORT } from "../tools/constants";
+import { ELEMENT, NOT_FOUND, TELEPORT } from "../tools/constants";
 import { q, appendChild } from "../tools/dom";
 
 export let hydrateTeleport = (vnode: VNode, attrName: string, attrValue: string) => {
@@ -10,7 +10,7 @@ export let hydrateTeleport = (vnode: VNode, attrName: string, attrValue: string)
 
     // If the target is not found, log a warning
     if (!target)
-        return logger(TELEPORT + ' target ' + NOT_FOUND, `${attrName}="${attrValue}"`, 'warn');
+        return logger(`The ${TELEPORT} target ${ELEMENT} was ` + NOT_FOUND, `${attrName}="${attrValue}"`, 'warn');
 
     // Teleport the node
     interceptor(vnode, attrName, (target: Element, next) => {

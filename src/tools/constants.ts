@@ -1,20 +1,3 @@
-let dict: string[] = [
-    'number',
-    'str',
-    'ing',
-    'boo',
-    'lean',
-    'und',
-    'efi',
-    'ned',
-    'symbol',
-
-];
-
-export let decompress = (compressed: number[]) => {
-    return compressed.map(i => dict[i]).join('');
-}
-
 // Name of the primitive types
 export let NUMBER: 'number' = 'number';
 export let STRING: 'string' = 'string';
@@ -31,7 +14,7 @@ export let WEAKSET: 'weakset' = 'weakset';
 // Name of the function types
 export let METHOD: 'method' = 'method';
 export let FUNCTION: 'function' = 'function';
-export let ASYNC_FUNCTION: 'asyncfunction' = 'asyncfunction';
+export let ASYNC_FUNCTION = 'async' + FUNCTION as 'asyncfunction';
 export let PROMISE: 'promise' = 'promise';
 export let REGEXP: 'regexp' = 'regexp';
 export let DATE: 'date' = 'date';
@@ -102,28 +85,33 @@ export let DELETE: 'delete' = 'delete';
 
 // Animation & transition
 export let TRANSITION: 'transition' = 'transition';
-export let TRANSITION_ENGINE = TRANSITION + ' engine';
+export let TRANSITION_ENGINE = TRANSITION + ' engine' as 'transition engine';
 export let PAUSE: 'pause' = 'pause';
 export let PLAY: 'play' = 'play';
 export let REVERSE: 'reverse' = 'reverse';
-export let REVERSED = REVERSE+'d';
-export let CURRENT_TIME = 'currentTime';
+export let REVERSED = REVERSE+'d' as 'reversed';
+export let CURRENT_TIME: 'currentTime' = 'currentTime';
 export let DURATION: 'duration' = 'duration';
 export let EASING: 'easing' = 'easing';
-export let EVENT_CALLBACK = 'eventCallback';
-export let COMPLETE = 'complete';
+export let EVENT_CALLBACK: 'eventCallback' = 'eventCallback';
+export let COMPLETE: 'complete' = 'complete';
 export let ON_COMPLETE: 'onComplete' = 'onComplete';
-export let PLAYBACK_RATE = 'playbackRate';
+export let PLAYBACK_RATE: 'playbackRate' = 'playbackRate';
 export let NAME: 'name' = 'name';
 export let VALIDATE: 'validate' = 'validate';
 
 // Error messages
-export let MUST_BE = 'must be';
+export let MUST_BE: 'must be' = 'must be';
 export let BEFORE_INIT = MUST_BE + ` defined ${BEFORE} initialization.` as 'must be defined before initialization';
 export let CAN_ONLY_BE_USED_ON = 'can only be used on';
-export let NOT_FOUND = 'not found.';
+export let NOT_FOUND: 'not found.' = 'not found.';
 export let INVALID: 'Invalid' = 'Invalid';
 
+/** but got ${somethingElse} instead. */
 export let BUT_GOT_INSTEAD = (somethingElse: string) => `but got ${somethingElse} instead.`;
-export let API_ADD_ERROR = (apiModule: string, moduleName: string) => `The ${apiModule} "${moduleName}" ${BEFORE_INIT}`;
+
+/** The ${apiModule} "${moduleName}" must be defined before initialization */
+export let API_ADD_ERROR = (apiModule: string, moduleName: string) => `The ${apiModule} "${moduleName}" ${BEFORE_INIT}.`;
+
+/** The name "${name}" is already in use. */
 export let NAME_ALREADY_IN_USE = (name: string) => `The name "${name}" is already in use.`;

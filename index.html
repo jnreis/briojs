@@ -65,18 +65,18 @@
     <h1>Brio.js</h1>
     <button on-click="console.log('on-click', $event)">Outside a props</button>
 
-    <div component="input" props="{a: 'component'}">
+    <div b-component="input" b-props="{a: 'component'}">
       Fall back content for input
     </div>
 
-    <button props="{ ranCount: 0 }" init="$before(document.querySelector('#button1'), 'on-click', ($ctx, $next, $remove) => {
+    <button b-props="{ ranCount: 0 }" b-init="$before(document.querySelector('#button1'), 'on-click', ($ctx, $next, $remove) => {
       console.log('$before button1 on-click directive', $ctx);
       $next();
       ranCount++;
       if (ranCount == 3) $remove();
     });">Add $before "From a parent scope"</button>
 
-    <div props="{
+    <div b-props="{
       animations: new Map(),
       count: $persist(110, 'theCount'), 
       search: $session(''),
@@ -123,15 +123,15 @@
         }
       },
       t1: null,
-    }" init="console.log('$props', $props); $store.a1 = $animate($refs.a1, {translateX: '200px', opacity: .05, pause: true})">
+    }" b-init="console.log('$props', $props); $store.a1 = $animate($refs.a1, {translateX: '200px', opacity: .05, pause: true})">
     <button on-click="$out($store.a1, isOpen)">Play $out</button>
     <button on-click="$in($store.a1, isOpen)">Play $in</button>
-      <button no-effect="console.log('effect', isOpen)" on-click="toggle" text="isOpen"></button>
+      <button no-effect="console.log('effect', isOpen)" on-click="toggle" b-text="isOpen"></button>
       <!-- <h1 uppercase init="$el.animate([{transform: 'translateX(300px)'}], {duration: 2000, iterations: Infinity, direction: 'alternate', easing: 'ease-in-out'})">Brio.js</h1> -->
       <!-- <h2 effect="$animate([{opacity: '0.05'}], {direction: 'alternate', iterations: Infinity, duration: 1000})">The $animate method</h2> -->
-      <div ref="a1" style="display: flex;">
-        <h2 transition="$animate($el, {opacity: 0, hue: '180deg', translateY: '56px', rotate3d: '1,1,1,90deg', perspective: '10px', duration: 2000})"
-        if="isOpen" before-if2="$out(animations.get('t1'), $ctx, $next)" after-if2="$in(animations.get('t1'), $ctx, $next)">Hello 👋.</h2>
+      <div b-ref="a1" style="display: flex;">
+        <h2 b-transition="$animate($el, {opacity: 0, hue: '180deg', translateY: '56px', rotate3d: '1,1,1,90deg', perspective: '10px', duration: 2000})"
+        b-if="isOpen" before-if2="$out(animations.get('t1'), $ctx, $next)" after-if2="$in(animations.get('t1'), $ctx, $next)">Hello 👋.</h2>
       </div>
       <!-- <p>Hi. <span html="`<strong>${ first } ${ last }</strong>`"></span></p> -->
       <!-- <p b-class="4 * count">Hello, ${ first } ${ last }!</p> -->
@@ -145,14 +145,14 @@
 
       <p>${ first }, ${search2}</p>
 
-      <input type="text" mask-dynamic="$mask.money()" model="search" on-keyup-enter="console.warn('on-keyup-enter')">
+      <input type="text" b-mask-dynamic="$mask.money()" b-model="search" on-keyup-enter="console.warn('on-keyup-enter')">
 
       <button on-click="$props.search = ''">Clear search</button>
 
-      <div props="{ open: true }">
+      <div b-props="{ open: true }">
         <button on-click="open = ! open">Toggle</button>
      
-        <div style="background-color: bisque;" show="open" on-click-outside="open = false">
+        <div style="background-color: bisque;" b-show="open" on-click-outside="open = false">
             Contents...
         </div>
       </div>
@@ -160,34 +160,34 @@
 
 
       <label for="search">Nested reference: ${item}</label>
-      <input id="search" type="text" model="item">
+      <input id="search" type="text" b-model="item">
 
 
       <!-- Just the value -->
       <!-- <div class="items-wrapper">
-        <div class="items" each="item in items">
+        <div class="items" b-each="item in items">
           <p>${ item }</p>
         </div>
       </div> -->
 
       <!-- Index and value -->
       <!-- <div class="items-wrapper">
-        <div class="items" each="itemx, index in items">
+        <div class="items" b-each="itemx, index in items">
           <p>${index}. ${ itemx }</p>
         </div>
       </div> -->
 
       <!-- Just object key -->
       <div class="items-wrapper">
-        <div class="items" each="v, i in obj">
+        <div class="items" b-each="v, i in obj">
           <p>${i}: ${v}</p>
-          <input type="text" model="v">
+          <input type="text" b-model="v">
           <button on-click="delete obj[i]">Remove</button>
           <button on-click="console.log(obj, v)">Log items</button>
         </div>
         <div class="items">
           <p>Some other item</p>
-          <input type="text" model="item">
+          <input type="text" b-model="item">
           <button on-click="delete $props.item">Remove</button>
           <button on-click="console.log($props, $props.item)">Log items</button>
         </div>
@@ -197,63 +197,63 @@
           on-submit-prevent="obj[item] = item; item = ''"
           style="display: flex; margin-top: 10px; gap: 10px;"
         >
-          <input type="text" model="item" style="width: 100%;">
+          <input type="text" b-model="item" style="width: 100%;">
           <button type="submit">Add</button>
         </form>
       </div>
 
       <p>${count}</p>
 
-      <input type="text" model-trim="first" b-placeholder="first">
+      <input type="text" b-model-trim="first" b-placeholder="first">
 
-      <input type="text" model="last">
+      <input type="text" b-model="last">
 
-      <input type="number" model-number="count">
+      <input type="number" b-model-number="count">
 
       <button on-click="count++">Increment</button>
 
       <h4>Select: ${first}</h4>
-      <select name="names" id="names" model="first">
+      <select name="names" id="names" b-model="first">
         <option value="John">John</option>
         <option value="James">James</option>
         <option value="Jane">Jane</option>
       </select>
 
       <h4>Multiple select: ${vehicle}</h4>
-      <select name="names" id="names" model="vehicle" multiple>
+      <select name="names" id="names" b-model="vehicle" multiple>
         <option value="Bike">Bike</option>
         <option value="Car">Car</option>
         <option value="Boat">Boat</option>
       </select>
 
       <h4>Checkbox: ${checked}</h4>
-      <input type="checkbox" id="vehicle1" name="vehicle1" value="Bike" model="checked">
+      <input type="checkbox" id="vehicle1" name="vehicle1" value="Bike" b-model="checked">
       <label for="vehicle1"> I have a bike</label><br>
-      <input type="checkbox" id="vehicle2" name="vehicle2" model="checked">
+      <input type="checkbox" id="vehicle2" name="vehicle2" b-model="checked">
       <label for="vehicle2"> I have a car</label><br>
-      <input type="checkbox" id="vehicle3" name="vehicle3" value="Boat" model="checked">
+      <input type="checkbox" id="vehicle3" name="vehicle3" value="Boat" b-model="checked">
       <label for="vehicle3"> I have a boat</label><br>
 
       <h4>Multiple Checkboxes: ${vehicle}</h4>
-      <input type="checkbox" name="vehicle" value="Bike" model="vehicle">
+      <input type="checkbox" name="vehicle" value="Bike" b-model="vehicle">
       <label for="vehicle1"> I have a bike</label><br>
-      <input type="checkbox" name="vehicle" value="Car" model="vehicle">
+      <input type="checkbox" name="vehicle" value="Car" b-model="vehicle">
       <label for="vehicle2"> I have a car</label><br>
-      <input type="checkbox" name="vehicle" value="Boat" model="vehicle">
+      <input type="checkbox" name="vehicle" value="Boat" b-model="vehicle">
       <label for="vehicle3"> I have a boat</label><br>
 
       <h4>Radio: ${pick}</h4>
-      <input type="radio" id="one" model="pick" value="one">
+      <input type="radio" id="one" b-model="pick" value="one">
       <label for="one">One</label><br>
-      <input type="radio" id="two" model="pick" value="two">
+      <input type="radio" id="two" b-model="pick" value="two">
       <label for="two">Two</label><br>
-      <input type="radio" id="two" model="pick">
+      <input type="radio" id="two" b-model="pick">
       <label for="two">No value</label><br>
 
       <h4>Textarea: ${first}</h4>
-      <textarea model="first">Hello, I'm a textarea</textarea>
+      <textarea b-model="first">Hello, I'm a textarea</textarea>
 
-      <div show="count % 2 == 0">
+      <div b-show="count % 2 == 0">
         <h2>Show condition</h2>
         <div if="count % 3 == 0">
           <h2>If condition</h2>
@@ -285,26 +285,26 @@
 
     <hr>
 
-    <div props="{p1: true}" ref="prop1">
+    <div b-props="{p1: true}" ref="prop1">
       <div b-class="p1">
         <button on-click="console.log($props, $refs, $el, $root, $uid, p1)">Log Magic attributes</button>
-        <button id="button1" ref="button1" on-click="console.log($refs)">From a parent scope</button>
+        <button id="button1" b-ref="button1" on-click="console.log($refs)">From a parent scope</button>
       </div>
-      <div props="{refs: 123}" ref="prop2">
+      <div b-props="{refs: 123}" b-ref="prop2">
         <div ref="prop2div">
-          <button ref="button1" on-click="console.log($refs, $props)" teleport="body" style="background-color: red;">Inside Ref</button>
+          <button b-ref="button1" on-click="console.log($refs, $props)" b-teleport="body" style="background-color: red;">Inside Ref</button>
         </div>
-        <button ref="button1" on-click="console.log($refs)">Outside Ref</button>
+        <button b-ref="button1" on-click="console.log($refs)">Outside Ref</button>
       </div>
-      <button ref="button3" on-click="console.log($refs)">From a parent scope</button>
+      <button b-ref="button3" on-click="console.log($refs)">From a parent scope</button>
     </div>
 
     <hr>
 
-    <div props="c1">
+    <div b-props="c1">
       <h2>Counter 1: ${count}</h2>
       <button on-mousedown="increment">Increment</button>
-      <div props="c1">
+      <div b-props="c1">
         <h2>Counter 2 (nested): ${count}</h2>
         <button on-click="count++">Increment using `button` tag</button>
         <a on-mousedown="count++">Increment using `a` tag</a>
@@ -321,7 +321,7 @@
             }
           };
         });
-        Brio.addComponent('input', `<input type="text" model="a" />`);
+        Brio.addComponent('input', `<input type="text" b-model="a" />`);
         // Brio.addDirective(
         //   attrName => attrName == 'uppercase', 
         //   (vnode, attrName, attrValue) => {

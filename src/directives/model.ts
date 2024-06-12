@@ -10,7 +10,7 @@ import { effect } from '../reactivity';
 
 export let hydrateModel = (vnode: VNode, attrName: string, attrValue: string) => {
 
-    let [MODEL, ...modifiers] = split(attrName, '-');
+    let [_B, MODEL, ...modifiers] = split(attrName, '-');
 
     let [call, isRef] = evaluate(vnode, attrValue);
 

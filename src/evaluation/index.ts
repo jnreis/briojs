@@ -4,7 +4,7 @@ import { _methods } from "../methods";
 import { newObject } from "../tools/object";
 import { $PROPS, $REFS, $ROOT, DELETE, EXPRESSION } from "../tools/constants";
 import { arrayAdd, each } from "../tools/array";
-import { isStringFunction, isPath, startsWith, test } from "../tools/string";
+import { isStringFunction, isPath, startsWith } from "../tools/string";
 import { getRef } from "../reactivity/track";
 import { isFunction } from "../tools/typeCheck";
 import { logger } from "../tools";
@@ -90,14 +90,6 @@ let getArgValues = (vnode: VNode) => {
 
     return $s;
 }
-
-/** Check if the expression is a function call */
-export let isFunctionCall = (exp: string) => 
-    test(exp, /\(.*\)$/);
-
-/** Check if the expression is an assignment */
-export let isAssignment = (exp: string) =>
-    test(exp, /[^=]=[^=<>]/);
 
 /** Check if the expression is a delete statement */
 export let isDelete = (exp: string) =>

@@ -106,7 +106,7 @@ export let _engines: AnimationEngine[] = [
 /** ANIMATION CONTROLS */
 let _animations: Map<any, NextFunction> = new Map();
 
-export let getEngine = (animation: any) => _engines.find(engine => engine.validate(animation));
+export let getEngine = (animation: any) => _engines.find(engine => engine[VALIDATE](animation));
 
 /* The transition $in function should be with the `after` interceptor function */
 export let $in = () => (animation: any, ctx: any = true, next: NextFunction = () => {}) => {
@@ -115,7 +115,7 @@ export let $in = () => (animation: any, ctx: any = true, next: NextFunction = ()
     let engine = prepTransition(animation, next);
 
     // Reverse the animation
-    if (engine && ctx) engine.reverse(animation, next);
+    if (engine && ctx) engine[REVERSE](animation, next);
     // Skip the animation
     else next();
 }
@@ -244,7 +244,7 @@ let prepTransition = (animation: any, next: NextFunction) => {
 
     // Set the `onComplete` callback for the animation
     if (!_animations.has(animation)) {
-        engine.onComplete(animation, () => {
+        engine[ON_COMPLETE](animation, () => {
             // onComplete, call the `next` interceptor function
             _animations.get(animation)!();
         });

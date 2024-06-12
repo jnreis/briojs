@@ -6,10 +6,10 @@ import { AFTER, ATTR, BEFORE, DIRECTIVE, MUST_BE, PAUSE, TRANSITION } from "../t
 
 export let hydrateTransition = (vnode: VNode, _: string, attrValue: string) => {
 
-    let _attrName = vnode[ATTR].if ? 'if' : vnode[ATTR].show ? 'show' : '';
+    let _attrName = vnode[ATTR]['b-if'] ? 'b-if' : vnode[ATTR]['b-show'] ? 'b-show' : '';
 
     if (!_attrName)
-        return logger(`The ${TRANSITION} ${DIRECTIVE} ${MUST_BE} accompanied by an "if" or "show" ${DIRECTIVE}.`);
+        return logger(`The ${TRANSITION} ${DIRECTIVE} ${MUST_BE} accompanied by an b-if or b-show ${DIRECTIVE}.`);
 
     // Evaluate the animation expression
     let animation = evaluate(vnode, attrValue)[0]();

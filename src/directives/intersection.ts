@@ -1,7 +1,7 @@
 import { evaluate } from "../evaluation";
 import { interceptor, saveCleanup } from "../hydration";
 import { debounce, has, size } from "../tools";
-import { arrayAdd, each } from "../tools/array";
+import { arrayAdd, each, join } from "../tools/array";
 import { toNumber } from "../tools/number";
 import { split } from "../tools/string";
 import { isNumeric } from "../tools/typeCheck";
@@ -41,7 +41,7 @@ export let hydrateIntersection = (vnode: VNode, attrName: string, attrValue: str
                 i++;
             }
             // Set the margin
-            if (size(marginValue)) options[MARGIN] = marginValue.join(' ');
+            if (size(marginValue)) options[MARGIN] = join(marginValue, ' ');
         }
     });
 

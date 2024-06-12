@@ -5,13 +5,15 @@ import { arrayAdd, each } from "../tools/array";
 
 export let hydrateRefs = (vnode: VNode) => {
 
+    let attrName = 'b-ref';
+
     // Query all refs not inside another context
     let $refs: ObjectType = {};
 
-    let query = q(`[ref]:not([${PROPS}]):not([${PROPS}] [ref])`, vnode.$el);
+    let query = q(`[${attrName}]:not([b-${PROPS}]):not([b-${PROPS}] [${attrName}])`, vnode.$el);
 
     each([vnode.$el, ...query], ref => {
-        let refName = getAttr(ref as HTMLElement, 'ref');
+        let refName = getAttr(ref as HTMLElement, attrName);
         if (refName) {
             // Check if the ref already exists
             let r = $refs[refName];
@@ -24,7 +26,7 @@ export let hydrateRefs = (vnode: VNode) => {
             // Add the ref to the context
             else $refs[refName] = ref;
             // Remove the attribute from the node
-            delAttr(ref as HTMLElement, 'ref');
+            delAttr(ref as HTMLElement, attrName);
         }
     });
 

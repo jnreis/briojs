@@ -1,7 +1,7 @@
 import { evaluate, makeFunction } from "../evaluation";
 import { effect } from "../reactivity";
 import { has, size, uid } from "../tools";
-import { arrayAdd, each } from "../tools/array";
+import { arrayAdd, each, join } from "../tools/array";
 import { q, walk, getAttr, delAttr, getParent, setAttr } from "../tools/dom";
 import { toNumber } from "../tools/number";
 import { isStringFunction, split, startsWith, trim } from "../tools/string";
@@ -391,7 +391,7 @@ export let interceptor = (vnode: VNode, attrName: string, directiveFn: Intercept
  * This is necessary to properly evaluate certain expressions.
  * Without this, the evaluate function may throw an error for some expressions.
  */
-export let sanitizeAttrValue = (text: string) => split(text, '\n').map(trim).join('')
+export let sanitizeAttrValue = (text: string) => join(split(text, '\n').map(trim), '');
 
 export let tools: HydrationTools = {
     vnodes,

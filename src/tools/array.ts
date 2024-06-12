@@ -27,3 +27,6 @@ export let arrayReverse = (array: any[]) =>
 
 export let each = (value: any[], callbackfn: (value: any, index: number, array: any[]) => void) =>
     value.forEach(callbackfn);
+
+export let join = (array: any[], separator: string = ',') =>
+    array.join(separator);

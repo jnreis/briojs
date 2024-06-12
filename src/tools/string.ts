@@ -1,5 +1,5 @@
 import { has, size, slice } from '.';
-import { arrayAdd, each } from './array';
+import { arrayAdd, each, join } from './array';
 import { FUNCTION } from './constants';
 
 export let regexAlpha = /^[a-z]/i;
@@ -24,7 +24,7 @@ export let uncapitalize = (str: string) => lower(str[0]) + slice(str, 1);
 
 export let split = (str: string, separator: string | RegExp, limit?: number | undefined) => str.split(separator, limit);
 
-export let reverse = (str: string) => split(str, '').reverse().join('');
+export let reverse = (str: string) => join(split(str, '').reverse(), '');
 
 export let lastIndex = (str: string, search: string) => str.lastIndexOf(search);
 
@@ -177,4 +177,4 @@ export let replaceSubstring = (subject: string, startsAt: number, endsAt: number
 
 export let alphaNumericOnly = (str: string) => str.replace(/[^a-z0-9]/gi, '');
 
-export let camelCase = (...args: string[]) => uncapitalize(args.map(capitalize).join(''));
+export let camelCase = (...args: string[]) => uncapitalize(join(args.map(capitalize), ''));

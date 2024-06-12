@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.0] - 2024-06-11
+- Every directive has been prefixed with a `b-` to avoid conflict with other frameworks and libraries, except for the directives that start with `on-`.
+  This will also make it easier to identify the directives in the HTML.
+
 ## [0.8.0] - 2024-06-07
 - Removed `$data` global store, since now it is possible to add global stores using the `addStore` method.
 - Refactored the `$animate` method.

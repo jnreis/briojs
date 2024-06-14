@@ -16,6 +16,18 @@ export let getAllKeys = (value: Object) => {
     return keys;
 }
 
+/** Recursively goes up the prototype chain to find an object with a specific key */
+export let findObjectByKey = (object: any, key: string) => {
+    let currentObj = object;
+    while (currentObj) {
+        if (hasOwnProperty(currentObj, key)) return currentObj;
+        currentObj = getProto(currentObj);
+    }
+    return null;
+};
+
+(window as any).findObjectByKey = findObjectByKey;
+
 export let newObject = (proto: object | null = null) =>
     Object[CREATE](proto);
 

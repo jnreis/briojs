@@ -43,12 +43,14 @@
         <hr>
 
         <p>Nested b-props:</p>
-        <div b-props="{ name: 'The best frontend framework of' }" b-year="the_year" b-init="setTimeout(() => $props.the_year++, 1000)">
+        <div b-props="{ name: 'The best frontend framework of' }" b-year="the_year">
             <pre class="text-white">{{ JSON.stringify($props) }}</pre>
             <p>
                 The "name" prop in the nested context is: {{name}} <br>
                 The year prop is inherited from the parent: {{the_year}}
             </p>
+            
+            <button on-click="nextYear">Next year</button>
         </div>
             
         <button on-click="nextYear">Next year</button>

@@ -2,8 +2,10 @@ import { each } from '../tools/array';
 
 // * VARIABLES
 
-/** The reference to all observed objects/arrays and their listeners.
-    These listeners receive every change to the observed object/array. */
+/**
+ * The reference to all observed objects/arrays and their listeners.
+ * These listeners receive every change to the observed object/array.
+ */
 export let listeners: Listeners = new Map();
 
 /** Hold computed functions currently being executed */

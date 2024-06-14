@@ -21,32 +21,33 @@ export let state = (target: any) => {
 
     // Proxy handler
     let handler = {
-        get(target: any, prop: string, receiver: any) {
+        get(target: any, prop: string): any {
 
             if (has(getKeys(target), prop)) {
                 // Get the last item in the computed stack and add the accessed property to it
                 if (size(computedStack) > 0) {
-                    arrayAdd(computedStack[size(computedStack) - 1], [receiver, prop]);
+                    arrayAdd(computedStack[size(computedStack) - 1], [observedState, prop]);
                 }
 
                 // Register the accessed property
                 if (trackProps) {
-                    arrayAdd(accessedProps, [receiver, prop]);
+                    arrayAdd(accessedProps, [observedState, prop]);
                 }
             }
 
             // return value[prop];
-            return Reflect.get(target, prop, receiver);
+            return Reflect.get(target, prop, observedState);
         },
-        set(target: any, prop: string, newValue: any, receiver: any) {
-            let oldValue = receiver[prop];
+        set(target: any, prop: string, newValue: any): boolean {
+
+            let oldValue = observedState[prop];
 
             // If the new/old value are equal, return
             if (deepEqual(oldValue, newValue)) return true;
 
             // Set the storage state if a callback is present
             if (hasStorageCallback(newValue)) {
-                newValue = newValue(receiver, prop);
+                newValue = newValue(observedState, prop);
             }
 
             // Observe the new value if it's an object/array
@@ -60,7 +61,7 @@ export let state = (target: any) => {
             }
 
             // Set the new value
-            let result = Reflect.set(target, prop, newValue, receiver);
+            let result: boolean = Reflect.set(target, prop, newValue, observedState);
 
             // Notify computed functions about property changes
             notifyListeners(prop, newValue, oldValue);
@@ -137,8 +138,6 @@ export let state = (target: any) => {
 
 let isArrayOrObject = (value: any) => 
     isArray(value) || isObject(value);
-
-// let ignore = (receiver: any) => IGNORE in receiver;
 
 let notifyStateListeners = (observedState: any, context: any) =>
     each(getListener(observedState).state as any, (fn: ListenerFunction) => fn(context));

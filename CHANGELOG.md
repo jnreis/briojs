@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.11.0] - 2024-06-14
+- Fixed reactivity issue where the receiver was not always the observed state.
+  This was creating undesired behaviors, where the object was receiving the keys of the prototype during assignment.
+
 ## [0.10.0] - 2024-06-14
 - `emit` and `listen` methods were removed from the API since it was proven that they are not necessary.
 - `uid`, `has`, and `size` methods were removed from the hydration tools object since they are not necessary.

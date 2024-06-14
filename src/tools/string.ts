@@ -34,6 +34,8 @@ export let startsWith = (str: string, search: string) => str.startsWith(search);
 
 export let test = (str: string, regex: RegExp) => regex.test(str);
 
+export let replace = (str: string, search: string | RegExp, replacement: string) => str.replace(search, replacement);
+
 export let isStringNumeric = (value: string) => test(value, regexNumeric);
 
 export let isStringAlpha = (value: string) => test(value, regexAlpha);
@@ -57,7 +59,7 @@ export let makeFunctionAnonymous = (fn: Function) => {
     let name = fn.name;
     let body = toString(fn);
 
-    return test(body, new RegExp(`${name}\\s*\\(`)) ? body.replace(name, FUNCTION) : body;
+    return test(body, new RegExp(`${name}\\s*\\(`)) ? replace(body, name, FUNCTION) : body;
 };
 
 export let validateBracketPair = (str: string) => {
@@ -69,7 +71,7 @@ export let validateBracketPair = (str: string) => {
 
         each(pairs, pair => {
             if (has(str, pair)) {
-                str = str.replace(pair, '');
+                str = replace(str, pair, '');
                 found = true;
             }
         });
@@ -175,6 +177,6 @@ export let findTopmostDelimitedContent = (input: string, startDelimiter: string,
 export let replaceSubstring = (subject: string, startsAt: number, endsAt: number, replacement = '') =>
     slice(subject, 0, startsAt) + replacement + slice(subject, endsAt);
 
-export let alphaNumericOnly = (str: string) => str.replace(/[^a-z0-9]/gi, '');
+export let alphaNumericOnly = (str: string) => replace(str, /[^a-z0-9]/gi, '');
 
 export let camelCase = (...args: string[]) => uncapitalize(join(args.map(capitalize), ''));

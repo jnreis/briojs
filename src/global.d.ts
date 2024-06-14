@@ -3,27 +3,24 @@
 // API
 declare type start = (nodes?: Node[]) => void;
 declare type Api = {
-    // Methods that may only be called before Brio is initialized
-    // Extend Brio
+    // To extend Brio.js
+    // * Node: this methods may only be called before Brio.js is initialized
     addDirective: (directiveName: string, hasModifiers: boolean, hydrateDirective: HydrateDirective) => void,
     addMethod: (methodName: string, fn: MagicMethod) => void,
     addTransitionEngine: (engine: AnimationEngine) => void,
-    // Add assets
-    addComponent: (componentName: string, html: string) => void,
+
+    // To add assets
+    addComponent: (componentName: string, ...html: string[]) => void,
     addProps: (propsName: string, fn: (...args: any) => ObjectType) => void,
     addStore: (storeName: string, storeObject: ObjectType) => void,
 
-    // Helper functions
-    emit: (node: HTMLElement, eventName: string, eventData?: any) => boolean,
-    listen: (node: HTMLElement, eventName: string, callback: (event: Event) => void, options?: boolean | AddEventListenerOptions | undefined) => () => void,
-
     // Reactivity methods
     state: (target: any) => any,
-    computed: (fn: ListenerFunction, deps?: ListenerFunction | undefined) => ListenerFunction,
+    computed: (fn: ListenerFunction, deps?: ListenerFunction) => ListenerFunction,
     removeComputed: (fn: ListenerFunction) => void,
-    effect: (fn: ListenerFunction) => () => void,
+    effect: (fn: ListenerFunction, deps?: ListenerFunction) => () => void,
     watch: (observedState: any, prop: string | number | null, callback: ListenerFunction) => () => void,
-    storage: (_storage: any, value: any, alias?: string | undefined) => void | ((observedState: any, prop: string) => any),
+    storage: (_storage: any, value: any, alias?: string) => void | ((observedState: any, prop: string) => any),
 }
 type MagicMethod = (vnode: VNode) => FunctionType;
 
@@ -75,14 +72,14 @@ type HydrateDirective = (vnode: VNode, attrName: string, attrValue: string, tool
 type HydrationTools = {
     vnodes: VNodes,
     wrapper: (vnode: VNode, attrName: string, attrValue: string, callback: (node: HTMLElement) => FunctionType) => void,
-    hydrate: (nodes?: Node[] | undefined) => void,
+    hydrate: (nodes?: Node[]) => void,
     dehydrate: (node: Node, removeVNode?: boolean) => void,
     saveCleanup: (vnode: VNode, fn: FunctionType) => void,
     newVNode: ($el: HTMLElement) => VNode,
     saveVNode: (vnode: VNode) => void,
     attr: (vnode: VNode, attrName: string, attrValue?: string) => {
         value: string;
-        deps?: FunctionType | undefined;
+        deps?: FunctionType;
         before: Interceptor[];
         after: Interceptor[];
     },
@@ -91,10 +88,6 @@ type HydrationTools = {
     saveInterceptor: (vnode: VNode, attrName: string, interceptorType: 'before' | 'after', fn: Interceptor) => void,
 
     evaluate: (vnode: VNode, exp: string) => any,
-
-    uid: (length?: number, callback?: ((uid: string) => boolean) | undefined) => string,
-    has: (value: any, item: string | symbol) => any,
-    size: (value: any) => number,
 }
 
 type Interceptor = (ctx: any, next: NextFunction, remove: () => void) => void;
@@ -133,6 +126,7 @@ type AnimationEngine = {
 
 
 // ASTRO HTML TYPES
+// * Node: this is no longer needed since every Brio.js directive is now prefixed with `b-` or `on-`.
 declare namespace astroHTML.JSX {
     interface HTMLAttributes {
         ignore?: string;

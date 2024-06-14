@@ -36,7 +36,8 @@ let keyPrefix = (key: string) => '_b_' + key;
 export let _storageStack = new Map();
 
 /**
- * Tracks a property and stores it in a storage object like localStorage or sessionStorage or any other object that has the getItem and setItem methods.
+ * Creates a two-way binding between a reactive property and a storage object (like localStorage or sessionStorage).
+ * A "storage object" is any object that has the `getItem` and `setItem` methods.
  */
 export let storage = (_storage: any, value: any, alias?: string) => {
 

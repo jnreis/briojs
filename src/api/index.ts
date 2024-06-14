@@ -3,11 +3,10 @@ import { addProps } from './props';
 import { addMethod } from './method';
 import { addDirective } from "./directive";
 import { addTransitionEngine } from "./transition";
+import { _storeNames, addStore } from './store';
 
 import { state, computed, removeComputed, effect, watch, storage } from "../reactivity";
-import { emit, listen } from "../tools/dom";
 import { $PROPS, $REFS, $ROOT, INIT } from "../tools/constants";
-import { _storeNames, addStore } from './store';
 import { _methods } from '../methods';
 import { arrayMerge } from '../tools/array';
 
@@ -29,19 +28,16 @@ export let getReservedNames = () => arrayMerge(
 
 // Brio API
 export let api: Api = {
-    // Methods that may only be called before Brio is initialized
-    // To extend Brio
+    // To extend Brio.js
+    // * Node: this methods may only be called before Brio.js is initialized
     addDirective,
     addMethod,
     addTransitionEngine,
+
     // To add assets
     addComponent,
     addProps,
     addStore,
-
-    // Helper functions
-    emit,
-    listen,
 
     // Reactivity methods
     state,

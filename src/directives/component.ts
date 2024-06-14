@@ -1,14 +1,21 @@
 import { _components } from "../api/component"
+import { interceptor } from "../hydration";
 import { logger } from "../tools";
 import { COMPONENT, NOT_FOUND } from "../tools/constants";
 
 
-export let hydrateComponent = (vnode: VNode, _attrName: string, attrValue: string) => {
+export let hydrateComponent = (vnode: VNode, attrName: string, attrValue: string) => {
 
-    // Get the component
-    let component = _components[attrValue];
+    // Create an interceptor
+    interceptor(vnode, attrName, (ctx, next) => {
 
-    // Replace the innerHTML with the component, if the component exists
-    if (component) vnode.$el.innerHTML = component;
-    else logger(COMPONENT + ` "${attrValue}" ` + NOT_FOUND);
+        // Replace the innerHTML with the component, if the component exists
+        if (ctx) vnode.$el.innerHTML = ctx;
+        else logger(COMPONENT + ` "${attrValue}" ` + NOT_FOUND);
+
+        // Next function
+        next();
+    })
+    // Evaluate the expression and run it only once
+    (_components[attrValue]);
 }

@@ -53,7 +53,7 @@ export let hydrateIntersection = (vnode: VNode, attrName: string, attrValue: str
     // Create an interceptor
     let exp: Function = interceptor(vnode, attrName, (entry: IntersectionObserverEntry, next) => {
         // Execute the expression
-        if (isRef) call()
+        if (isRef == 1) call()
         else call(entry);
 
         // Next function

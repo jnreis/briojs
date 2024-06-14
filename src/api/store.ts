@@ -19,7 +19,7 @@ export let stores: ObjectType = {
     [$STORE]: state({}),
 };
 
-/** Adds an item to the data store */
+/** Add a global store */
 export let addStore = (storeName: string, storeObject: ObjectType) => {
     let GLOBAL_STORE = 'global store';
 

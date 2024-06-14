@@ -2,7 +2,7 @@ import { evaluate } from '../evaluation';
 import { state, watch } from '../reactivity';
 import { hydrate, dehydrate, vnodes, saveVNode, saveCleanup, newVNode, interceptor, attr } from '../hydration';
 import { entries, has, logger } from '../tools';
-import { appendChild, removeChild, insertBefore, getParent, nextSibling } from '../tools/dom';
+import { appendChildren, removeChild, insertBefore, getParent, nextSibling } from '../tools/dom';
 import { split, test, trim } from '../tools/string';
 import { isArray, isObject } from '../tools/typeCheck';
 import { ARRAY, OBJECT, EACH, DIRECTIVE, REQUIRE, CREATE, UPDATE, DELETE, $PROPS, PROPS, STATUS, SKIP } from '../tools/constants';
@@ -36,7 +36,7 @@ export let hydrateEach = (vnode: VNode, attrName: string, attrValue: string) => 
     // Get the value of the prop
     let [ ref, isRef ] = evaluate(vnode, propExp);
 
-    if (!isRef)
+    if (isRef != 1)
         return logger(`${msg} a prop.`);
 
     let value = ref();
@@ -66,7 +66,7 @@ export let hydrateEach = (vnode: VNode, attrName: string, attrValue: string) => 
 
         // Add the node to the DOM
         if (nextEl) insertBefore(parentEl, _el, nextEl);
-        else appendChild(parentEl, _el);
+        else appendChildren(parentEl, _el);
 
         // Create a new vnode
         let _vnode = newVNode(_el);

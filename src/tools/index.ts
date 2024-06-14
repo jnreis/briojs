@@ -1,7 +1,7 @@
 import { arrayFrom, join } from "./array";
 import { getKeys } from "./object";
 import { toString } from "./string";
-import { isArray, isDate, isFunction, isMap, isObject, isRegExp, isSet, isString } from "./typeCheck";
+import { isArray, isDate, isFunction, isMap, isObject, isPromise, isRegExp, isSet, isString } from "./typeCheck";
 
 /**
  * Generates random strings of a given length until a callback returns true.
@@ -26,6 +26,11 @@ export let entries = (value: any): [string, any][] =>
 
 export let slice = (value: any, start?: number | undefined, end?: number | undefined) =>
     value.slice(start, end);
+
+export let asyncValue = async (value: any) => {
+    let v = isFunction(value) ? value() : value;
+    return isPromise(v) ? await v : v;
+}
 
 /**
  * Returns the size of a value

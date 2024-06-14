@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.0] - 2024-06-14
+- `emit` and `listen` methods were removed from the API since it was proven that they are not necessary.
+- `uid`, `has`, and `size` methods were removed from the hydration tools object since they are not necessary.
+- types have been updated to reflect the changes in the API.
+- The `addComponent` method now takes N number of html string and sanitize them before registering the component.
+- The `b-component` directive was removed. Now the `b-html` uses the components registered with the `addComponent` method.
+- The `b-text` directive was removed. Now the `b-html` can handle text nodes.
+- The `b-html` directive has suffered a major refactoring.
+  - Now it can re-hydrate the html string passed to it and proccess the mustache syntax.
+  - It can also uses the components registered with the `addComponent` method.
+- The `evaluate` function now returns a number as its second value in the array.
+  - 0 = not a reference;
+  - 1 = reference;
+  - 2 = reference is a function.
+- The `hydrate` function will skip script and style tags.
+- The `hydrateTextNode` function now handles the mustache syntax.
+- Many comments were added to the code to make it easier to understand.
+
 ## [0.9.0] - 2024-06-11
 - Every directive has been prefixed with a `b-` to avoid conflict with other frameworks and libraries, except for the directives that start with `on-`.
   This will also make it easier to identify the directives in the HTML.

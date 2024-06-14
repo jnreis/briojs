@@ -223,8 +223,6 @@ export let $animate = () => ($el: HTMLElement, options: ObjectType) => {
     // Pause the animation, if the `pause` property is provided
     if (options[PAUSE]) animation[PAUSE]();
 
-    console.log(startPoint, endPoint, options)
-
     return animation;
 }
 

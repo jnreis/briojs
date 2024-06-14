@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>b-props</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+            font-size: 1.2rem;
+        }
+        .text-white {
+            color: white;
+        }
+        pre {
+            background-color: #383a3f;
+            padding: 1rem;
+            border-radius: 0.25rem;
+            box-shadow: 0 0 0.5rem rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <h1>b-props</h1>
+
+    <div b-props="{ name: 'Brio.js', the_year: 2024, nextYear() { this.the_year++ } }">
+
+        <p>Top level b-props:</p>
+        <pre class="text-white">{{ JSON.stringify($props) }}</pre>
+        <p>
+            The "name" prop in the top level context is: {{name}}. <br>
+            The year is: {{the_year}}
+        </p>
+
+        <hr>
+
+        <p>Nested b-props:</p>
+        <div b-props="{ name: 'The best frontend framework of' }" b-year="the_year" b-init="setTimeout(() => $props.the_year++, 1000)">
+            <pre class="text-white">{{ JSON.stringify($props) }}</pre>
+            <p>
+                The "name" prop in the nested context is: {{name}} <br>
+                The year prop is inherited from the parent: {{the_year}}
+            </p>
+        </div>
+            
+        <button on-click="nextYear">Next year</button>
+    </div>
+
+    <script type="module" src="/src/cdn.ts"></script>
+</body>
+</html>

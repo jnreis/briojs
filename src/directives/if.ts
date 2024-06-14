@@ -1,6 +1,6 @@
 import { wrapper } from "../hydration";
 import { wait } from "../tools";
-import { appendChild, getParent, insertBefore, nextSibling } from "../tools/dom";
+import { appendChildren, getParent, insertBefore, nextSibling } from "../tools/dom";
 import { isFunction } from "../tools/typeCheck";
 
 export let hydrateIf = (vnode: VNode, attrName: string, attrValue: string) => {
@@ -22,7 +22,7 @@ export let hydrateIf = (vnode: VNode, attrName: string, attrValue: string) => {
                     // Add the node before the next sibling
                     if (nextEl) insertBefore(parentEl, node, nextEl);
                     // Add the node as the last child
-                    else appendChild(parentEl, node);
+                    else appendChildren(parentEl, node);
                 }
                 // Remove
                 else node.remove();

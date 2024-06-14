@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>b-html</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+            font-size: 1.2rem;
+        }
+        .text-white {
+            color: white;
+        }
+        .p-2 {
+            padding: 2rem;
+        }
+        .bg-blue {
+            background-color: #2563eb;
+        }
+        .bg-red {
+            background-color: #e11d48;
+        }
+
+        button {
+            padding: 0.6rem 1rem;
+            margin-top: 1rem;
+            font-size: 1rem;
+            background-color: #35383e;
+            color: white;
+            border: none;
+            border-radius: 0.25rem;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>b-html</h1>
+
+    <div b-props="{
+        componentName: 'c1',
+        toggleComponent() {
+            this.componentName = this.componentName == 'c1' ? 'c2' : 'c1';
+        },
+    }">
+        <h3>The current component is: {{componentName}}</h3>
+        <div b-html="componentName"></div>
+
+        <button on-click="toggleComponent">Change component</button>
+    </div>
+
+    <script>
+        document.addEventListener('brio:init', () => {
+            Brio.addComponent('c1',
+                '<p class="text-white p-2 bg-red">Component 1</p>',
+            );
+            Brio.addComponent('c2',
+                '<p class="text-white p-2 bg-blue">Component 2</p>',
+            );
+        })
+    </script>
+    <script type="module" src="/src/cdn.ts"></script>
+</body>
+</html>

@@ -62,7 +62,7 @@ export let hydrateOn = (vnode: VNode, attrName: string, attrValue: string) => {
     let [call, isRef] = evaluate(vnode, attrValue, '$event', true);
 
     // Check if the event handler is a function
-    if (isRef)
+    if (isRef == 1)
         logger(`The event handler ${MUST_BE} a ${FUNCTION}, ${BUT_GOT_INSTEAD(getType(call()))}`, '', 'warn');
 
     // Create an interceptor

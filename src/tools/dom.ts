@@ -9,8 +9,9 @@ export let closest = (node: Node, selector: string) => {
     return el && (el as HTMLElement).closest(selector);
 }
 
-export let appendChild = (parent: Node, child: Node) =>
-    parent.appendChild(child);
+/** Append children to a parent node */
+export let appendChildren = (parent: Element, ...children: Node[]|string[]) =>
+    parent.append(...children);
 
 export let insertBefore = (parent: Node, child: Node, beforeChild: Node) =>
     parent.insertBefore(child, beforeChild);
@@ -23,6 +24,10 @@ export let getParent = (node: Node) =>
 
 export let nextSibling = (node: Node) =>
     node.nextSibling;
+
+/** Get the child nodes of a node as an array */
+export let childNodes = (node: Node) =>
+    [...node.childNodes];
 
 export let getAttr = (node: HTMLElement, attr: string) =>
     node.getAttribute(attr);
@@ -56,7 +61,7 @@ export let walk = (node: Node, callback: (node: Node) => boolean | null) => {
     // If callback returns false, don't walk through child nodes
     if (callback(node)) {
         // Recursively walk through child nodes
-        for (let child of node.childNodes) {
+        for (let child of childNodes(node)) {
             walk(child, callback);
         }
     }

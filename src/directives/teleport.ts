@@ -1,7 +1,7 @@
 import { interceptor } from "../hydration";
 import { logger } from "../tools";
 import { ELEMENT, NOT_FOUND, TELEPORT } from "../tools/constants";
-import { q, appendChild } from "../tools/dom";
+import { q, appendChildren } from "../tools/dom";
 
 export let hydrateTeleport = (vnode: VNode, attrName: string, attrValue: string) => {
 
@@ -15,7 +15,7 @@ export let hydrateTeleport = (vnode: VNode, attrName: string, attrValue: string)
     // Teleport the node
     interceptor(vnode, attrName, (target: Element, next) => {
         // Append the node to the target
-        appendChild(target, vnode.$el);
+        appendChildren(target, vnode.$el);
 
         // Next function
         next();

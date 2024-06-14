@@ -15,9 +15,9 @@ import { logger } from "../tools";
 let cache: Record<string, FunctionType> = newObject();
 
 /** Evaluate an expression using vnode properties */
-export let evaluate = (vnode: VNode, exp: string, args: string = '', isVoid: boolean = false): [FunctionType, boolean] => {
+export let evaluate = (vnode: VNode, exp: string, args: string = '', isVoid: boolean = false): [FunctionType, 0|1|2] => {
 
-    let isRef: boolean = false;
+    let isRef: 0|1|2 = 0;
     let _ref: FunctionType | undefined;
 
     // The expression is a path
@@ -29,11 +29,11 @@ export let evaluate = (vnode: VNode, exp: string, args: string = '', isVoid: boo
 
         // Reference found
         if (_ref) {
-            isRef = true;
+            isRef = 1;
 
             // Reference is a function
             if (isFunction(_ref())) {
-                isRef = false;
+                isRef = 2;
                 // Call the function with the arguments
                 exp = makeFunction(`${exp}(${args})`, args, isVoid);
             }
@@ -46,7 +46,7 @@ export let evaluate = (vnode: VNode, exp: string, args: string = '', isVoid: boo
     // ? This is done to prevent the expression from being evaluated immediately. E.g. `count++` would change the value of `count` immediately.
     else if (!isStringFunction(exp)) exp = makeFunction(exp, args, isVoid);
 
-    return [isRef ? _ref : execute(vnode, exp), isRef];
+    return [isRef == 1 ? _ref : execute(vnode, exp), isRef];
 }
 
 /** Execute an expression */

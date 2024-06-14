@@ -17,7 +17,7 @@ export let hydrateModel = (vnode: VNode, attrName: string, attrValue: string) =>
     let ATTR_REPRESENTATION = `${attrName}="${attrValue}"`;
     let MODEL_DIRECTIVE = `${MODEL} ${DIRECTIVE}`;
 
-    if (!isRef)
+    if (isRef != 1)
         return logger(`The ${MODEL_DIRECTIVE} ${REQUIRE}s a reactive state.`, ATTR_REPRESENTATION);
 
     // Get the value

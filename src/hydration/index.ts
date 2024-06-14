@@ -1,10 +1,10 @@
 import { evaluate, makeFunction } from "../evaluation";
 import { effect } from "../reactivity";
-import { has, size, uid } from "../tools";
+import { has, size } from "../tools";
 import { arrayAdd, each, join } from "../tools/array";
 import { q, walk, getAttr, delAttr, getParent, setAttr } from "../tools/dom";
 import { toNumber } from "../tools/number";
-import { isStringFunction, split, startsWith, trim } from "../tools/string";
+import { isStringFunction, split, startsWith, test, trim } from "../tools/string";
 import { isTextNode, isElementNode } from "../tools/typeCheck";
 import { NUMBER, TEXT, $PROPS, $ROOT, $REFS, TEXT_CONTENT, ATTR, CLEANUP, VALUE, STATUS, SKIP, BEFORE, AFTER, ATTRIBUTE } from "../tools/constants";
 import { _directives } from "../directives";
@@ -77,7 +77,7 @@ export let hydrate = (nodes?: Node[]) => {
             if (isTextNode(node) && trim(node[TEXT_CONTENT] || '')) {
                 result = hydrateTextNode(node as Text);
             }
-            else if (isElementNode(node)) {
+            else if (isElementNode(node) && !has(['SCRIPT','STYLE'], node.nodeName)) {
                 result = hydrateElementNode(node as HTMLElement);
             }
             return result;
@@ -194,13 +194,14 @@ export let hydrateTextNode = (node: Text) => {
     // * Empty text nodes are ignored by the walk callback
 
     let text = (node as any)[TEXT_CONTENT];
+    let sanitizedText = replaceMustache(sanitizeAttrValue(text || ''));
 
-    if (text && has(text, '${') && has(text, '}')) {
+    if (sanitizedText && test(sanitizedText, templateRegex)) {
 
         let vnode = newVNode(node as any);
 
         // Evaluate the expression
-        let [call] = evaluate(vnode, `$el.${TEXT_CONTENT}=\`${sanitizeAttrValue(text)}\``);
+        let [call] = evaluate(vnode, `$el.${TEXT_CONTENT}=\`${sanitizedText}\``, '', true);
 
         // Save the cleanup function
         saveCleanup(vnode, effect(call));
@@ -393,22 +394,37 @@ export let interceptor = (vnode: VNode, attrName: string, directiveFn: Intercept
  */
 export let sanitizeAttrValue = (text: string) => join(split(text, '\n').map(trim), '');
 
+/** Match template literal ${} */
+export let templateRegex = /\${((?!.*\${).*?)}/;
+
+/** Match mustache syntax {{}} */
+export let mustacheRegex = /{{((?!.*{{).*?)}}/;
+
+/** Replace mustache syntax with template literals */
+export let replaceMustache = (text: string) => {
+
+    while (test(text, mustacheRegex)) {
+        text = text.replace(mustacheRegex, '${$1}');
+    }
+
+    return text;
+};
+
 export let tools: HydrationTools = {
     vnodes,
     wrapper,
     hydrate,
     dehydrate,
     saveCleanup,
+
     newVNode,
     saveVNode,
+
     attr,
     saveAttr,
+
     interceptor,
     saveInterceptor,
 
     evaluate,
-
-    uid,
-    has,
-    size,
 };

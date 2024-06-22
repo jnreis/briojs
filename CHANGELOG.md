@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.14.0] - 2024-06-22
+- Fixed a bug in the `getAccessedProps` function. Now it returns all the accessed properties. The code related to navigating to the accessed properties and filtering the duplicates, etc. was moved to the `getAccessedProp` function.
+
 ## [0.13.0] - 2024-06-22
 - The `$http` magic property is now a magic method. It allows the use of the `get`, `post`, `put`, `patch`, and `delete` methods. As well as creating custom instances of $http with base URL and global options.
 

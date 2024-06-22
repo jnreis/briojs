@@ -116,14 +116,11 @@ export let state = (target: any, options?: { depth?: number, ignore?: boolean })
         let listener = getListener(observedState);
 
         // Notify state listeners
-        notifyStateListeners(observedState, context);
+        _notifyListeners(listener.state, context);
 
         // Notify property listeners
         if (listener.props[prop]) {
-            each(listener.props[prop] as any, (fn: ListenerFunction) => {
-                // Run the computed function
-                fn(context);
-            });
+            _notifyListeners(listener.props[prop], context);
         }
 
         // // If property is also an state, notify its listeners
@@ -142,8 +139,9 @@ export let state = (target: any, options?: { depth?: number, ignore?: boolean })
 let isArrayOrObject = (value: any) => 
     isArray(value) || isObject(value);
 
-let notifyStateListeners = (observedState: any, context: any) =>
-    each(getListener(observedState).state as any, (fn: ListenerFunction) => fn(context));
+/** Notify state listeners */
+let _notifyListeners = (listeners: ListenerFunctions, context: any) =>
+    each(listeners, (fn: ListenerFunction) => fn(context));
 
 /**
  * Checks if a value has the callback symbol.

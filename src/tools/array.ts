@@ -25,7 +25,7 @@ export let arrayMerge = (...arrays: any[][]) =>
 export let arrayReverse = (array: any[]) =>
     slice(array).reverse();
 
-export let each = (value: any[], callbackfn: (value: any, index: number, array: any[]) => void) =>
+export let each = (value: any[] | Set<any> | Map<any, any>, callbackfn: (value: any, index: number, array: any[] | Set<any> | Map<any, any>) => void) =>
     value.forEach(callbackfn);
 
 export let join = (array: any[], separator: string = ',') =>

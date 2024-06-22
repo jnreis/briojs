@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>b-model</title>
+</head>
+<body b-props="{vehicle: ['Car'], vo: {car: 'Car'}}">
+    <h4>Multiple select: ${vehicle} ${Object.keys(vo)}</h4>
+    <select name="names" id="names" b-model="vehicle" multiple>
+      <option value="Bike">Bike</option>
+      <option value="Car">Car</option>
+      <option value="Boat">Boat</option>
+    </select>
+
+    <script type="module" src="/src/cdn.ts"></script>
+</body>
+</html>

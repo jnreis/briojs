@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.13.0] - 2024-06-22
+- The `$http` magic property is now a magic method. It allows the use of the `get`, `post`, `put`, `patch`, and `delete` methods. As well as creating custom instances of $http with base URL and global options.
+
 ## [0.12.0] - 2024-06-21
 - The `bind` directive now takes the initial value of the property as an argument. E.g. `class="container"` `b-class="$initial + ' mx-auto'"`. This will make it easier to bind attributes that need to be concatenated with the initial value.
 - The `each` directive now can take any object or array as its argument. It does not need to be a reference anymore. It can also take a number as an argument to repeat the element n times. Note that only reactive state will trigger the reactivity system.

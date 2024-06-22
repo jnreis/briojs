@@ -1,6 +1,6 @@
-import { CALLBACK, listeners, getListener, removePropertyListeners, computedStack, isState, ignoredTargets } from '.';
+import { CALLBACK, listeners, getListener, removePropertyListeners, isState, ignoredTargets } from '.';
 import { trackProps, accessedProps } from './track';
-import { deepEqual, has, size } from '../tools';
+import { deepEqual, has } from '../tools';
 import { arrayAdd, each } from '../tools/array';
 import { getKey, getKeys } from '../tools/object';
 import { isArray, isObject, isUndefined, isFunction } from '../tools/typeCheck';

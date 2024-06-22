@@ -11,9 +11,6 @@ export let listeners: Listeners = new Map();
 /** Objects/arrays that should be ignored */
 export let ignoredTargets: Set<any> = new Set();
 
-/** Hold computed functions currently being executed */
-export let computedStack: any[] = [];
-
 /** Internal callback symbol */
 export let CALLBACK = Symbol('callback');
 

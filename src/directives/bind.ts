@@ -1,16 +1,25 @@
 import { wrapper } from '../hydration';
 import { has, slice } from '../tools';
-import { setAttr, delAttr } from '../tools/dom';
+import { setAttr, delAttr, getAttr } from '../tools/dom';
 import { VALUE, CHECKED, STYLE, CLASS, SELECT } from '../tools/constants';
-import { isFunction } from '../tools/typeCheck';
+import { isStringFunction } from '../tools/string';
+import { makeFunction } from '../evaluation';
 
 export let hydrateBind = (vnode: VNode, attrName: string, attrValue: string) => {
 
     let prop = slice(attrName, 2);
 
-    wrapper(vnode, attrName, attrValue || 'true', (node) => (ctx, next) => {
+    // Check is attrValue is a function
+    if (!isStringFunction(attrValue)) {
+        attrValue = makeFunction(attrValue || 'true', '$initial');
+    }
 
-        let value = isFunction(ctx) ? ctx() : ctx;
+    // Get the attribute initial value
+    let initialAttrValue = getAttr(vnode.$el, prop) || '';
+
+    wrapper(vnode, attrName, attrValue, (node) => ([call], next) => {
+
+        let value = call(initialAttrValue);
 
         // Set property directly
         if (has([VALUE, CHECKED, SELECT+'ed', STYLE, CLASS, 'src'], prop))

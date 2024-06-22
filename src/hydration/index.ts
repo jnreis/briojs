@@ -12,7 +12,6 @@ import { _directives } from "../directives";
 // Raw values are evaluated only once in production mode, but are evaluated every time they are updated in development mode
 export const vnodes : VNodes = new Map();
 export let vnodesQueue: Map<Node, ObjectType> = new Map();
-export let currentNode: ObjectType = {};
 
 // Effects are functions that are called when a dependency changes
 // Most of the raw values are expressions, or references to a prop or method in the scope
@@ -42,16 +41,14 @@ export let wrapper = (
     let runner = interceptor(vnode, attrName, callback(vnode.$el));
 
     // The context. Which most likely refers to reactive properties.
-    let [ctx] = evaluate(vnode, attrValue);
-
-    // Get the dependencies, if any
-    let deps = attr(vnode, attrName).deps;
+    let evaluation = evaluate(vnode, attrValue);
 
     // Create a new effect, and save the cleanup function.
     // This sets up the reactivity.
     saveCleanup(vnode, effect(
-        () => runner(deps ? ctx : ctx()),
-        deps
+        () => runner(evaluation),
+        // Get the dependencies, if any
+        attr(vnode, attrName).deps
     ));
 }
 
@@ -314,7 +311,7 @@ let hydrateInterceptor = (vnode: VNode, attrName: string, interceptorType: 'befo
 
     // Evaluate the attribute value, if any
     if (attrValue) {
-        let fn = evaluate(vnode, attrValue, '$ctx,$next,$remove', true)[0];
+        let fn = evaluate(vnode, attrValue, '$context,$next,$remove', true)[0];
         saveInterceptor(vnode, attrName, interceptorType, fn);
         delAttr($el, attrCycle);
     }
@@ -361,7 +358,7 @@ export let interceptor = (vnode: VNode, attrName: string, directiveFn: Intercept
         // Execute the interceptor functions in sequence
         if (index < size(interceptorFns)) {
             interceptorFns[index](
-                // * $ctx: the context contains the data that is passed to the interceptor function. It can be modified if it is an object.
+                // * $ctx: the context contains the data that is passed to the interceptor function. It can be modified if it is a reference (object, array, etc.)
                 context,
                 // * $next(): go to the next interceptor function.
                 (stop: boolean = false) => {
@@ -388,11 +385,11 @@ export let interceptor = (vnode: VNode, attrName: string, directiveFn: Intercept
 }
 
 /**
- * Sanitize an attribute value by removing new lines and extra spaces. 
+ * Sanitize an attribute value by removing new lines and extra spaces and comments.
  * This is necessary to properly evaluate certain expressions.
  * Without this, the evaluate function may throw an error for some expressions.
  */
-export let sanitizeAttrValue = (text: string) => join(split(text, '\n').map(trim), '');
+export let sanitizeAttrValue = (text: string) => join(split(text, '\n').map(line => startsWith(trim(line), '//') ? '' : trim(line)), '');
 
 /** Match template literal ${} */
 export let templateRegex = /\${((?!.*\${).*?)}/;

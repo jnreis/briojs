@@ -1,4 +1,4 @@
-import { listeners, getListener, addPropertyListener, removeListener } from '.';
+import { getListener, addPropertyListener, removeListener, isState } from '.';
 import { logger } from '../tools';
 import { ARRAY, OBJECT } from '../tools/constants';
 
@@ -14,7 +14,7 @@ export let watch = (observedState: any, prop: string | number | null, callback: 
 
     // If no key/index is specified, watch for all changes to the observed object/array
     if (!prop && prop !== 0) {
-        if (!listeners.has(observedState)) {
+        if (!isState(observedState)) {
             logger(`Cannot watch an unobserved ${OBJECT}/${ARRAY}.`);
             return () => {};
         }

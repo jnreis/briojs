@@ -1,10 +1,16 @@
 import { each } from "./array";
 import { CREATE } from "./constants";
+import { isObject } from "./typeCheck";
+
+/** Gets the value of a key in an object or returns a default value */
+export let getKey = (object: any, key: string, defaultValue?: any) => {
+    return isObject(object) && hasOwnProperty(object, key) ? object[key] : defaultValue;
+}
 
 export let getKeys = (value: Object) => Object.keys(value);
 
 export let getAllKeys = (value: Object) => {
-    let keys = new Set();
+    let keys: Set<string> = new Set();
 
     // Recursively traverse the prototype chain
     let currentObj = value;
@@ -25,8 +31,6 @@ export let findObjectByKey = (object: any, key: string) => {
     }
     return null;
 };
-
-(window as any).findObjectByKey = findObjectByKey;
 
 export let newObject = (proto: object | null = null) =>
     Object[CREATE](proto);
@@ -78,14 +82,33 @@ export let setHiddenKey = (object: any, key: string, value: any) =>
 export let deleteKey = (object: any, key: string|number) => delete object[key];
 
 /**
- * Deletes all keys in an object
+ * Deletes all keys in an object.
+ * Note: This mutates the object.
+ * @returns void
  */
 export let deleteKeys = (object: any) =>
     each(getKeys(object), (key) => {
         deleteKey(object, key);
     });
 
-export let objectMerge = (target: ObjectType, source: ObjectType) =>
-    each(getKeys(source), key => {
-        target[key] = source[key];
+/**
+ * Merges the keys of each object into the `target` object.
+ * Note: This mutates the `target` object.
+ * @param target - The target object
+ * @param missingKeysOnly - If true, only missing keys will be merged
+ * @param ...objects - The objects to merge
+ * @returns void
+ */
+export let mergeKeys = (target: ObjectType, missingKeysOnly: boolean, ...objects: ObjectType[]) => {
+    // Each object
+    each(objects, object => {
+        if (isObject(object)) {
+            // Each key in the object
+            each(getKeys(object), key => {
+                if (!missingKeysOnly || (missingKeysOnly && !hasOwnProperty(target, key))) {
+                    target[key] = object[key];
+                }
+            });
+        }
     });
+};

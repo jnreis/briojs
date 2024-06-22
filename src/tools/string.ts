@@ -42,7 +42,7 @@ export let isStringAlpha = (value: string) => test(value, regexAlpha);
 
 /** Check if a string is a valid path */
 export let isPath = (exp: string) =>
-    test(exp, /^(\w|\s|\.|\$|`|'|"|(\[(.|\s)+?\]))*;?$/gm);
+    test(exp, /^(\w|\s|\.|\$|`|'|"|(\[(.|\s)+?\]))*;?$/g);
 
 /**
  * Check if a string is an anonymous function or arrow function
@@ -180,3 +180,5 @@ export let replaceSubstring = (subject: string, startsAt: number, endsAt: number
 export let alphaNumericOnly = (str: string) => replace(str, /[^a-z0-9]/gi, '');
 
 export let camelCase = (...args: string[]) => uncapitalize(join(args.map(capitalize), ''));
+
+export let stringify = (value: any) => JSON.stringify(value);

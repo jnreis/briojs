@@ -1,12 +1,11 @@
 import { wrapper } from "../hydration";
-import { isFunction } from "../tools/typeCheck";
 
 export let hydrateEffect = (vnode: VNode, attrName: string, attrValue: string) => {
 
-    wrapper(vnode, attrName, attrValue, () => (ctx, next) => {
+    wrapper(vnode, attrName, attrValue, () => ([call], next) => {
 
         // Call the expression
-        if (isFunction(ctx)) ctx();
+        call();
 
         // Next function
         next();

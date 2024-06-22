@@ -5,7 +5,7 @@ import { addDirective } from "./directive";
 import { addTransitionEngine } from "./transition";
 import { _storeNames, addStore } from './store';
 
-import { state, computed, removeComputed, effect, watch, storage } from "../reactivity";
+import { state, isState, computed, removeComputed, effect, watch, storage } from "../reactivity";
 import { $PROPS, $REFS, $ROOT, INIT } from "../tools/constants";
 import { _methods } from '../methods';
 import { arrayMerge } from '../tools/array';
@@ -21,7 +21,7 @@ export let reservedNames: string[] = [];
 
 /** Dynamic list of reserved names. This is only used during initialization. */
 export let getReservedNames = () => arrayMerge(
-    ['$el', $PROPS, $REFS, $ROOT], // Magic properties
+    ['$http', '$el', $PROPS, $REFS, $ROOT], // Magic properties
     _methods.map(([name, _]) => name), // Magic methods
     _storeNames, // Global stores
 ) as string[];
@@ -41,6 +41,7 @@ export let api: Api = {
 
     // Reactivity methods
     state,
+    isState,
     computed,
     removeComputed,
     effect,

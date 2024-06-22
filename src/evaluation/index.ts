@@ -1,13 +1,14 @@
 import { reservedNames } from "../api";
 import { _storeNames, stores } from "../api/store";
 import { _methods } from "../methods";
-import { newObject } from "../tools/object";
+import { getAllKeys, newObject } from "../tools/object";
 import { $PROPS, $REFS, $ROOT, DELETE, EXPRESSION } from "../tools/constants";
 import { arrayAdd, each } from "../tools/array";
-import { isStringFunction, isPath, startsWith } from "../tools/string";
-import { getRef } from "../reactivity/track";
+import { isStringFunction, isPath, startsWith, replace } from "../tools/string";
+import { getAccessedProp } from "../reactivity/track";
 import { isFunction } from "../tools/typeCheck";
 import { logger } from "../tools";
+import { $http } from "../methods/http";
 
 // Inspired by code from petite-vue (https://github.com/vuejs/petite-vue/blob/main/src/eval.ts)
 // Original code licensed under MIT License
@@ -25,7 +26,7 @@ export let evaluate = (vnode: VNode, exp: string, args: string = '', isVoid: boo
     // ? This is done to prevent the expression from being evaluated immediately. E.g. `delete $props.count` would delete the prop immediately.
     if (isPath(exp) && !isDelete(exp)) {
         // Get the reference, if any
-        _ref = getRef(() => execute(vnode, exp));
+        _ref = getAccessedProp(() => execute(vnode, exp));
 
         // Reference found
         if (_ref) {
@@ -77,7 +78,7 @@ let getError = (e: Error, exp: string) => {
 let getArgValues = (vnode: VNode) => {
     // ! Props written without `$props` can not start with JS reserved keywords (arguments, await, true, false, break, case, catch, class, const, continue, default?, delete, do, else, eval, extends, finally, for, function, if, in, instanceof, let, new, null, return, static, super, switch, this, throw, try, typeof, var, void, while, with, yield)
     // ! E.g. `super` must be written as `$props.super`
-    let $s: any[] = [];
+    let $s: any[] = [$http];
 
     // Magic properties
     each(['$el', $PROPS, $REFS, $ROOT], name => arrayAdd($s, vnode[name as keyof VNode]));
@@ -92,8 +93,37 @@ let getArgValues = (vnode: VNode) => {
 }
 
 /** Check if the expression is a delete statement */
-export let isDelete = (exp: string) =>
-    startsWith(exp, DELETE+' ');
+let isDelete = (exp: string) => startsWith(exp, DELETE+' ');
 
 export let makeFunction = (exp: string, args: string = '', isVoid: boolean = false) =>
     `(${ args })=>${ isVoid ? '{' : '(' }${ exp }${ isVoid ? '}' : ')' }`;
+
+/** 
+ * ! Experimental
+ */
+export let getAccessedProps = (vnode: VNode, exp: string) => {
+    let accessedProps: string[] = [];
+
+    // Get all the potentially accessed properties
+    let potentialProps = exp.match(/([a-z_$](\w|\.|\$|`|'|"|(\[(.|\s)+?\]))*;?)/gi);
+
+    for (let potentialProp of potentialProps || []) {
+
+        for (let name of [...reservedNames, 'this', ...getAllKeys(vnode.$props)]) {
+            // Check if the property is accessed
+            if (
+                potentialProp == name ||
+                startsWith(potentialProp, name + '.') ||
+                startsWith(potentialProp, name + '[')
+            ) {
+                if (name == 'this') {
+                    potentialProp = replace(potentialProp, 'this', $PROPS);
+                }
+                arrayAdd(accessedProps, potentialProp);
+                break;
+            }
+        };
+    };
+
+    return accessedProps;
+};

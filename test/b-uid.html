@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>b-uid</title>
+</head>
+<body>
+    <h1>b-uid</h1>
+
+    <div b-uid="['text-input']">
+        <label b-for="$uid('text-input')">{{ $uid('text-input') }}</label>
+        <!-- for="text-input-1" -->
+
+        <input type="text" b-id="$uid('text-input')" b-value="$uid('text-input')">
+        <!-- id="text-input-1" -->
+    </div>
+
+    <div b-uid="['text-input']">
+        <label b-for="$uid('text-input')">{{ $uid('text-input') }}</label>
+        <!-- for="text-input-2" -->
+
+        <input type="text" b-id="$uid('text-input')" b-value="$uid('text-input')">
+        <!-- id="text-input-2" -->
+    </div>
+
+    <script defer src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+    <script type="module" src="/src/cdn.ts"></script>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+            font-size: 1.2rem;
+        }
+        .mt-3 {
+            margin-top: 3rem;
+        }
+        .cards {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            background-color: #898e9c;
+            border-radius: 0.25rem;
+            box-shadow: 0 0 0.5rem rgba(0, 0, 0, 0.1);
+            padding: 1rem;
+        }
+        .card {
+            display: grid;
+            gap: 1rem;
+            text-align: center;
+            background-color: white;
+            border-radius: 0.25rem;
+            box-shadow: 0 0 0.5rem rgba(0, 0, 0, 0.1);
+            padding: 1rem;
+        }
+        button {
+            padding: 0.5rem 1rem;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 0.25rem;
+            cursor: pointer;
+        }
+        pre {
+            color: white;
+            background-color: #383a3f;
+            padding: 1rem;
+            border-radius: 0.25rem;
+            box-shadow: 0 0 0.5rem rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</body>
+</html>

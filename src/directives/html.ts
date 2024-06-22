@@ -3,14 +3,13 @@ import { evaluate } from "../evaluation";
 import { hydrate, mustacheRegex, replaceMustache, templateRegex, wrapper } from "../hydration";
 import { childNodes } from "../tools/dom";
 import { replace, test } from "../tools/string";
-import { isFunction } from "../tools/typeCheck";
 
 export let hydrateHtml = (vnode: VNode, attrName: string, attrValue: string) => {
 
-    wrapper(vnode, attrName, attrValue, (node) => (ctx, next) => {
+    wrapper(vnode, attrName, attrValue, (node) => ([call], next) => {
 
         // Get the value
-        let value = isFunction(ctx) ? ctx() : ctx;
+        let value = call();
 
         // Check if the value is a component
         if (value in _components) value = _components[value];

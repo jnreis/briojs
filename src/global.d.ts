@@ -16,6 +16,7 @@ declare type Api = {
 
     // Reactivity methods
     state: (target: any) => any,
+    isState: (value: any) => boolean,
     computed: (fn: ListenerFunction, deps?: ListenerFunction) => ListenerFunction,
     removeComputed: (fn: ListenerFunction) => void,
     effect: (fn: ListenerFunction, deps?: ListenerFunction) => () => void,
@@ -111,7 +112,8 @@ type ListenerObject = {
     }
 };
 type Listeners = Map<any, ListenerObject>;
-type PropRef = [any, string|number|symbol];
+/** [observedState, prop] */
+type AccessedProp = [any, string|number|symbol];
 
 
 // ANIMATION TYPES

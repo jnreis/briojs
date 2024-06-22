@@ -16,8 +16,8 @@ export let arrayRemove = (array: any[], value: any) => {
 export let arrayFrom = (arrayLike: any) =>
     Array.from(arrayLike);
 
-export let arrayFill = (length: number, value: any = null) =>
-    arrayFrom({ length }).map((_, i) => value || i);
+export let arrayFill = (length: number, startAt: number = 0) =>
+    arrayFrom({ length }).map((_, i) => startAt + i);
 
 export let arrayMerge = (...arrays: any[][]) =>
     arrays.reduce((acc, array) => acc.concat(array), []);

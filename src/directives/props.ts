@@ -5,10 +5,11 @@ import { evaluate } from '../evaluation';
 import { interceptor } from '../hydration';
 import { state } from '../reactivity';
 import { has, logger } from '../tools';
-import { createContext, deleteKey, getKeys, objectMerge } from '../tools/object';
+import { createContext, deleteKey, getKeys, mergeKeys } from '../tools/object';
 import { getType, isObject } from '../tools/typeCheck';
 import { $PROPS, $ROOT, BUT_GOT_INSTEAD, DIRECTIVE, INIT, MUST_BE, OBJECT, SKIP, STATUS } from '../tools/constants';
 import { each } from '../tools/array';
+import { toString } from '../tools/string';
 
 export let hydrateProps = (vnode: VNode, attrName: string, attrValue: string) => {
 
@@ -21,11 +22,11 @@ export let hydrateProps = (vnode: VNode, attrName: string, attrValue: string) =>
     // Create an interceptor
     interceptor(vnode, attrName, (context: ObjectType, next) => {
         // Check if the attribute value is a key in the _props object
-        let newContext: any = attrValue in _props
-            // Use the user-defined context
-            ? _props[attrValue]()
-            // Evaluate the expression
-            : evaluate(vnode, attrValue)[0]();
+        // Get the function as a string so it can be evaluated and receive the reserved names
+        if (attrValue in _props) attrValue = toString(_props[attrValue]);
+
+        // Evaluate the expression
+        let newContext: any = evaluate(vnode, attrValue)[0]();
 
         // Check if the context is an object. If not, throw an error
         if (!isObject(newContext)) {
@@ -42,7 +43,7 @@ export let hydrateProps = (vnode: VNode, attrName: string, attrValue: string) =>
         let hasParent = vnode.$el !== vnode[$ROOT];
 
         // Merge any keys passed in the context object from the `before` interceptor functions
-        objectMerge(newContext, context);
+        mergeKeys(newContext, false, context);
 
         // Create the new context
         context = state(hasParent ? createContext(vnode[$PROPS], newContext) : newContext);

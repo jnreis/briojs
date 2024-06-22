@@ -2,6 +2,7 @@ import { CALLBACK, watch } from ".";
 import { logger } from "../tools";
 import { INVALID, OBJECT } from "../tools/constants";
 import { getProto, hasOwnProperty } from "../tools/object";
+import { stringify } from "../tools/string";
 
 let GET_ITEM = 'getItem';
 let SET_ITEM = 'setItem';
@@ -23,7 +24,7 @@ export let getItem = (storage: any, key: string) => JSON.parse(storage[GET_ITEM]
 /**
  * Set an item in a storage object.
  */
-export let setItem = (storage: any, key: string, value: any) => storage[SET_ITEM](key, JSON.stringify(value));
+export let setItem = (storage: any, key: string, value: any) => storage[SET_ITEM](key, stringify(value));
 
 /**
  * Prefixes a key with Brio's prefix.

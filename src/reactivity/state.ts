@@ -1,10 +1,8 @@
-import {
-    listeners, getListener, removePropertyListeners, computedStack, 
-    CALLBACK } from '.';
+import { CALLBACK, listeners, getListener, removePropertyListeners, computedStack, isState, ignoredTargets } from '.';
 import { trackProps, accessedProps } from './track';
 import { deepEqual, has, size } from '../tools';
 import { arrayAdd, each } from '../tools/array';
-import { getKeys } from '../tools/object';
+import { getKey, getKeys } from '../tools/object';
 import { isArray, isObject, isUndefined, isFunction } from '../tools/typeCheck';
 import { CREATE, DELETE, UPDATE } from '../tools/constants';
 
@@ -14,28 +12,33 @@ import { CREATE, DELETE, UPDATE } from '../tools/constants';
  * @param target The object/array to observe
  * @returns observedState
 */
-export let state = (target: any) => {
+export let state = (target: any, options?: { depth?: number, ignore?: boolean }) => {
 
-    // If the object/array is already observed, return it
-    if (listeners.has(target) || !isArrayOrObject(target)) return target;
+    let ignore = getKey(options, 'ignore', false) as boolean;
+    let depth = getKey(options, 'depth', -1) as number;
+
+    // Ignore the target
+    if (ignore) ignoredTargets.add(target);
+
+    // Do not observe the target if:
+    // - The target is already observed
+    // - The target is not an object/array
+    // - The target is marked to be ignored
+    // - Should not observe any deeper. Depth is 0.
+    if (depth === 0 || !isArrayOrObject(target) || ignoredTargets.has(target) || isState(target)) return target;
+
+    // Decrease the depth for the next level
+    if (depth > 0) depth--;
 
     // Proxy handler
     let handler = {
         get(target: any, prop: string): any {
 
-            if (has(getKeys(target), prop)) {
-                // Get the last item in the computed stack and add the accessed property to it
-                if (size(computedStack) > 0) {
-                    arrayAdd(computedStack[size(computedStack) - 1], [observedState, prop]);
-                }
-
-                // Register the accessed property
-                if (trackProps) {
-                    arrayAdd(accessedProps, [observedState, prop]);
-                }
+            // Register the accessed property
+            if (trackProps && has(getKeys(target), prop)) {
+                arrayAdd(accessedProps, [observedState, prop]);
             }
 
-            // return value[prop];
             return Reflect.get(target, prop, observedState);
         },
         set(target: any, prop: string, newValue: any): boolean {
@@ -51,11 +54,11 @@ export let state = (target: any) => {
             }
 
             // Observe the new value if it's an object/array
-            newValue = state(newValue);
+            newValue = state(newValue, { depth, ignore });
 
             // If an observed array/object is being reassigned to a new array/object, update the listeners.
             // This is necessary because the reference to the observed array/object has changed.
-            if (listeners.has(oldValue) && isArrayOrObject(newValue)) {
+            if (isState(oldValue) && isArrayOrObject(newValue)) {
                 listeners.set(newValue, listeners.get(oldValue)!);
                 listeners[DELETE](oldValue);
             }
@@ -90,15 +93,15 @@ export let state = (target: any) => {
     // Add the observed object/array to the listeners
     getListener(observedState);
 
-    for (let prop in target) {
+    for (let prop of getKeys(target)) {
         // Set the storage state if a callback is present
         if (hasStorageCallback(target[prop])) {
             target[prop] = target[prop](observedState, prop);
         }
 
         // Recursively observe nested arrays/objects that are not already observed
-        if (!listeners.has(target[prop]) && isArrayOrObject(target[prop])) {
-            target[prop] = state(target[prop]);
+        if (!isState(target[prop]) && isArrayOrObject(target[prop])) {
+            target[prop] = state(target[prop], { depth, ignore });
         }
     }
 
@@ -115,7 +118,7 @@ export let state = (target: any) => {
         // Notify state listeners
         notifyStateListeners(observedState, context);
 
-        // Notify property listeners of the state
+        // Notify property listeners
         if (listener.props[prop]) {
             each(listener.props[prop] as any, (fn: ListenerFunction) => {
                 // Run the computed function
@@ -124,7 +127,7 @@ export let state = (target: any) => {
         }
 
         // // If property is also an state, notify its listeners
-        // if (listeners.has(observedState[prop])) {
+        // if (isState(observedState[prop])) {
         //     notifyStateListeners(observedState[prop], context);
         // }
     }

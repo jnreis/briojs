@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>b-show</title>
+</head>
+<body>
+    <h1>b-show</h1>
+
+    <div b-props="{ show: true }">
+        <p b-show="show">Toggle this paragraph</p>
+        <button on-click="show = !show">{{ show ? 'Hide' : 'Show' }}</button>
+    </div>
+
+    <script type="module" src="/src/cdn.ts"></script>
+</body>
+</html>

@@ -1,114 +1,19 @@
 import { logger } from "../tools";
 import { each } from "../tools/array";
-import { $ANIMATE, BLUR, COMPLETE, CURRENT_TIME, DURATION, EASING, EVENT_CALLBACK, FILTER, GET_COMPUTED_STYLE, NAME, NOT_FOUND, ON_COMPLETE, PAUSE, PLAY, PLAYBACK_RATE, REQUIRE, REVERSE, REVERSED, TRANSFORM, TRANSITION_ENGINE, VALIDATE, VALUE } from "../tools/constants";
-import { deleteKey, hasOwnProperty } from "../tools/object";
-import { camelCase, startsWith } from "../tools/string";
+import { $ANIMATE, BLUR, DURATION, EASING, FILTER, GET_COMPUTED_STYLE, NOT_FOUND, ON_COMPLETE, PAUSE, REQUIRE, REVERSE, TRANSFORM, TRANSITION_ENGINE, VALIDATE, VALUE } from "../tools/constants";
+import { deleteKey } from "../tools/object";
+import { startsWith } from "../tools/string";
 
 /** ANIMATION ENGINES */
-export let _engines: AnimationEngine[] = [
-    {
-        [NAME]: 'Web Animations API',
-        [VALIDATE]: (animation) => animation instanceof Animation,
-        [PLAY]: (animation, next) => {
-            // Animation is set backwards
-            if (animation[PLAYBACK_RATE] < 0) {
-                animation[REVERSE]();
-                animation[PAUSE]();
-            }
-
-            // Play the animation, if it's not completed
-            if (animation[CURRENT_TIME] != getAnimateDuration(animation)) animation[PLAY]();
-
-            // Skip the animation, if it's completed
-            else next();
-        },
-        [REVERSE]: (animation, next) => {
-            // The animation is already at the beginning
-            if (animation[CURRENT_TIME] == 0) next();
-
-            // Animation is set forward
-            else if (animation[PLAYBACK_RATE] > 0) {
-                animation[REVERSE]();
-                animation[PAUSE]();
-            }
-
-            // Play the animation, if it's not completed
-            if (animation[CURRENT_TIME] != 0) animation[PLAY]();
-
-            // Skip the animation, if it's completed
-            else next();
-        },
-        [ON_COMPLETE]: (animation, next) => {
-            animation.onfinish = next;
-        }
-    },
-    {
-        [NAME]: 'Anime.js',
-        // ? This validation can be improved
-        validate: (animation) => ['animatables', 'autoplay'].every(key => hasOwnProperty(animation, key)),
-        [PLAY]: (animation, next) => {
-            // Animation is set backwards
-            if (animation[REVERSED]) {
-                // Pause the animation before reversing
-                // ! This is necessary because reversing the animation while it's playing will cause the animation to play forward 
-                // ! and may not fire the `complete` callback because the animation will never reach the end that it was set to
-                animation[PAUSE]();
-    
-                // Set the animation forward
-                animation[REVERSE]();
-            }
-    
-            // Play the animation, if it's not completed
-            if (animation[CURRENT_TIME] != animation[DURATION]) animation[PLAY]();
-
-            // Skip the animation, if it's completed
-            else next();
-        },
-        [REVERSE]: (animation, next) => {
-            // Animation is set forward
-            if (!animation[REVERSED]) {
-                // Pause the animation before reversing
-                // ! This is necessary because reversing the animation while it's playing will cause the animation to play forward 
-                // ! and may not fire the `complete` callback because the animation will never reach the end that it was set to
-                animation[PAUSE]();
-    
-                // Set the animation backwards
-                animation[REVERSE]();
-            }
-    
-            // Play the animation, if it's not completed
-            if (animation[CURRENT_TIME] != 0) animation[PLAY]();
-
-            // Skip the animation, if it's completed
-            else next();
-        },
-        [ON_COMPLETE]: (animation, next) => {
-            animation[COMPLETE] = next;
-        }
-    },
-    {
-        [NAME]: 'GSAP',
-        // ? This validation can be improved
-        [VALIDATE]: (animation) => [EVENT_CALLBACK, 'yoyo'].every(key => key in animation),
-        [PLAY]: (animation) => {
-            animation[PLAY]();
-        },
-        [REVERSE]: (animation) => {
-            animation[REVERSE]();
-        },
-        [ON_COMPLETE]: (animation, next) => {
-            animation[EVENT_CALLBACK](ON_COMPLETE, next);
-            animation[EVENT_CALLBACK](camelCase('on', REVERSE, COMPLETE), next);
-        },
-    }
-];
+export let _engines: AnimationEngine[] = [];
 
 /** ANIMATION CONTROLS */
 let _animations: Map<any, NextFunction> = new Map();
 
+/** GET ANIMATION ENGINE */
 export let getEngine = (animation: any) => _engines.find(engine => engine[VALIDATE](animation));
 
-/* The transition $in function should be with the `after` interceptor function */
+/** The function for the $in transition should be used with the `after` interceptor function */
 export let $in = () => (animation: any, ctx: any = true, next: NextFunction = () => {}) => {
 
     // Prepare the transition
@@ -120,7 +25,7 @@ export let $in = () => (animation: any, ctx: any = true, next: NextFunction = ()
     else next();
 }
 
-/* The transition $out function should be with the `before` interceptor function */
+/** The function for the $out transition should be used with the `before` interceptor function */
 export let $out = () => (animation: any, ctx: any = false, next: NextFunction = () => {}) => {
 
     // Skip the animation for the first time if the element is supposed to be removed
@@ -135,7 +40,11 @@ export let $out = () => (animation: any, ctx: any = false, next: NextFunction = 
     else engine.play(animation, next);
 }
 
-/** A thin wrapper around the Web Animations API that allows `opacity`, `blur`, and all `transforms`, as well as `duration`, `easing`, `delay`, `endDelay`, and `pause` properties */
+
+/** 
+ * ! Experimental !
+ * A thin wrapper around the Web Animations API that allows `opacity`, `blur`, and all `transforms`, as well as `duration`, `easing`, `delay`, `endDelay`, and `pause` properties
+ */
 export let $animate = () => ($el: HTMLElement, options: ObjectType) => {
 
     let startPoint: ObjectType = {};
@@ -252,10 +161,4 @@ let prepTransition = (animation: any, next: NextFunction) => {
     _animations.set(animation, next);
 
     return engine;
-}
-
-/** Get the duration of the animation (Web Animations API) */
-export let getAnimateDuration = (animation: Animation) => {
-    let effect = animation.effect;
-    return effect ? Number(effect.getTiming()[DURATION]) : 0;
 }

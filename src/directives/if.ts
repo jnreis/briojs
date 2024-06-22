@@ -1,7 +1,6 @@
 import { wrapper } from "../hydration";
 import { wait } from "../tools";
 import { appendChildren, getParent, insertBefore, nextSibling } from "../tools/dom";
-import { isFunction } from "../tools/typeCheck";
 
 export let hydrateIf = (vnode: VNode, attrName: string, attrValue: string) => {
 
@@ -11,12 +10,13 @@ export let hydrateIf = (vnode: VNode, attrName: string, attrValue: string) => {
         let nextEl = nextSibling(node);
 
         // Return the watch function
-        return (ctx, next) => {
+        return ([call], next) => {
+            // Get the value
+            let value = call();
+
             // Wait for the next tick.
             // * This is necessary for some directives to work properly (e.g. `on-click-outside`)
             wait(() => {
-                let value = isFunction(ctx) ? ctx() : ctx;
-
                 // Add
                 if (value) {
                     // Add the node before the next sibling

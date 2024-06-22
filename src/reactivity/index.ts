@@ -8,6 +8,9 @@ import { each } from '../tools/array';
  */
 export let listeners: Listeners = new Map();
 
+/** Objects/arrays that should be ignored */
+export let ignoredTargets: Set<any> = new Set();
+
 /** Hold computed functions currently being executed */
 export let computedStack: any[] = [];
 
@@ -21,9 +24,12 @@ export let IGNORE = Symbol('ignore');
 
 // * HELPERS
 
+/** Check if a value is an observed state */
+export let isState = (value: any) => listeners.has(value);
+
 /** Get the listener object for an observed state */
 export let getListener = (observedState: any) => {
-    if (!listeners.has(observedState)) {
+    if (!isState(observedState)) {
         listeners.set(observedState, {
             state: new Set(),
             props: {}
@@ -46,7 +52,7 @@ export let addPropertyListener = (observedState: any, prop: string | number, fn:
     listener.props[prop].add(fn);
 
     // If the property is also a state, add the listener to the state
-    if (listeners.has(observedState[prop]))
+    if (isState(observedState[prop]))
         getListener(observedState[prop]).state.add(fn);
 }
 

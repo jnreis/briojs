@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>b-init</title>
+</head>
+<body>
+    <h1>b-init</h1>
+
+    <div b-props="{ name: 'Brio.js', headline: '' }">
+        <p b-init="setTimeout(() => headline = ' - The best minimalist frontend framework!', 3000)">The `headline` prop will be updated in 3 seconds</p>
+        <pre class="text-white">{{ JSON.stringify($props) }}</pre>
+    </div>
+
+    <script type="module" src="/src/cdn.ts"></script>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+            font-size: 1.2rem;
+        }
+        .text-white {
+            color: white;
+        }
+        pre {
+            background-color: #383a3f;
+            padding: 1rem;
+            border-radius: 0.25rem;
+            box-shadow: 0 0 0.5rem rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</body>
+</html>

@@ -36,8 +36,8 @@ export let _directives: [ValidateDirective, HydrateDirective][] = [
     // Static directives
     // These directives do not have modifiers
     [regDirective('ignore'), (vnode: VNode) => vnode[STATUS] = SKIP],
-    [regDirective(EACH), hydrateEach],
     [regDirective(PROPS), hydrateProps],
+    [regDirective(EACH), hydrateEach],
     [regDirective('init'), hydrateInit],
     [regDirective('uid'), hydrateUid],
     [regDirective('if'), hydrateIf],

@@ -1,12 +1,13 @@
-import { evaluate } from '../evaluation';
-import { state, watch } from '../reactivity';
+import { evaluate, makeFunction } from '../evaluation';
+import { isState, state, watch } from '../reactivity';
 import { hydrate, dehydrate, vnodes, saveVNode, saveCleanup, newVNode, interceptor, attr } from '../hydration';
 import { entries, has, logger } from '../tools';
 import { appendChildren, removeChild, insertBefore, getParent, nextSibling } from '../tools/dom';
 import { split, test, trim } from '../tools/string';
-import { isArray, isObject } from '../tools/typeCheck';
-import { ARRAY, OBJECT, EACH, DIRECTIVE, REQUIRE, CREATE, UPDATE, DELETE, $PROPS, PROPS, STATUS, SKIP } from '../tools/constants';
+import { isArray, isNumber, isObject } from '../tools/typeCheck';
+import { ARRAY, OBJECT, EACH, DIRECTIVE, REQUIRE, CREATE, UPDATE, DELETE, $PROPS, PROPS, STATUS, SKIP, NUMBER } from '../tools/constants';
 import { createContext, deleteKey } from '../tools/object';
+import { arrayFill } from '../tools/array';
 
 export let _each: ObjectType = {};
 
@@ -34,16 +35,17 @@ export let hydrateEach = (vnode: VNode, attrName: string, attrValue: string) => 
         return logger(`${msg} a valid alias.`);
 
     // Get the value of the prop
-    let [ ref, isRef ] = evaluate(vnode, propExp);
+    let value = evaluate(vnode, makeFunction(propExp))[0]();
 
-    if (isRef != 1)
-        return logger(`${msg} a prop.`);
+    // Check if the prop is an observed state (array or object)
+    let isObservedState = isState(value);
 
-    let value = ref();
+    // If the `value` is a number fill an array with numbers starting from 1 to the number of `value`
+    if (isNumber(value)) value = arrayFill(value, 1);
 
     // Check if the prop is an array or an object
     if (!(isArray(value) || isObject(value)))
-        return logger(`${msg} an ${ARRAY} or an ${OBJECT}.`);
+        return logger(`${msg} an ${ARRAY}, ${OBJECT}, or ${NUMBER}.`);
 
     let nextEl = nextSibling($el);
     let parentEl = getParent($el)!;
@@ -75,7 +77,7 @@ export let hydrateEach = (vnode: VNode, attrName: string, attrValue: string) => 
         saveVNode(_vnode);
 
         // Create a new context
-        let _props = state(createContext(_vnode[$PROPS], {
+        let _props = state(createContext(vnode[$PROPS], {
             [item]: v,
             [index]: i,
             [KEY]: i,
@@ -90,10 +92,12 @@ export let hydrateEach = (vnode: VNode, attrName: string, attrValue: string) => 
                 _props[index] = _props[KEY];
         }));
 
-        // Keep the `item` in sync with the `value`
-        saveCleanup(_vnode, watch(_props, item, ({newValue}) => {
-            value[_props[KEY]] = newValue;
-        }));
+        // Keep the `item` in sync with the `value` (if it's an observed state)
+        if (isObservedState) {
+            saveCleanup(_vnode, watch(_props, item, ({newValue}) => {
+                value[_props[KEY]] = newValue;
+            }));
+        }
 
         // Make this vnode a $root vnode so its children can inherit its context
         // This is done to make sure this item and its children have access to [item] and [index].
@@ -160,16 +164,16 @@ export let hydrateEach = (vnode: VNode, attrName: string, attrValue: string) => 
     }
 
 
-    // Watch the prop for changes
-    let cleanup = watch(value, "", ({operation, prop, newValue}) => {
-        if (has([CREATE,UPDATE,DELETE], operation)) {
-            // Perform the operation
-            operations[operation]([prop, newValue]);
-        }
-    });
-
-    // Save the cleanup function
-    saveCleanup(vnode, cleanup);
+    // Watch the prop for changes (if it's an observed state)
+    if (isObservedState) {
+        // Save the cleanup function
+        saveCleanup(vnode, watch(value, "", ({operation, prop, newValue}) => {
+            if (has([CREATE,UPDATE,DELETE], operation)) {
+                // Perform the operation
+                operations[operation]([prop, newValue]);
+            }
+        }));
+    }
 }
 
 let validVariableName = (name: string) => test(name, /^[a-z_$][\w$]*$/i);

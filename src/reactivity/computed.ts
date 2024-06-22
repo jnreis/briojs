@@ -1,5 +1,6 @@
-import { computedStack, removeListener, addPropertyListener } from '.';
-import { arrayAdd, each } from '../tools/array';
+import { removeListener, addPropertyListener } from '.';
+import { getAccessedProps } from './track';
+import { each } from '../tools/array';
 
 /**
  * Tracks accessed properties and executes a callback when any of the properties change.
@@ -9,16 +10,16 @@ import { arrayAdd, each } from '../tools/array';
  */
 export let computed = (fn: ListenerFunction, deps?: ListenerFunction): ListenerFunction => {
 
-    // Add the new array to the computed stack
-    arrayAdd(computedStack, []);
-
     // Run the computed function to track accessed properties
-    (deps ? deps : fn)({} as any);
+    let accessedProps = getAccessedProps(deps ? deps : fn);
 
     // Remove the array of accessed properties from the stack and add the computed function to each accessed property
-    each(computedStack.pop(), ([observedState, prop]: [any, string]) => {
+    each(accessedProps, ([observedState, prop]: [any, string]) => {
         addPropertyListener(observedState, prop, fn);
     });
+
+    // Make sure the computed function is called once
+    if (deps) fn({} as any);
 
     // Return the computed function
     return fn;

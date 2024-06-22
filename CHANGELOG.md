@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.12.0] - 2024-06-21
+- The `bind` directive now takes the initial value of the property as an argument. E.g. `class="container"` `b-class="$initial + ' mx-auto'"`. This will make it easier to bind attributes that need to be concatenated with the initial value.
+- The `each` directive now can take any object or array as its argument. It does not need to be a reference anymore. It can also take a number as an argument to repeat the element n times. Note that only reactive state will trigger the reactivity system.
+- The `wrapper` function now takes the evaluation array as an argument instead of calling the evaluated expression directly. This makes it more flexible and allows the evaluation to be called multiple times.
+- A bug was fixed in the `if` and `show` directives regarding their reactivity. Their reactivity was being triggered inside a setTimeout function, which was causing the reactivity system to lose track of the reference.
+- The `prop` directive was moved above the `each` directive in the hydration order. This was necessary because the `prop` directive may be set in the same element as the `each` directive, and the `each` directive may need to access a prop. Note: the `each` directive was also updated to pass the props to each element in the loop.
+- A bug was fixed on the user-defined props. They are now being stringified and evaluated so they can have access to the "reserved names".
+- A new `$http` magic property was added to the API. It is a thin wrapper around the Fetch API that allows the use of the `get`, `post`, `put`, `patch`, and `delete` methods.
+- The first parameter of the interceptor function was renamed from `$ctx` to `$context` to make it more descriptive.
+- The `sanitizeAttrValue` function now also removes single line comments from the expression string.
+- The `$animate` method was removed.
+- All transition engines were removed from the core to make the framework lighter, since no one would use them all at the same time. The developer can now choose which engine(s) to use and add them during initialization.
+- The `getRefs` in the tracking system was renamed to `getAccessedProps` to make it more descriptive. The `getRef` is now `getAccessedProp`.
+- The `computed` function now uses the `getAccessedProps` function to track the accessed properties.
+- The `state` function now takes an optional `options` object as its second argument. It can be used to provide the observation `depth` (defaults to -1, which means unlimited depth) and to mark an object/array as `ignore`d (defaults to false), which means it will never be observed. Note that the `ignore` option does not prevent nested objects/arrays from being observed if the `state` function is called on them.
+- A new `isState` function was added to the reactivity module. It checks if an object/array is being observed. It has also been added to the API.
+- The directives `each`, `html`, `if`, `init`, `props`, `show`, and `uid` received a first round of tests. Many of the improvements made in this version were based on what was learned from these tests.
+
 ## [0.11.0] - 2024-06-14
 - Fixed reactivity issue where the receiver was not always the observed state.
   This was creating undesired behaviors, where the object was receiving the keys of the prototype during assignment.
@@ -46,7 +64,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.7.0] - 2024-06-06
 - Added a new `addStore` magic method. It gives the ability to add global stores.
 - Removed the `addStoreItem`, `addDataItem`, `isStorage`, `getItem`, and `setItem` methods from the API.
-- Removed the `isStorage`, `getItem`, `setItem`, `getRefs`, and `getRef` exports from the reactivity module.
+- Removed the `isStorage`, `getItem`, `setItem`, `getRefs`, and `getRef` exports from the reactivity module (index.ts) exports.
 - Improved the way reserved names are handled.
 
 ## [0.6.0] - 2024-06-06

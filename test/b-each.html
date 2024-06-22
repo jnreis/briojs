@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>b-each</title>
+</head>
+<body>
+    <h1>b-each</h1>
+
+    <div b-props="{ person: 'Jhonathan', people: ['John','Jane','James']}">
+        <pre>{{ JSON.stringify($props) }}</pre>
+        <div class="cards">
+            <div class="card" b-each="person, index in people">
+                {{index}} - {{ person }}
+                <button on-click="person = 'Jack'">Make it Jack</button>
+            </div>
+        </div>
+        <div class="card mt-3">
+            <p>The "person" prop is different from the "person" variable in the b-each loop: {{ person }}</p>
+            <button on-click="person = 'Jack'">Make it Jack</button>
+        </div>
+    </div>
+
+    <script type="module" src="/src/cdn.ts"></script>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+            font-size: 1.2rem;
+        }
+        .mt-3 {
+            margin-top: 3rem;
+        }
+        .cards {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            background-color: #898e9c;
+            border-radius: 0.25rem;
+            box-shadow: 0 0 0.5rem rgba(0, 0, 0, 0.1);
+            padding: 1rem;
+        }
+        .card {
+            display: grid;
+            gap: 1rem;
+            text-align: center;
+            background-color: white;
+            border-radius: 0.25rem;
+            box-shadow: 0 0 0.5rem rgba(0, 0, 0, 0.1);
+            padding: 1rem;
+        }
+        button {
+            padding: 0.5rem 1rem;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 0.25rem;
+            cursor: pointer;
+        }
+        pre {
+            color: white;
+            background-color: #383a3f;
+            padding: 1rem;
+            border-radius: 0.25rem;
+            box-shadow: 0 0 0.5rem rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</body>
+</html>

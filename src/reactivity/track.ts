@@ -2,7 +2,6 @@
 
 import { size } from "../tools";
 import { arrayAdd } from "../tools/array";
-import { isUndefined } from "../tools/typeCheck";
 
 
 // * VARIABLES
@@ -11,7 +10,7 @@ import { isUndefined } from "../tools/typeCheck";
 export let trackProps = false;
 
 // Store the accessed properties
-export let accessedProps: PropRef[] = [];
+export let accessedProps: AccessedProp[] = [];
 
 
 /**
@@ -19,7 +18,7 @@ export let accessedProps: PropRef[] = [];
  *
  * @param trigger - The function to run to track the accessed properties
  */
-export let getRefs = (trigger: FunctionType): PropRef[] => {
+export let getAccessedProps = (trigger: FunctionType): AccessedProp[] => {
 
     // Clear the accessed properties
     accessedProps = [];
@@ -35,28 +34,36 @@ export let getRefs = (trigger: FunctionType): PropRef[] => {
 
     // Navigate to the accessed properties.
     // ! This is because in a path like `a.b.c`, the last accessed property is `c` but the get trap will be called for `a`, `b` and `c`.
-    let _refs: PropRef[] = [];
-    for (let ref of accessedProps) {
-        let i = size(_refs) - 1;
-        let r = _refs[i];
+    let accessed: AccessedProp[] = [];
+    for (let accessedProp of accessedProps) {
+        // Get the last accessed property
+        let i = size(accessed) - 1;
+        let lastAccessedProp = accessed[i];
+
         // Navigate if the last accessed property is equal to the current observed state
-        if (r && r[0][r[1]] === ref[0]) _refs[i] = ref;
-        // Otherwise, add the reference
-        else arrayAdd(_refs, ref);
+        if (lastAccessedProp && lastAccessedProp[0][lastAccessedProp[1]] === accessedProp[0]) accessed[i] = accessedProp;
+
+        // Otherwise, add the accessed property
+        else arrayAdd(accessed, accessedProp);
     }
 
-    // Filter out the properties that are not in the observed state
-    return _refs.filter(p => p[1] in p[0]);
+    return accessed
+        // Filter out the properties that are not in the observed state
+        .filter(accessedProp => accessedProp[1] in accessedProp[0])
+        // Filter out duplicates
+        .filter(([state1, prop1], i, array) => array.findIndex(([state2, prop2]) => state1 === state2 && prop1 == prop2) == i);
 }
 
-export let getRef = (trigger: FunctionType) => {
-    let _refs = getRefs(trigger);
-    let _ref: FunctionType | undefined;
+/** Get the accessed property of an observed state as a function. When called with a value, the property is set to that value. */
+export let getAccessedProp = (trigger: FunctionType) => {
+    let accessed = getAccessedProps(trigger);
+    let accessedProp: FunctionType | undefined;
 
-    if (size(_refs) == 1) {
-        let [state, prop] = _refs[0];
-        _ref = (newValue: any) => isUndefined(newValue) ? state[prop] : state[prop] = newValue;
+    if (size(accessed) == 1) {
+        let [state, prop] = accessed[0];
+        // The default value is a string that is unlikely to be used as a value. It represents the Primitive Irish spelling of 'BRIO'.
+        accessedProp = (newValue: any = 'ᚁᚏᚔᚑ') => newValue == 'ᚁᚏᚔᚑ' ? state[prop] : state[prop] = newValue;
     }
 
-    return _ref;
+    return accessedProp;
 }

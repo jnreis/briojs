@@ -10,10 +10,10 @@ export let hydrateUid = (vnode: VNode, attrName: string, attrValue: string) => {
     // Check if the UID expression is empty
     if (!attrValue) return;
 
-    // Evalute the UID expression
+    // Evaluate the UID expression
     let newUid = evaluate(vnode, attrValue)[0]();
 
-    // Check if the UID expression is not an array. If so, throw an error
+    // Check if the UID expression is not an array of strings. If so, throw an error
     if (!isArray(newUid) || !newUid.every(isString))
         return logger(`The ${attrName} ${DIRECTIVE} ${MUST_BE} an ${ARRAY} of ${STRING}(s).`);
 

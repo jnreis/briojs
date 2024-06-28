@@ -1,24 +1,18 @@
 import { $emit } from './dom';
 import { $interceptor } from './hydration';
-import { $persist, $session } from './reactivity';
-import { $uid } from './tools';
+import { $watch, $persist, $session } from './reactivity';
+import { $uid, $type } from './tools';
 import { $in, $out } from './transition';
+import { $http } from './http';
 
-import { $EMIT, $UID, $WATCH, AFTER, BEFORE } from '../tools/constants';
-import { watch } from '../reactivity';
+import { arrayAdd, each } from '../tools/array';
+import { AFTER, BEFORE } from '../tools/constants';
 
 export let _methods: [string, MagicMethod][] = [
-    [$EMIT, $emit],
-
-    [$UID, $uid],
-
-    [$WATCH, () => watch],
-    ['$persist', $persist],
-    ['$session', $session],
-
     ['$'+BEFORE, $interceptor(BEFORE)],
     ['$'+AFTER, $interceptor(AFTER)],
-
-    ['$in', $in],
-    ['$out', $out],
 ];
+
+each([$emit, $uid, $type, $http, $watch, $persist, $session, $in, $out], fn => {
+    arrayAdd(_methods, [fn.name, fn]);
+});

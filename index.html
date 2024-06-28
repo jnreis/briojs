@@ -207,50 +207,9 @@
 
       <input type="text" b-model="last">
 
-      <input type="number" b-model-number="count">
+      <input type="number" value="10" b-model-number="count">
 
       <button on-click="count++">Increment</button>
-
-      <h4>Select: ${first}</h4>
-      <select name="names" id="names" b-model="first">
-        <option value="John">John</option>
-        <option value="James">James</option>
-        <option value="Jane">Jane</option>
-      </select>
-
-      <h4 b-effect="console.log(vehicle)">Multiple select: ${vehicle}</h4>
-      <select name="names" id="names" b-model="vehicle" multiple>
-        <option value="Bike">Bike</option>
-        <option value="Car">Car</option>
-        <option value="Boat">Boat</option>
-      </select>
-
-      <h4>Checkbox: ${checked}</h4>
-      <input type="checkbox" id="vehicle1" name="vehicle1" value="Bike" b-model="checked">
-      <label for="vehicle1"> I have a bike</label><br>
-      <input type="checkbox" id="vehicle2" name="vehicle2" b-model="checked">
-      <label for="vehicle2"> I have a car</label><br>
-      <input type="checkbox" id="vehicle3" name="vehicle3" value="Boat" b-model="checked">
-      <label for="vehicle3"> I have a boat</label><br>
-
-      <h4>Multiple Checkboxes: ${vehicle}</h4>
-      <input type="checkbox" name="vehicle" value="Bike" b-model="vehicle">
-      <label for="vehicle1"> I have a bike</label><br>
-      <input type="checkbox" name="vehicle" value="Car" b-model="vehicle">
-      <label for="vehicle2"> I have a car</label><br>
-      <input type="checkbox" name="vehicle" value="Boat" b-model="vehicle">
-      <label for="vehicle3"> I have a boat</label><br>
-
-      <h4>Radio: ${pick}</h4>
-      <input type="radio" id="one" b-model="pick" value="one">
-      <label for="one">One</label><br>
-      <input type="radio" id="two" b-model="pick" value="two">
-      <label for="two">Two</label><br>
-      <input type="radio" id="two" b-model="pick">
-      <label for="two">No value</label><br>
-
-      <h4>Textarea: ${first}</h4>
-      <textarea b-model="first">Hello, I'm a textarea</textarea>
 
       <div b-show="count % 2 == 0">
         <h2>Show condition</h2>

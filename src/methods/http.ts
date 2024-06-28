@@ -18,7 +18,7 @@ interface HttpInstance {
     delete: (endpoint: string, headers?: HttpHeaders) => Promise<any>;
 }
 
-export let $http = (baseUrl: string = '', globalOptions: HttpOptions = {}): HttpInstance => {
+export let $http = () => (baseUrl: string = '', globalOptions: HttpOptions = {}): HttpInstance => {
     let _http = async (endpoint: string, config: HttpOptions = {}): Promise<any> => {
         let url = `${baseUrl}${endpoint}`;
         let finalConfig = {

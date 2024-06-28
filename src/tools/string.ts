@@ -182,3 +182,16 @@ export let alphaNumericOnly = (str: string) => replace(str, /[^a-z0-9]/gi, '');
 export let camelCase = (...args: string[]) => uncapitalize(join(args.map(capitalize), ''));
 
 export let stringify = (value: any) => JSON.stringify(value);
+
+/**
+ * Attempts to parse a JavaScript Object Notation (JSON) string. If the string is not valid JSON, it returns the original string.
+ * @param text - A valid JSON string.
+ * @param reviver - A function that transforms the results. This function is called for each member of the object. If a member contains nested objects, the nested objects are transformed before the parent object is.
+ */
+export let parse = (value: string, reviver?: ((this: any, key: string, value: any) => any) | undefined) => {
+    try {
+        return JSON.parse(value, reviver);
+    } catch (error) {
+        return value;
+    }
+}

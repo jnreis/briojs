@@ -1,4 +1,6 @@
-import { storage } from "../reactivity";
+import { storage, watch } from "../reactivity";
+
+export let $watch = () => watch;
 
 export let $persist = () => (value: any, alias?: string) => storage(localStorage, value, alias);
 

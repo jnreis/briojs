@@ -1,13 +1,17 @@
 import { wrapper } from '../hydration';
 import { has, slice } from '../tools';
 import { setAttr, delAttr, getAttr } from '../tools/dom';
-import { VALUE, CHECKED, STYLE, CLASS, SELECT } from '../tools/constants';
+import { VALUE, CHECKED, SELECT } from '../tools/constants';
 import { isStringFunction } from '../tools/string';
 import { makeFunction } from '../evaluation';
 
 export let hydrateBind = (vnode: VNode, attrName: string, attrValue: string) => {
 
     let prop = slice(attrName, 2);
+
+    // When the attribute value is omitted, use the attribute name as the value
+    // Example: b-hidden => b-hidden="hidden"
+    attrValue = attrValue || prop;
 
     // Check is attrValue is a function
     if (!isStringFunction(attrValue)) {
@@ -21,12 +25,21 @@ export let hydrateBind = (vnode: VNode, attrName: string, attrValue: string) => 
 
         let value = call(initialAttrValue);
 
-        // Set property directly
-        if (has([VALUE, CHECKED, SELECT+'ed', STYLE, CLASS, 'src'], prop))
-            (node as any)[prop == CLASS ? CLASS+'Name' : prop] = value;
+        /**
+         * Always set the DOM property for these attributes. No matter what the value is.
+         * Explanation:
+         * - Updating the "src" property normalizes the path and ensures the new resource is loaded
+         * - The properties "value", "checked", "selected", and "disabled" reflect the current state of the element
+         */
+        let forceBind = has(['src', VALUE, CHECKED, SELECT+'ed', 'disabled'], prop);
 
         // Set attribute
-        else if (value) setAttr(node, prop, value === true ? '' : value);
+        if (value || forceBind) {
+            // Also set the DOM property for these attributes
+            if (forceBind) (node as any)[prop] = value;
+
+            setAttr(node, prop, !forceBind && value === true ? '' : value);
+        }
 
         // Remove attribute
         else delAttr(node, prop);

@@ -8,7 +8,6 @@ import { isStringFunction, isPath, startsWith, replace } from "../tools/string";
 import { getAccessedProp } from "../reactivity/track";
 import { isFunction } from "../tools/typeCheck";
 import { logger } from "../tools";
-import { $http } from "../methods/http";
 
 // Inspired by code from petite-vue (https://github.com/vuejs/petite-vue/blob/main/src/eval.ts)
 // Original code licensed under MIT License
@@ -78,7 +77,7 @@ let getError = (e: Error, exp: string) => {
 let getArgValues = (vnode: VNode) => {
     // ! Props written without `$props` can not start with JS reserved keywords (arguments, await, true, false, break, case, catch, class, const, continue, default?, delete, do, else, eval, extends, finally, for, function, if, in, instanceof, let, new, null, return, static, super, switch, this, throw, try, typeof, var, void, while, with, yield)
     // ! E.g. `super` must be written as `$props.super`
-    let $s: any[] = [$http];
+    let $s: any[] = [];
 
     // Magic properties
     each(['$el', $PROPS, $REFS, $ROOT], name => arrayAdd($s, vnode[name as keyof VNode]));

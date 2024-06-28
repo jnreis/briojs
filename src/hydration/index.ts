@@ -3,10 +3,9 @@ import { effect } from "../reactivity";
 import { has, size } from "../tools";
 import { arrayAdd, each, join } from "../tools/array";
 import { q, walk, getAttr, delAttr, getParent, setAttr } from "../tools/dom";
-import { toNumber } from "../tools/number";
 import { isStringFunction, split, startsWith, test, trim } from "../tools/string";
 import { isTextNode, isElementNode } from "../tools/typeCheck";
-import { NUMBER, TEXT, $PROPS, $ROOT, $REFS, TEXT_CONTENT, ATTR, CLEANUP, VALUE, STATUS, SKIP, BEFORE, AFTER, ATTRIBUTE } from "../tools/constants";
+import { TEXT, $PROPS, $ROOT, $REFS, TEXT_CONTENT, ATTR, CLEANUP, VALUE, STATUS, SKIP, BEFORE, AFTER, ATTRIBUTE } from "../tools/constants";
 import { _directives } from "../directives";
 
 // Raw values are evaluated only once in production mode, but are evaluated every time they are updated in development mode
@@ -281,12 +280,6 @@ export let saveInterceptor = (vnode: VNode, attrName: string, interceptorType: '
 // Save the vnode to the vnodes map
 export let saveVNode = (vnode: VNode) => {
     if (!vnodes.has(vnode.$el)) vnodes.set(vnode.$el, vnode);
-}
-
-export let modelValue = (value: any, modifiers: string[]) => {
-    if (has(modifiers, 'trim')) value = trim(value);
-    if (has(modifiers, NUMBER)) value = toNumber(value);
-    return value;
 }
 
 // Find top level context nodes

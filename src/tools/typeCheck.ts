@@ -25,8 +25,10 @@ export let getType = (value: any): string => lower(slice(Object.prototype.toStri
 /** Check the type of a value */
 export let is = (value: any, type: string) => getType(value) === type;
 
+/** Check if a value is null */
 export let isNull = (value: any) => value === null;
 
+/** Check if a value is undefined */
 export let isUndefined = (value: any) => value === undefined;
 
 /** Check if a value is an object */
@@ -41,13 +43,16 @@ export let isFunction = (value: any) => is(value, FUNCTION) || isAsyncFunction(v
 /** Check if a value is a string arrow function */
 export let isAsyncFunction = (value: any) => is(value, ASYNC_FUNCTION);
 
+/** Check if a value is an arrow function */
 export let isArrowFunction = (value: any) => isUndefined(value.prototype) && value.name === "";
 
+/** Check if a value is a generator function */
 export let isGetter = (object: Object, key: string) => {
     let descriptor = getDescriptor(object, key);
     return !!descriptor && isFunction(descriptor.get);
 };
 
+/** Check if a value is a setter function */
 export let isSetter = (object: Object, key: string) => {
     let descriptor = getDescriptor(object, key);
     return !!descriptor && isFunction(descriptor.set);
@@ -57,10 +62,14 @@ export let isSetter = (object: Object, key: string) => {
 export let isString = (value: any) => is(value, STRING);
 
 /** Check if a value is a number */
-export let isNumber = (value: any) => is(value, NUMBER);
+export let isNumber = (value: any) => is(value, NUMBER) && isFinite(value);
 
-/** Check if a value is numeric */
-export let isNumeric = (str: any) => !isNaN(parseFloat(str)) && isFinite(str);
+/**
+ * Check if a value is numeric.
+ * - it must be a number or a string that can be converted to a number
+ * - it must be finite, not NaN or Infinity
+ */
+export let isNumeric = (value: any) => isNumber(parseFloat(value)) && isNumber(Number(value));
 
 /** Check if a value is a boolean */
 export let isBoolean = (value: any) => is(value, BOOLEAN);

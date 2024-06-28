@@ -2,7 +2,7 @@ import { CALLBACK, watch } from ".";
 import { logger } from "../tools";
 import { INVALID, OBJECT } from "../tools/constants";
 import { getProto, hasOwnProperty } from "../tools/object";
-import { stringify } from "../tools/string";
+import { parse, stringify } from "../tools/string";
 
 let GET_ITEM = 'getItem';
 let SET_ITEM = 'setItem';
@@ -19,7 +19,7 @@ export let isStorage = (obj: any) => {
 /**
  * Get an item from a storage object.
  */
-export let getItem = (storage: any, key: string) => JSON.parse(storage[GET_ITEM](key) || '');
+export let getItem = (storage: any, key: string) => parse(storage[GET_ITEM](key) || '');
 
 /**
  * Set an item in a storage object.

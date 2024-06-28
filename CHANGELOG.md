@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.15.0] - 2024-06-28
+- The `bind` directive now has a shorthand syntax. E.g. b-name="name" can be written as b-name. It also force the binding of the "src", "value", "checked", "selected", and "disabled" attributes and set their DOM properties.
+- The `model` directive went through a major refactoring. The reactive state is now trully the source of truth. The handling of multiple checkboxes and multiple select options is now very robust. In addition, null, number, and boolean strings are now automatically typecasted. The "raw" modifier was added to the directive to prevent the typecasting when needed. The validation is much more robust and error messages are more informative.
+- The built-in methods are now being loaded using a loop. This makes it easier to add new methods, improves readability, and reduces the size of the code.
+- A $type magic method was added. It is a more robust and reliable way to check the type of a value.
+- The helper methods "size", "isNumber", "isNumeric", and "toNumber" have been adjusted and refined to be more reliable and robust, by handling more edge cases.
+- The `bind` and `model` directives have been properly tested and documented.
+
 ## [0.14.0] - 2024-06-22
 - Fixed a bug in the `getAccessedProps` function. Now it returns all the accessed properties. The code related to navigating to the accessed properties and filtering the duplicates, etc. was moved to the `getAccessedProp` function.
 

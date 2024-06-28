@@ -21,7 +21,7 @@ export let reservedNames: string[] = [];
 
 /** Dynamic list of reserved names. This is only used during initialization. */
 export let getReservedNames = () => arrayMerge(
-    ['$http', '$el', $PROPS, $REFS, $ROOT], // Magic properties
+    ['$el', $PROPS, $REFS, $ROOT], // Magic properties
     _methods.map(([name, _]) => name), // Magic methods
     _storeNames, // Global stores
 ) as string[];

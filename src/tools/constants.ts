@@ -1,4 +1,6 @@
 // Name of the primitive types
+export let UNDEFINED: 'undefined' = 'undefined';
+export let NULL: 'null' = 'null';
 export let NUMBER: 'number' = 'number';
 export let STRING: 'string' = 'string';
 export let BOOLEAN: 'boolean' = 'boolean';
@@ -77,6 +79,7 @@ export let STATUS: 'status' = 'status';
 export let SKIP: 'skip' = 'skip';
 export let BEFORE: 'before' = 'before';
 export let AFTER: 'after' = 'after';
+export let LENGTH: 'length' = 'length';
 
 // Operation types
 export let CREATE: 'create' = 'create';

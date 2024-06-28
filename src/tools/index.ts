@@ -1,7 +1,8 @@
 import { arrayFrom, join } from "./array";
+import { LENGTH } from "./constants";
 import { getKeys } from "./object";
 import { toString } from "./string";
-import { isArray, isDate, isFunction, isMap, isObject, isPromise, isRegExp, isSet, isString } from "./typeCheck";
+import { isArray, isDate, isFunction, isMap, isObject, isPromise, isRegExp, isSet } from "./typeCheck";
 
 /**
  * Generates random strings of a given length until a callback returns true.
@@ -18,8 +19,8 @@ export let uid = (length: number = 8, callback?: (uid: string) => boolean): stri
     }
 }
 
-export let has = (value: any, item: string|symbol) =>
-    value && value.includes(item);
+export let has = (value: any[] | string, item: string, position?: number) =>
+    value.includes(item, position);
 
 export let entries = (value: any): [string, any][] =>
     isObject(value) ? Object.entries(value) : value.entries();
@@ -32,15 +33,13 @@ export let asyncValue = async (value: any) => {
     return isPromise(v) ? await v : v;
 }
 
-/**
- * Returns the size of a value
- */
+/** Returns the size/length of a value */
 export let size = (value: any): number => {
-    // If the value is an object, get the keys
-    let v = isObject(value) ? getKeys(value) : value;
-    return isArray(v) || isString(v) 
-        ? v.length // Object, Array, or String
-        : v.size; // Map, Set, or other iterable
+    return (isObject(value)) ? getKeys(value)[LENGTH]
+        : (LENGTH in value) ? value[LENGTH]
+        : ('size' in value) ? value.size
+        // @ts-ignore: logs and returns 0 if the size cannot be determined
+        : logger('Could not determine the size of the value.', value) || 0;
 }
 
 

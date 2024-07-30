@@ -1,4 +1,4 @@
-import { interceptor } from "../hydration";
+import { interceptor } from "../tools/hydration";
 import { logger } from "../tools";
 import { ELEMENT, NOT_FOUND, TELEPORT } from "../tools/constants";
 import { q, appendChildren } from "../tools/dom";

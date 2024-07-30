@@ -1,5 +1,5 @@
-import { evaluate } from '../evaluation';
-import { interceptor, saveCleanup } from '../hydration';
+import { evaluate } from '../tools/evaluation';
+import { interceptor, saveCleanup } from '../tools/hydration';
 import { has, size, debounce, throttle, wait, logger } from '../tools';
 import { each } from '../tools/array';
 import { BUT_GOT_INSTEAD, FUNCTION, MUST_BE } from '../tools/constants';

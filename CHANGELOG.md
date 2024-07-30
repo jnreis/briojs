@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.16.0] - 2024-07-29
+- evaluation.ts and hydration.ts were moved to the tools folder.
+
 ## [0.15.0] - 2024-06-28
 - The `bind` directive now has a shorthand syntax. E.g. b-name="name" can be written as b-name. It also force the binding of the "src", "value", "checked", "selected", and "disabled" attributes and set their DOM properties.
 - The `model` directive went through a major refactoring. The reactive state is now trully the source of truth. The handling of multiple checkboxes and multiple select options is now very robust. In addition, null, number, and boolean strings are now automatically typecasted. The "raw" modifier was added to the directive to prevent the typecasting when needed. The validation is much more robust and error messages are more informative.

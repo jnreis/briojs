@@ -1,8 +1,8 @@
 import { hydrateRefs } from './refs';
 import { getReservedNames } from '../api';
 import { _props } from '../api/props';
-import { evaluate } from '../evaluation';
-import { interceptor } from '../hydration';
+import { evaluate } from '../tools/evaluation';
+import { interceptor } from '../tools/hydration';
 import { state } from '../reactivity';
 import { has, logger } from '../tools';
 import { createContext, deleteKey, getKeys, mergeKeys } from '../tools/object';

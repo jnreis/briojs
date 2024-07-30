@@ -1,9 +1,9 @@
-import { wrapper } from '../hydration';
+import { wrapper } from '../tools/hydration';
 import { has, slice } from '../tools';
 import { setAttr, delAttr, getAttr } from '../tools/dom';
 import { VALUE, CHECKED, SELECT } from '../tools/constants';
 import { isStringFunction } from '../tools/string';
-import { makeFunction } from '../evaluation';
+import { makeFunction } from '../tools/evaluation';
 
 export let hydrateBind = (vnode: VNode, attrName: string, attrValue: string) => {
 

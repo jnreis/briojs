@@ -1,5 +1,5 @@
-import { evaluate } from "../evaluation";
-import { saveInterceptor } from "../hydration";
+import { evaluate } from "../tools/evaluation";
+import { saveInterceptor } from "../tools/hydration";
 import { $in, $out } from "../methods/transition";
 import { logger } from "../tools";
 import { AFTER, ATTR, BEFORE, DIRECTIVE, MUST_BE, PAUSE, TRANSITION } from "../tools/constants";

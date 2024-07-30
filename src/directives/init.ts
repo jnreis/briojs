@@ -1,5 +1,5 @@
-import { interceptor } from "../hydration";
-import { evaluate } from "../evaluation";
+import { interceptor } from "../tools/hydration";
+import { evaluate } from "../tools/evaluation";
 
 export let hydrateInit = (vnode: VNode, attrName: string, attrValue: string) => {
 

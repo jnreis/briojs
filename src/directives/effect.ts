@@ -1,4 +1,4 @@
-import { wrapper } from "../hydration";
+import { wrapper } from "../tools/hydration";
 
 export let hydrateEffect = (vnode: VNode, attrName: string, attrValue: string) => {
 

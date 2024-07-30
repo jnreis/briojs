@@ -1,6 +1,6 @@
 import { _components } from "../api/component";
-import { evaluate } from "../evaluation";
-import { hydrate, mustacheRegex, replaceMustache, templateRegex, wrapper } from "../hydration";
+import { evaluate } from "../tools/evaluation";
+import { hydrate, mustacheRegex, replaceMustache, templateRegex, wrapper } from "../tools/hydration";
 import { childNodes } from "../tools/dom";
 import { replace, test } from "../tools/string";
 

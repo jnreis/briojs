@@ -1,4 +1,4 @@
-import { evaluate } from '../evaluation';
+import { evaluate } from '../tools/evaluation';
 import { isArray, isString } from '../tools/typeCheck';
 import { ARRAY, DIRECTIVE, MUST_BE, STRING } from '../tools/constants';
 import { logger } from '../tools';

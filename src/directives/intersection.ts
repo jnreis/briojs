@@ -1,5 +1,5 @@
-import { evaluate } from "../evaluation";
-import { interceptor, saveCleanup } from "../hydration";
+import { evaluate } from "../tools/evaluation";
+import { interceptor, saveCleanup } from "../tools/hydration";
 import { debounce, has, size } from "../tools";
 import { arrayAdd, each, join } from "../tools/array";
 import { toNumber } from "../tools/number";

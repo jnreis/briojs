@@ -1,13 +1,13 @@
 import { reservedNames } from "../api";
 import { _storeNames, stores } from "../api/store";
 import { _methods } from "../methods";
-import { getAllKeys, newObject } from "../tools/object";
-import { $PROPS, $REFS, $ROOT, DELETE, EXPRESSION } from "../tools/constants";
-import { arrayAdd, each } from "../tools/array";
-import { isStringFunction, isPath, startsWith, replace } from "../tools/string";
+import { getAllKeys, newObject } from "./object";
+import { $PROPS, $REFS, $ROOT, DELETE, EXPRESSION } from "./constants";
+import { arrayAdd, each } from "./array";
+import { isStringFunction, isPath, startsWith, replace } from "./string";
 import { getAccessedProp } from "../reactivity/track";
-import { isFunction } from "../tools/typeCheck";
-import { logger } from "../tools";
+import { isFunction } from "./typeCheck";
+import { logger } from ".";
 
 // Inspired by code from petite-vue (https://github.com/vuejs/petite-vue/blob/main/src/eval.ts)
 // Original code licensed under MIT License

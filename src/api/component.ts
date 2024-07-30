@@ -1,5 +1,5 @@
 import { _settings } from ".";
-import { sanitizeAttrValue } from "../hydration";
+import { sanitizeAttrValue } from "../tools/hydration";
 import { logger } from "../tools";
 import { API_ADD_ERROR, COMPONENT, INIT } from "../tools/constants";
 

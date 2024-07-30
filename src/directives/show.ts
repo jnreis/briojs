@@ -1,4 +1,4 @@
-import { wrapper } from '../hydration';
+import { wrapper } from '../tools/hydration';
 import { getParent } from '../tools/dom';
 import { DISPLAY, STYLE } from '../tools/constants';
 import { wait } from '../tools';

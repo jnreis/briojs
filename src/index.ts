@@ -1,5 +1,5 @@
 import { _settings, reservedNames, getReservedNames } from "./api";
-import { hydrate } from "./hydration";
+import { hydrate } from "./tools/hydration";
 import { _methods } from './methods';
 import { storageEvent } from './reactivity/storage';
 import { arrayAdd, each } from "./tools/array";

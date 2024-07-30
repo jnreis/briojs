@@ -1,4 +1,4 @@
-import { replaceMustache, wrapper } from "../hydration";
+import { replaceMustache, wrapper } from "../tools/hydration";
 import { TEXT_CONTENT } from "../tools/constants";
 
 export let hydrateText = (vnode: VNode, attrName: string, attrValue: string) => {

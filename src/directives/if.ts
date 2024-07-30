@@ -1,4 +1,4 @@
-import { wrapper } from "../hydration";
+import { wrapper } from "../tools/hydration";
 import { wait } from "../tools";
 import { appendChildren, getParent, insertBefore, nextSibling } from "../tools/dom";
 

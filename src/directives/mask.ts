@@ -1,5 +1,5 @@
-import { evaluate } from "../evaluation";
-import { interceptor, saveCleanup } from "../hydration";
+import { evaluate } from "../tools/evaluation";
+import { interceptor, saveCleanup } from "../tools/hydration";
 import { logger, size, slice, wait } from "../tools";
 import { each } from "../tools/array";
 import { CAN_ONLY_BE_USED_ON, DIRECTIVE, ELEMENT, INPUT, SELECTION_START, TEXTAREA, VALUE } from "../tools/constants";

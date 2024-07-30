@@ -1,5 +1,5 @@
-import { evaluate } from '../evaluation';
-import { interceptor, saveCleanup } from '../hydration';
+import { evaluate } from '../tools/evaluation';
+import { interceptor, saveCleanup } from '../tools/hydration';
 import { entries, has, logger, size, wait } from '../tools';
 import { arrayAdd, arrayFrom, each } from '../tools/array';
 import { listen, onCompositionStart, onCompositionEnd, getAttr, q } from '../tools/dom';

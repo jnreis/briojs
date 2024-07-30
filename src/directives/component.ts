@@ -1,5 +1,5 @@
 import { _components } from "../api/component"
-import { interceptor } from "../hydration";
+import { interceptor } from "../tools/hydration";
 import { logger } from "../tools";
 import { COMPONENT, NOT_FOUND } from "../tools/constants";
 

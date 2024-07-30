@@ -1,11 +1,11 @@
-import { evaluate, makeFunction } from "../evaluation";
+import { evaluate, makeFunction } from "./evaluation";
 import { effect } from "../reactivity";
-import { has, size } from "../tools";
-import { arrayAdd, each, join } from "../tools/array";
-import { q, walk, getAttr, delAttr, getParent, setAttr } from "../tools/dom";
-import { isStringFunction, split, startsWith, test, trim } from "../tools/string";
-import { isTextNode, isElementNode } from "../tools/typeCheck";
-import { TEXT, $PROPS, $ROOT, $REFS, TEXT_CONTENT, ATTR, CLEANUP, VALUE, STATUS, SKIP, BEFORE, AFTER, ATTRIBUTE } from "../tools/constants";
+import { has, size } from ".";
+import { arrayAdd, each, join } from "./array";
+import { q, walk, getAttr, delAttr, getParent, setAttr } from "./dom";
+import { isStringFunction, split, startsWith, test, trim } from "./string";
+import { isTextNode, isElementNode } from "./typeCheck";
+import { TEXT, $PROPS, $ROOT, $REFS, TEXT_CONTENT, ATTR, CLEANUP, VALUE, STATUS, SKIP, BEFORE, AFTER, ATTRIBUTE } from "./constants";
 import { _directives } from "../directives";
 
 // Raw values are evaluated only once in production mode, but are evaluated every time they are updated in development mode

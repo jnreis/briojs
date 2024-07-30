@@ -1,6 +1,6 @@
-import { evaluate, makeFunction } from '../evaluation';
+import { evaluate, makeFunction } from '../tools/evaluation';
 import { isState, state, watch } from '../reactivity';
-import { hydrate, dehydrate, vnodes, saveVNode, saveCleanup, newVNode, interceptor, attr } from '../hydration';
+import { hydrate, dehydrate, vnodes, saveVNode, saveCleanup, newVNode, interceptor, attr } from '../tools/hydration';
 import { entries, has, logger } from '../tools';
 import { appendChildren, removeChild, insertBefore, getParent, nextSibling } from '../tools/dom';
 import { split, test, trim } from '../tools/string';

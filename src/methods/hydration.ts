@@ -1,4 +1,4 @@
-import { attr, newVNode, saveInterceptor, vnodes, vnodesQueue } from "../hydration"
+import { attr, newVNode, saveInterceptor, vnodes, vnodesQueue } from "../tools/hydration"
 import { logger } from "../tools";
 import { BUT_GOT_INSTEAD, ELEMENT, METHOD, REQUIRE } from "../tools/constants";
 import { getType, isElementNode } from "../tools/typeCheck";

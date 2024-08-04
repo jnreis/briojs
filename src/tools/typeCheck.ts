@@ -9,6 +9,7 @@ import {
     NUMBER,
     OBJECT,
     PROMISE,
+    PROTOTYPE,
     REGEXP,
     SET,
     STRING,
@@ -20,7 +21,7 @@ import { getDescriptor, O } from "./object";
 import { slice } from ".";
 
 /** Get the type of a value */
-export let getType = (value: any): string => lower(slice(O.prototype.toString.call(value), 8, -1));
+export let getType = (value: any): string => lower(slice(O[PROTOTYPE].toString.call(value), 8, -1));
 
 /** Check the type of a value */
 export let is = (value: any, type: string) => getType(value) === type;
@@ -44,7 +45,7 @@ export let isFunction = (value: any) => is(value, FUNCTION) || isAsyncFunction(v
 export let isAsyncFunction = (value: any) => is(value, ASYNC_FUNCTION);
 
 /** Check if a value is an arrow function */
-export let isArrowFunction = (value: any) => isUndefined(value.prototype) && value.name === "";
+export let isArrowFunction = (value: any) => isUndefined(value[PROTOTYPE]) && value.name === "";
 
 /** Check if a value is a generator function */
 export let isGetter = (object: Object, key: string) => {

@@ -1,6 +1,6 @@
 import { getStateObject, addPropertyListener, removeListener, isState } from '.';
 import { logger } from '../tools';
-import { ARRAY, DELETE, OBJECT } from '../tools/constants';
+import { ARRAY, DELETE, OBJECT, STATE } from '../tools/constants';
 
 /**
  * Watches for changes to a specific key/index or an entire observed object/array and executes a callback when changes are detected.
@@ -13,7 +13,7 @@ import { ARRAY, DELETE, OBJECT } from '../tools/constants';
 export let watch = (proxied: any, prop: string | number | null, callback: ListenerFunction) => {
 
     if (!isState(proxied)) {
-        logger(`Cannot watch non-state ${OBJECT}/${ARRAY}.`);
+        logger(`Cannot watch non-${STATE} ${OBJECT}/${ARRAY}.`);
         return () => {};
     }
 

@@ -5,7 +5,7 @@ import { entries, has, logger } from '../tools';
 import { appendChildren, removeChild, insertBefore, getParent, nextSibling } from '../tools/dom';
 import { split, test, trim } from '../tools/string';
 import { isArray, isNumber, isObject } from '../tools/typeCheck';
-import { ARRAY, OBJECT, EACH, DIRECTIVE, REQUIRE, CREATE, UPDATE, DELETE, $PROPS, PROPS, STATUS, SKIP, NUMBER } from '../tools/constants';
+import { ARRAY, OBJECT, EACH, DIRECTIVE, REQUIRE, CREATE, UPDATE, DELETE, $PROPS, PROPS, STATUS, SKIP, NUMBER, PARENT } from '../tools/constants';
 import { deleteKey } from '../tools/object';
 import { arrayFill } from '../tools/array';
 
@@ -81,7 +81,7 @@ export let hydrateEach = (vnode: VNode, attrName: string, attrValue: string) => 
             [item]: v,
             [index]: i,
             [KEY]: i,
-        }, { parent: vnode[$PROPS] });
+        }, { [PARENT]: vnode[$PROPS] });
 
         // Save the context to the vnode
         _vnode[$PROPS] = _props;

@@ -1,3 +1,10 @@
+/**
+ * Brio's default value is a string that is unlikely to be used as a value. 'ᚁᚏᚔᚑ' represents the Primitive Irish spelling of 'BRIO'.
+ * It is used to check if an argument is passed to a function. If the argument is not passed, the default value is used instead.
+ * It also allows the argument to be set to undefined.
+ */
+export let BRIO_DEFAULT_VALUE = 'ᚁᚏᚔᚑ';
+
 // Name of the primitive types
 export let UNDEFINED: 'undefined' = 'undefined';
 export let NULL: 'null' = 'null';
@@ -80,9 +87,6 @@ export let SKIP: 'skip' = 'skip';
 export let BEFORE: 'before' = 'before';
 export let AFTER: 'after' = 'after';
 export let LENGTH: 'length' = 'length';
-export let PARENT: 'parent' = 'parent';
-export let PROXIED: 'proxied' = 'proxied';
-export let TARGET: 'target' = 'target';
 
 // Operation types
 export let CREATE: 'create' = 'create';
@@ -105,6 +109,21 @@ export let ON_COMPLETE: 'onComplete' = 'onComplete';
 export let PLAYBACK_RATE: 'playbackRate' = 'playbackRate';
 export let NAME: 'name' = 'name';
 export let VALIDATE: 'validate' = 'validate';
+
+// State, proxy, and object properties
+export let STATE: 'state' = 'state';
+export let PARENT: 'parent' = 'parent';
+export let PROXIED: 'proxied' = 'proxied';
+export let TARGET: 'target' = 'target';
+export let IGNORE_KEYS: 'ignoreKeys' = 'ignoreKeys';
+export let PROTOTYPE: 'prototype' = 'prototype';
+export let PROPERTY: 'Property' = 'Property';
+export let OWN_PROPERTY = 'Own' + PROPERTY as 'OwnProperty';
+export let HAS_OWN_PROPERTY = 'has' + OWN_PROPERTY as 'hasOwnProperty';
+export let GET_OWN_PROPERTY_NAMES = 'get' + OWN_PROPERTY + 'Names' as 'getOwnPropertyNames';
+export let GET_OWN_PROPERTY_DESCRIPTOR = 'get' + OWN_PROPERTY + 'Descriptor' as 'getOwnPropertyDescriptor';
+export let GET_OWN_PROPERTY_DESCRIPTORS = GET_OWN_PROPERTY_DESCRIPTOR + 's' as 'getOwnPropertyDescriptors';
+export let DELETE_PROPERTY = DELETE + PROPERTY as 'deleteProperty';
 
 // Error messages
 export let MUST_BE: 'must be' = 'must be';

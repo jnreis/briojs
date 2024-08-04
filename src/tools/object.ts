@@ -1,5 +1,5 @@
 import { each } from "./array";
-import { CREATE } from "./constants";
+import { CREATE, GET_OWN_PROPERTY_DESCRIPTOR, GET_OWN_PROPERTY_DESCRIPTORS, GET_OWN_PROPERTY_NAMES, HAS_OWN_PROPERTY, PROTOTYPE } from "./constants";
 import { isObject } from "./typeCheck";
 
 export let R = Reflect;
@@ -59,22 +59,22 @@ export let createContext = (parentContext: any, newContext = {}): any => {
     const mergedContext = newObject(parentContext);
     O.defineProperties(
         mergedContext,
-        O.getOwnPropertyDescriptors(newContext)
+        O[GET_OWN_PROPERTY_DESCRIPTORS](newContext)
     );
     return mergedContext;
 };
 
 export let getDescriptor = (value: any, key: string, source: any = O) =>
-    source.getOwnPropertyDescriptor(value, key);
+    source[GET_OWN_PROPERTY_DESCRIPTOR](value, key);
 
 export let getProto = (object: any) =>
     O.getPrototypeOf(object);
 
 export let hasOwnProperty = (object: any, key: string) =>
-    O.prototype.hasOwnProperty.call(object, key);
+    O[PROTOTYPE][HAS_OWN_PROPERTY].call(object, key);
 
 export let getOwnProp = (object: any) =>
-    O.getOwnPropertyNames(object);
+    O[GET_OWN_PROPERTY_NAMES](object);
 
 export let defineProp = (object: any, key: string, descriptor: PropertyDescriptor) => {
     O.defineProperty(object, key, descriptor);

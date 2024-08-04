@@ -2,6 +2,7 @@
 
 import { size } from "../tools";
 import { arrayAdd } from "../tools/array";
+import { BRIO_DEFAULT_VALUE } from "../tools/constants";
 
 
 // * VARIABLES
@@ -69,7 +70,8 @@ export let getAccessedProp = (trigger: FunctionType) => {
     if (size(accessed) == 1) {
         let [state, prop] = accessed[0];
         // The default value is a string that is unlikely to be used as a value. It represents the Primitive Irish spelling of 'BRIO'.
-        accessedProp = (newValue: any = 'ᚁᚏᚔᚑ') => newValue == 'ᚁᚏᚔᚑ' ? state[prop] : state[prop] = newValue;
+        // ? This is done to determine if the accessed property is being set or accessed. And it also allows the accessed property to be set to undefined.
+        accessedProp = (newValue: any = BRIO_DEFAULT_VALUE) => newValue == BRIO_DEFAULT_VALUE ? state[prop] : state[prop] = newValue;
     }
 
     return accessedProp;

@@ -4,7 +4,7 @@ import { deepEqual, has } from '../tools';
 import { arrayAdd, each } from '../tools/array';
 import { R, getDescriptor, getKey, getKeys } from '../tools/object';
 import { isArray, isObject, isUndefined, isFunction } from '../tools/typeCheck';
-import { CREATE, DELETE, PARENT, PROXIED, TARGET, UPDATE } from '../tools/constants';
+import { CREATE, DELETE, DELETE_PROPERTY, GET_OWN_PROPERTY_DESCRIPTOR, IGNORE_KEYS, PARENT, PROPS, PROXIED, STATE, TARGET, UPDATE } from '../tools/constants';
 
 type StateOptions = { parent?: any, ignoreKeys?: string[] };
 
@@ -34,7 +34,7 @@ export let state = (target: any, options?: StateOptions) => {
      * Ignore specific keys/indexes.
      * @default []
      */
-    let ignoreKeys = getKey(options, 'ignoreKeys', []) as string[];
+    let ignoreKeys = getKey(options, IGNORE_KEYS, []) as string[];
 
     // Proxy handler
     let handler = {
@@ -42,7 +42,7 @@ export let state = (target: any, options?: StateOptions) => {
             let stateObject = findStateObject(proxied, prop);
             return R.has(stateObject[TARGET], prop);
         },
-        getOwnPropertyDescriptor(_: any, prop: string) {
+        [GET_OWN_PROPERTY_DESCRIPTOR](_: any, prop: string) {
             let stateObject = findStateObject(proxied, prop);
             return getDescriptor(stateObject[TARGET], prop, R);
         },
@@ -74,7 +74,7 @@ export let state = (target: any, options?: StateOptions) => {
                 newValue = newValue(stateObject[PROXIED], prop);
 
             // Attempt to observe the new value if the property is not marked to be ignored
-            if (!has(stateObject.ignoreKeys, prop))
+            if (!has(stateObject[IGNORE_KEYS], prop))
                 newValue = state(newValue);
 
             // If an observed array/object is being reassigned to a new array/object, update the listeners.
@@ -92,14 +92,14 @@ export let state = (target: any, options?: StateOptions) => {
 
             return result;
         },
-        deleteProperty(_: any, prop: string) {
+        [DELETE_PROPERTY](_: any, prop: string) {
 
             let stateObject = findStateObject(proxied, prop);
 
             let oldValue = stateObject[TARGET][prop];
 
             // Delete the property
-            let result = R.deleteProperty(stateObject[TARGET], prop);
+            let result = R[DELETE_PROPERTY](stateObject[TARGET], prop);
 
             // Notify computed functions about property deletion
             notifyListeners(prop, undefined, oldValue);
@@ -134,21 +134,21 @@ export let state = (target: any, options?: StateOptions) => {
 
         let operation = isUndefined(oldValue) ? CREATE : isUndefined(newValue) ? DELETE : UPDATE;
 
-        let context = {operation, proxied, prop, newValue, oldValue};
+        let context = {operation, [PROXIED]:proxied, prop, newValue, oldValue};
 
         // State listeners
         let stateObject = getStateObject(proxied);
 
         // Notify state listeners
-        _notifyListeners(stateObject.state, context);
+        _notifyListeners(stateObject[STATE], context);
 
         // Notify property listeners
-        if (stateObject.props[prop])
-            _notifyListeners(stateObject.props[prop], context);
+        if (stateObject[PROPS][prop])
+            _notifyListeners(stateObject[PROPS][prop], context);
 
         // // If property is also an state, notify its listeners
         // if (isState(proxied[prop]))
-        //     _notifyListeners(getStateObject(proxied[prop]).state, context);
+        //     _notifyListeners(getStateObject(proxied[prop])[STATE], context);
 
     }
 

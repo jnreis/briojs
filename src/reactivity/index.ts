@@ -1,5 +1,5 @@
 import { arrayFrom, each } from '../tools/array';
-import { DELETE, PARENT, TARGET } from '../tools/constants';
+import { DELETE, IGNORE_KEYS, PARENT, PROPS, PROXIED, STATE, TARGET } from '../tools/constants';
 import { hasOwnProperty, R } from '../tools/object';
 
 // * VARIABLES
@@ -28,12 +28,12 @@ export let isState = (proxied: any) => stateObjects.has(proxied);
 export let setStateObject = (proxied: any, target: any, ignoreKeys: string[], parent?: any) => {
     if (!isState(proxied)) {
         stateObjects.set(proxied, {
-            proxied,
-            target,
-            parent,
-            ignoreKeys,
-            state: new Set(),
-            props: {}
+            [PROXIED]: proxied,
+            [TARGET]: target,
+            [PARENT]: parent,
+            [IGNORE_KEYS]: ignoreKeys,
+            [STATE]: new Set(),
+            [PROPS]: {}
         });
     }
 }
@@ -92,30 +92,30 @@ export let addPropertyListener = (proxied: any, prop: string | number, fn: Liste
     let stateObject = getStateObject(proxied);
 
     // If the property doesn't exist in the listener, add it
-    if (!stateObject.props[prop])
-        stateObject.props[prop] = new Set();
+    if (!stateObject[PROPS][prop])
+        stateObject[PROPS][prop] = new Set();
 
     // Add the listener to the property
-    stateObject.props[prop].add(fn);
+    stateObject[PROPS][prop].add(fn);
 
     // If the property is also a state, add the listener to the state
     if (isState(proxied[prop]))
-        getStateObject(proxied[prop]).state.add(fn);
+        getStateObject(proxied[prop])[STATE].add(fn);
 }
 
 /** Remove a listener from a property of an observed state */
 export let removePropertyListeners = (proxied: any, prop: string) => {
     let stateObject = getStateObject(proxied);
-    if (stateObject.props[prop])
-        stateObject.props[prop].clear();
+    if (stateObject[PROPS][prop])
+        stateObject[PROPS][prop].clear();
 }
 
 /** Remove a listener from all states and properties */
 export let removeListener = (fn: ListenerFunction) => {
     each(stateObjects as any, stateObject => {
-        stateObject.state[DELETE](fn);
-        for (let prop in stateObject.props) {
-            stateObject.props[prop][DELETE](fn);
+        stateObject[STATE][DELETE](fn);
+        for (let prop in stateObject[PROPS]) {
+            stateObject[PROPS][prop][DELETE](fn);
         }
     });
 }

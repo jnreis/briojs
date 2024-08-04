@@ -58,11 +58,11 @@ export let storage = (_storage: any, value: any, alias?: string) => {
 
     // Set the tracking callback
     // This will be called when the state object is created or set
-    let fn = (observedState: any, prop: string) => {
+    let fn = (proxied: any, prop: string) => {
         // Get the final alias. This will be the key used to store the value in the storage
         alias = alias || keyPrefix(prop);
         // Watch the property for changes
-        watch(observedState, prop, ({newValue}) => {
+        watch(proxied, prop, ({newValue}) => {
             setItem(_storage, alias as string, newValue);
         });
         // Set the initial value if it doesn't exist in the storage
@@ -72,7 +72,7 @@ export let storage = (_storage: any, value: any, alias?: string) => {
             value = getItem(_storage, alias);
         }
         // Add the observed state, property, and storage to the storage stack
-        _storageStack.set(alias, [observedState, prop, _storage])
+        _storageStack.set(alias, [proxied, prop, _storage])
 
         return value;
     }
@@ -86,12 +86,12 @@ export let storageEvent = (event: StorageEvent) => {
     // If the key is being observed
     if (_storageStack.has(event.key)) {
         // Get the observed state, property, and storage
-        let [observedState, prop, _storage] = _storageStack.get(event.key);
+        let [proxied, prop, _storage] = _storageStack.get(event.key);
 
         // If the _storage is the same as the event storage
         if (_storage === event.storageArea) {
             // Update the observed state
-            observedState[prop] = getItem(_storage, event.key as string);
+            proxied[prop] = getItem(_storage, event.key as string);
         }
     }
 }

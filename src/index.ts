@@ -51,9 +51,9 @@ export { api } from './api';
 
 // ! BUG LIST
 
-
-
 // TODO LIST
+// - [ ] Implement my own version of the prototype chain to avoid the createContext function. Do this by passing the parent object to the child object.
+
 // - [ ] Add a "morph" modifier to the `html` directive to preserve the element's state when the template changes.
 
 // - [ ] Give the option to use a custom prefix for Brio directives. For example: `b-[directive]

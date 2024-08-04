@@ -1,4 +1,4 @@
-import { ATTRIBUTE, COMPOSING, DISPLAY, GET_COMPUTED_STYLE, INPUT, OPACITY } from "./constants";
+import { ATTRIBUTE, COMPOSING, DISPLAY, GET_COMPUTED_STYLE, INPUT, OPACITY, TARGET } from "./constants";
 import { isElementNode } from "./typeCheck";
 
 export let q = (selector: string, root: Node = document) =>
@@ -68,10 +68,10 @@ export let walk = (node: Node, callback: (node: Node) => boolean | null) => {
 }
 
 export let onCompositionStart = (e: Event) =>
-    (e.target as any)[COMPOSING] = true;
+    (e[TARGET] as any)[COMPOSING] = true;
 
 export let onCompositionEnd = (e: Event) => {
-    let target = e.target as any;
+    let target = e[TARGET] as any;
     if (target[COMPOSING]) {
         target[COMPOSING] = false;
         emit(target, INPUT);

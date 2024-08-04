@@ -2,7 +2,7 @@ import { evaluate } from '../tools/evaluation';
 import { interceptor, saveCleanup } from '../tools/hydration';
 import { has, size, debounce, throttle, wait, logger } from '../tools';
 import { each } from '../tools/array';
-import { BUT_GOT_INSTEAD, FUNCTION, MUST_BE } from '../tools/constants';
+import { BUT_GOT_INSTEAD, FUNCTION, MUST_BE, TARGET } from '../tools/constants';
 import { emit, isElementVisible, listen } from '../tools/dom';
 import { deleteKey, deleteKeys, getKeys } from '../tools/object';
 import { lower, split } from '../tools/string';
@@ -176,11 +176,11 @@ export let hydrateOn = (vnode: VNode, attrName: string, attrValue: string) => {
         if (mods.stop) e.stopPropagation();
 
         // * Note: when using `once` and `self` together and the event is triggered from a child element, `self` will prevent from executing the event listener and `once` will remove the event listener after the first dispatch. That means the event listener will never be executed.
-        if (mods.self && e.target !== e.currentTarget)
+        if (mods.self && e[TARGET] !== e.currentTarget)
             return;
 
         // Outside modifier
-        if (mods[OUTSIDE] && ($el.contains(e.target as Node) || !isElementVisible($el)))
+        if (mods[OUTSIDE] && ($el.contains(e[TARGET] as Node) || !isElementVisible($el)))
             return;
 
         // Check if all the keys are pressed

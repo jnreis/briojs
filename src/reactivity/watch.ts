@@ -1,33 +1,36 @@
-import { getListener, addPropertyListener, removeListener, isState } from '.';
+import { getStateObject, addPropertyListener, removeListener, isState } from '.';
 import { logger } from '../tools';
-import { ARRAY, OBJECT } from '../tools/constants';
+import { ARRAY, DELETE, OBJECT } from '../tools/constants';
 
 /**
  * Watches for changes to a specific key/index or an entire observed object/array and executes a callback when changes are detected.
  *
- * @param observedState - The observed object/array.
+ * @param proxied - The observed object/array.
  * @param prop - The key/index to watch. If `null` or empty string, watch for all changes to the observed object/array.
  * @param callback - The callback function to execute when the key/index is modified.
  * @returns cleanup - The disposer function to stop watching
  */
-export let watch = (observedState: any, prop: string | number | null, callback: ListenerFunction) => {
+export let watch = (proxied: any, prop: string | number | null, callback: ListenerFunction) => {
+
+    if (!isState(proxied)) {
+        logger(`Cannot watch non-state ${OBJECT}/${ARRAY}.`);
+        return () => {};
+    }
 
     // If no key/index is specified, watch for all changes to the observed object/array
     if (!prop && prop !== 0) {
-        if (!isState(observedState)) {
-            logger(`Cannot watch an unobserved ${OBJECT}/${ARRAY}.`);
-            return () => {};
-        }
+
+        let stateObject = getStateObject(proxied)!.state;
 
         // Add the callback to the observed object/array listeners
-        getListener(observedState).state.add(callback);
+        stateObject.add(callback);
 
         // Return the disposer function to stop watching
-        return () => getListener(observedState).state.delete(callback);
+        return () => stateObject[DELETE](callback);
     }
 
     // Watch for changes to a specific key/index
-    addPropertyListener(observedState, prop, callback);
+    addPropertyListener(proxied, prop, callback);
 
     // Return the disposer function to stop watching
     return () => removeListener(callback);

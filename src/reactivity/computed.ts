@@ -14,8 +14,8 @@ export let computed = (fn: ListenerFunction, deps?: ListenerFunction): ListenerF
     let accessedProps = getAccessedProps(deps ? deps : fn);
 
     // Remove the array of accessed properties from the stack and add the computed function to each accessed property
-    each(accessedProps, ([observedState, prop]: [any, string]) => {
-        addPropertyListener(observedState, prop, fn);
+    each(accessedProps, ([proxied, prop]: [any, string]) => {
+        addPropertyListener(proxied, prop, fn);
     });
 
     // Make sure the computed function is called once

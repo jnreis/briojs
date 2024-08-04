@@ -2,12 +2,28 @@ import { each } from "./array";
 import { CREATE } from "./constants";
 import { isObject } from "./typeCheck";
 
+export let R = Reflect;
+export let O = Object;
+
 /** Gets the value of a key in an object or returns a default value */
 export let getKey = (object: any, key: string, defaultValue?: any) => {
     return isObject(object) && hasOwnProperty(object, key) ? object[key] : defaultValue;
 }
 
-export let getKeys = (value: Object) => Object.keys(value);
+/** 
+ * Sets the value of a key in an object.
+ * This only works with objects.
+ */
+export let setKey = (object: any, key: string, value: any) => {
+    defineProp(object, key, {
+        value,
+        writable: true,
+        enumerable: true,
+        configurable: true,
+    });
+}
+
+export let getKeys = (value: Object) => O.keys(value);
 
 export let getAllKeys = (value: Object) => {
     let keys: Set<string> = new Set();
@@ -33,31 +49,35 @@ export let findObjectByKey = (object: any, key: string) => {
 };
 
 export let newObject = (proto: object | null = null) =>
-    Object[CREATE](proto);
+    O[CREATE](proto);
 
+/**
+ * Creates a new context object by merging the parent context with the new context.
+ * Note: This only works with objects.
+ */
 export let createContext = (parentContext: any, newContext = {}): any => {
     const mergedContext = newObject(parentContext);
-    Object.defineProperties(
+    O.defineProperties(
         mergedContext,
-        Object.getOwnPropertyDescriptors(newContext)
+        O.getOwnPropertyDescriptors(newContext)
     );
     return mergedContext;
 };
 
-export let getDescriptor = (value: any, key: string) =>
-    Object.getOwnPropertyDescriptor(value, key);
+export let getDescriptor = (value: any, key: string, source: any = O) =>
+    source.getOwnPropertyDescriptor(value, key);
 
 export let getProto = (object: any) =>
-    Object.getPrototypeOf(object);
+    O.getPrototypeOf(object);
 
 export let hasOwnProperty = (object: any, key: string) =>
-    object.hasOwnProperty(key);
+    O.prototype.hasOwnProperty.call(object, key);
 
 export let getOwnProp = (object: any) =>
-    Object.getOwnPropertyNames(object);
+    O.getOwnPropertyNames(object);
 
 export let defineProp = (object: any, key: string, descriptor: PropertyDescriptor) => {
-    Object.defineProperty(object, key, descriptor);
+    O.defineProperty(object, key, descriptor);
 }
 
 export let createGetterSetter = (source: ObjectType, target: ObjectType, propertyName: string, alias: string = '') =>

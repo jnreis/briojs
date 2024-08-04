@@ -16,11 +16,11 @@ import {
     WEAKSET
 } from "./constants";
 import { lower, test, toString } from "./string";
-import { getDescriptor } from "./object";
+import { getDescriptor, O } from "./object";
 import { slice } from ".";
 
 /** Get the type of a value */
-export let getType = (value: any): string => lower(slice(Object.prototype.toString.call(value), 8, -1));
+export let getType = (value: any): string => lower(slice(O.prototype.toString.call(value), 8, -1));
 
 /** Check the type of a value */
 export let is = (value: any, type: string) => getType(value) === type;

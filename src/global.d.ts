@@ -20,8 +20,8 @@ declare type Api = {
     computed: (fn: ListenerFunction, deps?: ListenerFunction) => ListenerFunction,
     removeComputed: (fn: ListenerFunction) => void,
     effect: (fn: ListenerFunction, deps?: ListenerFunction) => () => void,
-    watch: (observedState: any, prop: string | number | null, callback: ListenerFunction) => () => void,
-    storage: (_storage: any, value: any, alias?: string) => void | ((observedState: any, prop: string) => any),
+    watch: (proxied: any, prop: string | number | null, callback: ListenerFunction) => () => void,
+    storage: (_storage: any, value: any, alias?: string) => void | ((proxied: any, prop: string) => any),
 }
 type MagicMethod = (vnode: VNode) => FunctionType;
 
@@ -98,22 +98,29 @@ type NextFunction = (stop: boolean = false) => void;
 // REACTIVITY TYPES
 type ListenerContext = {
     operation: string, 
-    observedState: any, 
+    state: any, 
     prop: string, 
     newValue: any, 
     oldValue: any
 };
 type ListenerFunction = (context: ListenerContext) => any;
 type ListenerFunctions = Set<ListenerFunction>;
-type ListenerObject = {
+/** [proxied, prop] */
+type AccessedProp = [any, string|number|symbol];
+
+type StateObject = {
+    // Parent state, used for scope resolution.
+    proxied: any,
+    target: any,
+    parent: any,
+    ignoreKeys: string[],
+    // Listeners
     state: ListenerFunctions,
     props: {
         [prop: string|number]: ListenerFunctions
-    }
-};
-type Listeners = Map<any, ListenerObject>;
-/** [observedState, prop] */
-type AccessedProp = [any, string|number|symbol];
+    },
+}
+type State = Map<any, StateObject>;
 
 
 // ANIMATION TYPES

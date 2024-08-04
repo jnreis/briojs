@@ -35,7 +35,7 @@ export let COMPOSING: 'composing' = 'composing';
 export let SELECTION_START: 'selectionStart' = 'selectionStart';
 export let ELEMENT: 'element' = 'element';
 
-// Brio attributes
+// Brio directives
 export let PROPS: 'props' = 'props';
 export let TEXT: 'text' = 'text';
 export let EACH: 'each' = 'each';
@@ -80,6 +80,9 @@ export let SKIP: 'skip' = 'skip';
 export let BEFORE: 'before' = 'before';
 export let AFTER: 'after' = 'after';
 export let LENGTH: 'length' = 'length';
+export let PARENT: 'parent' = 'parent';
+export let PROXIED: 'proxied' = 'proxied';
+export let TARGET: 'target' = 'target';
 
 // Operation types
 export let CREATE: 'create' = 'create';

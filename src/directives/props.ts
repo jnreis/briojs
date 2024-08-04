@@ -5,9 +5,9 @@ import { evaluate } from '../tools/evaluation';
 import { interceptor } from '../tools/hydration';
 import { state } from '../reactivity';
 import { has, logger } from '../tools';
-import { createContext, deleteKey, getKeys, mergeKeys } from '../tools/object';
+import { deleteKey, getKeys, mergeKeys } from '../tools/object';
 import { getType, isObject } from '../tools/typeCheck';
-import { $PROPS, $ROOT, BUT_GOT_INSTEAD, DIRECTIVE, INIT, MUST_BE, OBJECT, SKIP, STATUS } from '../tools/constants';
+import { $PROPS, $ROOT, BUT_GOT_INSTEAD, DIRECTIVE, INIT, MUST_BE, OBJECT, PARENT, SKIP, STATUS } from '../tools/constants';
 import { each } from '../tools/array';
 import { toString } from '../tools/string';
 
@@ -46,7 +46,7 @@ export let hydrateProps = (vnode: VNode, attrName: string, attrValue: string) =>
         mergeKeys(newContext, false, context);
 
         // Create the new context
-        context = state(hasParent ? createContext(vnode[$PROPS], newContext) : newContext);
+        context = state(newContext, { [PARENT]: hasParent ? vnode[$PROPS] : null });
 
         // Add the context to the vnode
         vnode[$PROPS] = context;

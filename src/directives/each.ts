@@ -6,7 +6,7 @@ import { appendChildren, removeChild, insertBefore, getParent, nextSibling } fro
 import { split, test, trim } from '../tools/string';
 import { isArray, isNumber, isObject } from '../tools/typeCheck';
 import { ARRAY, OBJECT, EACH, DIRECTIVE, REQUIRE, CREATE, UPDATE, DELETE, $PROPS, PROPS, STATUS, SKIP, NUMBER } from '../tools/constants';
-import { createContext, deleteKey } from '../tools/object';
+import { deleteKey } from '../tools/object';
 import { arrayFill } from '../tools/array';
 
 export let _each: ObjectType = {};
@@ -77,11 +77,11 @@ export let hydrateEach = (vnode: VNode, attrName: string, attrValue: string) => 
         saveVNode(_vnode);
 
         // Create a new context
-        let _props = state(createContext(vnode[$PROPS], {
+        let _props = state({
             [item]: v,
             [index]: i,
             [KEY]: i,
-        }));
+        }, { parent: vnode[$PROPS] });
 
         // Save the context to the vnode
         _vnode[$PROPS] = _props;
@@ -115,6 +115,7 @@ export let hydrateEach = (vnode: VNode, attrName: string, attrValue: string) => 
 
     // Update an existing item
     let sync = interceptor(vnode, attrName, ([i, v]: EachContext, next) => {
+
         // Get the existing node
         let _el = mountedItems[i];
 
@@ -134,6 +135,7 @@ export let hydrateEach = (vnode: VNode, attrName: string, attrValue: string) => 
 
     // Unmount an existing item
     let unmount = interceptor(vnode, attrName, ([i, _]: EachContext, next) => {
+
         // Get the existing node
         let _el = mountedItems[i];
 

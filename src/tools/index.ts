@@ -1,8 +1,8 @@
 import { arrayFrom, join } from "./array";
 import { LENGTH } from "./constants";
-import { getKeys } from "./object";
+import { getKeys, hasOwnProperty, O } from "./object";
 import { toString } from "./string";
-import { isArray, isDate, isFunction, isMap, isObject, isPromise, isRegExp, isSet } from "./typeCheck";
+import { isArray, isDate, isFunction, isMap, isNull, isObject, isPromise, isRegExp, isSet, isUndefined } from "./typeCheck";
 
 /**
  * Generates random strings of a given length until a callback returns true.
@@ -23,7 +23,7 @@ export let has = (value: any[] | string, item: string, position?: number) =>
     value.includes(item, position);
 
 export let entries = (value: any): [string, any][] =>
-    isObject(value) ? Object.entries(value) : value.entries();
+    isObject(value) ? O.entries(value) : value.entries();
 
 export let slice = (value: any, start?: number | undefined, end?: number | undefined) =>
     value.slice(start, end);
@@ -35,11 +35,16 @@ export let asyncValue = async (value: any) => {
 
 /** Returns the size/length of a value */
 export let size = (value: any): number => {
-    return (isObject(value)) ? getKeys(value)[LENGTH]
-        : (LENGTH in value) ? value[LENGTH]
+    let errorMessage = 'Could not determine the size of a value.';
+    return (
+        // @ts-ignore: logs and returns 0 if undefined or null
+        (isUndefined(value) || isNull(value)) ? logger(errorMessage, value) || 0
+        : hasOwnProperty(value, LENGTH) ? value[LENGTH]
+        : (isObject(value)) ? getKeys(value)[LENGTH]
         : ('size' in value) ? value.size
         // @ts-ignore: logs and returns 0 if the size cannot be determined
-        : logger('Could not determine the size of the value.', value) || 0;
+        : logger(errorMessage, value) || 0
+    );
 }
 
 

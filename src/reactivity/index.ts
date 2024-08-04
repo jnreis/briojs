@@ -1,12 +1,13 @@
-import { each } from '../tools/array';
+import { arrayFrom, each } from '../tools/array';
+import { DELETE, PARENT, TARGET } from '../tools/constants';
+import { hasOwnProperty, R } from '../tools/object';
 
 // * VARIABLES
 
 /**
- * The reference to all observed objects/arrays and their listeners.
- * These listeners receive every change to the observed object/array.
+ * The state object that holds a reference to all observed states, their parent observed state (if any), listeners, and other settings.
  */
-export let listeners: Listeners = new Map();
+export let stateObjects: State = new Map();
 
 /** Objects/arrays that should be ignored */
 export let ignoredTargets: Set<any> = new Set();
@@ -22,51 +23,99 @@ export let IGNORE = Symbol('ignore');
 // * HELPERS
 
 /** Check if a value is an observed state */
-export let isState = (value: any) => listeners.has(value);
+export let isState = (proxied: any) => stateObjects.has(proxied);
 
-/** Get the listener object for an observed state */
-export let getListener = (observedState: any) => {
-    if (!isState(observedState)) {
-        listeners.set(observedState, {
+export let setStateObject = (proxied: any, target: any, ignoreKeys: string[], parent?: any) => {
+    if (!isState(proxied)) {
+        stateObjects.set(proxied, {
+            proxied,
+            target,
+            parent,
+            ignoreKeys,
             state: new Set(),
             props: {}
         });
     }
-    return listeners.get(observedState) as ListenerObject;
+}
+
+/**
+ * Find the closest state object that has a property.
+ * @param proxied
+ * @param prop 
+ * @returns stateObject
+ */
+export let findStateObject = (proxied: any, prop: string) => {
+    let stateObject = getStateObject(proxied);
+
+    whileState(proxied, (_stateObject: StateObject) => {
+        if (hasOwnProperty(_stateObject[TARGET], prop)) {
+            stateObject = _stateObject;
+            return true;
+        }
+    });
+
+    return stateObject;
+}
+
+export let getStateKeys = (proxied: any) => {
+    let keys: Set<string|symbol> = new Set();
+    whileState(proxied, (stateObject: StateObject) => {
+        for (let key of R.ownKeys(stateObject[TARGET])) {
+            keys.add(key);
+        }
+    });
+    return arrayFrom(keys) as (string|symbol)[];
+}
+
+/**
+ * Iterate through the state chain.
+ * @param proxied 
+ * @param callback 
+ */
+export let whileState = (proxied: any, callback: FunctionType) => {
+    let stateObject = getStateObject(proxied);
+
+    while (stateObject && !callback(stateObject)) {
+        stateObject = getStateObject(stateObject[PARENT]);
+    }
+}
+
+/** Get the state object for an observed state */
+export let getStateObject = (proxied: any) => {
+    return stateObjects.get(proxied) as StateObject;
 }
 
 /** Add a listener to a property of an observed state */
-export let addPropertyListener = (observedState: any, prop: string | number, fn: ListenerFunction) => {
+export let addPropertyListener = (proxied: any, prop: string | number, fn: ListenerFunction) => {
 
-    // Get the listener object for the observed state
-    let listener = getListener(observedState);
+    // Get the state object
+    let stateObject = getStateObject(proxied);
 
     // If the property doesn't exist in the listener, add it
-    if (!listener.props[prop])
-        listener.props[prop] = new Set();
+    if (!stateObject.props[prop])
+        stateObject.props[prop] = new Set();
 
     // Add the listener to the property
-    listener.props[prop].add(fn);
+    stateObject.props[prop].add(fn);
 
     // If the property is also a state, add the listener to the state
-    if (isState(observedState[prop]))
-        getListener(observedState[prop]).state.add(fn);
+    if (isState(proxied[prop]))
+        getStateObject(proxied[prop]).state.add(fn);
 }
 
 /** Remove a listener from a property of an observed state */
-export let removePropertyListeners = (observedState: any, prop: string) => {
-    let listener = getListener(observedState);
-    if (listener.props[prop]) {
-        listener.props[prop].clear();
-    }
+export let removePropertyListeners = (proxied: any, prop: string) => {
+    let stateObject = getStateObject(proxied);
+    if (stateObject.props[prop])
+        stateObject.props[prop].clear();
 }
 
 /** Remove a listener from all states and properties */
 export let removeListener = (fn: ListenerFunction) => {
-    each(listeners as any, listener => {
-        listener.state.delete(fn);
-        for (let prop in listener.props) {
-            listener.props[prop].delete(fn);
+    each(stateObjects as any, stateObject => {
+        stateObject.state[DELETE](fn);
+        for (let prop in stateObject.props) {
+            stateObject.props[prop][DELETE](fn);
         }
     });
 }

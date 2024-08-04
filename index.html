@@ -126,7 +126,7 @@
     }" b-init="console.log('$props', $props)">
     <button on-click="$out($store.a1, isOpen)">Play $out</button>
     <button on-click="$in($store.a1, isOpen)">Play $in</button>
-      <button no-effect="console.log('effect', isOpen)" on-click="toggle" b-text="isOpen"></button>
+      <button no-effect="console.log('effect', isOpen)" on-click="toggle" b-html="isOpen"></button>
       <!-- <h1 uppercase init="$el.animate([{transform: 'translateX(300px)'}], {duration: 2000, iterations: Infinity, direction: 'alternate', easing: 'ease-in-out'})">Brio.js</h1> -->
       <!-- <h2 effect="$animate([{opacity: '0.05'}], {direction: 'alternate', iterations: Infinity, duration: 1000})">The $animate method</h2> -->
       <div b-ref="a1" style="display: flex;">
@@ -188,7 +188,7 @@
           <p>Some other item</p>
           <input type="text" b-model="item">
           <button on-click="delete $props.item">Remove</button>
-          <button on-click="console.log($props, $props.item)">Log items</button>
+          <button on-click="console.log($props, item)">Log items</button>
         </div>
 
 

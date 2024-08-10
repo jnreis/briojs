@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.17.0] - 2024-08-09
+- Prepared Brio for becoming fully modular. The core is now a thin layer that can be extended with directives, methods, transition engines, and stores. With this change, even the core methods can be removed if they are not needed.
+- Reserved names are now better tracked and handled.
+- The b-if, b-show, and b-each directives are above the b-props directive in the hydration order.
+- The framework was prepared to receive a new interceptor system that will allow the developer to place functions anywhere in the hydration and evaluation processes.
+
 ## [0.16.0] - 2024-07-29
 - evaluation.ts and hydration.ts were moved to the tools folder.
 

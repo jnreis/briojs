@@ -7,6 +7,7 @@ import { lower, parse, split, trim } from '../tools/string';
 import { isNull, isArray, getType, isUndefined, isString, isBoolean, isNumber } from '../tools/typeCheck';
 import { SELECT, INPUT, TEXTAREA, CHECKBOX, RADIO, VALUE, CHANGE, ARRAY, DIRECTIVE, REQUIRE, COMPOSING, ELEMENT, CAN_ONLY_BE_USED_ON, BOOLEAN, STRING, NUMBER, CHECKED, BUT_GOT_INSTEAD, TEXT } from '../tools/constants';
 import { effect } from '../reactivity';
+import { D } from '../tools/object';
 
 /**
  * MODEL DIRECTIVE
@@ -214,7 +215,7 @@ export let hydrateModel = (vnode: VNode, attrName: string, attrValue: string) =>
             // Return if:
             // - the composition is still in progress, or
             // - the node is focused and the value hasn't changed
-            else if (node[COMPOSING] || (document.activeElement === node && value === nodeValue)) return;
+            else if (node[COMPOSING] || (D.activeElement === node && value === nodeValue)) return;
 
             // Otherwise, update the value
             else if (value !== nodeValue) node[VALUE] = value;

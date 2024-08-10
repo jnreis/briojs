@@ -1,8 +1,8 @@
 import { evaluate, makeFunction } from '../tools/evaluation';
 import { isState, state, watch } from '../reactivity';
-import { hydrate, dehydrate, vnodes, saveVNode, saveCleanup, newVNode, interceptor, attr } from '../tools/hydration';
+import { hydrate, dehydrate, vnodes, saveCleanup, newVNode, interceptor, attr } from '../tools/hydration';
 import { entries, has, logger } from '../tools';
-import { appendChildren, removeChild, insertBefore, getParent, nextSibling } from '../tools/dom';
+import { removeChild, getParent, nextSibling, insertNode } from '../tools/dom';
 import { split, test, trim } from '../tools/string';
 import { isArray, isNumber, isObject } from '../tools/typeCheck';
 import { ARRAY, OBJECT, EACH, DIRECTIVE, REQUIRE, CREATE, UPDATE, DELETE, $PROPS, PROPS, STATUS, SKIP, NUMBER, PARENT } from '../tools/constants';
@@ -47,6 +47,7 @@ export let hydrateEach = (vnode: VNode, attrName: string, attrValue: string) => 
     if (!(isArray(value) || isObject(value)))
         return logger(`${msg} an ${ARRAY}, ${OBJECT}, or ${NUMBER}.`);
 
+    // Get the node's location in the DOM
     let nextEl = nextSibling($el);
     let parentEl = getParent($el)!;
 
@@ -67,14 +68,10 @@ export let hydrateEach = (vnode: VNode, attrName: string, attrValue: string) => 
         let _el = $el.cloneNode(true) as HTMLElement;
 
         // Add the node to the DOM
-        if (nextEl) insertBefore(parentEl, _el, nextEl);
-        else appendChildren(parentEl, _el);
+        insertNode(_el, parentEl, nextEl);
 
         // Create a new vnode
         let _vnode = newVNode(_el);
-
-        // Save the vnode
-        saveVNode(_vnode);
 
         // Create a new context
         let _props = state({

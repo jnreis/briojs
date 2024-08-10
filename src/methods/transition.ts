@@ -1,7 +1,7 @@
 import { logger } from "../tools";
 import { each } from "../tools/array";
 import { $ANIMATE, BLUR, DURATION, EASING, FILTER, GET_COMPUTED_STYLE, NOT_FOUND, ON_COMPLETE, PAUSE, REQUIRE, REVERSE, TRANSFORM, TRANSITION_ENGINE, VALIDATE, VALUE } from "../tools/constants";
-import { deleteKey } from "../tools/object";
+import { deleteKey, W } from "../tools/object";
 import { startsWith } from "../tools/string";
 
 /** ANIMATION ENGINES */
@@ -84,7 +84,7 @@ export let $animate = () => ($el: HTMLElement, options: ObjectType) => {
         if (cssFn) value = cssFn + `(${value})`;
 
         // Save the start point for the property (only once)
-        if (!(cssProp in startPoint)) startPoint[cssProp] = window[GET_COMPUTED_STYLE]($el)[cssProp as any];
+        if (!(cssProp in startPoint)) startPoint[cssProp] = W[GET_COMPUTED_STYLE]($el)[cssProp as any];
 
         // Save the function value to the end point
         endPoint[cssProp] = (cssProp in endPoint) ? endPoint[cssProp] + ' ' + value : value;

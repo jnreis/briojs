@@ -1,6 +1,6 @@
-import { attr, newVNode, saveInterceptor, vnodes, vnodesQueue } from "../tools/hydration"
+import { attr, closestProps, newVNode, saveInterceptor, vnodes, vnodesQueue } from "../tools/hydration"
 import { logger } from "../tools";
-import { BUT_GOT_INSTEAD, ELEMENT, METHOD, REQUIRE } from "../tools/constants";
+import { $ROOT, AFTER, BEFORE, BUT_GOT_INSTEAD, ELEMENT, METHOD, NOT_FOUND, REQUIRE } from "../tools/constants";
 import { getType, isElementNode } from "../tools/typeCheck";
 
 export let $interceptor = (interceptorType: 'before' | 'after') => (_: any) => ($el: HTMLElement, attrName: string, fn: Interceptor) => {
@@ -21,4 +21,14 @@ export let $interceptor = (interceptorType: 'before' | 'after') => (_: any) => (
 
     // Add the vnode to the queue
     if (!hasVNode) vnodesQueue.set($el, vnode);
+};
+
+export let $before = () => $interceptor(BEFORE);
+
+export let $after = () => $interceptor(AFTER);
+
+export let $root = (_: any) => ($el: HTMLElement|Text) => {
+    let _vnode = closestProps($el);
+    if (!_vnode) logger($ROOT + ` ${ELEMENT} ` + NOT_FOUND);
+    return _vnode?.$el;
 };

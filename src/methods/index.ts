@@ -1,18 +1,46 @@
+import { $after, $before } from './hydration';
 import { $emit } from './dom';
-import { $interceptor } from './hydration';
-import { $watch, $persist, $session } from './reactivity';
 import { $uid, $type } from './tools';
-import { $in, $out } from './transition';
 import { $http } from './http';
+import { $watch, $persist, $session } from './reactivity';
+import { $in, $out } from './transition';
+import { arrayAdd } from '../tools/array';
+import { reservedNames } from '../api';
 
-import { arrayAdd, each } from '../tools/array';
-import { AFTER, BEFORE } from '../tools/constants';
+/**
+ * Brio methods.
+ * These methods are available to all expressions.
+ */
+export let _methods: MagicMethods = {
+    $before,
+    $after,
+    $emit,
+    $uid,
+    $type,
+    $http,
+    $watch,
+    $persist,
+    $session,
+    $in,
+    $out
+};
 
-export let _methods: [string, MagicMethod][] = [
-    ['$'+BEFORE, $interceptor(BEFORE)],
-    ['$'+AFTER, $interceptor(AFTER)],
-];
-
-each([$emit, $uid, $type, $http, $watch, $persist, $session, $in, $out], fn => {
-    arrayAdd(_methods, [fn.name, fn]);
-});
+/**
+ * Registers the core methods
+ * - $before
+ * - $after
+ * - $emit
+ * - $uid
+ * - $type
+ * - $http
+ * - $watch
+ * - $persist
+ * - $session
+ * - $in
+ * - $out
+ */
+export let registerCoreMethods = () => {
+    for (let methodName in _methods) {
+        arrayAdd(reservedNames, methodName);
+    }
+};

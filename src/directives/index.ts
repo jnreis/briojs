@@ -18,6 +18,7 @@ import { hydrateTransition } from "./transition";
 import { startsWith } from "../tools/string";
 import { EACH, PROPS, SKIP, STATUS, TELEPORT, TRANSITION } from "../tools/constants";
 
+/** Register a directive with or without modifiers */
 export let regDirective = (directiveName: string, hasModifiers: boolean = false) => (_: VNode, attrName: string) => {
 
     let prefix = startsWith(directiveName, 'on-') ? '' : 'b-';
@@ -31,17 +32,18 @@ export let regDirective = (directiveName: string, hasModifiers: boolean = false)
             ? 1 : 0;
 }
 
+/** Active directives */
 export let _directives: [ValidateDirective, HydrateDirective][] = [
 
     // Static directives
     // These directives do not have modifiers
     [regDirective('ignore'), (vnode: VNode) => vnode[STATUS] = SKIP],
-    [regDirective(PROPS), hydrateProps],
-    [regDirective(EACH), hydrateEach],
-    [regDirective('init'), hydrateInit],
-    [regDirective('uid'), hydrateUid],
     [regDirective('if'), hydrateIf],
     [regDirective('show'), hydrateShow],
+    [regDirective(EACH), hydrateEach],
+    [regDirective(PROPS), hydrateProps],
+    [regDirective('init'), hydrateInit],
+    [regDirective('uid'), hydrateUid],
     [regDirective('html'), hydrateHtml],
     [regDirective('effect'), hydrateEffect],
     [regDirective(TELEPORT), hydrateTeleport],

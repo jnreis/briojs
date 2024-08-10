@@ -1,4 +1,4 @@
-import { _settings, getReservedNames } from ".";
+import { _settings, reservedNames } from ".";
 import { state } from "../reactivity";
 import { has, logger } from "../tools";
 import { arrayAdd } from "../tools/array";
@@ -11,9 +11,6 @@ import { isObject } from "../tools/typeCheck";
 
 // /** Non-reactive data store */
 // export const data: ObjectType = {};
-
-/** The ordered list of global stores */
-export let _storeNames: string[] = [$STORE];
 
 export let stores: ObjectType = {
     [$STORE]: state({}),
@@ -32,7 +29,7 @@ export let addStore = (storeName: string, storeObject: ObjectType) => {
         return logger(API_ADD_ERROR(GLOBAL_STORE, storeName));
 
     // Name already in use
-    if (has(getReservedNames(), storeName))
+    if (has(reservedNames, storeName))
         return logger(NAME_ALREADY_IN_USE(storeName));
 
     // Validate the global store
@@ -41,7 +38,7 @@ export let addStore = (storeName: string, storeObject: ObjectType) => {
         stores[storeName] = storeObject;
 
         // Save the global store name
-        arrayAdd(_storeNames, storeName);
+        arrayAdd(reservedNames, storeName);
     }
 
     // Error: The global store must be an object

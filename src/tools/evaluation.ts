@@ -1,8 +1,8 @@
 import { reservedNames } from "../api";
-import { _storeNames, stores } from "../api/store";
+import { stores } from "../api/store";
 import { _methods } from "../methods";
 import { getAllKeys, newObject } from "./object";
-import { $PROPS, $REFS, $ROOT, DELETE, EXPRESSION } from "./constants";
+import { $PROPS, DELETE, EXPRESSION } from "./constants";
 import { arrayAdd, each } from "./array";
 import { isStringFunction, isPath, startsWith, replace } from "./string";
 import { getAccessedProp } from "../reactivity/track";
@@ -79,14 +79,11 @@ let getArgValues = (vnode: VNode) => {
     // ! E.g. `super` must be written as `$props.super`
     let $s: any[] = [];
 
-    // Magic properties
-    each(['$el', $PROPS, $REFS, $ROOT], name => arrayAdd($s, vnode[name as keyof VNode]));
-
-    // Magic methods
-    each(_methods, ([_, fn]) => arrayAdd($s, fn(vnode)));
-
-    // Global stores
-    each(_storeNames, store => arrayAdd($s, stores[store]));
+    each(reservedNames, (name: string) => {
+        if (name in vnode) arrayAdd($s, vnode[name as keyof VNode]);
+        else if (name in stores) arrayAdd($s, stores[name]);
+        else if (name in _methods) arrayAdd($s, _methods[name](vnode));
+    });
 
     return $s;
 }

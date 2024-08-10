@@ -75,6 +75,7 @@ export let getStateKeys = (proxied: any) => {
 export let whileState = (proxied: any, callback: FunctionType) => {
     let stateObject = getStateObject(proxied);
 
+    // While the state object exists and the callback returns false, get the parent state object
     while (stateObject && !callback(stateObject)) {
         stateObject = getStateObject(stateObject[PARENT]);
     }
@@ -128,4 +129,4 @@ export { state } from './state';
 export { computed, removeComputed } from './computed';
 export { effect } from './effect';
 export { watch } from './watch';
-export { storage } from './storage';
+export { storage, storageEvent } from './storage';

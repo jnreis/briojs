@@ -132,11 +132,11 @@ export let CAN_ONLY_BE_USED_ON = 'can only be used on';
 export let NOT_FOUND: 'not found.' = 'not found.';
 export let INVALID: 'Invalid' = 'Invalid';
 
-/** but got ${somethingElse} instead. */
+/** but got [something else] instead. */
 export let BUT_GOT_INSTEAD = (somethingElse: string) => `but got ${somethingElse} instead.`;
 
-/** The ${apiModule} "${moduleName}" must be defined before initialization */
+/** The [api module] "[module name]" must be defined before initialization */
 export let API_ADD_ERROR = (apiModule: string, moduleName: string) => `The ${apiModule} "${moduleName}" ${BEFORE_INIT}.`;
 
-/** The name "${name}" is already in use. */
+/** The name "[reserved name]" is already in use. */
 export let NAME_ALREADY_IN_USE = (name: string) => `The name "${name}" is already in use.`;

@@ -1,7 +1,8 @@
 import { ATTRIBUTE, COMPOSING, DISPLAY, GET_COMPUTED_STYLE, INPUT, OPACITY, TARGET } from "./constants";
+import { D, W } from "./object";
 import { isElementNode } from "./typeCheck";
 
-export let q = (selector: string, root: Node = document) =>
+export let q = (selector: string, root: Node = D) =>
     (root as HTMLElement).querySelectorAll(selector);
 
 export let closest = (node: Node, selector: string) => {
@@ -15,6 +16,14 @@ export let appendChildren = (parent: Element, ...children: Node[]|string[]) =>
 
 export let insertBefore = (parent: Node, child: Node, beforeChild: Node) =>
     parent.insertBefore(child, beforeChild);
+
+export let insertNode = (node: Node, parent: Node, nextSibling?: Node|null) => {
+    if (nextSibling) {
+        insertBefore(parent, node, nextSibling);
+    } else {
+        appendChildren(parent as Element, node);
+    }
+}
 
 export let removeChild = (parent: Node, child: Node) =>
     parent.removeChild(child);
@@ -80,6 +89,6 @@ export let onCompositionEnd = (e: Event) => {
 
 export let isElementVisible = (node: HTMLElement) => {
     // Check if element is hidden due to display, visibility, or opacity
-    let style = window[GET_COMPUTED_STYLE](node);
+    let style = W[GET_COMPUTED_STYLE](node);
     return !(!getParent(node) || style[DISPLAY] == 'none' || style.visibility == 'hidden' || style[OPACITY] == '0');
 }

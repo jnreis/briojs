@@ -2,9 +2,9 @@ import { evaluate } from '../tools/evaluation';
 import { interceptor, saveCleanup } from '../tools/hydration';
 import { has, size, debounce, throttle, wait, logger } from '../tools';
 import { each } from '../tools/array';
-import { BUT_GOT_INSTEAD, FUNCTION, MUST_BE, TARGET } from '../tools/constants';
+import { BUT_GOT_INSTEAD, DELETE, FUNCTION, MUST_BE, TARGET } from '../tools/constants';
 import { emit, isElementVisible, listen } from '../tools/dom';
-import { deleteKey, deleteKeys, getKeys } from '../tools/object';
+import { D, deleteKey, deleteKeys, getKeys, W } from '../tools/object';
 import { lower, split } from '../tools/string';
 import { getType } from '../tools/typeCheck';
 
@@ -34,7 +34,7 @@ let keysMap: ObjectType = {
     esc: 'escape',
     space: ' ',
     spacebar: ' ',
-    del: 'delete',
+    del: DELETE,
     slash: '/',
     up: ARROW+'up',
     down: ARROW+'down',
@@ -106,8 +106,8 @@ export let hydrateOn = (vnode: VNode, attrName: string, attrValue: string) => {
     });
 
     // The target element
-    if (mods[OUTSIDE] || mods[DOCUMENT]) target = document as any;
-    else if (mods[WINDOW]) target = window as any;
+    if (mods[OUTSIDE] || mods[DOCUMENT]) target = D as any;
+    else if (mods[WINDOW]) target = W as any;
 
     // Keep track of the pressed keys
     let s = size(keys);

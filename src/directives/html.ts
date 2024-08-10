@@ -1,8 +1,8 @@
 import { _components } from "../api/component";
-import { evaluate } from "../tools/evaluation";
-import { hydrate, mustacheRegex, replaceMustache, templateRegex, wrapper } from "../tools/hydration";
+import { dehydrate, hydrate, wrapper } from "../tools/hydration";
 import { childNodes } from "../tools/dom";
-import { replace, test } from "../tools/string";
+import { each } from "../tools/array";
+import { wait } from "../tools";
 
 export let hydrateHtml = (vnode: VNode, attrName: string, attrValue: string) => {
 
@@ -14,29 +14,18 @@ export let hydrateHtml = (vnode: VNode, attrName: string, attrValue: string) => 
         // Check if the value is a component
         if (value in _components) value = _components[value];
 
-        // Make sure the value is fully evaluated
-        while (test(value, templateRegex) || test(value, mustacheRegex)) {
-            // Save the value before evaluation
-            let valueBefore = value;
+        // Dehydrate the innerHTML
+        each(childNodes(node), child => dehydrate(child));
 
-            // The code below does the following:
-            // - Replaces all mustache expressions with template literal expressions. {{}} -> ${}
-            // - Wraps the `value` in backticks to allow for the use of template literal expressions.
-            // - Escapes all backticks inside the `value` to prevent syntax errors.
-            // - Evaluates the `value` and gets the result by calling the returned function.
-            value = evaluate(vnode, '`' + replace(replaceMustache(value), /`/g, '\\`') + '`')[0]();
+        wait(() => {
+            // Set the innerHTML
+            node.innerHTML = value;
 
-            // Break the loop if the value is the same as before
-            if (valueBefore == value) break;
-        }
+            // Hydrate the innerHTML
+            hydrate(childNodes(node));
 
-        // Set the innerHTML
-        node.innerHTML = value;
-
-        // Hydrate the innerHTML
-        hydrate(childNodes(node));
-
-        // Next function
-        next();
+            // Next function
+            next();
+        });
     });
 }

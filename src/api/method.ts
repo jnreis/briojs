@@ -1,4 +1,4 @@
-import { _settings, getReservedNames } from ".";
+import { _settings, reservedNames } from ".";
 import { _methods } from "../methods"
 import { has, logger } from "../tools";
 import { arrayAdd } from "../tools/array";
@@ -17,9 +17,12 @@ export let addMethod = (methodName: string, fn: MagicMethod) => {
         return logger(API_ADD_ERROR(METHOD, methodName));
 
     // Name already in use
-    if (has(getReservedNames(), methodName))
+    if (has(reservedNames, methodName))
         logger(NAME_ALREADY_IN_USE(methodName));
 
     // Add the method to the list of methods
-    else arrayAdd(_methods, [methodName, fn]);
+    else {
+        _methods[methodName] = fn;
+        arrayAdd(reservedNames, methodName);
+    }
 }

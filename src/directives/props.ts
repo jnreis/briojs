@@ -1,13 +1,13 @@
 import { hydrateRefs } from './refs';
-import { getReservedNames } from '../api';
+import { reservedNames } from '../api';
 import { _props } from '../api/props';
 import { evaluate } from '../tools/evaluation';
-import { interceptor } from '../tools/hydration';
+import { closestVNode, interceptor } from '../tools/hydration';
 import { state } from '../reactivity';
 import { has, logger } from '../tools';
 import { deleteKey, getKeys, mergeKeys } from '../tools/object';
 import { getType, isObject } from '../tools/typeCheck';
-import { $PROPS, $ROOT, BUT_GOT_INSTEAD, DIRECTIVE, INIT, MUST_BE, OBJECT, PARENT, SKIP, STATUS } from '../tools/constants';
+import { $PROPS, BUT_GOT_INSTEAD, DIRECTIVE, INIT, MUST_BE, OBJECT, PARENT, SKIP, STATUS } from '../tools/constants';
 import { each } from '../tools/array';
 import { toString } from '../tools/string';
 
@@ -35,18 +35,17 @@ export let hydrateProps = (vnode: VNode, attrName: string, attrValue: string) =>
         }
 
         // Remove reserved keys from the new context
-        each(getReservedNames(), key => {
+        each(reservedNames, key => {
             if (key in newContext) deleteKey(newContext, key);
         });
 
-        // Check if the vnode has a parent
-        let hasParent = vnode.$el !== vnode[$ROOT];
+        let parent = closestVNode(vnode.$el);
 
         // Merge any keys passed in the context object from the `before` interceptor functions
         mergeKeys(newContext, false, context);
 
         // Create the new context
-        context = state(newContext, { [PARENT]: hasParent ? vnode[$PROPS] : null });
+        context = state(newContext, { [PARENT]: parent ? parent[$PROPS] : null });
 
         // Add the context to the vnode
         vnode[$PROPS] = context;

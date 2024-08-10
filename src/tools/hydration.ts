@@ -1,12 +1,14 @@
 import { evaluate, makeFunction } from "./evaluation";
-import { effect } from "../reactivity";
-import { has, size } from ".";
+import { effect, storageEvent } from "../reactivity";
+import { has, logger, size } from ".";
 import { arrayAdd, each, join } from "./array";
-import { q, walk, getAttr, delAttr, getParent, setAttr } from "./dom";
+import { q, walk, getAttr, delAttr, getParent, setAttr, listen } from "./dom";
 import { isStringFunction, split, startsWith, test, trim } from "./string";
 import { isTextNode, isElementNode } from "./typeCheck";
-import { TEXT, $PROPS, $ROOT, $REFS, TEXT_CONTENT, ATTR, CLEANUP, VALUE, STATUS, SKIP, BEFORE, AFTER, ATTRIBUTE } from "./constants";
+import { TEXT, $PROPS, $REFS, TEXT_CONTENT, ATTR, CLEANUP, VALUE, STATUS, SKIP, BEFORE, AFTER, ATTRIBUTE, DELETE, INIT, PROPS, MUST_BE } from "./constants";
 import { _directives } from "../directives";
+import { D, W } from "./object";
+import { _settings } from "../api";
 
 // Raw values are evaluated only once in production mode, but are evaluated every time they are updated in development mode
 export const vnodes : VNodes = new Map();
@@ -51,22 +53,57 @@ export let wrapper = (
     ));
 }
 
+/**
+ * Walks up the DOM tree to find the closest vnode
+ */
 export let closestVNode = (node: Node) => {
-    let _el = isElementNode(node) ? node : getParent(node);
+    let _el: any = node;
     while (_el) {
+        // Get the vnode, if any
         let vnode = vnodes.get(_el);
-        // Return the vnode if it has attributes
+
+        // A vnode is valid if it has attributes
         if (vnode && size(vnode[ATTR])) return vnode;
+
+        // Try the parent node if the vnode
+        // - was not found, or
+        // - has no attributes
         _el = getParent(_el);
     }
 }
 
+/** Get the closest vnode with props */
+export let closestProps = (node: HTMLElement|Text): VNode | undefined => {
+    let _el: any = node;
+    while (_el) {
+        // Get the closest vnode, if any
+        let vnode = closestVNode(_el);
+
+        // There is no vnode up the DOM tree
+        if (!vnode) break;
+
+        // Check if the vnode has props
+        if ('b-'+PROPS in vnode[ATTR]) return vnode;
+
+        // Try the parent node of the vnode if it has no props
+        _el = getParent(vnode.$el);
+    }
+};
+
 export let hydrate = (nodes?: Node[]) => {
+
     // Get all the nodes if none are provided
-    if (!nodes) nodes = [document.body];
+    if (!nodes) nodes = [D.body];
 
     // Hydrate the nodes
     for (let _node of nodes) {
+
+        // Skip nodes that are not in the DOM
+        if (!getParent(_node)) {
+            logger(`The node ${MUST_BE} in the DOM ${BEFORE} hydration.`, _node);
+            continue;
+        }
+
         // Recursively hydrate the nodes
         walk(_node, (node: Node) => {
             let result = false;
@@ -94,7 +131,7 @@ export let dehydrate = (node: Node, removeVNode = true) => {
             each(vnode[CLEANUP], cleanupFn => cleanupFn());
 
             // Remove the context
-            if (removeVNode) vnodes.delete(n);
+            if (removeVNode) vnodes[DELETE](n);
         }
 
         return true;
@@ -143,7 +180,6 @@ export let newVNode = ($el: HTMLElement, status: 'ok' | 'temp' = 'ok'): VNode =>
         vnode = {
             // Magic attributes: $el, $root, $refs, $props
             $el, // the element itself
-            [$ROOT]: $el, // The closest element with a `props` attribute, or the element itself
             [$REFS]: {}, // References to other elements available to all elements in the same $props context. Except for nested contexts.
             [$PROPS]: {}, // context
 
@@ -158,12 +194,13 @@ export let newVNode = ($el: HTMLElement, status: 'ok' | 'temp' = 'ok'): VNode =>
         }
     }
 
-    // Hydration status
-    vnode[STATUS] = status; /*
-    ok: the element is about to be hydrated or has been hydrated
-    temp: the element will be hydrated later
-    skip: skips the hydration process
-*/
+    /**
+     * Hydration status
+     * - ok: the element is about to be hydrated or has been hydrated
+     * - temp: the element will be hydrated later
+     * - skip: the element will not be hydrated
+     */
+    vnode[STATUS] = status;
 
     // Update context data
     if (status == 'ok') {
@@ -171,8 +208,6 @@ export let newVNode = ($el: HTMLElement, status: 'ok' | 'temp' = 'ok'): VNode =>
         let parent = closestVNode($el);
 
         if (parent) {
-            vnode[$ROOT] = parent.$el;
-
             each([$REFS, $PROPS, 'uid'], key => {
                 vnode[key] = parent[key as keyof VNode];
             });
@@ -244,7 +279,7 @@ export let hydrateElementNode = (node: HTMLElement) => {
     }
 
     // Remove the vnode if no attributes were hydrated
-    if (!size(vnode[ATTR])) vnodes.delete(node);
+    if (!size(vnode[ATTR])) vnodes[DELETE](node);
 
     // Continue the walk callback to
     return vnode[STATUS] != SKIP;
@@ -398,6 +433,28 @@ export let replaceMustache = (text: string) => {
     }
 
     return text;
+};
+
+/**
+ * Initializes Brio and effectively prevents further programmatic addition of:
+ * - directives
+ * - methods
+ * - transition engines
+ * - components
+ * - props
+ * - and stores
+ */
+export let init = () => {
+
+    // If Brio is not initialized
+    if (!_settings[INIT]) {
+
+        // Listen to storage events
+        listen(W as any, 'storage', storageEvent as any);
+
+        // Mark Brio as initialized
+        _settings[INIT] = true;
+    }
 };
 
 export let tools: HydrationTools = {

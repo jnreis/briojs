@@ -60,9 +60,9 @@
 
     </style>
   </head>
-  <body b-props="{dummyjson: $http('https://dummyjson.com/')}">
+  <body hidden b-hidden="false">
 
-    <h1 b-init="dummyjson.get('test').then(d => console.log(d))">Brio.js</h1>
+    <h1 b-props="{dummyjson: $http('https://dummyjson.com/')}" b-init="dummyjson.get('test').then(d => console.log(d))">Brio.js</h1>
     <button on-click="console.log('on-click', $event)">Outside a props</button>
 
     <div b-props="{a: 'component'}">

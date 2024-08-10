@@ -1,32 +1,4 @@
-import { _settings, reservedNames, getReservedNames } from "./api";
-import { hydrate } from "./tools/hydration";
-import { _methods } from './methods';
-import { storageEvent } from './reactivity/storage';
-import { arrayAdd, each } from "./tools/array";
-import { INIT } from './tools/constants';
-import { emit } from "./tools/dom";
-
-// Hydrate elements with a valid `props` attribute
-export let start = (nodes?: Node[]) => {
-
-    // If Brio is not initialized
-    if (!_settings[INIT]) {
-        // Listen to storage events
-        window.addEventListener('storage', storageEvent);
-
-        // Emit the `brio:init` event
-        emit(document.body, 'brio:'+INIT);
-
-        // Mark Brio as initialized
-        _settings[INIT] = true;
-
-        // Save reserved names
-        each(getReservedNames(), reservedName => arrayAdd(reservedNames, reservedName));
-
-        // Hydrate the DOM
-        hydrate(nodes);
-    }
-}
+export { init, hydrate } from './tools/hydration';
 
 export { api } from './api';
 
@@ -52,6 +24,9 @@ export { api } from './api';
 // ! BUG LIST
 
 // TODO LIST
+// - [ ] - create the ability to add any number of interceptor functions at any stage of the hydration and lifecycle steps for each attribute.
+// - [ ] - create a way to remove interceptor functions programmatically.
+
 // - [ ] Implement my own version of the prototype chain to avoid the createContext function. Do this by passing the parent object to the child object.
 
 // - [ ] Add a "morph" modifier to the `html` directive to preserve the element's state when the template changes.

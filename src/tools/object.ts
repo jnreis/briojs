@@ -2,6 +2,8 @@ import { each } from "./array";
 import { CREATE, GET_OWN_PROPERTY_DESCRIPTOR, GET_OWN_PROPERTY_DESCRIPTORS, GET_OWN_PROPERTY_NAMES, HAS_OWN_PROPERTY, PROTOTYPE } from "./constants";
 import { isObject } from "./typeCheck";
 
+export let W = window;
+export let D = document;
 export let R = Reflect;
 export let O = Object;
 

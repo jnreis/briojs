@@ -23,14 +23,18 @@ declare type Api = {
     watch: (proxied: any, prop: string | number | null, callback: ListenerFunction) => () => void,
     storage: (_storage: any, value: any, alias?: string) => void | ((proxied: any, prop: string) => any),
 }
+
+// METHODS
 type MagicMethod = (vnode: VNode) => FunctionType;
+type MagicMethods = {
+    [methodName: string]: MagicMethod
+};
 
 // GENERAL TYPES
 type VNodes = Map<Node, VNode>;
 type VNode = {
     // Magic attributes
     $el: HTMLElement, // the element itself
-    $root: HTMLElement, // the closest element with a `props` attribute or the element itself
     $refs: ObjectType, // References to other elements available to all elements in the same $props context. Except for nested contexts.
     $props: ObjectType, // context
 
@@ -42,6 +46,8 @@ type VNode = {
         [attrName: string]: {
             value: string,
             deps?: FunctionType,
+            // hFns: FunctionType[], // hydration functions
+            // lFns: FunctionType[], // lifecycle functions
             before: Interceptor[],
             after: Interceptor[],
         }

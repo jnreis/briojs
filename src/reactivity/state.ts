@@ -164,8 +164,14 @@ let isArrayOrObject = (value: any) =>
     isArray(value) || isObject(value);
 
 /** Notify state listeners */
-let _notifyListeners = (listeners: ListenerFunctions, context: any) =>
-    each(listeners, (fn: ListenerFunction) => fn(context));
+let _notifyListeners = (listeners: ListenerFunctions, context: any) => {
+    let priority = getKeys(listeners).sort((a, b) => +b - +a);
+    each(priority, (p: string) => {
+        each(listeners[p], (listener: ListenerFunction) => {
+            listener(context);
+        });
+    });
+}
 
 /** Checks if a value has the callback symbol */
 let hasStorageCallback = (value: any) =>

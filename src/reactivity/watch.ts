@@ -1,4 +1,4 @@
-import { getStateObject, addPropertyListener, removeListener, isState } from '.';
+import { addPropertyListener, removeListener, isState, getStateListeners } from '.';
 import { logger } from '../tools';
 import { ARRAY, DELETE, OBJECT, STATE } from '../tools/constants';
 
@@ -10,7 +10,7 @@ import { ARRAY, DELETE, OBJECT, STATE } from '../tools/constants';
  * @param callback - The callback function to execute when the key/index is modified.
  * @returns cleanup - The disposer function to stop watching
  */
-export let watch = (proxied: any, prop: string | number | null, callback: ListenerFunction) => {
+export let watch = (proxied: any, prop: string | number | null, callback: ListenerFunction, priority: number = 0) => {
 
     if (!isState(proxied)) {
         logger(`Cannot watch non-${STATE} ${OBJECT}/${ARRAY}.`);
@@ -20,17 +20,17 @@ export let watch = (proxied: any, prop: string | number | null, callback: Listen
     // If no key/index is specified, watch for all changes to the observed object/array
     if (!prop && prop !== 0) {
 
-        let stateObject = getStateObject(proxied)!.state;
+        let stateListeners = getStateListeners(proxied, priority);
 
         // Add the callback to the observed object/array listeners
-        stateObject.add(callback);
+        stateListeners[priority].add(callback);
 
         // Return the disposer function to stop watching
-        return () => stateObject[DELETE](callback);
+        return () => stateListeners[priority][DELETE](callback);
     }
 
     // Watch for changes to a specific key/index
-    addPropertyListener(proxied, prop, callback);
+    addPropertyListener(proxied, prop, callback, priority);
 
     // Return the disposer function to stop watching
     return () => removeListener(callback);

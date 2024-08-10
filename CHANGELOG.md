@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.18.0] - 2024-08-10
+- A priority system was added to the reactivity system. Now the reactivity system will prioritize the notifications based on the priority of the listener. The default priority is 0. The higher the priority, the sooner the listener will be notified. Negative priorities are allowed.
+
 ## [0.17.0] - 2024-08-09
 - Prepared Brio for becoming fully modular. The core is now a thin layer that can be extended with directives, methods, transition engines, and stores. With this change, even the core methods can be removed if they are not needed.
 - Reserved names are now better tracked and handled.

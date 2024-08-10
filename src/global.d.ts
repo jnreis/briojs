@@ -110,7 +110,7 @@ type ListenerContext = {
     oldValue: any
 };
 type ListenerFunction = (context: ListenerContext) => any;
-type ListenerFunctions = Set<ListenerFunction>;
+type ListenerFunctions = Map<ListenerFunction,>;
 /** [proxied, prop] */
 type AccessedProp = [any, string|number|symbol];
 
@@ -121,9 +121,13 @@ type StateObject = {
     parent: any,
     ignoreKeys: string[],
     // Listeners
-    state: ListenerFunctions,
+    state: {
+        [priority: string]: ListenerFunctions
+    },
     props: {
-        [prop: string|number]: ListenerFunctions
+        [prop: string|number]: {
+            [priority: string]: ListenerFunctions
+        }
     },
 }
 type State = Map<any, StateObject>;

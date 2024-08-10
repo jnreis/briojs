@@ -124,6 +124,7 @@ export let GET_OWN_PROPERTY_NAMES = 'get' + OWN_PROPERTY + 'Names' as 'getOwnPro
 export let GET_OWN_PROPERTY_DESCRIPTOR = 'get' + OWN_PROPERTY + 'Descriptor' as 'getOwnPropertyDescriptor';
 export let GET_OWN_PROPERTY_DESCRIPTORS = GET_OWN_PROPERTY_DESCRIPTOR + 's' as 'getOwnPropertyDescriptors';
 export let DELETE_PROPERTY = DELETE + PROPERTY as 'deleteProperty';
+export let PRIORITY: 'priority' = 'priority';
 
 // Error messages
 export let MUST_BE: 'must be' = 'must be';

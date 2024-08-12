@@ -179,6 +179,8 @@ export let replaceSubstring = (subject: string, startsAt: number, endsAt: number
 
 export let alphaNumericOnly = (str: string) => replace(str, /[^a-z0-9]/gi, '');
 
+export let slugify = (...args: string[]) => join(args, '-');
+
 export let camelCase = (...args: string[]) => uncapitalize(join(args.map(capitalize), ''));
 
 export let stringify = (value: any) => JSON.stringify(value);

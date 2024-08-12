@@ -1,5 +1,5 @@
 import { evaluate } from '../tools/evaluation';
-import { interceptor, saveCleanup } from '../tools/hydration';
+import { saveCleanup } from '../tools/hydration';
 import { has, size, debounce, throttle, wait, logger } from '../tools';
 import { each } from '../tools/array';
 import { BUT_GOT_INSTEAD, DELETE, FUNCTION, MUST_BE, TARGET } from '../tools/constants';
@@ -7,6 +7,7 @@ import { emit, isElementVisible, listen } from '../tools/dom';
 import { D, deleteKey, deleteKeys, getKeys, W } from '../tools/object';
 import { lower, split } from '../tools/string';
 import { getType } from '../tools/typeCheck';
+import { callHook, setHook } from '../tools/hook';
 
 let KEYUP = 'keyup';
 let KEYDOWN = 'keydown';
@@ -65,14 +66,8 @@ export let hydrateOn = (vnode: VNode, attrName: string, attrValue: string) => {
     if (isRef == 1)
         logger(`The event handler ${MUST_BE} a ${FUNCTION}, ${BUT_GOT_INSTEAD(getType(call()))}`, '', 'warn');
 
-    // Create an interceptor
-    let fn = interceptor(vnode, attrName, ($event, next) => {
-        // Call the function
-        call($event);
-
-        // Next interceptor function
-        next();
-    });
+    // The function to call
+    let fn = call;
 
     // Other modifiers are passed as options to the event listener
     // https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener#options
@@ -104,6 +99,9 @@ export let hydrateOn = (vnode: VNode, attrName: string, attrValue: string) => {
         // Any other modifier is a key when the event is `keydown` or `keyup`
         else if (has([KEYDOWN,KEYUP], event) && isNaN(mod as any)) keys[keysMap[mod] || mod] = true;
     });
+
+    // Set the hook
+    setHook($el, attrName, fn);
 
     // The target element
     if (mods[OUTSIDE] || mods[DOCUMENT]) target = D as any;
@@ -192,7 +190,7 @@ export let hydrateOn = (vnode: VNode, attrName: string, attrValue: string) => {
         }
 
         // Run the function
-        fn(e);
+        callHook($el, attrName, e);
     };
 
     // Create listener and save the cleanup function

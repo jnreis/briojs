@@ -1,5 +1,5 @@
-import { $after, $before } from './hydration';
-import { $emit } from './dom';
+import { $hook } from './hook';
+import { $emit, $root } from './dom';
 import { $uid, $type } from './tools';
 import { $http } from './http';
 import { $watch, $persist, $session } from './reactivity';
@@ -12,9 +12,9 @@ import { reservedNames } from '../api';
  * These methods are available to all expressions.
  */
 export let _methods: MagicMethods = {
-    $before,
-    $after,
+    $hook,
     $emit,
+    $root,
     $uid,
     $type,
     $http,
@@ -27,8 +27,7 @@ export let _methods: MagicMethods = {
 
 /**
  * Registers the core methods
- * - $before
- * - $after
+ * - $hook
  * - $emit
  * - $uid
  * - $type

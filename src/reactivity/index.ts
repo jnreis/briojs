@@ -7,7 +7,7 @@ import { hasOwnProperty, R } from '../tools/object';
 /**
  * The state object that holds a reference to all observed states, their parent observed state (if any), listeners, and other settings.
  */
-export let stateObjects: State = new Map();
+export let stateObjects: Map<any, StateObject> = new Map();
 
 /** Objects/arrays that should be ignored */
 export let ignoredTargets: Set<any> = new Set();
@@ -32,7 +32,7 @@ export let setStateObject = (proxied: any, target: any, ignoreKeys: string[], pa
             [TARGET]: target,
             [PARENT]: parent,
             [IGNORE_KEYS]: ignoreKeys,
-            [STATE]: {},
+            [STATE]: new Map(),
             [PROPS]: {}
         });
     }
@@ -86,63 +86,41 @@ export let getStateObject = (proxied: any) => {
     return stateObjects.get(proxied) as StateObject;
 }
 
-export let getStateListeners = (proxied: any, priority: number = 0) => {
-    let stateObject = getStateObject(proxied);
-
-    // If the priority doesn't exist in the state, add it
-    if (!stateObject[STATE][priority])
-        stateObject[STATE][priority] = new Set();
-
-    return stateObject[STATE];
-}
-
-export let getPropertyListeners = (proxied: any, prop: string | number, priority: number = 0) => {
-    let stateObject = getStateObject(proxied);
-
-    // If the property doesn't exist in the listener, add it
-    if (!stateObject[PROPS][prop])
-        stateObject[PROPS][prop] = {};
-
-    let propListeners = stateObject[PROPS][prop];
-
-    // If the priority doesn't exist in the property, add it
-    if (!propListeners[priority])
-        propListeners[priority] = new Set();
-
-    return propListeners;
-}
+export let getStateListeners = (proxied: any) =>
+    getStateObject(proxied)[STATE];
 
 /** Add a listener to a property of an observed state */
 export let addPropertyListener = (proxied: any, prop: string | number, fn: ListenerFunction, priority: number = 0) => {
 
+    let stateObject = getStateObject(proxied);
+
+    // If the property doesn't exist in the listener, add it
+    if (!stateObject[PROPS][prop])
+        stateObject[PROPS][prop] = new Map();
+
     // Add the listener to the property
-    getPropertyListeners(proxied, prop, priority)[priority].add(fn);
+    stateObject[PROPS][prop].set(fn, priority);
 
     // If the property is also a state, add the listener to the state
     if (isState(proxied[prop]))
-        getStateListeners(proxied[prop], priority)[priority].add(fn);
+        getStateListeners(proxied[prop]).set(fn, priority);
 }
 
 /** Remove a listener from a property of an observed state */
-export let removePropertyListeners = (proxied: any, prop: string) => {
-    let stateObject = getStateObject(proxied);
+export let removePropertyListeners = (stateObject: StateObject, prop: string) => {
     if (stateObject[PROPS][prop])
-        stateObject[PROPS][prop] = {};
+        stateObject[PROPS][prop].clear();
 }
 
 /** Remove a listener from all states and properties */
 export let removeListener = (fn: ListenerFunction) => {
     each(stateObjects as any, stateObject => {
         // Remove the state listeners
-        for (let priority in stateObject[STATE]) {
-            stateObject[STATE][priority][DELETE](fn);
-        }
+        stateObject[STATE][DELETE](fn);
 
         // Remove the property listeners
         for (let prop in stateObject[PROPS]) {
-            for (let priority in stateObject[PROPS][prop]) {
-                stateObject[PROPS][prop][priority][DELETE](fn);
-            }
+            stateObject[PROPS][prop][DELETE](fn);
         }
     });
 }

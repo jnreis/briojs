@@ -10,7 +10,7 @@ export let hydrateIf = (vnode: VNode, attrName: string, attrValue: string) => {
         let nextEl = nextSibling(node);
 
         // Return the watch function
-        return ([call], next) => {
+        return ([call]) => {
             // Get the value
             let value = call();
 
@@ -23,9 +23,6 @@ export let hydrateIf = (vnode: VNode, attrName: string, attrValue: string) => {
                 }
                 // Remove
                 else node.remove();
-
-                // Next function
-                next();
             });
         }
     });

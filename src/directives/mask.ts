@@ -1,5 +1,5 @@
 import { evaluate } from "../tools/evaluation";
-import { interceptor, saveCleanup } from "../tools/hydration";
+import { saveCleanup } from "../tools/hydration";
 import { logger, size, slice, wait } from "../tools";
 import { each } from "../tools/array";
 import { CAN_ONLY_BE_USED_ON, DIRECTIVE, ELEMENT, INPUT, SELECTION_START, TEXTAREA, VALUE } from "../tools/constants";
@@ -7,6 +7,7 @@ import { listen } from "../tools/dom";
 import { deleteKey, getKeys } from "../tools/object";
 import { isStringAlpha, isStringNumeric, replaceSubstring, split, startsWith, trim } from "../tools/string";
 import { isUndefined } from "../tools/typeCheck";
+import { callHook, setHook } from "../tools/hook";
 
 export let hydrateMask = (vnode: VNode, attrName: string, attrValue: string) => {
 
@@ -213,8 +214,7 @@ export let hydrateMask = (vnode: VNode, attrName: string, attrValue: string) => 
     // Get the initial value of the input
     wait(() => previousValue = $el.value);
 
-    // This listener will `capture` and process the input value before any other listeners.
-    let cleanup = listen($el, INPUT, interceptor(vnode, attrName, (_, next) => {
+    setHook($el, attrName, () => {
 
         // Get the current value of the input
         value = $el.value;
@@ -242,10 +242,10 @@ export let hydrateMask = (vnode: VNode, attrName: string, attrValue: string) => 
 
         // Set the cursor position
         setCursorPosition($el, newCursorPosition + cursorOffset);
+    });
 
-        // Next function
-        next();
-    }), true);
+    // This listener will `capture` and process the input value before any other listeners.
+    let cleanup = listen($el, INPUT, () => callHook($el, attrName), true);
 
     // Save cleanup function
     saveCleanup(vnode, cleanup);

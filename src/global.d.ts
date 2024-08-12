@@ -1,29 +1,3 @@
-// EXPORTS
-
-// API
-declare type start = (nodes?: Node[]) => void;
-declare type Api = {
-    // To extend Brio.js
-    // * Node: this methods may only be called before Brio.js is initialized
-    addDirective: (directiveName: string, hasModifiers: boolean, hydrateDirective: HydrateDirective) => void,
-    addMethod: (methodName: string, fn: MagicMethod) => void,
-    addTransitionEngine: (engine: AnimationEngine) => void,
-
-    // To add assets
-    addComponent: (componentName: string, ...html: string[]) => void,
-    addProps: (propsName: string, fn: (...args: any) => ObjectType) => void,
-    addStore: (storeName: string, storeObject: ObjectType) => void,
-
-    // Reactivity methods
-    state: (target: any) => any,
-    isState: (value: any) => boolean,
-    computed: (fn: ListenerFunction, deps?: ListenerFunction) => ListenerFunction,
-    removeComputed: (fn: ListenerFunction) => void,
-    effect: (fn: ListenerFunction, deps?: ListenerFunction) => () => void,
-    watch: (proxied: any, prop: string | number | null, callback: ListenerFunction) => () => void,
-    storage: (_storage: any, value: any, alias?: string) => void | ((proxied: any, prop: string) => any),
-}
-
 // METHODS
 type MagicMethod = (vnode: VNode) => FunctionType;
 type MagicMethods = {
@@ -45,11 +19,6 @@ type VNode = {
     attr: {
         [attrName: string]: {
             value: string,
-            deps?: FunctionType,
-            // hFns: FunctionType[], // hydration functions
-            // lFns: FunctionType[], // lifecycle functions
-            before: Interceptor[],
-            after: Interceptor[],
         }
     },
 
@@ -86,31 +55,32 @@ type HydrationTools = {
     saveVNode: (vnode: VNode) => void,
     attr: (vnode: VNode, attrName: string, attrValue?: string) => {
         value: string;
-        deps?: FunctionType;
-        before: Interceptor[];
-        after: Interceptor[];
     },
-    saveAttr: (vnode: VNode, attrName: string, attrValue: string) => void,
-    interceptor: (vnode: VNode, attrName: string, directiveFn: Interceptor) => (context: any, index?: number) => void,
-    saveInterceptor: (vnode: VNode, attrName: string, interceptorType: 'before' | 'after', fn: Interceptor) => void,
 
+    setHook: (node: Node, hookName: string, fn: HookFunction, priority?: number) => void,
+    callHook: (node: Node, hookName: string, context?: any) => Promise<void>,
+
+    saveAttr: (vnode: VNode, attrName: string, attrValue: string) => void,
     evaluate: (vnode: VNode, exp: string) => any,
 }
 
-type Interceptor = (ctx: any, next: NextFunction, remove: () => void) => void;
-type NextFunction = (stop: boolean = false) => void;
+type HookControls = {
+    play: FunctionType,
+    pause: FunctionType,
+    remove: FunctionType,
+};
+type HookFunction = (ctx: any, controls: HookControls) => Promise<void> | void;
 
 
 // REACTIVITY TYPES
-type ListenerContext = {
+type ListenerFunction = (context: {
     operation: string, 
     state: any, 
     prop: string, 
     newValue: any, 
     oldValue: any
-};
-type ListenerFunction = (context: ListenerContext) => any;
-type ListenerFunctions = Map<ListenerFunction,>;
+}) => any;
+type ListenerFunctions = Map<ListenerFunction, number>;
 /** [proxied, prop] */
 type AccessedProp = [any, string|number|symbol];
 
@@ -121,20 +91,15 @@ type StateObject = {
     parent: any,
     ignoreKeys: string[],
     // Listeners
-    state: {
-        [priority: string]: ListenerFunctions
-    },
+    state: ListenerFunctions,
     props: {
-        [prop: string|number]: {
-            [priority: string]: ListenerFunctions
-        }
+        [prop: string|number]: ListenerFunctions
     },
 }
-type State = Map<any, StateObject>;
 
 
 // ANIMATION TYPES
-type AnimationFunction = (animation: any, next: NextFunction) => void;
+type AnimationFunction = (animation: any, next: FunctionType) => void;
 type AnimationEngine = {
     name: string,
     validate: (animation: any) => boolean,

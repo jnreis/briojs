@@ -1,10 +1,11 @@
 import { evaluate } from "../tools/evaluation";
-import { interceptor, saveCleanup } from "../tools/hydration";
+import { saveCleanup } from "../tools/hydration";
 import { debounce, has, size } from "../tools";
 import { arrayAdd, each, join } from "../tools/array";
 import { toNumber } from "../tools/number";
 import { split } from "../tools/string";
 import { isNumeric } from "../tools/typeCheck";
+import { callHook, setHook } from "../tools/hook";
 
 let DISCONNECT: 'disconnect' = 'disconnect';
 let ONCE = 'once';
@@ -50,23 +51,20 @@ export let hydrateIntersection = (vnode: VNode, attrName: string, attrValue: str
     // Evaluate the expression
     let [ call, isRef ] = evaluate(vnode, attrValue, '$entry', true);
 
-    // Create an interceptor
-    let exp: Function = interceptor(vnode, attrName, (entry: IntersectionObserverEntry, next) => {
+    // Set the directive hook
+    setHook($el, attrName, entry => {
         // Execute the expression
-        if (isRef == 1) call()
+        if (isRef == 1) call();
         else call(entry);
-
-        // Next function
-        next();
     });
 
     let observer = new IntersectionObserver(entries => {
-        each(entries, entry => {
+        each(entries, (entry: IntersectionObserverEntry) => {
             // Ignore if intersecting and the directive is `leave`
             if (entry.isIntersecting == (directiveName == 'leave')) return;
 
             // Execute the expression
-            exp(entry);
+            callHook($el, attrName, entry);
 
             // If the directive has the `once` option, disconnect the observer
             if (options.once) observer[DISCONNECT]();

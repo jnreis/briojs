@@ -20,13 +20,13 @@ export let watch = (proxied: any, prop: string | number | null, callback: Listen
     // If no key/index is specified, watch for all changes to the observed object/array
     if (!prop && prop !== 0) {
 
-        let stateListeners = getStateListeners(proxied, priority);
+        let stateListeners = getStateListeners(proxied);
 
         // Add the callback to the observed object/array listeners
-        stateListeners[priority].add(callback);
+        stateListeners.set(callback, priority);
 
         // Return the disposer function to stop watching
-        return () => stateListeners[priority][DELETE](callback);
+        return () => stateListeners[DELETE](callback);
     }
 
     // Watch for changes to a specific key/index

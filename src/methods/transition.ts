@@ -8,36 +8,48 @@ import { startsWith } from "../tools/string";
 export let _engines: AnimationEngine[] = [];
 
 /** ANIMATION CONTROLS */
-let _animations: Map<any, NextFunction> = new Map();
+let _animations: Map<any, FunctionType> = new Map();
 
 /** GET ANIMATION ENGINE */
 export let getEngine = (animation: any) => _engines.find(engine => engine[VALIDATE](animation));
 
-/** The function for the $in transition should be used with the `after` interceptor function */
-export let $in = () => (animation: any, ctx: any = true, next: NextFunction = () => {}) => {
+/** The function for the $in transition should after the main hook function */
+export let $in = () => (animation: any, ctx: any = true, controls: HookControls) => {
 
     // Prepare the transition
-    let engine = prepTransition(animation, next);
+    let engine = prepTransition(animation, controls.play);
 
     // Reverse the animation
-    if (engine && ctx) engine[REVERSE](animation, next);
+    if (engine && ctx) {
+        // Pause the next hook
+        controls.pause();
+
+        // Reverse the animation
+        engine[REVERSE](animation, controls.play);
+    }
     // Skip the animation
-    else next();
+    else controls.play();
 }
 
-/** The function for the $out transition should be used with the `before` interceptor function */
-export let $out = () => (animation: any, ctx: any = false, next: NextFunction = () => {}) => {
+/** The function for the $out transition should before the main hook function */
+export let $out = () => (animation: any, ctx: any = false, controls: HookControls) => {
 
     // Skip the animation for the first time if the element is supposed to be removed
-    if (!_animations.has(animation) && !ctx) next();
+    if (!_animations.has(animation) && !ctx) controls.play();
 
     // Prepare the transition
-    let engine = prepTransition(animation, next);
+    let engine = prepTransition(animation, controls.play);
 
     // Skip the animation
-    if (!engine || ctx) next();
+    if (!engine || ctx) controls.play();
     // Play the animation
-    else engine.play(animation, next);
+    else {
+        // Pause the next hook
+        controls.pause();
+        
+        // Play the animation
+        engine.play(animation, controls.play);
+    }
 }
 
 
@@ -139,7 +151,7 @@ export let $animate = () => ($el: HTMLElement, options: ObjectType) => {
 // HELPER FUNCTIONS
 
 /** Prepare the transition */
-let prepTransition = (animation: any, next: NextFunction) => {
+let prepTransition = (animation: any, play: FunctionType) => {
     // Get the animation engine
     let engine = getEngine(animation);
 
@@ -152,13 +164,13 @@ let prepTransition = (animation: any, next: NextFunction) => {
     // Set the `onComplete` callback for the animation
     if (!_animations.has(animation)) {
         engine[ON_COMPLETE](animation, () => {
-            // onComplete, call the `next` interceptor function
+            // onComplete, play the next hook
             _animations.get(animation)!();
         });
     }
 
-    // Pass the `next` interceptor function to the `complete` callback
-    _animations.set(animation, next);
+    // Pass the `play` hook function to the `complete` callback
+    _animations.set(animation, play);
 
     return engine;
 }

@@ -1,8 +1,9 @@
 import { evaluate } from "../tools/evaluation";
-import { saveInterceptor } from "../tools/hydration";
 import { $in, $out } from "../methods/transition";
 import { logger } from "../tools";
-import { AFTER, ATTR, BEFORE, DIRECTIVE, MUST_BE, PAUSE, TRANSITION } from "../tools/constants";
+import { ATTR, DIRECTIVE, MUST_BE, PAUSE, TRANSITION } from "../tools/constants";
+import { setHook } from "../tools/hook";
+import { INFINITY } from "../tools/number";
 
 export let hydrateTransition = (vnode: VNode, _: string, attrValue: string) => {
 
@@ -15,16 +16,16 @@ export let hydrateTransition = (vnode: VNode, _: string, attrValue: string) => {
     let animation = evaluate(vnode, attrValue)[0]();
 
     // Pause the animation
-    // The animation will be played when the interceptor functions are called
+    // The animation will be played when the hook functions are called
     animation[PAUSE]();
 
     // Create instances of the $in and $out functions
     let _out = $out();
     let _in = $in();
 
-    // Save the interceptor functions (before out, after in)
-    saveInterceptor(vnode, _attrName, BEFORE, (ctx, next) => _out(animation, ctx, next));
-    saveInterceptor(vnode, _attrName, AFTER, (ctx, next) => _in(animation, ctx, next));
+    // Save the hook functions (before out, after in)
+    setHook(vnode.$el, _attrName, (ctx, controls) => _out(animation, ctx, controls), INFINITY);
+    setHook(vnode.$el, _attrName, (ctx, controls) => _in(animation, ctx, controls), -INFINITY);
 }
 
 /**

@@ -4,6 +4,7 @@ import { addMethod } from './method';
 import { addDirective } from "./directive";
 import { addTransitionEngine } from "./transition";
 import { addStore } from './store';
+import { addHook } from './hook';
 import { state, isState, computed, removeComputed, effect, watch, storage } from "../reactivity";
 import { $PROPS, $REFS, INIT, $STORE } from "../tools/constants";
 
@@ -21,6 +22,7 @@ export let api = {
     addDirective,
     addMethod,
     addTransitionEngine,
+    addHook,
 
     // To add assets
     addComponent,

@@ -9,7 +9,9 @@
 </head>
 <body class="flex flex-col justify-center h-screen max-w-screen-sm mx-auto">
     
-    <div class="text-center" b-props="{
+    <div b-init="$hook($el, 'b-effect', ([call]) => console.warn('before-b-effect', componentName), -1);
+        $hook($el, 'b-effect', ([call]) => console.warn('before-b-effect 444', componentName),1);"
+        b-effect="console.log('Effect hydrated', componentName)" class="text-center" b-props="{
         componentName: 'c1',
         toggleComponent() {
             this.componentName = this.componentName == 'c1' ? 'c2' : 'c1';

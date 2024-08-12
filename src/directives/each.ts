@@ -1,13 +1,14 @@
 import { evaluate, makeFunction } from '../tools/evaluation';
 import { isState, state, watch } from '../reactivity';
-import { hydrate, dehydrate, vnodes, saveCleanup, newVNode, interceptor, attr } from '../tools/hydration';
+import { hydrate, dehydrate, vnodes, saveCleanup, newVNode, attr } from '../tools/hydration';
 import { entries, has, logger } from '../tools';
 import { removeChild, getParent, nextSibling, insertNode } from '../tools/dom';
-import { split, test, trim } from '../tools/string';
+import { slugify, split, test, trim } from '../tools/string';
 import { isArray, isNumber, isObject } from '../tools/typeCheck';
 import { ARRAY, OBJECT, EACH, DIRECTIVE, REQUIRE, CREATE, UPDATE, DELETE, $PROPS, PROPS, STATUS, SKIP, NUMBER, PARENT } from '../tools/constants';
 import { deleteKey } from '../tools/object';
 import { arrayFill } from '../tools/array';
+import { callHook, setHook } from '../tools/hook';
 
 export let _each: ObjectType = {};
 
@@ -61,8 +62,12 @@ export let hydrateEach = (vnode: VNode, attrName: string, attrValue: string) => 
 
     type EachContext = [number, any];
 
+    let ATTR_NAME_MOUNT = slugify(attrName, 'mount');
+    let ATTR_NAME_SYNC = slugify(attrName, 'sync');
+    let ATTR_NAME_UNMOUNT = slugify(attrName, 'unmount');
+
     // Mount a new item
-    let mount = interceptor(vnode, attrName, ([i, v]: EachContext, next) => {
+    setHook($el, ATTR_NAME_MOUNT, ([i, v]: EachContext) => {
 
         // Create a new node
         let _el = $el.cloneNode(true) as HTMLElement;
@@ -105,13 +110,10 @@ export let hydrateEach = (vnode: VNode, attrName: string, attrValue: string) => 
 
         // Add the node to the mountedItems map
         mountedItems[i] = _el;
-
-        // Next function
-        next();
     });
 
     // Update an existing item
-    let sync = interceptor(vnode, attrName, ([i, v]: EachContext, next) => {
+    setHook($el, ATTR_NAME_SYNC, ([i, v]: EachContext) => {
 
         // Get the existing node
         let _el = mountedItems[i];
@@ -125,13 +127,10 @@ export let hydrateEach = (vnode: VNode, attrName: string, attrValue: string) => 
             _props[index] = i;
             _props[KEY] = i;
         }
-
-        // Next function
-        next();
     });
 
     // Unmount an existing item
-    let unmount = interceptor(vnode, attrName, ([i, _]: EachContext, next) => {
+    setHook($el, ATTR_NAME_UNMOUNT, ([i, _]: EachContext) => {
 
         // Get the existing node
         let _el = mountedItems[i];
@@ -145,21 +144,18 @@ export let hydrateEach = (vnode: VNode, attrName: string, attrValue: string) => 
 
         // Remove the node from the mountedItems set
         deleteKey(mountedItems, i);
-
-        // Next function
-        next();
     });
 
     let operations: ObjectType = {
-        [CREATE]: mount,
-        [UPDATE]: sync,
-        [DELETE]: unmount,
+        [CREATE]: (context: any) => callHook($el, ATTR_NAME_MOUNT, context),
+        [UPDATE]: (context: any) => callHook($el, ATTR_NAME_SYNC, context),
+        [DELETE]: (context: any) => callHook($el, ATTR_NAME_UNMOUNT, context),
     };
 
     // Initialize all the items
     for (let entry of entries(value)) {
         // Create a new node for each item
-        mount(entry);
+        operations[CREATE](entry);
     }
 
 

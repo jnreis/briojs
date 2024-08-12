@@ -1,5 +1,5 @@
 import { evaluate } from '../tools/evaluation';
-import { interceptor, saveCleanup } from '../tools/hydration';
+import { saveCleanup } from '../tools/hydration';
 import { entries, has, logger, size, wait } from '../tools';
 import { arrayAdd, arrayFrom, each } from '../tools/array';
 import { listen, onCompositionStart, onCompositionEnd, getAttr, q } from '../tools/dom';
@@ -8,6 +8,7 @@ import { isNull, isArray, getType, isUndefined, isString, isBoolean, isNumber } 
 import { SELECT, INPUT, TEXTAREA, CHECKBOX, RADIO, VALUE, CHANGE, ARRAY, DIRECTIVE, REQUIRE, COMPOSING, ELEMENT, CAN_ONLY_BE_USED_ON, BOOLEAN, STRING, NUMBER, CHECKED, BUT_GOT_INSTEAD, TEXT } from '../tools/constants';
 import { effect } from '../reactivity';
 import { D } from '../tools/object';
+import { callHook, setHook } from '../tools/hook';
 
 /**
  * MODEL DIRECTIVE
@@ -244,7 +245,7 @@ export let hydrateModel = (vnode: VNode, attrName: string, attrValue: string) =>
 
     // UPDATES THE PROP
     let events: ObjectType = {};
-    let eventFn = interceptor(vnode, attrName, (_: FunctionType, next) => {
+    setHook(node, attrName, (_: FunctionType) => {
 
         value = stateValue();
 
@@ -274,9 +275,6 @@ export let hydrateModel = (vnode: VNode, attrName: string, attrValue: string) =>
         // Handle other input types
         // Note: When a single checkbox with a value attribute is unchecked, the getNodeValue function returns the value attribute, if present, instead of false. In this case, the value should be set to false.
         else stateValue(isCheckboxOrRadio && !node[CHECKED] ? false : getNodeValue(node));
-
-        // Next function
-        next();
     });
 
     // Handle composition events
@@ -290,7 +288,7 @@ export let hydrateModel = (vnode: VNode, attrName: string, attrValue: string) =>
         ? CHANGE 
         : INPUT;
 
-    events[event] = () => eventFn(stateValue);
+    events[event] = () => callHook(node, attrName, stateValue);
 
     // Add the event listeners and save the cleanup functions
     for (let [eventName, fn] of entries(events)) {

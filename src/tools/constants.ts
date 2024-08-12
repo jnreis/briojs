@@ -92,6 +92,7 @@ export let LENGTH: 'length' = 'length';
 export let CREATE: 'create' = 'create';
 export let UPDATE: 'update' = 'update';
 export let DELETE: 'delete' = 'delete';
+export let HYDRATE: 'hydrate' = 'hydrate';
 
 // Animation & transition
 export let TRANSITION: 'transition' = 'transition';
@@ -141,3 +142,6 @@ export let API_ADD_ERROR = (apiModule: string, moduleName: string) => `The ${api
 
 /** The name "[reserved name]" is already in use. */
 export let NAME_ALREADY_IN_USE = (name: string) => `The name "${name}" is already in use.`;
+
+/** Reactivity: the "[function name]" function must be synchronous. */
+export let FUNCTION_MUST_BE_SYNC = (functionName: string) => `Reactivity: the "${functionName}" ${FUNCTION} ${MUST_BE} synchronous.`;

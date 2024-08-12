@@ -7,8 +7,7 @@ import { D, W } from './tools/object';
 
 /**
  * Registers the core methods
- * - $before
- * - $after
+ * - $hook
  * - $emit
  * - $uid
  * - $type

@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.19.0] - 2024-08-12
+- The interceptor system was re-implemented. It is now called "hooks" and provide the additional features:
+  - it was flattened to a single map. Now the priority system is more efficient and easier to maintain.
+  - automatically calls the next hook in the chain. The developer can also call the next hook manually by pausing the execution of the hook chain and calling the `play` method to resume the execution later.
+  - ability to handle async functions. 
+  - added a new `controls` object that allows the developer to `pause` and `play` the execution of the hooks, as well as a `remove` method to remove the current hook.
+  - a `addHook` method was added to the API to add hooks before initialization.
+- The reactivity system now can handle async functions if the dependencies function is synchronous.
+- The `$before` an `$after` methods were replaced by the `$hook` method.
+- The `root` property was replaced by the `$root` method. It is now possible for an element to get the root element of another element.
+- The directives `b-effect`, `b-html`, and `b-init` can now take an async function as their expression.
+
 ## [0.18.0] - 2024-08-10
 - A priority system was added to the reactivity system. Now the reactivity system will prioritize the notifications based on the priority of the listener. The default priority is 0. The higher the priority, the sooner the listener will be notified. Negative priorities are allowed.
 

@@ -1,6 +1,9 @@
 import { removeListener, addPropertyListener } from '.';
 import { getAccessedProps } from './track';
 import { each } from '../tools/array';
+import { is, isAsyncFunction } from '../tools/typeCheck';
+import { logger } from '../tools';
+import { FUNCTION, FUNCTION_MUST_BE_SYNC } from '../tools/constants';
 
 /**
  * Tracks accessed properties and executes a callback when any of the properties change.
@@ -9,6 +12,14 @@ import { each } from '../tools/array';
  * @returns The computed function, which can be used to return the computed value or stop tracking accessed properties by calling `removeComputed` with it.
  */
 export let computed = (fn: ListenerFunction, deps?: ListenerFunction, priority: number = 0): ListenerFunction => {
+
+    // Validate the arguments
+    if (isAsyncFunction(deps)) {
+        logger(FUNCTION_MUST_BE_SYNC('dependencies'));
+    }
+    else if (isAsyncFunction(fn) && !is(deps, FUNCTION)) {
+        logger(FUNCTION_MUST_BE_SYNC('computed'));
+    }
 
     // Run the computed function to track accessed properties
     let accessedProps = getAccessedProps(deps ? deps : fn);

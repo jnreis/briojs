@@ -1,17 +1,16 @@
-import { interceptor } from "../tools/hydration";
 import { evaluate } from "../tools/evaluation";
+import { callHook, setHook } from "../tools/hook";
 
 export let hydrateInit = (vnode: VNode, attrName: string, attrValue: string) => {
 
-    // Create an interceptor
-    interceptor(vnode, attrName, (ctx, next) => {
+    let $el = vnode.$el;
 
+    // Set the directive hook
+    setHook($el, attrName, async (ctx) => {
         // Call the expression
-        ctx();
+        await ctx();
+    });
 
-        // Next function
-        next();
-    })
     // Evaluate the expression and run it only once
-    (evaluate(vnode, attrValue, '', true)[0]);
+    callHook($el, attrName, evaluate(vnode, attrValue, '', true)[0]);
 }

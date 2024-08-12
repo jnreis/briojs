@@ -5,7 +5,7 @@ import { wait } from '../tools';
 
 export let hydrateShow = (vnode: VNode, attrName: string, attrValue: string) => {
 
-    wrapper(vnode, attrName, attrValue, (node) => ([call], next) => {
+    wrapper(vnode, attrName, attrValue, (node) => ([call]) => {
         // Get the value
         let value = call();
 
@@ -17,9 +17,6 @@ export let hydrateShow = (vnode: VNode, attrName: string, attrValue: string) => 
         wait(() => {
             // Show or hide the element
             node[STYLE][DISPLAY] = value ? '' : 'none';
-
-            // Next function
-            next();
         });
     });
 }

@@ -1,7 +1,7 @@
 import { CALLBACK, getStateObject, setStateObject, removePropertyListeners, isState, findStateObject, getStateKeys, stateObjects } from '.';
 import { trackProps, accessedProps } from './track';
 import { deepEqual, has } from '../tools';
-import { arrayAdd, each } from '../tools/array';
+import { arrayAdd, arrayFrom, each } from '../tools/array';
 import { R, getDescriptor, getKey, getKeys } from '../tools/object';
 import { isArray, isObject, isUndefined, isFunction } from '../tools/typeCheck';
 import { CREATE, DELETE, DELETE_PROPERTY, GET_OWN_PROPERTY_DESCRIPTOR, IGNORE_KEYS, PARENT, PROPS, PROXIED, STATE, TARGET, UPDATE } from '../tools/constants';
@@ -105,7 +105,7 @@ export let state = (target: any, options?: StateOptions) => {
             notifyListeners(prop, undefined, oldValue);
 
             // Remove deleted properties from the listeners
-            removePropertyListeners(stateObject[PROXIED], prop);
+            removePropertyListeners(stateObject, prop);
 
             return result;
         },
@@ -165,12 +165,14 @@ let isArrayOrObject = (value: any) =>
 
 /** Notify state listeners */
 let _notifyListeners = (listeners: ListenerFunctions, context: any) => {
-    let priority = getKeys(listeners).sort((a, b) => +b - +a);
-    each(priority, (p: string) => {
-        each(listeners[p], (listener: ListenerFunction) => {
-            listener(context);
-        });
-    });
+    // Convert the map to an array
+    let fns = arrayFrom(listeners) as [ListenerFunction, number][];
+
+    // Sort the listeners by priority
+    fns.sort((a, b) => b[1] - a[1]);
+
+    // Call the listeners by priority
+    each(fns, ([listener]) => listener(context));
 }
 
 /** Checks if a value has the callback symbol */

@@ -18,10 +18,10 @@ export let hydrateBind = (vnode: VNode, attrName: string, attrValue: string) => 
         attrValue = makeFunction(attrValue || 'true', '$initial');
     }
 
-    // Get the attribute initial value
+    // Get the attribute's initial value
     let initialAttrValue = getAttr(vnode.$el, prop) || '';
 
-    wrapper(vnode, attrName, attrValue, (node) => ([call], next) => {
+    wrapper(vnode, attrName, attrValue, (node) => ([call]) => {
 
         let value = call(initialAttrValue);
 
@@ -43,8 +43,5 @@ export let hydrateBind = (vnode: VNode, attrName: string, attrValue: string) => 
 
         // Remove attribute
         else delAttr(node, prop);
-
-        // Next function
-        next();
     });
 }

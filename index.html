@@ -69,12 +69,15 @@
       Fall back content for input
     </div>
 
-    <button b-props="{ ranCount: 0 }" b-init="$before(document.querySelector('#button1'), 'on-click', ($context, $next, $remove) => {
-      console.log('$before button1 on-click directive', $context);
-      $next();
+    <button b-props="{ ranCount: 0 }" b-init="$hook(document.querySelector('#button1'), 'on-click', ($context, $controls) => {
+      console.log('$hook before', $context);
+      $controls.play();
       ranCount++;
-      if (ranCount == 3) $remove();
-    });">Add $before "From a parent scope"</button>
+      if (ranCount == 3) $controls.remove();
+    }, 1);
+    $hook(document.querySelector('#button1'), 'on-click', ($context, $controls) => {
+      console.log('$hook after', $context);
+    });">Add $hook "From a parent scope"</button>
 
     <div b-props="{
       animations: new Map(),
@@ -245,7 +248,7 @@
 
     <div b-props="{p1: true}" ref="prop1">
       <div b-class="p1">
-        <button on-click="console.log($props, $refs, $el, $root, $uid, p1)">Log Magic attributes</button>
+        <button on-click="console.log($props, $refs, $el, $root($el), $uid, p1)">Log Magic attributes</button>
         <button id="button1" b-ref="button1" on-click="console.log($refs)">From a parent scope</button>
       </div>
       <div b-props="{refs: 123}" b-ref="prop2">
@@ -288,6 +291,10 @@
         //   }
         // );
         // Brio.addMethod('$upper', (vnode) => (text) => text.toUpperCase());
+
+        Brio.addHook(document.querySelector('#button1'), 'before-hydrate-b-ref', () => {
+          console.log('before-hydrate-b-ref');
+        });
       });
     </script>
 

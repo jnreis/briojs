@@ -2,7 +2,7 @@ import { hydrateRefs } from './refs';
 import { reservedNames } from '../api';
 import { _props } from '../api/props';
 import { evaluate } from '../tools/evaluation';
-import { closestVNode, interceptor } from '../tools/hydration';
+import { closestVNode } from '../tools/hydration';
 import { state } from '../reactivity';
 import { has, logger } from '../tools';
 import { deleteKey, getKeys, mergeKeys } from '../tools/object';
@@ -10,17 +10,17 @@ import { getType, isObject } from '../tools/typeCheck';
 import { $PROPS, BUT_GOT_INSTEAD, DIRECTIVE, INIT, MUST_BE, OBJECT, PARENT, SKIP, STATUS } from '../tools/constants';
 import { each } from '../tools/array';
 import { toString } from '../tools/string';
+import { callHook, setHook } from '../tools/hook';
 
 export let hydrateProps = (vnode: VNode, attrName: string, attrValue: string) => {
 
     // Check if the props expression is empty. If so, return
     if (!attrValue) return;
 
-    // Create the context
-    let context: ObjectType = {};
+    let $el = vnode.$el;
 
-    // Create an interceptor
-    interceptor(vnode, attrName, (context: ObjectType, next) => {
+    // Set the directive hook
+    setHook($el, attrName, (context: ObjectType) => {
         // Check if the attribute value is a key in the _props object
         // Get the function as a string so it can be evaluated and receive the reserved names
         if (attrValue in _props) attrValue = toString(_props[attrValue]);
@@ -39,9 +39,9 @@ export let hydrateProps = (vnode: VNode, attrName: string, attrValue: string) =>
             if (key in newContext) deleteKey(newContext, key);
         });
 
-        let parent = closestVNode(vnode.$el);
+        let parent = closestVNode($el);
 
-        // Merge any keys passed in the context object from the `before` interceptor functions
+        // Merge any keys added to the context object by previous hooks
         mergeKeys(newContext, false, context);
 
         // Create the new context
@@ -55,8 +55,7 @@ export let hydrateProps = (vnode: VNode, attrName: string, attrValue: string) =>
     
         // Init prop
         if (has(getKeys(context), INIT)) context[INIT]();
+    });
 
-        // Next function
-        next();
-    })(context);
+    callHook($el, attrName, {});
 }

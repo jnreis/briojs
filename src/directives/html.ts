@@ -6,10 +6,10 @@ import { wait } from "../tools";
 
 export let hydrateHtml = (vnode: VNode, attrName: string, attrValue: string) => {
 
-    wrapper(vnode, attrName, attrValue, (node) => ([call], next) => {
+    wrapper(vnode, attrName, attrValue, (node) => async ([call]) => {
 
         // Get the value
-        let value = call();
+        let value = await call();
 
         // Check if the value is a component
         if (value in _components) value = _components[value];
@@ -23,9 +23,6 @@ export let hydrateHtml = (vnode: VNode, attrName: string, attrValue: string) => 
 
             // Hydrate the innerHTML
             hydrate(childNodes(node));
-
-            // Next function
-            next();
         });
     });
 }

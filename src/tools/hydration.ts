@@ -1,18 +1,18 @@
-import { evaluate, makeFunction } from "./evaluation";
+import { evaluate } from "./evaluation";
 import { effect, storageEvent } from "../reactivity";
 import { has, logger, size } from ".";
 import { arrayAdd, each, join } from "./array";
 import { q, walk, getAttr, delAttr, getParent, setAttr, listen } from "./dom";
-import { isStringFunction, split, startsWith, test, trim } from "./string";
+import { slugify, split, startsWith, test, trim } from "./string";
 import { isTextNode, isElementNode } from "./typeCheck";
-import { TEXT, $PROPS, $REFS, TEXT_CONTENT, ATTR, CLEANUP, VALUE, STATUS, SKIP, BEFORE, AFTER, ATTRIBUTE, DELETE, INIT, PROPS, MUST_BE } from "./constants";
+import { TEXT, $PROPS, $REFS, TEXT_CONTENT, ATTR, CLEANUP, VALUE, STATUS, SKIP, BEFORE, AFTER, ATTRIBUTE, DELETE, INIT, PROPS, MUST_BE, HYDRATE } from "./constants";
 import { _directives } from "../directives";
 import { D, W } from "./object";
 import { _settings } from "../api";
+import { callHook, hasHook, setHook } from "./hook";
 
 // Raw values are evaluated only once in production mode, but are evaluated every time they are updated in development mode
 export const vnodes : VNodes = new Map();
-export let vnodesQueue: Map<Node, ObjectType> = new Map();
 
 // Effects are functions that are called when a dependency changes
 // Most of the raw values are expressions, or references to a prop or method in the scope
@@ -34,22 +34,27 @@ export let wrapper = (
     vnode: VNode,
     attrName: string,
     attrValue: string,
-    callback: (node: HTMLElement) => Interceptor
+    callback: (node: HTMLElement) => HookFunction
 ) => {
 
-    // Create an interceptor
-    // The interceptor runner is a function that executes the `before`, `directive`, and `after` interceptor functions in sequence by calling a `next` function.
-    let runner = interceptor(vnode, attrName, callback(vnode.$el));
+    let $el = vnode.$el;
+
+    // * Set the directive hook. Priority 0. Other hooks can be added.
+    // * - Hooks with higher priority will be called first.
+    // * - Hooks with lower priority (negative numbers) will be called after.
+    setHook($el, attrName, callback($el));
 
     // The context. Which most likely refers to reactive properties.
     let evaluation = evaluate(vnode, attrValue);
 
+    let attrNameDeps = attrName+'-deps';
+
     // Create a new effect, and save the cleanup function.
     // This sets up the reactivity.
     saveCleanup(vnode, effect(
-        () => runner(evaluation),
+        () => callHook($el, attrName, evaluation),
         // Get the dependencies, if any
-        attr(vnode, attrName).deps
+        (hasHook($el, attrNameDeps) ? () => callHook($el, attrNameDeps, evaluation) : undefined)
     ));
 }
 
@@ -178,7 +183,7 @@ export let newVNode = ($el: HTMLElement, status: 'ok' | 'temp' = 'ok'): VNode =>
     // Get the existing vnode
     if (!vnode) {
         vnode = {
-            // Magic attributes: $el, $root, $refs, $props
+            // Magic attributes: $el, $refs, $props
             $el, // the element itself
             [$REFS]: {}, // References to other elements available to all elements in the same $props context. Except for nested contexts.
             [$PROPS]: {}, // context
@@ -231,6 +236,9 @@ export let hydrateTextNode = (node: Text) => {
 
         let vnode = newVNode(node as any);
 
+        // HOOK: before-hydrate
+        callHook(node, slugify(BEFORE, HYDRATE, TEXT), sanitizedText);
+
         // Evaluate the expression
         let [call] = evaluate(vnode, `$el.${TEXT_CONTENT}=\`${sanitizedText}\``, '', true);
 
@@ -239,6 +247,9 @@ export let hydrateTextNode = (node: Text) => {
 
         // Save attribute
         saveAttr(vnode, TEXT, text);
+
+        // HOOK: after-hydrate
+        callHook(node, slugify(AFTER, HYDRATE, TEXT), sanitizedText);
     }
 
     // Always return false because text nodes don't have attributes or children
@@ -265,8 +276,14 @@ export let hydrateElementNode = (node: HTMLElement) => {
                 // Save attribute
                 saveAttr(vnode, name, value);
 
+                // HOOK: before-hydrate-[attrName]
+                callHook(node, slugify(BEFORE, HYDRATE, name), [vnode, name, value]);
+
                 // Hydrate the directive
                 hydrateDirective(vnode, name, sanitizeAttrValue(value), tools);
+
+                // HOOK: after-hydrate-[attrName]
+                callHook(node, slugify(AFTER, HYDRATE, name), [vnode, name, value]);
 
                 // Break the directives loop if the directive has no modifiers
                 // This is because directives with no modifiers are unique and no further processing is needed after hydrating them
@@ -293,9 +310,7 @@ export let saveCleanup = (vnode: VNode, cleanupFn: FunctionType) => {
 /** Get an attribute object. Create one if it doesn't exist. */
 export let attr = (vnode: VNode, attrName: string, attrValue: string = '') => {
     if (!vnode[ATTR][attrName]) vnode[ATTR][attrName] = {
-        [VALUE]: attrValue || '',
-        [BEFORE]: [],
-        [AFTER]: [],
+        [VALUE]: attrValue || ''
     };
     return vnode[ATTR][attrName];
 }
@@ -306,10 +321,6 @@ export let saveAttr = (vnode: VNode, attrName: string, attrValue: string) => {
     attr(vnode, attrName, attrValue);
     // Remove the attribute from the node
     if (isElementNode(vnode.$el)) delAttr(vnode.$el, attrName);
-}
-
-export let saveInterceptor = (vnode: VNode, attrName: string, interceptorType: 'before'|'after', fn: Interceptor) => {
-    arrayAdd(attr(vnode, attrName)[interceptorType], fn);
 }
 
 // Save the vnode to the vnodes map
@@ -327,89 +338,6 @@ export let getTopLevelContext = (attrName: string) => {
         }
     });
     return $props
-}
-
-/** Hydrate the interceptor functions of a directive */
-let hydrateInterceptor = (vnode: VNode, attrName: string, interceptorType: 'before'|'after') => {
-    let $el = vnode.$el;
-    let attrCycle = interceptorType + '-' + attrName;
-
-    // Get the attribute value
-    let attrValue = getAttr($el, attrCycle);
-
-    // Evaluate the attribute value, if any
-    if (attrValue) {
-        let fn = evaluate(vnode, attrValue, '$context,$next,$remove', true)[0];
-        saveInterceptor(vnode, attrName, interceptorType, fn);
-        delAttr($el, attrCycle);
-    }
-
-    // Get queued interceptor functions
-    let qVnode = vnodesQueue.get($el);
-
-    if (qVnode && qVnode[ATTR][attrName]) {
-        each(qVnode[ATTR][attrName][interceptorType], fn => {
-            saveInterceptor(vnode, attrName, interceptorType, fn);
-        });
-    }
-}
-
-/** Set the interceptor functions (before and after) of a directive, as well as the dependencies, and return the interceptor runner */
-export let interceptor = (vnode: VNode, attrName: string, directiveFn: Interceptor) => {
-
-    let $el = vnode.$el;
-    let _attr = attr(vnode, attrName);
-
-    // * Hydrate the interceptor functions, if any
-    hydrateInterceptor(vnode, attrName, BEFORE);
-    hydrateInterceptor(vnode, attrName, AFTER);
-
-    // * Hydrate the dependencies, if any
-    let attrDeps = attrName + '-deps';
-    // Get attribute value
-    let depsValue = getAttr($el, attrDeps);
-    // Evaluate the attribute value, if any
-    if (depsValue) {
-        // If the value is not a function, make it a function
-        if (!isStringFunction(depsValue)) depsValue = makeFunction(depsValue, '', true);
-        // Evaluate and save the dependencies
-        _attr.deps = evaluate(vnode, depsValue, '', true)[0];
-        // Delete the attribute from the node
-        delAttr($el, attrDeps);
-    }
-
-    // Execute the interceptor functions
-    let runner = (context: any, index: number = 0) => {
-
-        let interceptorFns = [..._attr[BEFORE], directiveFn, ..._attr[AFTER]];
-
-        // Execute the interceptor functions in sequence
-        if (index < size(interceptorFns)) {
-            interceptorFns[index](
-                // * $ctx: the context contains the data that is passed to the interceptor function. It can be modified if it is a reference (object, array, etc.)
-                context,
-                // * $next(): go to the next interceptor function.
-                (stop: boolean = false) => {
-                    if (!stop) runner(context, index + 1);
-                },
-                // * $remove(): remove the interceptor function.
-                () => {
-                    // Ignore the directive function
-                    if (interceptorFns[index] == directiveFn) return;
-
-                    // The size of the `before` array
-                    let beforeSize = size(_attr[BEFORE]);
-
-                    // Remove the interceptor function
-                    if (index < beforeSize) _attr[BEFORE].splice(index, 1);
-                    else _attr[AFTER].splice(index - beforeSize - 1, 1);
-                }
-            );
-        }
-    }
-
-    // Return the interceptor runner
-    return runner;
 }
 
 /**
@@ -470,8 +398,8 @@ export let tools: HydrationTools = {
     attr,
     saveAttr,
 
-    interceptor,
-    saveInterceptor,
+    setHook,
+    callHook,
 
     evaluate,
 };

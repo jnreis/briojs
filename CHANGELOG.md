@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.20.0] - 2024-08-24
+- Child $props were not reacting to changes when the prop belonged to a parent $props.
+- State will no longer attempt to observe getters and setters.
+
 ## [0.19.0] - 2024-08-12
 - The interceptor system was re-implemented. It is now called "hooks" and provide the additional features:
   - it was flattened to a single map. Now the priority system is more efficient and easier to maintain.

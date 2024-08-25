@@ -24,18 +24,20 @@ export { api } from './api';
 // ! BUG LIST
 
 // TODO LIST
-// - [ ] - create the ability to add any number of interceptor functions at any stage of the hydration and lifecycle steps for each attribute.
-// - [ ] - create a way to remove interceptor functions programmatically.
-
-// - [ ] Implement my own version of the prototype chain to avoid the createContext function. Do this by passing the parent object to the child object.
+// - [ ] Investigate what it takes to have a modern build system with Astro and Brio, including TypeScript, Tailwind CSS, and PostCSS.
 
 // - [ ] Add a "morph" modifier to the `html` directive to preserve the element's state when the template changes.
-
-// - [ ] Give the option to use a custom prefix for Brio directives. For example: `b-[directive]
 
 
 
 // * DONE LIST
+// - [x] Nested props are not reacting to changes. If a parent $props has a year property, and the year property is changed from a nested $props, the year property in the parent $props does not react to the change.
+
+// - [x] - create the ability to add any number of interceptor functions at any stage of the hydration and lifecycle steps for each attribute.
+// - [x] - create a way to remove interceptor functions programmatically.
+
+// - [x] Implement my own version of the prototype chain to avoid the createContext function. Do this by passing the parent object to the child object.
+
 // - [x] Implement a `$before` and `$after` methods to run functions before and after a directive is executed.
 //       - Syntax: `$before|$after($el:Node, directiveName:string, middlewareFn:Function, removeFn:Function)`.
 //       - The function of the $before and $after methods receive $ctx and $next as arguments.

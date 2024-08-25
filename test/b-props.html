@@ -31,7 +31,7 @@
 <body>
     <h1>b-props</h1>
 
-    <div b-props="{ name: 'Brio.js', year: 2024, nextYear() { this.year++ } }">
+    <div b-props="{ name: 'Brio.js', year: 2024, nextYear() { this.year++ }, get aGetter() { return this.year + 1;} }">
 
         <p>Top level b-props:</p>
         <pre class="text-white">{{ JSON.stringify($props) }}</pre>

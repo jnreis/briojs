@@ -88,7 +88,7 @@ export let state = (target: any, options?: StateOptions) => {
             let result: boolean = R.set(stateObject[TARGET], prop, newValue, stateObject[PROXIED]);
 
             // Notify computed functions about property changes
-            notifyListeners(prop, newValue, oldValue);
+            notifyListeners(stateObject, prop, newValue, oldValue);
 
             return result;
         },
@@ -102,7 +102,7 @@ export let state = (target: any, options?: StateOptions) => {
             let result = R[DELETE_PROPERTY](stateObject[TARGET], prop);
 
             // Notify computed functions about property deletion
-            notifyListeners(prop, undefined, oldValue);
+            notifyListeners(stateObject, prop, undefined, oldValue);
 
             // Remove deleted properties from the listeners
             removePropertyListeners(stateObject, prop);
@@ -125,19 +125,17 @@ export let state = (target: any, options?: StateOptions) => {
             target[prop] = target[prop](proxied, prop);
 
         // Attempt to observe if the property is not marked to be ignored
-        if (!has(ignoreKeys, prop))
-            target[prop] = state(target[prop]);
+        // ? Note: R.set silently handles getters and setters
+        if (!has(ignoreKeys, prop) && isArrayOrObject(target[prop]))
+            R.set(target, prop, state(target[prop]), proxied);
     }
 
     // Function to notify computed functions about property changes
-    let notifyListeners = (prop: any, newValue: any, oldValue: any) => {
+    let notifyListeners = (stateObject: StateObject, prop: any, newValue: any, oldValue: any) => {
 
         let operation = isUndefined(oldValue) ? CREATE : isUndefined(newValue) ? DELETE : UPDATE;
 
         let context = {operation, [PROXIED]:proxied, prop, newValue, oldValue};
-
-        // State listeners
-        let stateObject = getStateObject(proxied);
 
         // Notify state listeners
         _notifyListeners(stateObject[STATE], context);

@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Document</title>
+    </head>
+    <body>
+        <form b-props="page" id="contact-form">
+            <div class="contact-reasons">
+                <div class="contact-reason">
+                    <input
+                        id="build-mvp"
+                        type="checkbox"
+                        name="reasons"
+                        value="Build a minimum viable product (MVP)"
+                        b-model="contact_reasons"
+                    />
+                    <label for="build-mvp"
+                        >Build a minimum viable product (MVP)</label
+                    >
+                </div>
+
+                <div class="contact-reason">
+                    <input
+                        id="build-product"
+                        type="checkbox"
+                        name="reasons"
+                        value="Build a new digital product"
+                        b-model="contact_reasons"
+                    />
+                    <label for="build-product"
+                        >Build a new digital product</label
+                    >
+                </div>
+
+                <div class="contact-reason">
+                    <input
+                        id="fast-development"
+                        type="checkbox"
+                        name="reasons"
+                        value="Speed up development & delivery"
+                        b-model="contact_reasons"
+                    />
+                    <label for="fast-development"
+                        >Speed up development & delivery</label
+                    >
+                </div>
+
+                <div class="contact-reason">
+                    <input
+                        id="revamp"
+                        type="checkbox"
+                        name="reasons"
+                        value="Revamp digital product"
+                        b-model="contact_reasons"
+                    />
+                    <label for="revamp">Revamp digital product</label>
+                </div>
+
+                <div class="contact-reason">
+                    <input
+                        id="digital-desgin"
+                        type="checkbox"
+                        name="reasons"
+                        value="Design or redesign digital product"
+                        b-model="contact_reasons"
+                    />
+                    <label for="digital-desgin"
+                        >Design or redesign digital product</label
+                    >
+                </div>
+
+                <div class="contact-reason">
+                    <input
+                        id="consulting"
+                        type="checkbox"
+                        name="reasons"
+                        value="Get expert advise"
+                        b-model="contact_reasons"
+                    />
+                    <label for="consulting">Get expert advise</label>
+                </div>
+
+                <div class="contact-reason">
+                    <input
+                        id="other-reason"
+                        type="checkbox"
+                        name="reasons"
+                        value="Something else"
+                        b-model="contact_reasons"
+                    />
+                    <label for="other-reason">Something else</label>
+                </div>
+            </div>
+
+            <div class="form-fields">
+                <div>
+                    <label for="client-name">Your name *</label>
+                    <input
+                        id="client-name"
+                        type="text"
+                        b-model="client_name"
+                        required
+                    />
+                </div>
+
+                <div>
+                    <label for="client-email">Your e-mail address *</label>
+                    <input
+                        id="client-email"
+                        type="email"
+                        b-model="client_email"
+                        required
+                    />
+                </div>
+
+                <div>
+                    <label for="client-phone">Your phone number *</label>
+                    <input
+                        id="client-phone"
+                        type="phone"
+                        b-model="client_phone"
+                        required
+                    />
+                </div>
+
+                <div>
+                    <label for="recommended-by"
+                        >Where did you hear about us? (optional)</label
+                    >
+                    <input
+                        id="recommended-by"
+                        type="text"
+                        b-model="recommended_by"
+                    />
+                </div>
+
+                <div>
+                    <label for="message"
+                        >Tell us about your project or the challenge you have
+                        *</label
+                    >
+                    <textarea
+                        id="message"
+                        b-model="message"
+                        rows="7"
+                        style="resize: none"
+                    ></textarea>
+                </div>
+            </div>
+
+            <p class="mt-30 text-14">
+                Your personal data will be processed in order to handle your
+                contact request, and will never be used to any other purpose.
+                Other information regarding the processing of personal data,
+                including information on your rights, can be found in our
+                Privacy Policy.
+            </p>
+
+            <p b-if="!isValid" b-if-deps="console.log('b-if-deps', isValid)" class="mt-30 text-14 text-bold text-red">
+                Please fill all required (*) fields to send us a message.
+            </p>
+
+            <div class="form-footer">
+                <button
+                    class="button-atom button-atom--primary"
+                    b-disabled="postingContact || !isValid"
+                    on-click-prevent="postContact"
+                >
+                    Send us a message
+                </button>
+                <p class="text-14">
+                    or contact us directly at
+                    <a href="mailto:contact@selectwebstudio.com"
+                        >contact@selectwebstudio.com</a
+                    >
+                </p>
+            </div>
+        </form>
+
+        <script>
+            document.addEventListener("brio:init", () => {
+                Brio.addProps("page", () => ({
+                    showSuccessMessage: false,
+                    postingContact: false,
+                    get isValid() {
+                        // Register dependencies
+                        this.requiredFields.forEach(depKey => this[depKey]);
+
+                        return this.requiredFields.every(key => this[key].length > 0);
+                    },
+
+                    async postContact() {
+                        this.postingContact = true;
+                        await $http.post(
+                            "https://directus.selectwebstudio.com/items/contact_form",
+                            this.requiredFields.map((key) => this[key])
+                        );
+                        this.showSuccessMessage = true;
+                        this.requiredFields.forEach((key) => {
+                            this[key] = Array.isArray(this[key]) ? [] : "";
+                        });
+                        this.postingContact = false;
+                    },
+
+                    requiredFields: [
+                        "contact_reasons",
+                        "client_name",
+                        "client_email",
+                        "client_phone",
+                        "message",
+                    ],
+
+                    contact_reasons: [],
+                    client_name: "",
+                    client_email: "",
+                    client_phone: "",
+                    recommended_by: "",
+                    message: "",
+                }));
+            });
+        </script>
+
+        <script type="module" src="/src/cdn.ts"></script>
+    </body>
+</html>

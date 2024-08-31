@@ -85,11 +85,11 @@ type ListenerFunctions = Map<ListenerFunction, number>;
 type AccessedProp = [any, string|number|symbol];
 
 type StateObject = {
-    // Parent state, used for scope resolution.
-    proxied: any,
-    target: any,
-    parent: any,
-    ignoreKeys: string[],
+    // // Parent state, used for scope resolution.
+    // proxied: any,
+    // target: any,
+    // parent: any,
+    // ignoreKeys: string[],
     // Listeners
     state: ListenerFunctions,
     props: {

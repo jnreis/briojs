@@ -9,7 +9,7 @@ import { TEXT, $PROPS, $REFS, TEXT_CONTENT, ATTR, CLEANUP, VALUE, STATUS, SKIP, 
 import { _directives } from "../directives";
 import { D, W } from "./object";
 import { _settings } from "../api";
-import { callHook, hasHook, setHook } from "./hook";
+import { callHook, setHook } from "./hook";
 
 // Raw values are evaluated only once in production mode, but are evaluated every time they are updated in development mode
 export const vnodes : VNodes = new Map();
@@ -47,16 +47,26 @@ export let wrapper = (
     // The context. Which most likely refers to reactive properties.
     let evaluation = evaluate(vnode, attrValue);
 
-    let attrNameDeps = attrName+'-deps';
-
     // Create a new effect, and save the cleanup function.
     // This sets up the reactivity.
     saveCleanup(vnode, effect(
         () => callHook($el, attrName, evaluation),
         // Get the dependencies, if any
-        (hasHook($el, attrNameDeps) ? () => callHook($el, attrNameDeps, evaluation) : undefined)
+        getDeps(vnode, attrName)
     ));
 }
+
+/**
+ * Get the dependencies of an attribute
+ */
+export let getDeps = (vnode: VNode, attrName: string) => {
+    let attrNameDeps = attrName + '-deps';
+    let deps = getAttr(vnode.$el, attrNameDeps);
+    if (deps) {
+        delAttr(vnode.$el, attrNameDeps);
+        return evaluate(vnode, deps, '', true)[0];
+    }
+};
 
 /**
  * Walks up the DOM tree to find the closest vnode

@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.21.0] - 2024-08-31
+- [REVERSED] The custom prototype chain/enheritance system was removed from the reactivity system due to unexpected behaviors, ever-growing complexity, and bundle size.
+- Reactivity system: async listeners are now supported and will be awaited before the next listener is called.
+- Bind directive: the "disabled" will not longer be forced. It will only be set if the value evaluates to true.
+- Model directive: Quick fix on isCheckboxGroup.
+
 ## [0.20.0] - 2024-08-24
 - Child $props were not reacting to changes when the prop belonged to a parent $props.
 - State will no longer attempt to observe getters and setters.

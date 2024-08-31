@@ -36,7 +36,7 @@ export { api } from './api';
 // - [x] - create the ability to add any number of interceptor functions at any stage of the hydration and lifecycle steps for each attribute.
 // - [x] - create a way to remove interceptor functions programmatically.
 
-// - [x] Implement my own version of the prototype chain to avoid the createContext function. Do this by passing the parent object to the child object.
+// - [x] [FAILED, REVERSED] Implement my own version of the prototype chain to avoid the createContext function. Do this by passing the parent object to the child object.
 
 // - [x] Implement a `$before` and `$after` methods to run functions before and after a directive is executed.
 //       - Syntax: `$before|$after($el:Node, directiveName:string, middlewareFn:Function, removeFn:Function)`.

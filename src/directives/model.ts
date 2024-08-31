@@ -1,5 +1,5 @@
 import { evaluate } from '../tools/evaluation';
-import { saveCleanup } from '../tools/hydration';
+import { getDeps, saveCleanup } from '../tools/hydration';
 import { entries, has, logger, size, wait } from '../tools';
 import { arrayAdd, arrayFrom, each } from '../tools/array';
 import { listen, onCompositionStart, onCompositionEnd, getAttr, q } from '../tools/dom';
@@ -142,7 +142,7 @@ export let hydrateModel = (vnode: VNode, attrName: string, attrValue: string) =>
     let isCheckboxOrRadio = isInput([CHECKBOX,RADIO]);
 
     let getCheckboxGroup = () => q(INPUT+`[type="${CHECKBOX}"][name="${node.name}"]`);
-    let isCheckboxGroup = () => isInput(CHECKBOX) && size(getCheckboxGroup()) > 1;
+    let isCheckboxGroup = () => isInput(CHECKBOX) && size(arrayFrom(getCheckboxGroup())) > 1;
 
     /** Special validation to warn when the reactive value is not the expected type */
     let validate = () => {
@@ -240,7 +240,7 @@ export let hydrateModel = (vnode: VNode, attrName: string, attrValue: string) =>
 
     // Save the effect
     // * Note: wait to save the effect until the node is fully hydrated because the model directive may depend on the bind directive to bind the value attribute, which happens after the model directive.
-    wait(() => saveCleanup(vnode, effect(watchFn)), 10); // 1ms is enough, but give it a little extra time to be safe
+    wait(() => saveCleanup(vnode, effect(watchFn, getDeps(vnode, attrName))), 10); // 1ms is enough, but give it a little extra time to be safe
 
 
     // UPDATES THE PROP

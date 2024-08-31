@@ -29,9 +29,9 @@ export let hydrateBind = (vnode: VNode, attrName: string, attrValue: string) => 
          * Always set the DOM property for these attributes. No matter what the value is.
          * Explanation:
          * - Updating the "src" property normalizes the path and ensures the new resource is loaded
-         * - The properties "value", "checked", "selected", and "disabled" reflect the current state of the element
+         * - The properties "value", "checked", and "selected" reflect the current state of the element
          */
-        let forceBind = has(['src', VALUE, CHECKED, SELECT+'ed', 'disabled'], prop);
+        let forceBind = has(['src', VALUE, CHECKED, SELECT+'ed'], prop);
 
         // Set attribute
         if (value || forceBind) {

@@ -1,10 +1,10 @@
-import { CALLBACK, getStateObject, setStateObject, removePropertyListeners, isState, findStateObject, getStateKeys, stateObjects } from '.';
+import { CALLBACK, getStateObject, setStateObject, removePropertyListeners, isState, stateObjects } from '.';
 import { trackProps, accessedProps } from './track';
 import { deepEqual, has } from '../tools';
-import { arrayAdd, arrayFrom, each } from '../tools/array';
-import { R, getDescriptor, getKey, getKeys } from '../tools/object';
+import { arrayAdd, arrayFrom } from '../tools/array';
+import { R, createContext, getKey, getKeys } from '../tools/object';
 import { isArray, isObject, isUndefined, isFunction } from '../tools/typeCheck';
-import { CREATE, DELETE, DELETE_PROPERTY, GET_OWN_PROPERTY_DESCRIPTOR, IGNORE_KEYS, PARENT, PROPS, PROXIED, STATE, TARGET, UPDATE } from '../tools/constants';
+import { CREATE, DELETE, DELETE_PROPERTY, IGNORE_KEYS, PARENT, PROPS, PROXIED, STATE, UPDATE } from '../tools/constants';
 
 type StateOptions = { parent?: any, ignoreKeys?: string[] };
 
@@ -38,32 +38,17 @@ export let state = (target: any, options?: StateOptions) => {
 
     // Proxy handler
     let handler = {
-        has(_: any, prop: string): boolean {
-            let stateObject = findStateObject(proxied, prop);
-            return R.has(stateObject[TARGET], prop);
-        },
-        [GET_OWN_PROPERTY_DESCRIPTOR](_: any, prop: string) {
-            let stateObject = findStateObject(proxied, prop);
-            return getDescriptor(stateObject[TARGET], prop, R);
-        },
-        ownKeys(_: any): (string | symbol)[] {
-            return getStateKeys(proxied);
-        },
-        get(_: any, prop: string): any {
-
-            let stateObject = findStateObject(proxied, prop);
+        get(target: any, prop: string): any {
 
             // Register the accessed property
-            if (trackProps && has(getKeys(stateObject[TARGET]), prop))
-                arrayAdd(accessedProps, [stateObject[PROXIED], prop]);
+            if (trackProps && has(getKeys(target), prop))
+                arrayAdd(accessedProps, [proxied, prop]);
 
-            return R.get(stateObject[TARGET], prop, stateObject[PROXIED]);
+            return R.get(target, prop, proxied);
         },
-        set(_: any, prop: string, newValue: any): boolean {
+        set(target: any, prop: string, newValue: any): boolean {
 
-            let stateObject = findStateObject(proxied, prop);
-
-            let oldValue = stateObject[PROXIED][prop];
+            let oldValue = proxied[prop];
 
             // Do not set the new value if it is equal to the old value
             if (deepEqual(oldValue, newValue))
@@ -71,10 +56,10 @@ export let state = (target: any, options?: StateOptions) => {
 
             // Set the storage state if a callback is present
             if (hasStorageCallback(newValue))
-                newValue = newValue(stateObject[PROXIED], prop);
+                newValue = newValue(proxied, prop);
 
             // Attempt to observe the new value if the property is not marked to be ignored
-            if (!has(stateObject[IGNORE_KEYS], prop))
+            if (!has(ignoreKeys, prop))
                 newValue = state(newValue);
 
             // If an observed array/object is being reassigned to a new array/object, update the listeners.
@@ -85,21 +70,21 @@ export let state = (target: any, options?: StateOptions) => {
             }
 
             // Set the new value
-            let result: boolean = R.set(stateObject[TARGET], prop, newValue, stateObject[PROXIED]);
+            let result: boolean = R.set(target, prop, newValue, proxied);
 
             // Notify computed functions about property changes
-            notifyListeners(stateObject, prop, newValue, oldValue);
+            notifyListeners(getStateObject(proxied), prop, newValue, oldValue);
 
             return result;
         },
-        [DELETE_PROPERTY](_: any, prop: string) {
+        [DELETE_PROPERTY](target: any, prop: string) {
 
-            let stateObject = findStateObject(proxied, prop);
+            let stateObject = getStateObject(proxied);
 
-            let oldValue = stateObject[TARGET][prop];
+            let oldValue = target[prop];
 
             // Delete the property
-            let result = R[DELETE_PROPERTY](stateObject[TARGET], prop);
+            let result = R[DELETE_PROPERTY](target, prop);
 
             // Notify computed functions about property deletion
             notifyListeners(stateObject, prop, undefined, oldValue);
@@ -112,10 +97,10 @@ export let state = (target: any, options?: StateOptions) => {
     };
 
     // Create a proxy for the object/array
-    const proxied = new Proxy(target, handler);
+    const proxied = new Proxy(isState(parent) ? createContext(parent, target) : target, handler);
 
     // Add the new proxied state to the state objects
-    setStateObject(proxied, target, ignoreKeys, parent);
+    setStateObject(proxied /* , target, ignoreKeys, parent */);
 
     // Observe nested arrays/objects
     for (let prop of getKeys(target)) {
@@ -162,7 +147,7 @@ let isArrayOrObject = (value: any) =>
     isArray(value) || isObject(value);
 
 /** Notify state listeners */
-let _notifyListeners = (listeners: ListenerFunctions, context: any) => {
+let _notifyListeners = async (listeners: ListenerFunctions, context: any) => {
     // Convert the map to an array
     let fns = arrayFrom(listeners) as [ListenerFunction, number][];
 
@@ -170,7 +155,7 @@ let _notifyListeners = (listeners: ListenerFunctions, context: any) => {
     fns.sort((a, b) => b[1] - a[1]);
 
     // Call the listeners by priority
-    each(fns, ([listener]) => listener(context));
+    for (let [listener] of fns) await listener(context);
 }
 
 /** Checks if a value has the callback symbol */

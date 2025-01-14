@@ -1,73 +1,61 @@
-import { has } from "../tools";
-import { lower, stringify } from "../tools/string";
+import { has } from '../tools';
+import { ERROR, TEXT, GET, DELETE, PUT, POST, PATCH, UNDEFINED, METHOD } from '../tools/constants';
+import { getKey } from '../tools/object';
+import { parse, queryString } from '../tools/string';
+import { isObject } from '../tools/typeCheck';
 
-let CONTENT_TYPE: "Content-Type" = "Content-Type";
-let CONTENT_TYPE_JSON: "application/json" = "application/json";
+let _http = (method: 'get' | 'delete' | 'post' | 'put' | 'patch') => 
+    async (endpoint: string, body?: any, options: HttpOptions = {}): Promise<any> => {
 
-type HttpHeaders = HeadersInit | { [key: string]: string };
+    let TEXT_STATUS: 'status' = 'status';
 
-interface HttpOptions extends RequestInit {
-    headers?: HttpHeaders;
-}
+    /**
+     * The name of the `parser` can be provided to explicitly specify how the response should be parsed.
+     * 
+     * By default, the response is parsed as `json` based on the content type.
+     */
+    let parser: ResponseParser = getKey(options, 'parser');
 
-interface HttpInstance {
-    get: (endpoint: string, headers?: HttpHeaders) => Promise<any>;
-    post: (endpoint: string, body: any, headers?: HttpHeaders) => Promise<any>;
-    put: (endpoint: string, body: any, headers?: HttpHeaders) => Promise<any>;
-    patch: (endpoint: string, body: any, headers?: HttpHeaders) => Promise<any>;
-    delete: (endpoint: string, headers?: HttpHeaders) => Promise<any>;
-}
+    // If the method is GET or DELETE and the body is an object, convert the object to a query string
+    if (has([GET, DELETE], method) && isObject(body)) {
+        endpoint += queryString(body);
+        body = UNDEFINED;
+    }
 
-export let $http = () => (baseUrl: string = '', globalOptions: HttpOptions = {}): HttpInstance => {
-    let _http = async (endpoint: string, config: HttpOptions = {}): Promise<any> => {
-        let url = `${baseUrl}${endpoint}`;
-        let finalConfig = {
-            ...globalOptions,
-            ...config,
-            headers: { ...globalOptions.headers, ...config.headers },
-        };
+    try {
+        let response = await fetch(endpoint, {...options, [METHOD]: method, body});
 
-        try {
-            let response = await fetch(url, finalConfig);
-
-            if (!response.ok) {
-                let error = new Error(`HTTP error! status: ${response.status}`);
-                (error as any).response = response;
-                throw error;
-            }
-
-            let contentType = response.headers.get(lower(CONTENT_TYPE));
-            if (contentType && has(contentType, CONTENT_TYPE_JSON)) {
-                return await response.json();
-            }
-
-            return await response.text();
-        } catch (error) {
-            // Add any additional error handling or logging here
+        // If the response is not ok, throw an error
+        if (!response.ok) {
+            let error = new Error(`HTTP ${ERROR}! ${TEXT_STATUS}: ${response[TEXT_STATUS]}`);
+            (error as any).response = response;
             throw error;
         }
-    };
 
-    let _noDataRequest = (method: "GET" | "DELETE") =>
-        (endpoint: string, headers: HttpHeaders = {}): Promise<any> =>
-            _http(endpoint, {
-                method,
-                headers,
-            });
+        // Get the response content
+        let content = await response[parser || TEXT]();
 
-    let _dataRequest = (method: "POST" | "PUT" | "PATCH") =>
-        (endpoint: string, body: any, headers: HttpHeaders = {}): Promise<any> =>
-            _http(endpoint, {
-                method,
-                headers: { [CONTENT_TYPE]: CONTENT_TYPE_JSON, ...headers },
-                body: stringify(body),
-            });
+        // If the parser is not provided
+        if (!parser) {
+            // Attempt to parse the response as JSON
+            try {
+                content = parse(content);
+            }
+            catch {}
+        }
 
-    return {
-        get: _noDataRequest("GET"),
-        post: _dataRequest("POST"),
-        put: _dataRequest("PUT"),
-        patch: _dataRequest("PATCH"),
-        delete: _noDataRequest("DELETE"),
-    };
+        return content;
+
+    }
+    catch (error) {
+        throw error;
+    }
+}
+
+export let http = {
+    get: _http(GET),
+    post: _http(POST),
+    put: _http(PUT),
+    [PATCH]: _http(PATCH),
+    [DELETE]: _http(DELETE)
 };

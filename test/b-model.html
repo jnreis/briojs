@@ -21,154 +21,168 @@
         }
     </style>
 </head>
-<body>
+<body b-hydrate>
+
+    <script b-script>
+        async () => {
+            $plugins.type = (value) => Object.prototype.toString.call(value).slice(8, -1).toLowerCase();
+        }
+    </script>
+
+    <!-- <script b-script type="brio" src="/dist/mask.money.js"></script> -->
 
     <!-- Single Select -->
     <div b-props="{state: null, options: ['Brio.js', 1.2, null, true, false]}">
-        <h4>Single Select: {{state}} ({{$type(state)}})</h4>
-        <select b-model="state">
-          <option b-each="option in options" b-value="option">{{option}}</option>
+        <h4>Single Select: {{$props.state}} ({{$plugins.type($props.state)}})</h4>
+        <select b-model="$props.state">
+          <option b-each="option in $props.options" bind-value="$each.option">{{$each.option}}</option>
         </select>
     </div>
 
     <!-- Multiple Select -->
     <div b-props="{state: null, options: ['Brio.js', 1.2, null, true, false]}">
-        <h4>Multiple Select: {{state}} ({{$type(state)}})</h4>
-        <select b-model="state" multiple>
-          <option b-each="option in options" b-value="option">{{option}}</option>
+        <h4>Multiple Select: {{$props.state}} ({{$plugins.type($props.state)}})</h4>
+        <select b-model="$props.state" multiple>
+          <option b-each="option in $props.options" bind-value="$each.option">{{$each.option}}</option>
         </select>
     </div>
 
     <!-- Single Checkbox -->
     <div b-props="{state: null, options: ['Brio.js', 1.2, null, true, false]}">
-        <h4>Single Checkbox: {{state}} ({{$type(state)}})</h4>
-        <div b-each="option in options" b-uid="['single-checkbox']">
-            <input type="checkbox" b-id="$uid('single-checkbox')" b-name="$uid('single-checkbox')" b-value="option" b-model="state">
-            <label b-for="$uid('single-checkbox')">The {{$type(option)}} {{option}}</label><br>
+        <h4>Single Checkbox: {{$props.state}} ({{$plugins.type($props.state)}})</h4>
+        <div b-each="option in $props.options" b-uid="['single-checkbox']">
+            <input type="checkbox" bind-id="$uid('single-checkbox')" bind-name="$uid('single-checkbox')" bind-value="$each.option" b-model="$props.state">
+            <label bind-for="$uid('single-checkbox')">The {{$plugins.type($each.option)}} {{$each.option}}</label><br>
         </div>
     </div>
 
     <!-- Multiple Checkbox -->
     <div b-props="{state: null, options: ['Brio.js', 1.2, null, true, false]}">
-        <h4>Multiple Checkbox: {{state}} ({{$type(state)}})</h4>
-        <div b-each="option in options" b-uid="['multiple-checkbox']">
-            <input type="checkbox" b-id="$uid('multiple-checkbox')" name="multiple-checkbox" b-value="option" b-model="state">
-            <label b-for="$uid('multiple-checkbox')">The {{$type(option)}} {{option}}</label><br>
+        <h4>Multiple Checkbox: {{$props.state}} ({{$plugins.type($props.state)}})</h4>
+        <div b-each="option in $props.options" b-uid="['multiple-checkbox']">
+            <input type="checkbox" bind-id="$uid('multiple-checkbox')" name="multiple-checkbox" bind-value="$each.option" b-model="$props.state">
+            <label bind-for="$uid('multiple-checkbox')">The {{$plugins.type($each.option)}} {{$each.option}}</label><br>
         </div>
     </div>
 
     <!-- Radio Input -->
     <div b-props="{state: null, options: ['Brio.js', 1.2, null, true, false]}">
-        <h4>Radio Input: {{state}} ({{$type(state)}})</h4>
-        <div b-each="option in options" b-uid="['radio-input']">
-            <input type="radio" b-id="$uid('radio-input')" b-value="option" b-model="state">
-            <label b-for="$uid('radio-input')">The {{$type(option)}} {{option}}</label><br>
+        <h4>Radio Input: {{$props.state}} ({{$plugins.type($props.state)}})</h4>
+        <div b-each="option in $props.options" b-uid="['radio-input']">
+            <input type="radio" bind-id="$uid('radio-input')" bind-value="$each.option" b-model="$props.state">
+            <label bind-for="$uid('radio-input')">The {{$plugins.type($each.option)}} {{$each.option}}</label><br>
         </div>
     </div>
 
     <!-- Text input -->
-    <div b-props="{state: null}">
-        <h4>Text input: {{state}} ({{$type(state)}})</h4>
-        <input type="text" b-model="state">
+    <div b-props="{state: '12345'}">
+        <h4>Text input: {{$props.state}} ({{$plugins.type($props.state)}})</h4>
+        <input
+            type="text"
+            b-model="$props.state"
+            b-mask="money"
+            b-effect="console.warn('MASK EFFECT:', $props.state)"
+            on-mask="console.warn('on-mask', $event.detail.value, $event.detail.output)"
+        >
     </div>
 
     <!-- Textarea -->
     <div b-props="{state: ''}">
-        <h4>Multiline Textarea ({{$type(state)}})</h4>
-        <p style="white-space: pre-line;">{{state}}</p>
-        <textarea b-model="state" rows="5" cols="30"></textarea>
+        <h4>Multiline Textarea ({{$plugins.type($props.state)}})</h4>
+        <p style="white-space: pre-line;">{{$props.state}}</p>
+        <textarea b-model="$props.state" rows="5" cols="30" b-mask="&2-&2-&5"></textarea>
     </div>
 
     <!-- Number input -->
     <div b-props="{state: null}">
-        <h4>Number input: {{state}} ({{$type(state)}})</h4>
-        <input type="number" b-model="state">
+        <h4>Number input: {{$props.state}} ({{$plugins.type($props.state)}})</h4>
+        <input type="number" b-model="$props.state" b-options="{'b-model': {raw: true} }">
     </div>
 
     <!-- Range input -->
     <div b-props="{state: null}">
-        <h4>Range input: {{state}} ({{$type(state)}})</h4>
-        <input type="range" b-model="state">
+        <h4>Range input: {{$props.state}} ({{$plugins.type($props.state)}})</h4>
+        <input type="range" b-model="$props.state">
     </div>
 
     <!-- Email input -->
     <div b-props="{state: null}">
-        <h4>Email input: {{state}} ({{$type(state)}})</h4>
-        <input type="email" b-model="state">
+        <h4>Email input: {{$props.state}} ({{$plugins.type($props.state)}})</h4>
+        <input type="text" b-model="$props.state" b-options="{'b-model': {trim: true} }" b-effect="console.warn(`'${$props.state}'`)">
     </div>
 
     <!-- Tel input -->
     <div b-props="{state: null}">
-        <h4>Tel input: {{state}} ({{$type(state)}})</h4>
-        <input type="tel" b-model="state">
+        <h4>Tel input: {{$props.state}} ({{$plugins.type($props.state)}})</h4>
+        <input type="tel" b-model="$props.state">
     </div>
 
     <!-- Password input -->
     <div b-props="{state: null}">
-        <h4>Password input: {{state}} ({{$type(state)}})</h4>
-        <input type="password" b-model="state">
+        <h4>Password input: {{$props.state}} ({{$plugins.type($props.state)}})</h4>
+        <input type="password" b-model="$props.state">
     </div>
 
     <!-- Search input -->
     <div b-props="{state: null}">
-        <h4>Search input: {{state}} ({{$type(state)}})</h4>
-        <input type="search" b-model="state">
+        <h4>Search input: {{$props.state}} ({{$plugins.type($props.state)}})</h4>
+        <input type="search" b-model="$props.state">
     </div>
 
     <!-- Url input -->
     <div b-props="{state: null}">
-        <h4>Url input: {{state}} ({{$type(state)}})</h4>
-        <input type="url" b-model="state">
+        <h4>Url input: {{$props.state}} ({{$plugins.type($props.state)}})</h4>
+        <input type="url" b-model="$props.state">
     </div>
 
     <!-- File input -->
     <div b-props="{state: null}">
-        <h4>File input: {{state}} ({{$type(state)}})</h4>
-        <input type="file" b-model="state">
+        <h4>File input: {{$props.state}} ({{$plugins.type($props.state)}})</h4>
+        <input type="file" b-model="$props.state">
     </div>
 
     <!-- Color input -->
     <div b-props="{state: '#ffffff'}">
-        <h4>Color input: {{state}} ({{$type(state)}})</h4>
-        <input type="color" b-model="state">
+        <h4>Color input: {{$props.state}} ({{$plugins.type($props.state)}})</h4>
+        <input type="color" b-model="$props.state">
     </div>
 
     <!-- Date input -->
     <div b-props="{state: null}">
-        <h4>Date input: {{state}} ({{$type(state)}})</h4>
-        <input type="date" b-model="state">
+        <h4>Date input: {{$props.state}} ({{$plugins.type($props.state)}})</h4>
+        <input type="date" b-model="$props.state">
     </div>
 
     <!-- Time input -->
     <div b-props="{state: null}">
-        <h4>Time input: {{state}} ({{$type(state)}})</h4>
-        <input type="time" b-model="state">
+        <h4>Time input: {{$props.state}} ({{$plugins.type($props.state)}})</h4>
+        <input type="time" b-model="$props.state">
     </div>
 
     <!-- Datetime input -->
     <div b-props="{state: null}">
-        <h4>Datetime input: {{state}} ({{$type(state)}})</h4>
-        <input type="datetime-local" b-model="state">
+        <h4>Datetime input: {{$props.state}} ({{$plugins.type($props.state)}})</h4>
+        <input type="datetime-local" b-model="$props.state">
     </div>
 
     <!-- Month input -->
     <div b-props="{state: null}">
-        <h4>Month input: {{state}} ({{$type(state)}})</h4>
-        <input type="month" b-model="state">
+        <h4>Month input: {{$props.state}} ({{$plugins.type($props.state)}})</h4>
+        <input type="month" b-model="$props.state">
     </div>
 
     <!-- Week input -->
     <div b-props="{state: null}">
-        <h4>Week input: {{state}} ({{$type(state)}})</h4>
-        <input type="week" b-model="state">
+        <h4>Week input: {{$props.state}} ({{$plugins.type($props.state)}})</h4>
+        <input type="week" b-model="$props.state">
     </div>
 
     <!-- Hidden input -->
     <div b-props="{state: null}">
-        <h4>Hidden input: {{state}} ({{$type(state)}})</h4>
-        <input type="hidden" b-model="state">
+        <h4>Hidden input: {{$props.state}} ({{$plugins.type($props.state)}})</h4>
+        <input type="hidden" b-model="$props.state">
     </div>
 
-    <script type="module" src="/src/cdn.ts"></script>
+    <script type="module" src="/src/index.ts"></script>
 </body>
 </html>

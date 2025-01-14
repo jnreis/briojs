@@ -1,0 +1,1 @@
+this.directive=this.directive||{};this.directive.uppercase=function(e){"use strict";let t=(r,i,c,a)=>{a.evalEffect(r,i,c,s=>([p])=>{s.textContent=p().toUpperCase()})};try{$set.directive("b-uppercase",t)}catch{console.error('Could not set the "b-uppercase" directive.')}return e.hydrateUpperCase=t,Object.defineProperty(e,Symbol.toStringTag,{value:"Module"}),e}({});

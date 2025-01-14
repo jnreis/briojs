@@ -11,19 +11,19 @@
     <div b-props="{ person: 'Jhonathan', people: ['John','Jane','James']}">
         <pre>{{ JSON.stringify($props) }}</pre>
         <div class="cards">
-            <div class="card" b-each="person, index in people" b-props="{isActive: false}">
-                <p>{{index}} - {{ person }}</p>
-                <p>isActive: {{ isActive }}</p>
-                <button on-click="person = 'Jack'; isActive = true">Make it Jack</button>
+            <div class="card" b-each="person, index in $props.people" b-props="{isActive: false}">
+                <p>{{$each.index}} - {{ $each.person }}</p>
+                <p>isActive: {{ $props.isActive }}</p>
+                <button on-click="$each.person = 'Jack'; $props.isActive = true">Make it Jack</button>
             </div>
         </div>
         <div class="card mt-3">
-            <p>The "person" prop is different from the "person" variable in the b-each loop: {{ person }}</p>
-            <button on-click="person = 'Jack'">Make it Jack</button>
+            <p>The "person" prop is different from the "person" variable in the b-each loop: {{ $props.person }}</p>
+            <button on-click="$props.person = 'Jack'">Make it Jack</button>
         </div>
     </div>
 
-    <script type="module" src="/src/cdn.ts"></script>
+    <script type="module" src="/src/index.ts"></script>
 
     <style>
         body {

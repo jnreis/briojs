@@ -1,11 +1,23 @@
-import { wrapper } from '../tools/hydration';
-import { getParent } from '../tools/dom';
-import { DISPLAY, STYLE } from '../tools/constants';
 import { wait } from '../tools';
+import { DISPLAY, EVAL_EFFECT, STYLE } from '../tools/constants';
+import { getParent, getStyle } from '../tools/dom';
 
-export let hydrateShow = (vnode: VNode, attrName: string, attrValue: string) => {
+/**
+ * b-show is the same as b-if but the element is not removed from the DOM
+ * 
+ * Must reference a prop, method, or be an expression that returns a value that can be converted to a boolean
+ */
+export let hydrateShow = (vnode: VNode, attrName: string, attrValue: string, tools: HydrationTools) => {
 
-    wrapper(vnode, attrName, attrValue, (node) => ([call]) => {
+    // Get the initial display value
+    let initialDisplay = getStyle(vnode.el)[DISPLAY];
+
+    // If the initial display value is 'none', set it to 'block'
+    // * This is necessary because the 'none' value is used to hide the element
+    if (initialDisplay == 'none') initialDisplay = 'block';
+
+    // Evaluate the attribute value as an effect
+    tools[EVAL_EFFECT](vnode, attrName, attrValue, (node: HTMLElement) => ([call]: any) => {
         // Get the value
         let value = call();
 
@@ -16,7 +28,7 @@ export let hydrateShow = (vnode: VNode, attrName: string, attrValue: string) => 
         // * This is necessary for some directives to work properly (e.g. `on-click-outside`)
         wait(() => {
             // Show or hide the element
-            node[STYLE][DISPLAY] = value ? '' : 'none';
+            node[STYLE][DISPLAY] = value ? initialDisplay : 'none';
         });
     });
 }

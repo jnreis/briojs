@@ -1,77 +1,211 @@
-import { ATTRIBUTE, COMPOSING, DISPLAY, GET_COMPUTED_STYLE, INPUT, OPACITY, TARGET } from "./constants";
-import { D, W } from "./object";
-import { isElementNode } from "./typeCheck";
+import { has, slice } from ".";
+import { arrayFrom, arrayReverse, each } from "./array";
+import { COMPOSING, DISPLAY, HREF, HTML, INPUT, TARGET, TEXT, TEXT_CONTENT, AFTER, VALUE, CHECKED, SELECT, CLASS_LIST, REMOVE, GET_ATTRIBUTE, SET_ATTRIBUTE, REMOVE_ATTRIBUTE, ADD_EVENT_LISTENER, REMOVE_EVENT_LISTENER, INNER_HTML, OUTER_HTML, BEFORE, APPEND, INSERT_ADJACENT_HTML, CLONE_NODE, PARENT_NODE, PREVIOUS_SIBLING, NEXT_SIBLING, FIRST_CHILD, LAST_CHILD, CREATE_ELEMENT } from "./constants";
+import { D, L, W } from "./object";
+import { lower, replace, trim } from "./string";
+import { isElementNode, isString } from "./typeCheck";
 
-export let q = (selector: string, root: Node = D) =>
-    (root as HTMLElement).querySelectorAll(selector);
 
-export let closest = (node: Node, selector: string) => {
-    let el = isElementNode(node) ? node: getParent(node);
-    return el && (el as HTMLElement).closest(selector);
+/**
+ ** QUERYING NODES
+ */
+
+/** Query all elements that match a selector */
+export let queryAll = (selector: string, root: Node = D) =>
+    arrayFrom((root as HTMLElement).querySelectorAll(selector)) as Element[];
+
+/** Query the first element that matches a selector */
+export let query = (selector: string | Node, root: Node = D) => (
+    isString(selector) 
+        ? queryAll(selector as string, root)[0] 
+        : selector
+) as Element | undefined;
+
+
+/**
+ ** INSERTING NODES
+ */
+
+/**
+ * Insert nodes adjacent to an element
+ * 
+ * Comparison with insertHTML:
+ * - replaceWith     = outerHTML
+ * - replaceChildren = innerHTML
+ */
+export let insertNodes = (node: Element, position: 'before' | 'after' | 'prepend' | 'append' | 'replaceWith' | 'replaceChildren', ...content: string[]|Node[]) =>
+    node[position](...content);
+
+/**
+ * Insert HTML adjacent to an element
+ * 
+ * Comparison with insertNodes:
+ * - outerHTML   = replaceWith
+ * - innerHTML   = replaceChildren
+ * - beforebegin = before
+ * - afterend    = after
+ * - afterbegin  = prepend
+ * - beforeend   = append
+ */
+export let insertHTML = (node: Element, position: InsertPosition | 'outerHTML' | 'innerHTML', html: string) => {
+    if (position == INNER_HTML || position == OUTER_HTML) node[position] = html;
+    else node[INSERT_ADJACENT_HTML](position, html);
 }
 
-/** Append children to a parent node */
-export let appendChildren = (parent: Element, ...children: Node[]|string[]) =>
-    parent.append(...children);
-
-export let insertBefore = (parent: Node, child: Node, beforeChild: Node) =>
-    parent.insertBefore(child, beforeChild);
-
 export let insertNode = (node: Node, parent: Node, nextSibling?: Node|null) => {
-    if (nextSibling) {
-        insertBefore(parent, node, nextSibling);
-    } else {
-        appendChildren(parent as Element, node);
+    // If the next sibling was provided and is in the DOM, insert the node before it
+    if (nextSibling && getParent(nextSibling))
+        insertNodes(nextSibling as Element, BEFORE, node);
+
+    // If the next sibling was not provided or is not in the DOM, append the node to the parent
+    else insertNodes(parent as Element, APPEND, node);
+}
+
+export let cloneNode = (node: Node) =>
+    node[CLONE_NODE](true);
+
+/** Restore the position of a node in the DOM to the closest position it was before being moved or removed */
+export let restorePosition = (node: Node) => {
+    let parent = getParent(node);
+
+    if (parent) {
+        // Get the child nodes of the parent
+        let nodes = childNodes(parent!) as any[];
+
+        // Get the index of the target node
+        let index = nodes.indexOf(node);
+
+        // Get the nodes before the target node
+        let nodesBefore = arrayReverse(slice(nodes, 0, index) as any[]) as Element[];
+
+        // Get the nodes after the target node
+        let nodesAfter = slice(nodes, index + 1) as Element[];
+
+        // Return a function to insert the node in the correct position
+        return () => {
+            let inserted = false;
+
+            // Attempt to insert the node before the the after nodes
+            for (let nodeAfter of nodesAfter) {
+                if (getParent(nodeAfter) == parent) {
+                    insertNodes(nodeAfter, BEFORE, node);
+                    inserted = true;
+                    break;
+                }
+            }
+
+            // If the node was not inserted, attempt to insert the node after the before nodes
+            if (!inserted) {
+                for (let nodeBefore of nodesBefore) {
+                    if (getParent(nodeBefore) == parent) {
+                        insertNodes(nodeBefore, AFTER, node);
+                        inserted = true;
+                        break;
+                    }
+                }
+            }
+
+            // If the node was not inserted, append the node to the parent
+            if (!inserted) insertNodes(parent as Element, APPEND, node);
+        }
     }
 }
 
-export let removeChild = (parent: Node, child: Node) =>
-    parent.removeChild(child);
+export let eachAttribute = (element: HTMLElement, callback: (name: string, value: string) => void) =>
+    each(arrayFrom(element.attributes), ({name, value}) => callback(name, value));
+
+export let nodesBetween = (startNode: Node, endNode: Node, callback: FunctionType) => {
+    let currentNode = nextSibling(startNode);
+    while (currentNode && currentNode != endNode) {
+        callback(currentNode);
+        currentNode = nextSibling(currentNode);
+    }
+}
+
+export let removeNode = (node: HTMLElement | Text) =>
+    node[REMOVE]();
 
 export let getParent = (node: Node) =>
-    node.parentElement;
+    node[PARENT_NODE];
+
+export let previousSibling = (node: Node) =>
+    node[PREVIOUS_SIBLING];
 
 export let nextSibling = (node: Node) =>
-    node.nextSibling;
+    node[NEXT_SIBLING];
+
+export let firstChild = (node: Node) =>
+    node[FIRST_CHILD];
+
+export let lastChild = (node: Node) =>
+    node[LAST_CHILD];
+
+export let getNodeContent = (node: Node) =>
+    trim(node[TEXT_CONTENT] || '');
 
 /** Get the child nodes of a node as an array */
 export let childNodes = (node: Node) =>
     [...node.childNodes];
 
 export let getAttr = (node: HTMLElement, attr: string) =>
-    node.getAttribute(attr);
+    node[GET_ATTRIBUTE](attr);
 
-export let setAttr = (node: HTMLElement, attr: string, value: string) =>
-    node.setAttribute(attr, value);
+export let setAttr = (node: HTMLElement, attr: string, value: string, prop?: string|false) => {
+    // Set the DOM property
+    if (prop) (node as any)[prop] = value;
 
-export let findAttr = (node: HTMLElement, callback: FunctionType): [string, string] | undefined => {
-    for (let { name, value } of [...node[ATTRIBUTE + 's' as 'attributes']]) {
-        if (callback(name, value)) return [name, value];
-    }
+    // Set the attribute
+    node[SET_ATTRIBUTE](attr, value);
 }
 
 export let delAttr = (node: HTMLElement, attr: string) =>
-    node.removeAttribute(attr);
+    node[REMOVE_ATTRIBUTE](attr);
+
+export let setClass = (node: HTMLElement, className: string) =>
+    node[CLASS_LIST].add(className);
+
+export let delClass = (node: HTMLElement, className: string) =>
+    node[CLASS_LIST][REMOVE](className);
+
+export let createElement = (tagName: string, options?: ElementCreationOptions) =>
+    D[CREATE_ELEMENT](tagName, options);
+
+export let formData = (form?: HTMLFormElement, submitter?: HTMLElement | null) =>
+    new FormData(form, submitter);
+
+export let parseHTML = (html: string) =>
+    new DOMParser().parseFromString(html, TEXT+'/'+HTML as 'text/html');
+
+export let getTagName = (node: any) =>
+    lower(node.tagName || '');
 
 // Listen to an event on a node with a callback and return a clean up function
-export let listen = (node: HTMLElement, eventName: string, callback: (event: Event) => void, options?: boolean | AddEventListenerOptions) => {
-    node.addEventListener(eventName, callback, options)
-    return () => {
-        node.removeEventListener(eventName, callback)
-    }
+export let listen = (target: HTMLElement|string, eventName: string, callback: (event: Event) => void, options?: boolean | AddEventListenerOptions) => {
+    // Get the target element, if it is a string
+    if (isString(target)) target = query(target)! as HTMLElement;
+
+    // Add the event listener
+    (target  as HTMLElement)[ADD_EVENT_LISTENER](eventName, callback, options);
+
+    // Return a clean up function
+    return () => (target as HTMLElement)[REMOVE_EVENT_LISTENER](eventName, callback)
 }
 
 // Emit an event on a node
-export let emit = (node: HTMLElement, eventName: string, eventData?: any) =>
-    node.dispatchEvent(new CustomEvent(eventName, {bubbles: true, cancelable: true, detail: eventData}));
+export let emit = (target: HTMLElement|string, eventName: string, eventData?: any) =>
+    query(target)!.dispatchEvent(new CustomEvent(lower(replace(eventName, /[^a-z\d]/gi, '')), {
+        bubbles: true, 
+        cancelable: true, 
+        detail: eventData
+    }));
 
 // Traverse DOM tree
-export let walk = (node: Node, callback: (node: Node) => boolean | null) => {
+export let walk = async (node: Node, callback: WalkSyncCallback | WalkAsyncCallback) => {
     // If callback returns false, don't walk through child nodes
-    if (callback(node)) {
+    if (await callback(node)) {
         // Recursively walk through child nodes
         for (let child of childNodes(node)) {
-            walk(child, callback);
+            await walk(child, callback);
         }
     }
 }
@@ -87,8 +221,42 @@ export let onCompositionEnd = (e: Event) => {
     }
 }
 
+export let getStyle = (node: HTMLElement) =>
+    W.getComputedStyle(node);
+
 export let isElementVisible = (node: HTMLElement) => {
     // Check if element is hidden due to display, visibility, or opacity
-    let style = W[GET_COMPUTED_STYLE](node);
-    return !(!getParent(node) || style[DISPLAY] == 'none' || style.visibility == 'hidden' || style[OPACITY] == '0');
+    let style = getStyle(node);
+    return !(!getParent(node) || style[DISPLAY] == 'none' || style.visibility == 'hidden' || style.opacity == '0');
+}
+
+
+export let url = (_url: string | URL, base?: string | URL) =>
+    new URL(_url, base);
+
+export let href = (_url: string = '', part: 'href'|'origin'|'pathname'|'search' = HREF) =>
+    url(_url, L[HREF])[part];
+
+/**
+ * Check if a property assignment should be forced.
+ * 
+ * The following properties are forced: `src`, `value`, `checked`, and `selected`
+ * 
+ * Explanation:
+ * - Updating the `src` property normalizes the path and ensures the new resource is loaded
+ * - The properties `value`, `checked`, and `selected` reflect the current state of the element
+ */
+export let forcePropertyAssignment = (attrName: string) =>
+    has(['src', VALUE, CHECKED, SELECT+'ed'], attrName);
+
+export let cssNotAttr = (attrName: string, extraSelector: string = '') =>
+    `:not([${attrName}]${extraSelector})`;
+
+
+/**
+ * ! UNUSED. MAY BE REMOVED IN THE FUTURE
+ */
+export let closest = (node: Node, selector: string) => {
+    let el = isElementNode(node) ? node: getParent(node);
+    return el && (el as HTMLElement).closest(selector);
 }

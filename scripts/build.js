@@ -1,47 +1,84 @@
+// build.js
 import fs from 'fs';
-import { execSync } from 'child_process';
+import { build } from 'vite';
+import dts from 'vite-plugin-dts';
 
 const packageJsonPath = process.cwd() + '/package.json';
 const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
 
+const name = packageJson.name;
+
 let libs = [
     {
         entry: 'src/index.ts',
-        fileName: `${packageJson.name}.js`,
-        formats: ['es'],
+        name,
+        formats: ['es']
     },
     {
         entry: 'src/cdn.ts',
-        fileName: `${packageJson.name}.min.js`,
-        formats: ['iife'],
-    }
+        name: name + '.min',
+    },
 ];
 
-for (let lib of libs) {
+// Build plugins
+// Get all the .ts file in the src/plugins folder
+fs.readdirSync('src/plugins').forEach(moduleName => {
+
+    // Plugins are in the root of the plugins folder
+    if (moduleName.endsWith('.ts')) {
+        libs.push({
+            entry: `src/plugins/${moduleName}`,
+            name: moduleName.replace('.ts', ''),
+        });
+    }
+
+    // Plugins are in a subfolder of the plugins folder
+    else if (fs.lstatSync(`src/plugins/${moduleName}`).isDirectory()) {
+        fs.readdirSync(`src/plugins/${moduleName}`).forEach(pluginName => {
+            if (pluginName.endsWith('.ts')) {
+                libs.push({
+                    entry: `src/plugins/${moduleName}/${pluginName}`,
+                    name: moduleName + '.' + pluginName.replace('.ts', ''),
+                });
+            }
+        });
+    }
+});
+
+// Build with Vite
+const buildWithVite = async (lib) => {
+    await build({
+        publicDir: false,
+        // logLevel: 'silent',
+        build: {
+            emptyOutDir: false,
+            copyPublicDir: false,
+            lib: {
+                ...lib,
+                fileName: () => lib.name + ".js",
+            },
+            minify: "esbuild",
+            reportCompressedSize: false,
+            // sourcemap: true,
+        },
+        plugins: [
+          dts()
+        ]
+    });
+}
+
+for (const lib of libs) {
     try {
-        // Log build
-        console.log(`\n> Building ${lib.entry} to dist/${lib.fileName} ${lib.formats.includes('es') ? 'as ES module' : 'for CDN'}`);
 
-        // Update package.json
-        packageJson.viteBuild = lib;
+        if (!lib.formats) {
+            lib.formats = ['iife'];
+        }
 
-        // Write package.json
-        fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2));
-
-        // Build
-        execSync('tsc && vite build', { stdio: 'inherit' });
+        // Build with Vite
+        await buildWithVite(lib);
     }
     catch (error) {
-        // Log error
         console.error('Build failed:', error);
-
-        // Exit process
         process.exit(1);
     }
 }
-
-// Clear viteBuild
-packageJson.viteBuild = {};
-
-// Write package.json
-fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2));

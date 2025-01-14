@@ -1,37 +1,22 @@
-import { addPropertyListener, removeListener, isState, getStateListeners } from '.';
-import { logger } from '../tools';
-import { ARRAY, DELETE, OBJECT, STATE } from '../tools/constants';
+import { addPropertyListener, isState, addStateListener } from '.';
+import { logError } from '../tools';
+import { ARRAY, OBJECT, STATE, CANNOT__$CAP } from '../tools/constants';
 
 /**
- * Watches for changes to a specific key/index or an entire observed object/array and executes a callback when changes are detected.
+ * Watches for changes to a specific prop or an entire observed object/array and executes a function when changes are detected.
  *
  * @param proxied - The observed object/array.
- * @param prop - The key/index to watch. If `null` or empty string, watch for all changes to the observed object/array.
- * @param callback - The callback function to execute when the key/index is modified.
+ * @param prop - The key/index to watch. If `falsy` and not 0, watch for all changes to the observed object/array.
+ * @param listener - The function to execute when the prop is modified.
  * @returns cleanup - The disposer function to stop watching
  */
-export let watch = (proxied: any, prop: string | number | null, callback: ListenerFunction, priority: number = 0) => {
+export let watch = (proxied: any, prop: string | number | null, listener: ListenerFunction, priority: number = 0) =>
 
-    if (!isState(proxied)) {
-        logger(`Cannot watch non-${STATE} ${OBJECT}/${ARRAY}.`);
-        return () => {};
-    }
+    // If the proxied object is not an observed state, log an error and return an empty function
+    !isState(proxied) && !logError(CANNOT__$CAP + `watch non-${STATE} ${OBJECT}/${ARRAY}.`) ? () => {}
 
-    // If no key/index is specified, watch for all changes to the observed object/array
-    if (!prop && prop !== 0) {
+    // If the prop is falsy and not 0, watch for all changes to the observed object/array
+    : !prop && prop !== 0 ? addStateListener(proxied, listener, priority)!
 
-        let stateListeners = getStateListeners(proxied);
-
-        // Add the callback to the observed object/array listeners
-        stateListeners.set(callback, priority);
-
-        // Return the disposer function to stop watching
-        return () => stateListeners[DELETE](callback);
-    }
-
-    // Watch for changes to a specific key/index
-    addPropertyListener(proxied, prop, callback, priority);
-
-    // Return the disposer function to stop watching
-    return () => removeListener(callback);
-}
+    // Otherwise watch for changes to a specific prop
+    : addPropertyListener(proxied, prop, listener, priority);

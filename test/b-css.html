@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <div b-data="{show: true}" b-css="['showTrue', 'showTrue2']" class="container">
+        <h1>Heading 1</h1>
+        <h2>Heading 2</h2>
+        <button on-click="$data.show = !$data.show">
+            Toggle 
+            {{$data.show}}
+        </button>
+    </div>
+
+    <div
+        class="container"
+        b-data="{name: 'Jhonathan', show: false}"
+        b-css="['showTrue', 'showTrue2']"
+        b-function="['data', 'props']"
+    >
+        <h1>Heading 1</h1>
+        <h2>Heading {{ $data.name }}</h2>
+        <button on-click="$data.show = !$data.show">Toggle {{$data.show}}</button>
+
+        <style b-css="showTrue2">
+            h2 {
+                color: {{ $data.show ? 'green' : 'purple' }};
+            }
+        </style>
+    </div>
+
+    <script b-load-once type="module" src="/src/index.ts"></script>
+
+    <script>
+        window.addEventListener('brio', () => {
+
+            // Create a new app
+            let {$set, $dom} = brio.newApp();
+
+            // Add a new style
+            $set.css('showTrue', /* css */`
+                &.container {
+                    background-color: #f0f0f0;
+                    margin: 20px 0;
+                    padding: 10px;
+                }
+                h1 {
+                    color: {{ $data.show ? 'blue' : 'red' }};
+                }`
+            );
+
+            // Add a new script: props
+            $set.function('props', async ({$props}) => {
+                console.log('$props', $props);
+
+                return 'PROPS FUNCTION';
+            });
+
+            // Hydrate the app
+            $dom.hydrate('body');
+        });
+    </script>
+</body>
+</html>

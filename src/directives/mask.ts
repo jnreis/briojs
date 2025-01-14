@@ -1,252 +1,520 @@
-import { evaluate } from "../tools/evaluation";
-import { saveCleanup } from "../tools/hydration";
-import { logger, size, slice, wait } from "../tools";
-import { each } from "../tools/array";
-import { CAN_ONLY_BE_USED_ON, DIRECTIVE, ELEMENT, INPUT, SELECTION_START, TEXTAREA, VALUE } from "../tools/constants";
-import { listen } from "../tools/dom";
-import { deleteKey, getKeys } from "../tools/object";
-import { isStringAlpha, isStringNumeric, replaceSubstring, split, startsWith, trim } from "../tools/string";
-import { isUndefined } from "../tools/typeCheck";
-import { callHook, setHook } from "../tools/hook";
+import { saveCleanup } from "../app";
+import { entries, has, logError, size, slice, wait } from "../tools";
+import { arrayAdd, find, indexOf, join } from "../tools/array";
+import { CAN_ONLY_BE_USED_ON, DIRECTIVE, ELEMENT, HOOKS, INPUT, MASK, OPTIONS, SELECTION_START, TEXTAREA, TOKENS, VALUE } from "../tools/constants";
+import { emit, listen } from "../tools/dom";
+import { getKey, getKeys, newRegExp } from "../tools/object";
+import { match, replace, split, startsWith } from "../tools/string";
 
-export let hydrateMask = (vnode: VNode, attrName: string, attrValue: string) => {
+/**
+ *  This is what I'm thinking for my mask directive:
+ *
+ *  Note 1: the mask syntax is purposely designed to be short, simple and easy to understand.
+ *  Note 2: for more complex scenarios, a function that returns the mask can be used.
+ *
+ *  Default Tokens: Note that the tokens object will be made available so tokens may be added or removed.
+ *  # = numbers
+ *  & = letters (unicode)
+ *  * = letters and numbers (unicode)
+ *
+ *  Quantifiers: Note that quantifiers only apply if the previous character is an unescaped token.
+ *  + = all characters that match the regex until another token is found
+ *  n = for example 3 would test each character until 3 characters matching the regex are found, if a character matches another token before 3 characters are matched it would return.
+ *
+ *  Escaping tokens and quantifiers:
+ *  - Add "\\" before a token or quantifier to escape it. It will be treated as a regular character.
+ *
+ *  Examples:
+ *  The mask "(#3) #3-#4" would take 7773334444 and turn into this (777) 333-4444. Or this mask "&+ &4" would be able to take in two works like John Doe.
+ *
+ *  The mask can be a string or a function that returns the string, which would allow for dynamic mask generation.
+ */
 
-    let $el: any = vnode.$el;
-    let [_B, MASK, modifier] = split(attrName, '-');
+/** */
+let OUTPUT: 'output' = 'output';
+let CURSOR: 'cursor' = 'cursor';
+let CHARACTER: 'character' = 'character';
+let QUANTIFIER: 'quantifier' = 'quantifier';
+let IS_TOKEN: 'isToken' = 'isToken';
+let IS_OPTIONAL: 'isOptional' = 'isOptional';
+let IS_MULTIPLE: 'isMultiple' = 'isMultiple';
+let PARTS: 'parts' = 'parts';
+
+/**
+ * TODO: The b-mask directive will be re-written taking as inspiration the Maska library.
+ * 
+ * @option tokens
+ * @option decimal   (default: `.`)
+ * @option thousands (default: `,`)
+ * @option precision (default: `2`)
+ */
+export let hydrateMask = (vnode: VNode, attrName: string, attrValue: string, tools: HydrationTools) => {
+
+    let $el: any = vnode.el;
+
+    let [setHook, playHook] = tools[HOOKS];
 
     // If the element has no value or selectionStart properties, return
     if (!(VALUE in $el && SELECTION_START in $el))
-        return logger(`The ${MASK} ${DIRECTIVE} ${CAN_ONLY_BE_USED_ON} ${TEXTAREA} ${ELEMENT}s and textual ${INPUT} types (text, email, etc.).`);
+        return logError('the', attrName, DIRECTIVE, CAN_ONLY_BE_USED_ON, TEXTAREA, ELEMENT + 's and textual', INPUT, 'types (text, email, etc.).');
 
-    let value: string;
-    let previousValue: string;
-    let cursorOffset: number;
+    // The mask to apply to the input value
     let mask = attrValue;
-    let dynamicMask: ($mask: ObjectType) => string;
-    /**
-     * Wildcards are characters that can be used in the mask and are used to determine which characters are valid.
-     */
-    let wildcards: ObjectType = {
-        '1': (input: string, index: number) => isStringNumeric(input[index]),
-        'a': (input: string, index: number) => isStringAlpha(input[index]),
-        '*': (input: string, index: number) => isStringNumeric(input[index]) || isStringAlpha(input[index]),
-    };
-    /**
-     * Keep only valid characters
-     */
-    let sanitize = (input: string) => {
-        let output = '',
-        w = getKeys(wildcards);
-        for (let i = 0; i < size(input); i++) {
-            if (w.some(c => wildcards[c](input, i))) {
-                output += input[i];
-            }
-        }
-        return output;
-    };
-    /**
-     * Create a mask for money
-     */
-    let money = (decimal = '.', thousands = ',', precision = 2) => {
 
-        // Remove imcompatible wildcards
-        each(['a', '*'], c => deleteKey(wildcards, c));
-
-        // Add negative wildcard
-        wildcards['-'] = (input: string, index: number) => index == 0 && trim(input[index]) == '-';
-
-        // Add decimal wildcard
-        wildcards[decimal] = (input: string, index: number) => input[index] == decimal;
-
-        // Overwrite `1` wildcard to remove leading zeros
-        wildcards['1'] = (input: string, index: number) => {
-            let char = input[index];
-            // Remove leading zeros
-            if (char == '0') {
-                // Check if zero(s) exist before a non-zero number.
-                // Also, handle the case where the input is negative.
-                let leadingZeros = trim(input).match(new RegExp(`^-?[0${thousands}]+[1-9]`));
-                // If the zero at the index is a leading zero, return false to remove it
-                return !(leadingZeros && index <= size(leadingZeros[0]) - 1);
-            }
-            // Check if the character is a number
-            return isStringNumeric(char);
-        };
-
-        // If the decimal and thousands separators are the same, update the thousands separator
-        if (decimal == ',' && thousands == ',') thousands = '.';
-
-        // Determine if the input is negative
-        let isNegative = startsWith(trim(value), '-'),
-
-        // Sanitize input: remove non-numeric characters and leading zeros
-        sanitizedValue = sanitize(value);
-
-        // Remove the negative sign, if it exists
-        if (isNegative) sanitizedValue = replaceSubstring(sanitizedValue, 0, 1);
-
-        // Split input into integer and decimal parts
-        let [integerPart, decimalPart] = split(sanitizedValue, decimal),
-
-        // Create the mask dynamically based on integer part and decimal precision
-        mask = '';
-
-        // Add the integer part to the mask
-        for (let i = 0; i < size(integerPart); i++) {
-            if (i > 0 && (size(integerPart) - i) % 3 == 0) {
-                mask += thousands;
-            }
-            mask += '1';
-        }
-
-        // Add the decimal part to the mask if it exists and precision is greater than 0.
-        // The decimal part length is determined by the precision.
-        if (!isUndefined(decimalPart) && precision > 0) {
-            mask += decimal;
-            if (size(decimalPart)) {
-                for (let i = 0; i < precision; i++) {
-                    mask += '1';
-                }
-            }
-        }
-
-        // Add the negative sign to the mask if the input is negative
-        if (isNegative) mask = '-' + mask;
-
-        return mask;
-    };
-    /**
-     * Apply the mask to the input
-     */
-    let applyMask = (input: string) => {
-        let output = '',
-        i = 0;
-
-        for (let m = 0; m < mask.length; m++) {
-            let maskChar = mask[m],
-            inputChar = input[i];
+    // Dynamic mask function
+    let dynamicMask: ($mask: MaskObject) => string;
+    if (tools.masks[mask]) dynamicMask = tools.masks[mask];
     
-            if (maskChar in wildcards) {
-                if (wildcards[maskChar](input, i)) {
-                    output += inputChar;
-                    i++;
-                }
-                // Stop if input character doesn't match mask
-                else break;
-            } else {
-                output += maskChar;
-                if (maskChar == inputChar) i++;
-            }
-        }
+    // Options
+    let options = vnode[OPTIONS][attrName] || {};
 
-        return output;
+    // Updated mask object
+    let $mask: MaskObject = {
+        ...options,
+        tokens: {...tools[TOKENS], ...options[TOKENS]},
+        mask,
+        [VALUE]: '',
+        [CURSOR]: $el[SELECTION_START],
+        [PARTS]: [],
+        [OUTPUT]: '',
     };
-    /**
-     * Make sure that the deleted character is a valid character.
-     * When one character is deleted and it's not a valid character, remove characters before it until a valid character is found and removed.
-     * A valid character is a character that matches a wildcard.
-     */
-    let deleteValidChar = () => {
-        if (size(previousValue) == size(value) + 1) {
-            // Find out what has changed
-            let deletedCharIndex = -1;
-            for (let p = 0; p < size(previousValue); p++) {
-                if (value[p] != previousValue[p]) {
-                    deletedCharIndex = p;
-                    break;
-                }
-            }
-
-            let w = getKeys(wildcards);
-            // If the deleted character is not a wildcard, remove the character before it
-            if (deletedCharIndex > -1 && !w.some(c => wildcards[c](previousValue, deletedCharIndex))) {
-                let validCharRemoved = false;
-                for (let i = deletedCharIndex -1; i >= 0; i--) {
-                    // A valid character was removed
-                    if (validCharRemoved) break;
-    
-                    // A valid character will be removed
-                    if (w.some(c => wildcards[c](value, i))) validCharRemoved = true;
-    
-                    // Remove the character
-                    value = replaceSubstring(value, i, i+1);
-                    cursorOffset--;
-                }
-            }
-        }
-    };
-    /**
-     * Get the number of valid characters before the cursor
-     */
-    let getCursorPosition = ($el: HTMLInputElement) => {
-        let cursorPosition = $el[SELECTION_START],
-        input = $el.value,
-        // Check how many valid characters are before the cursor
-        validCharsBeforeCursor = sanitize(slice(input, 0, cursorPosition || size(input)));
-        return validCharsBeforeCursor ? size(validCharsBeforeCursor) : 0;
-    };
-    /**
-     * Set the cursor before the next valid character after the last valid character
-     * example: 123-456-789 if the cursor is after the 3, it will be set before the 4 (the next valid character)
-     */
-    let setCursorPosition = ($el: HTMLInputElement, validChars: number) => {
-        let value = $el.value,
-        w = getKeys(wildcards),
-        nextChar = false;
-        for (let index = 0; index < size(value); index++) {
-            if (nextChar) {
-                index--;
-                $el.setSelectionRange(index, index);
-                break;
-            }
-            // If the character is valid, decrement the counter
-            if (w.some(c => wildcards[c](value, index))) {
-                if (validChars) validChars--;
-                else nextChar = true;
-            }
-        }
-    };
-
-    if (modifier == 'dynamic') {
-        dynamicMask = evaluate(vnode, attrValue, '$mask')[0];
-    }
-
-    // Get the initial value of the input
-    wait(() => previousValue = $el.value);
 
     setHook($el, attrName, () => {
 
         // Get the current value of the input
-        value = $el.value;
+        $mask[VALUE] = $el[VALUE];
 
         // If the value has not changed, return
-        if (value == previousValue) return;
+        if ($mask[VALUE] != $mask[OUTPUT]) {
 
-        // Reset the cursor offset
-        cursorOffset = 0;
+            // Reset the mask parts
+            $mask[PARTS] = [];
 
-        // If a character was deleted make sure it was a valid character
-        deleteValidChar();
+            // Get the current cursor position
+            $mask[CURSOR] = $el[SELECTION_START];
 
-        // If a dynamic mask is provided, use it to generate the mask
-        if (dynamicMask) mask = dynamicMask({money, sanitize, wildcards});
+            // If a dynamic mask is provided, use it to generate the mask
+            if (dynamicMask) dynamicMask($mask);
 
-        // Sanitize the value
-        let sanitizedValue = sanitize(value);
+            applyMask($mask);
 
-        // Get the cursor position before the input value changes
-        let newCursorPosition = getCursorPosition($el);
+            // Apply the mask to the value and save it for the next iteration
+            $el[VALUE] = $mask[OUTPUT];
 
-        // Apply the mask to the value and save it for the next iteration
-        $el.value = previousValue = applyMask(sanitizedValue);
+            // Set the cursor position
+            $el.setSelectionRange($mask[CURSOR], $mask[CURSOR]);
 
-        // Set the cursor position
-        setCursorPosition($el, newCursorPosition + cursorOffset);
+            // Emit the mask event
+            emit($el, MASK, $mask);
+        }
+
     });
 
+    wait(() => playHook($el, attrName), 7);
+
     // This listener will `capture` and process the input value before any other listeners.
-    let cleanup = listen($el, INPUT, () => callHook($el, attrName), true);
+    let cleanup = listen($el, INPUT, () => playHook($el, attrName), true);
 
     // Save cleanup function
     saveCleanup(vnode, cleanup);
 }
+
+// /** Mask Item: [character, quantifier, isToken, isOptional, isMultiple] */
+// type MaskItem = [string, number, boolean, boolean, boolean];
+
+/**
+ * Split a mask into an array of characters and quantifiers
+ * @returns `[character, quantifier, isToken, isOptional, isMultiple][]`
+ */
+let splitMask = (mask: string, tokens: ObjectType) => {
+
+    let result: MaskItem[] = [];
+
+    let ESCAPE = '\\';
+
+    for (let index = 0; index < size(mask); index++) {
+
+        // Get the character at the current index
+        let character = mask[index];
+
+        /** Mask Item: [character, quantifier, isToken, isOptional, isMultiple] */
+        let maskItem: MaskItem = {
+            [CHARACTER]: character,
+            [QUANTIFIER]: 1,
+            [IS_TOKEN]: false,
+            [IS_OPTIONAL]: false,
+            [IS_MULTIPLE]: false,
+        };
+
+        // Skip escape characters
+        if (character != ESCAPE || character == ESCAPE && mask[index + 1] == ESCAPE) {
+
+            // Check if the character is a token and not escaped
+            if (has(getKeys(tokens), character) && (mask[index - 1] != ESCAPE || mask[index - 2] == ESCAPE)) {
+
+                // Get the quantifier, if any
+                let matchQuantifier = match(slice(mask, index + 1) as string, /^\d+/)
+
+                // If a quantifier was found
+                if (matchQuantifier) {
+                    let quantifier = matchQuantifier[0];
+
+                    // Move the index to the end of the quantifier to skip it
+                    index += size(quantifier);
+
+                    // Add the quantifier to the mask item array
+                    // Note: + (multiple) means all characters that match the token's regex until the next mask character or another token is found
+                    // Note: ? (optional) means 0 or 1 character that matches the token's regex until the next mask character or another token is found
+                    maskItem[QUANTIFIER] = +quantifier;
+                }
+
+                // The character is a token
+                maskItem[IS_TOKEN] = true;
+
+                // Is the next character ? or +
+                let nextChar = mask[index + 1];
+
+                // The token is optional or multiple
+                if (nextChar == '?' || nextChar == '+') {
+                    maskItem[IS_OPTIONAL] = nextChar == '?';
+                    maskItem[IS_MULTIPLE] = nextChar == '+';
+                    index++;
+                }
+            }
+
+            // Save the mask token
+            arrayAdd(result, maskItem);
+        }
+    }
+
+    return result;
+}
+
+/**
+ * Get the next non-optional mask item
+ */
+let getNextRequiredMaskItem = (maskItems: MaskItem[], index: number): MaskItem | undefined =>
+    find(slice(maskItems, index + 1) as MaskItem[], maskItem => !maskItem[IS_OPTIONAL]);
+
+let matchMaskItem = (remainingInput: string, maskItem: MaskItem, tokens: MaskTokens) => {
+
+    let index = -1;
+
+    if (maskItem) {
+        let char = maskItem[CHARACTER];
+
+        if (maskItem[IS_TOKEN]) {
+            let matches = match(remainingInput, tokens[char]);
+            if (matches) {
+                index = matches.index!;
+            }
+        }
+        else index = indexOf(remainingInput, char);
+    }
+
+    return index;
+}
+
+let applyMask = ($mask: MaskObject) => {
+
+    let tokens = $mask[TOKENS];
+    let input = $mask[VALUE];
+    let cursor = $mask[CURSOR];
+
+    let maskItems = splitMask($mask[MASK], tokens);
+
+    let maskedOutput = '';
+
+    let remainingInput = input;
+
+    let cursorBefore = slice(input, cursor) as string;
+
+    // Iterate over the mask items
+    for (let [index, maskItem] of entries(maskItems)) {
+
+        let character = maskItem[CHARACTER];
+        let quantifier = maskItem[QUANTIFIER];
+
+        if (maskItem[IS_TOKEN]) {
+            if (quantifier > 0) {
+
+                // There are no remaining characters to match the token's regex
+                if (!remainingInput) break;
+
+                /**
+                 * Quantifiers: defaults to 1 if no quantifier is provided.
+                 * Fixed    (n): match exactly n characters. Don't stop until the required number of characters is reached.
+                 * Optional (?): match no more than n characters. Stop if the character being processed matches the next non-optional mask item.
+                 * Multiple (+): match at least n characters. Only stop after the required number of characters is reached and the character being processed matches the next non-optional mask item.
+                 */
+
+                // All the characters required by the token's quantifier
+                let unmaskedChars = '';
+
+                // let [isNextToken, nextToken] = maskItems[+index + 1] || [false, ''];
+
+                while (remainingInput && (quantifier > 0 || maskItem[IS_MULTIPLE])) {
+
+                    // The token matched enough characters
+                    let isSufficient = maskItem[IS_OPTIONAL] || quantifier < 1;
+
+                    // The index of the first character that matches the token's regex
+                    let charIndex = matchMaskItem(remainingInput, maskItem, tokens);
+
+                    // Look ahead at the next required mask item
+                    let nextRequiredMaskItem = isSufficient && charIndex > 0 && getNextRequiredMaskItem(maskItems, +index);
+                    let nextRequiredMaskItemIndex = matchMaskItem(remainingInput, nextRequiredMaskItem, tokens);
+
+                    // The remaining input doesn't contain the character
+                    // The next required mask matches a character before the character matched by the current mask item
+                    if (charIndex < 0 || (nextRequiredMaskItemIndex >= 0 && charIndex > nextRequiredMaskItemIndex)) {
+                        // The input is insufficient. Stop the process.
+                        if (!isSufficient) remainingInput = '';
+
+                        // Go to the next mask item
+                        break;
+                    }
+
+                    // The character is at the beginning of the input (index 0)
+                    if (!charIndex) {
+
+                        // Save unmasked character
+                        unmaskedChars += remainingInput[0];
+
+                        // Decrement the quantifier to stop the loop when the required number of characters is reached
+                        quantifier--;
+                    }
+
+                    // Remove the first character from the remaining input
+                    remainingInput = slice(remainingInput, 1) as string;
+
+                    // Get the cursor position
+                    if (cursorBefore == remainingInput) {
+                        cursor = size(maskedOutput + unmaskedChars);
+                    }
+                }
+
+                maskedOutput += unmaskedChars;
+                maskItem[VALUE] = unmaskedChars;
+            }
+        }
+        // There are characters to test against the mask item
+        else if (remainingInput) {
+
+            // Get the cursor position
+            if (cursorBefore == remainingInput) {
+                cursor = size(maskedOutput);
+            }
+
+            maskedOutput += character;
+            maskItem[VALUE] = character;
+
+            // Input starts with the static character
+            if (remainingInput[0] == character) {
+                remainingInput = slice(remainingInput, 1) as string;
+            }
+        }
+    }
+
+    // Preserve the cursor position if it's at the beginning or end of the input
+    $mask[CURSOR] = $mask[CURSOR] == 0 ? 0 : $mask[CURSOR] == size($mask[VALUE]) ? size(maskedOutput) : cursor;
+    $mask[OUTPUT] = maskedOutput;
+    $mask[PARTS] = maskItems;
+}
+
+export let money = ($mask: MaskObject) => {
+
+    let value = $mask[VALUE];
+
+    // Get the mask options
+    let decimal = getKey($mask, 'decimal', '.');
+    let thousands = getKey($mask, 'thousands', ',');
+    let precision = getKey($mask, 'precision', 2);
+
+    // Make sure the decimal separator is different from the thousands separator
+    if (decimal == ',') thousands = '.';
+    if (thousands == '.') decimal = ',';
+
+    // Split on the decimal separator
+    let valueParts = split(value, decimal);
+
+    // Get the integer part
+    let integer = valueParts[0];
+
+    // Determine if the integer is negative
+    let isNegative = startsWith(integer, '-');
+
+    // Remove non-numeric characters
+    integer = replace(integer, /\D/g, '');
+
+    // Remove leading zeros, but keep at least one zero
+    // Scenarios: '007' = '7', '000' = '0', '' = ''
+    integer = integer ? replace(integer, /^0+/, '') || '0' : integer;
+
+    // Check if the value has decimals
+    let hasDecimals = size(valueParts) > 1;
+
+    // Join the decimals back together
+    let decimals = hasDecimals ? join(slice(valueParts, 1) as string[], decimal) : '';
+
+    // Get the size of the integer part
+    let integerSize = size(integer);
+
+    // Create the mask dynamically based on integer part and decimal precision
+    let mask = isNegative ? '-' : '';
+
+    // Add the integer part to the mask
+    for (let i = 0; i < integerSize; i++) {
+
+        // Add the thousands separator every 3 numbers
+        if (i > 0 && (integerSize - i) % 3 == 0) mask += thousands;
+
+        // Add the number
+        mask += '#';
+    }
+
+    let tokens = $mask[TOKENS];
+
+    value = isNegative ? '-' + integer : integer;
+
+    // Add the decimal part to the mask, if precision is greater than 0.
+    if (precision > 0) {
+
+        // Add decimal token
+        tokens[decimal] = newRegExp(`\\${decimal}`);
+
+        // Add decimals to the value
+        if (hasDecimals) value += decimal + decimals;
+
+        // Add decimals to the mask
+        mask += decimal + '#' + precision;
+    }
+
+    $mask.mask = mask;
+
+    // Add negative token
+    if (isNegative) tokens['-'] = /-/;
+
+    // Ensure the # token is only numbers
+    tokens['#'] = /\d/;
+
+    // Replace the unwanted characters with an invalid character (∅) to remove them without changing the cursor position
+    let valueIndex = 0;
+    let newValue = '';
+    for (let char of $mask[VALUE]) {
+        if (char == value[valueIndex]) {
+            newValue += char;
+            valueIndex++;
+        }
+        else newValue += '∅';
+    }
+
+    $mask[VALUE] = newValue;
+}
+
+// let stringDiff = (previousValue: string, value: string) => {
+
+//     let v = 0;
+//     let p = 0;
+
+//     // The change subtracted characters from the previous value
+//     let subtraction = size(previousValue) - size(value);
+//     let subtractedChars: [number, number, string][] = [];
+
+//     // [previousValueIndex, valueIndex]
+//     let changedChars: [number, number, string][] = [];
+
+//     let unchangedChars: [number, number, string][] = [];
+
+//     // Example: previousValue = "777-333-4444", value = "777-3335544"
+
+//     /**
+//      * The diff status of each character:
+//      * @index `0`   character
+//      * @index `1`   previousValue index
+//      * @index `2`   value index
+//      * @index `3`   0 = unchanged, 1 = changed, 2 = deleted
+//      */
+//     let chars: [string, number, number, -1|0|1][] = [];
+
+//     while (v < size(value)) {
+//         if (value[v] != previousValue[p]) {
+//             // The character was deleted
+//             if (subtraction > 0) {
+//                 // Save the index of the subtracted character
+//                 arrayAdd(chars, [previousValue[p], value[v], p, v, 2]);
+//                 // Decrement the subtraction counter to properly count the number of characters that were subtracted
+//                 subtraction--;
+//                 // This will make the next `previousValue` character match the current `value` character
+//                 v--;
+//             }
+//             // Save the index of the changed character
+//             else arrayAdd(chars, [previousValue[p], value[v], p, v, 1]);
+//         }
+//         // // The character was not changed
+//         // else arrayAdd(chars, [previousValue[p], value[v], p, v, 0]);
+
+//         v++;
+//         p++;
+//     }
+
+//     return chars;
+// }
+
+// console.log('stringDiff:', stringDiff('123-456-7890', '123-456-3890'));
+
+/**
+ * Make sure that the deleted character is a valid character.
+ * When one character is deleted and it's not a valid character, remove characters before it until a valid character is found and removed.
+ * A valid character is a character that matches a wildcard.
+ */
+// let deleteValidChar = (previousValue: string, value: string, tokens: ObjectType) => {
+
+//     let previousValueSize = size(previousValue);
+//     let tokenKeys = getKeys(tokens);
+
+//     let previousValueIndex = 0;
+//     let valueIndex = 0;
+
+//     while (previousValueIndex <= previousValueSize) {
+
+//         previousValueIndex++;
+//         valueIndex++;
+
+//         // A character was changed
+//         if (previousValue[previousValueIndex] != value[valueIndex]) {
+
+//             // Is the new character valid or was the previous character valid?
+//             let isValidChange = some(tokenKeys, token => test(value[valueIndex], tokens[token]) || test(previousValue[previousValueIndex], tokens[token]));
+
+//             // A valid character was changed
+//             if (some(tokenKeys, token => test(previousValue[previousValueIndex], tokens[token]))) break;
+
+//             // Remove the first valid character before the changed character
+//             for (let j = i - 1; j >= 0; j--) {
+//                 // A valid character was found
+//                 if (some(tokenKeys, token => tokens[token](previousValue, j))) {
+//                     // Remove a valid character
+//                     value = slice(value, 0, j) as string + slice(value, i) as string;
+//                     break;
+//                 }
+//             }
+//         }
+//     }
+
+//     return value;
+// }
+
+
+
+// setTimeout(() => {
+
+    // Options: eager: shows static characters before they are typed, e.g. #-# will show 1- when 1 is typed.
+
+    // let str = '(#3) #3-#4'; // "(777) 333-4444"
+    //     str = '&+ &+'; // "John Doe"
+    //     str = '#+ *+ &2'; // "001 Main St", "123 Lake Dr"
+
+//     let mask = '&+ *+';
+//     applyMask(mask, 'Ângela Reis', tokens);
+// });

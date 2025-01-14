@@ -1,29 +1,42 @@
-import { reservedNames } from "../api";
-import { stores } from "../api/store";
-import { _methods } from "../methods";
-import { getAllKeys, newObject } from "./object";
-import { $PROPS, DELETE, EXPRESSION } from "./constants";
-import { arrayAdd, each } from "./array";
-import { isStringFunction, isPath, startsWith, replace } from "./string";
+import { logError, size } from ".";
+import { EXP_ARGS, NEW_LINE } from "./constants";
+import { newObject } from "./object";
+import { isStringFunction, isPath } from "./string";
 import { getAccessedProp } from "../reactivity/track";
 import { isFunction } from "./typeCheck";
-import { logger } from ".";
+import { settings, symbol } from "../app";
 
 // Inspired by code from petite-vue (https://github.com/vuejs/petite-vue/blob/main/src/eval.ts)
 // Original code licensed under MIT License
 
 let cache: Record<string, FunctionType> = newObject();
 
-/** Evaluate an expression using vnode properties */
+let errorFn = () => symbol;
+
+/**
+ * Evaluate an expression using vnode properties
+ * @param vnode The vnode object
+ * @param exp The expression to evaluate
+ * @param args The arguments to pass to the function
+ * @param isVoid Whether the expression should be wrapped in a block
+ * 
+ * @returns `[fn, isRef]` — An array containing the function and a number indicating the type of reference.
+ * 
+ * @types
+ * `0` — Not a reference.
+ * `1` — Reference.
+ * `2` — Reference is a function.
+ */
 export let evaluate = (vnode: VNode, exp: string, args: string = '', isVoid: boolean = false): [FunctionType, 0|1|2] => {
 
+    /** `0` — Not a reference. `1` — Reference. `2` — Reference is a function. */
     let isRef: 0|1|2 = 0;
     let _ref: FunctionType | undefined;
 
     // The expression is a path
-    // ? Since a delete statement matches the path regex, the expression needs to be checked for a delete statement.
-    // ? This is done to prevent the expression from being evaluated immediately. E.g. `delete $props.count` would delete the prop immediately.
-    if (isPath(exp) && !isDelete(exp)) {
+    // * Since a delete statement matches the path regex, the expression needs to be checked for a delete statement.
+    // * This is done to prevent the expression from being evaluated immediately. E.g. `delete $props.count` would delete the prop immediately.
+    if (isPath(exp)) {
         // Get the reference, if any
         _ref = getAccessedProp(() => execute(vnode, exp));
 
@@ -46,80 +59,55 @@ export let evaluate = (vnode: VNode, exp: string, args: string = '', isVoid: boo
     // ? This is done to prevent the expression from being evaluated immediately. E.g. `count++` would change the value of `count` immediately.
     else if (!isStringFunction(exp)) exp = makeFunction(exp, args, isVoid);
 
-    return [isRef == 1 ? _ref : execute(vnode, exp), isRef];
+    /** The function to execute */
+    let fn = isRef == 1 
+        ? _ref as FunctionType 
+        : (...args: any[]) => execute(vnode, exp)(...args);
+
+    return [fn, isRef];
 }
 
-/** Execute an expression */
+/** Execute an expression by creating a function from it */
 let execute = (vnode: VNode, exp: string) => {
-    let fn = cache[exp] || (cache[exp] = toFunction(exp));
+
+    // Get the function from the cache or create a new one
+    let fn = cache[exp];
+
     try {
-        return fn(...getArgValues(vnode));
-    } catch (e) {
-        return getError(e as Error, exp);
+        // Create a new function, if necessary
+        if (!fn) fn = new Function(settings[EXP_ARGS], `return(${exp})`) as FunctionType;
+
+        /**
+         * Cache the function, if it is not already cached and the expression size is less than 99 characters.
+         * 
+         * With the exception of expressions that come from script elements, all other expressions come from attributes and should be kept small.
+         * It is a good practice to separate the logic from the template and long expressions should be moved into functions.
+         * 
+         * By experience, as expressions grow, they become more specific to the context in which they are used and less likely to be reused.
+         * Keeping the functions from these expressions in the cache would be a waste of memory.
+         * 
+         * In the other hand, small expressions are more likely to be reused and should be kept in the cache.
+         * Some exemples are references to $props or $data, simple calculations, truthy/falsy checks, and other common short expressions.
+         * Recreating these functions every time they are used would be a waste of resources.
+         * 
+         * 99 characters strikes a balance between the two scenarios, but it is not a rule.
+         * It comes from personal experience and principles of good programming practices, such as D.R.Y., K.I.S.S., and separation of concerns.
+         */
+        if (!cache[exp] && size(exp) < 99) cache[exp] = fn;
+
+        // Execute the function
+        fn = fn({...vnode.gc, ...vnode.lc});
     }
-};
+    catch (error: any) {
+        // Log the error
+        logError(error.message, 'in expression:', exp);
 
-/** Convert an expression string to a function that takes the "reserved names" as arguments and uses the keys of the `$props` object as variables in its scope */
-let toFunction = (exp: string): FunctionType => {
-    try {
-        return new Function(...reservedNames, `with(${$PROPS}){return(${exp})}`) as FunctionType;
-    } catch (e) {
-        return getError(e as Error, exp);
+        // Return an empty function to prevent the error from being thrown again
+        fn = errorFn;
     }
-};
 
-let getError = (e: Error, exp: string) => {
-    logger(e.message + ` in ${EXPRESSION}:`, exp);
-    return () => {};
+    return fn;
 }
-
-/** Get the argument values for the function */
-let getArgValues = (vnode: VNode) => {
-    // ! Props written without `$props` can not start with JS reserved keywords (arguments, await, true, false, break, case, catch, class, const, continue, default?, delete, do, else, eval, extends, finally, for, function, if, in, instanceof, let, new, null, return, static, super, switch, this, throw, try, typeof, var, void, while, with, yield)
-    // ! E.g. `super` must be written as `$props.super`
-    let $s: any[] = [];
-
-    each(reservedNames, (name: string) => {
-        if (name in vnode) arrayAdd($s, vnode[name as keyof VNode]);
-        else if (name in stores) arrayAdd($s, stores[name]);
-        else if (name in _methods) arrayAdd($s, _methods[name](vnode));
-    });
-
-    return $s;
-}
-
-/** Check if the expression is a delete statement */
-let isDelete = (exp: string) => startsWith(exp, DELETE+' ');
 
 export let makeFunction = (exp: string, args: string = '', isVoid: boolean = false) =>
-    `(${ args })=>${ isVoid ? '{' : '(' }${ exp }${ isVoid ? '}' : ')' }`;
-
-/** 
- * ! Experimental
- */
-export let getAccessedProps = (vnode: VNode, exp: string) => {
-    let accessedProps: string[] = [];
-
-    // Get all the potentially accessed properties
-    let potentialProps = exp.match(/([a-z_$](\w|\.|\$|`|'|"|(\[(.|\s)+?\]))*;?)/gi);
-
-    for (let potentialProp of potentialProps || []) {
-
-        for (let name of [...reservedNames, 'this', ...getAllKeys(vnode.$props)]) {
-            // Check if the property is accessed
-            if (
-                potentialProp == name ||
-                startsWith(potentialProp, name + '.') ||
-                startsWith(potentialProp, name + '[')
-            ) {
-                if (name == 'this') {
-                    potentialProp = replace(potentialProp, 'this', $PROPS);
-                }
-                arrayAdd(accessedProps, potentialProp);
-                break;
-            }
-        };
-    };
-
-    return accessedProps;
-};
+    `(${ args })=>${ isVoid ? '{' : '(' }${ NEW_LINE + exp + NEW_LINE }${ isVoid ? '}' : ')' }`;

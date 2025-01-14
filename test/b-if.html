@@ -4,15 +4,54 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>b-if</title>
+    <style>
+        .hide {
+            display: block;
+        }
+    </style>
 </head>
-<body>
-    <h1>b-if</h1>
+<body b-hydrate>
+    <script>
+        () => {
+            // Set reusable props
+            $set.props('show', (lc, gc) => ({
+                show: true, 
+                show2: true,
+                where: $refs.redBox,
+                log() {
+                    console.log('show $props', this);
+                    console.log('show gc item', gc ? gc : 'gc not found');
+                    console.log('show lc item', lc);
+                }
+            }));
+            $set.data('show', (lc, gc) => ({ show: false, show2: false, 
+                log() {xw
+                    console.log('show $data', this);
+                    console.log('show gc item', gc ? gc : 'gc not found');
+                    console.log('show lc item', lc);
+                }
+            }));
+        }
+    </script>
+    <div b-props="show" b-props-hydrated="$props.log">
+        <h1>b-if</h1>
+    
+        <div b-show="$props.show" class="hide" style="border: 1px solid red; padding: 10px;">
+            <p b-ref="redBox" b-if="$props.show">Toggle this paragraph</p>
+            <p b-if="$props.show2" b-teleport="$props.where">Toggle this paragraph 2</p>
+            <p b-data="show" b-data-hydrated="$data.log" id="lastParagraph">Toggle this paragraph 3 {{ $data.show2 }}</p>
+        </div>
+        <div b-ref="blackBox" style="margin: 10px 0; border: 1px solid black; padding: 10px; color: green;">
 
-    <div b-props="{ show: true }">
-        <p b-if="show">Toggle this paragraph</p>
-        <button on-click="show = !show">{{ show ? 'Remove' : 'Add' }}</button>
+        </div>
+        <button on-click="$props.show = !$props.show">{{ $props.show ? 'Remove' : 'Add' }}</button>
+        <button on-click="$props.show2 = !$props.show2">{{ $props.show2 ? 'Remove2' : 'Add2' }}</button>
+        <button on-click="$props.show2 = !$props.show2">{{ $props.show2 ? 'Remove2' : 'Add2' }}</button>
+
+        <button on-click="$props.where = [$refs.blackBox, 'append']">Teleport to black box</button>
+        <button on-click="$props.where = $refs.redBox">Teleport to red box</button>
     </div>
 
-    <script type="module" src="/src/cdn.ts"></script>
+    <script type="module" src="/src/index.ts"></script>
 </body>
 </html>

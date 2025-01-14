@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hook</title>
+</head>
+<body b-hydrate b-props="{hook: [1,2,3], input: '123'}">
+
+    <!-- 
+        General notes about hooks:
+        - Hooks are functions that run before or after the primary function of a directive.
+        - Hooks with the highest priority run first.
+        - Hooks with the same priority run in the order they were added.
+        - The primary function of a directive is a hook with a priority of 0.
+        - The first hook to run must expose any necessary reactive dependencies before any asynchronous operation.
+
+        Directives with hooks that have reactive dependencies:
+        - text node that interpolates reactive values
+        - b-bind | bind
+        - b-effect
+        - b-html
+        - b-if
+        - b-model
+        - b-show
+        - b-teleport
+        Notes:
+        - The hook with the highest priority will run first and must expose the reactive dependencies before any asynchronous operation.
+        - By default, the directive's hook is the only hook and must expose the reactive dependencies in its expression.
+        - Hooks with priority less than 0 do not need to expose any reactive dependencies.
+
+        Directives with hooks that have DOM event listeners:
+        - b-boost
+        - b-intersection: on-enter, on-exit
+        - b-mask
+        - b-model
+        - b-on-[event] | on-[event]
+        - b-resize
+
+        Directives with hooks that only run once:
+        - b-props
+        - b-data
+        - b-ref
+        - b-script
+        - b-style
+        - b-template
+        - b-uid
+
+        Directives that don't have hooks:
+        - b-ignore
+        - b-options
+        - b-transition
+     -->
+
+    <h1 b-ref="h1" bind-hook="$props.hook" b-options="{'bind-hook': {prop:'bindHook'} }"></h1>
+
+    <input id="input" type="text" b-model="$props.input">
+
+    <button b-ref="click" on-click="$props.hook.push($props.input)">Add</button>
+    <button on-click="$props.hook.pop()">Remove Last</button>
+
+    <div b-ref="each" b-each="n in $props.hook">
+        Number is {{ $each.n }}
+        <input type="text" b-model="$each.n">
+    </div>
+
+    <div 
+        on-resize="console.log('$size:', $size)" 
+        b-options="{
+            'on-resize': {box: 'border-box', document: true}
+        }"
+        style="resize: both; overflow: auto; width: 100px; height: 100px; border: 1px solid black;"
+    >
+        Resize me
+    </div>
+
+    <div
+        on-enter="console.log('on-enter', $entry)"
+        b-options="{
+            'on-enter': {threshold: 1, debounce: 1000, once: true}
+        }"
+        style="height: 100px; border: 1px solid black; margin: 50px; padding: 10px;"
+    >
+        Intersection
+    </div>
+
+    <!-- <script b-script>
+        () => {
+            $set.hook($refs.input, 'b-model', () => {
+                console.log('Hook before');
+            }, 1)
+            $set.hook($refs.input, 'b-model', () => {
+                console.log('Hook after');
+            }, -1)
+        }
+    </script> -->
+
+    <script type="module" src="/src/index.ts"></script>
+</body>
+</html>

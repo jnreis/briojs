@@ -1,16 +1,21 @@
-import { wrapper } from "../tools/hydration";
 import { wait } from "../tools";
-import { getParent, insertNode, nextSibling } from "../tools/dom";
+import { EVAL_EFFECT, REMOVE } from "../tools/constants";
+import { getParent, restorePosition } from "../tools/dom";
 
-export let hydrateIf = (vnode: VNode, attrName: string, attrValue: string) => {
+/**
+ * Must reference a prop, method, or be an expression that returns a value that can be converted to a boolean
+ */
+export let hydrateIf = (vnode: VNode, attrName: string, attrValue: string, tools: HydrationTools) => {
 
-    wrapper(vnode, attrName, attrValue, (node) => {
-        // Store references to parent and siblings
-        let parentEl = getParent(node) as HTMLElement;
-        let nextEl = nextSibling(node);
+    // Evaluate the attribute value as an effect
+    tools[EVAL_EFFECT](vnode, attrName, attrValue, (node: HTMLElement) => {
+
+        // Cache the node position: parent node, sibling nodes before and after
+        let parent = getParent(node);
+        let insertClosest = restorePosition(node)!;
 
         // Return the watch function
-        return ([call]) => {
+        return ([call]: any) => {
             // Get the value
             let value = call();
 
@@ -18,11 +23,20 @@ export let hydrateIf = (vnode: VNode, attrName: string, attrValue: string) => {
             // * This is necessary for some directives to work properly (e.g. `on-click-outside`)
             wait(() => {
                 // Add
-                if (value) {
-                    insertNode(node, parentEl, nextEl);
-                }
+                if (value) insertClosest();
                 // Remove
-                else node.remove();
+                else {
+                    let _parent = getParent(node);
+                    if (_parent) {
+                        // Recache the node position
+                        if (_parent != parent) {
+                            parent = _parent;
+                            insertClosest = restorePosition(node)!;
+                        }
+                        // Remove the node
+                        node[REMOVE]();
+                    }
+                }
             });
         }
     });

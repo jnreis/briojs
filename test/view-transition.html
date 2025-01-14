@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View Transition</title>
+    <style>
+        .flex {
+            display: flex;
+            justify-content: space-between;
+        }
+        /* .ref-h1 {
+            view-transition-name: ref-h1;
+        } */
+    </style>
+</head>
+<body>
+    <h1 b-ref="h1">View Transition</h1>
+    <div b-ref="div" class="">
+        <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Natus ut, aut laboriosam labore quae aliquam adipisci veritatis quisquam? Nulla culpa harum ut at necessitatibus porro quia maxime pariatur error earum.</p>
+        <p b-ref="p2">Lorem ipsum dolor sit amet consectetur adipisicing elit. Natus ut, aut laboriosam labore quae aliquam adipisci veritatis quisquam? Nulla culpa harum ut at necessitatibus porro quia maxime pariatur error earum.</p>
+        <h2 b-ref="h2">View Transition</h2>
+    </div>
+    <button on-click="createTransition($refs.h1, $refs.h2, 1000)">
+        Change View
+    </button>
+
+    <script defer src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+    <!-- <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.2/lib/anime.min.js"></script> -->
+    <script type="module" src="/src/index.ts"></script>
+
+    <script>
+
+        let viewTransition = (updateCallback) => element.startViewTransition(updateCallback);
+
+        // Function to update position
+        function updatePosition(targetElement, elementToMove) {
+            // Get the bounding rectangles
+            const targetRect = targetElement.getBoundingClientRect();
+            
+            const elementToMoveRect = elementToMove.getBoundingClientRect();
+            
+            // Calculate the position in page coordinates
+            const x = targetRect.x - elementToMoveRect.x// + window.scrollX;
+            const y = targetRect.y - elementToMoveRect.y// + window.scrollY;
+
+            const scaleX = targetRect.width / elementToMoveRect.width;
+            const scaleY = targetRect.height / elementToMoveRect.height;
+
+            console.log('target', targetRect.x, targetRect.y);
+            console.log('element', elementToMoveRect.x, elementToMoveRect.y);
+
+            console.log('x and y', x, y);
+
+            console.log('target width and height', targetRect.width, targetRect.height);
+            console.log('element width and height', elementToMoveRect.width, elementToMoveRect.height);
+            console.log('scaleX and scaleY', scaleX, scaleY);
+
+            // Animate with GSAP
+            gsap.to(elementToMove, {
+                x,
+                y,
+                // scale: Math.min(scaleX, scaleY),
+            });
+        }
+
+        function createTransition(oldElement, newElement, duration = 300) {
+  // Create a wrapper for the transition
+  const wrapper = document.createElement('div');
+  wrapper.style.position = 'relative';
+  wrapper.style.width = '100%';
+  wrapper.style.height = '100%';
+
+  // Style the new element
+  newElement.style.position = 'absolute';
+  newElement.style.top = '0';
+  newElement.style.left = '0';
+  newElement.style.width = '100%';
+  newElement.style.height = '100%';
+  newElement.style.opacity = '0';
+  newElement.style.transition = `opacity ${duration}ms ease-in-out`;
+
+  // Wrap the old element
+  oldElement.parentNode.insertBefore(wrapper, oldElement);
+  wrapper.appendChild(oldElement);
+
+  // Add the new element
+  wrapper.appendChild(newElement);
+
+  // Start the transition
+  return new Promise(resolve => {
+    requestAnimationFrame(() => {
+      newElement.style.opacity = '1';
+      
+      setTimeout(() => {
+        wrapper.removeChild(oldElement);
+        while (newElement.firstChild) {
+          wrapper.insertBefore(newElement.firstChild, newElement);
+        }
+        wrapper.removeChild(newElement);
+        resolve();
+      }, duration);
+    });
+  });
+}
+
+        // // Optional: Update on window resize
+        // window.addEventListener('resize', updatePosition($refs.h2, $refs.h1));
+    </script>
+</body>
+</html>

@@ -1,28 +1,18 @@
-import { _components } from "../api/component";
-import { dehydrate, hydrate, wrapper } from "../tools/hydration";
-import { childNodes } from "../tools/dom";
-import { each } from "../tools/array";
-import { wait } from "../tools";
+import { EVAL_EFFECT, INSERT, TEMPLATES } from "../tools/constants";
+import { makeFunction } from "../tools/evaluation";
+import { stringify } from "../tools/string";
 
-export let hydrateHtml = (vnode: VNode, attrName: string, attrValue: string) => {
+export let hydrateHtml = (where: 'inner'|'text') => (vnode: VNode, attrName: string, attrValue: string, tools: HydrationTools) => {
 
-    wrapper(vnode, attrName, attrValue, (node) => async ([call]) => {
+    // Wrap the attribute value in a function that returns the template name as a string.
+    // Otherwise, evalEffect will evaluate the template name as a variable and most likely throw an error.
+    if (attrValue in tools[TEMPLATES])
+        attrValue = makeFunction(stringify(attrValue));
 
-        // Get the value
-        let value = await call();
+    // Evaluate the attribute value as an effect
+    tools[EVAL_EFFECT](vnode, attrName, attrValue, (node: HTMLElement) => async ([value]: any) => {
 
-        // Check if the value is a component
-        if (value in _components) value = _components[value];
-
-        // Dehydrate the innerHTML
-        each(childNodes(node), child => dehydrate(child));
-
-        wait(() => {
-            // Set the innerHTML
-            node.innerHTML = value;
-
-            // Hydrate the innerHTML
-            hydrate(childNodes(node));
-        });
+        // Hydrate HTML content
+        await tools.$dom[INSERT](value(), where, node);
     });
 }

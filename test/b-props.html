@@ -31,31 +31,33 @@
 <body>
     <h1>b-props</h1>
 
-    <div b-props="{ name: 'Brio.js', year: 2024, nextYear() { this.year++ }, get aGetter() { return this.year + 1;} }">
+    <div b-props="{ name: 'Brio.js', year: 2024, nextYear() { this.year++ }, get aGetter() { return this.year + 1;}, a: { b: { c: 123 } } }" bind-length="$props.name.length">
 
         <p>Top level b-props:</p>
         <pre class="text-white">{{ JSON.stringify($props) }}</pre>
         <p>
-            The "name" prop in the top level context is: {{name}}. <br>
-            The year is: {{year}}
+            The "name" prop in the top level context is: {{$props.name}}. <br>
+            The year is: {{$props.year}}
         </p>
 
         <hr>
 
         <p>Nested b-props:</p>
-        <div b-props="{ name: 'The best frontend framework of' }" b-year="year">
+        <div b-props="{ name: 'The best frontend framework of', year: 1991 }" bind-year="$props.year">
             <pre class="text-white">{{ JSON.stringify($props) }}</pre>
             <p>
-                The "name" prop in the nested context is: {{name}} <br>
-                The year prop is inherited from the parent: {{year}}
+                The "name" prop in the nested context is: {{$props.name}} <br>
+                The year prop is inherited from the parent: {{$props.year}}
             </p>
+
+            <input type="text" b-model="$props.a.b.c" bind-placeholder="$props.a.b.c">
             
-            <button on-click="year++">Next year</button>
+            <button on-click="$props.year++">Next year</button>
         </div>
             
-        <button on-click="nextYear">Next year</button>
+        <button on-click="$props.nextYear">Next year</button>
     </div>
 
-    <script type="module" src="/src/cdn.ts"></script>
+    <script type="module" src="/src/index.ts"></script>
 </body>
 </html>

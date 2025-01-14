@@ -1,54 +1,124 @@
-import { logger } from "../tools";
-import { each } from "../tools/array";
-import { $ANIMATE, BLUR, DURATION, EASING, FILTER, GET_COMPUTED_STYLE, NOT_FOUND, ON_COMPLETE, PAUSE, REQUIRE, REVERSE, TRANSFORM, TRANSITION_ENGINE, VALIDATE, VALUE } from "../tools/constants";
-import { deleteKey, W } from "../tools/object";
+import { logError } from "../tools";
+import { arrayAdd, each, every, findIndex } from "../tools/array";
+import { NOT_FOUND, ON_COMPLETE, PAUSE, PLAY, REQUIRES, REVERSE, ANIMATION_ENGINE, VALIDATE, VALUE, NAME, INVALID__$CAP, STYLE, NEW_LINE } from "../tools/constants";
+import { getStyle } from "../tools/dom";
+import { deleteKey, getKey, newMap } from "../tools/object";
 import { startsWith } from "../tools/string";
 
-/** ANIMATION ENGINES */
-export let _engines: AnimationEngine[] = [];
+/** Animation Engines */
+let animationEngines: AnimationEngine[] = [];
 
-/** ANIMATION CONTROLS */
-let _animations: Map<any, FunctionType> = new Map();
+export let newTransitions = (): [PlayTransition, ReverseTransition] => {
+    /**
+     * Animations Map
+     * Stores the `play` hook function for each animation
+     * This function will be called when the animation is complete and ensures that the next hook is played
+     */
+    let _animations: Map<any, FunctionType> = newMap();
 
-/** GET ANIMATION ENGINE */
-export let getEngine = (animation: any) => _engines.find(engine => engine[VALIDATE](animation));
+    /**
+     * Get the animation engine and set the `onComplete` callback for the animation
+     */
+    let getEngine = (animation: any, play: FunctionType) => {
+        // Get the animation engine
+        let engine = animationEngines.find(engine => engine[VALIDATE](animation));
 
-/** The function for the $in transition should after the main hook function */
-export let $in = () => (animation: any, ctx: any = true, controls: HookControls) => {
+        if (engine) {
+            // Set the `onComplete` callback for the animation
+            // This callback will be called when the animation is complete at the start or end
+            // This is only set once for each animation
+            if (!_animations.has(animation)) {
+                engine[ON_COMPLETE](animation, () => {
+                    // onComplete, play the next hook
+                    _animations.get(animation)!();
+                });
+            }
 
-    // Prepare the transition
-    let engine = prepTransition(animation, controls.play);
+            // Save the `play` hook function to the `_animations` map
+            // This function will be called when the animation is complete
+            _animations.set(animation, play);
 
-    // Reverse the animation
-    if (engine && ctx) {
-        // Pause the next hook
-        controls.pause();
+            return engine;
+        }
 
-        // Reverse the animation
-        engine[REVERSE](animation, controls.play);
+        // If the engine is not found, skip the animation
+        logError(ANIMATION_ENGINE, NOT_FOUND, NEW_LINE, animation);
     }
-    // Skip the animation
-    else controls.play();
+
+    return [
+        /**
+         * Plays the animation towards the end
+         * 
+         * When used with $hook, this function is usually called before the main hook function
+         * 
+         * This allows the animation to transition the element out of view
+         */
+        (animation: any, ctx: any = false, controls: HookControls) => {
+
+            let play = getKey(controls, PLAY, () => {});
+            let pause = getKey(controls, PAUSE, () => {});
+
+            // Skip the animation for the first time if the element is supposed to be removed
+            if (!_animations.has(animation) && !ctx) play();
+
+            // Prepare the transition
+            let engine = getEngine(animation, play);
+
+            // Skip the animation
+            if (!engine || ctx) play();
+            // Play the animation
+            else {
+                // Pause the next hook
+                pause();
+                
+                // Play the animation
+                engine.play(animation, play);
+            }
+        },
+
+        /**
+         * Plays the animation towards the start (in reverse)
+         * 
+         * When used with hook, this function is usually called after the main hook function
+         * 
+         * This allows the animation to transition the element into view
+         */
+        (animation: any, ctx: any = true, controls: HookControls) => {
+
+            let play = getKey(controls, PLAY, () => {});
+            let pause = getKey(controls, PAUSE, () => {});
+
+            // Prepare the transition
+            let engine = getEngine(animation, play);
+
+            // Reverse the animation
+            if (engine && ctx) {
+                // Pause the next hook
+                pause();
+
+                // Reverse the animation
+                engine[REVERSE](animation, play);
+            }
+            // Skip the animation
+            else play();
+        }
+    ];
 }
 
-/** The function for the $out transition should before the main hook function */
-export let $out = () => (animation: any, ctx: any = false, controls: HookControls) => {
+export let addAnimationEngine = (engine: AnimationEngine) => {
 
-    // Skip the animation for the first time if the element is supposed to be removed
-    if (!_animations.has(animation) && !ctx) controls.play();
+    // Validate the engine properties
+    if (!engine || !every([NAME, VALIDATE, PLAY, REVERSE, ON_COMPLETE], key => key in engine))
+        logError(INVALID__$CAP, ANIMATION_ENGINE, engine ? engine[NAME] : '');
 
-    // Prepare the transition
-    let engine = prepTransition(animation, controls.play);
-
-    // Skip the animation
-    if (!engine || ctx) controls.play();
-    // Play the animation
     else {
-        // Pause the next hook
-        controls.pause();
-        
-        // Play the animation
-        engine.play(animation, controls.play);
+        // Check if the engine already exists
+        let engineIndex = findIndex(animationEngines, item => item[NAME] == engine[NAME]);
+
+        // Overwrite the engine
+        if (engineIndex >= 0) animationEngines[engineIndex] = engine;
+        // Add new engine
+        else arrayAdd(animationEngines, engine);
     }
 }
 
@@ -63,16 +133,16 @@ export let $animate = () => ($el: HTMLElement, options: ObjectType) => {
     let endPoint: ObjectType = {};
 
     let opts: KeyframeAnimationOptions = {
-        [DURATION]: 300,
+        duration: 300,
         // Web Animations API easings are: 'linear', 'ease', 'ease-in', 'ease-out', 'ease-in-out'
         // Custom easing can be created with: 'steps(number, start|end)', 'cubic-bezier(x1, y1, x2, y2)'
         // Some custom easings can be found at: https://easings.net/
-        [EASING]: 'ease-in-out',
+        'easing': 'ease-in-out',
         fill: 'forwards'
-    };
+    }
 
     // Update animation options, if provided
-    each([DURATION, EASING, 'delay', 'endDelay'], key => {
+    each(['duration', 'easing', 'delay', 'endDelay'], key => {
         if (key in options) {
             opts[key as keyof KeyframeAnimationOptions] = options[key];
             deleteKey(options, key);
@@ -90,13 +160,13 @@ export let $animate = () => ($el: HTMLElement, options: ObjectType) => {
     let saveValue = (cssProp: string, value: any, cssFn: string = '') => {
         // If the property is not an exact match and the value is not provided, log an error
         // Example: 'translateX' is not an exact match for 'translate'. If a value is not provided, log an error because the default value can not be used
-        if (!(value || value === 0)) return logger(`The ${$ANIMATE} helper ${REQUIRE}s a ${VALUE} for the "${cssFn || cssProp}" property.`);
+        if (!(value || value === 0)) return logError(`The $animate helper ${REQUIRES} a ${VALUE} for the "${cssFn || cssProp}" property.`);
 
         // cssFn (e.g. 'translateX', 'rotate', 'blur', etc.)
         if (cssFn) value = cssFn + `(${value})`;
 
         // Save the start point for the property (only once)
-        if (!(cssProp in startPoint)) startPoint[cssProp] = W[GET_COMPUTED_STYLE]($el)[cssProp as any];
+        if (!(cssProp in startPoint)) startPoint[cssProp] = getStyle($el)[cssProp as any];
 
         // Save the function value to the end point
         endPoint[cssProp] = (cssProp in endPoint) ? endPoint[cssProp] + ' ' + value : value;
@@ -112,14 +182,14 @@ export let $animate = () => ($el: HTMLElement, options: ObjectType) => {
         // transform indexes: 0-4
         'translate', 'scale', 'rotate', 'skew', 'perspective',
         // filter indexes: 5-10
-        BLUR, 'brightness', 'contrast', 'grayscale', 'hue-rotate', 'saturate', 'sepia'
+        'blur', 'brightness', 'contrast', 'grayscale', 'hue-rotate', 'saturate', 'sepia'
     ];
 
     // Shorthand properties
     for (let option in options) {
         let cssFn = cssFns.find(cssFn => startsWith(option, cssFn));
         if (cssFn) {
-            let cssProp = cssFns.indexOf(cssFn) < 5 ? TRANSFORM : FILTER;
+            let cssProp = cssFns.indexOf(cssFn) < 5 ? 'transform' : 'filter';
             let value = options[option];
 
             // Save value
@@ -132,7 +202,7 @@ export let $animate = () => ($el: HTMLElement, options: ObjectType) => {
         let value = options[cssProp];
 
         // Check if the property is a valid CSS property
-        if (cssProp in $el.style) {
+        if (cssProp in $el[STYLE]) {
             // Save value
             saveValue(cssProp, value);
         }
@@ -145,32 +215,4 @@ export let $animate = () => ($el: HTMLElement, options: ObjectType) => {
     if (options[PAUSE]) animation[PAUSE]();
 
     return animation;
-}
-
-
-// HELPER FUNCTIONS
-
-/** Prepare the transition */
-let prepTransition = (animation: any, play: FunctionType) => {
-    // Get the animation engine
-    let engine = getEngine(animation);
-
-    // If the engine is not found, skip the animation
-    if (!engine) {
-        logger(TRANSITION_ENGINE + ' ' + NOT_FOUND, animation);
-        return;
-    }
-
-    // Set the `onComplete` callback for the animation
-    if (!_animations.has(animation)) {
-        engine[ON_COMPLETE](animation, () => {
-            // onComplete, play the next hook
-            _animations.get(animation)!();
-        });
-    }
-
-    // Pass the `play` hook function to the `complete` callback
-    _animations.set(animation, play);
-
-    return engine;
 }

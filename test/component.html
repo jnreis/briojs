@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brio Component</title>
+</head>
+<body>
+    <!--
+        IMPORTANT FEATURE:
+            1. Ability provide the parent context when creating vnodes.
+
+        On page load:
+            1. Elements with the b-save attribute are saved as assets.
+            2. Elements with the b-hydrate attribute are hydrated.
+
+        b-save attribute:
+            1. Gets the innerHTML of a template, script, or style elements, or the outerHTML of other elements.
+            2. Saves the content as an asset that can be used later. Scripts are used by b-script, styles are used by b-style, and other elements are used by b-html.
+            3. Any script or style elements inside a template element with the b-save attribute are saved as assets and removed from the template if they don't have the b-hydrate attribute.
+
+        b-hydrate for template elements:
+            1. Creates a div element containing the content of the template element.
+            2. Replaces the template element with the div element.
+            3. Hydrates the div element and its children. Inline scripts are evaluated and removed from the DOM, external scripts are loaded, and styles are applied.
+            4. Replaces the div element with the hydrated content.
+
+        To prevent an inline script from being evaluated on page load:
+
+            Recommendations:
+                1. For script element outside a template element, a good vanilla option is to wrap the code in an anonymous arrow function.
+                2. Script elements inside a template element are not evaluated on page load and don't require anything extra.
+
+            1.  Wrap the code in a anonymous function.
+                Since the function is defined but not invoked or assigned to a variable, it will be marked for garbage collection.
+                Note: the script content MUST only contain the anonymous function.
+                Example 1:
+                    // Anonymous arrow function
+                    <script b-script>
+                        () => {
+                            ...
+                        }
+                    </script>
+                Example 2:
+                    // Anonymous function
+                    <script b-script>
+                        (function() {
+                            ...
+                        })
+                    </script>
+            2.  Set the "type" attribute to anything other than "module" or "text/javascript".
+                Example:
+                    <script b-script type="brio">...</script>
+            3.  Add the "src" attribute without a value to the script element.
+                Example:
+                    <script b-script src>...</script>
+            4.  Place the script element inside a template element with the b-save attribute, then use b-script to evaluate the script.
+                Example:
+                    <template>
+                        <script b-script>
+                            ...
+                        </script>
+                    </template>
+    -->
+    <template b-save="counter">
+        <script>
+            $props.count = 33;
+        </script>
+        <div b-style="bg-light-gray">
+            <h1>Counter</h1>
+            <p>Count: {{ $props.count }}</p>
+            <button on-click="$props.count--">Decrement</button>
+            <button on-click="$props.count++">Increment</button>
+        </div>
+
+        {{ $props.count}} Blah
+
+        <template b-save="second">
+            <h2>Heading Second</h2>
+            <div b-save="third">
+                <h3>Heading 3 {{ $props.count }}</h3>
+            </div>
+        </template>
+
+        <style b-save="bg-light-gray">
+            & {
+                background-color: lightgray;
+                padding: 1rem;
+            }
+        </style>
+
+        <style>
+            h1 {
+                color: dodgerblue;
+                margin: 0;
+            }
+        </style>
+    </template>
+
+    <!-- 
+        b-save will only get the innerHTML of any element.
+    -->
+
+    <template b-hydrate b-props="{count: 99}">
+
+        <!-- <script src="http://localhost:5173/dist/fn.js"></script> -->
+
+        <!-- <div b-props="{count:0}" b-html="counter"></div> -->
+        <script>
+            ({$props}) => {
+                $props.html1 = `<h3>HTML 1 {{ $props.count }}</h3>
+<button on-click="$props.html = $props.html2">Show HTML 2</button>`;
+                $props.html2 = `<h3>HTML 2 {{ $props.count }}</h3>
+<button on-click="$props.html = $props.html1">Show HTML 1</button>`;
+
+                $props.html = $props.html1;
+            }
+        </script>
+
+        <div b-html="$props.html" b-template="$props.html"></div>
+        <div b-html="$props.html" b-text="$props.html"></div>
+        <div b-html="$props.html"></div>
+
+    </template>
+
+    <script type="module" src="/src/index.ts"></script>
+</body>
+</html>

@@ -1,81 +1,57 @@
+import { saveCleanup } from "../app";
 import { evaluate } from "../tools/evaluation";
-import { saveCleanup } from "../tools/hydration";
-import { debounce, has, size } from "../tools";
-import { arrayAdd, each, join } from "../tools/array";
-import { toNumber } from "../tools/number";
-import { split } from "../tools/string";
-import { isNumeric } from "../tools/typeCheck";
-import { callHook, setHook } from "../tools/hook";
+import { debounce, logError, slice } from "../tools";
+import { each } from "../tools/array";
+import { split, startsWith } from "../tools/string";
+import { getType } from "../tools/typeCheck";
+import { B_, DISCONNECT, OBSERVE, ONCE, REQUIRES_ACTION_TYPE, EVENT, FUNCTION, OPTIONS, DEBOUNCE, HOOKS } from "../tools/constants";
 
-let DISCONNECT: 'disconnect' = 'disconnect';
-let ONCE = 'once';
-let HALF = 'half';
-let FULL = 'full';
-let THRESHOLD = 'threshold';
-let MARGIN = 'margin';
+/**
+ * Hydrate the `b-intersect` directive
+ * 
+ * @option `once`       If true, the observer will only execute the callback once.
+ * @option `debounce`   The time in milliseconds to wait before executing the callback.
+ * @option `root`       The element that is used as the viewport for checking visibility of the target.
+ * @option `rootMargin` Margin around the root. Can have values similar to the CSS margin property, e.g. "10px 20px 30px 40px" (top, right, bottom, left).
+ * @option `threshold`  Either a single number or an array of numbers which indicate at what percentage of the target's visibility the observer's callback should be
+ */
+export let hydrateIntersection = (vnode: VNode, attrName: string, attrValue: string, tools: HydrationTools) => {
 
-export let hydrateIntersection = (vnode: VNode, attrName: string, attrValue: string) => {
+    let [setHook, playHook] = tools[HOOKS];
 
-    let [_, directiveName, ...modifiers] = split(attrName, '-');
+    let _attrName = slice(attrName, startsWith(attrName, B_) ? 5 : 3) as string; // 5: b-on-, 3: on-
 
-    // Parse modifiers: once, half, full, threshold, margin
-    let options: ObjectType = {};
-    let mods = [ONCE, HALF, FULL, THRESHOLD, MARGIN];
-    each(modifiers, (modifier, index) => {
-        if (modifier == ONCE) options[ONCE] = true;
-        else if (modifier == HALF) options[THRESHOLD] = 0.5;
-        else if (modifier == FULL) options[THRESHOLD] = 1;
-        else if (modifier == THRESHOLD) {
-            // Get the threshold value
-            let thresholdValue = modifiers[index + 1];
-            // If the next modifier is a number, set the threshold
-            if (isNumeric(thresholdValue)) options[THRESHOLD] = toNumber(thresholdValue);
-        }
-        else if (modifier == MARGIN) {
-            // Get the margin value(s) (up to 4 values)
-            let marginValue: string[] = [];
-            let i = index + 1;
+    let [directiveName] = split(_attrName, '-');
 
-            // Run at most 4 times, or until the next modifier is found
-            while (i < index + 5 && i < size(modifiers) && !has(mods, modifiers[i])) {
-                arrayAdd(marginValue, modifiers[i]);
-                i++;
-            }
-            // Set the margin
-            if (size(marginValue)) options[MARGIN] = join(marginValue, ' ');
-        }
-    });
+    // Options
+    let options = vnode[OPTIONS][attrName] || {};
 
-    let $el = vnode.$el;
+    let $el = vnode.el;
 
     // Evaluate the expression
-    let [ call, isRef ] = evaluate(vnode, attrValue, '$entry', true);
+    let [ expFn, isRef ] = evaluate(vnode, attrValue, '$entry', true);
 
     // Set the directive hook
-    setHook($el, attrName, entry => {
-        // Execute the expression
-        if (isRef == 1) call();
-        else call(entry);
-    });
+    setHook($el, attrName, debounce(expFn, options[DEBOUNCE] || 100));
 
     let observer = new IntersectionObserver(entries => {
-        each(entries, (entry: IntersectionObserverEntry) => {
-            // Ignore if intersecting and the directive is `leave`
-            if (entry.isIntersecting == (directiveName == 'leave')) return;
+        each(entries, async (entry: IntersectionObserverEntry) => {
+            // Ignore if intersecting and the directive is `exit`
+            if (entry.isIntersecting == (directiveName == 'exit')) return;
 
-            // Execute the expression
-            callHook($el, attrName, entry);
+            // Execute the expression, if the event handler is a function
+            if (isRef != 1) await playHook($el, attrName, entry);
+
+            // If the event handler is not a function, log an error
+            else logError(REQUIRES_ACTION_TYPE(EVENT, attrName, 'a ' + FUNCTION, getType(expFn())));
 
             // If the directive has the `once` option, disconnect the observer
-            if (options.once) observer[DISCONNECT]();
+            if (options[ONCE]) observer[DISCONNECT]();
         });
     }, options);
 
-    // Wait for the next tick to observe the element
-    let observe = debounce(() => observer.observe($el), 0);
-
     // Observe the element
-    observe();
+    observer[OBSERVE]($el);
 
     // Save the cleanup function
     saveCleanup(vnode, () => observer[DISCONNECT]());

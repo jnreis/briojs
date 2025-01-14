@@ -60,20 +60,20 @@
 
     </style>
   </head>
-  <body hidden b-hidden="false">
+  <body hidden bind-hidden="false">
 
-    <h1 b-props="{dummyjson: $http('https://dummyjson.com/')}" b-init="dummyjson.get('test').then(d => console.log(d))">Brio.js</h1>
+    <h1 b-hydrate="async () => console.log('b-hydrate', await $http.get('https://dummyjson.com/test'))">Brio.js</h1>
     <button on-click="console.log('on-click', $event)">Outside a props</button>
 
-    <div b-props="{a: 'component'}">
+    <div b-props="{a: 'template'}">
       Fall back content for input
     </div>
 
     <button b-props="{ ranCount: 0 }" b-init="$hook(document.querySelector('#button1'), 'on-click', ($context, $controls) => {
       console.log('$hook before', $context);
       $controls.play();
-      ranCount++;
-      if (ranCount == 3) $controls.remove();
+      $props.ranCount++;
+      if ($props.ranCount == 3) $controls.remove();
     }, 1);
     $hook(document.querySelector('#button1'), 'on-click', ($context, $controls) => {
       console.log('$hook after', $context);
@@ -117,7 +117,7 @@
       animation1: null,
       item: 'abc',
       items: ['Apple','Banana','Cherry'],
-      obj: { a: '1', b: '2', c: '3' },
+      obj: { a: 1, b: 2, c: 3 },
       s: {
         duper: {
           nested: {
@@ -127,13 +127,13 @@
       },
       t1: null,
     }" b-init="console.log('$props', $props)">
-    <button on-click="$out($store.a1, isOpen)">Play $out</button>
-    <button on-click="$in($store.a1, isOpen)">Play $in</button>
-      <button no-effect="console.log('effect', isOpen)" on-click="toggle" b-html="isOpen"></button>
+      <button on-click="$out($store.a1, $props.isOpen)">Play $out</button>
+      <button on-click="$in($store.a1, $props.isOpen)">Play $in</button>
+      <button no-effect="console.log('effect', $props.isOpen)" on-click="$props.toggle" b-html="$props.isOpen"></button>
       <!-- <h1 uppercase init="$el.animate([{transform: 'translateX(300px)'}], {duration: 2000, iterations: Infinity, direction: 'alternate', easing: 'ease-in-out'})">Brio.js</h1> -->
       <!-- <h2 effect="$animate([{opacity: '0.05'}], {direction: 'alternate', iterations: Infinity, duration: 1000})">The $animate method</h2> -->
       <div b-ref="a1" style="display: flex;">
-        <h2 b-if="isOpen" before-if2="$out(animations.get('t1'), $context, $next)" after-if2="$in(animations.get('t1'), $context, $next)">Hello 👋.</h2>
+        <h2 b-if="$props.isOpen" before-if2="$out($props.animations.get('t1'), $context, $next)" after-if2="$in($props.animations.get('t1'), $context, $next)">Hello 👋.</h2>
       </div>
       <!-- <p>Hi. <span html="`<strong>${ first } ${ last }</strong>`"></span></p> -->
       <!-- <p b-class="4 * count">Hello, ${ first } ${ last }!</p> -->
@@ -141,28 +141,28 @@
       <button on-click="console.log($event.detail)">Test event</button>
 
       <p>
-        Count is: ${count}. The double is: ${double}
+        Count is: ${$props.count}. The double is: ${$props.double}
         <strong>Global Count: ${$store.count}</strong>
       </p>
 
-      <p>${ first }, ${search2}</p>
+      <p>${ $props.first }, ${$props.search2}</p>
 
-      <input type="text" b-mask-dynamic="$mask.money()" b-model="search" on-keyup-enter="console.warn('on-keyup-enter')">
+      <input type="text" b-mask-dynamic="$mask.money()" b-model="$props.search" on-keyup-enter="console.warn('on-keyup-enter')">
 
       <button on-click="$props.search = ''">Clear search</button>
 
       <div b-props="{ open: true }">
-        <button on-click="open = ! open">Toggle</button>
+        <button on-click="$props.open = ! $props.open">Toggle</button>
      
-        <div style="background-color: bisque;" b-show="open" on-click-outside="open = false">
+        <div style="background-color: bisque;" b-show="$props.open" on-click-outside="$props.open = false">
             Contents...
         </div>
       </div>
 
 
 
-      <label for="search">Nested reference: ${item}</label>
-      <input id="search" type="text" b-model="item">
+      <label for="search">Nested reference: ${$props.item}</label>
+      <input id="search" type="text" b-model="$props.item">
 
 
       <!-- Just the value -->
@@ -179,49 +179,65 @@
         </div>
       </div> -->
 
-      <!-- Just object key -->
+      <!-- b-each with object -->
       <div class="items-wrapper">
-        <div class="items" b-each="v, i in obj">
-          <p>${i}: ${v}</p>
-          <input type="text" b-model="v">
-          <button on-click="delete obj[i]">Remove</button>
-          <button on-click="console.log(obj, v)">Log items</button>
+        <h3 b-hydrate="$data.a = 'abc'">b-each with object</h3>
+        <div class="items" b-each="v, i in $props.obj">
+          <p b-hydrate="console.log('context', $dom.context($el))">{{ $each.i }}: {{ $each.v }}</p>
+          <input type="text" b-model="$each.v">
+          <button on-click="delete $props.obj[$each.i]">Remove</button>
+          <button on-click="console.log($props.obj, $props)">Log obj</button>
+          <div>
+            <div><div><div b-hydrated="console.log('$data', $data)">
+              <button on-click="console.log('Nested $data', $data)">Log obj</button>
+            </div></div></div>
+          </div>
         </div>
-        <div class="items">
-          <p>Some other item</p>
-          <input type="text" b-model="item">
-          <button on-click="delete $props.item">Remove</button>
-          <button on-click="console.log($props, item)">Log items</button>
-        </div>
-
-
         <form 
-          on-submit-prevent="obj[item] = item; item = ''"
+          on-submit-prevent="$props.obj[$props.item] = $props.item; $props.item = ''"
           style="display: flex; margin-top: 10px; gap: 10px;"
         >
-          <input type="text" b-model="item" style="width: 100%;">
+          <input type="text" b-model="$props.item" style="width: 100%;">
           <button type="submit">Add</button>
         </form>
       </div>
 
-      <p>${count}</p>
+      <!-- b-each with array -->
+      <!-- <div class="items-wrapper">
+        <h3>b-each with array</h3>
+        <div class="items" b-each="v, i in $props.items" b-props-hydrated="console.log('context', $dom.context($el))">
+          <p>{{ $each.i }}: {{ $each.v }}</p>
+          <input type="text" b-model="$each.v">
+          <button on-click="$props.items.splice($each.i, 1)">Remove</button>
+          <button on-click="console.log($props.items, $props)">Log items</button>
+        </div>
+        <form 
+          on-submit-prevent="$props.items.push($props.item); $props.item = ''"
+          style="display: flex; margin-top: 10px; gap: 10px;"
+        >
+          <input type="text" b-model="$props.item" style="width: 100%;">
+          <button type="submit">Add</button>
+        </form>
+      </div> -->
 
-      <input type="text" b-model-trim="first" b-placeholder="first">
+      <p>${$props.count}</p>
 
-      <input type="text" b-model="last">
+      <input type="text" b-model-trim="$props.first" b-placeholder="$props.first">
 
-      <input type="number" value="10" b-model-number="count">
+      <input type="text" b-model="$props.last">
 
-      <button on-click="count++">Increment</button>
+      <input type="number" value="10" b-model-number="$props.count">
 
-      <div b-show="count % 2 == 0">
+      <button on-click="$props.count++">Increment</button>
+
+      <div b-show="$props.count % 2 == 0">
         <h2>Show condition</h2>
-        <div if="count % 3 == 0">
+        <div if="$props.count % 3 == 0">
           <h2>If condition</h2>
         </div>
       </div>
 
-      <button on-click="vehicle = ['Car','Boat']">Reassign</button>
+      <button on-click="$props.vehicle = ['Car','Boat']">Reassign</button>
       <button on-click="console.log($props.vehicle)">Log Props</button>
     </div>
 
@@ -246,68 +262,90 @@
 
     <hr>
 
-    <div b-props="{p1: true}" ref="prop1">
-      <div b-class="p1">
-        <button on-click="console.log($props, $refs, $el, $root($el), $uid, p1)">Log Magic attributes</button>
-        <button id="button1" b-ref="button1" on-click="console.log($refs)">From a parent scope</button>
+    <div b-data="{p1: true}" b-ref="prop1">
+      <div b-class="$props.p1">
+        <button on-click="console.log($props, $refs, $el, $root($el), $uid, $data.p1)">Log Magic attributes</button>
+        <button id="button1" b-ref="button1" on-click="console.log($refs, $s2)">From a parent scope</button>
       </div>
-      <div b-props="{refs: 123}" b-ref="prop2">
-        <div ref="prop2div">
+      <div b-data="{refs: 123}" b-ref="prop2">
+        <div b-ref="prop2div">
           <button b-ref="button1" on-click="console.log($refs, $props)" b-teleport="body" style="background-color: red;">Inside Ref</button>
         </div>
-        <button b-ref="button1" on-click="console.log($refs)">Outside Ref</button>
+        <button b-ref="button1" on-click="console.log($refs); $set.store('$s2', {store2: 'Hey there!'})">Outside Ref</button>
       </div>
       <button b-ref="button3" on-click="console.log($refs)">From a parent scope</button>
     </div>
 
     <hr>
 
-    <div b-props="c1">
-      <h2>Counter 1: ${count}</h2>
-      <button on-mousedown="increment">Increment</button>
-      <div b-props="c1">
-        <h2>Counter 2 (nested): ${count}</h2>
-        <button on-click="count++">Increment using `button` tag</button>
-        <a on-mousedown="count++">Increment using `a` tag</a>
+    <div b-props="{count: 0, increment() {this.count++} }">
+      <h2>Counter 1: ${$props.count}</h2>
+      <button on-mousedown="$props.increment" on-click="console.log('context', $dom.context($el))">Increment</button>
+      <div b-props="{
+        count: 0,
+        increment() {
+          this.count++;
+        }
+      }">
+        <h2>Counter 2 (nested): ${$props.count}</h2>
+        <button on-click="$props.count++">Increment using `button` tag</button>
+        <a on-mousedown="$props.count++">Increment using `a` tag</a>
       </div>
     </div>
 
     <script>
       document.addEventListener('brio:init', () => {
-        Brio.addProps('c1', () => {
-          return {
-            count: 0,
-            increment() {
-              this.count++;
-            }
-          };
-        });
-        Brio.addComponent('input', `<input type="text" b-model="a" />`);
-        // Brio.addDirective(
-        //   attrName => attrName == 'uppercase', 
-        //   (vnode, attrName, attrValue) => {
-        //     vnode.$el.textContent = vnode.$el.textContent.toUpperCase();
-        //     vnode.attr[attrName] = attrValue;
+        // brio.addProps('c1', () => {
+        //   return {
+        //     count: 0,
+        //     increment() {
+        //       this.count++;
+        //     }
         //   }
-        // );
-        // Brio.addMethod('$upper', (vnode) => (text) => text.toUpperCase());
+        // });
 
-        Brio.addHook(document.querySelector('#button1'), 'before-hydrate-b-ref', () => {
-          console.log('before-hydrate-b-ref');
-        });
+        // let e="eventCallback";
+        // brio.addAnimationEngine({
+        //   name:"GSAP",
+        //   validate:n=>[e,"yoyo"].every(e=>e in n),
+        //   play:e=>{e.play()},
+        //   reverse:e=>{e.reverse()},
+        //   onComplete:(n,o)=>{n[e]("onComplete",o),n[e]("onReverseComplete",o)}
+        // });
+
+        // // Add global hook
+        // setTimeout(() => {
+        //   brio.addHook('*', 'b-each-update', ($context) => {
+        //     console.log('Global hook b-each-update', $context);
+        //   });
+        // }, 2000);
       });
     </script>
 
-    <!-- TODO: $uid() and uid -->
     <!-- <div x-data="{count: 0}">
       <h2>Counter 2: <span x-text="count"></span></h2>
       <button @click="count++">Increment</button>
     </div> -->
 
-    <!-- <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script> -->
     <script defer src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
     <script defer src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.2/anime.min.js" integrity="sha512-aNMyYYxdIxIaot0Y1/PLuEu3eipGCmsEUBrUq+7aVyPGMFH8z0eTP0tkqAvv34fzN6z+201d3T8HPb1svWSKHQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
-    <script type="module" src="/src/cdn.ts"></script>
+    <script type="module" src="/src/index.ts"></script>
+
+    <script>
+      window.addEventListener('brio', () => {
+
+        let app = brio.newApp();
+        let {$dom,$set,$state} = app;
+
+        let store = $state({a1: null, count: 123});
+
+        $set.store('store', store);
+
+        console.log('app', app);
+
+        $dom.hydrate($dom.query('body'));
+      });
+    </script>
   </body>
 </html>

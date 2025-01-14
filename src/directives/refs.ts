@@ -1,19 +1,26 @@
-import { q, delAttr, getAttr } from "../tools/dom";
-import { isArray } from "../tools/typeCheck";
-import { $REFS, PROPS } from "../tools/constants";
 import { arrayAdd, each } from "../tools/array";
-import { callHook, setHook } from "../tools/hook";
+import { B_DATA, HOOKS } from "../tools/constants";
+import { cssNotAttr, delAttr, getAttr, queryAll } from "../tools/dom";
+import { isArray } from "../tools/typeCheck";
 
-export let hydrateRefs = (vnode: VNode) => {
+/**
+ * NOTE
+ * - refs are only available within a b-data context. Make sure to have a b-data directive around the refs you want make available to the context.
+ */
 
-    let $el = vnode.$el;
-    let attrName = 'b-ref';
+export let hydrateRefs = async (vnode: VNode, attrName: string, tools: HydrationTools) => {
+
+    let [setHook, playHook] = tools[HOOKS];
+
+    let $el = vnode.el;
 
     setHook($el, attrName, () => {
-        // Query all refs not inside another context
-        let $refs: ObjectType = {};
+        // Get the $refs object
+        let $refs = vnode.lc.$refs as ObjectType;
+        let attrSelector = ` [${attrName}]`;
 
-        let query = q(`[${attrName}]:not([b-${PROPS}]):not([b-${PROPS}] [${attrName}])`, $el);
+        // Query all refs not inside another context
+        let query = queryAll(attrSelector + cssNotAttr(B_DATA) + cssNotAttr(B_DATA, attrSelector), $el);
 
         each([$el, ...query], ref => {
             let refName = getAttr(ref as HTMLElement, attrName);
@@ -32,11 +39,8 @@ export let hydrateRefs = (vnode: VNode) => {
                 delAttr(ref as HTMLElement, attrName);
             }
         });
-
-        // Add the refs to the vnode
-        vnode[$REFS] = $refs;
     });
 
-    // Call the hook
-    callHook($el, attrName);
+    // Play the hook
+    await playHook($el, attrName);
 }

@@ -1,8 +1,8 @@
 // * TYPES
 
 import { size } from "../tools";
-import { arrayAdd } from "../tools/array";
-import { BRIO_DEFAULT_VALUE } from "../tools/constants";
+import { arrayAdd, findIndex } from "../tools/array";
+import { isUndefined } from "../tools/typeCheck";
 
 
 // * VARIABLES
@@ -28,7 +28,7 @@ export let getAccessedProps = (trigger: FunctionType): AccessedProp[] => {
     trackProps = true;
 
     // Run the trigger
-    trigger();
+    trigger({});
 
     // Stop tracking
     trackProps = false;
@@ -63,15 +63,17 @@ export let getAccessedProp = (trigger: FunctionType) => {
         // Filter out the properties that are not in the observed state
         .filter(accessedProp => accessedProp[1] in accessedProp[0])
         // Filter out duplicates
-        .filter(([state1, prop1], i, array) => array.findIndex(([state2, prop2]) => state1 === state2 && prop1 == prop2) == i);
+        .filter(([state1, prop1], i, array) => findIndex(array, ([state2, prop2]) => state1 === state2 && prop1 == prop2) == i);
 
     // The accessed property. If there are multiple accessed properties, return undefined.
     let accessedProp: FunctionType | undefined;
     if (size(accessed) == 1) {
         let [state, prop] = accessed[0];
-        // The default value is a string that is unlikely to be used as a value. It represents the Primitive Irish spelling of 'BRIO'.
-        // ? This is done to determine if the accessed property is being set or accessed. And it also allows the accessed property to be set to undefined.
-        accessedProp = (newValue: any = BRIO_DEFAULT_VALUE) => newValue == BRIO_DEFAULT_VALUE ? state[prop] : state[prop] = newValue;
+        /**
+         * If a new value is not defined, return the value of the property.
+         * Otherwise, set the value of the property.
+         */
+        accessedProp = (newValue?: any) => isUndefined(newValue) ? state[prop] : state[prop] = newValue;
     }
 
     return accessedProp;

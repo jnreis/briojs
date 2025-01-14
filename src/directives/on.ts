@@ -1,20 +1,18 @@
-import { evaluate } from '../tools/evaluation';
-import { saveCleanup } from '../tools/hydration';
-import { has, size, debounce, throttle, wait, logger } from '../tools';
-import { each } from '../tools/array';
-import { BUT_GOT_INSTEAD, DELETE, FUNCTION, MUST_BE, TARGET } from '../tools/constants';
+import { saveCleanup } from '../app';
+import { hydrateIntersection } from './intersection';
+import { hydrateResize } from './resize';
+import { has, debounce, throttle, wait, slice, logError } from '../tools';
+import { each, every } from '../tools/array';
+import { B_, DELETE, FUNCTION, PREVENT_DEFAULT, TARGET, REQUIRES_ACTION_TYPE, EVENT, DOCUMENT, DEBOUNCE, OPTIONS, THROTTLE, PREVENT, HOOKS } from '../tools/constants';
 import { emit, isElementVisible, listen } from '../tools/dom';
-import { D, deleteKey, deleteKeys, getKeys, W } from '../tools/object';
-import { lower, split } from '../tools/string';
-import { getType } from '../tools/typeCheck';
-import { callHook, setHook } from '../tools/hook';
+import { evaluate } from '../tools/evaluation';
+import { D, deleteKey, deleteKeys, getKeys, W, countKeys, getKey } from '../tools/object';
+import { lower, split, startsWith } from '../tools/string';
+import { getType, isFunction } from '../tools/typeCheck';
 
 let KEYUP = 'keyup';
 let KEYDOWN = 'keydown';
-let DEBOUNCE = 'debounce';
-let PREVENT = 'prevent';
 let OUTSIDE = 'outside';
-let DOCUMENT = 'document';
 let WINDOW = 'window';
 let CONTROL = 'control';
 let META = 'meta';
@@ -33,82 +31,92 @@ let keysMap: ObjectType = {
     cmd: META,
     super: META,
     esc: 'escape',
-    space: ' ',
-    spacebar: ' ',
     del: DELETE,
-    slash: '/',
     up: ARROW+'up',
     down: ARROW+'down',
     left: ARROW+'left',
     right: ARROW+'right',
-    period: '.',
-    dot: '.',
-    comma: ',',
-    equal: '=',
-    plus: '+',
-    minus: '-',
-    underscore: '_',
-};
+}
 
-export let hydrateOn = (vnode: VNode, attrName: string, attrValue: string) => {
+/**
+ * Hydrate the `b-on` directive
+ * 
+ * TODO: test every option
+ * 
+ * @option `capture`    If true, the event will be dispatched to the registered listener before being dispatched to any EventTarget beneath it in the DOM tree.
+ * @option `once`       If true, the observer will only execute the callback once.
+ * @option `passive`    If true, the listener will never call preventDefault().
+ * @option `signal`     The AbortSignal to use to cancel the event listener.
+ * 
+ * @option `debounce`   The time in milliseconds to wait before executing the callback.
+ * @option `throttle`   The time in milliseconds to wait before executing the callback.
+ * 
+ * @option `prevent`    If true, the event's default action will be prevented.
+ * @option `stop`       If true, the event's propagation will be stopped.
+ * @option `self`       If true, the event will only be dispatched if the target is the same as the currentTarget.
+ * @option `outside`    If true, the event will only be dispatched if the target is outside the element.
+ * @option `document`   If true, the event will only be dispatched if the target is the document.
+ * @option `window`     If true, the event will only be dispatched if the target is the window.
+ */
+export let hydrateOn = (vnode: VNode, attrName: string, attrValue: string, tools: HydrationTools) => {
 
-    let [_, event, ...modifiers] = split(attrName, '-');
+    let [setHook, playHook] = tools[HOOKS];
 
-    let $el = vnode.$el;
+    let _attrName = slice(attrName, startsWith(attrName, B_) ? 5 : 3) as string; // 5: b-on-, 3: on-
+
+    let [event] = split(_attrName, '-');
+
+    // Enter or exit event (IntersectionObserver)
+    if (event == 'enter' || event == 'exit')
+        return hydrateIntersection(vnode, attrName, attrValue, tools);
+
+    // Resize event (ResizeObserver)
+    if (event == 'resize')
+        return hydrateResize(vnode, attrName, attrValue, tools);
+
+    let $el = vnode.el;
 
     // The target element
     let target = $el;
 
-    // Get the reference, if any
-    let [call, isRef] = evaluate(vnode, attrValue, '$event', true);
-
-    // Check if the event handler is a function
-    if (isRef == 1)
-        logger(`The event handler ${MUST_BE} a ${FUNCTION}, ${BUT_GOT_INSTEAD(getType(call()))}`, '', 'warn');
-
     // The function to call
-    let fn = call;
+    let fn = (e: any) => {
+        // Get the function, if any
+        let [call] = evaluate(vnode, attrValue, '$event', true);
+    
+        // Check if the event handler is a function
+        if (isFunction(call)) call(e);
+        else logError(REQUIRES_ACTION_TYPE(EVENT, attrName, 'a ' + FUNCTION, getType(call())));
+    };
 
-    // Other modifiers are passed as options to the event listener
+    // Options
     // https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener#options
-    let opts: ObjectType = {};
+    let options: ObjectType = vnode[OPTIONS][attrName] || {};
 
-    // Modifiers that are not passed as options to the event listener
-    let mods: ObjectType = {};
+    // Wrap the function with debounce
+    if (DEBOUNCE in options) fn = debounce(fn, options[DEBOUNCE]);
 
-    // Watched keys
-    let keys: ObjectType = {};
-
-    // Loop through the modifiers
-    each(modifiers, (mod, index) => {
-        // Debounce and throttle modifiers
-        if (has([DEBOUNCE,'throttle'], mod)) {
-            // Get the delay, if any
-            let delay = modifiers[index + 1];
-            mods[mod] = isNaN(delay as any) ? 250 : +delay;
-
-            // Wrap the function with debounce or throttle
-            fn = DEBOUNCE == mod 
-                ? debounce(fn, mods[mod]) 
-                : throttle(fn, mods[mod]);
-        }
-        // Options modifiers
-        else if (has(['once','capture','passive'], mod)) opts[mod] = true;
-        // Prevent, stop, self, outside, document, window modifiers
-        else if (has([PREVENT,OUTSIDE,DOCUMENT,WINDOW,'stop','self'], mod)) mods[mod] = true;
-        // Any other modifier is a key when the event is `keydown` or `keyup`
-        else if (has([KEYDOWN,KEYUP], event) && isNaN(mod as any)) keys[keysMap[mod] || mod] = true;
-    });
+    // Wrap the function with throttle
+    if (THROTTLE in options) fn = throttle(fn, options[THROTTLE]);
 
     // Set the hook
     setHook($el, attrName, fn);
 
     // The target element
-    if (mods[OUTSIDE] || mods[DOCUMENT]) target = D as any;
-    else if (mods[WINDOW]) target = W as any;
+    if (options[OUTSIDE] || options[DOCUMENT]) target = D as any;
+    else if (options[WINDOW]) target = W as any;
+
+    // Watched keys
+    let keys: ObjectType = {};
+
+    // Get the keys to watch for when the event is `keydown` or `keyup`
+    if (has([KEYDOWN,KEYUP], event))
+        each(getKey(options, 'keys', []), (key: string) => {
+            keys[keysMap[key] || key] = true;
+        });
 
     // Keep track of the pressed keys
-    let s = size(keys);
+    let s = countKeys(keys);
     let eventName = event;
     if (has([KEYDOWN,KEYUP], event) && s) {
         let pressedKeys: ObjectType = {};
@@ -116,9 +124,11 @@ export let hydrateOn = (vnode: VNode, attrName: string, attrValue: string) => {
         // Watch the pressed keys
         event = attrName;
 
-        // * DEBOUNCE EMIT
-        // * The debounce is only applied to the `keyup` event when there are more than one key to watch and the meta key is one of them.
-        // * This is because the `keyup` event is not triggered on alphanumeric keys when the meta key is pressed.
+        /**
+         * IMPORTANT NOTE:
+         * The debounce is only applied to the `keyup` event when there are more than one key to watch and the meta key is one of them.
+         * This is because the `keyup` event is not triggered on alphanumeric keys when the meta key is pressed.
+         */
         let debounceEmit = debounce((detail: any) => {
             emit(target, event, detail);
         }, 600);
@@ -127,9 +137,12 @@ export let hydrateOn = (vnode: VNode, attrName: string, attrValue: string) => {
         saveCleanup(vnode, listen(target, KEYDOWN, (e: any) => {
             let key = lower(e.key);
             if (!pressedKeys[key]) pressedKeys[key] = true;
-        
-            // * Auto-remove non-single action key if the meta key is pressed
-            // * This is because the `keyup` event is not triggered on alphanumeric keys when the meta key is pressed.
+
+            /**
+             * IMPORTANT NOTE:
+             * Auto-remove non-single action key if the meta key is pressed.
+             * This is because the `keyup` event is not triggered on alphanumeric keys when the meta key is pressed.
+             */
             wait(() => {
                 if (pressedKeys.meta && !has(singleActionKeys, key))
                     delKey(e, pressedKeys);
@@ -137,11 +150,11 @@ export let hydrateOn = (vnode: VNode, attrName: string, attrValue: string) => {
 
             let detail = getKeys(pressedKeys);
 
-            // * If there are more than one key to watch and the meta key is one of them and a non-single action key is pressed, debounce the emit
+            // If there are more than one key to watch and the meta key is one of them and a non-single action key is pressed, debounce the emit
             if (s > 1 && KEYUP == eventName && pressedKeys.meta && !has(singleActionKeys, key))
                 debounceEmit(detail);
 
-            // * Otherwise, emit the event immediately
+            // Otherwise, emit the event immediately
             else if (KEYDOWN == eventName)
                 emit(target, event, detail);
         }));
@@ -165,36 +178,36 @@ export let hydrateOn = (vnode: VNode, attrName: string, attrValue: string) => {
         }));
     }
 
-    // Wrap the function to handle modifiers
+    // Wrap the function to handle options
     let listenFn = (e: any) => {
         // https://developer.mozilla.org/en-US/docs/Web/API/Event/preventDefault
-        if (mods[PREVENT]) e.preventDefault();
+        if (options[PREVENT]) e[PREVENT_DEFAULT]();
 
         // https://developer.mozilla.org/en-US/docs/Web/API/Event/stopPropagation
-        if (mods.stop) e.stopPropagation();
+        if (options.stop) e.stopPropagation();
 
-        // * Note: when using `once` and `self` together and the event is triggered from a child element, `self` will prevent from executing the event listener and `once` will remove the event listener after the first dispatch. That means the event listener will never be executed.
-        if (mods.self && e[TARGET] !== e.currentTarget)
+        // IMPORTANT: when using `once` and `self` together and the event is triggered from a child element, `self` will prevent from executing the event listener and `once` will remove the event listener after the first dispatch. That means the event listener will never be executed.
+        if (options.self && e[TARGET] !== e.currentTarget)
             return;
 
-        // Outside modifier
-        if (mods[OUTSIDE] && ($el.contains(e[TARGET] as Node) || !isElementVisible($el)))
+        // Outside option
+        if (options[OUTSIDE] && ($el.contains(e[TARGET] as Node) || !isElementVisible($el)))
             return;
 
         // Check if all the keys are pressed
-        // ! NOTE: `keypress` has been deprecated, use `keydown` instead
+        // WARNING: `keypress` has been deprecated, use `keydown` instead
         if (has([KEYDOWN,KEYUP], eventName)) {
             let pkeys = e.detail;
-            if (!(size(keys) == size(pkeys) && getKeys(keys).every((k: string) => has(pkeys, k))))
+            if (!(countKeys(keys) == countKeys(pkeys) && every(getKeys(keys), k => has(pkeys, k))))
                 return;
         }
 
         // Run the function
-        callHook($el, attrName, e);
-    };
+        playHook($el, attrName, e);
+    }
 
     // Create listener and save the cleanup function
-    saveCleanup(vnode, listen(target, event, listenFn, opts));
+    saveCleanup(vnode, listen(target, event, listenFn, options));
 }
 
 let delKey = (e: any, pressedKeys: ObjectType) => {

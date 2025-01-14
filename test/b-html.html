@@ -8,39 +8,57 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@unocss/reset/tailwind.min.css">
 </head>
 <body class="flex flex-col justify-center h-screen max-w-screen-sm mx-auto">
-    
-    <div b-init="$hook($el, 'b-effect', ([call]) => console.warn('before-b-effect', componentName), -1);
-        $hook($el, 'b-effect', ([call]) => console.warn('before-b-effect 444', componentName),1);"
-        b-effect="console.log('Effect hydrated', componentName)" class="text-center" b-props="{
-        componentName: 'c1',
-        toggleComponent() {
-            this.componentName = this.componentName == 'c1' ? 'c2' : 'c1';
-        },
-    }">
-        <h1 class="text-4xl mb-2">b-html</h1>
-        <h3 class="mb-6">The current component is: {{componentName}}</h3>
-        <div class="mb-6" b-html="componentName"></div>
 
-        <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" on-click="toggleComponent">Change component</button>
+    <div id="app" b-effect="console.log('Effect hydrated', $props.templateName)" 
+        class="text-center" 
+        b-props="{
+            templateName: 'c1',
+            toggleTemplate() {
+                this.templateName = this.templateName == 'c1' ? 'c2' : 'c1';
+            },
+        }"
+    >
+        <h1 class="text-4xl mb-2">b-html</h1>
+        <h3 class="mb-6">The current template is: {{ $props.templateName }}</h3>
+        <div class="mb-6" b-html="$props.templateName"></div>
+
+        <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" on-click="$props.toggleTemplate">Change template</button>
     </div>
 
+    <div id="builder" b-html-outer="c1"></div>
+
+    <template b-template="c1">
+        <div class="p-2 bg-red" b-props="{name: 'red'}">
+            <p class="text-white">Template: {{ $props.name }}</p>
+            <input type="text" b-model="$props.name">
+        </div>
+    </template>
+
+    <template b-template="c2">
+        <p class="text-white">Template 2</p>
+    </template>
+
+    <script type="module" src="/src/index.ts"></script>
+
     <script>
-        document.addEventListener('brio:init', () => {
-            Brio.addComponent('c1',
-                '<div class="p-2 bg-red">',
-                '<p class="text-white">Component 1</p>',
-                '<input b-props="{name: `Some value`}" type="text" b-model="name">',
-                '</div>',
-            );
-            Brio.addComponent('c2',
-                '<p class="text-white p-2 bg-blue">Component 2</p>',
-            );
+        window.addEventListener('brio', () => {
+            let {$dom, $set} = brio.newApp();
+
+            let c1 = $dom.query('[b-template="c1"]').innerHTML;
+            let c2 = $dom.query('[b-template="c2"]').innerHTML;
+
+            $set.template('c1', c1);
+            $set.template('c2', c2);
+
+            // $dom.queryAll('[b-template="c1"]').forEach($dom.hydrate);
+
+            $dom.hydrate('#app');
+
+            let builder = brio.newApp();
+
+            builder.$set.template('c1', c1);
+            builder.$dom.hydrate('#builder');
         })
     </script>
-
-    <script type="module" src="/src/cdn.ts"></script>
-
-    <style>
-    </style>
 </body>
 </html>

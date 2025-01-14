@@ -1,0 +1,26 @@
+<script>
+    
+</script>
+
+<div b-boost 
+    style="margin-top: 1rem;" 
+    b-props="{ count: 0 }" 
+    b-each="item, index in 3" 
+    b-effect="console.log('b-each index:', $each.index, '; item:', $each.item)"
+>
+
+    <div>Count: {{ $props.count }}</div>
+    <div>Item: {{ $each.item }}</div>
+    <div>Index: {{ $each.index }}</div>
+
+    <button on-click="$each.item--">Decrement</button>
+    <button on-click="$each.item++">Increment</button>
+
+    <button on-click="console.log('contactLink', $refs)">Get contact link element</button>
+
+    <a href="/test/load.html" b-ref="contactLink">load.html</a>
+</div>
+
+<style>
+
+</style>

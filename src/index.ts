@@ -1,29 +1,30 @@
-export { init, hydrate } from './tools/hydration';
+import { setup } from "./app";
 
-export { api } from './api';
+/**
+ TODO: I need to wrap it up and release the first version of this amazing framework by the end of the month.
+ * This means I need to finish the following tasks:
+ * - Complete all pending TODOs. [DONE]
+ * - Test each feature to make sure it works as expected. [IN PROGRESS]
+ * - Test the framework with Astro. [IN PROGRESS]
+ * - Write documentation for each feature.
+ * - Write a getting started guide.
+ * - Create a website for the framework.
+ * - Create a GitHub repository and push the code.
+ * - Publish the package to npm.
+ * - Create a Twitter account for the framework.
+ * - Promote the framework on social media, forums, and other platforms (Reddit, Hacker News, LinkedIn).
+ */
 
+setup();
 
-
-
-// TO USE BRIO LOCALLY DURING DEVELOPMENT:
-// - Make npm aware of the local package by running `npm link` in the Brio root folder.
-// - In the project folder, run `npm link brio` to use the local package.
-// - To unlink the local package, run `npm unlink brio` in the project folder.
-// - To unlink the local package from npm, run `npm unlink` in the Brio root folder.
-
-// If the types are not recognized, add this to the tsconfig.json file:
-// "compilerOptions": {
-//     "baseUrl": ".",
-//     "paths": {
-//       "briojs": ["node_modules/briojs/src"],
-//     }
-//   }
-
+export { newApp } from "./app";
 
 
 // ! BUG LIST
+// - [ ] FIX: methods can not be used in addProps.
 
 // TODO LIST
+
 // - [ ] Investigate what it takes to have a modern build system with Astro and Brio, including TypeScript, Tailwind CSS, and PostCSS.
 
 // - [ ] Add a "morph" modifier to the `html` directive to preserve the element's state when the template changes.
@@ -31,6 +32,14 @@ export { api } from './api';
 
 
 // * DONE LIST
+
+// - [x] Create a $http method to make HTTP requests.
+
+// - [x] Implement a "$insert" method to insert some content (html or text) at a specific position in the DOM.
+// - [x] Implement a router. It should use the history API and cache the body of previous pages to avoid re-rendering.
+
+// - [x] Implement a `$context` method to get the context of an element, which includes the $el, $props, $refs, and $uid.
+
 // - [x] Nested props are not reacting to changes. If a parent $props has a year property, and the year property is changed from a nested $props, the year property in the parent $props does not react to the change.
 
 // - [x] - create the ability to add any number of interceptor functions at any stage of the hydration and lifecycle steps for each attribute.
@@ -62,8 +71,8 @@ export { api } from './api';
 
 // - [x] Implement a `transition` directive to animate elements when they are added or removed from the DOM.
 
-// - [x] Implement a `enter` and `leave` directives to react when an element enters or leaves the viewport.
-//       It takes an optional options object. `[enter-options | leave-options]="{ root: null, rootMargin: '0px', threshold: 50, once: true}"`
+// - [x] Implement a `enter` and `exit` directives to react when an element enters or exits the viewport.
+//       It takes an optional options object. `[enter-options | exit-options]="{ root: null, rootMargin: '0px', threshold: 50, once: true}"`
 
 // - [x] (!!! TOP PRIORITY !!!) Support key modifiers for the `on` directive. For example: `on-keydown-enter="submit"`.
 //       - https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/key
@@ -71,17 +80,12 @@ export { api } from './api';
 
 
 // * POSSIBLE FUTURE FEATURES LIST
-// - [ ] Create a $fetch method to make HTTP requests.
-
-// - [ ] Implement a $async method to work with async functions and promises.
-
-// - [ ] Implement a "dev mode" where the DOM is re-hydrated when Brio attributes are updated.
-
-// - [ ] Implement a $format method to format strings, numbers, and dates.
 
 // - [ ] Create a page builder based on Brio.
 // - [ ] Create an Astro plugin to use Brio with Astro.
 // - [ ] Create a WordPress plugin to use Brio with WordPress.
+
+// - [ ] Implement a "dev mode" where the DOM is re-hydrated when Brio attributes are updated.
 
 // - [ ] Implement a lightweigth $class method to generate utility classes on the fly, similar to Tailwind CSS.
 //       - It should take something like this: $class('bg-red-500', 'text-white', 'p-4', 'rounded-md') and generate the classes on the fly.

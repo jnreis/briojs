@@ -1,36 +1,19 @@
-import {
-    ARRAY,
-    ASYNC_FUNCTION,
-    BOOLEAN,
-    DATE,
-    ERROR,
-    FUNCTION,
-    MAP,
-    NUMBER,
-    OBJECT,
-    PROMISE,
-    PROTOTYPE,
-    REGEXP,
-    SET,
-    STRING,
-    WEAKMAP,
-    WEAKSET
-} from "./constants";
-import { lower, test, toString } from "./string";
-import { getDescriptor, O } from "./object";
+import { ARRAY, ASYNC_FUNCTION, BOOLEAN, FUNCTION, NUMBER, OBJECT, PROTOTYPE, STRING, TO_STRING, UNDEFINED, NULL } from "./constants";
+import { lower } from "./string";
+import { getDescriptor, O, Regex } from "./object";
 import { slice } from ".";
 
 /** Get the type of a value */
-export let getType = (value: any): string => lower(slice(O[PROTOTYPE].toString.call(value), 8, -1));
+export let getType = (value: any): string => lower(slice(O[PROTOTYPE][TO_STRING].call(value), 8, -1) as string);
 
 /** Check the type of a value */
 export let is = (value: any, type: string) => getType(value) === type;
 
 /** Check if a value is null */
-export let isNull = (value: any) => value === null;
+export let isNull = (value: any) => value === NULL;
 
 /** Check if a value is undefined */
-export let isUndefined = (value: any) => value === undefined;
+export let isUndefined = (value: any) => value === UNDEFINED;
 
 /** Check if a value is an object */
 export let isObject = (value: any): boolean => is(value, OBJECT);
@@ -38,10 +21,13 @@ export let isObject = (value: any): boolean => is(value, OBJECT);
 /** Check if a value is an array */
 export let isArray = (value: any): boolean => is(value, ARRAY);
 
-/** Check if a value is a function */
-export let isFunction = (value: any) => is(value, FUNCTION) || isAsyncFunction(value);
+/** Check if a value is a sync or async function */
+export let isFunction = (value: any) => isSyncFunction(value) || isAsyncFunction(value);
 
-/** Check if a value is a string arrow function */
+/** Check if a value is a sync function */
+export let isSyncFunction = (value: any) => is(value, FUNCTION);
+
+/** Check if a value is an async function */
 export let isAsyncFunction = (value: any) => is(value, ASYNC_FUNCTION);
 
 /** Check if a value is an arrow function */
@@ -51,13 +37,13 @@ export let isArrowFunction = (value: any) => isUndefined(value[PROTOTYPE]) && va
 export let isGetter = (object: Object, key: string) => {
     let descriptor = getDescriptor(object, key);
     return !!descriptor && isFunction(descriptor.get);
-};
+}
 
 /** Check if a value is a setter function */
 export let isSetter = (object: Object, key: string) => {
     let descriptor = getDescriptor(object, key);
     return !!descriptor && isFunction(descriptor.set);
-};
+}
 
 /** Check if a value is a string */
 export let isString = (value: any) => is(value, STRING);
@@ -76,34 +62,18 @@ export let isNumeric = (value: any) => isNumber(parseFloat(value)) && isNumber(N
 export let isBoolean = (value: any) => is(value, BOOLEAN);
 
 /** Check if a value is a regular expression */
-export let isRegExp = (value: any) => is(value, REGEXP);
+export let isRegExp = (value: any) => isInstance(value, Regex);
 
-/** Check if a value is a date */
-export let isDate = (value: any) => is(value, DATE);
+export let isInstance = (value: any, ObjectConstructor: Function) => value instanceof ObjectConstructor;
 
-/** Check if a value is a map */
-export let isMap = (value: any) => is(value, MAP);
-
-/** Check if a value is a weak map */
-export let isWeakMap = (value: any) => is(value, WEAKMAP);
-
-/** Check if a value is a set */
-export let isSet = (value: any) => is(value, SET);
-
-/** Check if a value is a weak set */
-export let isWeakSet = (value: any) => is(value, WEAKSET);
-
-/** Check if a value is a promise */
-export let isPromise = (value: any) => is(value, PROMISE);
-
-/** Check if a value is an error */
-export let isError = (value: any) => is(value, ERROR);
-
-/** Check if a value is a class */
-export let isClass = (value: any) => isFunction(value) && test(toString(value), /^\s*class\s+/);
+/** Check if a value is a node */
+export let isNode = (node: any) => isInstance(node, Node);
 
 /** Check if a value is a text node */
-export let isTextNode = (node: Node) => node instanceof Text;
+export let isTextNode = (node: any) => isInstance(node, Text);
 
 /** Check if a value is an element node */
-export let isElementNode = (node: Node) => node instanceof HTMLElement;
+export let isElementNode = (node: any) => isInstance(node, HTMLElement);
+
+/** Check if a value is a document fragment */
+export let isDocumentFragment = (node: any) => isInstance(node, DocumentFragment);

@@ -1,0 +1,1 @@
+export { newApp } from './app';

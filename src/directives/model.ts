@@ -1,14 +1,13 @@
-import { evaluate } from '../tools/evaluation';
-import { getDeps, saveCleanup } from '../tools/hydration';
-import { entries, has, logger, size, wait } from '../tools';
-import { arrayAdd, arrayFrom, each } from '../tools/array';
-import { listen, onCompositionStart, onCompositionEnd, getAttr, q } from '../tools/dom';
-import { lower, parse, split, trim } from '../tools/string';
-import { isNull, isArray, getType, isUndefined, isString, isBoolean, isNumber } from '../tools/typeCheck';
-import { SELECT, INPUT, TEXTAREA, CHECKBOX, RADIO, VALUE, CHANGE, ARRAY, DIRECTIVE, REQUIRE, COMPOSING, ELEMENT, CAN_ONLY_BE_USED_ON, BOOLEAN, STRING, NUMBER, CHECKED, BUT_GOT_INSTEAD, TEXT } from '../tools/constants';
 import { effect } from '../reactivity';
-import { D } from '../tools/object';
-import { callHook, setHook } from '../tools/hook';
+import { entries, has, logError, logWarn, size, wait } from '../tools';
+import { arrayAdd, arrayFrom, each, join } from '../tools/array';
+import { SELECT, INPUT, TEXTAREA, CHECKBOX, RADIO, VALUE, ARRAY, DIRECTIVE, REQUIRES, COMPOSING, ELEMENT, CAN_ONLY_BE_USED_ON, BOOLEAN, STRING, NUMBER, CHECKED, BUT_GOT_INSTEAD, TEXT, OF_TYPE, OPTIONS, HOOKS, COMPOSITION_START, COMPOSITION_END } from '../tools/constants';
+import { listen, onCompositionStart, onCompositionEnd, getAttr, queryAll, getTagName } from '../tools/dom';
+import { evaluate } from '../tools/evaluation';
+import { saveCleanup } from '../app';
+import { D, newMap } from '../tools/object';
+import { parse, trim } from '../tools/string';
+import { isNull, isArray, getType, isUndefined, isString, isBoolean, isNumber } from '../tools/typeCheck';
 
 /**
  * MODEL DIRECTIVE
@@ -71,44 +70,51 @@ import { callHook, setHook } from '../tools/hook';
  * - This is used to apply the modifiers to the value of the checkbox or select option that don't have direct access to the modifiers.
  * - Without this, the value of these elements would not be properly modified.
  */
-let nodeModifiers: Map<Node, string[]> = new Map();
+let nodeModifiers: Map<Node, string[]> = newMap();
 
-export let hydrateModel = (vnode: VNode, attrName: string, attrValue: string) => {
+/**
+ * 
+ * @option `trim`   trims the value before setting it to the reactive state.
+ * @option `raw`    prevents the value from being typecast to a number, boolean, or null.
+ * @option `lazy`   listens for the change event instead of the input event.
+ */
+export let hydrateModel = (vnode: VNode, attrName: string, attrValue: string, tools: HydrationTools) => {
 
-    // Split the attribute name to get the modifiers
-    let [_B, MODEL, ...modifiers] = split(attrName, '-');
+    let [setHook, playHook] = tools[HOOKS];
 
     // Reusable strings
-    let THE_MODEL_DIRECTIVE = `The ${MODEL} ${DIRECTIVE}`;
-    let REQUIRES_A_REACTIVE_VALUE = ` ${REQUIRE}s a reactive ${VALUE}`;
+    let THE_MODEL_DIRECTIVE = `the ${attrName} ` + DIRECTIVE;
+    let REQUIRES_A_REACTIVE_VALUE = REQUIRES + ` a reactive ` + VALUE;
     let SELECTED = SELECT+'ed' as 'selected';
 
     // The node, its tag, and its type
-    let node = vnode.$el as any;
-    let tag = lower(node.tagName);
+    let node = vnode.el as any;
+    let tag = getTagName(node);
     let type = node.type;
 
     // ! ERROR: The model directive can only be used on input, textarea, and select elements.
     if (!has([INPUT,TEXTAREA,SELECT], tag))
-        return logger(THE_MODEL_DIRECTIVE + ` ${CAN_ONLY_BE_USED_ON} ${INPUT}, ${TEXTAREA}, and ${SELECT} ${ELEMENT}s.`, node);
+        return logError(THE_MODEL_DIRECTIVE, CAN_ONLY_BE_USED_ON, INPUT, `, ${TEXTAREA}, and ${SELECT} ${ELEMENT}s.`, node);
 
     // Evaluate the expression to get the reactive value
     let [stateValue, isRef] = evaluate(vnode, attrValue);
 
     // ! ERROR: The model directive requires a reactive value.
     if (isRef != 1)
-        return logger(THE_MODEL_DIRECTIVE + REQUIRES_A_REACTIVE_VALUE + '.', node);
+        return logError(THE_MODEL_DIRECTIVE, REQUIRES_A_REACTIVE_VALUE + ',', BUT_GOT_INSTEAD(stateValue()));
 
     // Get the reactive value
     let value = stateValue();
     let nodeValue: any;
 
     /** Get all the nodes that hold value for the reactive state */
-    let getArrayNodes = () => arrayFrom(tag == SELECT ? node.options : getCheckboxGroup()) as Node[];
+    let getArrayNodes = () => arrayFrom(tag == SELECT ? node[OPTIONS] : getCheckboxGroup()) as Node[];
+
+    // The modifiers
+    let modifiers = vnode[OPTIONS][attrName] || {};
 
     /**
-     * Get the node value and apply the modifiers
-     * - modifiers: trim, raw
+     * Get the node value and apply the modifiers `trim` and `raw`, if present.
      */
     let getNodeValue = (node: any) => {
 
@@ -120,14 +126,14 @@ export let hydrateModel = (vnode: VNode, attrName: string, attrValue: string) =>
         if (isString(value)) {
 
             // Trim the value
-            if (has(_modifiers, 'trim')) value = trim(value);
+            if (_modifiers.trim) value = trim(value);
 
             // Raw prevents the value from being parsed
             // - By default, the model directive will typecast the value to a number, boolean, or null using JSON.parse.
             //   This is useful when the reactive value is a string that represents a number, boolean, or null.
             // - Note that 'undefined' is not a valid JSON string.
             // - Note that if one checkbox in a checkbox group has the raw modifier, all checkboxes in the group must have the raw modifier.
-            if (!has(_modifiers, 'raw')) {
+            if (!_modifiers.raw) {
                 let parsed = parse(value);
                 if (isNumber(parsed) || isNull(parsed) || isBoolean(parsed))
                     value = parsed;
@@ -141,8 +147,8 @@ export let hydrateModel = (vnode: VNode, attrName: string, attrValue: string) =>
     let isInput = (_type: string|string[]) => tag == INPUT && has(_type, type);
     let isCheckboxOrRadio = isInput([CHECKBOX,RADIO]);
 
-    let getCheckboxGroup = () => q(INPUT+`[type="${CHECKBOX}"][name="${node.name}"]`);
-    let isCheckboxGroup = () => isInput(CHECKBOX) && size(arrayFrom(getCheckboxGroup())) > 1;
+    let getCheckboxGroup = () => queryAll(INPUT+`[type="${CHECKBOX}"][name="${node.name}"]`);
+    let isCheckboxGroup = () => isInput(CHECKBOX) && size(getCheckboxGroup()) > 1;
 
     /** Special validation to warn when the reactive value is not the expected type */
     let validate = () => {
@@ -167,14 +173,14 @@ export let hydrateModel = (vnode: VNode, attrName: string, attrValue: string) =>
     
             // The type is invalid, log an error and return
             if (!(isNull(value) || isUndefined(value) || has(_typesArray, getType(value))))
-                logger(THE_MODEL_DIRECTIVE + REQUIRES_A_REACTIVE_VALUE + ` of type ${_typesArray.join(' or ')} for ${tag == INPUT ? type+' ' : ''}${_tag} ${ELEMENT}s, ${BUT_GOT_INSTEAD(getType(value))}`, node, 'warn');
+                logWarn(THE_MODEL_DIRECTIVE, REQUIRES_A_REACTIVE_VALUE, OF_TYPE, join(_typesArray, ' or '), `for ${tag == INPUT ? type+' ' : ''}${_tag} ${ELEMENT}s,`, BUT_GOT_INSTEAD(getType(value)), node);
 
             break;
         }
     }
 
     // Wait for the node to be fully hydrated before running the special validation
-    // * Note: this is necessary because the reactive state may be used by multiple elements scattered throughout the template (e.g. multiple checkboxes in a group).
+    // Note: this is necessary because the reactive state may be used by multiple elements scattered throughout the template (e.g. multiple checkboxes in a group).
     wait(() => {
         validate();
 
@@ -205,7 +211,7 @@ export let hydrateModel = (vnode: VNode, attrName: string, attrValue: string) =>
             // Handle radio buttons and checkboxes
             else if (isCheckboxOrRadio) {
 
-                // ! IMPORTANT NOTE:
+                // IMPORTANT:
                 // * A checkbox with the value of false will be checked when all checkboxes are unchecked.
                 // * This behavior may be helpful in some cases, but it can be confusing in others.
                 // * To avoid this, use a different value for the checkbox, or use the raw modifier to treat false as a string.
@@ -236,11 +242,11 @@ export let hydrateModel = (vnode: VNode, attrName: string, attrValue: string) =>
             // Handle single select
             else node[VALUE] = value;
         }
-    };
+    }
 
     // Save the effect
-    // * Note: wait to save the effect until the node is fully hydrated because the model directive may depend on the bind directive to bind the value attribute, which happens after the model directive.
-    wait(() => saveCleanup(vnode, effect(watchFn, getDeps(vnode, attrName))), 10); // 1ms is enough, but give it a little extra time to be safe
+    // Note: wait to save the effect until the node is fully hydrated because the model directive may depend on the bind directive to bind the value attribute.
+    wait(() => saveCleanup(vnode, effect(watchFn)), 5); // 1ms is enough, but give it a little extra time to be safe
 
 
     // UPDATES THE PROP
@@ -258,11 +264,11 @@ export let hydrateModel = (vnode: VNode, attrName: string, attrValue: string) =>
             // Save the selected/checked values
             each(getArrayNodes(), node => {
 
-                // Make sure the all option nodes have the modifiers of the select node
+                // Make sure that all option nodes have the modifiers of the select node
                 // * This is because new option nodes may be added to the select element after the model directive is applied.
                 if (tag == SELECT) nodeModifiers.set(node, modifiers);
 
-                // Save the selected/checked to the reactive state
+                // Save the selected/checked value to the reactive state
                 if (node[SELECTED] || node[CHECKED]) {
                     arrayAdd(newValue, getNodeValue(node));
                 }
@@ -279,16 +285,16 @@ export let hydrateModel = (vnode: VNode, attrName: string, attrValue: string) =>
 
     // Handle composition events
     if (isInput([TEXT,'search','url','tel','email','password']) || tag == TEXTAREA) {
-        events.compositionstart = onCompositionStart;
-        events.compositionend = onCompositionEnd;
+        events[COMPOSITION_START] = onCompositionStart;
+        events[COMPOSITION_END] = onCompositionEnd;
     }
 
     // Event name
-    let event = (has(modifiers, 'lazy') || isCheckboxOrRadio || tag == SELECT)
-        ? CHANGE 
+    let event = (modifiers.lazy || isCheckboxOrRadio || tag == SELECT)
+        ? 'change' 
         : INPUT;
 
-    events[event] = () => callHook(node, attrName, stateValue);
+    events[event] = () => playHook(node, attrName, stateValue);
 
     // Add the event listeners and save the cleanup functions
     for (let [eventName, fn] of entries(events)) {

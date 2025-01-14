@@ -1,16 +1,17 @@
+import { logError } from "../tools";
+import { ATTR, B_IF, B_SHOW, DIRECTIVE, HOOKS, MUST_BE, PAUSE, TRANSITION } from "../tools/constants";
 import { evaluate } from "../tools/evaluation";
-import { $in, $out } from "../methods/transition";
-import { logger } from "../tools";
-import { ATTR, DIRECTIVE, MUST_BE, PAUSE, TRANSITION } from "../tools/constants";
-import { setHook } from "../tools/hook";
 import { INFINITY } from "../tools/number";
 
-export let hydrateTransition = (vnode: VNode, _: string, attrValue: string) => {
+export let hydrateTransition = (vnode: VNode, attrName: string, attrValue: string, tools: HydrationTools) => {
 
-    let _attrName = vnode[ATTR]['b-if'] ? 'b-if' : vnode[ATTR]['b-show'] ? 'b-show' : '';
+    let _attrName = vnode[ATTR][B_IF] ? B_IF : vnode[ATTR][B_SHOW] ? B_SHOW : '';
 
     if (!_attrName)
-        return logger(`The ${TRANSITION} ${DIRECTIVE} ${MUST_BE} accompanied by an b-if or b-show ${DIRECTIVE}.`);
+        return logError('the', attrName, DIRECTIVE, MUST_BE, 'accompanied by an b-if or', B_SHOW, DIRECTIVE);
+
+    let [setHook] = tools[HOOKS];
+    let [playTransition, reverseTransition]: [PlayTransition, ReverseTransition] = tools[TRANSITION];
 
     // Evaluate the animation expression
     let animation = evaluate(vnode, attrValue)[0]();
@@ -19,13 +20,11 @@ export let hydrateTransition = (vnode: VNode, _: string, attrValue: string) => {
     // The animation will be played when the hook functions are called
     animation[PAUSE]();
 
-    // Create instances of the $in and $out functions
-    let _out = $out();
-    let _in = $in();
+    // This will play the transition before the main hook function
+    setHook(vnode.el, _attrName, (ctx, controls) => playTransition(animation, ctx, controls), INFINITY);
 
-    // Save the hook functions (before out, after in)
-    setHook(vnode.$el, _attrName, (ctx, controls) => _out(animation, ctx, controls), INFINITY);
-    setHook(vnode.$el, _attrName, (ctx, controls) => _in(animation, ctx, controls), -INFINITY);
+    // This will play the transition after the main hook function
+    setHook(vnode.el, _attrName, (ctx, controls) => reverseTransition(animation, ctx, controls), -INFINITY);
 }
 
 /**

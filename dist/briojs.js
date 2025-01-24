@@ -212,7 +212,7 @@ let Tl = "brio", Bl = "$", br = "$store", pe = "after", Lr = "animation engine",
       let T = je(i);
       Ue.has(f) && (f = f({ [se]: i, prop: E, [At]: f, [Rt]: c }, T, f)), s.has(E) || (f = $e(f)), Pe(c) && Pe(f) && (_t.set(f, je(c)), _t[m](c));
       let o = We.set(n, E, f, i);
-      return console.log("set", T, i, E, f, c), T[Ze][E] && P(T[Ze][E], (h) => h({ [se]: i, prop: E, [At]: f, [Rt]: c }, T, h)), Ii(T, i, E, f, c), o;
+      return T[Ze][E] && P(T[Ze][E], (h) => h({ [se]: i, prop: E, [At]: f, [Rt]: c }, T, h)), Ii(T, i, E, f, c), o;
     },
     [ui](n, E) {
       let f = n[E], c = We[ui](n, E);

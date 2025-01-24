@@ -28,7 +28,7 @@ export let settings: ObjectType = {};
 export let loadedScripts: Set<string> = new Set();
 
 /** Create a new app */
-export let newApp = (node?: Node, ctxNode?: Node) => {
+export let newApp = (node?: Node|string, ctxNode?: Node|string) => {
 
     let vnodes: Map<Node, VNode> = newMap();
     let unicodeLetters = '\\p{Letter}';
@@ -428,7 +428,7 @@ export let newApp = (node?: Node, ctxNode?: Node) => {
             setAttr(node as HTMLElement, B_DATA, '');
 
         // Hydrate the root node
-        hydrate(node, ctxNode);
+        hydrate(node as Node, ctxNode as Node);
     }
 
     return gc;

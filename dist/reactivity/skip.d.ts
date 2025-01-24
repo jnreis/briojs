@@ -6,4 +6,4 @@
  * @param value - The value to set the property to
  * @returns The property initialization function
  */
-export declare let skipProp: (value: any) => (_: any, prop: string, options: StateOptions) => any;
+export declare let skipProp: (value: any) => ({ prop }: ListenerFunctionContext, stateObject: StateObject) => any;

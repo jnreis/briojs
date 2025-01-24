@@ -28,7 +28,7 @@ export let hydrateContext = async (vnode: VNode, attrName: string, attrValue: st
             // The attribute value must be an object or a function that returns an object, evaluate it
             : evaluate(vnode, attrValue, '', false)[0];
 
-        newContext = await newContext(vnode.lc, vnode.gc);
+        newContext = await newContext({...vnode.gc, ...vnode.lc});
 
         // Check if newContext is an object. If not, throw an error
         if (!isObject(newContext)) {

@@ -1,6 +1,5 @@
 import { propertyInitFns } from ".";
-import { arrayAdd } from "../tools/array"
-import { DELETE } from "../tools/constants";
+import { DELETE, SKIP } from "../tools/constants";
 
 /**
  * Skip a specific property from being automatically observed.
@@ -14,12 +13,13 @@ export let skipProp = (value: any) => {
 
     // Property initialization function
     // This function will be called when the state object is created or set
-    let fn = (_: any, prop: string, options: StateOptions) => {
-        // Prevent the property from being automatically observed
-        arrayAdd(options.skip!, prop);
+    let fn = ({ prop }: ListenerFunctionContext, stateObject: StateObject) => {
 
         // Remove the property initialization function from the set
         propertyInitFns[DELETE](fn);
+
+        // Prevent the property from being automatically observed
+        stateObject[SKIP].add(prop);
 
         return value;
     }

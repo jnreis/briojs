@@ -91,7 +91,7 @@ export let setObjectKeys = (object: any, descriptor: PropertyDescriptorShorthand
  * 
  * Note: This mutates the object.
  */
-export let deleteKey = (object: any, key: string|number) => delete object[key];
+export let deleteKey = (object: any, key: string|number|symbol) => delete object[key];
 
 /**
  * Deletes all keys in an object.

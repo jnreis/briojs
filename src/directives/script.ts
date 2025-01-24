@@ -1,7 +1,7 @@
 import { loadedScripts, sanitizeAttrValue } from "../app";
 import { http } from "../methods/http";
 import { arrayAdd, map } from "../tools/array";
-import { HOOKS, SCRIPT, SCRIPTS } from "../tools/constants";
+import { HOOKS, SCRIPT } from "../tools/constants";
 import { getAttr, getNodeContent, getTagName, removeNode } from "../tools/dom";
 import { evaluate } from "../tools/evaluation";
 import { isStringFunction } from "../tools/string";
@@ -11,7 +11,7 @@ export let hydrateScripts = async (vnode: VNode, attrName: string, attrValue: st
 
     let el = vnode.el as HTMLScriptElement;
 
-    let scriptsObject = tools[SCRIPTS];
+    let scriptsObject = tools[SCRIPT];
 
     let isScript = getTagName(el) == SCRIPT;
 

@@ -3,29 +3,39 @@ type GlobalContext = {
     $set: SetObject,
     $dom: DomObject,
     $http: HttpObject,
-    $stores: ObjectType,
-    $plugins: ObjectType,
+    $store: StoreObject,
     $state: State,
     $watch: Watch,
     $effect: Effect,
 }
 
+type StoreObject = ObjectType & {
+    /**
+     * Route parameter matching rules
+     * 
+     * A dynamic route segment may have a matching function separated by a colon.
+     * 
+     * Example: `:id:number` will match only numbers.
+     */
+    routeRule: RouteRulesObject,
+
+    mask: MaskObject,
+    /** Tokens are special characters that specify the type of characters allowed in a particular position of a mask. */
+    maskToken: MaskTokens,
+
+    directive: DirectivesArray,
+    template: TemplateObject,
+    script: ScriptObject,
+    style: StyleObject,
+    props: ContextObject,
+    data: ContextObject,
+};
+
 /** The global $set object */
 type SetObject = {
     hook: SetHook,
     route: SetRoute,
-    routeRule: ObjectType,
     router: SetRouter,
-    // method: SetContext,
-    // store: SetContext,
-    directive: SetDirective,
-    script: SetContext,
-    style: SetContext,
-    tokens: MaskTokens,
-    template: SetContext,
-    props: SetContext,
-    data: SetContext,
-    mask: SetContext,
 }
 
 type SetContext = (contextName: string, contextValue: any) => void;
@@ -117,22 +127,14 @@ type HydrationTools = {
     evalEffect: (vnode: VNode, attrName: string, attrValue: string, callback: (node: HTMLElement) => HookFunction) => void,
     // evalAttr: (vnode: VNode, ...attrNameParts: string[]) => FunctionType | undefined,
     // makeFn: (exp: string, args?: string, isVoid?: boolean) => string,
-
-    templates: TemplateObject,
-    scripts: ScriptObject,
-    styles: StyleObject,
-    tokens: MaskTokens,
-    props: ContextObject,
-    data: ContextObject,
-    masks: ObjectType,
     hooks: [SetHook, PlayHook],
     transition: [PlayTransition, ReverseTransition],
 
-} & GlobalContext;
+} & GlobalContext & StoreObject;
 
 /** The object that holds the saved templates */
 type TemplateObject = {
-    [templateName: string]: string
+    [templateName: string]: () => string
 }
 
 /** The object that holds the saved scripts */
@@ -142,10 +144,10 @@ type ScriptObject = {
 
 /** The object that holds the saved styles */
 type StyleObject = {
-    [styleName: string]: string
+    [styleName: string]: () => string
 }
 
 /** The object that holds the saved context functions */
 type ContextObject = {
-    [contextName: string]: (localContext?: LocalContext, globalContext?: GlobalContext) => ObjectType
+    [contextName: string]: (context?: LocalContext & GlobalContext) => ObjectType
 }

@@ -17,6 +17,7 @@ let libs = [
     {
         entry: 'src/cdn.ts',
         name: name + '.min',
+        formats: ['iife']
     },
 ];
 
@@ -69,11 +70,6 @@ const buildWithVite = async (lib) => {
 
 for (const lib of libs) {
     try {
-
-        if (!lib.formats) {
-            lib.formats = ['iife'];
-        }
-
         // Build with Vite
         await buildWithVite(lib);
     }

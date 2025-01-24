@@ -1,8 +1,9 @@
-import { propertyInitFns, watch } from ".";
-import { logError } from "../tools";
+import { isState, propertyInitFns, watch } from ".";
+import { logError, wait } from "../tools";
 import { DELETE, INVALID__$CAP, OBJECT, STORAGE, STORAGE_AREA } from "../tools/constants";
 import { getProto, hasOwnProperty, newMap } from "../tools/object";
 import { parse, stringify } from "../tools/string";
+import { setStateProperty } from "./prop";
 
 let GET_ITEM = 'getItem';
 let SET_ITEM = 'setItem';
@@ -64,43 +65,59 @@ export let storage = (_storage: any, value: any, alias?: string) => {
 
     // Property initialization function
     // This will be called when the state object is created or set
-    let fn = (proxied: any, prop: string) => {
+    let initFn = ({ state, prop }: ListenerFunctionContext, stateObject: StateObject) => {
+
+        // Remove the property initialization function from the set
+        propertyInitFns[DELETE](initFn);
+
+        // Add the observed state, property, and storage to the storage stack
+        _storageStack.set(alias, [state, prop, _storage]);
+
         // Get the final alias. This will be the key used to store the value in the storage
         alias = alias || keyPrefix(prop);
-        // Watch the property for changes
-        watch(proxied, prop, ({newValue}) => {
-            setItem(_storage, alias as string, newValue);
-        });
+
         // Set the initial value if it doesn't exist in the storage
         if (!hasOwnProperty(_storage, alias)) {
             setItem(_storage, alias, value);
         } else {
             value = getItem(_storage, alias);
         }
-        // Add the observed state, property, and storage to the storage stack
-        _storageStack.set(alias, [proxied, prop, _storage])
 
-        propertyInitFns[DELETE](fn);
+        // Update the storage when the property changes
+        let updateStorage = () =>
+            setItem(_storage, alias as string, state[prop]);
+
+        // Watch for changes to the property (property assignment)
+        wait(() => watch(state, prop, updateStorage));
+
+        // Add a property function to the state object
+        setStateProperty(stateObject, prop, ({ state, prop }: { state: any, prop: string }) => {
+            // If the property is an observed state
+            // Watch for changes in the entire object/array
+            // This will ensure that the storage is updated when the object/array is modified, not just during property assignment
+            if (isState(state[prop]))
+                watch(state[prop], "", updateStorage);
+        });
 
         return value;
     }
 
-    // Add the tracking callback to the storage functions
-    propertyInitFns.add(fn);
+    // Add the tracking callback to the property functions
+    propertyInitFns.add(initFn);
 
-    return fn;
+    return initFn;
 }
 
 export let storageEvent = (event: StorageEvent) => {
     // If the key is being observed
     if (_storageStack.has(event.key)) {
         // Get the observed state, property, and storage
-        let [proxied, prop, _storage] = _storageStack.get(event.key);
+        let [state, prop, _storage] = _storageStack.get(event.key);
 
         // If the _storage is the same as the event storage
         if (_storage === event[STORAGE_AREA]) {
             // Update the observed state
-            proxied[prop] = getItem(_storage, event.key as string);
+            state[prop] = getItem(_storage, event.key as string);
         }
     }
 }

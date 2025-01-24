@@ -1,7 +1,7 @@
 import { saveCleanup } from "../app";
 import { entries, has, logError, size, slice, wait } from "../tools";
 import { arrayAdd, find, indexOf, join } from "../tools/array";
-import { CAN_ONLY_BE_USED_ON, DIRECTIVE, ELEMENT, HOOKS, INPUT, MASK, OPTIONS, SELECTION_START, TEXTAREA, TOKENS, VALUE } from "../tools/constants";
+import { CAN_ONLY_BE_USED_ON, DIRECTIVE, ELEMENT, HOOKS, INPUT, MASK, MASK_TOKEN, OPTIONS, SELECTION_START, TEXTAREA, TOKENS, VALUE } from "../tools/constants";
 import { emit, listen } from "../tools/dom";
 import { getKey, getKeys, newRegExp } from "../tools/object";
 import { match, replace, split, startsWith } from "../tools/string";
@@ -62,16 +62,16 @@ export let hydrateMask = (vnode: VNode, attrName: string, attrValue: string, too
     let mask = attrValue;
 
     // Dynamic mask function
-    let dynamicMask: ($mask: MaskObject) => string;
-    if (tools.masks[mask]) dynamicMask = tools.masks[mask];
-    
+    let dynamicMask: MaskFunction | undefined;
+    if (tools.mask[mask]) dynamicMask = tools.mask[mask];
+
     // Options
     let options = vnode[OPTIONS][attrName] || {};
 
     // Updated mask object
-    let $mask: MaskObject = {
+    let $mask: MaskContext = {
         ...options,
-        tokens: {...tools[TOKENS], ...options[TOKENS]},
+        tokens: {...tools[MASK_TOKEN], ...options[TOKENS]},
         mask,
         [VALUE]: '',
         [CURSOR]: $el[SELECTION_START],
@@ -215,7 +215,7 @@ let matchMaskItem = (remainingInput: string, maskItem: MaskItem, tokens: MaskTok
     return index;
 }
 
-let applyMask = ($mask: MaskObject) => {
+let applyMask = ($mask: MaskContext) => {
 
     let tokens = $mask[TOKENS];
     let input = $mask[VALUE];
@@ -322,7 +322,7 @@ let applyMask = ($mask: MaskObject) => {
     $mask[PARTS] = maskItems;
 }
 
-export let money = ($mask: MaskObject) => {
+export let money = ($mask: MaskContext) => {
 
     let value = $mask[VALUE];
 

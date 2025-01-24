@@ -41,7 +41,7 @@
   "scripts": {
     "dev": "vite",
     "build": "node scripts/build.js",
-    "publish:local": "yalc publish"
+    "local": "yalc publish"
   },
   "devDependencies": {
     "vite": "^5.0.8",

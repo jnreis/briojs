@@ -97,3 +97,5 @@ export let queryString = (params: ObjectType) => {
     let query = toString(new URLSearchParams(params));
     return query ? '?' + query : '';
 }
+
+export let wrapInBackticks = (value: string) => '`' + replace(value, /`/g, '\\`') + '`';

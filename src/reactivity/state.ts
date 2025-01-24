@@ -1,20 +1,19 @@
 import { getStateObject, isState, stateObjects, propertyInitFns } from '.';
 import { trackProps, accessedProps } from './track';
-import { has } from '../tools';
-import { arrayAdd, arrayFrom, sort, sortPriority } from '../tools/array';
+import { arrayAdd, arrayFrom, each, sort, sortPriority } from '../tools/array';
 import { R, createContext, getKey, hasOwnProperty, newMap, setKey } from '../tools/object';
 import { isArray, isObject, isUndefined } from '../tools/typeCheck';
-import { CREATE, DEFINE_PROPERTY, DELETE, DELETE_PROPERTY, NULL, PARENT, PROPS, SKIP, STATE, VALUE, UNDEFINED, UPDATE } from '../tools/constants';
+import { CREATE, DEFINE_PROPERTY, DELETE, DELETE_PROPERTY, NULL, PARENT, PROPS, STATE, VALUE, UNDEFINED, UPDATE, ON_SET, NEW_VALUE, OLD_VALUE } from '../tools/constants';
 
 /**
  * State wrapps an object/array in a Proxy to track changes and notify listeners.
  * @param {Object|Array} target The object/array to observe
  * @param {Object} [options] Options for the state
  * @param {Object} [options.parent] The parent state object
- * @param {Array} [options.skip] Skip specific keys/indexes from being automatically observed
  * @returns proxied
 */
-export let state = (target: any, options?: StateOptions) => {
+// @ts-ignore
+export let state: State = (target: any, options?: StateOptions) => {
 
     /**
      * Do not observe the target if:
@@ -26,15 +25,8 @@ export let state = (target: any, options?: StateOptions) => {
     /** The parent state object */
     let parent = getKey(options, PARENT, NULL) as any;
 
-    /**
-     * Skip specific keys/indexes from being automatically observed.
-     * 
-     * Note that these keys/indexes can still be observed manually.
-     */
-    let skip = getKey(options, SKIP, []);
-
     // State options
-    options = { parent, skip };
+    options = { parent };
 
     // Proxy handler
     let handler = {
@@ -91,19 +83,22 @@ export let state = (target: any, options?: StateOptions) => {
             // Do not set the new value if it is equal to the old value
             if (oldValue === newValue) return true;
 
-            // Call the property initialization function if present
+            let stateObject = getStateObject(proxied);
+
+            // Call the property init function, if present
             if (propertyInitFns.has(newValue))
-                newValue = newValue(proxied, prop, options);
+                newValue = newValue({[STATE]: proxied, prop, [NEW_VALUE]: newValue, [OLD_VALUE]: oldValue}, stateObject, newValue);
 
             // Attempt to observe the value if the property is not marked to skip observation
-            if (!has(skip, prop))
+            if (!skip.has(prop))
                 newValue = state(newValue);
 
             /**
              * If an observed array/object is being reassigned to a new array/object, update the listeners.
              * This is necessary because the reference to the observed array/object has changed.
+             * Note that the old and new values must be of the same type (array or object).
              */
-            if (isState(oldValue) && isArrayOrObject(newValue)) {
+            if (isState(oldValue) && isState(newValue)) {
                 stateObjects.set(newValue, getStateObject(oldValue));
                 stateObjects[DELETE](oldValue);
             }
@@ -111,14 +106,18 @@ export let state = (target: any, options?: StateOptions) => {
             // Set the new value
             let result: boolean = R.set(target, prop, newValue, proxied);
 
+            console.log('set', stateObject, proxied, prop, newValue, oldValue);
+
+            // Call the property set functions, if any
+            if (stateObject[ON_SET][prop])
+                each(stateObject[ON_SET][prop], fn => fn({[STATE]: proxied, prop, [NEW_VALUE]: newValue, [OLD_VALUE]: oldValue}, stateObject, fn));
+
             // Notify listeners about the property change
-            notifyListeners(getStateObject(proxied), proxied, prop, newValue, oldValue);
+            notifyListeners(stateObject, proxied, prop, newValue, oldValue);
 
             return result;
         },
         [DELETE_PROPERTY](target: any, prop: string) {
-
-            let stateObject = getStateObject(proxied);
 
             let oldValue = target[prop];
 
@@ -126,18 +125,21 @@ export let state = (target: any, options?: StateOptions) => {
             let result = R[DELETE_PROPERTY](target, prop);
 
             // Notify listeners about the property deletion
-            notifyListeners(stateObject, proxied, prop, UNDEFINED, oldValue);
+            notifyListeners(getStateObject(proxied), proxied, prop, UNDEFINED, oldValue);
 
             return result;
         },
         [DEFINE_PROPERTY](target: any, prop: string, descriptor: PropertyDescriptor) {
 
+            let newValue = descriptor[VALUE];
+            let oldValue = proxied[prop];
+
             // Call the property initialization function if present
-            if (propertyInitFns.has(descriptor[VALUE]))
-                descriptor[VALUE] = descriptor[VALUE](proxied, prop, options);
+            if (propertyInitFns.has(newValue))
+                descriptor[VALUE] = newValue({[STATE]: proxied, prop, [NEW_VALUE]: newValue, [OLD_VALUE]: oldValue}, getStateObject(proxied), newValue);
 
             // Attempt to observe the value if the property is not marked to skip observation
-            if (!has(skip, prop) && isArrayOrObject(descriptor[VALUE]))
+            if (!skip.has(prop) && VALUE in descriptor)
                 descriptor[VALUE] = state(descriptor[VALUE]);
 
             return R[DEFINE_PROPERTY](target, prop, descriptor);
@@ -147,11 +149,23 @@ export let state = (target: any, options?: StateOptions) => {
     // Create a proxy for the object/array
     const proxied = new Proxy(isState(parent) ? createContext(parent, target) : target, handler);
 
-    // Add the new proxied state to the state objects
-    stateObjects.set(proxied, {
+    /**
+     * Skip specific keys/indexes from being automatically observed.
+     * 
+     * Note that these keys/indexes can still be observed manually.
+     */
+    const skip: Set<string|number> = new Set();
+
+    // Create the state object
+    let stateObject: StateObject = {
         [STATE]: newMap(),
-        [PROPS]: {}
-    });
+        [PROPS]: {},
+        skip,
+        [ON_SET]: {},
+    };
+
+    // Add the new proxied state to the state objects
+    stateObjects.set(proxied, stateObject);
 
     // Observe nested arrays/objects
     for (let prop in target) {
@@ -159,15 +173,15 @@ export let state = (target: any, options?: StateOptions) => {
         let value = target[prop];
 
         // Call the property initialization function if present
-        if (propertyInitFns.has(target[prop])) {
-            value = target[prop](proxied, prop, options);
+        if (propertyInitFns.has(value)) {
+            value = value({[STATE]: proxied, prop, [NEW_VALUE]: value, [OLD_VALUE]: UNDEFINED}, stateObject, value);
             R.set(target, prop, value, proxied);
         }
 
         // Attempt to observe the value if the property is not marked to skip observation
         // Note: R.set silently handles getters and setters
-        if (!has(skip, prop) && isArrayOrObject(value)) {
-            R.set(target, prop, state(value), proxied);
+        else if (!skip.has(prop) && isArrayOrObject(value)) {
+            R.set(target, prop, value, proxied);
         }
     }
 
@@ -187,7 +201,7 @@ let notifyListeners = (stateObject: StateObject, proxied: any, prop: any, newVal
 
     let operation = isUndefined(oldValue) ? CREATE : isUndefined(newValue) ? DELETE : UPDATE;
 
-    let context: ListenerFunctionContext = {operation, state: proxied, prop, newValue, oldValue};
+    let context: ListenerFunctionContext = {operation, [STATE]: proxied, prop, [NEW_VALUE]: newValue, [OLD_VALUE]: oldValue};
 
     // Notify state listeners
     _notifyListeners(stateObject[STATE], context);

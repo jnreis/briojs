@@ -7,6 +7,7 @@ export let BRIO: 'brio' = 'brio';
  */
 
 export let $: '$' = '$';
+export let $STORE: '$store' = '$store';
 
 export let AFTER: 'after' = 'after';
 export let ANIMATION_ENGINE: 'animation engine' = 'animation engine';
@@ -21,6 +22,7 @@ export let BEFORE: 'before' = 'before';
 export let BEGIN: 'begin' = 'begin';
 export let BODY: 'body' = 'body';
 export let BOOLEAN: 'boolean' = 'boolean';
+export let BOTH: 'both' = 'both';
 
 export let CAN_ONLY_BE_USED_ON = 'can only be used on';
 export let CANNOT__$CAP: 'Cannot ' = 'Cannot ';
@@ -60,6 +62,7 @@ export let HTML: 'html' = 'html';
 export let HTML__$UPPER: 'HTML' = 'HTML';
 export let HYDRATE: 'hydrate' = 'hydrate';
 
+export let IN: 'in' = 'in';
 export let INNER: 'inner' = 'inner';
 export let INSERT: 'insert' = 'insert';
 export let INVALID__$CAP: 'Invalid' = 'Invalid';
@@ -71,6 +74,7 @@ export let METHOD: 'method' = 'method';
 export let MUST_BE: 'must be' = 'must be';
 
 export let NEW_LINE = '\n';
+export let NEW_VALUE: 'newValue' = 'newValue';
 export let NAME: 'name' = 'name';
 export let NODE__$CAP: 'Node' = 'Node';
 export let NOT_FOUND: 'not found.' = 'not found.';
@@ -79,9 +83,12 @@ export let NUMBER: 'number' = 'number';
 
 export let OBJECT: 'object' = 'object';
 export let OBSERVE: 'observe' = 'observe';
+export let OLD_VALUE: 'oldValue' = 'oldValue';
 export let ONCE: 'once' = 'once';
 export let ON_COMPLETE: 'onComplete' = 'onComplete';
+export let ON_SET: 'onSet' = 'onSet';
 export let OPTIONS: 'options' = 'options';
+export let OUT: 'out' = 'out';
 export let OUTER: 'outer' = 'outer';
 
 export let PARENT: 'parent' = 'parent';
@@ -177,6 +184,8 @@ export let INSERT_ADJACENT_HTML = INSERT + 'AdjacentHTML' as 'insertAdjacentHTML
 
 export let LAST_CHILD = 'last' + CHILD__$CAP as 'lastChild';
 
+export let MASK_TOKEN = MASK + 'Token' as 'maskToken';
+
 export let NEXT_SIBLING = 'next' + SIBLING__$CAP as 'nextSibling';
 
 export let OF_TYPE = 'of ' + TYPE as 'of type';
@@ -195,15 +204,12 @@ export let REPLACE_WITH = REPLACE + WITH__$CAP as 'replaceWith';
 export let REPLACE_CHILDREN = REPLACE + 'Children' as 'replaceChildren';
 export let ROUTE_RULE = ROUTE + 'Rule' as 'routeRule';
 
-export let SCRIPTS = SCRIPT + 's' as 'scripts';
 export let SELECTION_START = SELECT + 'ionStart' as 'selectionStart';
 export let SET_ATTRIBUTE = 'set' + ATTRIBUTE__$CAP as 'setAttribute';
 export let STARTS_WITH = START + 's' + WITH__$CAP as 'startsWith';
 export let STORAGE_AREA = STORAGE + 'Area' as 'storageArea';
-export let STYLES = STYLE + 's' as 'styles';
 
 export let TARGET = 'tar' + GET as 'target';
-export let TEMPLATES = TEMPLATE + 's' as 'templates';
 export let TEXTAREA = TEXT + 'area' as 'textarea';
 export let TEXT_CONTENT = TEXT + CONTENT__$CAP as 'textContent';
 

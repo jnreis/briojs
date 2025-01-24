@@ -4,7 +4,7 @@ import { TOKENS, VALUE } from "../../tools/constants";
 import { getKey, newRegExp } from "../../tools/object";
 import { replace, split, startsWith } from "../../tools/string";
 
-let money = ($mask: MaskObject) => {
+let money = ($mask: MaskContext) => {
 
     let value = $mask[VALUE];
 

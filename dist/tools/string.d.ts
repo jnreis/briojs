@@ -41,3 +41,4 @@ export declare let parse: (value: string, reviver?: ((this: any, key: string, va
  * @returns The query string. Includes the '?' character if the query string is not empty.
  */
 export declare let queryString: (params: ObjectType) => string;
+export declare let wrapInBackticks: (value: string) => string;

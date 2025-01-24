@@ -4,7 +4,6 @@ import { each, filter, sort } from "../tools/array";
 import { AFTER, BEFORE, BEGIN, BODY, ELEMENT, END, HTML, HYDRATE, INNER_HTML, NOT_FOUND, OUTER, OUTER_HTML, SELECT, TEXT, TEXT_CONTENT, INNER, PARENT, HEAD, SCRIPT, ONCE, STYLE, REPLACE_WITH, B_, INSERT } from "../tools/constants";
 import { childNodes, createElement, eachAttribute, forcePropertyAssignment, getAttr, getParent, getTagName, insertHTML, insertNodes, parseHTML, query, queryAll, setAttr } from "../tools/dom";
 import { getKey } from "../tools/object";
-import { trim } from "../tools/string";
 import { isNode, isNull } from "../tools/typeCheck";
 
 /**
@@ -72,7 +71,7 @@ export let newInsert = (hydrate: FunctionType, dehydrate: FunctionType, template
     content = await content;
 
     // The content is a template
-    if (content in templates) content = trim(templates[content]);
+    if (content in templates) content = templates[content]();
 
     // Parse the content if it is a string
     let htmlContent = isNode(content) ? content : parseHTML(content);

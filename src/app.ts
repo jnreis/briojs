@@ -1,20 +1,20 @@
-import { directives, setDirective } from "./directives";
+import { directives } from "./directives";
 import { money } from "./directives/mask";
-import { newLocalContext } from "./methods/context";
 import { newInsert } from "./methods/dom";
 import { http } from "./methods/http";
 import { newRouter } from "./methods/route";
 import { newTransitions } from "./methods/transition";
 import { effect, state, storageEvent, watch } from "./reactivity";
+import { skipProp } from "./reactivity/skip";
 import { logError, wait } from "./tools";
 import { arrayAdd, each, join } from "./tools/array";
-import { TEXT, TEXT_CONTENT, ATTR, DELETE, INNER_HTML, PARENT, HYDRATE, $PROPS, B_PROPS, NULL, B_DATA, SCRIPT, ELEMENT, NOT_FOUND, $DATA, $EACH, STYLE, B_, TEMPLATE, TEMPLATES, DIRECTIVE, PROPS, STRING, STYLES, SCRIPTS, UNDEFINED, REPLACE_WITH, ROUTE_RULE, OPTIONS, ROUTE, EXP_ARGS, EVAL_EFFECT, TRANSITION, TOKENS, MASK, NEW_LINE, BRIO, STORAGE, STATE } from "./tools/constants";
+import { TEXT, TEXT_CONTENT, ATTR, DELETE, INNER_HTML, PARENT, HYDRATE, $PROPS, B_PROPS, NULL, B_DATA, SCRIPT, ELEMENT, NOT_FOUND, $DATA, $EACH, STYLE, B_, TEMPLATE, UNDEFINED, REPLACE_WITH, ROUTE_RULE, OPTIONS, ROUTE, EXP_ARGS, EVAL_EFFECT, TRANSITION, NEW_LINE, BRIO, STORAGE, STATE, $STORE, MASK_TOKEN, DIRECTIVE, PROPS, DEHYDRATE, INSERT, HOOKS } from "./tools/constants";
 import { walk, getAttr, delAttr, getParent, queryAll, getTagName, getNodeContent, removeNode, eachAttribute, query, emit, listen, href, childNodes, setAttr, createElement, insertNodes } from "./tools/dom";
 import { evaluate } from "./tools/evaluation";
 import { newHooks } from "./tools/hook";
 import { countKeys, getKey, getKeys, newMap, newRegExp, setKey, setObjectKeys, W } from "./tools/object";
-import { isStringNumeric, replace, split, startsWith, test, trim } from "./tools/string";
-import { isTextNode, isElementNode, isNull, isRegExp, isUndefined, isString, isNode } from "./tools/typeCheck";
+import { isStringNumeric, replace, split, startsWith, test, trim, wrapInBackticks } from "./tools/string";
+import { isTextNode, isElementNode, isNull, isRegExp, isUndefined, isString, isNode, isFunction } from "./tools/typeCheck";
 
 // TODO: some notes that may be useful when writing documentation
 // * Effects are functions that are called when a dependency changes
@@ -31,42 +31,36 @@ export let loadedScripts: Set<string> = new Set();
 export let newApp = (node?: Node, ctxNode?: Node) => {
 
     let vnodes: Map<Node, VNode> = newMap();
+    let unicodeLetters = '\\p{Letter}';
+
+    let store: StoreObject = state({
+        [ROUTE_RULE]: skipProp({ number: isStringNumeric }),
+
+        mask: skipProp({ money }),
+        [MASK_TOKEN]: skipProp({
+            '#': /\d/, // only numbers
+            '&': newRegExp(`[${unicodeLetters}]`, 'u'), // only letters (unicode)
+            '*': newRegExp(`[${unicodeLetters}\\d]`, 'u'), // letters and numbers (unicode)
+            // H: /[a-f\d]/i, // hexadecimal
+        }),
+
+        [DIRECTIVE]: skipProp([...directives]),
+        [TEMPLATE]: skipProp({}),
+        [SCRIPT]: skipProp({}),
+        [STYLE]: skipProp({}),
+        [PROPS]: skipProp({}),
+        data: skipProp({}),
+    });
 
     /** The global context of this app */
     // @ts-ignore
     let gc: GlobalContext = {
         $http: http,
-        $stores: {},
-        $plugins: {},
+        [$STORE]: store,
         $state: state,
         $watch: watch,
         $effect: effect,
     };
-
-    /**
-     * Route parameter matching rules
-     * 
-     * A dynamic route segment may have a matching function separated by a colon.
-     * 
-     * Example: `:id:number` will match only numbers.
-     */
-    let routeRules: RouteRulesObject = { number: isStringNumeric };
-
-    let templates: TemplateObject = {};
-    let scripts: ScriptObject = {};
-    let styles: StyleObject = {};
-    let props: ContextObject = {};
-    let data: ContextObject = {};
-    let masks: ObjectType = {};
-
-    let unicodeLetters = '\\p{Letter}';
-    /** Tokens are special characters that specify the type of characters allowed in a particular position of a mask. */
-    let tokens: MaskTokens = {
-        '#': /\d/, // only numbers
-        '&': newRegExp(`[${unicodeLetters}]`, 'u'), // only letters (unicode)
-        '*': newRegExp(`[${unicodeLetters}\\d]`, 'u'), // letters and numbers (unicode)
-        // H: /[a-f\d]/i, // hexadecimal
-    }
 
     /** Get a vnode, if any */
     let getVNode = (node: Node) => vnodes.get(node);
@@ -216,10 +210,13 @@ export let newApp = (node?: Node, ctxNode?: Node) => {
                     }
                     // Hydrate the element
                     else {
-                        // Make sure every script element is hydrated by setting the b-script attribute
-                        // Note: an element can still be marked to not be hydrated by setting the b-ignore attribute
-                        if (tagName == SCRIPT && isNull(getAttr(_node as HTMLElement, B_+SCRIPT)))
-                            setAttr(_node as HTMLElement, B_+SCRIPT, '');
+                        /**
+                         * IMPORTANT: THIS IS NOT PART OF THE MAIN BUILD, BUT YOU CAN UNCOMMENT IT IF YOU WANT TO USE IT
+                         * Make sure every script element is hydrated by setting the b-script attribute
+                         * Note: an element can still be marked to not be hydrated by setting the b-ignore attribute
+                         */
+                        // if (tagName == SCRIPT && isNull(getAttr(_node as HTMLElement, B_+SCRIPT)))
+                        //     setAttr(_node as HTMLElement, B_+SCRIPT, '');
 
                         result = await hydrateElementNode(_node as HTMLElement, _ctxNode);
                     }
@@ -269,7 +266,7 @@ export let newApp = (node?: Node, ctxNode?: Node) => {
             let vnode = newVNode(node as any, ctxNode);
 
             // Evaluate the expression
-            let [call] = evaluate(vnode, `$el.${TEXT_CONTENT}=\`${sanitizedText}\``, '', true);
+            let [call] = evaluate(vnode, `$el.${TEXT_CONTENT}=${wrapInBackticks(sanitizedText)}`, '', true);
 
             // Save the cleanup function
             saveCleanup(vnode, effect(call));
@@ -301,7 +298,7 @@ export let newApp = (node?: Node, ctxNode?: Node) => {
          * Check the attributes against the directives.
          * Its important to hydrate the directives in the correct order because some directives depend on others.
          */
-        for (let [directiveName, hydrationFn] of directives) {
+        for (let [directiveName, hydrationFn] of store[DIRECTIVE]) {
 
             // The attributes to hydrate
             let hydrateAttributes: [string, string][] = [];
@@ -363,38 +360,29 @@ export let newApp = (node?: Node, ctxNode?: Node) => {
     // * * * INSTANTIATE METHODS FOR THIS APP * * * //
 
     /** The `$insert` method of this app */
-    let insert = newInsert(hydrate, dehydrate, templates);
+    let insert = newInsert(hydrate, dehydrate, store[TEMPLATE]);
 
     /** Hook methods */
     let [setHook, playHook] = newHooks(newMap());
 
     /** Router methods */
-    let [setRoute, route] = newRouter({}, routeRules, insert);
+    let [setRoute, route] = newRouter({}, store[ROUTE_RULE], insert);
 
     // Make the router of the first instance the primary router
     if (!settings[ROUTE]) setRouter(route);
 
     let $set = {
-        hook: setHook,
-        route: setRoute,
-        [ROUTE_RULE]: routeRules,
-        router: setRouter,
-        [DIRECTIVE]: setDirective,
-        [SCRIPT]: newLocalContext(SCRIPT, scripts),
-        [STYLE]: newLocalContext(STYLE, styles, isString, STRING),
-        [TEMPLATE]: newLocalContext(TEMPLATE, templates, isString, STRING),
-        [PROPS]: newLocalContext($PROPS, props),
-        data: newLocalContext($DATA, data),
-        mask: newLocalContext(MASK, masks),
-        [TOKENS]: tokens,
+        hook: setHook, // -> $hook
+        [ROUTE]: setRoute, // -> $route
+        router: setRouter, // -> $setRouter
     }
-
-    // Add the money mask
-    $set.mask('money', money);
 
     /** Global context: $dom methods */
     let $dom = {
-        hydrate, dehydrate, insert, route,
+        [HYDRATE]: hydrate, 
+        [DEHYDRATE]: dehydrate, 
+        [INSERT]: insert, 
+        [ROUTE]: route,
         emit, listen, query, queryAll,
         /** Get the closest parent element of a target element */
         closest(target: HTMLElement | string, directiveName: string = B_DATA) {
@@ -415,23 +403,17 @@ export let newApp = (node?: Node, ctxNode?: Node) => {
 
     let hydrationTools: HydrationTools = {
         ...gc,
+        ...store,
         newVNode,
         getVNode,
         eval: evaluate,
         [EVAL_EFFECT]: evalEffect,
-        [TEMPLATES]: templates,
-        [SCRIPTS]: scripts,
-        [STYLES]: styles,
-        [TOKENS]: tokens,
-        props,
-        data,
-        masks,
-        hooks: [setHook, playHook],
+        [HOOKS]: [setHook, playHook],
         [TRANSITION]: newTransitions(),
     };
 
     // Prevent the items in these objects from being changed or deleted
-    each([$set, $dom, http, gc, hydrationTools], obj => setObjectKeys(obj, {w: false, c: false}));
+    each([$set, $dom, http, store, gc, hydrationTools], obj => setObjectKeys(obj, {w: false, c: false}));
 
     // // Save the assets in the document (templates, scripts, styles)
     // saveAssets(query(HTML) as HTMLElement, hydrationTools);
@@ -473,7 +455,8 @@ export let saveAttr = (vnode: VNode, attrName: string, attrValue: string) => {
  * This is necessary to properly evaluate certain expressions.
  * Without this, the evaluate function may throw an error for some expressions.
  */
-export let sanitizeAttrValue = (text: string) => replace(trim(join(split(text, NEW_LINE).map(line => startsWith(trim(line), '//') ? '' : line), NEW_LINE)), /;$/, '');
+export let sanitizeAttrValue = (text: string) => 
+    replace(trim(join(split(text, NEW_LINE).map(line => startsWith(trim(line), '//') ? '' : line), NEW_LINE)), /;$/, '');
 
 /** Match template literal ${} */
 export let templateRegex = /\${((?!.*\${).*?)}/;
@@ -527,8 +510,10 @@ let saveAssets = (element: HTMLElement, tools: HydrationTools) => {
             // Determine the asset type (script, style, or template)
             let assetType = tagName == SCRIPT ? SCRIPT : tagName == STYLE ? STYLE : TEMPLATE;
 
+            let assetValue = sanitizeAttrValue(el[INNER_HTML]);
+
             // Save the asset
-            tools[assetType+'s' as 'scripts'|'styles'|'templates'][assetName] = sanitizeAttrValue(el[INNER_HTML]);
+            tools[assetType as 'script'|'style'|'template'][assetName] = tagName == SCRIPT ? assetValue : () => assetValue;
 
             // Remove the element, if it does not have the b-hydrate attribute
             if (isNull(getAttr(el, B_+HYDRATE))) removeNode(el);
@@ -570,7 +555,11 @@ let localContext: ObjectType = {
 }
 
 /** Sets the primary router */
-let setRouter = (route: FunctionType) => settings[ROUTE] = () => route(href());
+let setRouter = (route: FunctionType) => {
+    if (isFunction(route)) {
+        settings[ROUTE] = () => route(href());
+    }
+}
 
 /**
  * Evaluate attribute, if any

@@ -1,9 +1,9 @@
 import { logError } from "../tools";
-import { ATTR, B_IF, B_SHOW, DIRECTIVE, HOOKS, MUST_BE, PAUSE, TRANSITION } from "../tools/constants";
+import { ATTR, B_IF, B_SHOW, BOTH, DIRECTIVE, HOOKS, IN, MUST_BE, OUT, PAUSE, TRANSITION } from "../tools/constants";
 import { evaluate } from "../tools/evaluation";
 import { INFINITY } from "../tools/number";
 
-export let hydrateTransition = (vnode: VNode, attrName: string, attrValue: string, tools: HydrationTools) => {
+export let hydrateTransition = (type: 'in'|'out'|'both') => (vnode: VNode, attrName: string, attrValue: string, tools: HydrationTools) => {
 
     let _attrName = vnode[ATTR][B_IF] ? B_IF : vnode[ATTR][B_SHOW] ? B_SHOW : '';
 
@@ -21,10 +21,12 @@ export let hydrateTransition = (vnode: VNode, attrName: string, attrValue: strin
     animation[PAUSE]();
 
     // This will play the transition before the main hook function
-    setHook(vnode.el, _attrName, (ctx, controls) => playTransition(animation, ctx, controls), INFINITY);
+    if (type == OUT || type == BOTH)
+        setHook(vnode.el, _attrName, (ctx, controls) => playTransition(animation, ctx, controls), INFINITY);
 
     // This will play the transition after the main hook function
-    setHook(vnode.el, _attrName, (ctx, controls) => reverseTransition(animation, ctx, controls), -INFINITY);
+    if (type == IN || type == BOTH)
+        setHook(vnode.el, _attrName, (ctx, controls) => reverseTransition(animation, ctx, controls), -INFINITY);
 }
 
 /**

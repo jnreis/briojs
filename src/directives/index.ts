@@ -16,7 +16,7 @@ import { hydrateScripts } from './script';
 import { hydrateStyles } from './styles';
 import { hydrateIgnore } from './ignore';
 
-import { B_, B_DATA, B_EACH, B_IF, B_PROPS, B_SHOW, HTML, INNER, SCRIPT, STYLE, TELEPORT, TEMPLATE, TEXT, TRANSITION } from "../tools/constants";
+import { B_, B_DATA, B_EACH, B_IF, B_PROPS, B_SHOW, BOTH, HTML, IN, INNER, OUT, SCRIPT, STYLE, TELEPORT, TEMPLATE, TEXT, TRANSITION } from "../tools/constants";
 import { newRegExp } from '../tools/object';
 import { isString } from '../tools/typeCheck';
 import { findIndex } from '../tools/array';
@@ -24,7 +24,7 @@ import { startsWith, toString } from '../tools/string';
 import { has } from '../tools';
 import { hydrateTemplate } from './template';
 
-let dynamicDirectivePattern = (directiveName: string) => newRegExp(`^(${directiveName})[\\w-]*$`);
+let dynamicDirectivePattern = (directiveName: string) => newRegExp(`^(${directiveName})[\\w-]+$`);
 
 /**
  * Active directives
@@ -58,7 +58,9 @@ export let directives: [string | RegExp, HydrationFunction][] = [
     [B_SHOW, hydrateShow],
 
     // ['b-boost', hydrateBoost],
-    [B_+TRANSITION, hydrateTransition],
+    [B_+TRANSITION, hydrateTransition(BOTH)], // b-transition
+    [B_+TRANSITION+'-in', hydrateTransition(IN)], // b-transition-in
+    [B_+TRANSITION+'-out', hydrateTransition(OUT)], // b-transition-out
 
     // b-on: used to create event listeners. Including special listeners such as `on-enter`, `on-exit`, and `on-resize`
     [dynamicDirectivePattern('b-on-|on-'), hydrateOn], // [b-on|on]-[eventName]-[...eventAlias]

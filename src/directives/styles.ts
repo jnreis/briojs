@@ -1,7 +1,7 @@
 import { replaceMustache, templateRegex } from "../app";
 import { has, uid } from "../tools";
 import { arrayAdd, each, filter, join, map } from "../tools/array";
-import { AFTER, HOOKS, HYDRATE, NEW_LINE, STYLE, STYLES, TEXT_CONTENT } from "../tools/constants";
+import { AFTER, HOOKS, HYDRATE, NEW_LINE, STYLE, TEXT_CONTENT } from "../tools/constants";
 import { createElement, getTagName, insertNodes, setClass } from "../tools/dom";
 import { evaluate } from "../tools/evaluation";
 import { match, replace, split, test, trim } from "../tools/string";
@@ -16,13 +16,15 @@ export let hydrateStyles = (vnode: VNode, attrName: string, attrValue: string, t
 
         let [setHook, playHook] = tools[HOOKS];
 
+        let stylesObject = tools[STYLE];
+
         // Evaluate the attribute value, if attribute value does not match a saved style
-        let styles = tools[STYLES][attrValue] || evaluate(vnode, attrValue)[0]();
+        let styles = stylesObject[attrValue] ? stylesObject[attrValue]() : evaluate(vnode, attrValue)[0]();
 
         // Get the styles
         styles = map(
             isArray(styles) ? styles : [styles],
-            style => tools[STYLES][style] || style
+            style => stylesObject[style] ? stylesObject[style]() : style
         );
 
         // Create a unique prefix for the CSS selectors

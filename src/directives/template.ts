@@ -1,4 +1,4 @@
-import { HOOKS, INNER, INSERT, REPLACE_WITH, TEMPLATES } from "../tools/constants";
+import { HOOKS, INNER, INSERT, REPLACE_WITH, TEMPLATE } from "../tools/constants";
 import { childNodes, insertNodes } from "../tools/dom";
 import { evaluate } from "../tools/evaluation";
 
@@ -7,7 +7,7 @@ export let hydrateTemplate = (vnode: VNode, attrName: string, attrValue: string,
     let el = vnode.el;
 
     // Evaluate the attribute value, if it does not match a saved template
-    let template = tools[TEMPLATES][attrValue] || evaluate(vnode, attrValue)[0]();
+    let template = tools[TEMPLATE][attrValue] ? tools[TEMPLATE][attrValue]() : evaluate(vnode, attrValue)[0]();
 
     let [setHook, playHook] = tools[HOOKS];
 

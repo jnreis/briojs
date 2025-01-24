@@ -44,7 +44,7 @@ export declare let setObjectKeys: (object: any, descriptor?: PropertyDescriptorS
  *
  * Note: This mutates the object.
  */
-export declare let deleteKey: (object: any, key: string | number) => boolean;
+export declare let deleteKey: (object: any, key: string | number | symbol) => boolean;
 /**
  * Deletes all keys in an object.
  *

@@ -1,9 +1,9 @@
 import { symbol } from "../app";
 import { logError, size } from "../tools";
 import { arrayAdd, each, filter } from "../tools/array";
-import { NULL, OUTER, PATHNAME, CANNOT__$CAP, FUNCTION, HTML, NEW_LINE } from "../tools/constants";
+import { NULL, OUTER, PATHNAME, CANNOT__$CAP, FUNCTION, HTML, NEW_LINE, REMOVE } from "../tools/constants";
 import { href } from "../tools/dom";
-import { getKeys, L } from "../tools/object";
+import { deleteKey, getKeys, L } from "../tools/object";
 import { split, startsWith, trim } from "../tools/string";
 import { isArray, isFunction } from "../tools/typeCheck";
 import { http } from "./http";
@@ -120,7 +120,11 @@ export let newRouter = (routes: RoutesObject, routeRules: ObjectType, insert: Fu
         found = found && routesAt[symbol] ? 1 : 0;
 
         // The route was found, call the route function
-        if (found) routesAt[symbol]({params, routePath});
+        if (found) routesAt[symbol]({
+            params,
+            path: routePath,
+            [REMOVE]: () => deleteKey(routesAt, symbol)
+        });
 
         // Otherwise, fetch and swap the page
         else insert(http.get(routePath), OUTER, HTML);

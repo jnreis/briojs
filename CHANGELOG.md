@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.25.0] - 2025-01-24
+
+- The $store object now houses directive array, and the following objects: routeRule, template, script, style, props, data. These reusable items are used by Brio.js and can be modified for maximum flexibility.
+
+
 ## [0.24.0] - 2024-09-20
 
 - The Brio.js framework no longer automatically hydrates the HTML on load. One or more independent Brio apps must be created by calling brio.newApp('selector'|node).

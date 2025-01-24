@@ -17,10 +17,17 @@ type InsertOptions = {
  */
 type RoutesObject = {
     [segment: string]: RoutesObject;
-    [routeFunction: symbol]: FunctionType;
+    [routeFunction: symbol]: RouteFunction;
 }
 
-type SetRoute = (routePath: string, routeFunction: FunctionType) => void;
+type SetRoute = (routePath: string, routeFunction: RouteFunction) => void;
+
+type RouteFunctionArgs = {
+    params: ObjectType,
+    path: string,
+    remove: FunctionType
+};
+type RouteFunction = (args: RouteFunctionArgs) => void;
 
 /**
  * Route to a path.

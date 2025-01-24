@@ -2,7 +2,7 @@ export declare let symbol: symbol;
 export declare let settings: ObjectType;
 export declare let loadedScripts: Set<string>;
 /** Create a new app */
-export declare let newApp: (node?: Node, ctxNode?: Node) => GlobalContext;
+export declare let newApp: (node?: Node | string, ctxNode?: Node | string) => GlobalContext;
 /** Save the cleanup function to the vnode */
 export declare let saveCleanup: (vnode: VNode, cleanupFn: FunctionType) => void;
 /** Saves the attribute to the vnode and removes it from the node */

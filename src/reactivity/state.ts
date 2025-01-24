@@ -106,8 +106,6 @@ export let state: State = (target: any, options?: StateOptions) => {
             // Set the new value
             let result: boolean = R.set(target, prop, newValue, proxied);
 
-            console.log('set', stateObject, proxied, prop, newValue, oldValue);
-
             // Call the property set functions, if any
             if (stateObject[ON_SET][prop])
                 each(stateObject[ON_SET][prop], fn => fn({[STATE]: proxied, prop, [NEW_VALUE]: newValue, [OLD_VALUE]: oldValue}, stateObject, fn));

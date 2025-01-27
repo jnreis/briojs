@@ -574,7 +574,7 @@ let evalAttr = (vnode: VNode, attrName: string, defaultAttrValue: string = '{}')
     saveAttr(vnode, attrName, attrValue);
 
     // Evaluate and return
-    return evaluate(vnode, attrValue, '', false)[0];
+    return evaluate(vnode, attrValue)[0];
 }
 
 export let setup = () => {

@@ -1,13 +1,12 @@
 import { saveCleanup } from '../app';
 import { getAttr, getTagName, listen } from '../tools/dom';
-import { evaluate } from '../tools/evaluation';
 import { HREF, PREVENT_DEFAULT, ROUTE, TARGET } from '../tools/constants';
 
-export let hydrateBoost = (vnode: VNode, _: string, attrValue: string, tools: HydrationTools) => {
+export let hydrateBoost = (vnode: VNode, _: string, attrValue: string) => {
 
     let $el = vnode.el;
 
-    let [value] = evaluate(vnode, attrValue || '1');
+    let value = vnode.exec(vnode, attrValue || '1');
 
     // on-click-prevent="$boost($el, )"
 
@@ -27,7 +26,7 @@ export let hydrateBoost = (vnode: VNode, _: string, attrValue: string, tools: Hy
                 // Prevent the default action
                 event[PREVENT_DEFAULT]();
 
-                tools.$dom[ROUTE](rawHref);
+                vnode[ROUTE](rawHref);
             }
         }
     }));

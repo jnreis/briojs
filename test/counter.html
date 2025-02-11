@@ -8,11 +8,10 @@
     <body>
         <div
             b-hydrate
-            b-data="{}"
             class="m-2 flex items-center rounded-md border border-slate-600 p-2"
         >
-            <script>
-                ({ $data }) => {
+            <script b-script>
+                try {
                     $data.MAX_COUNT = 3;
 
                     console.log($data);
@@ -24,7 +23,7 @@
                             $data.upvoteCount = prevCount + 1;
                         }
                     };
-                };
+                } catch {}
             </script>
             <button
                 on-click="$data.setUpvoteCount($data.upvoteCount)"
@@ -74,13 +73,14 @@
             </div>
         </div>
 
-        <script type="module" b-ignore src="/src/index.ts"></script>
+        <script type="module" b-ignore src="/src/cdn.ts"></script>
 
         <script>
             window.addEventListener('brio', () => {
-                console.log('window loaded');
+                console.log('Brio is ready');
 
-                brio.newApp('body');
+                let {gc:{$dom}} = brio.newApp();
+                $dom.hydrate('body');
             });
         </script>
     </body>

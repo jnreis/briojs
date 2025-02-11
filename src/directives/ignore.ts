@@ -1,5 +1,7 @@
-import { evaluate } from "../tools/evaluation";
+import { SKIP } from "../tools/constants";
 
 export let hydrateIgnore = async (vnode: VNode, _attrName: string, attrValue: string) => {
-    vnode.skip = !attrValue || !!await evaluate(vnode, attrValue)[0]();
+    vnode[SKIP] = !attrValue || !!await vnode.exec(vnode, attrValue)();
 }
+
+export let ignoreDirective: Directive = ['b-ignore', hydrateIgnore];

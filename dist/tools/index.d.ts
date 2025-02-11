@@ -33,6 +33,7 @@ export declare let debounce: (callback: Function, delay?: number) => (...args: a
  * @returns A throttled function
  */
 export declare let throttle: (callback: Function, delay: number) => (...args: any[]) => any;
+export declare let uuid: () => `${string}-${string}-${string}-${string}-${string}`;
 /**
  * Generates a random string of a specified length (default is 8)
  * @param length

@@ -1,34 +1,32 @@
 import { hydrateRefs } from './refs';
-import { evaluate } from '../tools/evaluation';
+import { newFn } from '../tools/evaluation';
 import { logError } from '../tools';
 import { getDescriptor, setKey } from '../tools/object';
 import { getType, isObject } from '../tools/typeCheck';
-import { DIRECTIVE, OBJECT, SKIP, $PROPS, $DATA, REQUIRES_ACTION_TYPE, PROPS, DATA, B_DATA, HOOKS } from '../tools/constants';
+import { DIRECTIVE, OBJECT, SKIP, REQUIRES_ACTION_TYPE, PROPS, DATA, B_DATA, $, CTX_ARGS, B_ } from '../tools/constants';
 
-export let hydrateContext = async (vnode: VNode, attrName: string, attrValue: string, tools: HydrationTools) => {
+export let hydrateContext = async (vnode: VNode, attrName: string, attrValue: string) => {
 
-    let [setHook, playHook] = tools[HOOKS];
-
-    // Check if the props expression is empty. If so, return
-    if (!attrValue) attrValue = '{}';
+    let [setHook, playHook] = vnode.hook;
 
     let isData = attrName == B_DATA;
+    let ctxType = isData ? DATA : PROPS;
 
-    let element = vnode.el;
-    let context = vnode.lc[isData ? $DATA : $PROPS];
+    let assetObject = vnode[ctxType];
 
-    let contextStore = isData ? tools[DATA] : tools[PROPS];
+    let ctxFn: FunctionType = !attrValue
+        // Attribute value returns an empty object if not provided
+        ? () => ({})
 
-    setHook(element, attrName, async () => {
+        // Get the asset or evaluate the attribute value
+        : assetObject[attrValue] || newFn(vnode[CTX_ARGS](), attrValue);
 
-        // Get the new context object from the attribute value
-        let newContext: FunctionType = attrValue in contextStore 
-            // The attribute value is the name of a context function
-            ? contextStore[attrValue]
-            // The attribute value must be an object or a function that returns an object, evaluate it
-            : evaluate(vnode, attrValue, '', false)[0];
+    let context = vnode.ctx[$ + ctxType];
 
-        newContext = await newContext({...vnode.gc, ...vnode.lc});
+    setHook(vnode.el, attrName, async () => {
+
+        // Evaluate the new context
+        let newContext: ObjectType = await ctxFn(vnode.ctx);
 
         // Check if newContext is an object. If not, throw an error
         if (!isObject(newContext)) {
@@ -40,8 +38,11 @@ export let hydrateContext = async (vnode: VNode, attrName: string, attrValue: st
         for (let key in newContext) setKey(context, key, getDescriptor(newContext, key));
 
         // Hydrate the refs, if the context is b-data
-        if (isData) await hydrateRefs(vnode, 'b-ref', tools);
+        if (isData) await hydrateRefs(vnode, 'b-ref');
     });
 
-    await playHook(element, attrName, context);
+    await playHook(vnode.el, attrName, context);
 }
+
+export let propsDirective: Directive = [B_+PROPS, hydrateContext];
+export let dataDirective: Directive = [B_DATA, hydrateContext];

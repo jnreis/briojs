@@ -18,4 +18,5 @@
  * @option `document`   If true, the event will only be dispatched if the target is the document.
  * @option `window`     If true, the event will only be dispatched if the target is the window.
  */
-export declare let hydrateOn: (vnode: VNode, attrName: string, attrValue: string, tools: HydrationTools) => void;
+export declare let hydrateOn: (vnode: VNode, attrName: string, attrValue: string) => void;
+export declare let onDirective: Directive;

@@ -1,20 +1,19 @@
 import { logError } from "../tools";
-import { ATTR, B_IF, B_SHOW, BOTH, DIRECTIVE, HOOKS, IN, MUST_BE, OUT, PAUSE, TRANSITION } from "../tools/constants";
-import { evaluate } from "../tools/evaluation";
+import { ATTR, B_, B_IF, B_SHOW, BOTH, DIRECTIVE, IN, MUST_BE, OUT, PAUSE, TRANSITION } from "../tools/constants";
 import { INFINITY } from "../tools/number";
 
-export let hydrateTransition = (type: 'in'|'out'|'both') => (vnode: VNode, attrName: string, attrValue: string, tools: HydrationTools) => {
+export let hydrateTransition = (type: 'in'|'out'|'both') => (vnode: VNode, attrName: string, attrValue: string) => {
 
     let _attrName = vnode[ATTR][B_IF] ? B_IF : vnode[ATTR][B_SHOW] ? B_SHOW : '';
 
     if (!_attrName)
         return logError('the', attrName, DIRECTIVE, MUST_BE, 'accompanied by an b-if or', B_SHOW, DIRECTIVE);
 
-    let [setHook] = tools[HOOKS];
-    let [playTransition, reverseTransition]: [PlayTransition, ReverseTransition] = tools[TRANSITION];
+    let [setHook] = vnode.hook;
+    let [playTransition, reverseTransition] = vnode[TRANSITION];
 
     // Evaluate the animation expression
-    let animation = evaluate(vnode, attrValue)[0]();
+    let animation = vnode.exec(vnode, attrValue)();
 
     // Pause the animation
     // The animation will be played when the hook functions are called
@@ -28,6 +27,12 @@ export let hydrateTransition = (type: 'in'|'out'|'both') => (vnode: VNode, attrN
     if (type == IN || type == BOTH)
         setHook(vnode.el, _attrName, (ctx, controls) => reverseTransition(animation, ctx, controls), -INFINITY);
 }
+
+export let transitionDirectives: Directive[] = [
+    [B_+TRANSITION, hydrateTransition(BOTH)],
+    [B_+TRANSITION+'-in', hydrateTransition(IN)],
+    [B_+TRANSITION+'-out', hydrateTransition(OUT)]
+];
 
 /**
     // Web Animations API

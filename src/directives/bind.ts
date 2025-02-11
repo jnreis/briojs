@@ -1,28 +1,23 @@
-import { slice } from '../tools';
+import { sliceAttrName } from '../app';
+import { OPTIONS, EVAL_EFFECT, $DATA } from '../tools/constants';
 import { setAttr, delAttr, getAttr, forcePropertyAssignment } from '../tools/dom';
-import { B_, $DATA, OPTIONS, EVAL_EFFECT } from '../tools/constants';
-import { isStringFunction, startsWith } from '../tools/string';
-import { makeFunction } from '../tools/evaluation';
+import { expToFn } from '../tools/evaluation';
 
 /**
  * Option
  * @option `prop`   Also set a specific DOM property.
  */
-export let hydrateBind = (vnode: VNode, attrName: string, attrValue: string, tools: HydrationTools) => {
+export let hydrateBind = (vnode: VNode, attrName: string, attrValue: string) => {
 
-    let _attrName = slice(attrName, startsWith(attrName, B_) ? 7 : 5) as string; // 7: b-bind-, 5: bind-
+    let _attrName = sliceAttrName(attrName, 7); // 7: b-bind-, 5: bind-
 
     /**
+     * Make sure the attribute value is a function that takes the attribute's initial value as an argument.
      * When the attribute value is omitted, use the attribute name as the key in the $data context.
      * Example:
      *   bind-hidden  becomes  bind-hidden="$data['hidden']"
      */
-    attrValue = attrValue || $DATA + `['${_attrName}']`;
-
-    // Make sure the attribute value is a function that takes the attribute's initial value
-    if (!isStringFunction(attrValue)) {
-        attrValue = makeFunction(attrValue, '$initial');
-    }
+    attrValue = expToFn(attrValue || $DATA + `['${_attrName}']`, '$initial');
 
     // Get the attribute's initial value
     let initialAttrValue = getAttr(vnode.el, _attrName) || '';
@@ -31,7 +26,7 @@ export let hydrateBind = (vnode: VNode, attrName: string, attrValue: string, too
     let options = vnode[OPTIONS][attrName] || {};
 
     // Evaluate the attribute value as an effect
-    tools[EVAL_EFFECT](vnode, attrName, attrValue, (node: HTMLElement) => ([call]) => {
+    vnode[EVAL_EFFECT](vnode, attrName, attrValue, (node: HTMLElement) => (call) => {
 
         let value = call(initialAttrValue);
 
@@ -52,3 +47,5 @@ export let hydrateBind = (vnode: VNode, attrName: string, attrValue: string, too
         else delAttr(node, _attrName);
     });
 }
+
+export let bindDirective: Directive = [/^(b-bind-|bind-)[\w-]+$/, hydrateBind];

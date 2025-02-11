@@ -1,1 +1,2 @@
-export declare let hydrateScripts: (vnode: VNode, attrName: string, attrValue: string, tools: HydrationTools) => Promise<void>;
+export declare let hydrateScript: (vnode: VNode, attrName: string, attrValue: string) => Promise<void>;
+export declare let scriptDirective: Directive;

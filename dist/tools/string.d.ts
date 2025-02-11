@@ -3,6 +3,7 @@ export declare let trim: (str: string) => string;
 export declare let lower: (str: string) => string;
 export declare let split: (str: string, separator: string | RegExp, limit?: number | undefined) => string[];
 export declare let match: (str: string, regex: RegExp) => RegExpMatchArray | null;
+export declare let upper: (str: string) => string;
 export declare let reverseString: (str: string) => string;
 export declare let startsWith: (str: string, search: string, position?: number) => boolean;
 export declare let endsWith: (str: string, search: string, endPosition?: number) => boolean;

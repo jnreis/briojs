@@ -3,7 +3,7 @@ import { trackProps, accessedProps } from './track';
 import { arrayAdd, arrayFrom, each, sort, sortPriority } from '../tools/array';
 import { R, createContext, getKey, hasOwnProperty, newMap, setKey } from '../tools/object';
 import { isArray, isObject, isUndefined } from '../tools/typeCheck';
-import { CREATE, DEFINE_PROPERTY, DELETE, DELETE_PROPERTY, NULL, PARENT, PROPS, STATE, VALUE, UNDEFINED, UPDATE, ON_SET, NEW_VALUE, OLD_VALUE } from '../tools/constants';
+import { CREATE, DEFINE_PROPERTY, DELETE, DELETE_PROPERTY, NULL, PARENT, PROPS, STATE, VALUE, UNDEFINED, UPDATE, ON_SET, NEW_VALUE, OLD_VALUE, OPERATION } from '../tools/constants';
 
 /**
  * State wrapps an object/array in a Proxy to track changes and notify listeners.
@@ -26,7 +26,7 @@ export let state: State = (target: any, options?: StateOptions) => {
     let parent = getKey(options, PARENT, NULL) as any;
 
     // State options
-    options = { parent };
+    options = { [PARENT]: parent };
 
     // Proxy handler
     let handler = {
@@ -199,7 +199,13 @@ let notifyListeners = (stateObject: StateObject, proxied: any, prop: any, newVal
 
     let operation = isUndefined(oldValue) ? CREATE : isUndefined(newValue) ? DELETE : UPDATE;
 
-    let context: ListenerFunctionContext = {operation, [STATE]: proxied, prop, [NEW_VALUE]: newValue, [OLD_VALUE]: oldValue};
+    let context: ListenerFunctionContext = {
+        [OPERATION]: operation, 
+        [STATE]: proxied, 
+        prop, 
+        [NEW_VALUE]: newValue, 
+        [OLD_VALUE]: oldValue
+    };
 
     // Notify state listeners
     _notifyListeners(stateObject[STATE], context);

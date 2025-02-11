@@ -1,10 +1,19 @@
 import { saveCleanup } from "../app";
 import { entries, has, logError, size, slice, wait } from "../tools";
 import { arrayAdd, find, indexOf, join } from "../tools/array";
-import { CAN_ONLY_BE_USED_ON, DIRECTIVE, ELEMENT, HOOKS, INPUT, MASK, MASK_TOKEN, OPTIONS, SELECTION_START, TEXTAREA, TOKENS, VALUE } from "../tools/constants";
+import { B_, CAN_ONLY_BE_USED_ON, DIRECTIVE, ELEMENT, INDEX, INPUT, MASK, MASK_TOKENS, MASKS, OPTIONS, SELECTION_START, TEXTAREA, TOKENS, VALUE } from "../tools/constants";
 import { emit, listen } from "../tools/dom";
 import { getKey, getKeys, newRegExp } from "../tools/object";
 import { match, replace, split, startsWith } from "../tools/string";
+
+/** Set the default mask tokens */
+export let setDefaultMaskTokens = (maskTokens: MaskTokensObject) => {
+
+    maskTokens['#'] = /\d/; // only numbers
+    maskTokens['&'] = /[\p{Letter}]/u; // only letters (unicode)
+    maskTokens['*'] = /[\p{Letter}\d]/u; // letters and numbers (unicode)
+    // maskTokens['H'] = /[a-f\d]/i; // hexadecimal
+}
 
 /**
  *  This is what I'm thinking for my mask directive:
@@ -48,22 +57,19 @@ let PARTS: 'parts' = 'parts';
  * @option thousands (default: `,`)
  * @option precision (default: `2`)
  */
-export let hydrateMask = (vnode: VNode, attrName: string, attrValue: string, tools: HydrationTools) => {
+export let hydrateMask = (vnode: VNode, attrName: string, attrValue: string) => {
 
     let $el: any = vnode.el;
+    let masks = vnode[MASKS];
 
-    let [setHook, playHook] = tools[HOOKS];
+    let [setHook, playHook] = vnode.hook;
 
     // If the element has no value or selectionStart properties, return
     if (!(VALUE in $el && SELECTION_START in $el))
         return logError('the', attrName, DIRECTIVE, CAN_ONLY_BE_USED_ON, TEXTAREA, ELEMENT + 's and textual', INPUT, 'types (text, email, etc.).');
 
-    // The mask to apply to the input value
-    let mask = attrValue;
-
     // Dynamic mask function
-    let dynamicMask: MaskFunction | undefined;
-    if (tools.mask[mask]) dynamicMask = tools.mask[mask];
+    let dynamicMask: MaskFunction | undefined = masks[attrValue];
 
     // Options
     let options = vnode[OPTIONS][attrName] || {};
@@ -71,8 +77,8 @@ export let hydrateMask = (vnode: VNode, attrName: string, attrValue: string, too
     // Updated mask object
     let $mask: MaskContext = {
         ...options,
-        tokens: {...tools[MASK_TOKEN], ...options[TOKENS]},
-        mask,
+        [TOKENS]: {...vnode[MASK_TOKENS], ...options[TOKENS]},
+        mask: attrValue,
         [VALUE]: '',
         [CURSOR]: $el[SELECTION_START],
         [PARTS]: [],
@@ -196,7 +202,7 @@ let splitMask = (mask: string, tokens: ObjectType) => {
 let getNextRequiredMaskItem = (maskItems: MaskItem[], index: number): MaskItem | undefined =>
     find(slice(maskItems, index + 1) as MaskItem[], maskItem => !maskItem[IS_OPTIONAL]);
 
-let matchMaskItem = (remainingInput: string, maskItem: MaskItem, tokens: MaskTokens) => {
+let matchMaskItem = (remainingInput: string, maskItem: MaskItem, tokens: MaskTokensObject) => {
 
     let index = -1;
 
@@ -206,7 +212,7 @@ let matchMaskItem = (remainingInput: string, maskItem: MaskItem, tokens: MaskTok
         if (maskItem[IS_TOKEN]) {
             let matches = match(remainingInput, tokens[char]);
             if (matches) {
-                index = matches.index!;
+                index = matches[INDEX]!;
             }
         }
         else index = indexOf(remainingInput, char);
@@ -322,7 +328,7 @@ let applyMask = ($mask: MaskContext) => {
     $mask[PARTS] = maskItems;
 }
 
-export let money = ($mask: MaskContext) => {
+export let moneyMask = ($mask: MaskContext) => {
 
     let value = $mask[VALUE];
 
@@ -390,7 +396,7 @@ export let money = ($mask: MaskContext) => {
         mask += decimal + '#' + precision;
     }
 
-    $mask.mask = mask;
+    $mask[MASK] = mask;
 
     // Add negative token
     if (isNegative) tokens['-'] = /-/;
@@ -411,6 +417,8 @@ export let money = ($mask: MaskContext) => {
 
     $mask[VALUE] = newValue;
 }
+
+export let maskDirective: Directive = [B_+MASK, hydrateMask];
 
 // let stringDiff = (previousValue: string, value: string) => {
 

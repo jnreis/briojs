@@ -1,1 +1,2 @@
-export declare let hydrateStyles: (vnode: VNode, attrName: string, attrValue: string, tools: HydrationTools) => void;
+export declare let hydrateStyle: (vnode: VNode, attrName: string, attrValue: string) => void;
+export declare let styleDirective: Directive;

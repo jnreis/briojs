@@ -20,6 +20,11 @@ type RoutesObject = {
     [routeFunction: symbol]: RouteFunction;
 }
 
+type RouteRulesObject = {
+    [ruleName: string]: (value: string) => boolean,
+    number: (value: string) => boolean,
+}
+
 type SetRoute = (routePath: string, routeFunction: RouteFunction) => void;
 
 type RouteFunctionArgs = {

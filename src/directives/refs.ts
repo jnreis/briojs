@@ -1,5 +1,5 @@
 import { arrayAdd, each } from "../tools/array";
-import { B_DATA, HOOKS } from "../tools/constants";
+import { B_DATA } from "../tools/constants";
 import { cssNotAttr, delAttr, getAttr, queryAll } from "../tools/dom";
 import { isArray } from "../tools/typeCheck";
 
@@ -8,15 +8,15 @@ import { isArray } from "../tools/typeCheck";
  * - refs are only available within a b-data context. Make sure to have a b-data directive around the refs you want make available to the context.
  */
 
-export let hydrateRefs = async (vnode: VNode, attrName: string, tools: HydrationTools) => {
+export let hydrateRefs = async (vnode: VNode, attrName: string) => {
 
-    let [setHook, playHook] = tools[HOOKS];
+    let [setHook, playHook] = vnode.hook;
 
     let $el = vnode.el;
 
     setHook($el, attrName, () => {
         // Get the $refs object
-        let $refs = vnode.lc.$refs as ObjectType;
+        let $refs = vnode.ctx.$refs as ObjectType;
         let attrSelector = ` [${attrName}]`;
 
         // Query all refs not inside another context

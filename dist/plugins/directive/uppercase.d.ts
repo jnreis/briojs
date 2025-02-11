@@ -1,1 +1,1 @@
-export declare let hydrateUpperCase: (vnode: VNode, attrName: string, attrValue: string, tools: HydrationTools) => void;
+export declare let uidDirective: Directive;

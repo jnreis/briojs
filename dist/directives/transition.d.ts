@@ -1,4 +1,5 @@
-export declare let hydrateTransition: (type: "in" | "out" | "both") => (vnode: VNode, attrName: string, attrValue: string, tools: HydrationTools) => any;
+export declare let hydrateTransition: (type: "in" | "out" | "both") => (vnode: VNode, attrName: string, attrValue: string) => any;
+export declare let transitionDirectives: Directive[];
 /**
     // Web Animations API
     $el.animate(

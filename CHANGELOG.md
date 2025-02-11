@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.26.0] - 2025-02-10
+
+- A more modular approach was taken to the core. Now the core is a much thinner layer that directives, hooks, routes, route rules, templates, scripts, styles, props, data, masks, mask tokens, and animation engines can be added to. This can effectively be used to create a custom version of Brio.js and load reusable assets on demand.
+- Brio now has a ES module version, as well as two CDN versions: one with the core and one with the core and the directives and masks.
+
 ## [0.25.0] - 2025-01-24
 
 - The $store object now houses directive array, and the following objects: routeRule, template, script, style, props, data. These reusable items are used by Brio.js and can be modified for maximum flexibility.

@@ -1,7 +1,8 @@
-type DirectivesArray = [string | RegExp, HydrationFunction][];
+type DirectivesArray = [string | RegExp, HydrateDirective][];
 
 /** The hydration function of a directive */
-type HydrationFunction = (vnode: VNode, attrName: string, attrValue: string, tools: HydrationTools) => any;
+type HydrateDirective = (vnode: VNode, attrName: string, attrValue: string) => any;
+type EvaluateDirective = (vnode: VNode, attrName: string, attrValue: string) => any;
 
 // type Masked = {
 //     cursor: number,
@@ -12,18 +13,18 @@ type HydrationFunction = (vnode: VNode, attrName: string, attrValue: string, too
 
 type MaskFunction = (context: MaskContext) => void
 
-type MaskObject = {
+type MasksObject = {
     [mask: string]: MaskFunction
 }
 
-type MaskTokens = {
+type MaskTokensObject = {
     [token: string]: RegExp
 }
 
 type MaskContext = {
     mask: string,
     value: string,
-    tokens: MaskTokens,
+    tokens: MaskTokensObject,
     cursor: number,
     parts: MaskItem[],
     output: string,

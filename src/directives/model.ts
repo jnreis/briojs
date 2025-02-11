@@ -1,9 +1,8 @@
 import { effect } from '../reactivity';
 import { entries, has, logError, logWarn, size, wait } from '../tools';
 import { arrayAdd, arrayFrom, each, join } from '../tools/array';
-import { SELECT, INPUT, TEXTAREA, CHECKBOX, RADIO, VALUE, ARRAY, DIRECTIVE, REQUIRES, COMPOSING, ELEMENT, CAN_ONLY_BE_USED_ON, BOOLEAN, STRING, NUMBER, CHECKED, BUT_GOT_INSTEAD, TEXT, OF_TYPE, OPTIONS, HOOKS, COMPOSITION_START, COMPOSITION_END } from '../tools/constants';
+import { SELECT, INPUT, TEXTAREA, CHECKBOX, RADIO, VALUE, ARRAY, DIRECTIVE, REQUIRES, COMPOSING, ELEMENT, CAN_ONLY_BE_USED_ON, BOOLEAN, STRING, NUMBER, CHECKED, BUT_GOT_INSTEAD, TEXT, OF_TYPE, OPTIONS, COMPOSITION_START, COMPOSITION_END } from '../tools/constants';
 import { listen, onCompositionStart, onCompositionEnd, getAttr, queryAll, getTagName } from '../tools/dom';
-import { evaluate } from '../tools/evaluation';
 import { saveCleanup } from '../app';
 import { D, newMap } from '../tools/object';
 import { parse, trim } from '../tools/string';
@@ -78,9 +77,9 @@ let nodeModifiers: Map<Node, string[]> = newMap();
  * @option `raw`    prevents the value from being typecast to a number, boolean, or null.
  * @option `lazy`   listens for the change event instead of the input event.
  */
-export let hydrateModel = (vnode: VNode, attrName: string, attrValue: string, tools: HydrationTools) => {
+export let hydrateModel = (vnode: VNode, attrName: string, attrValue: string) => {
 
-    let [setHook, playHook] = tools[HOOKS];
+    let [setHook, playHook] = vnode.hook;
 
     // Reusable strings
     let THE_MODEL_DIRECTIVE = `the ${attrName} ` + DIRECTIVE;
@@ -97,11 +96,7 @@ export let hydrateModel = (vnode: VNode, attrName: string, attrValue: string, to
         return logError(THE_MODEL_DIRECTIVE, CAN_ONLY_BE_USED_ON, INPUT, `, ${TEXTAREA}, and ${SELECT} ${ELEMENT}s.`, node);
 
     // Evaluate the expression to get the reactive value
-    let [stateValue, isRef] = evaluate(vnode, attrValue);
-
-    // ! ERROR: The model directive requires a reactive value.
-    if (isRef != 1)
-        return logError(THE_MODEL_DIRECTIVE, REQUIRES_A_REACTIVE_VALUE + ',', BUT_GOT_INSTEAD(stateValue()));
+    let stateValue = vnode.exec(vnode, attrValue);
 
     // Get the reactive value
     let value = stateValue();
@@ -301,3 +296,5 @@ export let hydrateModel = (vnode: VNode, attrName: string, attrValue: string, to
         saveCleanup(vnode, listen(node, eventName, fn));
     }
 }
+
+export let modelDirective: Directive = ['b-model', hydrateModel];

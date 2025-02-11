@@ -1,7 +1,8 @@
 import { size } from ".";
 import { arrayFrom, sort, sortPriority } from "./array";
-import { DELETE, REMOVE } from "./constants";
+import { DELETE, PAUSE, REMOVE } from "./constants";
 import { newMap } from "./object";
+import { isFunction } from "./typeCheck";
 
 let getHook = (_hooks: Hooks, key: any, hookName: string) => {
     let hook = _hooks.get(key);
@@ -12,16 +13,18 @@ export let newHooks = (_hooks: Hooks): [SetHook, PlayHook] => ([
 
     // Adds a hook to a target
     (target: any, hookName: string, hookFunction: HookFunction, priority: number = 0) => {
-        // Add the node to the hooks map if it doesn't exist
-        if (!_hooks.has(target)) {
-            _hooks.set(target, {});
+        if (isFunction(hookFunction)) {
+            // Add the node to the hooks map if it doesn't exist
+            if (!_hooks.has(target)) {
+                _hooks.set(target, {});
+            }
+            // Add the hook to the node if it doesn't exist
+            if (!_hooks.get(target)![hookName]) {
+                _hooks.get(target)![hookName] = newMap();
+            }
+            // Set the hook function
+            getHook(_hooks, target, hookName)!.set(hookFunction, priority);
         }
-        // Add the hook to the node if it doesn't exist
-        if (!_hooks.get(target)![hookName]) {
-            _hooks.get(target)![hookName] = newMap();
-        }
-        // Set the hook function
-        getHook(_hooks, target, hookName)!.set(hookFunction, priority);
     },
 
     // Calls all the functions under a hook name on a target by priority
@@ -63,7 +66,7 @@ export let newHooks = (_hooks: Hooks): [SetHook, PlayHook] => ([
                             /** Call the next function */
                             play,
                             /** Disable the auto-run feature and choose when/if to call the next function */
-                            pause: () => playing = false,
+                            [PAUSE]: () => playing = false,
                             /** Remove the current function */
                             [REMOVE]: () => hook[DELETE](_fns[_index][0]),
                         }

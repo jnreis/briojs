@@ -1,13 +1,10 @@
-import { saveCleanup } from '../app';
-import { hydrateIntersection } from './intersection';
-import { hydrateResize } from './resize';
-import { has, debounce, throttle, wait, slice, logError } from '../tools';
+import { saveCleanup, sliceAttrName } from '../app';
+import { has, debounce, throttle, wait, logError } from '../tools';
 import { each, every } from '../tools/array';
-import { B_, DELETE, FUNCTION, PREVENT_DEFAULT, TARGET, REQUIRES_ACTION_TYPE, EVENT, DOCUMENT, DEBOUNCE, OPTIONS, THROTTLE, PREVENT, HOOKS } from '../tools/constants';
+import { DELETE, FUNCTION, PREVENT_DEFAULT, TARGET, REQUIRES_ACTION_TYPE, EVENT, DOCUMENT, DEBOUNCE, OPTIONS, THROTTLE, PREVENT, $, DETAIL } from '../tools/constants';
 import { emit, isElementVisible, listen } from '../tools/dom';
-import { evaluate } from '../tools/evaluation';
 import { D, deleteKey, deleteKeys, getKeys, W, countKeys, getKey } from '../tools/object';
-import { lower, split, startsWith } from '../tools/string';
+import { lower, split } from '../tools/string';
 import { getType, isFunction } from '../tools/typeCheck';
 
 let KEYUP = 'keyup';
@@ -58,21 +55,13 @@ let keysMap: ObjectType = {
  * @option `document`   If true, the event will only be dispatched if the target is the document.
  * @option `window`     If true, the event will only be dispatched if the target is the window.
  */
-export let hydrateOn = (vnode: VNode, attrName: string, attrValue: string, tools: HydrationTools) => {
+export let hydrateOn = (vnode: VNode, attrName: string, attrValue: string) => {
 
-    let [setHook, playHook] = tools[HOOKS];
+    let [setHook, playHook] = vnode.hook;
 
-    let _attrName = slice(attrName, startsWith(attrName, B_) ? 5 : 3) as string; // 5: b-on-, 3: on-
+    let _attrName = sliceAttrName(attrName, 5); // 5: b-on-, 3: on-
 
     let [event] = split(_attrName, '-');
-
-    // Enter or exit event (IntersectionObserver)
-    if (event == 'enter' || event == 'exit')
-        return hydrateIntersection(vnode, attrName, attrValue, tools);
-
-    // Resize event (ResizeObserver)
-    if (event == 'resize')
-        return hydrateResize(vnode, attrName, attrValue, tools);
 
     let $el = vnode.el;
 
@@ -82,7 +71,7 @@ export let hydrateOn = (vnode: VNode, attrName: string, attrValue: string, tools
     // The function to call
     let fn = (e: any) => {
         // Get the function, if any
-        let [call] = evaluate(vnode, attrValue, '$event', true);
+        let call = vnode.exec(vnode, attrValue, $+EVENT, false);
     
         // Check if the event handler is a function
         if (isFunction(call)) call(e);
@@ -197,7 +186,7 @@ export let hydrateOn = (vnode: VNode, attrName: string, attrValue: string, tools
         // Check if all the keys are pressed
         // WARNING: `keypress` has been deprecated, use `keydown` instead
         if (has([KEYDOWN,KEYUP], eventName)) {
-            let pkeys = e.detail;
+            let pkeys = e[DETAIL];
             if (!(countKeys(keys) == countKeys(pkeys) && every(getKeys(keys), k => has(pkeys, k))))
                 return;
         }
@@ -214,3 +203,5 @@ let delKey = (e: any, pressedKeys: ObjectType) => {
     let key = lower(e.key);
     if (pressedKeys[key]) deleteKey(pressedKeys, key);
 }
+
+export let onDirective: Directive = [/^(b-on-|on-)[\w-]+$/, hydrateOn];

@@ -63,12 +63,14 @@ export let throttle = (callback: Function, delay: number) => {
     }
 }
 
+export let uuid = () => crypto.randomUUID();
+
 /**
  * Generates a random string of a specified length (default is 8)
  * @param length
  */
 export let uid = (length: number = 8): string =>
-    'b' + slice(replace(crypto.randomUUID(), /-/g, ''), 0, length - 1);
+    'b' + slice(replace(uuid(), /-/g, ''), 0, length - 1);
 
 /**
  * Logs a message.

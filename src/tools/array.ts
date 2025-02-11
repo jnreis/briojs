@@ -1,4 +1,4 @@
-import { REVERSE } from "./constants";
+import { LENGTH, REVERSE } from "./constants";
 
 // ! Array Mutator Methods (modify the original array)
 
@@ -141,5 +141,5 @@ export let arrayFrom = (arrayLike: any) =>
  * @param startAt the number to start at
  */
 export let arrayFill = (length: number, startAt: number = 0): number[] =>
-    map(arrayFrom({ length }), (_, i) => startAt + i);
+    map(arrayFrom({ [LENGTH]: length }), (_, i) => startAt + i);
 

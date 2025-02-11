@@ -1,5 +1,3 @@
-import { setup } from "./app";
-
 /**
  TODO: I need to wrap it up and release the first version of this amazing framework by the end of the month.
  * This means I need to finish the following tasks:
@@ -14,8 +12,6 @@ import { setup } from "./app";
  * - Create a Twitter account for the framework.
  * - Promote the framework on social media, forums, and other platforms (Reddit, Hacker News, LinkedIn).
  */
-
-setup();
 
 /**
  * Each app has the following items:
@@ -32,8 +28,27 @@ setup();
  * $store object:
  * - Default stores: data, directive, mask, maskToken, props, routeRules, script, style, template
  */
-export { newApp } from "./app";
-
+export { settings, newApp, setup } from "./app";
+export { allDirectives } from "./directives";
+export { ignoreDirective } from "./directives/ignore";
+export { eachDirective } from "./directives/each";
+export { propsDirective, dataDirective } from "./directives/context";
+export { uidDirective } from "./directives/uid";
+export { htmlDirective } from "./directives/html";
+export { templateDirective } from "./directives/template";
+export { scriptDirective } from "./directives/script";
+export { styleDirective } from "./directives/styles";
+export { teleportDirective } from "./directives/teleport";
+export { ifDirective } from "./directives/if";
+export { showDirective } from "./directives/show";
+export { transitionDirectives } from "./directives/transition";
+export { intersectionDirectives } from "./directives/intersection";
+export { resizeDirectives } from "./directives/resize";
+export { onDirective } from "./directives/on";
+export { bindDirective } from "./directives/bind";
+export { modelDirective } from "./directives/model";
+export { maskDirective, moneyMask, setDefaultMaskTokens } from "./directives/mask";
+export { newFn } from "./tools/evaluation";
 
 // ! BUG LIST
 // - [ ] FIX: methods can not be used in addProps.

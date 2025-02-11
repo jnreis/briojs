@@ -14,21 +14,19 @@
     <script>
         () => {
             // Set reusable props
-            $set.props('show', (lc, gc) => ({
+            $set.props('show', (ctx) => ({
                 show: true, 
                 show2: true,
                 where: $refs.redBox,
                 log() {
                     console.log('show $props', this);
-                    console.log('show gc item', gc ? gc : 'gc not found');
-                    console.log('show lc item', lc);
+                    console.log('show ctx item', ctx);
                 }
             }));
-            $set.data('show', (lc, gc) => ({ show: false, show2: false, 
+            $set.data('show', (ctx) => ({ show: false, show2: false, 
                 log() {xw
                     console.log('show $data', this);
-                    console.log('show gc item', gc ? gc : 'gc not found');
-                    console.log('show lc item', lc);
+                    console.log('show ctx item', ctx);
                 }
             }));
         }

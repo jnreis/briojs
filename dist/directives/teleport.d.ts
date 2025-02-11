@@ -1,1 +1,2 @@
-export declare let hydrateTeleport: (vnode: VNode, attrName: string, attrValue: string, tools: HydrationTools) => void;
+export declare let hydrateTeleport: (vnode: VNode, attrName: string, attrValue: string) => void;
+export declare let teleportDirective: Directive;

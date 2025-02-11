@@ -1,32 +1,31 @@
 import { loadedScripts, sanitizeAttrValue } from "../app";
 import { http } from "../methods/http";
 import { arrayAdd, map } from "../tools/array";
-import { HOOKS, SCRIPT } from "../tools/constants";
+import { B_, CTX_ARGS, SCRIPT } from "../tools/constants";
 import { getAttr, getNodeContent, getTagName, removeNode } from "../tools/dom";
-import { evaluate } from "../tools/evaluation";
-import { isStringFunction } from "../tools/string";
-import { isArray, isFunction } from "../tools/typeCheck";
+import { newFn } from "../tools/evaluation";
+import { isArray, isFunction, isString } from "../tools/typeCheck";
 
-export let hydrateScripts = async (vnode: VNode, attrName: string, attrValue: string, tools: HydrationTools) => {
+export let hydrateScript = async (vnode: VNode, attrName: string, attrValue: string) => {
 
     let el = vnode.el as HTMLScriptElement;
 
-    let scriptsObject = tools[SCRIPT];
+    let assetObject = vnode[SCRIPT];
 
     let isScript = getTagName(el) == SCRIPT;
 
     // Skip the hydration of the text node of this script element
     vnode.skip = isScript;
 
-    let [setHook, playHook] = tools[HOOKS];
+    let [setHook, playHook] = vnode.hook;
 
-    // Evaluate the attribute value, if attribute value does not match a saved script
-    let scripts = attrValue ? scriptsObject[attrValue] || evaluate(vnode, attrValue)[0]() : [];
+    // Get the asset or evaluate the attribute value
+    let scripts: any = attrValue ? assetObject[attrValue] || vnode.exec(vnode, attrValue)() : [];
 
     // Get the scripts
     scripts = map(
         isArray(scripts) ? scripts : [scripts],
-        script => scriptsObject[script] || script
+        script => assetObject[script] || script
     );
 
     // Set the hook
@@ -42,30 +41,31 @@ export let hydrateScripts = async (vnode: VNode, attrName: string, attrValue: st
             if (src) loadedScripts.add(src);
 
             // Get the content of the script element
-            let content = src ? await http.get(src) : getNodeContent(el) || '0';
+            let content = src ? await http.get(src) : getNodeContent(el);
 
-            // Include code from this script element
-            arrayAdd(scripts, sanitizeAttrValue(content));
+            // Include code from this script element, if any
+            if (content) arrayAdd(scripts, sanitizeAttrValue(content));
 
             // Remove this script element
             removeNode(el);
         }
 
-        let args = {...vnode.gc, ...vnode.lc};
-
         for (let script of scripts) {
             // Get the script function/string
             let fn = script;
 
-            // Evaluate the script, if it is not a function
-            if (!isFunction(fn))
-                fn = evaluate(vnode, fn, '', !isStringFunction(fn))[0];
+            // Evaluate the script
+            if (isString(fn))
+                fn = newFn(vnode[CTX_ARGS](), fn, false);
 
             // Execute the script
-            await fn(args);
+            if (isFunction(fn))
+                await fn(vnode.ctx);
         };
     });
 
     // Play the hook
     await playHook(el, attrName);
 }
+
+export let scriptDirective: Directive = [B_+SCRIPT, hydrateScript];

@@ -1,14 +1,13 @@
 import { has, logWarn } from "../tools";
-import { AFTER, APPEND, BEFORE, ELEMENT, EVAL_EFFECT, NOT_FOUND, PREPEND, TELEPORT } from "../tools/constants";
+import { AFTER, APPEND, B_, BEFORE, ELEMENT, EVAL_EFFECT, NOT_FOUND, PREPEND, TELEPORT, TEXT } from "../tools/constants";
 import { insertNodes, query } from "../tools/dom";
-import { makeFunction } from "../tools/evaluation";
-import { stringify } from "../tools/string";
+import { expToFn } from "../tools/evaluation";
 import { isArray, isNode } from "../tools/typeCheck";
 
-export let hydrateTeleport = (vnode: VNode, attrName: string, attrValue: string, tools: HydrationTools) => {
+export let hydrateTeleport = (vnode: VNode, attrName: string, attrValue: string) => {
 
     // Where to teleport the node in relation to the target element. Default is 'after'.
-    
+
     let target: any;
     let where: 'before' | 'after' | 'prepend' | 'append';
     try {
@@ -19,12 +18,12 @@ export let hydrateTeleport = (vnode: VNode, attrName: string, attrValue: string,
         // Wrap the attribute value in a function that returns the selector as a string.
         // Otherwise, evalEffect will evaluate the selector as a variable and most likely throw an error.
         if (isNode(target))
-            attrValue = makeFunction(stringify(attrValue));
+            attrValue = expToFn(attrValue, '', TEXT);
     }
     catch {}
 
     // Evaluate the attribute value as an effect
-    tools[EVAL_EFFECT](vnode, attrName, attrValue, (node: HTMLElement) => ([value]: [FunctionType]) => {
+    vnode[EVAL_EFFECT](vnode, attrName, attrValue, (node: HTMLElement) => (value) => {
         try {
             let v = value();
             // If the value is an array, the first item is the target element and the second is the position
@@ -49,3 +48,5 @@ export let hydrateTeleport = (vnode: VNode, attrName: string, attrValue: string,
         else logWarn(TELEPORT, ELEMENT, NOT_FOUND, attrName + `="${attrValue}"`);
     });
 }
+
+export let teleportDirective: Directive = [B_+TELEPORT, hydrateTeleport];

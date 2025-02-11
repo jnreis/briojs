@@ -37,27 +37,34 @@
         }
     </style>
 </head>
-<body>
+<body b-hydrate>
+
+    <script b-script>
+        try {
+            console.log('$set', $set);
+            $data.name = 'Brio.js is awesome!';
+        } catch {}
+    </script>
 
     <h1>Bind Directive</h1>
 
     <p>The bind directive is used to bind a prop/expression to a DOM attribute. The attribute value is updated when any of its reactive data change, if any.</p>
 
-    <div b-data="{name: 'Brio.js'}">
+    <div>
         <h4 b-bind-name>Full syntax</h4>
         <p><code>b-bind-[attr-name]="[prop or expression]"</code></p>
         <p>Example: <code>b-bind-name="name"</code></p>
     </div>
 
-    <div b-data="{name: 'Brio.js'}">
+    <div>
         <h4 bind-name>Shorthand syntax</h4>
         <p>The shorthand syntax can be used when the prop name is the same as the attribute name.</p>
         <p><code>bind-[attr-name]</code></p>
         <p>Example: <code>bind-name</code></pre>
     </div>
 
-    <div b-data="{name: 'Brio.js'}">
-        <h4 bind-name="$data.name + ' is awesome!'">Initial attribute value</h4>
+    <div>
+        <h4 name="!!" bind-name="$data.name + $initial">Initial attribute value</h4>
         <p>Get the initial value of the DOM attribute (if any) by using the <code>$initial</code> magic property.</p>
         <p>This is useful when you need to concatenate the prop value with the initial value of the attribute.</p>
         <p>Example: <code>class="bg-slate-700" bind-class="$initial + ' text-white'"</code></p>
@@ -85,6 +92,14 @@
         </ul>
     </div>
 
-    <script type="module" src="/src/index.ts"></script>
+    <script type="module" src="/src/cdn.ts"></script>
+
+    <script>
+        window.addEventListener('brio', () => {
+            console.log('Brio.js is ready');
+            let {gc:{$dom}} = brio.newApp();
+            $dom.hydrate('[b-hydrate]');
+        });
+    </script>
 </body>
 </html>

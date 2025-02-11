@@ -1,1 +1,1 @@
-export {};
+export declare let moneyMask: () => void;

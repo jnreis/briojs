@@ -1,21 +1,21 @@
 import { wait } from "../tools";
-import { EVAL_EFFECT, REMOVE } from "../tools/constants";
+import { B_IF, EVAL_EFFECT, REMOVE } from "../tools/constants";
 import { getParent, restorePosition } from "../tools/dom";
 
 /**
  * Must reference a prop, method, or be an expression that returns a value that can be converted to a boolean
  */
-export let hydrateIf = (vnode: VNode, attrName: string, attrValue: string, tools: HydrationTools) => {
+export let hydrateIf = (vnode: VNode, attrName: string, attrValue: string) => {
 
     // Evaluate the attribute value as an effect
-    tools[EVAL_EFFECT](vnode, attrName, attrValue, (node: HTMLElement) => {
+    vnode[EVAL_EFFECT](vnode, attrName, attrValue, (node: HTMLElement) => {
 
         // Cache the node position: parent node, sibling nodes before and after
         let parent = getParent(node);
         let insertClosest = restorePosition(node)!;
 
         // Return the watch function
-        return ([call]: any) => {
+        return (call) => {
             // Get the value
             let value = call();
 
@@ -41,3 +41,5 @@ export let hydrateIf = (vnode: VNode, attrName: string, attrValue: string, tools
         }
     });
 }
+
+export let ifDirective: Directive = [B_IF, hydrateIf];

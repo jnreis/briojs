@@ -6,6 +6,7 @@
     <title>Counter Example</title>
 </head>
 <body
+    b-hydrate
     bind-id="$uid('temp')"
     b-uid="['temp']"
     b-data="{
@@ -50,12 +51,11 @@
                 $store.props.count = () => ({
                     count: 0
                 });
-                const keys2 = Object.keys($store.props).join(', ');
-                console.log(`props set to: ${keys2}`);
+                console.log(`props set to:`, $store);
             }
         </script>
 
-        <div b-props="count" b-props-hydrated="console.log('props', $props)" b-css="['count']">
+        <div b-props="{count: 12}" b-css="['count']">
             <!-- A counter {{$props.count}} -->
             My count is {{ $props.count }}
             <button on-click="$props.count--">--</button>
@@ -80,11 +80,11 @@
         }
     </style>
 
-    <script b-ignore b-load-once type="module" src="/src/index.ts"></script>
+    <script b-ignore b-load-once type="module" src="/src/cdn.ts"></script>
 
-    <script>
+    <!-- <script>
         window.addEventListener('brio', () => {
-            let app = brio.newApp('head');
+            let app = brio.newApp('body');
 
             let $state = app.$state;
             let { skip, persist, session } = $state;
@@ -104,13 +104,13 @@
             data.val = session(data.val);
             data.val = persist(data.val);
 
-            console.log('data', data);
+            console.log('data', data, app);
 
             console.log('app', app);
             // console.log('skip', 'skip' in $state , data.skip1);
             // console.log('persist', 'persist' in $state, data.persist1);
             // console.log('session', 'session' in $state, data.session1);
         })
-    </script>
+    </script> -->
 </body>
 </html>

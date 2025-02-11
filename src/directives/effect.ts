@@ -1,17 +1,20 @@
 import { EVAL_EFFECT } from "../tools/constants";
-import { makeFunction } from "../tools/evaluation";
-import { isStringFunction } from "../tools/string";
+import { expToFn } from "../tools/evaluation";
 
-export let hydrateEffect = (vnode: VNode, attrName: string, attrValue: string, tools: HydrationTools) => {
+export let hydrateEffect = (vnode: VNode, attrName: string, attrValue: string) => {
 
-    // Check if string is a function
-    if (!isStringFunction(attrValue))
-        attrValue = makeFunction(attrValue, '$controls', true);
+    /**
+     * The `b-effect` directive requires the following function signature:
+     * ($controls) => void
+     */
+    attrValue = expToFn(attrValue, '$controls', false);
 
     // Evaluate the attribute value as an effect
-    tools[EVAL_EFFECT](vnode, attrName, attrValue, () => async ([call]: any, controls: HookControls) => {
+    vnode[EVAL_EFFECT](vnode, attrName, attrValue, () => async (call, controls: HookControls) => {
         // Call the expression
         await call(controls);
     });
 
 }
+
+export let effectDirective: Directive = ['b-effect', hydrateEffect];

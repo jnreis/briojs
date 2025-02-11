@@ -1,7 +1,10 @@
 // build.js
-import fs from 'fs';
+import fs, { rmdirSync } from 'fs';
 import { build } from 'vite';
 import dts from 'vite-plugin-dts';
+
+// Delete dist folder
+rmdirSync('dist', { recursive: true });
 
 const packageJsonPath = process.cwd() + '/package.json';
 const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
@@ -15,42 +18,44 @@ let libs = [
         formats: ['es']
     },
     {
-        entry: 'src/cdn.ts',
-        name: name + '.min',
+        entry: `src/${name}.min.ts`,
+        name: `${name}.min`,
+        formats: ['iife']
+    },
+    {
+        entry: `src/${name}.core.min.ts`,
+        name: `${name}.core.min`,
         formats: ['iife']
     },
 ];
 
-// Build plugins
-// Get all the .ts file in the src/plugins folder
-fs.readdirSync('src/plugins').forEach(moduleName => {
+const queuePlugins = (dirPath, name = '') => {
+    fs.readdirSync(dirPath).forEach(moduleName => {
 
-    // Plugins are in the root of the plugins folder
-    if (moduleName.endsWith('.ts')) {
-        libs.push({
-            entry: `src/plugins/${moduleName}`,
-            name: moduleName.replace('.ts', ''),
-        });
-    }
+        // Plugins end with .min.ts
+        if (moduleName.endsWith('.min.ts')) {
+            libs.push({
+                entry: dirPath + moduleName,
+                name: (name ? name + '.' : '') + moduleName.replace('.ts', ''),
+                formats: ['iife']
+            });
+        }
 
-    // Plugins are in a subfolder of the plugins folder
-    else if (fs.lstatSync(`src/plugins/${moduleName}`).isDirectory()) {
-        fs.readdirSync(`src/plugins/${moduleName}`).forEach(pluginName => {
-            if (pluginName.endsWith('.ts')) {
-                libs.push({
-                    entry: `src/plugins/${moduleName}/${pluginName}`,
-                    name: moduleName + '.' + pluginName.replace('.ts', ''),
-                });
-            }
-        });
-    }
-});
+        // Queue subdirectories recursively
+        else if (fs.lstatSync(dirPath + moduleName).isDirectory()) {
+            queuePlugins(dirPath + moduleName + '/', (name ? name + '.' : '') + moduleName);
+        }
+    });
+}
+
+queuePlugins('src/plugins/');
+
 
 // Build with Vite
 const buildWithVite = async (lib) => {
     await build({
         publicDir: false,
-        // logLevel: 'silent',
+        // logLevel: 'info',
         build: {
             emptyOutDir: false,
             copyPublicDir: false,

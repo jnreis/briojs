@@ -1,19 +1,18 @@
 import { isState, state, watch } from '../reactivity';
 import { entries, logError } from '../tools';
 import { arrayFill, map } from '../tools/array';
-import { ARRAY, OBJECT, DIRECTIVE, REQUIRES, CREATE, UPDATE, DELETE, SKIP, NUMBER, $EACH, HOOKS } from '../tools/constants';
+import { ARRAY, OBJECT, DIRECTIVE, REQUIRES, CREATE, UPDATE, DELETE, SKIP, NUMBER, $EACH, HYDRATE, DEHYDRATE, NEW_VALUE, OPERATION, INDEX, B_, EACH } from '../tools/constants';
 import { removeNode, getParent, nextSibling, insertNode, cloneNode } from '../tools/dom';
-import { evaluate, makeFunction } from '../tools/evaluation';
 import { saveAttr, saveCleanup } from '../app';
 import { deleteKey, setKey } from '../tools/object';
 import { split, test, trim } from '../tools/string';
 import { isArray, isNumber, isObject } from '../tools/typeCheck';
 
-export let hydrateEach = (vnode: VNode, attrName: string, attrValue: string, tools: HydrationTools) => {
+export let hydrateEach = (vnode: VNode, attrName: string, attrValue: string) => {
 
     let $el = vnode.el;
-    let [setHook, playHook] = tools[HOOKS];
-    let { hydrate, dehydrate } = tools.$dom;
+    let [newVNode, getVNode] = vnode.vnode;
+    let [setHook, playHook] = vnode.hook
 
     // Skip the node
     vnode[SKIP] = true;
@@ -25,7 +24,7 @@ export let hydrateEach = (vnode: VNode, attrName: string, attrValue: string, too
     let [item, index] = map(split(alias, ','), trim);
 
     // Set the default value of the `index` alias
-    if (!index) index = 'index';
+    if (!index) index = INDEX;
 
     // Error message
     let msg = `the ${attrName} ${DIRECTIVE} ` + REQUIRES as 'the b-each directive requires';
@@ -35,7 +34,8 @@ export let hydrateEach = (vnode: VNode, attrName: string, attrValue: string, too
         return logError(msg, 'a valid alias.');
 
     // Get the value of the prop
-    let value = evaluate(vnode, makeFunction(propExp))[0]();
+    // TODO: create a function that takes the vnode and the cache key and returns the value
+    let value = vnode.exec(vnode, propExp)();
 
     // Check if the prop is an observed state (array or object)
     let isObservedState = isState(value);
@@ -76,7 +76,7 @@ export let hydrateEach = (vnode: VNode, attrName: string, attrValue: string, too
         insertNode(_el, parentEl, nextEl);
 
         // Create a new vnode
-        let _vnode = tools.newVNode(_el);
+        let _vnode = newVNode(_el);
 
         // Make sure the node has at least one attribute so it doesn't get removed
         saveAttr(_vnode, '', '');
@@ -89,10 +89,10 @@ export let hydrateEach = (vnode: VNode, attrName: string, attrValue: string, too
         setKey(_each, index, {v: i, w: true, e: true});
 
         // Save the $each context
-        setKey(_vnode.lc, $EACH, {v: _each, e: true});
+        setKey(_vnode.ctx, $EACH, {v: _each, e: true});
 
         // Make sure the `index` never changes
-        saveCleanup(_vnode, watch(_each, index, ({newValue}) => {
+        saveCleanup(_vnode, watch(_each, index, ({[NEW_VALUE]:newValue}) => {
             let currentIndex = mountedItems[i][1];
             if (newValue !== currentIndex)
                 _each[index] = currentIndex;
@@ -100,7 +100,7 @@ export let hydrateEach = (vnode: VNode, attrName: string, attrValue: string, too
 
         // Keep the `item` in sync with the `value` (if it's an observed state)
         if (isObservedState) {
-            saveCleanup(_vnode, watch(_each, item, ({newValue}) => {
+            saveCleanup(_vnode, watch(_each, item, ({[NEW_VALUE]: newValue}) => {
                 value[_each[index]] = newValue;
             }));
         }
@@ -109,7 +109,7 @@ export let hydrateEach = (vnode: VNode, attrName: string, attrValue: string, too
         mountedItems[i] = [_el, i];
 
         // Hydrate the new node
-        hydrate(_el);
+        vnode[HYDRATE](_el);
     });
 
     // Update an existing item
@@ -118,11 +118,11 @@ export let hydrateEach = (vnode: VNode, attrName: string, attrValue: string, too
         // Get the existing node
         let mountedItem = mountedItems[i];
 
-        let _vnode = tools.getVNode(mountedItem && mountedItem[0]);
+        let _vnode = getVNode(mountedItem && mountedItem[0]);
 
         // Update the context
         if (_vnode) {
-            let _each = _vnode.lc[$EACH] as ObjectType;
+            let _each = _vnode.ctx[$EACH] as ObjectType;
             _each[item] = v;
             _each[index] = i;
             mountedItem[1] = i;
@@ -137,7 +137,7 @@ export let hydrateEach = (vnode: VNode, attrName: string, attrValue: string, too
 
         // Dehydrate the node.
         // This will completely revert the node to its original state before hydration by removing all the effects and the context.
-        dehydrate(_el);
+        vnode[DEHYDRATE](_el);
 
         // Remove the node from the mountedItems set
         deleteKey(mountedItems, i);
@@ -159,7 +159,7 @@ export let hydrateEach = (vnode: VNode, attrName: string, attrValue: string, too
     // Watch the prop for changes (if it's an observed state)
     if (isObservedState) {
         // Save the cleanup function
-        saveCleanup(vnode, watch(value, "", ({operation, prop, newValue}) => {
+        saveCleanup(vnode, watch(value, "", ({[OPERATION]: operation, prop, [NEW_VALUE]: newValue}) => {
             // Perform the operation
             operations[operation]([prop, newValue]);
         }));
@@ -167,3 +167,5 @@ export let hydrateEach = (vnode: VNode, attrName: string, attrValue: string, too
 }
 
 let validVariableName = (name: string) => test(name, /^[a-z_$][\w$]*$/i);
+
+export let eachDirective: Directive = [B_+EACH, hydrateEach];

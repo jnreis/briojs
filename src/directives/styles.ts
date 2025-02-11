@@ -1,30 +1,29 @@
 import { replaceMustache, templateRegex } from "../app";
 import { has, uid } from "../tools";
 import { arrayAdd, each, filter, join, map } from "../tools/array";
-import { AFTER, HOOKS, HYDRATE, NEW_LINE, STYLE, TEXT_CONTENT } from "../tools/constants";
-import { createElement, getTagName, insertNodes, setClass } from "../tools/dom";
-import { evaluate } from "../tools/evaluation";
+import { AFTER, B_, CLASS_LIST, HYDRATE, NEW_LINE, STYLE, TEXT_CONTENT } from "../tools/constants";
+import { createElement, getTagName, insertNodes } from "../tools/dom";
 import { match, replace, split, test, trim } from "../tools/string";
 import { isArray } from "../tools/typeCheck";
 
-export let hydrateStyles = (vnode: VNode, attrName: string, attrValue: string, tools: HydrationTools) => {
+export let hydrateStyle = (vnode: VNode, attrName: string, attrValue: string) => {
 
     let el = vnode.el;
 
     // Skip style elements
-    if (getTagName(el) != STYLE) {
+    if (attrValue && getTagName(el) != STYLE) {
 
-        let [setHook, playHook] = tools[HOOKS];
+        let [setHook, playHook] = vnode.hook;
 
-        let stylesObject = tools[STYLE];
+        let assetObject = vnode[STYLE];
 
-        // Evaluate the attribute value, if attribute value does not match a saved style
-        let styles = stylesObject[attrValue] ? stylesObject[attrValue]() : evaluate(vnode, attrValue)[0]();
+        // Get the asset or evaluate the attribute value
+        let styles = assetObject[attrValue] || vnode.exec(vnode, attrValue)();
 
         // Get the styles
         styles = map(
             isArray(styles) ? styles : [styles],
-            style => stylesObject[style] ? stylesObject[style]() : style
+            style => assetObject[style] || style
         );
 
         // Create a unique prefix for the CSS selectors
@@ -34,7 +33,7 @@ export let hydrateStyles = (vnode: VNode, attrName: string, attrValue: string, t
         setHook(el, attrName, () => {
 
             // Add the selector to the element
-            setClass(el, prefix);
+            el[CLASS_LIST].add(prefix);
 
             // Create a style element
             let style = createElement(STYLE);
@@ -43,7 +42,7 @@ export let hydrateStyles = (vnode: VNode, attrName: string, attrValue: string, t
             style[TEXT_CONTENT] = prefixCssSelectors(join(styles, NEW_LINE), '.'+prefix);
 
             // Hydrate the style element
-            tools.$dom[HYDRATE](style, el);
+            vnode[HYDRATE](style, el);
 
             // Insert the style element after the current element
             insertNodes(el, AFTER, style);
@@ -112,3 +111,5 @@ let prefixCssSelectors = (css: string, prefix: string) => {
 
     return prefixed;
 }
+
+export let styleDirective: Directive = [B_+STYLE, hydrateStyle];

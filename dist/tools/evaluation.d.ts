@@ -1,3 +1,4 @@
+export declare let cache: Record<string, FunctionType>;
 /**
  * Evaluate an expression using vnode properties
  * @param vnode The vnode object
@@ -14,3 +15,8 @@
  */
 export declare let evaluate: (vnode: VNode, exp: string, args?: string, isVoid?: boolean) => [FunctionType, 0 | 1 | 2];
 export declare let makeFunction: (exp: string, args?: string, isVoid?: boolean) => string;
+export declare let newFn: (args: string, exp: string, returns?: boolean) => FunctionType;
+/** Sanitize an expression to prepare it for evaluation */
+export declare let sanitizeExp: (exp: string, isText?: boolean) => string;
+/** Ensure an expression is a function */
+export declare let expToFn: (exp: string, args?: string, returns?: boolean | "text") => string;

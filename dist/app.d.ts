@@ -2,7 +2,7 @@ export declare let symbol: symbol;
 export declare let settings: ObjectType;
 export declare let loadedScripts: Set<string>;
 /** Create a new app */
-export declare let newApp: (node?: Node | string, ctxNode?: Node | string) => GlobalContext;
+export declare let newApp: () => AppObject;
 /** Save the cleanup function to the vnode */
 export declare let saveCleanup: (vnode: VNode, cleanupFn: FunctionType) => void;
 /** Saves the attribute to the vnode and removes it from the node */
@@ -17,4 +17,5 @@ export declare let sanitizeAttrValue: (text: string) => string;
 export declare let templateRegex: RegExp;
 /** Sanitize string and replace mustache syntax with template literals */
 export declare let replaceMustache: (text: string) => string;
-export declare let setup: () => void;
+export declare let setup: (brioWindow?: ObjectType) => void;
+export declare let sliceAttrName: (attrName: string, charsWithPrefix: number) => string;

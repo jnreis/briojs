@@ -4,6 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Brio Component</title>
+    <style>
+        h3 {
+            margin: 0 0 1rem !important;
+        }
+        hr {
+            margin: 1rem 0;
+        }
+    </style>
 </head>
 <body>
     <!--
@@ -62,9 +70,12 @@
                         </script>
                     </template>
     -->
+
     <template b-save="counter">
-        <script>
-            $props.count = 33;
+        <script b-script>
+            try {
+                $props.count = 33;
+            } catch {}
         </script>
         <div b-style="bg-light-gray">
             <h1>Counter</h1>
@@ -90,7 +101,7 @@
         </style>
 
         <style>
-            h1 {
+            h3 {
                 color: dodgerblue;
                 margin: 0;
             }
@@ -101,28 +112,59 @@
         b-save will only get the innerHTML of any element.
     -->
 
-    <template b-hydrate b-props="{count: 99}">
+    <template b-hydrate>
+
+        <script b-script>
+            try {
+                if (!$props.hasOwnProperty('count'))
+                    $props.count = 1010;
+            } catch {}
+        </script>
 
         <!-- <script src="http://localhost:5173/dist/fn.js"></script> -->
 
         <!-- <div b-props="{count:0}" b-html="counter"></div> -->
-        <script>
-            ({$props}) => {
+        <script b-script>
+            try {
                 $props.html1 = `<h3>HTML 1 {{ $props.count }}</h3>
-<button on-click="$props.html = $props.html2">Show HTML 2</button>`;
+        <button on-click="$props.html = $props.html2">Show HTML 2</button>`;
                 $props.html2 = `<h3>HTML 2 {{ $props.count }}</h3>
-<button on-click="$props.html = $props.html1">Show HTML 1</button>`;
+        <button on-click="$props.html = $props.html1">Show HTML 1</button>`;
 
                 $props.html = $props.html1;
-            }
+            } catch {}
         </script>
 
-        <div b-html="$props.html" b-template="$props.html"></div>
-        <div b-html="$props.html" b-text="$props.html"></div>
+        <div b-template="$props.html"></div>
+
+        <hr>
+
         <div b-html="$props.html"></div>
+
+        <hr>
+
+        <div b-text="counter"></div>
+
+        <hr>
+
+        <div b-html="counter"></div>
+
+        <hr>
+
+        <button on-click="$props.count--">Subtract</button>
+        <button on-click="$props.count++">Add</button>
 
     </template>
 
-    <script type="module" src="/src/index.ts"></script>
+    <script type="module" src="/src/cdn.ts"></script>
+
+    <script>
+        window.addEventListener('brio', () => {
+            let app = brio.newApp();
+            let {gc:{$dom},data} = app;
+            $dom.hydrate('body');
+            console.log(app);
+        });
+    </script>
 </body>
 </html>

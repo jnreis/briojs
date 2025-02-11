@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pre-rendered app</title>
+</head>
+<body>
+    <h1>Pre-rendered Brio.js App</h1>
+    <div b-app b-data="{count: 0}">
+        Counter: {{$data.count}}
+        <button on-click="$data.count++">Increment</button>
+        <button on-click="$data.count--">Decrement</button>
+    </div>
+    <hr>
+    <div b-a1>
+        <div b-a2>Counter: 0</div>
+        <button b-a3>Increment</button>
+        <button b-a4>Decrement</button>
+    </div>
+
+    <script b-ignore b-load-once type="module" src="/src/index.ts"></script>
+
+    <script>
+        window.addEventListener('brio', () => {
+
+            let {$set: {fn: newFn}, $dom: {query, hydrate}, $store} = brio.newApp();
+
+            console.log('$store', $store);
+
+            query('[b-a1]').setAttribute('b-data', newFn(() => ({ count: 120 })));
+            query('[b-a2]').setAttribute('b-text', newFn(({$data}) => () => `Counter: ${$data.count}`));
+            query('[b-a3]').setAttribute('on-click', newFn(({$data}) => () => $data.count++));
+            query('[b-a4]').setAttribute('on-click', newFn(({$data}) => ($event) => {
+                $data.count--;
+                console.log('event', $event);
+            }));
+
+            hydrate('[b-a1]');
+        });
+    </script>
+</body>
+</html>

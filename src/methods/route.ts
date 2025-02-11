@@ -1,7 +1,7 @@
 import { symbol } from "../app";
 import { logError, size } from "../tools";
 import { arrayAdd, each, filter } from "../tools/array";
-import { NULL, OUTER, PATHNAME, CANNOT__$CAP, FUNCTION, HTML, NEW_LINE, REMOVE } from "../tools/constants";
+import { NULL, OUTER, PATHNAME, CANNOT__$CAP, FUNCTION, HTML, NEW_LINE, REMOVE, ROUTE } from "../tools/constants";
 import { href } from "../tools/dom";
 import { deleteKey, getKeys, L } from "../tools/object";
 import { split, startsWith, trim } from "../tools/string";
@@ -31,7 +31,7 @@ export let newRouter = (routes: RoutesObject, routeRules: ObjectType, insert: Fu
             });
         }
         // Error: The route function must be a function
-        else logError(CANNOT__$CAP, 'set route without a route', FUNCTION, NEW_LINE, routePath);
+        else logError(CANNOT__$CAP, 'set route without a', ROUTE, FUNCTION, NEW_LINE, routePath);
     },
 
     /**

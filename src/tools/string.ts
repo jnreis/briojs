@@ -18,7 +18,7 @@ export let match = (str: string, regex: RegExp) => str.match(regex);
 //     return has(haystack, needle);
 // }
 
-// export let upper = (str: string) => str.toUpperCase();
+export let upper = (str: string) => str.toUpperCase();
 
 // export let capitalize = (str: string) => upper(str[0]) + slice(str, 1);
 

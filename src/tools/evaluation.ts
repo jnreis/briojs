@@ -1,15 +1,15 @@
 import { logError, size } from ".";
-import { EXP_ARGS, NEW_LINE } from "./constants";
+import { CTX_ARGS, NEW_LINE, TEXT } from "./constants";
 import { newObject } from "./object";
-import { isStringFunction, isPath } from "./string";
+import { isStringFunction, isPath, wrapInBackticks } from "./string";
 import { getAccessedProp } from "../reactivity/track";
 import { isFunction } from "./typeCheck";
-import { settings, symbol } from "../app";
+import { sanitizeAttrValue, settings, symbol } from "../app";
 
 // Inspired by code from petite-vue (https://github.com/vuejs/petite-vue/blob/main/src/eval.ts)
 // Original code licensed under MIT License
 
-let cache: Record<string, FunctionType> = newObject();
+export let cache: Record<string, FunctionType> = newObject();
 
 let errorFn = () => symbol;
 
@@ -75,7 +75,7 @@ let execute = (vnode: VNode, exp: string) => {
 
     try {
         // Create a new function, if necessary
-        if (!fn) fn = new Function(settings[EXP_ARGS], `return(${exp})`) as FunctionType;
+        if (!fn) fn = new Function(settings[CTX_ARGS], `return(${exp})`) as FunctionType;
 
         /**
          * Cache the function, if it is not already cached and the expression size is less than 99 characters.
@@ -96,7 +96,7 @@ let execute = (vnode: VNode, exp: string) => {
         if (!cache[exp] && size(exp) < 99) cache[exp] = fn;
 
         // Execute the function
-        fn = fn({...vnode.gc, ...vnode.lc});
+        fn = fn(vnode.ctx);
     }
     catch (error: any) {
         // Log the error
@@ -111,3 +111,26 @@ let execute = (vnode: VNode, exp: string) => {
 
 export let makeFunction = (exp: string, args: string = '', isVoid: boolean = false) =>
     `(${ args })=>${ isVoid ? '{' : '(' }${ NEW_LINE + exp + NEW_LINE }${ isVoid ? '}' : ')' }`;
+
+
+
+export let newFn = (args: string, exp: string, returns: boolean = true) =>
+    new Function(args, returns ? `return(${exp})` : exp) as FunctionType;
+
+/** Sanitize an expression to prepare it for evaluation */
+export let sanitizeExp = (exp: string, isText?: boolean) =>
+    isText ? wrapInBackticks(exp) : sanitizeAttrValue(exp);
+
+/** Ensure an expression is a function */
+export let expToFn = (exp: string, args: string = '', returns: boolean | 'text' = true) => {
+
+    if (!isStringFunction(exp)) {
+        // If the expression returns text, wrap it in backticks
+        exp = sanitizeExp(exp, returns == TEXT);
+
+        // Make sure the expression is a function
+        exp = `(${args})=>` + (returns ? `(${exp})` : `{${exp}}`);
+    }
+
+    return exp;
+}

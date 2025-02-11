@@ -1,9 +1,9 @@
 import { logError } from "../tools";
 import { arrayAdd, each, every, findIndex } from "../tools/array";
-import { NOT_FOUND, ON_COMPLETE, PAUSE, PLAY, REQUIRES, REVERSE, ANIMATION_ENGINE, VALIDATE, VALUE, NAME, INVALID__$CAP, STYLE, NEW_LINE } from "../tools/constants";
+import { NOT_FOUND, ON_COMPLETE, PAUSE, PLAY, REQUIRES, REVERSE, VALIDATE, VALUE, NAME, INVALID__$CAP, STYLE, NEW_LINE, ANIMATION, ENGINE__$CAP } from "../tools/constants";
 import { getStyle } from "../tools/dom";
 import { deleteKey, getKey, newMap } from "../tools/object";
-import { startsWith } from "../tools/string";
+import { lower, startsWith } from "../tools/string";
 
 /** Animation Engines */
 let animationEngines: AnimationEngine[] = [];
@@ -42,7 +42,7 @@ export let newTransitions = (): [PlayTransition, ReverseTransition] => {
         }
 
         // If the engine is not found, skip the animation
-        logError(ANIMATION_ENGINE, NOT_FOUND, NEW_LINE, animation);
+        logError(ANIMATION, lower(ENGINE__$CAP), NOT_FOUND, NEW_LINE, animation);
     }
 
     return [
@@ -109,7 +109,7 @@ export let addAnimationEngine = (engine: AnimationEngine) => {
 
     // Validate the engine properties
     if (!engine || !every([NAME, VALIDATE, PLAY, REVERSE, ON_COMPLETE], key => key in engine))
-        logError(INVALID__$CAP, ANIMATION_ENGINE, engine ? engine[NAME] : '');
+        logError(INVALID__$CAP, ANIMATION, lower(ENGINE__$CAP), engine ? engine[NAME] : '');
 
     else {
         // Check if the engine already exists

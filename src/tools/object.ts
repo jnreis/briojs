@@ -1,19 +1,32 @@
-import { size } from ".";
+import { size, uid } from ".";
 import { each } from "./array";
-import { CREATE, DEFINE_PROPERTIES, DEFINE_PROPERTY, GET_OWN_PROPERTY_DESCRIPTOR, GET_OWN_PROPERTY_DESCRIPTORS, HAS_OWN_PROPERTY, NULL, PROTOTYPE, VALUE } from "./constants";
+import { CREATE, DEFINE_PROPERTIES, DEFINE_PROPERTY, DOCUMENT, GET_OWN_PROPERTY_DESCRIPTOR, GET_OWN_PROPERTY_DESCRIPTORS, HAS_OWN_PROPERTY, NULL, PROTOTYPE, VALUE } from "./constants";
 import { isObject } from "./typeCheck";
 
 export let W = window;
 export let O = Object;
 export let R = Reflect;
 export let L = location;
-export let D = document;
+export let D = W[DOCUMENT];
 
 export let Regex = RegExp;
 
 /** Gets the value of a key in an object or returns a default value */
 export let getKey = (object: any, key: string, defaultValue?: any) => {
     return isObject(object) && key in object ? object[key] : defaultValue;
+}
+
+/** Generates a unique key for an object */
+export let uniqueKey = (object: ObjectType) => {
+
+    // Generate a key
+    let key = uid();
+
+    // Make sure the key is unique.
+    // Make it 12 characters long to increase the chances of uniqueness.
+    while (key in object) key = uid(12);
+
+    return key;
 }
 
 export let countKeys = (value: any): number => size(getKeys(value));

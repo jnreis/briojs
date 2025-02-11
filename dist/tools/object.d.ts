@@ -6,6 +6,8 @@ export declare let D: Document;
 export declare let Regex: RegExpConstructor;
 /** Gets the value of a key in an object or returns a default value */
 export declare let getKey: (object: any, key: string, defaultValue?: any) => any;
+/** Generates a unique key for an object */
+export declare let uniqueKey: (object: ObjectType) => string;
 export declare let countKeys: (value: any) => number;
 export declare let renameKeys: (object: ObjectType, ...keys: [string, string][]) => void;
 /** Gets the keys of an object */

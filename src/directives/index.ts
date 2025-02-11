@@ -1,101 +1,78 @@
-import { hydrateOn } from './on';
-import { hydrateBind } from './bind';
-import { hydrateModel } from './model';
-import { hydrateMask } from "./mask";
-
-import { hydrateEach } from './each';
-import { hydrateContext } from "./context";
-import { hydrateUid } from "./uid";
-import { hydrateIf } from './if';
-import { hydrateShow } from './show';
-import { hydrateHtml } from './html';
-import { hydrateEffect } from './effect';
-import { hydrateTeleport } from './teleport';
-import { hydrateTransition } from "./transition";
-import { hydrateScripts } from './script';
-import { hydrateStyles } from './styles';
-import { hydrateIgnore } from './ignore';
-
-import { B_, B_DATA, B_EACH, B_IF, B_PROPS, B_SHOW, BOTH, HTML, IN, INNER, OUT, SCRIPT, STYLE, TELEPORT, TEMPLATE, TEXT, TRANSITION } from "../tools/constants";
-import { newRegExp } from '../tools/object';
-import { isString } from '../tools/typeCheck';
-import { findIndex } from '../tools/array';
-import { startsWith, toString } from '../tools/string';
-import { has } from '../tools';
-import { hydrateTemplate } from './template';
-
-let dynamicDirectivePattern = (directiveName: string) => newRegExp(`^(${directiveName})[\\w-]+$`);
+import { ignoreDirective } from './ignore';
+import { eachDirective } from './each';
+import { dataDirective, propsDirective } from './context';
+import { uidDirective } from './uid';
+import { htmlDirective, textDirective } from './html';
+import { templateDirective } from './template';
+import { scriptDirective } from './script';
+import { styleDirective } from './styles';
+import { teleportDirective } from './teleport';
+import { ifDirective } from './if';
+import { showDirective } from './show';
+import { transitionDirectives } from './transition';
+import { intersectionDirectives } from './intersection';
+import { resizeDirectives } from './resize';
+import { onDirective } from './on';
+import { bindDirective } from './bind';
+import { modelDirective } from './model';
+import { maskDirective } from './mask';
+import { effectDirective } from './effect';
 
 /**
  * Active directives
  * [directiveName, hydrationFn][]
  */
-export let directives: [string | RegExp, HydrationFunction][] = [
+export let allDirectives: [string | RegExp, HydrateDirective][] = [
 
     // IMPORTANT: The `b-ignore` directive must be hydrated first because it stops the hydration of the element and its children.
-    ['b-ignore', hydrateIgnore],
-
+    ignoreDirective,
 
     // IMPORTANT: The `b-each` directive must be hydrated second because it hydrates other directives for each item it iterates over.
-    [B_EACH, hydrateEach],
+    eachDirective,
 
     // Context-related directives
-    [B_PROPS, hydrateContext],
-    [B_DATA, hydrateContext],
-    ['b-uid', hydrateUid],
+    propsDirective,
+    dataDirective,
+    uidDirective,
 
-    [B_+HTML, hydrateHtml(INNER)],
-    [B_+TEXT, hydrateHtml(TEXT)],
-    [B_+TEMPLATE, hydrateTemplate],
-    [B_+SCRIPT, hydrateScripts],
-    [B_+STYLE, hydrateStyles],
+    htmlDirective,
+    textDirective,
+    templateDirective,
+    scriptDirective,
+    styleDirective,
 
     // IMPORTANT: The `b-teleport` directive must be hydrated before the `b-if` directive because `b-if` restores the element to its original position.
-    [B_+TELEPORT, hydrateTeleport],
+    teleportDirective,
 
     // Conditional directives: These directives usually depend on values from the context
-    [B_IF, hydrateIf],
-    [B_SHOW, hydrateShow],
+    ifDirective,
+    showDirective,
 
     // ['b-boost', hydrateBoost],
-    [B_+TRANSITION, hydrateTransition(BOTH)], // b-transition
-    [B_+TRANSITION+'-in', hydrateTransition(IN)], // b-transition-in
-    [B_+TRANSITION+'-out', hydrateTransition(OUT)], // b-transition-out
+    ...transitionDirectives, // b-transition, b-transition-in, b-transition-out
 
-    // b-on: used to create event listeners. Including special listeners such as `on-enter`, `on-exit`, and `on-resize`
-    [dynamicDirectivePattern('b-on-|on-'), hydrateOn], // [b-on|on]-[eventName]-[...eventAlias]
+    ...intersectionDirectives, // [b-on|on]-enter, [b-on|on]-exit
+
+    ...resizeDirectives, // [b-on|on]-resize
+
+    onDirective, // [b-on|on]-[eventName]
 
     /**
      * Data binding directives
      * Used to bind data to an element's property or attribute
      * 
+     * - The `b-bind-|bind-` directive is a general directive used to bind data to an element property or attribute.
      * - The `b-model` directive is used to create a two-way data binding between an input value and a reactive property.
      * - The `b-mask` directive is used to format an input value using a mask.
-     * - The `b-bind-|bind-` directive is a general directive used to bind data to an element property or attribute.
      */
-    [dynamicDirectivePattern('b-bind-|bind-'), hydrateBind], // [b-bind|bind]-[...attributeNames]
-    ['b-model', hydrateModel],
-    ['b-mask', hydrateMask],
+    bindDirective, // [b-bind|bind]-[attributeName]
+    modelDirective,
+    maskDirective,
 
     /**
-     * b-effect: used to create one or more effects that run when their dependencies change.
+     * b-effect: used to create an effect that run when its dependencies change.
      * It is perfect for small expressions, reactive or not.
      * Example: console.log(`Hello, ${$data.name}!`)
      */
-    [dynamicDirectivePattern('b-effect'), hydrateEffect], // b-effect-[effectAlias]
+    effectDirective,
 ];
-
-/** Set a directive */
-export let setDirective = (directiveName: string|RegExp, hydrationFunction: HydrationFunction, afterDirective?: string) => {
-
-    // The index to add the directive
-    let index = isString(afterDirective) && startsWith(afterDirective!, B_)
-        ? findIndex(directives, ([name]) => has(toString(name), afterDirective!))
-        : -1;
-
-    // If the index was found, increment it by 1 to add this directive after the found directive
-    if (index > -1) index = index + 1;
-
-    // Add the new directive
-    directives.splice(index, 0, [directiveName, hydrationFunction]);
-}

@@ -1,21 +1,20 @@
-import { HOOKS, INNER, INSERT, REPLACE_WITH, TEMPLATE } from "../tools/constants";
+import { B_, INNER, INSERT, REPLACE_WITH, TEMPLATE } from "../tools/constants";
 import { childNodes, insertNodes } from "../tools/dom";
-import { evaluate } from "../tools/evaluation";
 
-export let hydrateTemplate = (vnode: VNode, attrName: string, attrValue: string, tools: HydrationTools) => {
+export let hydrateTemplate = (vnode: VNode, attrName: string, attrValue: string) => {
 
     let el = vnode.el;
 
     // Evaluate the attribute value, if it does not match a saved template
-    let template = tools[TEMPLATE][attrValue] ? tools[TEMPLATE][attrValue]() : evaluate(vnode, attrValue)[0]();
+    let template = vnode[TEMPLATE][attrValue] || vnode.exec(vnode, attrValue)();
 
-    let [setHook, playHook] = tools[HOOKS];
+    let [setHook, playHook] = vnode.hook;
 
     // Set the hook
     setHook(el, attrName, async () => {
 
         // Hydrate HTML content
-        await tools.$dom[INSERT](template, INNER, el);
+        await vnode[INSERT](template, INNER, el);
 
         // Replace the node with its children, if outer
         insertNodes(el, REPLACE_WITH, ...childNodes(el));
@@ -24,3 +23,5 @@ export let hydrateTemplate = (vnode: VNode, attrName: string, attrValue: string,
     // Play the hook
     playHook(el, attrName);
 }
+
+export let templateDirective: Directive = [B_+TEMPLATE, hydrateTemplate];

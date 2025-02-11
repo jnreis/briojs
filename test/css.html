@@ -6,7 +6,7 @@
     <title>Document</title>
 </head>
 <body>
-    <div b-data="{show: true}" b-css="['showTrue', 'showTrue2']" class="container">
+    <div b-data="{show: true}" b-style="['showTrue', 'showTrue2']" class="container">
         <h1>Heading 1</h1>
         <h2>Heading 2</h2>
         <button on-click="$data.show = !$data.show">
@@ -19,7 +19,7 @@
         class="container"
         b-data="{name: 'Jhonathan', show: false}"
         b-css="['showTrue', 'showTrue2']"
-        b-function="['data', 'props']"
+        b-script="['props']"
     >
         <h1>Heading 1</h1>
         <h2>Heading {{ $data.name }}</h2>
@@ -32,16 +32,18 @@
         </style>
     </div>
 
-    <script b-load-once type="module" src="/src/index.ts"></script>
+    <script b-load-once type="module" src="/src/cdn.ts"></script>
 
     <script>
         window.addEventListener('brio', () => {
 
             // Create a new app
-            let {$set, $dom} = brio.newApp();
+            let {gc: {$set, $dom}} = brio.newApp();
+
+            console.log('set', $set);
 
             // Add a new style
-            $set.css('showTrue', /* css */`
+            $set.style('showTrue', /* css */`
                 &.container {
                     background-color: #f0f0f0;
                     margin: 20px 0;
@@ -53,7 +55,7 @@
             );
 
             // Add a new script: props
-            $set.function('props', async ({$props}) => {
+            $set.script('props', async ({$props}) => {
                 console.log('$props', $props);
 
                 return 'PROPS FUNCTION';

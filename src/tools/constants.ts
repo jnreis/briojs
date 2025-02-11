@@ -1,16 +1,13 @@
 export let BRIO: 'brio' = 'brio';
 
-
-
 /*
  * NO DEPENDENCIES
  */
 
 export let $: '$' = '$';
-export let $STORE: '$store' = '$store';
 
 export let AFTER: 'after' = 'after';
-export let ANIMATION_ENGINE: 'animation engine' = 'animation engine';
+export let ANIMATION: 'animation' = 'animation';
 export let APPEND: 'append' = 'append';
 export let ARRAY: 'array' = 'array';
 export let ATTR: 'attr' = 'attr';
@@ -24,18 +21,21 @@ export let BODY: 'body' = 'body';
 export let BOOLEAN: 'boolean' = 'boolean';
 export let BOTH: 'both' = 'both';
 
+export let CACHE: 'cache' = 'cache';
 export let CAN_ONLY_BE_USED_ON = 'can only be used on';
 export let CANNOT__$CAP: 'Cannot ' = 'Cannot ';
 export let CHECKBOX: 'checkbox' = 'checkbox';
 export let CHECKED: 'checked' = 'checked';
 export let CHILD__$CAP: 'Child' = 'Child';
 export let CLASS_LIST: 'classList' = 'classList';
+export let CLOSEST: 'closest' = 'closest';
 export let COMPOSI: 'composi' = 'composi';
 export let CONTENT__$CAP: 'Content' = 'Content';
 export let CREATE: 'create' = 'create';
 
 export let DATA: 'data' = 'data';
 export let DEBOUNCE: 'debounce' = 'debounce';
+export let DETAIL: 'detail' = 'detail';
 export let DEFINE: 'define' = 'define';
 export let DELETE: 'delete' = 'delete';
 export let DIRECTIVE: 'directive' = 'directive';
@@ -46,12 +46,14 @@ export let DOCUMENT: 'document' = 'document';
 export let EACH: 'each' = 'each';
 export let ELEMENT: 'element' = 'element';
 export let END: 'end' = 'end';
+export let ENGINE__$CAP: 'Engine' = 'Engine';
 export let ENTRIES: 'entries' = 'entries';
 export let ERROR: 'error' = 'error';
 export let EVAL_EFFECT: 'evalEffect' = 'evalEffect';
 export let EVENT: 'event' = 'event';
 export let EVENT_LISTENER__$CAP: 'EventListener' = 'EventListener';
-export let EXP_ARGS: 'expArgs' = 'expArgs';
+export let EXIT: 'exit' = 'exit';
+export let CTX_ARGS: 'ctxArgs' = 'ctxArgs';
 
 export let GET: 'get' = 'get';
 
@@ -63,6 +65,7 @@ export let HTML__$UPPER: 'HTML' = 'HTML';
 export let HYDRATE: 'hydrate' = 'hydrate';
 
 export let IN: 'in' = 'in';
+export let INDEX: 'index' = 'index';
 export let INNER: 'inner' = 'inner';
 export let INSERT: 'insert' = 'insert';
 export let INVALID__$CAP: 'Invalid' = 'Invalid';
@@ -84,9 +87,14 @@ export let NUMBER: 'number' = 'number';
 export let OBJECT: 'object' = 'object';
 export let OBSERVE: 'observe' = 'observe';
 export let OLD_VALUE: 'oldValue' = 'oldValue';
+export let ON_: 'on-' = 'on-';
+export let ON_ENTER = ON_+'enter' as 'on-enter';
+export let ON_EXIT = ON_+EXIT as 'on-exit';
+export let ON_RESIZE = ON_+'resize' as 'on-resize';
 export let ONCE: 'once' = 'once';
 export let ON_COMPLETE: 'onComplete' = 'onComplete';
 export let ON_SET: 'onSet' = 'onSet';
+export let OPERATION: 'operation' = 'operation';
 export let OPTIONS: 'options' = 'options';
 export let OUT: 'out' = 'out';
 export let OUTER: 'outer' = 'outer';
@@ -152,11 +160,10 @@ export let $EACH = $+EACH as '$each';
 export let $PROPS = $+PROPS as '$props';
 
 export let B_DATA = B_+DATA as 'b-data';
-export let B_EACH = B_+EACH as 'b-each';
 export let B_IF: 'b-if' = 'b-if';
-export let B_PROPS = B_+PROPS as 'b-props';
 export let B_SHOW: 'b-show' = 'b-show';
 
+export let CACHE_EXP = CACHE + 'Exp' as 'cacheExp';
 export let CLONE_NODE = 'clone' + NODE__$CAP as 'cloneNode';
 export let COMPOSING = COMPOSI + 'ng' as 'composing';
 export let COMPOSITION_START = COMPOSI + TION + START as 'compositionstart';
@@ -167,6 +174,7 @@ export let DEFINE_PROPERTY = DEFINE + PROPERTY__$CAP as 'defineProperty';
 export let DEFINE_PROPERTIES = DEFINE + PROPERT__$CAP + 'ies' as 'defineProperties';
 export let DEHYDRATE = 'de' + HYDRATE as 'dehydrate';
 export let DELETE_PROPERTY = DELETE + PROPERTY__$CAP as 'deleteProperty';
+export let DIRECTIVES = DIRECTIVE + 's' as 'directives';
 
 export let ENDS_WITH = 'ends' + WITH__$CAP as 'endsWith';
 
@@ -184,7 +192,9 @@ export let INSERT_ADJACENT_HTML = INSERT + 'AdjacentHTML' as 'insertAdjacentHTML
 
 export let LAST_CHILD = 'last' + CHILD__$CAP as 'lastChild';
 
+export let MASKS = MASK + 's' as 'masks';
 export let MASK_TOKEN = MASK + 'Token' as 'maskToken';
+export let MASK_TOKENS = MASK_TOKEN + 's' as 'maskTokens';
 
 export let NEXT_SIBLING = 'next' + SIBLING__$CAP as 'nextSibling';
 

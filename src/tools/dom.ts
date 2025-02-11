@@ -1,6 +1,6 @@
 import { has, slice } from ".";
-import { arrayFrom, arrayReverse, each } from "./array";
-import { COMPOSING, DISPLAY, HREF, HTML, INPUT, TARGET, TEXT, TEXT_CONTENT, AFTER, VALUE, CHECKED, SELECT, CLASS_LIST, REMOVE, GET_ATTRIBUTE, SET_ATTRIBUTE, REMOVE_ATTRIBUTE, ADD_EVENT_LISTENER, REMOVE_EVENT_LISTENER, INNER_HTML, OUTER_HTML, BEFORE, APPEND, INSERT_ADJACENT_HTML, CLONE_NODE, PARENT_NODE, PREVIOUS_SIBLING, NEXT_SIBLING, FIRST_CHILD, LAST_CHILD, CREATE_ELEMENT } from "./constants";
+import { arrayFrom, arrayReverse, each, indexOf } from "./array";
+import { COMPOSING, DISPLAY, HREF, HTML, INPUT, TARGET, TEXT, TEXT_CONTENT, AFTER, VALUE, CHECKED, SELECT, CLASS_LIST, REMOVE, GET_ATTRIBUTE, SET_ATTRIBUTE, REMOVE_ATTRIBUTE, ADD_EVENT_LISTENER, REMOVE_EVENT_LISTENER, INNER_HTML, OUTER_HTML, BEFORE, APPEND, INSERT_ADJACENT_HTML, CLONE_NODE, PARENT_NODE, PREVIOUS_SIBLING, NEXT_SIBLING, FIRST_CHILD, LAST_CHILD, CREATE_ELEMENT, DETAIL } from "./constants";
 import { D, L, W } from "./object";
 import { lower, replace, trim } from "./string";
 import { isElementNode, isString } from "./typeCheck";
@@ -73,7 +73,7 @@ export let restorePosition = (node: Node) => {
         let nodes = childNodes(parent!) as any[];
 
         // Get the index of the target node
-        let index = nodes.indexOf(node);
+        let index = indexOf(nodes, node);
 
         // Get the nodes before the target node
         let nodesBefore = arrayReverse(slice(nodes, 0, index) as any[]) as Element[];
@@ -196,7 +196,7 @@ export let emit = (target: HTMLElement|string, eventName: string, eventData?: an
     query(target)!.dispatchEvent(new CustomEvent(lower(replace(eventName, /[^a-z\d]/gi, '')), {
         bubbles: true, 
         cancelable: true, 
-        detail: eventData
+        [DETAIL]: eventData
     }));
 
 // Traverse DOM tree

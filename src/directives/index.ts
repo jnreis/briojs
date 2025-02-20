@@ -15,8 +15,10 @@ import { resizeDirectives } from './resize';
 import { onDirective } from './on';
 import { bindDirective } from './bind';
 import { modelDirective } from './model';
-import { maskDirective } from './mask';
+import { maskDirective, moneyMask, setDefaultMaskTokens } from './mask';
 import { effectDirective } from './effect';
+import { arrayAdd, each } from '../tools/array';
+import { DIRECTIVES } from '../tools/constants';
 
 /**
  * Active directives
@@ -76,3 +78,13 @@ export let allDirectives: [string | RegExp, HydrateDirective][] = [
      */
     effectDirective,
 ];
+
+export let setAllDirectives = (app: AppObject) => {
+    each(allDirectives, directive => arrayAdd(app[DIRECTIVES], directive));
+
+    // Load the money mask
+    app.masks.money = moneyMask;
+
+    // Set the default mask tokens
+    setDefaultMaskTokens(app.maskTokens);
+}

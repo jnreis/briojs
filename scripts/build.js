@@ -16,20 +16,10 @@ let libs = [
         entry: 'src/index.ts',
         name,
         formats: ['es']
-    },
-    {
-        entry: `src/${name}.min.ts`,
-        name: `${name}.min`,
-        formats: ['iife']
-    },
-    {
-        entry: `src/${name}.core.min.ts`,
-        name: `${name}.core.min`,
-        formats: ['iife']
-    },
+    }
 ];
 
-const queuePlugins = (dirPath, name = '') => {
+const queueMinTs = (dirPath, name = '') => {
     fs.readdirSync(dirPath).forEach(moduleName => {
 
         // Plugins end with .min.ts
@@ -43,12 +33,12 @@ const queuePlugins = (dirPath, name = '') => {
 
         // Queue subdirectories recursively
         else if (fs.lstatSync(dirPath + moduleName).isDirectory()) {
-            queuePlugins(dirPath + moduleName + '/', (name ? name + '.' : '') + moduleName);
+            queueMinTs(dirPath + moduleName + '/', (name ? name + '.' : '') + moduleName);
         }
     });
 }
 
-queuePlugins('src/plugins/');
+queueMinTs('src/');
 
 
 // Build with Vite

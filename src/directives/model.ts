@@ -7,6 +7,7 @@ import { saveCleanup } from '../app';
 import { D, newMap } from '../tools/object';
 import { parse, trim } from '../tools/string';
 import { isNull, isArray, getType, isUndefined, isString, isBoolean, isNumber } from '../tools/typeCheck';
+import { getAccessedProp } from '../reactivity/track';
 
 /**
  * MODEL DIRECTIVE
@@ -96,7 +97,12 @@ export let hydrateModel = (vnode: VNode, attrName: string, attrValue: string) =>
         return logError(THE_MODEL_DIRECTIVE, CAN_ONLY_BE_USED_ON, INPUT, `, ${TEXTAREA}, and ${SELECT} ${ELEMENT}s.`, node);
 
     // Evaluate the expression to get the reactive value
-    let stateValue = vnode.exec(vnode, attrValue);
+    let stateValue = getAccessedProp(vnode.exec(vnode, attrValue));
+
+    if (!stateValue) {
+        logError(THE_MODEL_DIRECTIVE, REQUIRES_A_REACTIVE_VALUE, node);
+        return;
+    }
 
     // Get the reactive value
     let value = stateValue();

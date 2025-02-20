@@ -1,9 +1,10 @@
+// TODO
 /**
- TODO: I need to wrap it up and release the first version of this amazing framework by the end of the month.
+ * I need to wrap it up and release the first version of this amazing framework by the end of the month.
  * This means I need to finish the following tasks:
  * - Complete all pending TODOs. [DONE]
  * - Test each feature to make sure it works as expected. [IN PROGRESS]
- * - Test the framework with Astro. [IN PROGRESS]
+ * IMPORTANT: - Test the framework with Astro. Make sure TailwindCSS recognizes dynamic classes (see: tailwind-merge). [IN PROGRESS]
  * - Write documentation for each feature.
  * - Write a getting started guide.
  * - Create a website for the framework.
@@ -29,7 +30,7 @@
  * - Default stores: data, directive, mask, maskToken, props, routeRules, script, style, template
  */
 export { settings, newApp, setup } from "./app";
-export { allDirectives } from "./directives";
+export { setAllDirectives } from "./directives";
 export { ignoreDirective } from "./directives/ignore";
 export { eachDirective } from "./directives/each";
 export { propsDirective, dataDirective } from "./directives/context";
@@ -48,7 +49,9 @@ export { onDirective } from "./directives/on";
 export { bindDirective } from "./directives/bind";
 export { modelDirective } from "./directives/model";
 export { maskDirective, moneyMask, setDefaultMaskTokens } from "./directives/mask";
-export { newFn } from "./tools/evaluation";
+export { animeAnimationEngine } from "./plugins/animation/engine/animejs";
+export { gsapAnimationEngine } from "./plugins/animation/engine/gsap";
+export { webAnimationsApiAnimationEngine } from "./plugins/animation/engine/web.animations.api";
 
 // ! BUG LIST
 // - [ ] FIX: methods can not be used in addProps.

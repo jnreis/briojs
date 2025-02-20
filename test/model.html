@@ -23,12 +23,6 @@
 </head>
 <body b-hydrate>
 
-    <script b-script>
-        async () => {
-            $plugins.type = (value) => Object.prototype.toString.call(value).slice(8, -1).toLowerCase();
-        }
-    </script>
-
     <!-- <script b-script type="brio" src="/dist/mask.money.js"></script> -->
 
     <!-- Single Select -->
@@ -82,7 +76,7 @@
             b-model="$props.state"
             b-mask="money"
             b-effect="console.warn('MASK EFFECT:', $props.state)"
-            on-mask="console.warn('on-mask', $event.detail.value, $event.detail.output)"
+            on-mask="console.warn('ON MASK:', $event.detail.value, $event.detail.output)"
         >
     </div>
 
@@ -183,6 +177,18 @@
         <input type="hidden" b-model="$props.state">
     </div>
 
-    <script type="module" src="/src/index.ts"></script>
+    <script type="module" src="/src/briojs.min.ts"></script>
+
+    <script>
+        window.addEventListener('brio', () => {
+            const {gc} = brio.newApp();
+
+            gc.$plugins = {
+                type: (value) => Object.prototype.toString.call(value).slice(8, -1).toLowerCase()
+            }
+
+            gc.$dom.hydrate('body');
+        })
+    </script>
 </body>
 </html>

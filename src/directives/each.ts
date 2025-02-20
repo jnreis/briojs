@@ -34,7 +34,6 @@ export let hydrateEach = (vnode: VNode, attrName: string, attrValue: string) => 
         return logError(msg, 'a valid alias.');
 
     // Get the value of the prop
-    // TODO: create a function that takes the vnode and the cache key and returns the value
     let value = vnode.exec(vnode, propExp)();
 
     // Check if the prop is an observed state (array or object)

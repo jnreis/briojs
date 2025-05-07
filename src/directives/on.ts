@@ -72,7 +72,7 @@ export let hydrateOn = (vnode: VNode, attrName: string, attrValue: string) => {
     let fn = (e: any) => {
         // Get the function, if any
         let call = vnode.exec(vnode, attrValue, $+EVENT, false);
-    
+
         // Check if the event handler is a function
         if (isFunction(call)) call(e);
         else logError(REQUIRES_ACTION_TYPE(EVENT, attrName, 'a ' + FUNCTION, getType(call())));

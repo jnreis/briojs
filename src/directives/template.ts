@@ -16,7 +16,7 @@ export let hydrateTemplate = (vnode: VNode, attrName: string, attrValue: string)
         // Hydrate HTML content
         await vnode[INSERT](template, INNER, el);
 
-        // Replace the node with its children, if outer
+        // Replace the node with its children
         insertNodes(el, REPLACE_WITH, ...childNodes(el));
     });
 

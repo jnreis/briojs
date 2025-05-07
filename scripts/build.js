@@ -55,7 +55,7 @@ const buildWithVite = async (lib) => {
             },
             minify: "esbuild",
             reportCompressedSize: false,
-            // sourcemap: true,
+            sourcemap: true,
         },
         plugins: [
           dts()

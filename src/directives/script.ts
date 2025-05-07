@@ -4,6 +4,7 @@ import { arrayAdd, map } from "../tools/array";
 import { B_, CTX_ARGS, SCRIPT } from "../tools/constants";
 import { getAttr, getNodeContent, getTagName, removeNode } from "../tools/dom";
 import { newFn } from "../tools/evaluation";
+import { isStringFunction } from "../tools/string";
 import { isArray, isFunction, isString } from "../tools/typeCheck";
 
 export let hydrateScript = async (vnode: VNode, attrName: string, attrValue: string) => {
@@ -55,8 +56,11 @@ export let hydrateScript = async (vnode: VNode, attrName: string, attrValue: str
             let fn = script;
 
             // Evaluate the script
-            if (isString(fn))
-                fn = newFn(vnode[CTX_ARGS](), fn, false);
+            if (isString(fn)) {
+                let scriptFn = isStringFunction(fn);
+                fn = newFn(vnode[CTX_ARGS](), fn, scriptFn);
+                if (scriptFn) fn = fn(vnode.ctx);
+            }
 
             // Execute the script
             if (isFunction(fn))

@@ -40,13 +40,23 @@
 <body b-hydrate>
 
     <script b-script>
-        try {
-            console.log('$set', $set);
+        async () => {
+            console.log('$set', $set, '$data', $data);
             $data.name = 'Brio.js is awesome!';
-        } catch {}
+
+            let result = await $http.post('https://portal.gmgsavings.com/apps/blogspot-dev/api/components.php', {
+                slugs: ["adhc-signup-form"]
+            })
+
+            console.log('result', result);
+
+            $data.load = () => {
+                console.log('loading effect...');
+            }
+        }
     </script>
 
-    <h1>Bind Directive</h1>
+    <h1 on-click="$data.load">Bind Directive</h1>
 
     <p>The bind directive is used to bind a prop/expression to a DOM attribute. The attribute value is updated when any of its reactive data change, if any.</p>
 
@@ -92,7 +102,7 @@
         </ul>
     </div>
 
-    <script type="module" src="/src/cdn.ts"></script>
+    <script type="module" src="/src/briojs.min.ts"></script>
 
     <script>
         window.addEventListener('brio', () => {

@@ -1,13 +1,15 @@
-import { has } from '../tools';
-import { ERROR, TEXT, GET, DELETE, PUT, POST, PATCH, UNDEFINED, METHOD } from '../tools/constants';
-import { getKey } from '../tools/object';
-import { parse, queryString } from '../tools/string';
+import { find } from '../tools/array';
+import { ERROR, TEXT, GET, DELETE, PUT, POST, PATCH, UNDEFINED, METHOD, HEADERS, CONTENT__$CAP } from '../tools/constants';
+import { getKey, getKeys } from '../tools/object';
+import { lower, parse, queryString, stringify } from '../tools/string';
 import { isObject } from '../tools/typeCheck';
 
 let _http = (method: 'get' | 'delete' | 'post' | 'put' | 'patch') => 
     async (endpoint: string, body?: any, options: HttpOptions = {}): Promise<any> => {
 
     let TEXT_STATUS: 'status' = 'status';
+    let CONTENT_TYPE = CONTENT__$CAP + '-Type' as 'Content-Type';
+    let APPLICATION_JSON: 'application/json' = 'application/json';
 
     /**
      * The name of the `parser` can be provided to explicitly specify how the response should be parsed.
@@ -16,10 +18,33 @@ let _http = (method: 'get' | 'delete' | 'post' | 'put' | 'patch') =>
      */
     let parser: ResponseParser = getKey(options, 'parser');
 
-    // If the method is GET or DELETE and the body is an object, convert the object to a query string
-    if (has([GET, DELETE], method) && isObject(body)) {
-        endpoint += queryString(body);
-        body = UNDEFINED;
+    // Stringify the body if it is an object
+    if (isObject(body)) {
+
+        // Get the headers
+        let headers: ObjectType = options[HEADERS] || {};
+
+        // Get the content type key, if it exists
+        let contentTypeKey = find(getKeys(headers), key => lower(key) == lower(CONTENT_TYPE));
+        let contentTypeValue = headers[contentTypeKey];
+
+        // Append the body to the endpoint
+        if (method == GET || (method == DELETE && !contentTypeKey)) {
+            endpoint += queryString(body);
+            body = UNDEFINED;
+        }
+        // Stringify the body as JSON
+        else if (!contentTypeKey || contentTypeValue == APPLICATION_JSON) {
+            body = stringify(body);
+
+            if (!contentTypeKey) {
+                // Set the content type to JSON
+                headers[CONTENT_TYPE] = APPLICATION_JSON;
+
+                // Save the updated headers
+                options[HEADERS] = headers;
+            }
+        }
     }
 
     try {

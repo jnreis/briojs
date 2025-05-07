@@ -124,6 +124,10 @@ export let sanitizeExp = (exp: string, isText?: boolean) =>
 /** Ensure an expression is a function */
 export let expToFn = (exp: string, args: string = '', returns: boolean | 'text' = true) => {
 
+    if (isPath(exp) && !returns) {
+        exp += `(${args})`;
+    }
+
     if (!isStringFunction(exp)) {
         // If the expression returns text, wrap it in backticks
         exp = sanitizeExp(exp, returns == TEXT);

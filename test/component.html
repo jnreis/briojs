@@ -135,6 +135,10 @@
             } catch {}
         </script>
 
+        <template b-html="$props.html"></template>
+
+        <hr>
+
         <div b-template="$props.html"></div>
 
         <hr>
@@ -154,9 +158,36 @@
         <button on-click="$props.count--">Subtract</button>
         <button on-click="$props.count++">Add</button>
 
+        <hr>
+
+        <!-- Template with slots -->
+        <template b-save="my-card">
+            <!-- TODO: elements with a b-slot -->
+            <h2 b-template="$slot.title">
+                Title goes here
+            </h2>
+
+            <h3 b-html="$refs.content && $refs.content.innerHTML || $el.innerHTML">
+                Content goes here
+            </h3>
+
+            <h4 b-html="$refs.footer && $refs.footer.innerHTML || $el.innerHTML">
+                Footer goes here
+            </h4>
+        </template>
+
+        <!-- TODO: b-html, b-text, and b-template should get the outerHTML of the elements with a b-slot directive -->
+        <div b-html="my-card">
+            <h2 b-slot="title">The title</h2>
+            <div b-slot="content">
+                <p>The content</p>
+            </div>
+            <div b-slot="footer">The footer</div>
+        </div>
+
     </template>
 
-    <script type="module" src="/src/cdn.ts"></script>
+    <script type="module" src="/src/briojs.min.ts"></script>
 
     <script>
         window.addEventListener('brio', () => {

@@ -35,7 +35,7 @@ type AppObject = {
     lcFns: LocalContextFns,
     /** The directives to be hydrated */
     directives: Directive[],
-    vnodes: Map<Node, VNode>,
+    bnodes: Map<Node, BNode>,
     hooks: Hooks,
 
     masks: MasksObject,
@@ -45,10 +45,10 @@ type AppObject = {
     routeRules: RouteRulesObject,
 
     ctxArgs: FunctionType,
-    exec: (vnode: VNode, exp: string, args?: string, returns?: boolean | "text") => FunctionType,
+    exec: (bnode: BNode, exp: string, args?: string, returns?: boolean | "text") => FunctionType,
     cacheExp: CacheExp,
-    evalEffect: (vnode: VNode, attrName: string, attrValue: string, callback: (node: HTMLElement) => HookFunction) => void,
-    vnode: [NewVNode, GetVNode],
+    evalEffect: (bnode: BNode, attrName: string, attrValue: string, callback: (node: HTMLElement) => HookFunction) => void,
+    bnode: [NewBNode, GetBNode],
     hook: [SetHook, PlayHook],
     transition: [PlayTransition, ReverseTransition],
     // route: [SetRoute, Route],
@@ -78,11 +78,20 @@ type GlobalContext = {
     $dom: DomObject,
     $http: HttpObject,
     $set: SetObject,
-    // $tools: HydrationTools,
     $store: ObjectType,
     $state: State,
     $watch: Watch,
     $effect: Effect,
+    $tools: BrioTools,
+}
+
+type BrioTools = {
+    hasProp: (object: any, key: string) => boolean;
+    getProp: (object: any, key: string, defaultValue?: any) => any;
+    setProp: (object: any, key: string, descriptor?: PropertyDescriptorShorthand) => void;
+
+    /** Performs a in-place deep sync between `target` and `source` values */
+    sync: (target: any, source: any) => any;
 }
 
 /** The global $set object */
@@ -110,7 +119,7 @@ type SetDirective = (name: string | RegExp, hydrateDirective: HydrateDirective, 
 
 type GetCache = (key: string, type?: keyof CacheObject) => any;
 type SetCache = (value: any, key?: string, type?: keyof CacheObject) => string;
-type CacheExp = (exp: string, args?: string, returns?: boolean | "text") => string;
+type CacheExp = (bnode: BNode, exp: string, args?: string, returns?: boolean | "text") => string;
 type EvalFn = (exp: string, args?: string, returns?: boolean | "text") => FunctionType;
 type SetCtxArgs = (args: string) => string;
 
@@ -120,7 +129,7 @@ type SetRouter = (route: FunctionType) => void;
 /** The global $dom object */
 type DomObject = {
     hydrate: (node: Node, ctxNode?: Node) => void,
-    dehydrate: (node: Node, _removeNode?: boolean, _removeVNode?: boolean) => void,
+    dehydrate: (node: Node, _removeNode?: boolean, _removeBNode?: boolean) => void,
     insert: (content: any, where: "outer" | "inner" | "text" | "before" | "first" | "last" | "after", target: HTMLElement | string, options?: InsertOptions) => Promise<any>,
     route: Route,
     emit: (target: HTMLElement | string, eventName: string, eventData?: any) => boolean,
@@ -147,12 +156,18 @@ type HttpObject = {
 type HttpMethod = (endpoint: string, body?: any, options?: HttpOptions) => Promise<any>;
 
 /** Virtual Node */
-type VNode = {
-    /** The local context available to all expressions evaluated with this vnode. e.g. $el, $data, $props, $refs, $uid, etc. */
+type BNode = {
+    /** The local context available to all expressions evaluated with this bnode. e.g. $el, $data, $props, $refs, $uid, etc. */
     ctx: Context,
 
     /** The element itself */
     el: HTMLElement,
+
+    /** A comment node that serves as a placeholder for `b-if` when the condition is false */
+    ph?: Comment,
+
+    /** The actual nodes in the DOM */
+    nodes?: Node[],
 
     /** UID context */
     uid: ObjectType,
@@ -173,10 +188,10 @@ type VNode = {
     app: AppObject,
 } & DomObject & AppObject;
 
-type NewVNode = (el: HTMLElement, ctxNode?: Node) => VNode;
-type GetVNode = (node: Node) => VNode | undefined;
+type NewBNode = (el: HTMLElement, ctxNode?: Node) => BNode;
+type GetBNode = (node: Node) => BNode | undefined;
 
-/** The local context of a vnode */
+/** The local context of a bnode */
 type LocalContext = {
     $el: HTMLElement,
     $refs: ObjectType,
@@ -188,18 +203,18 @@ type LocalContext = {
 }
 
 type LocalContextFns = {
-    [contextName: string]: (vnode: VNode, parent?: VNode) => any,
+    [contextName: string]: (bnode: BNode, parent?: BNode) => any,
 }
 
 type ContextFunction = (contextDestructured: Context) => (...args: any[]) => any;
 
-type NewVnode = (el: HTMLElement, ctxNode?: Node) => VNode;
-type GetVnode = (node: Node) => VNode | undefined;
+type NewVnode = (el: HTMLElement, ctxNode?: Node) => BNode;
+type GetVnode = (node: Node) => BNode | undefined;
 
 /** The tools passed to the hydration function of a directive */
 type HydrationTools = {
-    evalEffect: (vnode: VNode, attrName: string, attrValue: string, callback: (node: HTMLElement) => HookFunction) => void,
-    vnode: [NewVnode, GetVnode],
+    evalEffect: (bnode: BNode, attrName: string, attrValue: string, callback: (node: HTMLElement) => HookFunction) => void,
+    bnode: [NewVnode, GetVnode],
     hooks: [SetHook, PlayHook],
     transition: [PlayTransition, ReverseTransition],
 };

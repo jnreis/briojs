@@ -1,46 +1,25 @@
-import { arrayAdd, each } from "../tools/array";
-import { B_DATA } from "../tools/constants";
-import { cssNotAttr, delAttr, getAttr, queryAll } from "../tools/dom";
-import { isArray } from "../tools/typeCheck";
+import { delAttr, getAttr } from "../tools/dom";
 
 /**
- * NOTE
+ * NOTES:
  * - refs are only available within a b-data context. Make sure to have a b-data directive around the refs you want make available to the context.
+ * - if multiple elements share the same ref name within a b-data context, only the last one will be available in the $refs object.
  */
 
-export let hydrateRefs = async (vnode: VNode, attrName: string) => {
+export let hydrateRefs = async (bnode: BNode, attrName: string, el: HTMLElement) => {
 
-    let [setHook, playHook] = vnode.hook;
+    let attrValue = getAttr(el, attrName);
 
-    let $el = vnode.el;
+    if (attrValue) {
 
-    setHook($el, attrName, () => {
-        // Get the $refs object
-        let $refs = vnode.ctx.$refs as ObjectType;
-        let attrSelector = ` [${attrName}]`;
+        // Get the context object
+        let $refs = bnode.ctx.$refs;
 
-        // Query all refs not inside another context
-        let query = queryAll(attrSelector + cssNotAttr(B_DATA) + cssNotAttr(B_DATA, attrSelector), $el);
+        // Add the ref to the context
+        // NOTE: if multiple elements share the same ref name within a b-data context, only the last one will be available in the $refs object.
+        $refs[attrValue] = el;
 
-        each([$el, ...query], ref => {
-            let refName = getAttr(ref as HTMLElement, attrName);
-            if (refName) {
-                // Check if the ref already exists
-                let r = $refs[refName];
-                if (r) {
-                    // Add the ref to the ref array
-                    if (isArray(r)) arrayAdd(r, ref);
-                    // Convert the ref to an array
-                    else $refs[refName] = [r, ref];
-                }
-                // Add the ref to the context
-                else $refs[refName] = ref;
-                // Remove the attribute from the node
-                delAttr(ref as HTMLElement, attrName);
-            }
-        });
-    });
-
-    // Play the hook
-    await playHook($el, attrName);
+        // Remove the attribute from the node
+        delAttr(el, attrName);
+    }
 }

@@ -1,27 +1,43 @@
-import { B_, INNER, INSERT, REPLACE_WITH, TEMPLATE } from "../tools/constants";
-import { childNodes, insertNodes } from "../tools/dom";
+import { logWarn } from "../tools";
+import { B_TEMPLATE, BEFORE, INNER_HTML, INSERT, INVALID__$CAP, TEMPLATE, VALUE } from "../tools/constants";
+import { removeNode } from "../tools/dom";
+import { isString } from "../tools/typeCheck";
+import { updateDataLevelContext } from "./context";
 
-export let hydrateTemplate = (vnode: VNode, attrName: string, attrValue: string) => {
+export let hydrateTemplate = async (bnode: BNode, attrName: string, attrValue: string) => {
 
-    let el = vnode.el;
+    let el = bnode.el;
 
     // Evaluate the attribute value, if it does not match a saved template
-    let template = vnode[TEMPLATE][attrValue] || vnode.exec(vnode, attrValue)();
+    let template = attrValue ? bnode[TEMPLATE][attrValue] || bnode.exec(bnode, attrValue)() : el[INNER_HTML];
 
-    let [setHook, playHook] = vnode.hook;
+    let [setHook, playHook] = bnode.hook;
 
     // Set the hook
     setHook(el, attrName, async () => {
 
         // Hydrate HTML content
-        await vnode[INSERT](template, INNER, el);
+        if (isString(template)) {
 
-        // Replace the node with its children
-        insertNodes(el, REPLACE_WITH, ...childNodes(el));
+            // Insert and hydrate the template content
+            await bnode[INSERT](template, BEFORE, el, {
+                then: (insertedNodes: Node[]) => {
+                    // The nodes that were inserted
+                    bnode.nodes = insertedNodes;
+                }
+            });
+
+            // Remove the wrapper element
+            removeNode(el);
+
+            // Update the $refs and $slots objects
+            await updateDataLevelContext(bnode);
+        }
+        else logWarn(attrName + ':', INVALID__$CAP, VALUE, '\n', template);
     });
 
     // Play the hook
-    playHook(el, attrName);
+    await playHook(el, attrName);
 }
 
-export let templateDirective: Directive = [B_+TEMPLATE, hydrateTemplate];
+export let templateDirective: Directive = [B_TEMPLATE, hydrateTemplate];

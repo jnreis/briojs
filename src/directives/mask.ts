@@ -3,7 +3,7 @@ import { entries, has, logError, size, slice, wait } from "../tools";
 import { arrayAdd, find, indexOf, join } from "../tools/array";
 import { B_, CAN_ONLY_BE_USED_ON, DIRECTIVE, ELEMENT, INDEX, INPUT, MASK, MASK_TOKENS, MASKS, OPTIONS, SELECTION_START, TEXTAREA, TOKENS, VALUE } from "../tools/constants";
 import { emit, listen } from "../tools/dom";
-import { getKey, getKeys, newRegExp } from "../tools/object";
+import { getProp, getKeys, newRegExp } from "../tools/object";
 import { match, replace, split, startsWith } from "../tools/string";
 
 /** Set the default mask tokens */
@@ -57,12 +57,12 @@ let PARTS: 'parts' = 'parts';
  * @option thousands (default: `,`)
  * @option precision (default: `2`)
  */
-export let hydrateMask = (vnode: VNode, attrName: string, attrValue: string) => {
+export let hydrateMask = (bnode: BNode, attrName: string, attrValue: string) => {
 
-    let $el: any = vnode.el;
-    let masks = vnode[MASKS];
+    let $el: any = bnode.el;
+    let masks = bnode[MASKS];
 
-    let [setHook, playHook] = vnode.hook;
+    let [setHook, playHook] = bnode.hook;
 
     // If the element has no value or selectionStart properties, return
     if (!(VALUE in $el && SELECTION_START in $el))
@@ -72,12 +72,12 @@ export let hydrateMask = (vnode: VNode, attrName: string, attrValue: string) => 
     let dynamicMask: MaskFunction | undefined = masks[attrValue];
 
     // Options
-    let options = vnode[OPTIONS][attrName] || {};
+    let options = bnode[OPTIONS][attrName] || {};
 
     // Updated mask object
     let $mask: MaskContext = {
         ...options,
-        [TOKENS]: {...vnode[MASK_TOKENS], ...options[TOKENS]},
+        [TOKENS]: {...bnode[MASK_TOKENS], ...options[TOKENS]},
         mask: attrValue,
         [VALUE]: '',
         [CURSOR]: $el[SELECTION_START],
@@ -122,7 +122,7 @@ export let hydrateMask = (vnode: VNode, attrName: string, attrValue: string) => 
     let cleanup = listen($el, INPUT, () => playHook($el, attrName), true);
 
     // Save cleanup function
-    saveCleanup(vnode, cleanup);
+    saveCleanup(bnode, cleanup);
 }
 
 // /** Mask Item: [character, quantifier, isToken, isOptional, isMultiple] */
@@ -221,7 +221,7 @@ let matchMaskItem = (remainingInput: string, maskItem: MaskItem, tokens: MaskTok
     return index;
 }
 
-let applyMask = ($mask: MaskContext) => {
+export let applyMask = ($mask: MaskContext) => {
 
     let tokens = $mask[TOKENS];
     let input = $mask[VALUE];
@@ -333,9 +333,9 @@ export let moneyMask = ($mask: MaskContext) => {
     let value = $mask[VALUE];
 
     // Get the mask options
-    let decimal = getKey($mask, 'decimal', '.');
-    let thousands = getKey($mask, 'thousands', ',');
-    let precision = getKey($mask, 'precision', 2);
+    let decimal = getProp($mask, 'decimal', '.');
+    let thousands = getProp($mask, 'thousands', ',');
+    let precision = getProp($mask, 'precision', 2);
 
     // Make sure the decimal separator is different from the thousands separator
     if (decimal == ',') thousands = '.';
@@ -517,12 +517,18 @@ export let maskDirective: Directive = [B_+MASK, hydrateMask];
 
 // setTimeout(() => {
 
-    // Options: eager: shows static characters before they are typed, e.g. #-# will show 1- when 1 is typed.
+//     let mask = {
+//         tokens: {
+//             '&': /[a-z_]/i,
+//             '*': /[\w-]/
+//         },
+//         value: '$name',
+//         mask: '&*+',
+//         cursor: 0,
+//         parts: [],
+//         output: '',
+//     }
+//     applyMask(mask);
 
-    // let str = '(#3) #3-#4'; // "(777) 333-4444"
-    //     str = '&+ &+'; // "John Doe"
-    //     str = '#+ *+ &2'; // "001 Main St", "123 Lake Dr"
-
-//     let mask = '&+ *+';
-//     applyMask(mask, 'Ângela Reis', tokens);
+//     console.log('masked:', mask.output);
 // });

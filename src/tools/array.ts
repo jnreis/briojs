@@ -8,8 +8,8 @@ import { LENGTH, REVERSE } from "./constants";
  * @param value the item to add
  * @returns the new length of the array
  */
-export let arrayAdd = (array: any[], value: any) =>
-    array.push(value);
+export let arrayAdd = (array: any[], ...value: any) =>
+    array.push(...value);
 
 /**
  * Sort the items in an array
@@ -52,7 +52,7 @@ type PredicateFn = (value: any, index: number, array: any[]) => unknown;
  * @param value the array to loop through
  * @param callbackfn a function to execute on each item
  */
-export let each = (value: any, callbackfn: (value: any, index: number, array: any) => void) =>
+export let each = (value: any, callbackfn: (value: any, index: any, array: any) => void) =>
     value.forEach(callbackfn);
 
 /**

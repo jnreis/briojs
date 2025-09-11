@@ -1,4 +1,5 @@
-import { arrayReverse, join } from './array';
+import { slice } from '.';
+import { arrayReverse, join, map } from './array';
 import { DELETE, ENDS_WITH, REPLACE, STARTS_WITH, TO_STRING } from './constants';
 
 export let toString = (value: any, radix?: number | undefined) => value[TO_STRING](radix);
@@ -20,9 +21,9 @@ export let match = (str: string, regex: RegExp) => str.match(regex);
 
 export let upper = (str: string) => str.toUpperCase();
 
-// export let capitalize = (str: string) => upper(str[0]) + slice(str, 1);
+export let capitalize = (str: string) => upper(str[0]) + slice(str, 1);
 
-// export let uncapitalize = (str: string) => lower(str[0]) + slice(str, 1);
+export let uncapitalize = (str: string) => lower(str[0]) + slice(str, 1);
 
 export let reverseString = (str: string) => join(arrayReverse(split(str, '')), '');
 
@@ -34,7 +35,15 @@ export let endsWith = (str: string, search: string, endPosition?: number) => str
 
 export let test = (str: string, regex: RegExp) => regex.test(str);
 
-export let replace = (str: string, search: string | RegExp, replacement: string) => str[REPLACE](search, replacement);
+export let replace = (str: string, search: string | RegExp, replacement: any) => str[REPLACE](search, replacement);
+
+export let replaceAll = (str: string, regex: RegExp, replacement: any) => {
+
+    while (test(str, regex))
+        str = replace(str, regex, replacement);
+
+    return str;
+}
 
 /**
  * Check if a string ONLY contains letters (a-z, A-Z)
@@ -71,7 +80,7 @@ export let isStringArrowFunction = (value: string) => test(trim(value), /^(async
 // }
 
 
-// export let camelCase = (...args: string[]) => uncapitalize(join(map(args, capitalize), ''));
+export let camelCase = (args: string) => uncapitalize(join(map(split(args, '-'), capitalize), ''));
 
 export let stringify = (value: any) => JSON.stringify(value);
 

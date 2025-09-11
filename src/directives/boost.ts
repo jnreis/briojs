@@ -2,16 +2,16 @@ import { saveCleanup } from '../app';
 import { getAttr, getTagName, listen } from '../tools/dom';
 import { HREF, PREVENT_DEFAULT, ROUTE, TARGET } from '../tools/constants';
 
-export let hydrateBoost = (vnode: VNode, _: string, attrValue: string) => {
+export let hydrateBoost = (bnode: BNode, _: string, attrValue: string) => {
 
-    let $el = vnode.el;
+    let $el = bnode.el;
 
-    let value = vnode.exec(vnode, attrValue || '1');
+    let value = bnode.exec(bnode, attrValue || '1');
 
     // on-click-prevent="$boost($el, )"
 
     // Anchor: intercept the click event and prevent the default action
-    saveCleanup(vnode, listen($el, 'click', async event => {
+    saveCleanup(bnode, listen($el, 'click', async event => {
         // Get the target element
         let target = event[TARGET];
 
@@ -26,13 +26,13 @@ export let hydrateBoost = (vnode: VNode, _: string, attrValue: string) => {
                 // Prevent the default action
                 event[PREVENT_DEFAULT]();
 
-                vnode[ROUTE](rawHref);
+                bnode[ROUTE](rawHref);
             }
         }
     }));
 
     // // Form: intercept the submit event and prevent the default action
-    // saveCleanup(vnode, listen($el, 'submit', async event => {
+    // saveCleanup(bnode, listen($el, 'submit', async event => {
     //     // Get the target element
     //     let target = event[TARGET];
 

@@ -2,6 +2,7 @@
 type ListenerFunctionContext = {
     operation: 'create'|'update'|'delete',
     state: any,
+    target: any,
     prop: string,
     newValue: any,
     oldValue: any
@@ -12,24 +13,33 @@ type ListenerFunction = (context: ListenerFunctionContext) => any;
 /** [ListenerFunction, PriorityNumber] */
 type ListenerFunctions = Map<ListenerFunction, number>;
 
+type Prop = string | number | symbol;
+
 /** [ProxiedObject, PropertyName] */
-type AccessedProp = [any, string|number|symbol];
+type AccessedProp = [any, Prop];
+
+/** [ProxiedObject, PropertyName] */
+type PropertyReference = [any, Prop];
 
 type StateObject = {
+
+    /** The listeners to be called when a property in the state is set */
     state: ListenerFunctions,
+
+    /** The listeners to be called when a property is set */
     props: {
-        [prop: string|number]: ListenerFunctions
+        [prop: Prop]: ListenerFunctions
     },
-    skip: Set<string|number>,
-    onSet: {
-        [prop: string|number]: Set<FunctionType>
-    },
+
+    /** Skip specific keys/indexes from being automatically observed */
+    skip: Set<Prop>,
 }
 
 type SetFunction = (proxied: any, prop: string | number | symbol, stateObject: StateObject) => any;
 
 type StateOptions = {
     parent?: any,
+    path?: string,
 }
 
 type State = {

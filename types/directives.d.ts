@@ -1,8 +1,8 @@
 type DirectivesArray = [string | RegExp, HydrateDirective][];
 
 /** The hydration function of a directive */
-type HydrateDirective = (vnode: VNode, attrName: string, attrValue: string) => any;
-type EvaluateDirective = (vnode: VNode, attrName: string, attrValue: string) => any;
+type HydrateDirective = (bnode: BNode, attrName: string, attrValue: string) => any;
+type EvaluateDirective = (bnode: BNode, attrName: string, attrValue: string) => any;
 
 // type Masked = {
 //     cursor: number,

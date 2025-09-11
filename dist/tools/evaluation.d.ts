@@ -1,7 +1,7 @@
 export declare let cache: Record<string, FunctionType>;
 /**
- * Evaluate an expression using vnode properties
- * @param vnode The vnode object
+ * Evaluate an expression using bnode properties
+ * @param bnode The bnode object
  * @param exp The expression to evaluate
  * @param args The arguments to pass to the function
  * @param isVoid Whether the expression should be wrapped in a block
@@ -13,7 +13,7 @@ export declare let cache: Record<string, FunctionType>;
  * `1` — Reference.
  * `2` — Reference is a function.
  */
-export declare let evaluate: (vnode: VNode, exp: string, args?: string, isVoid?: boolean) => [FunctionType, 0 | 1 | 2];
+export declare let evaluate: (bnode: BNode, exp: string, args?: string, isVoid?: boolean) => [FunctionType, 0 | 1 | 2];
 export declare let makeFunction: (exp: string, args?: string, isVoid?: boolean) => string;
 export declare let newFn: (args: string, exp: string, returns?: boolean) => FunctionType;
 /** Sanitize an expression to prepare it for evaluation */

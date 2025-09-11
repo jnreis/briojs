@@ -45,3 +45,7 @@ export declare let isTextNode: (node: any) => boolean;
 export declare let isElementNode: (node: any) => boolean;
 /** Check if a value is a document fragment */
 export declare let isDocumentFragment: (node: any) => boolean;
+/** Check if a value is a Map */
+export declare let isMap: (value: any) => boolean;
+/** Check if a value is a Set */
+export declare let isSet: (value: any) => boolean;

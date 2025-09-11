@@ -11,24 +11,24 @@ import { split } from "../tools/string";
  * @option `debounce`   The time in milliseconds to wait before executing the callback.
  * @option `box`        The box type to observe: content-box, border-box, device-pixel-content-box
  */
-export let hydrateResize = (vnode: VNode, attrName: string, attrValue: string) => {
+export let hydrateResize = (bnode: BNode, attrName: string, attrValue: string) => {
 
-    let [setHook, playHook] = vnode.hook;
+    let [setHook, playHook] = bnode.hook;
 
     let _attrName = sliceAttrName(attrName, 5); // 5: b-on-, 3: on-
 
     let [_directiveName] = split(_attrName, '-');
 
-    let $el = vnode.el;
+    let $el = bnode.el;
 
     // Options
-    let options = vnode[OPTIONS][attrName] || {};
+    let options = bnode[OPTIONS][attrName] || {};
 
     // Get the target element
     let target = options[DOCUMENT] ? query(HTML) as HTMLElement : $el;
 
     // Evaluate the expression
-    let expFn = vnode.exec(vnode, attrValue, '$size', false);
+    let expFn = bnode.exec(bnode, attrValue, '$size', false);
 
     // Set the directive hook
     setHook($el, attrName, debounce(expFn, options[DEBOUNCE] || 100));
@@ -48,7 +48,7 @@ export let hydrateResize = (vnode: VNode, attrName: string, attrValue: string) =
     observer[OBSERVE](target, options);
 
     // Save the cleanup function
-    saveCleanup(vnode, () => observer[DISCONNECT]());
+    saveCleanup(bnode, () => observer[DISCONNECT]());
 }
 
 export let resizeDirectives: Directive[] = [

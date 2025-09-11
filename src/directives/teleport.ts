@@ -4,7 +4,7 @@ import { insertNodes, query } from "../tools/dom";
 import { expToFn } from "../tools/evaluation";
 import { isArray, isNode } from "../tools/typeCheck";
 
-export let hydrateTeleport = (vnode: VNode, attrName: string, attrValue: string) => {
+export let hydrateTeleport = (bnode: BNode, attrName: string, attrValue: string) => {
 
     // Where to teleport the node in relation to the target element. Default is 'after'.
 
@@ -23,7 +23,7 @@ export let hydrateTeleport = (vnode: VNode, attrName: string, attrValue: string)
     catch {}
 
     // Evaluate the attribute value as an effect
-    vnode[EVAL_EFFECT](vnode, attrName, attrValue, (node: HTMLElement) => (value) => {
+    bnode[EVAL_EFFECT](bnode, attrName, attrValue, (node: HTMLElement) => (value) => {
         try {
             let v = value();
             // If the value is an array, the first item is the target element and the second is the position
@@ -42,7 +42,8 @@ export let hydrateTeleport = (vnode: VNode, attrName: string, attrValue: string)
             where = AFTER;
 
         // Teleport the node to the target element
-        if (isNode(target)) insertNodes(target, where, node);
+        // Note: the teleported node(s) may be the b-if placeholder (ph), or the b-template nodes (nodes), or the node itself.
+        if (isNode(target)) insertNodes(target, where, ...(bnode.nodes || [node]));
 
         // If the target is not found, log a warning
         else logWarn(TELEPORT, ELEMENT, NOT_FOUND, attrName + `="${attrValue}"`);

@@ -77,3 +77,9 @@ export let isElementNode = (node: any) => isInstance(node, HTMLElement);
 
 /** Check if a value is a document fragment */
 export let isDocumentFragment = (node: any) => isInstance(node, DocumentFragment);
+
+/** Check if a value is a Map */
+export let isMap = (value: any): boolean => isInstance(value, Map);
+
+/** Check if a value is a Set */
+export let isSet = (value: any): boolean => isInstance(value, Set);

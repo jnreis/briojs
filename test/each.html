@@ -8,22 +8,106 @@
 <body>
     <h1>b-each</h1>
 
-    <div b-props="{ person: 'Jhonathan', people: ['John','Jane','James']}">
+    <div b-data="app" b-props="{ person: 'Jhonathan', people: ['John','Jane','James'], p2: [{id: 1, label: 'User 1'}, {id: 2, label: 'User 2'}], count: 3}">
         <pre>{{ JSON.stringify($props) }}</pre>
+        <!-- <div class="cards">
+            <div class="card" b-each="person, index in count" b-props="{isActive: false}">
+                <p>{{index}} - {{ person }}</p>
+                <p>isActive: {{ isActive }}</p>
+                <button on-click="isActive = !isActive">
+                    {{ isActive ? 'Deactivate' : 'Activate' }}
+                </button>
+            </div>
+        </div> -->
         <div class="cards">
-            <div class="card" b-each="person, index in $props.people" b-props="{isActive: false}">
-                <p>{{$each.index}} - {{ $each.person }}</p>
-                <p>isActive: {{ $props.isActive }}</p>
-                <button on-click="$each.person = 'Jack'; $props.isActive = true">Make it Jack</button>
+            <div class="card" b-each="item in data" b-props="{isActive: false}">
+                <p>{{item.id}} - {{ item.label }}</p>
             </div>
         </div>
-        <div class="card mt-3">
-            <p>The "person" prop is different from the "person" variable in the b-each loop: {{ $props.person }}</p>
-            <button on-click="$props.person = 'Jack'">Make it Jack</button>
-        </div>
+        <!-- Count -->
+        <!-- <div class="card">
+            <p>Items count: {{ count }}</p>
+            <input type="number" placeholder="Enter name" b-model="count" />
+        </div> -->
+        <!-- Add person -->
+        <!-- <div class="card">
+            <p>Add a new person:</p>
+            <input type="text" placeholder="Enter name" b-model="person" />
+            <button on-click="people.push(person); person = ''">Add</button>
+        </div> -->
+        <!-- Reasign people -->
+        <!-- <div class="card">
+            <p>Reassign people:</p>
+            <button on-click="sync(people, ['Alice', 'Bob', 'Charlie']);">Reassign</button>
+        </div> -->
+        <!-- <div class="card mt-3">
+            <p>The "person" prop is different from the "person" variable in the b-each loop: {{ person }}</p>
+            <button on-click="person = 'Jack'">Make it Jack</button>
+        </div> -->
     </div>
 
-    <script type="module" src="/src/index.ts"></script>
+    <script type="module" src="/dist/briojs.min.js"></script>
+
+    <script>
+        window.addEventListener('brio', () => {
+            let app = brio.newApp();
+            let {$dom, $state, $effect, $watch, $store} = app.gc;
+            $dom.hydrate('body');
+
+            // let obj = $state({
+            //     person: 'Jhonathan',
+            //     people: [
+            //         {name: 'John', isActive: false, addresses: ['123 Main St', '456 Elm St']},
+            //         {name: 'Jane', isActive: false, addresses: ['789 Oak St', '101 Pine St']},
+            //         {name: 'James', isActive: false, addresses: ['202 Maple St', '303 Birch St']},
+            //     ],
+            //     morepeople: [],
+            //     count: 3,
+            // });
+
+            // let index = 0;
+
+            // $watch(obj.people[index], 'addresses', ({operation, oldValue, newValue}) => {
+            //     console.warn('obj.people[0].addresses changed:', '\noperation:', operation, '\noldValue:', oldValue, '\nnewValue:', newValue);
+            // });
+
+            // // obj.people[0] = {name: 'John', isActive: false, addresses: ['789 Main St', '543 Elm St']};
+
+            // obj.morepeople.push({name: 'Jack', isActive: false, addresses: obj.people[0].addresses});
+
+            // $watch(obj.morepeople[0], 'addresses', ({operation, oldValue, newValue}) => {
+            //     console.warn('obj.people[3].addresses changed:', '\noperation:', operation, '\noldValue:', oldValue, '\nnewValue:', newValue);
+            // });
+
+            // let adds = obj.people[index].addresses;
+
+            // $effect(({operation, oldValue, newValue}) => {
+            //     console.log('$effect obj.people:', operation, oldValue, newValue, obj.people === newValue);
+            // }, () => adds[0]);
+
+            // obj.people[3].addresses = obj.people[0].addresses;
+
+            // obj.people[3].addresses.push('333 Cedar St');
+            // obj.people[3].addresses = ['111 Cherry St', '222 Walnut St'];
+
+            // obj.people[3] = {name: 'Jack', isActive: false, addresses: ['1010 Cherry St', '2020 Walnut St']};
+            // $effect(({operation, oldValue, newValue}) => {
+            //     console.log('$effect obj.people:', operation, oldValue, newValue, obj.people === newValue);
+            // }, () => obj.people);
+
+            // setTimeout(() => {
+            //     // console.warn('action 1');
+            //     // obj.people.push('Alice');
+
+            //     console.warn('action 2');
+            //     obj.people = ['Alice', 'Bob', 'Charlie'];
+        
+            //     console.warn('action 3');
+            //     obj.people.push('David');
+            // }, 0);
+
+        });
+    </script>
 
     <style>
         body {
@@ -34,7 +118,6 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            height: 100vh;
             background-color: #f0f0f0;
             font-size: 1.2rem;
         }
@@ -58,6 +141,7 @@
             border-radius: 0.25rem;
             box-shadow: 0 0 0.5rem rgba(0, 0, 0, 0.1);
             padding: 1rem;
+            margin: 1rem 0;
         }
         button {
             padding: 0.5rem 1rem;

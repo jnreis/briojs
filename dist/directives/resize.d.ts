@@ -5,5 +5,5 @@
  * @option `debounce`   The time in milliseconds to wait before executing the callback.
  * @option `box`        The box type to observe: content-box, border-box, device-pixel-content-box
  */
-export declare let hydrateResize: (vnode: VNode, attrName: string, attrValue: string) => void;
+export declare let hydrateResize: (bnode: BNode, attrName: string, attrValue: string) => void;
 export declare let resizeDirectives: Directive[];

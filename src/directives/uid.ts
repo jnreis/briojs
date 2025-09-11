@@ -5,24 +5,24 @@ import { isArray, isString } from '../tools/typeCheck';
 
 let _uid: ObjectType = {};
 
-export let hydrateUid = async (vnode: VNode, attrName: string, attrValue: string) => {
+export let hydrateUid = async (bnode: BNode, attrName: string, attrValue: string) => {
 
     // Check if the UID expression is empty
     if (attrValue) {
-        let $el = vnode.el;
+        let $el = bnode.el;
 
-        let [setHook, playHook] = vnode.hook;
+        let [setHook, playHook] = bnode.hook;
 
         setHook($el, attrName, () => {
             // Evaluate the UID expression
-            let newUid = vnode.exec(vnode, attrValue)();
+            let newUid = bnode.exec(bnode, attrValue)();
 
             // Check if the UID expression is not an array of strings. If so, throw an error
             if (!isArray(newUid) || !every(newUid, isString))
                 return logError('the', attrName, DIRECTIVE, MUST_BE, `an ${ARRAY} of ${STRING}(s).`);
 
             // Convert the UID's to an object and save them in the context
-            vnode.uid = newUid.reduce((acc: any, uid: string) => {
+            bnode.uid = newUid.reduce((acc: any, uid: string) => {
 
                 // If the UID is in the parent context, increment it by 1 in the new context.
                 if (uid in _uid) _uid[uid]++;

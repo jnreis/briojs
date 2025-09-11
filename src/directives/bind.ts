@@ -1,32 +1,46 @@
 import { sliceAttrName } from '../app';
-import { OPTIONS, EVAL_EFFECT, $DATA } from '../tools/constants';
-import { setAttr, delAttr, getAttr, forcePropertyAssignment } from '../tools/dom';
+import { OPTIONS, EVAL_EFFECT } from '../tools/constants';
+import { setAttr, delAttr, getAttr, forcePropertyAssignment, sanitizeAttrName } from '../tools/dom';
 import { expToFn } from '../tools/evaluation';
+import { camelCase } from '../tools/string';
 
 /**
  * Option
  * @option `prop`   Also set a specific DOM property.
  */
-export let hydrateBind = (vnode: VNode, attrName: string, attrValue: string) => {
+export let hydrateBind = (bnode: BNode, attrName: string, attrValue: string) => {
 
     let _attrName = sliceAttrName(attrName, 7); // 7: b-bind-, 5: bind-
 
     /**
      * Make sure the attribute value is a function that takes the attribute's initial value as an argument.
-     * When the attribute value is omitted, use the attribute name as the key in the $data context.
-     * Example:
-     *   bind-hidden  becomes  bind-hidden="$data['hidden']"
+     * 
+     * When the attribute value is omitted, use the attribute name as the context key. Note that it must be a valid HTML attribute name.
+     * 
+     * Rules for valid HTML attribute name:
+     * - must start with a letter or underscore
+     * - subsequent characters can be letters, numbers, underscores, or hyphens
+     * - uppercase letters are treated as lowercase (HTML is case-insensitive)
+     * - any special characters are removed for the purpose of setting the attribute value, but not for context lookup.
+     * Context lookup using shorthand syntax (_attrName):
+     * - attribute names with hyphens (e.g., "first-name") are converted to camelCase (e.g., "firstName").
+     * - all other cases, including underscores, are used as is. Examples: firstname and first_name will be used as is.
+     * - for any other cases, use the regular bind syntax (e.g., `b-bind-first-name="FirstName"`).
      */
-    attrValue = expToFn(attrValue || $DATA + `['${_attrName}']`, '$initial');
+    attrValue = expToFn(attrValue || camelCase(_attrName), '$initial');
+
+    // Sanitize the attribute name to ensure it is a valid HTML attribute name
+    // This is necessary because some attributes may contain special characters that are not valid in HTML.
+    _attrName = sanitizeAttrName(_attrName);
 
     // Get the attribute's initial value
-    let initialAttrValue = getAttr(vnode.el, _attrName) || '';
+    let initialAttrValue = getAttr(bnode.el, _attrName) || '';
 
     // Options
-    let options = vnode[OPTIONS][attrName] || {};
+    let options = bnode[OPTIONS][attrName] || {};
 
     // Evaluate the attribute value as an effect
-    vnode[EVAL_EFFECT](vnode, attrName, attrValue, (node: HTMLElement) => (call) => {
+    bnode[EVAL_EFFECT](bnode, attrName, attrValue, (node: HTMLElement) => (call) => {
 
         let value = call(initialAttrValue);
 
@@ -48,4 +62,4 @@ export let hydrateBind = (vnode: VNode, attrName: string, attrValue: string) => 
     });
 }
 
-export let bindDirective: Directive = [/^(b-bind-|bind-)[\w-]+$/, hydrateBind];
+export let bindDirective: Directive = [/^(b-bind-|bind-)[\w-$]+$/, hydrateBind];

@@ -31,7 +31,7 @@ export declare let insertHTML: (node: Element, position: InsertPosition | "outer
 export declare let insertNode: (node: Node, parent: Node, nextSibling?: Node | null) => void;
 export declare let cloneNode: (node: Node) => Node;
 /** Restore the position of a node in the DOM to the closest position it was before being moved or removed */
-export declare let restorePosition: (node: Node) => (() => void) | undefined;
+export declare let restorePosition: (node: Node) => ((node: HTMLElement) => void) | undefined;
 export declare let eachAttribute: (element: HTMLElement, callback: (name: string, value: string) => void) => any;
 export declare let nodesBetween: (startNode: Node, endNode: Node, callback: FunctionType) => void;
 export declare let removeNode: (node: HTMLElement | Text) => void;
@@ -49,6 +49,7 @@ export declare let delAttr: (node: HTMLElement, attr: string) => void;
 export declare let setClass: (node: HTMLElement, className: string) => void;
 export declare let delClass: (node: HTMLElement, className: string) => void;
 export declare let createElement: (tagName: string, options?: ElementCreationOptions) => HTMLElement;
+export declare let createComment: (text: string) => Comment;
 export declare let formData: (form?: HTMLFormElement, submitter?: HTMLElement | null) => FormData;
 export declare let parseHTML: (html: string) => Document;
 export declare let getTagName: (node: any) => string;
@@ -71,7 +72,7 @@ export declare let href: (_url?: string, part?: "href" | "origin" | "pathname" |
  * - The properties `value`, `checked`, and `selected` reflect the current state of the element
  */
 export declare let forcePropertyAssignment: (attrName: string) => boolean;
-export declare let cssNotAttr: (attrName: string, extraSelector?: string) => string;
+export declare let sanitizeAttrName: (attrName: string) => string;
 /**
  * ! UNUSED. MAY BE REMOVED IN THE FUTURE
  */

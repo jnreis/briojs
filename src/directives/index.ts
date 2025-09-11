@@ -26,38 +26,71 @@ import { DIRECTIVES } from '../tools/constants';
  */
 export let allDirectives: [string | RegExp, HydrateDirective][] = [
 
-    // IMPORTANT: The `b-ignore` directive must be hydrated first because it stops the hydration of the element and its children.
+    /**
+     * The b-ignore directive is used to stop the hydration of the element and its children.
+     */
     ignoreDirective,
 
-    // IMPORTANT: The `b-each` directive must be hydrated second because it hydrates other directives for each item it iterates over.
-    eachDirective,
+    /**
+     * Conditional hydration
+     * Notes:
+     * - b-if stops the hydration flow of the element and starts a new hydration flow with a copy of the element whenever the condition evaluates to true;
+     * - whenever the condition evaluates to false, the copy of the element is dehydrated and removed from the DOM and a placeholder comment node is inserted in its place;
+     * - the copy of the element may contain any directive that is hydrated after b-if, all the other directive will have already been hydrated and are no longer part of the source element.
+     */
+    ifDirective,
 
-    // Context-related directives
+    /**
+     * Context-related directives from the farthest ($props) to the closest ($each) context.
+     * Notes:
+     * - b-each stops the hydration flow of the element and starts a new hydration flow for each item it creates.
+     */
     propsDirective,
     dataDirective,
     uidDirective,
+    eachDirective,
 
-    htmlDirective,
-    textDirective,
+    /**
+     * Static template hydration
+     * Notes:
+     * - the inner HTML of the element is used as a template and it may include more thann one root element;
+     * - the element that contains the b-template directive is removed from the DOM and its content is inserted in place;
+     */
     templateDirective,
-    scriptDirective,
-    styleDirective,
 
-    // IMPORTANT: The `b-teleport` directive must be hydrated before the `b-if` directive because `b-if` restores the element to its original position.
-    teleportDirective,
-
-    // Conditional directives: These directives usually depend on values from the context
-    ifDirective,
+    /**
+     * Conditional display
+     * Notes:
+     * - the element is hydrated regardless of the condition;
+     * - the b-show directive toggles the `display` of the element based on the condition.
+     */
     showDirective,
 
-    // ['b-boost', hydrateBoost],
-    ...transitionDirectives, // b-transition, b-transition-in, b-transition-out
+    /**
+     * The b-teleport moves the element to a different location in the DOM.
+     * Notes:
+     * - b-teleport also works with the b-if and b-template directives.
+     */
+    teleportDirective,
 
-    ...intersectionDirectives, // [b-on|on]-enter, [b-on|on]-exit
+    /**
+     * Run one or more scripts on the element
+     * Notes:
+     * - the b-script directive may hold one script or an array of scripts;
+     * - the script(s) are executed in order and awaited;
+     * - when b-script is in a script element the content of the src file or text content is added to the list of scripts to be executed;
+     */
+    scriptDirective,
 
-    ...resizeDirectives, // [b-on|on]-resize
-
-    onDirective, // [b-on|on]-[eventName]
+    /**
+     * Dynamic hydration of HTML or text content and styles
+     * Notes:
+     * - if the element has a b-html and b-text directive, the b-html directive is hydrated and the b-text directive is ignored;
+     * - b-style always hydrates regardless of the b-html and b-text directives;
+     */
+    htmlDirective,
+    textDirective,
+    styleDirective,
 
     /**
      * Data binding directives
@@ -70,6 +103,15 @@ export let allDirectives: [string | RegExp, HydrateDirective][] = [
     bindDirective, // [b-bind|bind]-[attributeName]
     modelDirective,
     maskDirective,
+
+    // ['b-boost', hydrateBoost],
+    ...transitionDirectives, // b-transition, b-transition-play, b-transition-reverse
+
+    ...intersectionDirectives, // [b-on|on]-enter, [b-on|on]-exit
+
+    ...resizeDirectives, // [b-on|on]-resize
+
+    onDirective, // [b-on|on]-[eventName]
 
     /**
      * b-effect: used to create an effect that run when its dependencies change.

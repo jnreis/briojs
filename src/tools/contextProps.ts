@@ -1,0 +1,169 @@
+import { has, size } from ".";
+import { arrayAdd, indexOf, map } from "./array";
+import { $DATA, $EACH, $PROPS, $STORE, $TOOLS, INDEX } from "./constants";
+import { newSet } from "./object";
+import { replace, split, test, trim } from "./string";
+
+export const reserved = newSet([
+    // ECMAScript reserved keywords
+    "break", "case", "catch", "class", "const", "continue", "debugger", "default", "delete", "do", "else",
+    "export", "extends", "finally", "for", "function", "if", "import", "in", "instanceof", "let", "new", "return",
+    "super", "switch", "this", "throw", "try", "typeof", "var", "void", "while", "with", "yield", "enum",
+    "await", "implements", "package", "protected", "interface", "private", "public", "static", "null", "true", "false",
+]) as Set<string>;
+
+export let variableNameRegex = /^[a-z_$][\w$]*$/i;
+
+export let findUsedButNotDeclaredVariables = (code: string) => {
+
+    let identifierRegex = /[a-z_$][\w$]*/gi;
+
+    let declared = newSet() as Set<string>;
+
+    // 1. Capture declared variables/functions/params/imports
+    let declarationRegexes = [
+        /\b(?:var|let|const)\s+([a-z_$][\w$]*)/gi,
+        /\bfunction\s+([a-z_$][\w$]*)/gi,
+        /\bclass\s+([a-z_$][\w$]*)/gi,
+        /\bimport\s+([a-z_$][\w$]*)/gi,
+        /\bfunction\s*[^(]*\(([^)]*)\)/g,
+        /\(([^)]*)\)\s*=>/g,
+        /\b([a-z_$][\w$]*)\s*=>/gi,
+    ];
+
+    for (let regex of declarationRegexes) {
+        let match;
+        while ((match = regex.exec(code)) !== null) {
+            let raw = match[1];
+            if (raw) {
+                let names = map(split(raw, ","), (s) => replace(trim(s), /=.*$/, ""));
+                for (let name of names) {
+                    if (name.match(variableNameRegex)) {
+                        declared.add(name);
+                    }
+                }
+            }
+        }
+    }
+
+    // 2. Exclude string ranges (including template literal non-${})
+    let exclusionRanges: [number, number][] = [];
+    let stringRegex = /(['"`])(?:\\[\s\S]|(?!\1)[^\\])*\1/g;
+    let templateExprRegex = /\$\{([\s\S]*?)\}/g;
+
+    let match;
+    while ((match = stringRegex.exec(code)) !== null) {
+        let quote = match[1];
+        let start = match[INDEX];
+        let end = start + size(match[0]);
+
+        if (quote === "`") {
+            let content = match[0];
+            let baseOffset = match[INDEX];
+            let lastEnd = 0;
+            let subMatch;
+            while ((subMatch = templateExprRegex.exec(content)) !== null) {
+                // NOTE: By excluding `${` and `}` also fix the issue of `$` being treated as a variable
+                let subStart = subMatch[INDEX] + 2; // +2 to account for the ${ prefix
+                let subEnd = subStart + size(subMatch[0]) - 3; // -3 to account for the } suffix
+                if (subStart > lastEnd) {
+                    arrayAdd(exclusionRanges, [
+                        baseOffset + lastEnd,
+                        baseOffset + subStart,
+                    ]);
+                }
+                lastEnd = subEnd;
+            }
+            if (lastEnd < size(content)) {
+                arrayAdd(exclusionRanges, [
+                    baseOffset + lastEnd,
+                    baseOffset + size(content),
+                ]);
+            }
+        } else {
+            arrayAdd(exclusionRanges, [start, end]);
+        }
+    }
+
+    // 3. Find object literal keys and mark their start positions
+    let objectKeyIndexes = newSet() as Set<number>;
+    let objectKeyRegex = /{([^}]+)}/g;
+    while ((match = objectKeyRegex.exec(code)) !== null) {
+        let body = match[1];
+        let offset = match[INDEX];
+        let pairs = split(body, ",");
+        for (let pair of pairs) {
+            if (has(pair, ":")) {
+                let [key] = map(split(pair, ":"), part => trim(part));
+                if (key && test(key, variableNameRegex)) {
+                    let index = indexOf(code, key, offset);
+                    if (index !== -1) objectKeyIndexes.add(index);
+                }
+            }
+        }
+    }
+
+    // 4. Final variable extraction
+    let found: [string, number, number][] = [];
+    while ((match = identifierRegex.exec(code)) !== null) {
+        let name = match[0];
+        let index = match[INDEX];
+        let before = code[index - 1];
+
+        if (reserved.has(name) || 
+            declared.has(name) || 
+            before === "." || 
+            objectKeyIndexes.has(index) ||
+            exclusionRanges.some(([start, end]) => index >= start && index < end)
+        ) continue;
+
+        // Add the found variable to the set
+        arrayAdd(found, [
+            name,
+            index, // start index of the variable
+            index + size(name), // end index of the variable
+        ]);
+    }
+
+    return found;
+}
+
+export let replaceUsedButNotDeclaredVariables = (bnode: BNode, code: string) => {
+    // console.warn('Initial code:', code);
+
+    let found = findUsedButNotDeclaredVariables(code);
+    console.log('Found variables:', found);
+
+    let updatedCode = '';
+    let lastIndex = 0;
+
+    let ctx = bnode.ctx;
+
+    for (let [name, start, end] of found) {
+
+        // The name of the variables in the context are reserved keywords
+        if (name in ctx) continue;
+
+        // Is in one of these contexts?
+        // TODO: make this dynamic. set by the developer.
+        for (let obj of [$EACH, $DATA, $PROPS, $STORE, $TOOLS]) {
+
+            // Check if the variable is a property of a known context object
+            if (ctx[obj] && name in ctx[obj]) {
+
+                // Slice the code until the end of the variable
+                updatedCode += code.slice(lastIndex, start) + `${obj}.${name}`;
+
+                // Update the last index to the end of the variable
+                lastIndex = end;
+
+                // Stop at the first match
+                break;
+            }
+        }
+    }
+
+    // console.warn('Final code:', updatedCode + code.slice(lastIndex));
+
+    return updatedCode + code.slice(lastIndex);
+}

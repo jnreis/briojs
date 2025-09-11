@@ -1,5 +1,5 @@
-import { propertyInitFns } from ".";
-import { DELETE, SKIP } from "../tools/constants";
+import { getStateObject, initProp } from ".";
+import { SKIP } from "../tools/constants";
 
 /**
  * Skip a specific property from being automatically observed.
@@ -7,25 +7,12 @@ import { DELETE, SKIP } from "../tools/constants";
  * Note that the property can still be observed manually.
  * 
  * @param value - The value to set the property to
- * @returns The property initialization function
+ * @returns The property initialization function. This function will be called when the property is first set.
  */
-export let skipProp = (value: any) => {
+export let skipProp = (value: any) => initProp(({ prop, state }: ListenerFunctionContext) => {
 
-    // Property initialization function
-    // This function will be called when the state object is created or set
-    let fn = ({ prop }: ListenerFunctionContext, stateObject: StateObject) => {
+    // Prevent the property from being automatically observed
+    getStateObject(state)[SKIP].add(prop);
 
-        // Remove the property initialization function from the set
-        propertyInitFns[DELETE](fn);
-
-        // Prevent the property from being automatically observed
-        stateObject[SKIP].add(prop);
-
-        return value;
-    }
-
-    // Add the tracking callback to the storage functions
-    propertyInitFns.add(fn);
-
-    return fn;
-}
+    return value;
+});

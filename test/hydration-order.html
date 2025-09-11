@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body b-hydrate>
+    <script b-script>
+        async () => {
+            $data.name = 'Awesome Brio.js';
+
+            // Simulate a delay to demonstrate hydration
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+            $data.name = 'Brio.js is awesome!';
+        }
+    </script>
+
+    <!-- This b-effect will only log the name after the script has run -->
+    <div b-effect="console.log('name:', name)"></div>
+
+    <script type="module" src="/src/briojs.min.ts"></script>
+    <script>
+        window.addEventListener('brio', () => {
+            let {gc} = brio.newApp();
+            gc.$dom.hydrate('[b-hydrate]');
+            console.warn('Brio.js is ready:', gc);
+        });
+    </script>
+</body>
+</html>

@@ -7,21 +7,21 @@ import { newFn } from "../tools/evaluation";
 import { isStringFunction } from "../tools/string";
 import { isArray, isFunction, isString } from "../tools/typeCheck";
 
-export let hydrateScript = async (vnode: VNode, attrName: string, attrValue: string) => {
+export let hydrateScript = async (bnode: BNode, attrName: string, attrValue: string) => {
 
-    let el = vnode.el as HTMLScriptElement;
+    let el = bnode.el as HTMLScriptElement;
 
-    let assetObject = vnode[SCRIPT];
+    let assetObject = bnode[SCRIPT];
 
     let isScript = getTagName(el) == SCRIPT;
 
     // Skip the hydration of the text node of this script element
-    vnode.skip = isScript;
+    bnode.skip = isScript;
 
-    let [setHook, playHook] = vnode.hook;
+    let [setHook, playHook] = bnode.hook;
 
     // Get the asset or evaluate the attribute value
-    let scripts: any = attrValue ? assetObject[attrValue] || vnode.exec(vnode, attrValue)() : [];
+    let scripts: any = attrValue ? assetObject[attrValue] || bnode.exec(bnode, attrValue)() : [];
 
     // Get the scripts
     scripts = map(
@@ -58,13 +58,13 @@ export let hydrateScript = async (vnode: VNode, attrName: string, attrValue: str
             // Evaluate the script
             if (isString(fn)) {
                 let scriptFn = isStringFunction(fn);
-                fn = newFn(vnode[CTX_ARGS](), fn, scriptFn);
-                if (scriptFn) fn = fn(vnode.ctx);
+                fn = newFn(bnode[CTX_ARGS](), fn, scriptFn);
+                if (scriptFn) fn = fn(bnode.ctx);
             }
 
             // Execute the script
             if (isFunction(fn))
-                await fn(vnode.ctx);
+                await fn(bnode.ctx);
         };
     });
 

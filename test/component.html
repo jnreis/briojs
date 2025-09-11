@@ -163,15 +163,15 @@
         <!-- Template with slots -->
         <template b-save="my-card">
             <!-- TODO: elements with a b-slot -->
-            <h2 b-template="$slot.title">
+            <h2 b-template="$slots.title || $el.outerHTML">
                 Title goes here
             </h2>
 
-            <h3 b-html="$refs.content && $refs.content.innerHTML || $el.innerHTML">
+            <h3 b-template="$slots.content || $el.outerHTML">
                 Content goes here
             </h3>
 
-            <h4 b-html="$refs.footer && $refs.footer.innerHTML || $el.innerHTML">
+            <h4 b-template="$slots.footer || $el.outerHTML">
                 Footer goes here
             </h4>
         </template>
@@ -192,9 +192,42 @@
     <script>
         window.addEventListener('brio', () => {
             let app = brio.newApp();
-            let {gc:{$dom},data} = app;
+            let {$dom, $state, $effect, $watch} = app.gc;
             $dom.hydrate('body');
-            console.log(app);
+
+            // console.log(app);
+
+            // let ctx = $state({
+            //     items: [
+            //         {id: 1, name: 'Item 1'},
+            //         {id: 2, name: 'Item 2'},
+            //         {id: 3, name: 'Item 3'}
+            //     ]
+            // });
+
+            // $effect(({operation, oldValue, newValue}) => {
+            //     console.log('$effect ctx.items:', operation, oldValue, newValue, ctx.items === newValue);
+            // }, () => ctx.items);
+
+            // // $watch(ctx, 'items', ({oldValue, newValue}) => {
+            // //     console.log('$watch ctx.items:', oldValue, newValue, ctx.items === newValue);
+            // // });
+
+            // console.warn('action 1')
+            // ctx.items.push({id: 4, name: 'Item 4'});
+
+            // console.warn('action 2')
+            // ctx.items[0] = {id: 1, name: 'Updated Item 1'};
+
+            // console.warn('action 3')
+            // ctx.items = ctx.items.filter(item => item.id !== 2);
+
+            // console.warn('action 1.2')
+            // ctx.items.push({id: 5, name: 'Item 5'});
+
+            // console.warn('action 2.2')
+            // ctx.items[1] = {id: 2, name: 'Updated Item 2'};
+
         });
     </script>
 </body>

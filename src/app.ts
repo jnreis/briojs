@@ -2,15 +2,16 @@ import { newInsert } from "./methods/dom";
 import { http } from "./methods/http";
 import { newRouter } from "./methods/route";
 import { addAnimationEngine, newTransitions } from "./methods/transition";
+import { replaceUsedButNotDeclaredVariables } from "./tools/contextProps";
 import { effect, state, storageEvent, watch } from "./reactivity";
-import { logError, slice, wait } from "./tools";
+import { logError, slice } from "./tools";
 import { arrayAdd, each, join, map } from "./tools/array";
-import { TEXT, TEXT_CONTENT, ATTR, DELETE, INNER_HTML, PARENT, HYDRATE, $PROPS, NULL, B_DATA, SCRIPT, ELEMENT, NOT_FOUND, $DATA, $EACH, STYLE, B_, TEMPLATE, UNDEFINED, REPLACE_WITH, OPTIONS, ROUTE, CTX_ARGS, EVAL_EFFECT, TRANSITION, NEW_LINE, BRIO, STORAGE, STATE, PROPS, DEHYDRATE, INSERT, CACHE_EXP, NUMBER, CLOSEST, DIRECTIVES, MASKS, MASK_TOKENS, DATA, MASK_TOKEN, ROUTE_RULE, ANIMATION, ENGINE__$CAP } from "./tools/constants";
-import { walk, getAttr, delAttr, getParent, queryAll, getTagName, getNodeContent, removeNode, eachAttribute, query, emit, listen, href, childNodes, setAttr, createElement, insertNodes } from "./tools/dom";
+import { TEXT, TEXT_CONTENT, ATTR, DELETE, INNER_HTML, PARENT, HYDRATE, $PROPS, NULL, B_DATA, SCRIPT, ELEMENT, NOT_FOUND, $DATA, $EACH, STYLE, B_, TEMPLATE, UNDEFINED, OPTIONS, ROUTE, CTX_ARGS, EVAL_EFFECT, TRANSITION, NEW_LINE, BRIO, STORAGE, STATE, PROPS, DEHYDRATE, INSERT, CACHE_EXP, NUMBER, CLOSEST, DIRECTIVES, MASKS, MASK_TOKENS, DATA, MASK_TOKEN, ROUTE_RULE, ANIMATION, ENGINE, B_SAVE, OUTER_HTML, $STORE, $TOOLS, SKIP, CONTENT } from "./tools/constants";
+import { walk, getAttr, delAttr, getParent, queryAll, getTagName, getNodeContent, removeNode, eachAttribute, query, emit, listen, href, childNodes, setAttr } from "./tools/dom";
 import { expToFn, newFn } from "./tools/evaluation";
 import { newHooks } from "./tools/hook";
-import { countKeys, getKey, getKeys, newMap, setKey, setObjectKeys, uniqueKey, W } from "./tools/object";
-import { isStringNumeric, replace, split, startsWith, test, trim, wrapInBackticks } from "./tools/string";
+import { countKeys, hasProp, getProp, getKeys, newMap, setProp, setObjectKeys, uniqueKey, W, newSet, S, sync } from "./tools/object";
+import { isStringNumeric, replace, replaceAll, split, startsWith, test, trim, upper, wrapInBackticks } from "./tools/string";
 import { isTextNode, isElementNode, isNull, isRegExp, isUndefined, isString, isNode, isFunction } from "./tools/typeCheck";
 
 // TODO: some notes that may be useful when writing documentation
@@ -18,46 +19,46 @@ import { isTextNode, isElementNode, isNull, isRegExp, isUndefined, isString, isN
 // * Most of the raw values are expressions, or references to a prop or method in the scope
 // * All raw values are converted to functions that return the value of the expression, or void in some cases
 
-export let symbol = Symbol();
+export let symbol = S(BRIO);
 
 export let settings: ObjectType = {};
 
-export let loadedScripts: Set<string> = new Set();
+export let loadedScripts = newSet() as Set<string>;
 
 /** Create a new app */
 export let newApp = (): AppObject => {
 
-    /** Get a vnode, if any */
-    let getVNode = (node: Node) => vnodes.get(node);
+    /** Get a bnode, if any */
+    let getBNode = (node: Node) => bnodes.get(node);
 
-    /** Walks up the DOM tree to find the closest vnode */
-    let closestVNode = (node: Node, validate: FunctionType = () => true) => {
+    /** Walks up the DOM tree to find the closest bnode */
+    let closestBNode = (node: Node, validate: FunctionType = () => true) => {
         let _el: any = node ? getParent(node) : NULL;
         while (_el) {
-            // Get the vnode, if any
-            let vnode = getVNode(_el);
+            // Get the bnode, if any
+            let bnode = getBNode(_el);
 
-            // A vnode is valid if it has attributes, and passes the validation function
-            if (vnode && countKeys(vnode[ATTR]) && validate(vnode)) return vnode;
+            // A bnode is valid if it has attributes, and passes the validation function
+            if (bnode && countKeys(bnode[ATTR]) && validate(bnode)) return bnode;
 
-            // Try the parent node, if vnode not found
+            // Try the parent node, if bnode not found
             _el = getParent(_el);
         }
     }
 
-    /** Create a new vnode or get the existing one */
-    let newVNode = (el: HTMLElement, ctxNode?: Node) => {
+    /** Create a new bnode or get the existing one */
+    let newBNode = (el: HTMLElement, ctxNode?: Node) => {
 
-        // Get the existing vnode, if any
-        let vnode = getVNode(el) as VNode;
+        // Get the existing bnode, if any
+        let bnode = getBNode(el) as BNode;
 
-        // Create a new vnode
-        if (!vnode) {
+        // Create a new bnode
+        if (!bnode) {
 
-            // Get the parent vnode
-            let parent = ctxNode ? getVNode(ctxNode) : closestVNode(ctxNode ? ctxNode : el);
+            // Get the parent bnode
+            let parent = ctxNode ? getBNode(ctxNode) : closestBNode(ctxNode ? ctxNode : el);
 
-            vnode = {
+            bnode = {
                 // Local context
                 // @ts-ignore
                 ctx: {...globalContext},
@@ -66,7 +67,7 @@ export let newApp = (): AppObject => {
                 el,
 
                 // UID context
-                uid: getKey(parent, 'uid', {}),
+                uid: getProp(parent, 'uid', {}),
 
                 /** Attributes or directives */
                 attr: {},
@@ -80,22 +81,22 @@ export let newApp = (): AppObject => {
 
             // Set the local context
             for (let key in localContextFns) {
-                let v = localContextFns[key](vnode, parent);
-                if (v) setKey(vnode.ctx, key, {v, e: true});
+                let v = localContextFns[key](bnode, parent);
+                if (v) setProp(bnode.ctx, key, v, 'wc');
             }
 
-            // Save the vnode
-            vnodes.set(el, vnode);
+            // Save the bnode
+            bnodes.set(el, bnode);
         }
 
-        // Create a new vnode
-        return vnode;
+        // Create a new bnode
+        return bnode;
     }
 
     /** Evaluate the attribute as an effect */
-    let evalEffect = (vnode: VNode, attrName: string, attrValue: string, callback: (node: HTMLElement) => HookFunction) => {
+    let evalEffect = (bnode: BNode, attrName: string, attrValue: string, callback: (node: HTMLElement) => HookFunction) => {
 
-        let $el = vnode.el;
+        let $el = bnode.el;
 
         /**
          * Set the directive hook. Priority 0. Other hooks can be added.
@@ -105,11 +106,11 @@ export let newApp = (): AppObject => {
         setHook($el, attrName, callback($el));
 
         // The context. Which most likely refers to reactive properties.
-        let context = exec(vnode, attrValue);
+        let context = exec(bnode, attrValue);
 
         // Create a new effect, and save the cleanup function.
         // This sets up the reactivity.
-        saveCleanup(vnode, effect(() => playHook($el, attrName, context)));
+        saveCleanup(bnode, effect(() => playHook($el, attrName, context)));
     }
 
     /**
@@ -151,39 +152,48 @@ export let newApp = (): AppObject => {
 
                     let tagName = getTagName(_node);
 
-                    // Handle template elements
-                    if (tagName == TEMPLATE) {
-
-                        // Create a new div element
-                        let div = createElement('div');
-
-                        // Copy the attributes
-                        eachAttribute(_node as HTMLElement, (name, value) => setAttr(div, name, value));
-
-                        // Copy the innerHTML
-                        div[INNER_HTML] = (_node as any)[INNER_HTML];
-
-                        // Replace the template element with the div element
-                        insertNodes(_node as HTMLElement, REPLACE_WITH, div);
-
-                        // Hydrate the div element
-                        hydrate(div, _ctxNode);
-
-                        // Replace the div element with its child nodes
-                        // Note: wait the next tick to make sure the div is fully hydrated
-                        wait(() => insertNodes(div, REPLACE_WITH, ...childNodes(div)));
+                    // Ignore script elements that do not have the b-script attribute
+                    if (tagName == SCRIPT && isNull(getAttr(_node as HTMLElement, B_+SCRIPT))) {
+                        result = false;
                     }
                     // Hydrate the element
                     else {
-                        /**
-                         * IMPORTANT: THIS IS NOT PART OF THE MAIN BUILD, BUT YOU CAN UNCOMMENT IT IF YOU WANT TO USE IT
-                         * Make sure every script element is hydrated by setting the b-script attribute
-                         * Note: an element can still be marked to not be hydrated by setting the b-ignore attribute
-                         */
-                        // if (tagName == SCRIPT && isNull(getAttr(_node as HTMLElement, B_+SCRIPT)))
-                        //     setAttr(_node as HTMLElement, B_+SCRIPT, '');
+                        // // A temporary key for the template
+                        // let tempKey = '';
+
+                        // // Handle template elements
+                        // if (tagName == TEMPLATE) {
+
+                        //     // Create a new div element
+                        //     let div = createElement('div');
+
+                        //     // Copy the attributes
+                        //     eachAttribute(_node as HTMLElement, (name, value) => setAttr(div, name, value));
+
+                        //     // Save the innerHTML as a temporary template
+                        //     if (![B_TEMPLATE, B_HTML, B_TEXT].some(directiveName => getAttr(_node as HTMLElement, directiveName))) {
+
+                        //         // A temporary key for the template
+                        //         tempKey = uniqueKey(template);
+
+                        //         // Set the b-template attribute to the temporary key
+                        //         setAttr(div, B_TEMPLATE, tempKey);
+
+                        //         // Save the temporary template
+                        //         template[tempKey] = (_node as any)[INNER_HTML];
+                        //     }
+
+                        //     // Replace the template element with the div element
+                        //     insertNodes(_node as HTMLElement, REPLACE_WITH, div);
+                        //     _node = div;
+                        // }
 
                         result = await hydrateElementNode(_node as HTMLElement, _ctxNode);
+
+                        // // Remove the temporary template
+                        // if (tagName == TEMPLATE && tempKey) {
+                        //     deleteKey(template, tempKey);
+                        // }
                     }
                 }
                 return result;
@@ -192,21 +202,26 @@ export let newApp = (): AppObject => {
     }
 
     /**
-     * Remove all the effects and vnode from the node and its children
+     * Remove all the effects and bnode from the node and its children
      */
-    let dehydrate = (node: Node, _removeNode = true, _removeVNode = true) => {
+    let dehydrate = (node: Node, _removeNode = true, _removeBNode = true) => {
 
         // Dehydrate the node and its children
         walk(node, (n) => {
-            let vnode = getVNode(n);
+            let bnode = getBNode(n);
 
             // Remove the effects
-            if (vnode) {
-                // Call the cleanup functions
-                each(vnode.cFns, cleanupFn => cleanupFn());
+            if (bnode) {
+                // Dehydrate the child nodes
+                if (bnode.nodes) {
+                    each(bnode.nodes, childNode => bnode[DEHYDRATE](childNode, _removeNode, _removeBNode));
+                }
 
-                // Remove the vnode
-                if (_removeVNode) vnodes[DELETE](n);
+                // Call the cleanup functions
+                each(bnode.cFns, cleanupFn => cleanupFn());
+
+                // Remove the bnode
+                if (_removeBNode) bnodes[DELETE](n);
 
                 // Remove the node
                 if (_removeNode) removeNode(n as HTMLElement);
@@ -228,16 +243,16 @@ export let newApp = (): AppObject => {
 
         if (sanitizedText && test(sanitizedText, templateRegex)) {
 
-            let vnode = newVNode(node as any, ctxNode);
+            let bnode = newBNode(node as any, ctxNode);
 
             // Evaluate the expression
-            let call = exec(vnode, `$el.${TEXT_CONTENT}=${wrapInBackticks(sanitizedText)}`, '', false);
+            let call = exec(bnode, `$el.${TEXT_CONTENT}=${wrapInBackticks(sanitizedText)}`, '', false);
 
             // Save the cleanup function
-            saveCleanup(vnode, effect(call));
+            saveCleanup(bnode, effect(call));
 
             // Save attribute
-            saveAttr(vnode, TEXT, text);
+            saveAttr(bnode, TEXT, text);
         }
 
         // Always return false because text nodes don't have attributes or children
@@ -249,15 +264,15 @@ export let newApp = (): AppObject => {
      */
     let hydrateElementNode = async (node: HTMLElement, ctxNode?: Node) => {
 
-        // Get the vnode or create a new one
-        let vnode = newVNode(node, ctxNode);
+        // Get the bnode or create a new one
+        let bnode = newBNode(node, ctxNode);
 
         // Skip hydrated elements
         // Note: Hydrated elements have the skip property
-        if (!isUndefined(getSkip(vnode))) return true;
+        if (!isUndefined(getSkip(bnode))) return true;
 
         // Get the b-options directive
-        vnode[OPTIONS] = evalAttr(vnode, B_+OPTIONS)();
+        bnode[OPTIONS] = evalAttr(bnode, B_+OPTIONS)();
 
         /**
          * Check the attributes against the directives.
@@ -296,46 +311,48 @@ export let newApp = (): AppObject => {
             for (let [attrName, attrValue] of hydrateAttributes) {
 
                 // Stop hydrating the element
-                if (getSkip(vnode)) break;
+                if (getSkip(bnode)) break;
 
                 // Save attribute
-                saveAttr(vnode, attrName, attrValue);
+                saveAttr(bnode, attrName, attrValue);
 
                 // Hydrate the directive
-                await hydrationFn(vnode, attrName, sanitizeAttrValue(attrValue));
+                await hydrationFn(bnode, attrName, sanitizeAttrValue(attrValue));
             }
 
             // Stop hydrating the element
-            if (getSkip(vnode)) break;
+            if (getSkip(bnode)) break;
         }
 
         // Mark the element as hydrated by setting the skip property
-        if (isUndefined(getSkip(vnode)))
-            vnode.skip = false;
+        if (isUndefined(getSkip(bnode)))
+            bnode[SKIP] = false;
 
-        // Remove the vnode if no attributes were hydrated and no context node was provided
-        // Note: The vnode is not removed if it has a context node because it may be used by its children
-        if (!countKeys(vnode[ATTR]) && !ctxNode)
-            vnodes[DELETE](node);
+        // Remove the bnode if no attributes were hydrated and no context node was provided
+        // Note: The bnode is not removed if it has a context node because it may be used by its children
+        if (!countKeys(bnode[ATTR]) && !ctxNode)
+            bnodes[DELETE](node);
 
         // Hydrate the children, if the element should not be skipped
-        return !getSkip(vnode);
+        return !getSkip(bnode);
     }
 
     /**
      * Evaluate attribute, if any
      * @param defaultAttrValue A string to fall back to if the attribute has no value. Default is an empty object.
      */
-    let evalAttr = (vnode: VNode, attrName: string, defaultAttrValue: string = '{}') => {
-    
+    let evalAttr = (bnode: BNode, attrName: string, defaultAttrValue: string = '{}') => {
+
         // Get the attribute value
-        let attrValue = sanitizeAttrValue(getAttr(vnode.el, attrName) || defaultAttrValue);
-    
+        let attrValue = getAttr(bnode.el, attrName);
+
         // Remove the attribute
-        saveAttr(vnode, attrName, attrValue);
+        if (!isNull(attrValue)) saveAttr(bnode, attrName, attrValue!);
     
+        attrValue = sanitizeAttrValue(attrValue || defaultAttrValue);
+
         // Evaluate and return
-        return exec(vnode, attrValue);
+        return exec(bnode, attrValue);
     }
 
     /**
@@ -346,7 +363,6 @@ export let newApp = (): AppObject => {
      * Note: elements with the `b-save` attribute are removed from the DOM if they do not also have the `b-hydrate` attribute.
      */
     let saveAssets = (element: HTMLElement) => {
-        let B_SAVE = B_+'save';
 
         if (isElementNode(element)) {
             // Query all elements with the b-save attribute
@@ -368,7 +384,7 @@ export let newApp = (): AppObject => {
 
                 // Recursively register elements in the template
                 if (tagName == TEMPLATE)
-                    each(childNodes((el as HTMLTemplateElement).content), el => saveAssets(el));
+                    each(childNodes((el as HTMLTemplateElement)[CONTENT]), el => saveAssets(el));
 
                 // Save the asset
                 if (assetName) {
@@ -377,7 +393,7 @@ export let newApp = (): AppObject => {
                     // Determine the asset type (script, style, or template)
                     let assetType = isScript ? SCRIPT : tagName == STYLE ? STYLE : TEMPLATE;
 
-                    let assetValue = el[INNER_HTML];
+                    let assetValue = el[tagName == TEMPLATE ? OUTER_HTML : INNER_HTML];
 
                     app[assetType][assetName] = isScript
                         ? newFn(ctxArgs, sanitizeAttrValue(assetValue), false)
@@ -395,7 +411,7 @@ export let newApp = (): AppObject => {
         app[assetType][assetName] = assetValue;
     }
 
-    let cacheExp = (exp: string, args: string = '', returns: boolean | 'text' = true) => {
+    let cacheExp = (bnode: BNode, exp: string, args: string = '', returns: boolean | 'text' = true) => {
         // The cache key
         let cacheKey: string;
 
@@ -410,8 +426,12 @@ export let newApp = (): AppObject => {
             // Generate a unique key for the function
             cacheKey = uniqueKey(cache);
 
-            // Cache the function
-            cache[cacheKey] = newFn(ctxArgs, exp);
+            /**
+             * Cache the function and auto-fill the references to props in the context objects.
+             * This allows the use of "{{ propName }}" instead of "{{ $data.propName }}".
+             * The default context list and order is: $each, $data, $props, $store, $tools.
+             */
+            cache[cacheKey] = newFn(ctxArgs, replaceUsedButNotDeclaredVariables(bnode, exp));
 
             // Save the cache key
             cached[exp] = cacheKey;
@@ -420,14 +440,14 @@ export let newApp = (): AppObject => {
         return cacheKey;
     }
 
-    let exec = (vnode: VNode, exp: string, args: string = '', returns: boolean | 'text' = true) => {
+    let exec = (bnode: BNode, exp: string, args: string = '', returns: boolean | 'text' = true) => {
         let fn: FunctionType;
 
         try {
             // Get the cache key or evaluate the expression
-            let cacheKey = exp in cache ? exp : cacheExp(exp, args, returns);
+            let cacheKey = exp in cache ? exp : cacheExp(bnode, exp, args, returns);
 
-            fn = cache[cacheKey](vnode.ctx);
+            fn = cache[cacheKey](bnode.ctx);
         }
         catch (error: any) {
             logError(error.message);
@@ -438,7 +458,7 @@ export let newApp = (): AppObject => {
         return fn;
     }
 
-    let vnodes: Map<Node, VNode> = newMap();
+    let bnodes: Map<Node, BNode> = newMap();
     let hooks: Hooks = newMap();
     let directives: Directive[] = [];
     let template: CacheAssetObject = {};
@@ -451,13 +471,10 @@ export let newApp = (): AppObject => {
     /** Defines how the local context should be set up for each element */
     let localContextFns: LocalContextFns = {
         // The element itself
-        $el: (vnode: VNode) => vnode.el,
-
-        // References to `b-ref` elements under the same $data context, not including nested $data contexts
-        $refs: (vnode: VNode, parent?: VNode) => !parent || (isElementNode(vnode.el) && !isNull(getAttr(vnode.el as HTMLElement, B_DATA))) ? {} : parent.ctx.$refs,
+        $el: (bnode: BNode) => bnode.el,
 
         // Unique identifier for the element
-        $uid: (vnode: VNode) => (uidName: string) => `${uidName}-${vnode.uid[uidName]}`,
+        $uid: (bnode: BNode) => (uidName: string) => `${uidName}-${bnode.uid[uidName]}`,
 
         // Reactive properties defined in the element or inherited from the parent context
         [$PROPS]: newContext($PROPS, B_+PROPS, true),
@@ -465,8 +482,13 @@ export let newApp = (): AppObject => {
         // The $data context
         [$DATA]: newContext($DATA, B_DATA),
 
+        // Data Level Context:
+        // Referenced under the same $data context, not including nested $data contexts
+        $refs: newDataLevelContext('$refs'),
+        $slots: newDataLevelContext('$slots'),
+
         // The $each context
-        [$EACH]: (_: VNode, parent?: VNode) => parent?.ctx[$EACH],
+        [$EACH]: (_: BNode, parent?: BNode) => parent?.ctx[$EACH],
     };
 
     /** Hook methods */
@@ -481,7 +503,7 @@ export let newApp = (): AppObject => {
     // Make the router of the first instance the primary router
     if (!settings[ROUTE]) setRouter(route);
 
-    let ANIMATION_ENGINE = ANIMATION+ENGINE__$CAP as 'animationEngine';
+    let ANIMATION_ENGINE = ANIMATION+upper(ENGINE) as 'animationEngine';
 
     let $set: SetObject = {
         hook: setHook,
@@ -507,12 +529,12 @@ export let newApp = (): AppObject => {
         emit, listen, query, queryAll,
         /** Get the closest parent element of a target element that has a directive (b-data by default) */
         [CLOSEST](target: HTMLElement | string, directiveName: string = B_DATA) {
-            let _vnode = closestVNode(query(target)!, vnode => directiveName in vnode[ATTR]);
-            if (!_vnode) logError(CLOSEST+':', ELEMENT, NOT_FOUND);
-            return _vnode?.el;
+            let _bnode = closestBNode(query(target)!, bnode => directiveName in bnode[ATTR]);
+            if (!_bnode) logError(CLOSEST+':', ELEMENT, NOT_FOUND);
+            return _bnode?.el;
         },
         /** Get the local context of an element */
-        context: (target: HTMLElement | string) => getVNode(query(target)!)?.ctx,
+        context: (target: HTMLElement | string) => getBNode(query(target)!)?.ctx,
     }
 
     /** The global context of this app */
@@ -520,10 +542,16 @@ export let newApp = (): AppObject => {
         $dom,
         $http: http,
         $set,
-        $store: state({}),
+        [$STORE]: state({}),
         $state: state,
         $watch: watch,
         $effect: effect,
+        [$TOOLS]: {
+            hasProp,
+            getProp,
+            setProp,
+            sync,
+        },
     };
 
     // The arguments used by the evaluate function
@@ -543,7 +571,7 @@ export let newApp = (): AppObject => {
         // ! HYDRATION
         lcFns: localContextFns,
         [DIRECTIVES]: directives,
-        vnodes,
+        bnodes,
         hooks,
 
         [MASKS]: {},
@@ -560,7 +588,7 @@ export let newApp = (): AppObject => {
         [CACHE_EXP]: cacheExp,
         [CTX_ARGS]: updateContextArgs,
         [EVAL_EFFECT]: evalEffect,
-        vnode: [newVNode, getVNode],
+        bnode: [newBNode, getBNode],
         hook: [setHook, playHook],
         [TRANSITION]: newTransitions(),
         // insert,
@@ -568,25 +596,25 @@ export let newApp = (): AppObject => {
     };
 
     // Prevent the items in these objects from being changed or deleted
-    each([$set, $dom, http, globalContext, app], obj => setObjectKeys(obj, {w: false, c: false}));
+    each([$set, $dom, http, globalContext, app], obj => setObjectKeys(obj, 'wc'));
 
     return app;
 }
 
-/** Get the skip property from the vnode */
-let getSkip = (vnode: VNode) => vnode.skip;
+/** Get the skip property from the bnode */
+let getSkip = (bnode: BNode) => bnode.skip;
 
-/** Save the cleanup function to the vnode */
-export let saveCleanup = (vnode: VNode, cleanupFn: FunctionType) => {
-    arrayAdd(vnode.cFns, cleanupFn);
+/** Save the cleanup function to the bnode */
+export let saveCleanup = (bnode: BNode, cleanupFn: FunctionType) => {
+    arrayAdd(bnode.cFns, cleanupFn);
 }
 
-/** Saves the attribute to the vnode and removes it from the node */
-export let saveAttr = (vnode: VNode, attrName: string, attrValue: string) => {
-    // Save the attribute to the vnode
-    vnode[ATTR][attrName] = attrValue;
+/** Saves the attribute to the bnode and removes it from the node */
+export let saveAttr = (bnode: BNode, attrName: string, attrValue: string) => {
+    // Save the attribute to the bnode
+    bnode[ATTR][attrName] = attrValue;
     // Remove the attribute from the node
-    if (isElementNode(vnode.el)) delAttr(vnode.el, attrName);
+    if (isElementNode(bnode.el)) delAttr(bnode.el, attrName);
 }
 
 /**
@@ -600,21 +628,18 @@ export let sanitizeAttrValue = (text: string) =>
 /** Match template literal ${} */
 export let templateRegex = /\${((?!.*\${).*?)}/;
 
+/** Match mustache syntax {{}} */
+export let mustacheRegex: RegExp = /{{((?!.*{{).*?)}}/;
+
 /** Sanitize string and replace mustache syntax with template literals */
-export let replaceMustache = (text: string) => {
+export let replaceMustache = (text: string, replacement: any = '${$1}') => 
+    replaceAll(text, mustacheRegex, replacement);
 
-    let mustacheRegex: RegExp = /{{((?!.*{{).*?)}}/;
-
-    while (test(text, mustacheRegex))
-        text = replace(text, mustacheRegex, '${$1}');
-
-    return text;
-}
 
 /** Create a new context */
-let newContext = (contextName: string, directiveName: string, inherit?: boolean) => (vnode: VNode, parent: VNode|undefined) => {
+let newContext = (contextName: string, directiveName: string, inherit?: boolean) => (bnode: BNode, parent: BNode|undefined) => {
     // The node element
-    let el = vnode.el as HTMLElement;
+    let el = bnode.el as HTMLElement;
 
     // Get the parent context, if any
     let parentContext = parent ? parent.ctx[contextName] : NULL;
@@ -636,6 +661,9 @@ let newContext = (contextName: string, directiveName: string, inherit?: boolean)
     return createNewState ? state({}, {[PARENT]: inherit && parentContext}) : parentContext || {};
 }
 
+let newDataLevelContext = (contextName: string) => 
+    (bnode: BNode, parent?: BNode) => !parent || (isElementNode(bnode.el) && !isNull(getAttr(bnode.el as HTMLElement, B_DATA))) ? {} : parent.ctx[contextName];
+
 /** Sets the primary router */
 let setRouter = (routeFn: FunctionType) => {
     if (isFunction(routeFn)) {
@@ -648,10 +676,10 @@ export let setup = (brioWindow: ObjectType = {}) => {
     if (!(BRIO in W)) {
 
         // Ensure the items in the `brioWindow` object cannot be changed or deleted
-        setObjectKeys(brioWindow, {w: false, c: false});
+        setObjectKeys(brioWindow, 'wc');
 
         // Set the unchangeable `brio` object in the `window` object
-        setKey(W, BRIO, { v: brioWindow });
+        setProp(W, BRIO, brioWindow, 'wc');
 
         // Listen to storage events
         listen(W as any, STORAGE, storageEvent as any);

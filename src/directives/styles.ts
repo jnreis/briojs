@@ -6,19 +6,19 @@ import { createElement, getTagName, insertNodes } from "../tools/dom";
 import { match, replace, split, test, trim } from "../tools/string";
 import { isArray } from "../tools/typeCheck";
 
-export let hydrateStyle = (vnode: VNode, attrName: string, attrValue: string) => {
+export let hydrateStyle = (bnode: BNode, attrName: string, attrValue: string) => {
 
-    let el = vnode.el;
+    let el = bnode.el;
 
     // Skip style elements
     if (attrValue && getTagName(el) != STYLE) {
 
-        let [setHook, playHook] = vnode.hook;
+        let [setHook, playHook] = bnode.hook;
 
-        let assetObject = vnode[STYLE];
+        let assetObject = bnode[STYLE];
 
         // Get the asset or evaluate the attribute value
-        let styles = assetObject[attrValue] || vnode.exec(vnode, attrValue)();
+        let styles = assetObject[attrValue] || bnode.exec(bnode, attrValue)();
 
         // Get the styles
         styles = map(
@@ -42,7 +42,7 @@ export let hydrateStyle = (vnode: VNode, attrName: string, attrValue: string) =>
             style[TEXT_CONTENT] = prefixCssSelectors(join(styles, NEW_LINE), '.'+prefix);
 
             // Hydrate the style element
-            vnode[HYDRATE](style, el);
+            bnode[HYDRATE](style, el);
 
             // Insert the style element after the current element
             insertNodes(el, AFTER, style);
@@ -70,6 +70,7 @@ let prefixCssSelectors = (css: string, prefix: string) => {
 
     // Replace template items with a placeholder
     // IMPORTANT: this is necessary to avoid conflicts with the template items
+    // TODO: this code may need replaceUsedButNotDeclaredVariables, to directly refence keys in the $each and $data contexts
     while (test(css, templateRegex)) {
         let value = match(css, templateRegex);
         if (value) {

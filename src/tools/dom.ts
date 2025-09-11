@@ -1,6 +1,6 @@
 import { has, slice } from ".";
 import { arrayFrom, arrayReverse, each, indexOf } from "./array";
-import { COMPOSING, DISPLAY, HREF, HTML, INPUT, TARGET, TEXT, TEXT_CONTENT, AFTER, VALUE, CHECKED, SELECT, CLASS_LIST, REMOVE, GET_ATTRIBUTE, SET_ATTRIBUTE, REMOVE_ATTRIBUTE, ADD_EVENT_LISTENER, REMOVE_EVENT_LISTENER, INNER_HTML, OUTER_HTML, BEFORE, APPEND, INSERT_ADJACENT_HTML, CLONE_NODE, PARENT_NODE, PREVIOUS_SIBLING, NEXT_SIBLING, FIRST_CHILD, LAST_CHILD, CREATE_ELEMENT, DETAIL } from "./constants";
+import { COMPOSING, DISPLAY, HREF, HTML, INPUT, TARGET, TEXT, TEXT_CONTENT, AFTER, VALUE, CHECKED, SELECT, CLASS_LIST, REMOVE, GET_ATTRIBUTE, SET_ATTRIBUTE, REMOVE_ATTRIBUTE, ADD_EVENT_LISTENER, REMOVE_EVENT_LISTENER, INNER_HTML, OUTER_HTML, BEFORE, APPEND, INSERT_ADJACENT_HTML, CLONE_NODE, PARENT_NODE, PREVIOUS_SIBLING, NEXT_SIBLING, FIRST_CHILD, LAST_CHILD, CREATE_ELEMENT, DETAIL, CREATE_COMMENT } from "./constants";
 import { D, L, W } from "./object";
 import { lower, replace, trim } from "./string";
 import { isElementNode, isString } from "./typeCheck";
@@ -82,7 +82,7 @@ export let restorePosition = (node: Node) => {
         let nodesAfter = slice(nodes, index + 1) as Element[];
 
         // Return a function to insert the node in the correct position
-        return () => {
+        return (node: HTMLElement) => {
             let inserted = false;
 
             // Attempt to insert the node before the the after nodes
@@ -170,6 +170,9 @@ export let delClass = (node: HTMLElement, className: string) =>
 export let createElement = (tagName: string, options?: ElementCreationOptions) =>
     D[CREATE_ELEMENT](tagName, options);
 
+export let createComment = (text: string) =>
+    D[CREATE_COMMENT](text);
+
 export let formData = (form?: HTMLFormElement, submitter?: HTMLElement | null) =>
     new FormData(form, submitter);
 
@@ -247,10 +250,10 @@ export let href = (_url: string = '', part: 'href'|'origin'|'pathname'|'search' 
  * - The properties `value`, `checked`, and `selected` reflect the current state of the element
  */
 export let forcePropertyAssignment = (attrName: string) =>
-    has(['src', VALUE, CHECKED, SELECT+'ed'], attrName);
+    has([VALUE, CHECKED, SELECT+'ed'], attrName);
 
-export let cssNotAttr = (attrName: string, extraSelector: string = '') =>
-    `:not([${attrName}]${extraSelector})`;
+export let sanitizeAttrName = (attrName: string) => 
+    replace(replace(attrName, /[^a-z0-9_-]/gi, ''), /^[^a-z_]+/i, '');
 
 
 /**

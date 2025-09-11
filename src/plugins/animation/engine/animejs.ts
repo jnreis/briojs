@@ -1,4 +1,5 @@
 import { PAUSE, PLAY, REVERSE } from "../../../tools/constants";
+import { hasProp } from "../../../tools/object";
 
 let CURRENT_TIME = 'currentTime';
 let REVERSED = REVERSE+'d';
@@ -6,7 +7,7 @@ let REVERSED = REVERSE+'d';
 export let animeAnimationEngine = {
     name: 'Anime.js',
     // ? This validation can be improved
-    validate: (animation: ObjectType) => ['animatables', 'autoplay'].every(key => animation.hasOwnProperty(key)),
+    validate: (animation: ObjectType) => ['animatables', 'autoplay'].every(key => hasProp(animation, key)),
     [PLAY]: (animation: ObjectType, next: FunctionType) => {
         // Animation is set backwards
         if (animation[REVERSED]) {

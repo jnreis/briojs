@@ -78,9 +78,9 @@ let nodeModifiers: Map<Node, string[]> = newMap();
  * @option `raw`    prevents the value from being typecast to a number, boolean, or null.
  * @option `lazy`   listens for the change event instead of the input event.
  */
-export let hydrateModel = (vnode: VNode, attrName: string, attrValue: string) => {
+export let hydrateModel = (bnode: BNode, attrName: string, attrValue: string) => {
 
-    let [setHook, playHook] = vnode.hook;
+    let [setHook, playHook] = bnode.hook;
 
     // Reusable strings
     let THE_MODEL_DIRECTIVE = `the ${attrName} ` + DIRECTIVE;
@@ -88,7 +88,7 @@ export let hydrateModel = (vnode: VNode, attrName: string, attrValue: string) =>
     let SELECTED = SELECT+'ed' as 'selected';
 
     // The node, its tag, and its type
-    let node = vnode.el as any;
+    let node = bnode.el as any;
     let tag = getTagName(node);
     let type = node.type;
 
@@ -97,7 +97,7 @@ export let hydrateModel = (vnode: VNode, attrName: string, attrValue: string) =>
         return logError(THE_MODEL_DIRECTIVE, CAN_ONLY_BE_USED_ON, INPUT, `, ${TEXTAREA}, and ${SELECT} ${ELEMENT}s.`, node);
 
     // Evaluate the expression to get the reactive value
-    let stateValue = getAccessedProp(vnode.exec(vnode, attrValue));
+    let stateValue = getAccessedProp(bnode.exec(bnode, attrValue));
 
     if (!stateValue) {
         logError(THE_MODEL_DIRECTIVE, REQUIRES_A_REACTIVE_VALUE, node);
@@ -112,7 +112,7 @@ export let hydrateModel = (vnode: VNode, attrName: string, attrValue: string) =>
     let getArrayNodes = () => arrayFrom(tag == SELECT ? node[OPTIONS] : getCheckboxGroup()) as Node[];
 
     // The modifiers
-    let modifiers = vnode[OPTIONS][attrName] || {};
+    let modifiers = bnode[OPTIONS][attrName] || {};
 
     /**
      * Get the node value and apply the modifiers `trim` and `raw`, if present.
@@ -247,7 +247,7 @@ export let hydrateModel = (vnode: VNode, attrName: string, attrValue: string) =>
 
     // Save the effect
     // Note: wait to save the effect until the node is fully hydrated because the model directive may depend on the bind directive to bind the value attribute.
-    wait(() => saveCleanup(vnode, effect(watchFn)), 5); // 1ms is enough, but give it a little extra time to be safe
+    wait(() => saveCleanup(bnode, effect(watchFn)), 5); // 1ms is enough, but give it a little extra time to be safe
 
 
     // UPDATES THE PROP
@@ -299,7 +299,7 @@ export let hydrateModel = (vnode: VNode, attrName: string, attrValue: string) =>
 
     // Add the event listeners and save the cleanup functions
     for (let [eventName, fn] of entries(events)) {
-        saveCleanup(vnode, listen(node, eventName, fn));
+        saveCleanup(bnode, listen(node, eventName, fn));
     }
 }
 

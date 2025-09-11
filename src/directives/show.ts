@@ -7,17 +7,17 @@ import { getParent, getStyle } from '../tools/dom';
  * 
  * Must reference a prop, method, or be an expression that returns a value that can be converted to a boolean
  */
-export let hydrateShow = (vnode: VNode, attrName: string, attrValue: string) => {
+export let hydrateShow = (bnode: BNode, attrName: string, attrValue: string) => {
 
     // Get the initial display value
-    let initialDisplay = getStyle(vnode.el)[DISPLAY];
+    let initialDisplay = getStyle(bnode.el)[DISPLAY];
 
     // If the initial display value is 'none', set it to 'block'
     // * This is necessary because the 'none' value is used to hide the element
     if (initialDisplay == 'none') initialDisplay = 'block';
 
     // Evaluate the attribute value as an effect
-    vnode[EVAL_EFFECT](vnode, attrName, attrValue, (node: HTMLElement) => (call) => {
+    bnode[EVAL_EFFECT](bnode, attrName, attrValue, (node: HTMLElement) => (call) => {
         // Get the value
         let value = call();
 

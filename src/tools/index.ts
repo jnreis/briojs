@@ -1,7 +1,8 @@
+import { arrayAdd } from "./array";
 import { ENTRIES, ERROR, LENGTH } from "./constants";
-import { O } from "./object";
+import { hasProp, newMap, newSet, O } from "./object";
 import { replace } from "./string";
-import { isObject, isUndefined } from "./typeCheck";
+import { isArray, isInstance, isMap, isNull, isObject, isSet, isUndefined } from "./typeCheck";
 
 /**
  * Determines whether an string or array includes a certain value
@@ -82,10 +83,71 @@ export let log = (type: 'log'|'warn'|'error', ...details: any[]): any => console
  * Logs a warning message.
  * @returns Brio.js warn: `...details`
  */
-export let logWarn = (...details: any[]) => log('warn', 'warn:', ...details);
+export let logWarn = (...details: any[]) => log('warn', 'warn:\n', ...details);
 
 /**
  * Logs an error message.
  * @returns Brio.js detected an error: `...details`
  */
-export let logError = (...details: any[]) => log(ERROR, `detected an ${ERROR}:`, ...details);
+export let logError = (...details: any[]) => log(ERROR, `detected an ${ERROR}:\n`, ...details);
+
+
+export let deepClone = (value: any, seen = new WeakMap()) => {
+  // Handle primitives and functions (returned as-is)
+  if (isNull(value) || typeof value !== 'object') {
+    return value;
+  }
+
+  // Handle circular references
+  if (seen.has(value)) {
+    return seen.get(value);
+  }
+
+  let cloned: any;
+
+  // Handle plain Object
+  if (isObject(value)) {
+    cloned = {};
+    seen.set(value, cloned);
+    for (let key in value) {
+      if (hasProp(value, key)) {
+        cloned[key] = deepClone(value[key], seen);
+      }
+    }
+  }
+
+  // Handle Array
+  else if (isArray(value)) {
+    cloned = [];
+    seen.set(value, cloned);
+    for (let item of value) {
+      arrayAdd(cloned, deepClone(item, seen));
+    }
+  }
+
+  // Handle Map
+  else if (isMap(value)) {
+    cloned = newMap();
+    seen.set(value, cloned);
+    for (let [key, val] of entries(value)) {
+      cloned.set(deepClone(key, seen), deepClone(val, seen));
+    }
+  }
+
+  // Handle Set
+  else if (isSet(value)) {
+    cloned = newSet();
+    seen.set(value, cloned);
+    for (let item of value.values()) {
+      cloned.add(deepClone(item, seen));
+    }
+  }
+
+  // Handle Date
+  else if (isInstance(value, Date)) {
+    value = new Date(value);
+  }
+
+  // Fallback for unsupported types (e.g., RegExp, Function)
+  return value;
+}

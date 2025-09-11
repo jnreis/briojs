@@ -1,18 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>b-if</title>
-    <style>
-        .hide {
-            display: block;
-        }
-    </style>
-</head>
-<body b-hydrate>
-    <script>
-        () => {
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>b-if</title>
+        <style>
+            .hide {
+                display: block;
+            }
+        </style>
+    </head>
+    <body>
+
+    <script b-script>
+        async () => {
             // Set reusable props
             $set.props('show', (ctx) => ({
                 show: true, 
@@ -24,14 +25,33 @@
                 }
             }));
             $set.data('show', (ctx) => ({ show: false, show2: false, 
-                log() {xw
+                log() {
                     console.log('show $data', this);
                     console.log('show ctx item', ctx);
                 }
             }));
+
+            $data.theIf = true;
+            $data.theShow = true;
         }
     </script>
-    <div b-props="show" b-props-hydrated="$props.log">
+
+    <template 
+        b-template
+        b-if="$data.theIf" 
+        b-show="$data.theShow" 
+        b-script="console.log('The template script')" 
+        b-effect="console.log('Template', '\n', 'theIf:', $data.theIf, '\n', 'theShow:', $data.theShow)"
+    >
+        <div b-template b-if="$data.theShow" b-effect="console.log('H1', '\n', 'theIf:', $data.theIf, '\n', 'theShow:', $data.theShow)">
+            <h1>b-if</h1>
+            <p>This element is conditionally rendered based on the value of <code>theIf</code>.</p>
+        </div>
+    </template>
+    <button b-ref="btn" on-click-prevent="$data.theIf = !$data.theIf">Toggle If</button>
+    <button on-click="$data.theShow = !$data.theShow">Toggle Show</button>
+
+    <!-- <div b-props="show" b-props-hydrated="$props.log">
         <h1>b-if</h1>
     
         <div b-show="$props.show" class="hide" style="border: 1px solid red; padding: 10px;">
@@ -48,8 +68,93 @@
 
         <button on-click="$props.where = [$refs.blackBox, 'append']">Teleport to black box</button>
         <button on-click="$props.where = $refs.redBox">Teleport to red box</button>
-    </div>
+    </div> -->
 
-    <script type="module" src="/src/index.ts"></script>
-</body>
+        <script type="module" src="/src/briojs.min.ts"></script>
+
+        <script>
+            window.addEventListener('brio', () => {
+                let app = brio.newApp();
+                let {$dom, $state, $effect, $watch} = app.gc;
+                $dom.hydrate('body');
+            });
+
+            // function h(type, props, ...children) {
+            //     return { type, props: props || {}, children: children.flat() };
+            // }
+
+            // function render(vnode) {
+            //     if (typeof vnode === "string") {
+            //         return document.createTextNode(vnode);
+            //     }
+
+            //     const el = document.createElement(vnode.type);
+
+            //     for (const [key, value] of Object.entries(vnode.props)) {
+            //         el.setAttribute(key, value);
+            //     }
+
+            //     vnode.children.forEach((child) => {
+            //         el.appendChild(render(child));
+            //     });
+
+            //     return el;
+            // }
+
+            // function diff(oldVNode, newVNode) {
+            //     // Replace if different types or text
+            //     if (
+            //         typeof oldVNode !== typeof newVNode ||
+            //         (typeof oldVNode === "string" && oldVNode !== newVNode) ||
+            //         oldVNode.type !== newVNode.type
+            //     ) {
+            //         return (parent, el) => {
+            //             const newEl = render(newVNode);
+            //             parent.replaceChild(newEl, el);
+            //             return newEl;
+            //         };
+            //     }
+
+            //     // Patch props and children
+            //     return (parent, el) => {
+            //         // Update attributes
+            //         for (const [key, value] of Object.entries(newVNode.props)) {
+            //             el.setAttribute(key, value);
+            //         }
+
+            //         // Diff children
+            //         const childPatches = [];
+            //         const max = Math.max(
+            //             oldVNode.children.length,
+            //             newVNode.children.length
+            //         );
+            //         for (let i = 0; i < max; i++) {
+            //             childPatches.push(
+            //                 diff(oldVNode.children[i], newVNode.children[i])
+            //             );
+            //         }
+
+            //         childPatches.forEach((patch, i) => {
+            //             if (patch) {
+            //                 patch(el, el.childNodes[i]);
+            //             }
+            //         });
+
+            //         return el;
+            //     };
+            // }
+
+            // let oldVNode = h("div", {}, h("h1", null, "Hello"));
+            // let root = render(oldVNode);
+            // document.body.appendChild(root);
+
+            // // Later...
+            // setTimeout(() => {
+            //     const newVNode = h("div", {}, h("h1", null, "Hello World"));
+            //     const patch = diff(oldVNode, newVNode);
+            //     root = patch(document.body, root);
+            //     oldVNode = newVNode;
+            // }, 2000);
+        </script>
+    </body>
 </html>

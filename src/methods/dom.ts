@@ -3,7 +3,7 @@ import { logError } from "../tools";
 import { each, filter, sort } from "../tools/array";
 import { AFTER, BEFORE, BEGIN, BODY, ELEMENT, END, HTML, HYDRATE, INNER_HTML, NOT_FOUND, OUTER, OUTER_HTML, SELECT, TEXT, TEXT_CONTENT, INNER, PARENT, HEAD, SCRIPT, ONCE, STYLE, REPLACE_WITH, B_, INSERT } from "../tools/constants";
 import { childNodes, createElement, eachAttribute, forcePropertyAssignment, getAttr, getParent, getTagName, insertHTML, insertNodes, parseHTML, query, queryAll, setAttr } from "../tools/dom";
-import { getKey } from "../tools/object";
+import { getProp, newSet } from "../tools/object";
 import { isNode, isNull } from "../tools/typeCheck";
 
 /**
@@ -20,6 +20,7 @@ import { isNode, isNull } from "../tools/typeCheck";
  * @param target The element to insert the content relative to
  * @param options.select A selector to query an element from the content
  * @param options.hydrate Whether to hydrate the inserted nodes (default: true)
+ * @param options.then A callback function to be called with the inserted nodes
  * 
  * @example
  * $dom.insert('<html lang="en"><head>...</head><body>...</body></html>', 'outer', 'html');
@@ -77,7 +78,7 @@ export let newInsert = (hydrate: FunctionType, dehydrate: FunctionType, template
     let htmlContent = isNode(content) ? content : parseHTML(content);
 
     // Query the content using the provided selector
-    let optionSelect = getKey(options, SELECT) as string;
+    let optionSelect = getProp(options, SELECT) as string;
     if (optionSelect) content = query(optionSelect, htmlContent);
 
     // Get the outerHTML of the content if it is a node
@@ -96,7 +97,7 @@ export let newInsert = (hydrate: FunctionType, dehydrate: FunctionType, template
     // ! CACHE THE NODES
 
     // Cache the current child nodes of the element and its parent
-    let cachedNodes = new Set<Node>(childNodes(el));
+    let cachedNodes = newSet(childNodes(el)) as Set<Node>;
     if (parent) each(childNodes(parent), node => cachedNodes.add(node));
 
     /** Filter the new nodes */
@@ -181,6 +182,10 @@ export let newInsert = (hydrate: FunctionType, dehydrate: FunctionType, template
     });
 
     // Hydrate the inserted nodes
-    if (getKey(options, HYDRATE, true))
+    if (getProp(options, HYDRATE, true))
         each(insertedNodes, node => hydrate(node, el));
+
+    // Hydrate the inserted nodes
+    let then = getProp(options, 'then');
+    then && await then(insertedNodes);
 }

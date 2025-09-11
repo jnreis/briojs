@@ -13,21 +13,21 @@ import { DISCONNECT, OBSERVE, ONCE, OPTIONS, DEBOUNCE, EXIT, ON_ENTER, B_, ON_EX
  * @option `rootMargin` Margin around the root. Can have values similar to the CSS margin property, e.g. "10px 20px 30px 40px" (top, right, bottom, left).
  * @option `threshold`  Either a single number or an array of numbers which indicate at what percentage of the target's visibility the observer's callback should be
  */
-export let hydrateIntersection = (vnode: VNode, attrName: string, attrValue: string) => {
+export let hydrateIntersection = (bnode: BNode, attrName: string, attrValue: string) => {
 
-    let [setHook, playHook] = vnode.hook;
+    let [setHook, playHook] = bnode.hook;
     
     let _attrName = sliceAttrName(attrName, 5); // 5: b-on-, 3: on-
     
     let [directiveName] = split(_attrName, '-');
     
     // Options
-    let options = vnode[OPTIONS][attrName] || {};
+    let options = bnode[OPTIONS][attrName] || {};
     
-    let $el = vnode.el;
+    let $el = bnode.el;
     
     // Evaluate the expression
-    let expFn = vnode.exec(vnode, attrValue, '$entry', false);
+    let expFn = bnode.exec(bnode, attrValue, '$entry', false);
 
     // Set the directive hook
     setHook($el, attrName, debounce(expFn, options[DEBOUNCE] || 100));
@@ -49,7 +49,7 @@ export let hydrateIntersection = (vnode: VNode, attrName: string, attrValue: str
     observer[OBSERVE]($el);
 
     // Save the cleanup function
-    saveCleanup(vnode, () => observer[DISCONNECT]());
+    saveCleanup(bnode, () => observer[DISCONNECT]());
 }
 
 export let intersectionDirectives: Directive[] = [

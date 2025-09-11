@@ -4,11 +4,14 @@ export declare let lower: (str: string) => string;
 export declare let split: (str: string, separator: string | RegExp, limit?: number | undefined) => string[];
 export declare let match: (str: string, regex: RegExp) => RegExpMatchArray | null;
 export declare let upper: (str: string) => string;
+export declare let capitalize: (str: string) => string;
+export declare let uncapitalize: (str: string) => string;
 export declare let reverseString: (str: string) => string;
 export declare let startsWith: (str: string, search: string, position?: number) => boolean;
 export declare let endsWith: (str: string, search: string, endPosition?: number) => boolean;
 export declare let test: (str: string, regex: RegExp) => boolean;
-export declare let replace: (str: string, search: string | RegExp, replacement: string) => string;
+export declare let replace: (str: string, search: string | RegExp, replacement: any) => string;
+export declare let replaceAll: (str: string, regex: RegExp, replacement: any) => string;
 /**
  * Check if a string ONLY contains letters (a-z, A-Z)
  * @param value - The string to check
@@ -29,6 +32,7 @@ export declare let isPath: (exp: string) => boolean;
 export declare let isStringFunction: (value: string) => boolean;
 /** Check if a string is an anonymous arrow function only */
 export declare let isStringArrowFunction: (value: string) => boolean;
+export declare let camelCase: (args: string) => string;
 export declare let stringify: (value: any) => string;
 /**
  * Attempts to parse a JavaScript Object Notation (JSON) string. If the string is not valid JSON, it returns the original string.

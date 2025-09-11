@@ -3,7 +3,7 @@ import { has, debounce, throttle, wait, logError } from '../tools';
 import { each, every } from '../tools/array';
 import { DELETE, FUNCTION, PREVENT_DEFAULT, TARGET, REQUIRES_ACTION_TYPE, EVENT, DOCUMENT, DEBOUNCE, OPTIONS, THROTTLE, PREVENT, $, DETAIL } from '../tools/constants';
 import { emit, isElementVisible, listen } from '../tools/dom';
-import { D, deleteKey, deleteKeys, getKeys, W, countKeys, getKey } from '../tools/object';
+import { D, deleteKey, deleteKeys, getKeys, W, countKeys, getProp } from '../tools/object';
 import { lower, split } from '../tools/string';
 import { getType, isFunction } from '../tools/typeCheck';
 
@@ -55,15 +55,15 @@ let keysMap: ObjectType = {
  * @option `document`   If true, the event will only be dispatched if the target is the document.
  * @option `window`     If true, the event will only be dispatched if the target is the window.
  */
-export let hydrateOn = (vnode: VNode, attrName: string, attrValue: string) => {
+export let hydrateOn = (bnode: BNode, attrName: string, attrValue: string) => {
 
-    let [setHook, playHook] = vnode.hook;
+    let [setHook, playHook] = bnode.hook;
 
     let _attrName = sliceAttrName(attrName, 5); // 5: b-on-, 3: on-
 
-    let [event] = split(_attrName, '-');
+    let [event, ...booleanOptions] = split(_attrName, '-');
 
-    let $el = vnode.el;
+    let $el = bnode.el;
 
     // The target element
     let target = $el;
@@ -71,7 +71,7 @@ export let hydrateOn = (vnode: VNode, attrName: string, attrValue: string) => {
     // The function to call
     let fn = (e: any) => {
         // Get the function, if any
-        let call = vnode.exec(vnode, attrValue, $+EVENT, false);
+        let call = bnode.exec(bnode, attrValue, $+EVENT, false);
 
         // Check if the event handler is a function
         if (isFunction(call)) call(e);
@@ -80,7 +80,12 @@ export let hydrateOn = (vnode: VNode, attrName: string, attrValue: string) => {
 
     // Options
     // https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener#options
-    let options: ObjectType = vnode[OPTIONS][attrName] || {};
+    let options: ObjectType = bnode[OPTIONS][attrName] || {};
+
+    // Merge quick boolean options
+    each(booleanOptions, option => {
+        options[option] = true;
+    });
 
     // Wrap the function with debounce
     if (DEBOUNCE in options) fn = debounce(fn, options[DEBOUNCE]);
@@ -100,7 +105,7 @@ export let hydrateOn = (vnode: VNode, attrName: string, attrValue: string) => {
 
     // Get the keys to watch for when the event is `keydown` or `keyup`
     if (has([KEYDOWN,KEYUP], event))
-        each(getKey(options, 'keys', []), (key: string) => {
+        each(getProp(options, 'keys', []), (key: string) => {
             keys[keysMap[key] || key] = true;
         });
 
@@ -123,7 +128,7 @@ export let hydrateOn = (vnode: VNode, attrName: string, attrValue: string) => {
         }, 600);
 
         // Add keys
-        saveCleanup(vnode, listen(target, KEYDOWN, (e: any) => {
+        saveCleanup(bnode, listen(target, KEYDOWN, (e: any) => {
             let key = lower(e.key);
             if (!pressedKeys[key]) pressedKeys[key] = true;
 
@@ -149,7 +154,7 @@ export let hydrateOn = (vnode: VNode, attrName: string, attrValue: string) => {
         }));
 
         // Remove keys
-        saveCleanup(vnode, listen(target, KEYUP, (e: any) => {
+        saveCleanup(bnode, listen(target, KEYUP, (e: any) => {
 
             // On keydown, remove the key before emitting the event
             if (KEYDOWN == eventName) delKey(e, pressedKeys);
@@ -162,7 +167,7 @@ export let hydrateOn = (vnode: VNode, attrName: string, attrValue: string) => {
         }));
 
         // Remove all keys when the target loses focus
-        saveCleanup(vnode, listen(target, 'focus', () => {
+        saveCleanup(bnode, listen(target, 'focus', () => {
             deleteKeys(pressedKeys);
         }));
     }
@@ -196,7 +201,7 @@ export let hydrateOn = (vnode: VNode, attrName: string, attrValue: string) => {
     }
 
     // Create listener and save the cleanup function
-    saveCleanup(vnode, listen(target, event, listenFn, options));
+    saveCleanup(bnode, listen(target, event, listenFn, options));
 }
 
 let delKey = (e: any, pressedKeys: ObjectType) => {
@@ -204,4 +209,4 @@ let delKey = (e: any, pressedKeys: ObjectType) => {
     if (pressedKeys[key]) deleteKey(pressedKeys, key);
 }
 
-export let onDirective: Directive = [/^(b-on-|on-)[\w-]+$/, hydrateOn];
+export let onDirective: Directive = [/^(b-on-|on-)[\w-]+$/, hydrateOn]; // on-click="action" on-click-prevent

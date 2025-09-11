@@ -8,7 +8,8 @@ export declare let setDefaultMaskTokens: (maskTokens: MaskTokensObject) => void;
  * @option thousands (default: `,`)
  * @option precision (default: `2`)
  */
-export declare let hydrateMask: (vnode: VNode, attrName: string, attrValue: string) => any;
+export declare let hydrateMask: (bnode: BNode, attrName: string, attrValue: string) => any;
+export declare let applyMask: ($mask: MaskContext) => void;
 export declare let moneyMask: ($mask: MaskContext) => void;
 export declare let maskDirective: Directive;
 /**

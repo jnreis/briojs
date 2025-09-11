@@ -1,9 +1,8 @@
-import { isState, propertyInitFns, watch } from ".";
+import { watch, initProp } from ".";
 import { logError, wait } from "../tools";
-import { DELETE, INVALID__$CAP, OBJECT, STORAGE, STORAGE_AREA } from "../tools/constants";
-import { getProto, hasOwnProperty, newMap } from "../tools/object";
+import { INVALID__$CAP, OBJECT, STORAGE, STORAGE_AREA } from "../tools/constants";
+import { getProto, hasProp, newMap } from "../tools/object";
 import { parse, stringify } from "../tools/string";
-import { setStateProperty } from "./prop";
 
 let GET_ITEM = 'getItem';
 let SET_ITEM = 'setItem';
@@ -19,7 +18,7 @@ let _storageStack = newMap();
 let isStorage = (obj: any) => {
     let proto = getProto(obj);
     // Check if obj has the getItem and setItem methods
-    return proto && hasOwnProperty(proto, GET_ITEM) && hasOwnProperty(proto, SET_ITEM);
+    return proto && hasProp(proto, GET_ITEM) && hasProp(proto, SET_ITEM);
 }
 
 /**
@@ -58,17 +57,14 @@ export let storage = (_storage: any, value: any, alias?: string) => {
         // Prefix the alias with Brio's prefix
         alias = keyPrefix(alias);
         // Get the value from the storage, if it exists
-        if (hasOwnProperty(_storage, alias)) {
+        if (hasProp(_storage, alias)) {
             value = getItem(_storage, alias);
         }
     }
 
     // Property initialization function
     // This will be called when the state object is created or set
-    let initFn = ({ state, prop }: ListenerFunctionContext, stateObject: StateObject) => {
-
-        // Remove the property initialization function from the set
-        propertyInitFns[DELETE](initFn);
+    let initFn = ({ state, prop }: ListenerFunctionContext) => {
 
         // Add the observed state, property, and storage to the storage stack
         _storageStack.set(alias, [state, prop, _storage]);
@@ -77,35 +73,24 @@ export let storage = (_storage: any, value: any, alias?: string) => {
         alias = alias || keyPrefix(prop);
 
         // Set the initial value if it doesn't exist in the storage
-        if (!hasOwnProperty(_storage, alias)) {
+        if (!hasProp(_storage, alias)) {
             setItem(_storage, alias, value);
         } else {
             value = getItem(_storage, alias);
         }
 
-        // Update the storage when the property changes
-        let updateStorage = () =>
+        // Watch for changes to the property (property assignment and reference key changes)
+        wait(() => watch(state, prop, () => {
+            // Update the storage when the property changes
+            // or one of its direct keys/indexes is changed, if it is a state object/array
             setItem(_storage, alias as string, state[prop]);
-
-        // Watch for changes to the property (property assignment)
-        wait(() => watch(state, prop, updateStorage));
-
-        // Add a property function to the state object
-        setStateProperty(stateObject, prop, ({ state, prop }: { state: any, prop: string }) => {
-            // If the property is an observed state
-            // Watch for changes in the entire object/array
-            // This will ensure that the storage is updated when the object/array is modified, not just during property assignment
-            if (isState(state[prop]))
-                watch(state[prop], "", updateStorage);
-        });
+        }));
 
         return value;
     }
 
     // Add the tracking callback to the property functions
-    propertyInitFns.add(initFn);
-
-    return initFn;
+    return initProp(initFn);
 }
 
 export let storageEvent = (event: StorageEvent) => {

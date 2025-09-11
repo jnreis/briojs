@@ -14,8 +14,8 @@ export let cache: Record<string, FunctionType> = newObject();
 let errorFn = () => symbol;
 
 /**
- * Evaluate an expression using vnode properties
- * @param vnode The vnode object
+ * Evaluate an expression using bnode properties
+ * @param bnode The bnode object
  * @param exp The expression to evaluate
  * @param args The arguments to pass to the function
  * @param isVoid Whether the expression should be wrapped in a block
@@ -27,7 +27,7 @@ let errorFn = () => symbol;
  * `1` — Reference.
  * `2` — Reference is a function.
  */
-export let evaluate = (vnode: VNode, exp: string, args: string = '', isVoid: boolean = false): [FunctionType, 0|1|2] => {
+export let evaluate = (bnode: BNode, exp: string, args: string = '', isVoid: boolean = false): [FunctionType, 0|1|2] => {
 
     /** `0` — Not a reference. `1` — Reference. `2` — Reference is a function. */
     let isRef: 0|1|2 = 0;
@@ -38,7 +38,7 @@ export let evaluate = (vnode: VNode, exp: string, args: string = '', isVoid: boo
     // * This is done to prevent the expression from being evaluated immediately. E.g. `delete $props.count` would delete the prop immediately.
     if (isPath(exp)) {
         // Get the reference, if any
-        _ref = getAccessedProp(() => execute(vnode, exp));
+        _ref = getAccessedProp(() => execute(bnode, exp));
 
         // Reference found
         if (_ref) {
@@ -62,13 +62,13 @@ export let evaluate = (vnode: VNode, exp: string, args: string = '', isVoid: boo
     /** The function to execute */
     let fn = isRef == 1 
         ? _ref as FunctionType 
-        : (...args: any[]) => execute(vnode, exp)(...args);
+        : (...args: any[]) => execute(bnode, exp)(...args);
 
     return [fn, isRef];
 }
 
 /** Execute an expression by creating a function from it */
-let execute = (vnode: VNode, exp: string) => {
+let execute = (bnode: BNode, exp: string) => {
 
     // Get the function from the cache or create a new one
     let fn = cache[exp];
@@ -96,7 +96,7 @@ let execute = (vnode: VNode, exp: string) => {
         if (!cache[exp] && size(exp) < 99) cache[exp] = fn;
 
         // Execute the function
-        fn = fn(vnode.ctx);
+        fn = fn(bnode.ctx);
     }
     catch (error: any) {
         // Log the error

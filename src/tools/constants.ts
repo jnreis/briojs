@@ -5,6 +5,8 @@ export let BRIO: 'brio' = 'brio';
  */
 
 export let $: '$' = '$';
+export let $STORE: '$store' = '$store';
+export let $TOOLS: '$tools' = '$tools';
 
 export let AFTER: 'after' = 'after';
 export let ANIMATION: 'animation' = 'animation';
@@ -19,7 +21,6 @@ export let BEFORE: 'before' = 'before';
 export let BEGIN: 'begin' = 'begin';
 export let BODY: 'body' = 'body';
 export let BOOLEAN: 'boolean' = 'boolean';
-export let BOTH: 'both' = 'both';
 
 export let CACHE: 'cache' = 'cache';
 export let CAN_ONLY_BE_USED_ON = 'can only be used on';
@@ -30,6 +31,7 @@ export let CHILD__$CAP: 'Child' = 'Child';
 export let CLASS_LIST: 'classList' = 'classList';
 export let CLOSEST: 'closest' = 'closest';
 export let COMPOSI: 'composi' = 'composi';
+export let CONTENT: 'content' = 'content';
 export let CONTENT__$CAP: 'Content' = 'Content';
 export let CREATE: 'create' = 'create';
 
@@ -46,7 +48,7 @@ export let DOCUMENT: 'document' = 'document';
 export let EACH: 'each' = 'each';
 export let ELEMENT: 'element' = 'element';
 export let END: 'end' = 'end';
-export let ENGINE__$CAP: 'Engine' = 'Engine';
+export let ENGINE: 'engine' = 'engine';
 export let ENTRIES: 'entries' = 'entries';
 export let ERROR: 'error' = 'error';
 export let EVAL_EFFECT: 'evalEffect' = 'evalEffect';
@@ -64,7 +66,6 @@ export let HTML: 'html' = 'html';
 export let HTML__$UPPER: 'HTML' = 'HTML';
 export let HYDRATE: 'hydrate' = 'hydrate';
 
-export let IN: 'in' = 'in';
 export let INDEX: 'index' = 'index';
 export let INNER: 'inner' = 'inner';
 export let INSERT: 'insert' = 'insert';
@@ -96,7 +97,6 @@ export let ON_COMPLETE: 'onComplete' = 'onComplete';
 export let ON_SET: 'onSet' = 'onSet';
 export let OPERATION: 'operation' = 'operation';
 export let OPTIONS: 'options' = 'options';
-export let OUT: 'out' = 'out';
 export let OUTER: 'outer' = 'outer';
 
 export let PARENT: 'parent' = 'parent';
@@ -113,6 +113,7 @@ export let PROPS: 'props' = 'props';
 export let PUT: 'put' = 'put';
 
 export let RADIO: 'radio' = 'radio';
+export let REFS: 'refs' = 'refs';
 export let REMOVE: 'remove' = 'remove';
 export let REPLACE: 'replace' = 'replace';
 export let REQUIRES: 'requires' = 'requires';
@@ -160,14 +161,21 @@ export let $EACH = $+EACH as '$each';
 export let $PROPS = $+PROPS as '$props';
 
 export let B_DATA = B_+DATA as 'b-data';
+export let B_EACH = B_+EACH as 'b-each';
+export let B_HTML = B_+HTML as 'b-html';
 export let B_IF: 'b-if' = 'b-if';
+export let B_IGNORE: 'b-ignore' = 'b-ignore';
+export let B_SAVE: 'b-save' = 'b-save';
 export let B_SHOW: 'b-show' = 'b-show';
+export let B_TEMPLATE = B_+TEMPLATE as 'b-template';
+export let B_TEXT = B_+TEXT as 'b-text';
 
 export let CACHE_EXP = CACHE + 'Exp' as 'cacheExp';
 export let CLONE_NODE = 'clone' + NODE__$CAP as 'cloneNode';
 export let COMPOSING = COMPOSI + 'ng' as 'composing';
 export let COMPOSITION_START = COMPOSI + TION + START as 'compositionstart';
 export let COMPOSITION_END = COMPOSI + TION + END as 'compositionend';
+export let CREATE_COMMENT = CREATE + 'Comment' as 'createComment';
 export let CREATE_ELEMENT = CREATE + 'Element' as 'createElement';
 
 export let DEFINE_PROPERTY = DEFINE + PROPERTY__$CAP as 'defineProperty';
@@ -233,6 +241,7 @@ export let ASYNC_FUNCTION = 'async' + FUNCTION as 'asyncfunction';
 
 export let GET_OWN_PROPERTY_DESCRIPTOR = GET + OWN_PROPERTY + 'Descriptor' as 'getOwnPropertyDescriptor';
 export let GET_OWN_PROPERTY_DESCRIPTORS = GET_OWN_PROPERTY_DESCRIPTOR + 's' as 'getOwnPropertyDescriptors';
+export let GET_OWN_PROPERTY_NAMES = GET + OWN_PROPERTY + 'Names' as 'getOwnPropertyNames';
 
 export let HAS_OWN_PROPERTY = 'has' + OWN_PROPERTY as 'hasOwnProperty';
 

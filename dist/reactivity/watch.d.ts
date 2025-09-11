@@ -6,4 +6,4 @@
  * @param listener - The function to execute when the prop is modified.
  * @returns cleanup - The disposer function to stop watching
  */
-export declare let watch: (proxied: any, prop: string | number | null, listener: ListenerFunction, priority?: number) => () => void;
+export declare let watch: (proxied: any, prop: string | number | null | undefined | symbol, listener: ListenerFunction, priority?: number) => () => void;

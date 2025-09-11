@@ -1,22 +1,56 @@
-import { find } from '../tools/array';
-import { ERROR, TEXT, GET, DELETE, PUT, POST, PATCH, UNDEFINED, METHOD, HEADERS, CONTENT__$CAP } from '../tools/constants';
-import { getKey, getKeys } from '../tools/object';
-import { lower, parse, queryString, stringify } from '../tools/string';
-import { isObject } from '../tools/typeCheck';
+import { entries } from '../tools';
+import { each, find } from '../tools/array';
+import { ERROR, TEXT, GET, DELETE, PUT, POST, PATCH, UNDEFINED, METHOD, HEADERS, CONTENT__$CAP, APPEND, DATA } from '../tools/constants';
+import { getProp, getKeys, deleteKey } from '../tools/object';
+import { endsWith, lower, parse, stringify } from '../tools/string';
+import { isArray, isObject } from '../tools/typeCheck';
+
+/**
+ * Convert nested objects and arrays into a flat key-value pair format.
+ * This is useful for sending data in a format that can be easily parsed by servers.
+ * URLSearchParams is used for `application/x-www-form-urlencoded`.
+ * - It also helps avoid CORS issues by avoiding preflight requests.
+ * - It works with every type of request, including GET and DELETE.
+ * FormData is used for `multipart/form-data`.
+ * - It is especially useful for file uploads.
+ * - It does not work with GET and DELETE requests.
+ */
+export let encodeParams = (obj: any, paramType = '', prefix = '') => {
+    let ParamsType = paramType == DATA ? FormData : URLSearchParams;
+    let params = new ParamsType();
+
+    let buildParams = (data: any, keyPrefix = '') => {
+      if (isObject(data) || isArray(data)) {
+        each(entries(data), ([key, value]) => {
+          let newKey = keyPrefix
+            ? `${keyPrefix}[${key}]`
+            : key;
+
+          buildParams(value, newKey);
+        });
+      } else {
+        params[APPEND](keyPrefix, data);
+      }
+    }
+
+    buildParams(obj, prefix);
+
+    return params;
+}
 
 let _http = (method: 'get' | 'delete' | 'post' | 'put' | 'patch') => 
     async (endpoint: string, body?: any, options: HttpOptions = {}): Promise<any> => {
 
     let TEXT_STATUS: 'status' = 'status';
     let CONTENT_TYPE = CONTENT__$CAP + '-Type' as 'Content-Type';
-    let APPLICATION_JSON: 'application/json' = 'application/json';
 
     /**
      * The name of the `parser` can be provided to explicitly specify how the response should be parsed.
      * 
-     * By default, the response is parsed as `json` based on the content type.
+     * By default, the response is parsed as `text` if no parser is provided.
+     * The response is then attempted to be parsed as JSON if no parser is provided.
      */
-    let parser: ResponseParser = getKey(options, 'parser');
+    let parser: ResponseParser = getProp(options, 'parser');
 
     // Stringify the body if it is an object
     if (isObject(body)) {
@@ -26,25 +60,34 @@ let _http = (method: 'get' | 'delete' | 'post' | 'put' | 'patch') =>
 
         // Get the content type key, if it exists
         let contentTypeKey = find(getKeys(headers), key => lower(key) == lower(CONTENT_TYPE));
-        let contentTypeValue = headers[contentTypeKey];
+        let contentTypeValue = lower(headers[contentTypeKey] || '');
 
-        // Append the body to the endpoint
-        if (method == GET || (method == DELETE && !contentTypeKey)) {
-            endpoint += queryString(body);
+        // Let the browser set the content type, if not JSON
+        deleteKey(headers, contentTypeKey);
+
+        // Append the body to the endpoint as query parameters
+        // REASON: GET and DELETE requests should not have a body
+        if (method == GET || method == DELETE) {
+            endpoint += encodeParams(body);
             body = UNDEFINED;
         }
         // Stringify the body as JSON
-        else if (!contentTypeKey || contentTypeValue == APPLICATION_JSON) {
+        else if (endsWith(contentTypeValue, 'json')) {
             body = stringify(body);
-
-            if (!contentTypeKey) {
-                // Set the content type to JSON
-                headers[CONTENT_TYPE] = APPLICATION_JSON;
-
-                // Save the updated headers
-                options[HEADERS] = headers;
-            }
+            // Manually set the content type
+            headers[CONTENT_TYPE] = 'application/json';
         }
+        // Use FormData if the content type ends with 'form-data'
+        else if (endsWith(contentTypeValue, 'form-data')) {
+            body = encodeParams(body, DATA);
+        }
+        // Stringify the body as x-www-form-urlencoded
+        else {
+            body = encodeParams(body);
+        }
+
+        // Save the updated headers
+        options[HEADERS] = headers;
     }
 
     try {

@@ -54,3 +54,4 @@ export declare let logWarn: (...details: any[]) => any;
  * @returns Brio.js detected an error: `...details`
  */
 export declare let logError: (...details: any[]) => any;
+export declare let deepClone: (value: any, seen?: WeakMap<object, any>) => any;

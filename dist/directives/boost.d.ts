@@ -1,1 +1,1 @@
-export declare let hydrateBoost: (vnode: VNode, _: string, attrValue: string) => void;
+export declare let hydrateBoost: (bnode: BNode, _: string, attrValue: string) => void;

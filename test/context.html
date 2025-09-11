@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>context</title>
+    </head>
+    <body b-props="{show: true}">
+
+        <div b-if="show" b-data="{c1: 1}">
+            <strong>{{ c1 }}</strong>
+            <div b-data="{c2: 2}">
+                <strong>.{{ c2 }}</strong>
+                <div b-data="{c3: 3}">
+                    <strong>.{{ c3 }}</strong>
+                </div>
+            </div>
+        </div>
+
+        <button on-click="show = !show">Toggle</button>
+
+        <script type="module" src="/src/briojs.min.ts"></script>
+
+        <script>
+            window.addEventListener('brio', () => {
+                let app = brio.newApp();
+                let {$dom, $state, $effect, $watch} = app.gc;
+                $dom.hydrate('body');
+            });
+        </script>
+    </body>
+</html>

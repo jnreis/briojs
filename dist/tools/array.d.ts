@@ -4,7 +4,7 @@
  * @param value the item to add
  * @returns the new length of the array
  */
-export declare let arrayAdd: (array: any[], value: any) => number;
+export declare let arrayAdd: (array: any[], ...value: any) => number;
 /**
  * Sort the items in an array
  * @param array the array to sort
@@ -31,7 +31,7 @@ type PredicateFn = (value: any, index: number, array: any[]) => unknown;
  * @param value the array to loop through
  * @param callbackfn a function to execute on each item
  */
-export declare let each: (value: any, callbackfn: (value: any, index: number, array: any) => void) => any;
+export declare let each: (value: any, callbackfn: (value: any, index: any, array: any) => void) => any;
 /**
  * Loop through an array to transform each item
  * @param array the array to loop through

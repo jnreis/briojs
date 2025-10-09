@@ -14,6 +14,7 @@ export let APPEND: 'append' = 'append';
 export let ARRAY: 'array' = 'array';
 export let ATTR: 'attr' = 'attr';
 export let ATTRIBUTE__$CAP: 'Attribute' = 'Attribute';
+export let A_VALID: 'a valid' = 'a valid';
 
 export let B_: 'b-' = 'b-';
 export let B_IF: 'b-if' = 'b-if';
@@ -32,6 +33,7 @@ export let CHECKBOX: 'checkbox' = 'checkbox';
 export let CHECKED: 'checked' = 'checked';
 export let CHILD__$CAP: 'Child' = 'Child';
 export let CLASS: 'class' = 'class';
+export let CLONE: 'clone' = 'clone';
 export let CLOSEST: 'closest' = 'closest';
 export let COMPOSI: 'composi' = 'composi';
 export let CONTENT: 'content' = 'content';
@@ -50,6 +52,7 @@ export let DOCUMENT: 'document' = 'document';
 
 export let EACH: 'each' = 'each';
 export let ELEMENT: 'element' = 'element';
+export let EMAIL: 'email' = 'email';
 export let END: 'end' = 'end';
 export let ENGINE: 'engine' = 'engine';
 export let ENTRIES: 'entries' = 'entries';
@@ -134,6 +137,7 @@ export let START: 'start' = 'start';
 export let STORAGE: 'storage' = 'storage';
 export let STRING: 'string' = 'string';
 export let STYLE: 'style' = 'style';
+export let SUPER: 'super' = 'super';
 
 export let TELEPORT: 'teleport' = 'teleport';
 export let TEMPLATE: 'template' = 'template';
@@ -173,7 +177,7 @@ export let B_TEXT = B_+TEXT as 'b-text';
 
 export let CACHE_EXP = CACHE + 'Exp' as 'cacheExp';
 export let CLASS_LIST = CLASS + 'List' as 'classList';
-export let CLONE_NODE = 'clone' + NODE__$CAP as 'cloneNode';
+export let CLONE_NODE = CLONE + NODE__$CAP as 'cloneNode';
 export let COMPOSING = COMPOSI + 'ng' as 'composing';
 export let COMPOSITION_START = COMPOSI + TION + START as 'compositionstart';
 export let COMPOSITION_END = COMPOSI + TION + END as 'compositionend';

@@ -206,7 +206,7 @@ let newTransition = (el: HTMLElement, inSelector: string, outSelector: string) =
 }
 
 // let parseTimes = (timeStr: string): number[] => filter(map(split(timeStr, ','), item => {
-//     let matched = trim(item).match(/^(-?\d*\.?\d+)(ms|s)/);
+//     let matched = match(trim(item), /^(-?\d*\.?\d+)(ms|s)/);
 //     if (matched) {
 //         let [_, value, unit] = matched;
 //         return toNumber(value) * (unit == 's' ? 1000 : 1)

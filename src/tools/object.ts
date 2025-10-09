@@ -203,7 +203,7 @@ export let sync = (target: any, source: any): any => {
         }
     }
     // Update target Set in-place
-    else if (target instanceof Set && source instanceof Set) {
+    else if (isSet(target) && isSet(source)) {
 
         // Remove all elements
         target.clear();

@@ -1,6 +1,6 @@
 import { watch, initProp } from ".";
 import { logError, wait } from "../tools";
-import { INVALID__$CAP, OBJECT, STORAGE, STORAGE_AREA } from "../tools/constants";
+import { INVALID__$CAP, OBJECT, STATE, STORAGE, STORAGE_AREA } from "../tools/constants";
 import { getProto, hasProp, newMap } from "../tools/object";
 import { parse, stringify } from "../tools/string";
 
@@ -64,7 +64,7 @@ export let storage = (_storage: any, value: any, alias?: string) => {
 
     // Property initialization function
     // This will be called when the state object is created or set
-    let initFn = ({ state, prop }: ListenerFunctionContext) => {
+    let initFn = ({ [STATE]: state, prop }: ListenerFunctionContext) => {
 
         // Add the observed state, property, and storage to the storage stack
         _storageStack.set(alias, [state, prop, _storage]);

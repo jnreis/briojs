@@ -1,16 +1,18 @@
-import { size } from ".";
+import { size, slice } from ".";
 import { arrayAdd, map } from "./array";
-import { $DATA, $EACH, $PROPS, $STORE, $TOOLS, INDEX } from "./constants";
+import { $DATA, $EACH, $PROPS, $STORE, $TOOLS, CLASS, DELETE, INDEX, SUPER } from "./constants";
 import { newSet } from "./object";
-import { replace, split, trim } from "./string";
+import { match, replace, split, trim } from "./string";
 
 export const reserved = newSet([
     // ECMAScript reserved keywords
-    "break", "case", "catch", "class", "const", "continue", "debugger", "default", "delete", "do", "else",
+    "break", "case", "catch", CLASS, "const", "continue", "debugger", "default", DELETE, "do", "else",
     "export", "extends", "finally", "for", "function", "if", "import", "in", "instanceof", "let", "new", "return",
-    "super", "switch", "this", "throw", "try", "typeof", "var", "void", "while", "with", "yield", "enum",
+    SUPER, "switch", "this", "throw", "try", "typeof", "var", "void", "while", "with", "yield", "enum",
     "await", "implements", "package", "protected", "interface", "private", "public", "static", "null", "true", "false",
 ]) as Set<string>;
+
+console.log('reserved keywords:', Array.from(reserved).join(', '));
 
 export let variableNameRegex = /^[a-z_$][\w$]*$/i;
 
@@ -32,13 +34,13 @@ export let findUsedButNotDeclaredVariables = (code: string) => {
     ];
 
     for (let regex of declarationRegexes) {
-        let match;
-        while ((match = regex.exec(code)) !== null) {
-            let raw = match[1];
+        let matched;
+        while ((matched = regex.exec(code)) !== null) {
+            let raw = matched[1];
             if (raw) {
                 let names = map(split(raw, ","), (s) => replace(trim(s), /=.*$/, ""));
                 for (let name of names) {
-                    if (name.match(variableNameRegex)) {
+                    if (match(name, variableNameRegex)) {
                         declared.add(name);
                     }
                 }
@@ -51,15 +53,15 @@ export let findUsedButNotDeclaredVariables = (code: string) => {
     let stringRegex = /(['"`])(?:\\[\s\S]|(?!\1)[^\\])*\1/g;
     let templateExprRegex = /\$\{([\s\S]*?)\}/g;
 
-    let match;
-    while ((match = stringRegex.exec(code)) !== null) {
-        let quote = match[1];
-        let start = match[INDEX];
-        let end = start + size(match[0]);
+    let matched;
+    while ((matched = stringRegex.exec(code)) !== null) {
+        let quote = matched[1];
+        let start = matched[INDEX];
+        let end = start + size(matched[0]);
 
         if (quote === "`") {
-            let content = match[0];
-            let baseOffset = match[INDEX];
+            let content = matched[0];
+            let baseOffset = matched[INDEX];
             let lastEnd = 0;
             let subMatch;
             while ((subMatch = templateExprRegex.exec(content)) !== null) {
@@ -88,16 +90,16 @@ export let findUsedButNotDeclaredVariables = (code: string) => {
     // 3. Find object literal keys and mark their start positions
     let objectKeys = newSet() as Set<string>;
     let objectKeyRegex = /\b([a-z_$][\w$]*)\s*:/gi;
-    while ((match = objectKeyRegex.exec(code)) !== null) {
+    while ((matched = objectKeyRegex.exec(code)) !== null) {
         // Add the object key to the set
-        objectKeys.add(match[1]);
+        objectKeys.add(matched[1]);
     }
 
     // 4. Final variable extraction
     let found: [string, number, number][] = [];
-    while ((match = identifierRegex.exec(code)) !== null) {
-        let name = match[0];
-        let index = match[INDEX];
+    while ((matched = identifierRegex.exec(code)) !== null) {
+        let name = matched[0];
+        let index = matched[INDEX];
         let before = code[index - 1];
 
         if (reserved.has(name) || 
@@ -143,7 +145,7 @@ export let replaceUsedButNotDeclaredVariables = (bnode: BNode, code: string) => 
             if (ctx[obj] && name in ctx[obj]) {
 
                 // Slice the code until the end of the variable
-                updatedCode += code.slice(lastIndex, start) + `${obj}.${name}`;
+                updatedCode += slice(code, lastIndex, start) + `${obj}.${name}`;
 
                 // Update the last index to the end of the variable
                 lastIndex = end;
@@ -154,5 +156,5 @@ export let replaceUsedButNotDeclaredVariables = (bnode: BNode, code: string) => 
         }
     }
 
-    return updatedCode + code.slice(lastIndex);
+    return updatedCode + slice(code, lastIndex);
 }

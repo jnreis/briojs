@@ -112,7 +112,7 @@ export let restorePosition = (node: Node) => {
 }
 
 export let eachAttribute = (element: HTMLElement, callback: (name: string, value: string) => void) =>
-    each(arrayFrom(element.attributes), ({name, value}) => callback(name, value));
+    each(arrayFrom(element.attributes), ({name, [VALUE]: value}) => callback(name, value));
 
 export let nodesBetween = (startNode: Node, endNode: Node, callback: FunctionType) => {
     let currentNode = nextSibling(startNode);
@@ -309,7 +309,7 @@ export let getStylesFromSelector = (selector: string) => {
     try {
       for (let rule of sheet.cssRules) {
         if ((rule as CSSStyleRule).selectorText == selector) {
-          return getDeclaredStyles((rule as CSSStyleRule).style);
+          return getDeclaredStyles((rule as CSSStyleRule)[STYLE]);
         }
       }
     }

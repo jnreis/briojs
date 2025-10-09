@@ -1,7 +1,7 @@
 import { saveCleanup, sliceAttrName } from '../app';
 import { has, debounce, throttle, wait, logError } from '../tools';
 import { each, every } from '../tools/array';
-import { DELETE, FUNCTION, PREVENT_DEFAULT, TARGET, REQUIRES_ACTION_TYPE, EVENT, DOCUMENT, DEBOUNCE, OPTIONS, THROTTLE, PREVENT, $, DETAIL } from '../tools/constants';
+import { DELETE, FUNCTION, PREVENT_DEFAULT, TARGET, REQUIRES_ACTION_TYPE, EVENT, DOCUMENT, DEBOUNCE, OPTIONS, THROTTLE, PREVENT, $, DETAIL, SUPER } from '../tools/constants';
 import { emit, isElementVisible, listen } from '../tools/dom';
 import { D, delProp, deleteKeys, getKeys, W, countKeys, getProp } from '../tools/object';
 import { lower, split } from '../tools/string';
@@ -26,7 +26,7 @@ let singleActionKeys = [
 let keysMap: ObjectType = {
     ctrl: CONTROL,
     cmd: META,
-    super: META,
+    [SUPER]: META,
     esc: 'escape',
     del: DELETE,
     up: ARROW+'up',

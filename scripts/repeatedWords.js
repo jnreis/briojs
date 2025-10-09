@@ -1,6 +1,10 @@
-import { readFileSync } from "fs"
 
-let brio = readFileSync(process.cwd() + "/dist/briojs.min.js", "utf8");
+import { readFileSync } from 'fs';
+
+const packageJsonPath = process.cwd() + '/package.json';
+const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf8'));
+
+let brio = readFileSync(process.cwd() + `/dist/briojs.${packageJson.version}.min.js`, "utf8");
 
 let words = brio
     .match(/\w+/g)

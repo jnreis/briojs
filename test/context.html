@@ -9,7 +9,7 @@
 
         <script b-script>
             () => {
-                let v = $validate($props);
+                let v = validate($props);
                 v.prop('level1', [
                     { name: 'required', value: true },
                     { name: 'type', value: ['boolean', 'string'] },

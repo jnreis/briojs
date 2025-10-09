@@ -1,7 +1,7 @@
 import { effect } from '../reactivity';
 import { entries, has, logError, logWarn, size, wait } from '../tools';
 import { arrayAdd, arrayFrom, each, join } from '../tools/array';
-import { SELECT, INPUT, TEXTAREA, CHECKBOX, RADIO, VALUE, ARRAY, DIRECTIVE, REQUIRES, COMPOSING, ELEMENT, CAN_ONLY_BE_USED_ON, BOOLEAN, STRING, NUMBER, CHECKED, BUT_GOT_INSTEAD, TEXT, OF_TYPE, OPTIONS, COMPOSITION_START, COMPOSITION_END } from '../tools/constants';
+import { SELECT, INPUT, TEXTAREA, CHECKBOX, RADIO, VALUE, ARRAY, DIRECTIVE, REQUIRES, COMPOSING, ELEMENT, CAN_ONLY_BE_USED_ON, BOOLEAN, STRING, NUMBER, CHECKED, BUT_GOT_INSTEAD, TEXT, OF_TYPE, OPTIONS, COMPOSITION_START, COMPOSITION_END, EMAIL } from '../tools/constants';
 import { listen, onCompositionStart, onCompositionEnd, getAttr, queryAll, getTagName } from '../tools/dom';
 import { saveCleanup } from '../app';
 import { D, newMap } from '../tools/object';
@@ -285,7 +285,7 @@ export let hydrateModel = (bnode: BNode, attrName: string, attrValue: string) =>
     });
 
     // Handle composition events
-    if (isInput([TEXT,'search','url','tel','email','password']) || tag == TEXTAREA) {
+    if (isInput([TEXT,'search','url','tel',EMAIL,'password']) || tag == TEXTAREA) {
         events[COMPOSITION_START] = onCompositionStart;
         events[COMPOSITION_END] = onCompositionEnd;
     }

@@ -1,5 +1,5 @@
 // build.js
-import fs, { rmdirSync } from 'fs';
+import { rmdirSync, readFileSync, readdirSync, lstatSync } from 'fs';
 import { build } from 'vite';
 import dts from 'vite-plugin-dts';
 
@@ -7,7 +7,7 @@ import dts from 'vite-plugin-dts';
 rmdirSync('dist', { recursive: true });
 
 const packageJsonPath = process.cwd() + '/package.json';
-const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf8'));
 
 const version = '.' + packageJson.version;
 const name = packageJson.name;
@@ -21,7 +21,7 @@ let libs = [
 ];
 
 const queueMinTs = (dirPath, name = '') => {
-    fs.readdirSync(dirPath).forEach(moduleName => {
+    readdirSync(dirPath).forEach(moduleName => {
 
         // Plugins end with .min.ts
         if (moduleName.endsWith('.min.ts')) {
@@ -33,7 +33,7 @@ const queueMinTs = (dirPath, name = '') => {
         }
 
         // Queue subdirectories recursively
-        else if (fs.lstatSync(dirPath + moduleName).isDirectory()) {
+        else if (lstatSync(dirPath + moduleName).isDirectory()) {
             queueMinTs(dirPath + moduleName + '/', (name ? name + '.' : '') + moduleName);
         }
     });

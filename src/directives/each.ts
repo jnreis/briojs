@@ -1,7 +1,7 @@
 import { delState, effect, isState, state, watch } from '../reactivity';
 import { entries, logError } from '../tools';
 import { arrayFill, map } from '../tools/array';
-import { ARRAY, OBJECT, DIRECTIVE, REQUIRES, CREATE, UPDATE, DELETE, SKIP, NUMBER, $EACH, HYDRATE, DEHYDRATE, NEW_VALUE, INDEX, OPERATION, UNDEFINED, B_EACH, BEFORE, REPLACE_WITH, B_IF, ATTR } from '../tools/constants';
+import { ARRAY, OBJECT, DIRECTIVE, REQUIRES, CREATE, UPDATE, DELETE, SKIP, NUMBER, $EACH, HYDRATE, DEHYDRATE, NEW_VALUE, INDEX, OPERATION, UNDEFINED, B_EACH, BEFORE, REPLACE_WITH, B_IF, ATTR, A_VALID } from '../tools/constants';
 import { cloneNode, createComment, insertNodes } from '../tools/dom';
 import { saveCleanup, saveToParent } from '../app';
 import { delProp, hasProp, setProp, sync } from '../tools/object';
@@ -33,7 +33,7 @@ export let hydrateEach = (bnode: BNode, attrName: string, attrValue: string) => 
 
     // Check if the `item` alias is a valid variable name
     if (!test(item, variableNameRegex) || !test(index, variableNameRegex))
-        return logError(msg, 'a valid alias.');
+        return logError(msg, A_VALID, 'alias.');
 
     // Evaluate the prop expression
     let evalExp = bnode.exec(bnode, propExp);

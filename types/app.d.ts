@@ -82,12 +82,6 @@ type GlobalContext = {
     $watch: Watch,
     $effect: Effect,
     $tools: BrioTools,
-    $validate: (data: ObjectType) => {
-        prop: (name: string, rules: SchemaRules) => void;
-        rule: (name: string, fn: RuleFn, message?: MessageFn) => void;
-        validate: () => boolean;
-        errors: ObjectType;
-    }
 }
 
 type BrioTools = {
@@ -100,6 +94,13 @@ type BrioTools = {
 
     /** Creates a deep clone of the given value */
     clone: (value: any) => any;
+
+    validate: (data: ObjectType) => {
+        prop: (name: string, rules: SchemaRules) => void;
+        rule: (name: string, fn: RuleFn, message?: MessageFn) => void;
+        validate: () => boolean;
+        errors: ObjectType;
+    }
 }
 
 /** The global $set object */

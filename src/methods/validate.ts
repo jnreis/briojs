@@ -1,6 +1,6 @@
 import { entries, has, logWarn, size } from "../tools";
 import { arrayAdd, join } from "../tools/array";
-import { MESSAGE, MUST_BE, NAME, OF_TYPE, VALUE } from "../tools/constants";
+import { A_VALID, EMAIL, MESSAGE, MUST_BE, NAME, OF_TYPE, VALIDATE, VALUE } from "../tools/constants";
 import { countKeys, deleteKeys, newRegExp } from "../tools/object";
 import { replaceAll, space, test } from "../tools/string";
 import { getType, isArray, isNumber, isObject, isString } from "../tools/typeCheck";
@@ -30,7 +30,7 @@ export let validate = (data: ObjectType) => {
 
         max: (value: any, ruleValue: any) => minMax(value, ruleValue, false),
 
-        email: (value: any) => isString(value) && test(value, regexEmail),
+        [EMAIL]: (value: any) => isString(value) && test(value, regexEmail),
 
         same: (value: any, ruleValue: any, data: any) => value === data[ruleValue],
     
@@ -48,7 +48,7 @@ export let validate = (data: ObjectType) => {
 
         max: (propName: string, ruleValue: any) => space(propName, MUST_BE, 'at most', ruleValue + '.'),
 
-        email: (propName: string) => space(propName, MUST_BE, 'a valid email.'),
+        [EMAIL]: (propName: string) => space(propName, MUST_BE, A_VALID, EMAIL + '.'),
 
         same: (propName: string, ruleValue: any) => space(propName, 'must match', ruleValue + '.'),
 
@@ -119,7 +119,7 @@ export let validate = (data: ObjectType) => {
     return {
         prop,
         rule,
-        validate,
+        [VALIDATE]: validate,
         errors,
     };
 }

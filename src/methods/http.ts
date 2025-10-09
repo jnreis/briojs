@@ -1,7 +1,7 @@
 import { entries } from '../tools';
 import { each, find } from '../tools/array';
-import { ERROR, TEXT, GET, DELETE, PUT, POST, PATCH, UNDEFINED, METHOD, HEADERS, CONTENT__$CAP, APPEND, DATA } from '../tools/constants';
-import { getProp, getKeys, deleteKey } from '../tools/object';
+import { TEXT, GET, DELETE, PUT, POST, PATCH, UNDEFINED, METHOD, HEADERS, CONTENT__$CAP, APPEND, DATA, CONTENT } from '../tools/constants';
+import { getProp, getKeys, delProp } from '../tools/object';
 import { endsWith, lower, parse, stringify } from '../tools/string';
 import { isArray, isObject } from '../tools/typeCheck';
 
@@ -63,7 +63,7 @@ let _http = (method: 'get' | 'delete' | 'post' | 'put' | 'patch') =>
         let contentTypeValue = lower(headers[contentTypeKey] || '');
 
         // Let the browser set the content type, if not JSON
-        deleteKey(headers, contentTypeKey);
+        delProp(headers, contentTypeKey);
 
         // Append the body to the endpoint as query parameters
         // REASON: GET and DELETE requests should not have a body
@@ -93,13 +93,6 @@ let _http = (method: 'get' | 'delete' | 'post' | 'put' | 'patch') =>
     try {
         let response = await fetch(endpoint, {...options, [METHOD]: method, body});
 
-        // If the response is not ok, throw an error
-        if (!response.ok) {
-            let error = new Error(`HTTP ${ERROR}! ${TEXT_STATUS}: ${response[TEXT_STATUS]}`);
-            (error as any).response = response;
-            throw error;
-        }
-
         // Get the response content
         let content = await response[parser || TEXT]();
 
@@ -112,8 +105,15 @@ let _http = (method: 'get' | 'delete' | 'post' | 'put' | 'patch') =>
             catch {}
         }
 
-        return content;
+        // If the response is not ok, throw an error
+        if (!response.ok) {
+            let error = new Error(`HTTP ${response[TEXT_STATUS]}! Status text: ` + response.statusText) as any;
+            error.response = response;
+            error[CONTENT] = content;
+            throw error;
+        }
 
+        return content;
     }
     catch (error) {
         throw error;

@@ -1,8 +1,8 @@
-import { replaceMustache, templateRegex } from "../app";
+import { replaceMustache, saveCleanup, templateRegex } from "../app";
 import { has, uid } from "../tools";
 import { arrayAdd, each, filter, join, map } from "../tools/array";
-import { AFTER, B_, CLASS_LIST, HYDRATE, NEW_LINE, STYLE, TEXT_CONTENT } from "../tools/constants";
-import { createElement, getTagName, insertNodes } from "../tools/dom";
+import { AFTER, B_, DEHYDRATE, HYDRATE, NEW_LINE, STYLE, TEXT_CONTENT } from "../tools/constants";
+import { createElement, getTagName, insertNodes, setClass } from "../tools/dom";
 import { match, replace, split, test, trim } from "../tools/string";
 import { isArray } from "../tools/typeCheck";
 
@@ -33,7 +33,7 @@ export let hydrateStyle = (bnode: BNode, attrName: string, attrValue: string) =>
         setHook(el, attrName, () => {
 
             // Add the selector to the element
-            el[CLASS_LIST].add(prefix);
+            setClass(el, prefix);
 
             // Create a style element
             let style = createElement(STYLE);
@@ -46,6 +46,11 @@ export let hydrateStyle = (bnode: BNode, attrName: string, attrValue: string) =>
 
             // Insert the style element after the current element
             insertNodes(el, AFTER, style);
+
+            // Remove the style element
+            saveCleanup(bnode, () => {
+                bnode[DEHYDRATE](style);
+            });
         });
 
         // Play the hook

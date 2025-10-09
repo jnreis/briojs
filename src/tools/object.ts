@@ -1,4 +1,4 @@
-import { entries, has, size, uid } from ".";
+import { entries, has, size } from ".";
 import { arrayFrom, each, map } from "./array";
 import { CREATE, DEFINE_PROPERTIES, DEFINE_PROPERTY, DOCUMENT, GET_OWN_PROPERTY_DESCRIPTOR, GET_OWN_PROPERTY_DESCRIPTORS, GET_OWN_PROPERTY_NAMES, HAS_OWN_PROPERTY, NULL, PROTOTYPE, UNDEFINED, VALUE } from "./constants";
 import { isArray, isMap, isObject, isSet, isString } from "./typeCheck";
@@ -12,65 +12,34 @@ export let S = Symbol;
 
 export let Regex = RegExp;
 
-/** Gets the value of a key in an object or returns a default value */
-export let getProp = (object: any, key: string, defaultValue?: any) => {
-    return isObject(object) && key in object ? object[key] : defaultValue;
-}
-
-/** Generates a unique key for an object */
-export let uniqueKey = (object: ObjectType) => {
-
-    // Generate a key
-    let key = uid();
-
-    // Make sure the key is unique.
-    // Make it 12 characters long to increase the chances of uniqueness.
-    while (key in object) key = uid(12);
-
-    return key;
-}
-
-export let countKeys = (value: any): number => size(getKeys(value));
-
-export let renameKeys = (object: ObjectType, ...keys: [string, string][]) => {
-    each(keys, ([oldName, newName]) => {
-        if (oldName in object) {
-            object[newName] = object[oldName];
-            deleteKey(object, oldName);
-        }
-    })
-}
-
-/** Gets the keys of an object */
-export let getKeys = (value: Object) => O.keys(value);
-
-export let getAllKeys = (value: Object) => O[GET_OWN_PROPERTY_NAMES](value);
-
-/** Creates a new object with the specified prototype */
-export let newObject = (proto: object | null = NULL) => O[CREATE](proto);
-
-/**
- * Creates a new context object by merging the parent context with the new context.
- * 
- * Note: This only works with objects.
- */
-export let createContext = (parentContext: any, newContext = {}): any => {
-    const mergedContext = newObject(parentContext);
-    O[DEFINE_PROPERTIES](
-        mergedContext,
-        O[GET_OWN_PROPERTY_DESCRIPTORS](newContext)
-    );
-    return mergedContext;
-}
-
-export let getDescriptor = (value: any, key: string, source: any = O) =>
-    source[GET_OWN_PROPERTY_DESCRIPTOR](value, key);
-
-export let getProto = (object: any) =>
-    O.getPrototypeOf(object);
-
 export let hasProp = (object: any, key: Prop) =>
     O[PROTOTYPE][HAS_OWN_PROPERTY].call(object, key);
+
+/** Gets the value of a key in an object or returns a default value */
+export let getProp = (object: any, key: string, defaultValue?: any) => {
+    let value = defaultValue;
+    try {
+        value = key in object ? object[key] : defaultValue;
+    } catch {}
+    return value;
+}
+
+export let renameProp = (object: ObjectType, oldName: string, newName: string, newValue?: any) => {
+    if (oldName in object) {
+        object[newName] = object[oldName];
+        delProp(object, oldName);
+    }
+    else {
+        object[newName] = newValue;
+    }
+}
+
+/**
+ * Deletes a key in an object.
+ * 
+ * Note: This mutates the object.
+ */
+export let delProp = (object: any, key: Prop) => delete object[key];
 
 let descriptorShorthand = [
     ['w', 'writable'], 
@@ -116,6 +85,45 @@ export let setProp = (object: any, key: string, value: any = UNDEFINED, descript
     O[DEFINE_PROPERTY](object, key, descriptor);
 }
 
+export let countKeys = (value: any): number => size(getKeys(value));
+
+export let renameKeys = (object: ObjectType, ...keys: [string, string][]) => {
+    each(keys, ([oldName, newName]) => {
+        if (oldName in object) {
+            object[newName] = object[oldName];
+            delProp(object, oldName);
+        }
+    })
+}
+
+/** Gets the keys of an object */
+export let getKeys = (value: Object) => O.keys(value);
+
+export let getAllKeys = (value: Object) => O[GET_OWN_PROPERTY_NAMES](value);
+
+/** Creates a new object with the specified prototype */
+export let newObject = (proto: object | null = NULL) => O[CREATE](proto);
+
+/**
+ * Creates a new context object by merging the parent context with the new context.
+ * 
+ * Note: This only works with objects.
+ */
+export let createContext = (parentContext: any, newContext = {}): any => {
+    const mergedContext = newObject(parentContext);
+    O[DEFINE_PROPERTIES](
+        mergedContext,
+        O[GET_OWN_PROPERTY_DESCRIPTORS](newContext)
+    );
+    return mergedContext;
+}
+
+export let getDescriptor = (value: any, key: string, source: any = O) =>
+    source[GET_OWN_PROPERTY_DESCRIPTOR](value, key);
+
+export let getProto = (object: any) =>
+    O.getPrototypeOf(object);
+
 /**
  * Updates the descriptor of each key in an object.
  * @param object - The object to update
@@ -130,13 +138,6 @@ export let setObjectKeys = (object: any, descriptor: any = {}) => {
 }
 
 /**
- * Deletes a key in an object.
- * 
- * Note: This mutates the object.
- */
-export let deleteKey = (object: any, key: Prop) => delete object[key];
-
-/**
  * Deletes all keys in an object.
  * 
  * Note: This mutates the object.
@@ -144,7 +145,7 @@ export let deleteKey = (object: any, key: Prop) => delete object[key];
  */
 export let deleteKeys = (object: any) =>
     each(getKeys(object), key => {
-        deleteKey(object, key);
+        delProp(object, key);
     });
 
 /**
@@ -165,6 +166,8 @@ export let newRegExp = (pattern: RegExp | string, flags?: string) => new Regex(p
 
 /**
  * Performs a in-place deep sync between `target` and `source` values
+ * 
+ * Note: this mutates the target.
  */
 export let sync = (target: any, source: any): any => {
 

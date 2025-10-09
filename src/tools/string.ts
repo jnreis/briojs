@@ -108,3 +108,5 @@ export let queryString = (params: ObjectType) => {
 }
 
 export let wrapInBackticks = (value: string) => '`' + replace(value, /`/g, '\\`') + '`';
+
+export let space = (...strings: (string | number | boolean | null | undefined)[]) => join(strings, ' ')

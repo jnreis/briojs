@@ -10,7 +10,7 @@ import { storage } from './storage';
  * The state object that holds a reference to all observed states, their parent observed state (if any), listeners, and other settings.
  */
 export let stateObjects: Map<any, StateObject> = newMap();
-console.log('stateObjects:', stateObjects);
+// console.log('stateObjects:', stateObjects);
 
 /**
  * Holds temporary functions that are called when a state is set to initialize the property.

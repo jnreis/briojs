@@ -1,8 +1,8 @@
 import { has, slice } from ".";
 import { arrayFrom, arrayReverse, each, indexOf } from "./array";
-import { COMPOSING, DISPLAY, HREF, HTML, INPUT, TARGET, TEXT, TEXT_CONTENT, AFTER, VALUE, CHECKED, SELECT, CLASS_LIST, REMOVE, GET_ATTRIBUTE, SET_ATTRIBUTE, REMOVE_ATTRIBUTE, ADD_EVENT_LISTENER, REMOVE_EVENT_LISTENER, INNER_HTML, OUTER_HTML, BEFORE, APPEND, INSERT_ADJACENT_HTML, CLONE_NODE, PARENT_NODE, PREVIOUS_SIBLING, NEXT_SIBLING, FIRST_CHILD, LAST_CHILD, CREATE_ELEMENT, DETAIL, CREATE_COMMENT } from "./constants";
+import { COMPOSING, DISPLAY, HREF, HTML, INPUT, TARGET, TEXT, TEXT_CONTENT, AFTER, VALUE, CHECKED, SELECT, CLASS_LIST, REMOVE, GET_ATTRIBUTE, SET_ATTRIBUTE, REMOVE_ATTRIBUTE, ADD_EVENT_LISTENER, REMOVE_EVENT_LISTENER, INNER_HTML, OUTER_HTML, BEFORE, APPEND, INSERT_ADJACENT_HTML, CLONE_NODE, PARENT_NODE, PREVIOUS_SIBLING, NEXT_SIBLING, FIRST_CHILD, LAST_CHILD, CREATE_ELEMENT, DETAIL, CREATE_COMMENT, STYLE, GET_PROPERTY_VALUE, GET_PROPERTY_PRIORITY, SET_PROPERTY, REMOVE_PROPERTY, TRANSITION } from "./constants";
 import { D, L, W } from "./object";
-import { lower, replace, trim } from "./string";
+import { lower, replace, startsWith, trim } from "./string";
 import { isElementNode, isString } from "./typeCheck";
 
 
@@ -161,11 +161,17 @@ export let setAttr = (node: HTMLElement, attr: string, value: string, prop?: str
 export let delAttr = (node: HTMLElement, attr: string) =>
     node[REMOVE_ATTRIBUTE](attr);
 
-export let setClass = (node: HTMLElement, className: string) =>
-    node[CLASS_LIST].add(className);
+export let setClass = (node: HTMLElement, ...className: string[]) =>
+    node[CLASS_LIST].add(...className);
 
-export let delClass = (node: HTMLElement, className: string) =>
-    node[CLASS_LIST][REMOVE](className);
+export let delClass = (node: HTMLElement, ...className: string[]) =>
+    node[CLASS_LIST][REMOVE](...className);
+
+export let hasClass = (node: HTMLElement, className: string) =>
+    node[CLASS_LIST].contains(className);
+
+let rAF = requestAnimationFrame;
+export let nextFrame = (callback: FunctionType) => rAF(() => rAF(callback));
 
 export let createElement = (tagName: string, options?: ElementCreationOptions) =>
     D[CREATE_ELEMENT](tagName, options);
@@ -262,4 +268,76 @@ export let sanitizeAttrName = (attrName: string) =>
 export let closest = (node: Node, selector: string) => {
     let el = isElementNode(node) ? node: getParent(node);
     return el && (el as HTMLElement).closest(selector);
+}
+
+/** Check if the browser supports a given CSS property-value pair */
+export let cssSupport = (property: string, value: string) => {
+    let supported = false;
+    try {
+        supported = CSS.supports(property, value);
+    } catch {}
+
+    return supported;
+}
+
+export let getDeclaredStyles = (style: CSSStyleDeclaration): StyleProps => {
+    let styles: Record<string, [string, string]> = {};
+    for (let prop of style) {
+        styles[prop] = [style[GET_PROPERTY_VALUE](prop), style[GET_PROPERTY_PRIORITY](prop)];
+    }
+    return styles;
+}
+
+/**
+ * Split styles into transition-related and other styles
+ * 
+ * returns [transitionStyles, otherStyles]
+ */
+export let splitTransitionStyles = (styles: StyleProps): [StyleProps, StyleProps] => {
+    let transitionStyles: StyleProps = {};
+    let otherStyles: StyleProps = {};
+
+    for (let prop in styles) {
+        (startsWith(prop, TRANSITION) ? transitionStyles : otherStyles)[prop] = styles[prop];
+    }
+
+    return [transitionStyles, otherStyles];
+}
+
+export let getStylesFromSelector = (selector: string) => {
+  for (let sheet of document.styleSheets) {
+    try {
+      for (let rule of sheet.cssRules) {
+        if ((rule as CSSStyleRule).selectorText == selector) {
+          return getDeclaredStyles((rule as CSSStyleRule).style);
+        }
+      }
+    }
+    // Skip inaccessible stylesheets (e.g. CORS-restricted stylesheets)
+    catch {}
+  }
+}
+
+export let setStyleProp = (el: HTMLElement, prop: string, value: string, priority?: string) => {
+    el[STYLE][SET_PROPERTY](prop, value, priority);
+}
+
+export let delStyleProp = (el: HTMLElement, prop: string) => {
+    el[STYLE][REMOVE_PROPERTY](prop);
+}
+
+export let setStyleProps = (el: HTMLElement, ...styleProps: StyleProps[]) => {
+    for (let styles of styleProps) {
+        for (let prop in styles) {
+            setStyleProp(el, prop, ...styles[prop]);
+        }
+    }
+}
+
+export let delStyleProps = (el: HTMLElement, ...styleProps: StyleProps[]) => {
+    for (let styles of styleProps) {
+        for (let prop in styles) {
+            delStyleProp(el, prop);
+        }
+    }
 }

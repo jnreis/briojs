@@ -9,12 +9,13 @@ rmdirSync('dist', { recursive: true });
 const packageJsonPath = process.cwd() + '/package.json';
 const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
 
+const version = '.' + packageJson.version;
 const name = packageJson.name;
 
 let libs = [
     {
         entry: 'src/index.ts',
-        name,
+        name: name + version,
         formats: ['es']
     }
 ];
@@ -26,7 +27,7 @@ const queueMinTs = (dirPath, name = '') => {
         if (moduleName.endsWith('.min.ts')) {
             libs.push({
                 entry: dirPath + moduleName,
-                name: (name ? name + '.' : '') + moduleName.replace('.ts', ''),
+                name: (name ? name + '.' : '') + moduleName.replace('.min.ts', version + '.min'),
                 formats: ['iife']
             });
         }

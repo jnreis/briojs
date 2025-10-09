@@ -38,3 +38,5 @@ type MaskItem = {
     isMultiple: boolean,
     value?: string,
 }
+
+type StyleProps = Record<string, [string, string]>;

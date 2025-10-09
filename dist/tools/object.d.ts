@@ -5,10 +5,29 @@ export declare let L: Location;
 export declare let D: Document;
 export declare let S: SymbolConstructor;
 export declare let Regex: RegExpConstructor;
+export declare let hasProp: (object: any, key: Prop) => boolean;
 /** Gets the value of a key in an object or returns a default value */
 export declare let getProp: (object: any, key: string, defaultValue?: any) => any;
-/** Generates a unique key for an object */
-export declare let uniqueKey: (object: ObjectType) => string;
+export declare let renameProp: (object: ObjectType, oldName: string, newName: string, newValue?: any) => void;
+/**
+ * Deletes a key in an object.
+ *
+ * Note: This mutates the object.
+ */
+export declare let delProp: (object: any, key: Prop) => boolean;
+/**
+ * Defines a property on an object.
+ * @param object - The object that will receive the key
+ * @param key - The key that will be set
+ * @param descriptor - The PropertyDescriptor or a string of shorthand letters to quickly mark a descriptor option as false.
+ * @shorthand
+ * - `w`: not writable (can not be changed)
+ * - `c`: not configurable (can not be deleted)
+ * - `e`: not enumerable (can not be iterated over)
+ * @example
+ * setProp(obj, 'key', 'value', 'wce');
+ */
+export declare let setProp: (object: any, key: string, value?: any, descriptor?: any) => void;
 export declare let countKeys: (value: any) => number;
 export declare let renameKeys: (object: ObjectType, ...keys: [string, string][]) => void;
 /** Gets the keys of an object */
@@ -24,20 +43,6 @@ export declare let newObject: (proto?: object | null) => any;
 export declare let createContext: (parentContext: any, newContext?: {}) => any;
 export declare let getDescriptor: (value: any, key: string, source?: any) => any;
 export declare let getProto: (object: any) => any;
-export declare let hasProp: (object: any, key: Prop) => boolean;
-/**
- * Defines a property on an object.
- * @param object - The object that will receive the key
- * @param key - The key that will be set
- * @param descriptor - The PropertyDescriptor or a string of shorthand letters to quickly mark a descriptor option as false.
- * @shorthand
- * - `w`: not writable (can not be changed)
- * - `c`: not configurable (can not be deleted)
- * - `e`: not enumerable (can not be iterated over)
- * @example
- * setProp(obj, 'key', 'value', 'wce');
- */
-export declare let setProp: (object: any, key: string, value?: any, descriptor?: any) => void;
 /**
  * Updates the descriptor of each key in an object.
  * @param object - The object to update
@@ -46,12 +51,6 @@ export declare let setProp: (object: any, key: string, value?: any, descriptor?:
  * @param descriptor.c - The keys are configurable (can be deleted)
  */
 export declare let setObjectKeys: (object: any, descriptor?: any) => void;
-/**
- * Deletes a key in an object.
- *
- * Note: This mutates the object.
- */
-export declare let deleteKey: (object: any, key: Prop) => boolean;
 /**
  * Deletes all keys in an object.
  *
@@ -73,6 +72,8 @@ export declare let newSet: (value?: any) => Set<any>;
 export declare let newRegExp: (pattern: RegExp | string, flags?: string) => RegExp;
 /**
  * Performs a in-place deep sync between `target` and `source` values
+ *
+ * Note: this mutates the target.
  */
 export declare let sync: (target: any, source: any) => any;
 /** Clones a value deeply */

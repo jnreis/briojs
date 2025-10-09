@@ -5,6 +5,13 @@ export declare let loadedScripts: Set<string>;
 export declare let newApp: () => AppObject;
 /** Save the cleanup function to the bnode */
 export declare let saveCleanup: (bnode: BNode, cleanupFn: FunctionType) => void;
+/** Saves an element to the parent's nodes array. These nodes will be used for cleanup and other operations */
+export declare let saveToParent: (bnode: BNode, el: HTMLElement) => void;
+/**
+ * Evaluate attribute, if any
+ * @param defaultAttrValue A string to fall back to if the attribute has no value. Default is an empty object.
+ */
+export declare let evalAttr: (bnode: BNode, attrName: string, defaultAttrValue?: string) => FunctionType;
 /** Saves the attribute to the bnode and removes it from the node */
 export declare let saveAttr: (bnode: BNode, attrName: string, attrValue: string) => void;
 /**

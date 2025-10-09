@@ -46,8 +46,10 @@ export declare let childNodes: (node: Node) => ChildNode[];
 export declare let getAttr: (node: HTMLElement, attr: string) => string | null;
 export declare let setAttr: (node: HTMLElement, attr: string, value: string, prop?: string | false) => void;
 export declare let delAttr: (node: HTMLElement, attr: string) => void;
-export declare let setClass: (node: HTMLElement, className: string) => void;
-export declare let delClass: (node: HTMLElement, className: string) => void;
+export declare let setClass: (node: HTMLElement, ...className: string[]) => void;
+export declare let delClass: (node: HTMLElement, ...className: string[]) => void;
+export declare let hasClass: (node: HTMLElement, className: string) => boolean;
+export declare let nextFrame: (callback: FunctionType) => number;
 export declare let createElement: (tagName: string, options?: ElementCreationOptions) => HTMLElement;
 export declare let createComment: (text: string) => Comment;
 export declare let formData: (form?: HTMLFormElement, submitter?: HTMLElement | null) => FormData;
@@ -77,3 +79,17 @@ export declare let sanitizeAttrName: (attrName: string) => string;
  * ! UNUSED. MAY BE REMOVED IN THE FUTURE
  */
 export declare let closest: (node: Node, selector: string) => Element | null;
+/** Check if the browser supports a given CSS property-value pair */
+export declare let cssSupport: (property: string, value: string) => boolean;
+export declare let getDeclaredStyles: (style: CSSStyleDeclaration) => StyleProps;
+/**
+ * Split styles into transition-related and other styles
+ *
+ * returns [transitionStyles, otherStyles]
+ */
+export declare let splitTransitionStyles: (styles: StyleProps) => [StyleProps, StyleProps];
+export declare let getStylesFromSelector: (selector: string) => StyleProps | undefined;
+export declare let setStyleProp: (el: HTMLElement, prop: string, value: string, priority?: string) => void;
+export declare let delStyleProp: (el: HTMLElement, prop: string) => void;
+export declare let setStyleProps: (el: HTMLElement, ...styleProps: StyleProps[]) => void;
+export declare let delStyleProps: (el: HTMLElement, ...styleProps: StyleProps[]) => void;

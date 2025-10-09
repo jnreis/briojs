@@ -1,5 +1,6 @@
+import { saveToParent } from "../app";
 import { has, logWarn } from "../tools";
-import { AFTER, APPEND, B_, BEFORE, ELEMENT, EVAL_EFFECT, NOT_FOUND, PREPEND, TELEPORT, TEXT } from "../tools/constants";
+import { AFTER, APPEND, B_, BEFORE, ELEMENT, EVAL_EFFECT, NODES, NOT_FOUND, PREPEND, TELEPORT, TEXT } from "../tools/constants";
 import { insertNodes, query } from "../tools/dom";
 import { expToFn } from "../tools/evaluation";
 import { isArray, isNode } from "../tools/typeCheck";
@@ -43,7 +44,12 @@ export let hydrateTeleport = (bnode: BNode, attrName: string, attrValue: string)
 
         // Teleport the node to the target element
         // Note: the teleported node(s) may be the b-if placeholder (ph), or the b-template nodes (nodes), or the node itself.
-        if (isNode(target)) insertNodes(target, where, ...(bnode.nodes || [node]));
+        if (isNode(target)) {
+            insertNodes(target, where, ...(bnode[NODES] || [node]));
+
+            // Ensure the element will go through the cleanup process
+            saveToParent(bnode, node);
+        }
 
         // If the target is not found, log a warning
         else logWarn(TELEPORT, ELEMENT, NOT_FOUND, attrName + `="${attrValue}"`);

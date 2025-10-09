@@ -1,18 +1,18 @@
 import { newInsert } from "./methods/dom";
 import { http } from "./methods/http";
 import { newRouter } from "./methods/route";
-import { addAnimationEngine, newTransitions } from "./methods/transition";
 import { replaceUsedButNotDeclaredVariables } from "./tools/contextProps";
 import { effect, state, storageEvent, watch } from "./reactivity";
-import { logError, slice } from "./tools";
+import { has, logError, slice, uid } from "./tools";
 import { arrayAdd, each, join, map } from "./tools/array";
-import { TEXT, TEXT_CONTENT, ATTR, DELETE, INNER_HTML, PARENT, HYDRATE, $PROPS, NULL, B_DATA, SCRIPT, ELEMENT, NOT_FOUND, $DATA, $EACH, STYLE, B_, TEMPLATE, UNDEFINED, OPTIONS, ROUTE, CTX_ARGS, EVAL_EFFECT, TRANSITION, NEW_LINE, BRIO, STORAGE, STATE, PROPS, DEHYDRATE, INSERT, CACHE_EXP, NUMBER, CLOSEST, DIRECTIVES, MASKS, MASK_TOKENS, DATA, MASK_TOKEN, ROUTE_RULE, ANIMATION, ENGINE, B_SAVE, OUTER_HTML, $STORE, $TOOLS, SKIP, CONTENT } from "./tools/constants";
+import { TEXT, TEXT_CONTENT, ATTR, DELETE, INNER_HTML, PARENT, HYDRATE, $PROPS, NULL, B_DATA, SCRIPT, ELEMENT, NOT_FOUND, $DATA, $EACH, STYLE, B_, TEMPLATE, UNDEFINED, OPTIONS, ROUTE, CTX_ARGS, EVAL_EFFECT, NEW_LINE, BRIO, STORAGE, STATE, PROPS, DEHYDRATE, INSERT, CACHE_EXP, NUMBER, CLOSEST, DIRECTIVES, MASKS, MASK_TOKENS, DATA, MASK_TOKEN, ROUTE_RULE, B_SAVE, OUTER_HTML, $STORE, $TOOLS, SKIP, CONTENT, NODES, B_IF, MESSAGE } from "./tools/constants";
 import { walk, getAttr, delAttr, getParent, queryAll, getTagName, getNodeContent, removeNode, eachAttribute, query, emit, listen, href, childNodes, setAttr } from "./tools/dom";
 import { expToFn, newFn } from "./tools/evaluation";
 import { newHooks } from "./tools/hook";
-import { countKeys, hasProp, getProp, getKeys, newMap, setProp, setObjectKeys, uniqueKey, W, newSet, S, sync } from "./tools/object";
-import { isStringNumeric, replace, replaceAll, split, startsWith, test, trim, upper, wrapInBackticks } from "./tools/string";
+import { countKeys, hasProp, getProp, getKeys, newMap, setProp, setObjectKeys, W, newSet, S, sync, clone } from "./tools/object";
+import { isStringNumeric, replace, replaceAll, split, startsWith, test, trim, wrapInBackticks } from "./tools/string";
 import { isTextNode, isElementNode, isNull, isRegExp, isUndefined, isString, isNode, isFunction } from "./tools/typeCheck";
+import { validate } from "./methods/validate";
 
 // TODO: some notes that may be useful when writing documentation
 // * Effects are functions that are called when a dependency changes
@@ -38,8 +38,8 @@ export let newApp = (): AppObject => {
             // Get the bnode, if any
             let bnode = getBNode(_el);
 
-            // A bnode is valid if it has attributes, and passes the validation function
-            if (bnode && countKeys(bnode[ATTR]) && validate(bnode)) return bnode;
+            // A bnode is valid if it passes the validation function
+            if (bnode && validate(bnode)) return bnode;
 
             // Try the parent node, if bnode not found
             _el = getParent(_el);
@@ -66,6 +66,8 @@ export let newApp = (): AppObject => {
                 // A reference to the element. Convenience for internal use.
                 el,
 
+                parent,
+
                 // UID context
                 uid: getProp(parent, 'uid', {}),
 
@@ -82,11 +84,13 @@ export let newApp = (): AppObject => {
             // Set the local context
             for (let key in localContextFns) {
                 let v = localContextFns[key](bnode, parent);
-                if (v) setProp(bnode.ctx, key, v, 'wc');
+                if (v) setProp(bnode.ctx, key, v, 'c');
             }
 
             // Save the bnode
             bnodes.set(el, bnode);
+
+            bnode[OPTIONS] = evalAttr(bnode, B_+OPTIONS)();
         }
 
         // Create a new bnode
@@ -158,42 +162,7 @@ export let newApp = (): AppObject => {
                     }
                     // Hydrate the element
                     else {
-                        // // A temporary key for the template
-                        // let tempKey = '';
-
-                        // // Handle template elements
-                        // if (tagName == TEMPLATE) {
-
-                        //     // Create a new div element
-                        //     let div = createElement('div');
-
-                        //     // Copy the attributes
-                        //     eachAttribute(_node as HTMLElement, (name, value) => setAttr(div, name, value));
-
-                        //     // Save the innerHTML as a temporary template
-                        //     if (![B_TEMPLATE, B_HTML, B_TEXT].some(directiveName => getAttr(_node as HTMLElement, directiveName))) {
-
-                        //         // A temporary key for the template
-                        //         tempKey = uniqueKey(template);
-
-                        //         // Set the b-template attribute to the temporary key
-                        //         setAttr(div, B_TEMPLATE, tempKey);
-
-                        //         // Save the temporary template
-                        //         template[tempKey] = (_node as any)[INNER_HTML];
-                        //     }
-
-                        //     // Replace the template element with the div element
-                        //     insertNodes(_node as HTMLElement, REPLACE_WITH, div);
-                        //     _node = div;
-                        // }
-
                         result = await hydrateElementNode(_node as HTMLElement, _ctxNode);
-
-                        // // Remove the temporary template
-                        // if (tagName == TEMPLATE && tempKey) {
-                        //     deleteKey(template, tempKey);
-                        // }
                     }
                 }
                 return result;
@@ -213,8 +182,13 @@ export let newApp = (): AppObject => {
             // Remove the effects
             if (bnode) {
                 // Dehydrate the child nodes
-                if (bnode.nodes) {
-                    each(bnode.nodes, childNode => bnode[DEHYDRATE](childNode, _removeNode, _removeBNode));
+                if (bnode[NODES]) {
+                    each(bnode[NODES], childNode => bnode[DEHYDRATE](childNode, _removeNode, _removeBNode));
+                }
+
+                // Remove the placeholder
+                if (bnode.ph) {
+                    removeNode(bnode.ph as any);
                 }
 
                 // Call the cleanup functions
@@ -246,7 +220,7 @@ export let newApp = (): AppObject => {
             let bnode = newBNode(node as any, ctxNode);
 
             // Evaluate the expression
-            let call = exec(bnode, `$el.${TEXT_CONTENT}=${wrapInBackticks(sanitizedText)}`, '', false);
+            let call = exec(bnode, `$el.${TEXT_CONTENT}=` + wrapInBackticks(sanitizedText), '', false);
 
             // Save the cleanup function
             saveCleanup(bnode, effect(call));
@@ -270,9 +244,6 @@ export let newApp = (): AppObject => {
         // Skip hydrated elements
         // Note: Hydrated elements have the skip property
         if (!isUndefined(getSkip(bnode))) return true;
-
-        // Get the b-options directive
-        bnode[OPTIONS] = evalAttr(bnode, B_+OPTIONS)();
 
         /**
          * Check the attributes against the directives.
@@ -338,29 +309,11 @@ export let newApp = (): AppObject => {
     }
 
     /**
-     * Evaluate attribute, if any
-     * @param defaultAttrValue A string to fall back to if the attribute has no value. Default is an empty object.
-     */
-    let evalAttr = (bnode: BNode, attrName: string, defaultAttrValue: string = '{}') => {
-
-        // Get the attribute value
-        let attrValue = getAttr(bnode.el, attrName);
-
-        // Remove the attribute
-        if (!isNull(attrValue)) saveAttr(bnode, attrName, attrValue!);
-    
-        attrValue = sanitizeAttrValue(attrValue || defaultAttrValue);
-
-        // Evaluate and return
-        return exec(bnode, attrValue);
-    }
-
-    /**
-     * Save assets in the `element`.
+     * Save assets in the element.
      * 
-     * Assets are elements with the `b-save` attribute.
+     * Assets are elements with the b-save attribute.
      * 
-     * Note: elements with the `b-save` attribute are removed from the DOM if they do not also have the `b-hydrate` attribute.
+     * Note: elements with the b-save attribute are removed from the DOM if they do not also have the b-hydrate attribute.
      */
     let saveAssets = (element: HTMLElement) => {
 
@@ -368,7 +321,7 @@ export let newApp = (): AppObject => {
             // Query all elements with the b-save attribute
             let elements = queryAll(TEMPLATE+`,[${B_SAVE}]`, element);
 
-            // Include the element, if it has the b-save attribute
+            // Include the element, if it has the b-save attribute or is a template
             if (getAttr(element, B_SAVE) || getTagName(element) == TEMPLATE)
                 arrayAdd(elements, element);
 
@@ -424,7 +377,7 @@ export let newApp = (): AppObject => {
         }
         else {
             // Generate a unique key for the function
-            cacheKey = uniqueKey(cache);
+            cacheKey = uid();
 
             /**
              * Cache the function and auto-fill the references to props in the context objects.
@@ -450,7 +403,7 @@ export let newApp = (): AppObject => {
             fn = cache[cacheKey](bnode.ctx);
         }
         catch (error: any) {
-            logError(error.message);
+            logError(error[MESSAGE]);
 
             fn = () => symbol;
         }
@@ -474,7 +427,7 @@ export let newApp = (): AppObject => {
         $el: (bnode: BNode) => bnode.el,
 
         // Unique identifier for the element
-        $uid: (bnode: BNode) => (uidName: string) => `${uidName}-${bnode.uid[uidName]}`,
+        $uid: (bnode: BNode) => bnode.uid,
 
         // Reactive properties defined in the element or inherited from the parent context
         [$PROPS]: newContext($PROPS, B_+PROPS, true),
@@ -489,12 +442,14 @@ export let newApp = (): AppObject => {
 
         // The $each context
         [$EACH]: (_: BNode, parent?: BNode) => parent?.ctx[$EACH],
+
+        $cleanup: (bnode: BNode) => (fn: FunctionType) => saveCleanup(bnode, fn),
     };
 
     /** Hook methods */
     let [setHook, playHook] = newHooks(hooks);
 
-    /** The `$insert` method of this app */
+    /** The $insert method of this app */
     let insert = newInsert(hydrate, dehydrate, template);
 
     /** Router methods */
@@ -502,8 +457,6 @@ export let newApp = (): AppObject => {
 
     // Make the router of the first instance the primary router
     if (!settings[ROUTE]) setRouter(route);
-
-    let ANIMATION_ENGINE = ANIMATION+upper(ENGINE) as 'animationEngine';
 
     let $set: SetObject = {
         hook: setHook,
@@ -517,7 +470,6 @@ export let newApp = (): AppObject => {
         data: setAsset(DATA),
         mask: setAsset(MASKS),
         [MASK_TOKEN]: setAsset(MASK_TOKENS),
-        [ANIMATION_ENGINE]: addAnimationEngine,
     }
 
     /** Global context: $dom methods */
@@ -551,7 +503,9 @@ export let newApp = (): AppObject => {
             getProp,
             setProp,
             sync,
+            clone,
         },
+        $validate: validate
     };
 
     // The arguments used by the evaluate function
@@ -590,7 +544,6 @@ export let newApp = (): AppObject => {
         [EVAL_EFFECT]: evalEffect,
         bnode: [newBNode, getBNode],
         hook: [setHook, playHook],
-        [TRANSITION]: newTransitions(),
         // insert,
         // route: [SetRoute, Route],
     };
@@ -607,6 +560,39 @@ let getSkip = (bnode: BNode) => bnode.skip;
 /** Save the cleanup function to the bnode */
 export let saveCleanup = (bnode: BNode, cleanupFn: FunctionType) => {
     arrayAdd(bnode.cFns, cleanupFn);
+}
+
+/** Saves an element to the parent's nodes array. These nodes will be used for cleanup and other operations */
+export let saveToParent = (bnode: BNode, el: HTMLElement) => {
+    let parent = bnode[PARENT];
+    if (parent) {
+        // Ensure the parent has a nodes array
+        if (!parent[NODES]) {
+            parent[NODES] = [];
+        }
+        // Add the element to the parent's nodes array, if not already present
+        if (!has(parent[NODES]!, el)) {
+            arrayAdd(parent[NODES]!, el);
+        }
+    }
+}
+
+/**
+ * Evaluate attribute, if any
+ * @param defaultAttrValue A string to fall back to if the attribute has no value. Default is an empty object.
+ */
+export let evalAttr = (bnode: BNode, attrName: string, defaultAttrValue: string = '{}') => {
+
+    // Get the attribute value
+    let attrValue = isElementNode(bnode.el) ? getAttr(bnode.el, attrName) : null;
+
+    // Remove the attribute
+    if (!isNull(attrValue)) saveAttr(bnode, attrName, attrValue!);
+
+    attrValue = sanitizeAttrValue(attrValue || defaultAttrValue);
+
+    // Evaluate and return
+    return bnode.exec(bnode, attrValue);
 }
 
 /** Saves the attribute to the bnode and removes it from the node */
@@ -647,6 +633,9 @@ let newContext = (contextName: string, directiveName: string, inherit?: boolean)
     let isElement = isElementNode(el);
     let hasDirective = isElement && !isNull(getAttr(el, directiveName));
 
+    // Elements with b-if stop the hydration flow before b-data or b-props can be processed
+    let isBif = isElement && (bnode[ATTR][B_IF] || !isNull(getAttr(el, B_IF)));
+
     // Determine if a new context should be created (is element with no parent context or with directive)
     let createNewState = isElement && (!parentContext || hasDirective);
 
@@ -658,7 +647,7 @@ let newContext = (contextName: string, directiveName: string, inherit?: boolean)
     }
 
     // Return the context
-    return createNewState ? state({}, {[PARENT]: inherit && parentContext}) : parentContext || {};
+    return createNewState && !isBif ? state({}, {[PARENT]: inherit && parentContext}) : parentContext || {};
 }
 
 let newDataLevelContext = (contextName: string) => 
@@ -675,10 +664,10 @@ export let setup = (brioWindow: ObjectType = {}) => {
     // This will prevent another instance of Brio from being initialized
     if (!(BRIO in W)) {
 
-        // Ensure the items in the `brioWindow` object cannot be changed or deleted
+        // Ensure the items in the 'brioWindow' object cannot be changed or deleted
         setObjectKeys(brioWindow, 'wc');
 
-        // Set the unchangeable `brio` object in the `window` object
+        // Set the unchangeable 'brio' object in the 'window' object
         setProp(W, BRIO, brioWindow, 'wc');
 
         // Listen to storage events
@@ -687,7 +676,7 @@ export let setup = (brioWindow: ObjectType = {}) => {
         // Listen to route changes and update the view
         listen(W as any, 'pop'+STATE, settings[ROUTE]);
 
-        // Emit the `brio` event to let listeners know that Brio is ready
+        // Emit the 'brio' event to let listeners know that Brio is ready
         emit(W as any, BRIO);
     }
 }

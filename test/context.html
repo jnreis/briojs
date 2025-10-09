@@ -5,21 +5,105 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>context</title>
     </head>
-    <body b-props="{show: true}">
+    <body b-props="{level1: 1}">
 
-        <div b-if="show" b-data="{c1: 1}">
-            <strong>{{ c1 }}</strong>
-            <div b-data="{c2: 2}">
-                <strong>.{{ c2 }}</strong>
-                <div b-data="{c3: 3}">
-                    <strong>.{{ c3 }}</strong>
-                </div>
+        <script b-script>
+            () => {
+                let v = $validate($props);
+                v.prop('level1', [
+                    { name: 'required', value: true },
+                    { name: 'type', value: ['boolean', 'string'] },
+                    { name: 'in', value: [2, 4, 6] },
+                ]);
+                v.validate();
+                console.log('validation errors:', v.errors);
+
+                // console.warn('clone', clone);
+
+                // // Testing the validator
+
+                // let validate = createValidator({
+                //     password: '12345678',
+                //     email: 'test@e.xample.com',
+                //     confirmPassword: '12345678'
+                // });
+
+                // validate.prop("email", [
+                //     {name: 'required', message: 'Email is required.'},
+                //     {name: 'email', message: 'Email must be valid.'}
+                // ]);
+                // validate.prop("password", [
+                //     {name: 'required', message: 'Password is required.'},
+                //     {name: 'min', value: 8, message: 'Password must be at least 8 characters long.'},
+                //     {name: 'max', value: 64, message: 'Password must be at most 64 characters long.'},
+                // ]);
+                // validate.prop("confirmPassword", [
+                //     {name: 'required', message: 'Confirm Password is required.'},
+                //     {name: 'same', value: "password", message: 'Confirm Password must be the same as the Password.'},
+                // ]);
+
+                // console.log(validate.errors);
+                // if (!validate.validate()) {
+                //     console.log(validate.errors);
+                // } else {
+                //     console.log("All validations passed!");
+                // }
+            }
+        </script>
+
+        <div b-ref="square" b-show="level1" class="square" b-transition="['.button-in-start', '.button-out-start']"></div>
+
+        <button class="button" on-click="level1 = !level1">Toggle Level 1 (b-if)</button>
+
+        <!-- <div b-if="level1" b-data="{show: true, ctx: 'context'}" b-each="n in 2">
+            <div b-style="bg-light-gray" class="someclass" b-if="show" b-data="{show: true, ctx: 'context'}" b-each="n in 2" b-uid="['field1']">
+                <strong>{{n}} {{ctx}} {{field1}}</strong>
+                <br>
             </div>
-        </div>
+            <br>
+        </div> -->
 
-        <button on-click="show = !show">Toggle</button>
+        <style>
+            .button {
+                background-color: #007bff;
+                padding: 0.5rem 1rem;
+                border: none;
+                color: white;
+                cursor: pointer;
+                border-radius: 4px;
+                font-size: 1rem;
+            }
+            .button-in-start {
+                background: blue;
+                transform: translateX(300px) !important;
+                transition: transform 2s ease-in-out, background 2.5s ease !important;
+            }
+            .button-out-start {
+                transform: translate(70px, 250px) scale(0.5) !important;
+                transition: transform 1s ease-in-out !important;
+            }
+
+            .square {
+                width: 100px;
+                height: 100px;
+                background-color: coral;
+                margin-bottom: 1rem;
+                transition: all .3s linear;
+            }
+
+            .mb-1 {
+                margin-bottom: 8px;
+            }
+        </style>
 
         <script type="module" src="/src/briojs.min.ts"></script>
+
+        <style b-save="bg-light-gray">
+            & {
+                background-color: lightgray;
+                padding: 1rem;
+            }
+        </style>
 
         <script>
             window.addEventListener('brio', () => {

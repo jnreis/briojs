@@ -11,7 +11,7 @@ import { isArray, isInstance, isMap, isNull, isObject, isSet, isUndefined } from
  * @param position the position to start the search
  * @returns true if the value is found, else false
  */
-export let has = (value: string|any[], item: string, position?: number) =>
+export let has = (value: string|any[], item: any, position?: number) =>
     value.includes(item, position);
 
 export let entries = (value: any): [string, any][] =>
@@ -32,6 +32,10 @@ export let size = (value: any): number => isUndefined(value[LENGTH]) ? value.siz
 
 export let wait = (callback: FunctionType, ms = 0) => setTimeout(callback, ms);
 
+export let clearWait = (id: number) => {
+    clearTimeout(id);
+}
+
 export let waitAsync = (callback: FunctionType, ms = 0) => new Promise(resolve => wait(() => resolve(callback()), ms));
 
 /**
@@ -43,7 +47,7 @@ export let waitAsync = (callback: FunctionType, ms = 0) => new Promise(resolve =
 export let debounce = (callback: Function, delay?: number) => {
     let timeout: any;
     return (...args: any[]) => {
-        clearTimeout(timeout);
+        clearWait(timeout);
         timeout = wait(() => callback(...args), delay);
     }
 }
@@ -64,14 +68,26 @@ export let throttle = (callback: Function, delay: number) => {
     }
 }
 
-export let uuid = () => crypto.randomUUID();
+let _uids: ObjectType = {};
+
+let _uid = (length: number) => slice(replace(crypto.randomUUID(), /-/g, ''), 0, length - 1) as string;
 
 /**
- * Generates a random string of a specified length (default is 8)
+ * Generates a unique string of a minimum length.
  * @param length
  */
-export let uid = (length: number = 8): string =>
-    'b' + slice(replace(uuid(), /-/g, ''), 0, length - 1);
+export let uid = (length: number = 8): string => {
+    let key = _uid(length);
+
+    // Make sure the key is unique.
+    // If the key has been used, generate a new, longer key
+    while (key in _uids) key = _uid(size(key) + 1);
+
+    // Mark the key as used
+    _uids[key] = true;
+
+    return 'b' + key;
+}
 
 /**
  * Logs a message.

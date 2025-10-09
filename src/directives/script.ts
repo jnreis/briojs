@@ -1,7 +1,8 @@
-import { loadedScripts, sanitizeAttrValue } from "../app";
+import { loadedScripts, sanitizeAttrValue, saveToParent } from "../app";
 import { http } from "../methods/http";
 import { arrayAdd, map } from "../tools/array";
-import { B_, CTX_ARGS, SCRIPT } from "../tools/constants";
+import { B_, CTX_ARGS, SCRIPT, SKIP } from "../tools/constants";
+import { replaceUsedButNotDeclaredVariables } from "../tools/contextProps";
 import { getAttr, getNodeContent, getTagName, removeNode } from "../tools/dom";
 import { newFn } from "../tools/evaluation";
 import { isStringFunction } from "../tools/string";
@@ -16,7 +17,7 @@ export let hydrateScript = async (bnode: BNode, attrName: string, attrValue: str
     let isScript = getTagName(el) == SCRIPT;
 
     // Skip the hydration of the text node of this script element
-    bnode.skip = isScript;
+    bnode[SKIP] = isScript;
 
     let [setHook, playHook] = bnode.hook;
 
@@ -28,6 +29,13 @@ export let hydrateScript = async (bnode: BNode, attrName: string, attrValue: str
         isArray(scripts) ? scripts : [scripts],
         script => assetObject[script] || script
     );
+
+    /**
+     * Since the script element will be removed, it needs to be saved to the parent
+     * to ensure the element will go through the cleanup process and will trigger
+     * any cleanup functions registered on the bnode
+     */
+    saveToParent(bnode, el);
 
     // Set the hook
     setHook(el, attrName, async () => {
@@ -58,7 +66,9 @@ export let hydrateScript = async (bnode: BNode, attrName: string, attrValue: str
             // Evaluate the script
             if (isString(fn)) {
                 let scriptFn = isStringFunction(fn);
-                fn = newFn(bnode[CTX_ARGS](), fn, scriptFn);
+                // Scripts can access context properties directly
+                // e.g. `console.log(name)` instead of `console.log($data.name)`
+                fn = newFn(bnode[CTX_ARGS](), replaceUsedButNotDeclaredVariables(bnode, fn), scriptFn);
                 if (scriptFn) fn = fn(bnode.ctx);
             }
 

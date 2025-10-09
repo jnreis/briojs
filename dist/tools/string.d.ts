@@ -47,3 +47,4 @@ export declare let parse: (value: string, reviver?: ((this: any, key: string, va
  */
 export declare let queryString: (params: ObjectType) => string;
 export declare let wrapInBackticks: (value: string) => string;
+export declare let space: (...strings: (string | number | boolean | null | undefined)[]) => string;

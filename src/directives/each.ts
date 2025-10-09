@@ -1,11 +1,11 @@
-import { effect, isState, state, watch } from '../reactivity';
+import { delState, effect, isState, state, watch } from '../reactivity';
 import { entries, logError } from '../tools';
 import { arrayFill, map } from '../tools/array';
-import { ARRAY, OBJECT, DIRECTIVE, REQUIRES, CREATE, UPDATE, DELETE, SKIP, NUMBER, $EACH, HYDRATE, DEHYDRATE, NEW_VALUE, INDEX, OPERATION, UNDEFINED, B_EACH } from '../tools/constants';
-import { removeNode, getParent, nextSibling, insertNode, cloneNode } from '../tools/dom';
-import { saveAttr, saveCleanup } from '../app';
-import { deleteKey, setProp, sync } from '../tools/object';
-import { split, test, trim } from '../tools/string';
+import { ARRAY, OBJECT, DIRECTIVE, REQUIRES, CREATE, UPDATE, DELETE, SKIP, NUMBER, $EACH, HYDRATE, DEHYDRATE, NEW_VALUE, INDEX, OPERATION, UNDEFINED, B_EACH, BEFORE, REPLACE_WITH, B_IF, ATTR } from '../tools/constants';
+import { cloneNode, createComment, insertNodes } from '../tools/dom';
+import { saveCleanup, saveToParent } from '../app';
+import { delProp, hasProp, setProp, sync } from '../tools/object';
+import { space, split, test, trim } from '../tools/string';
 import { isArray, isNumber, isObject } from '../tools/typeCheck';
 import { variableNameRegex } from '../tools/contextProps';
 import { getAccessedProp } from '../reactivity/track';
@@ -14,7 +14,7 @@ export let hydrateEach = (bnode: BNode, attrName: string, attrValue: string) => 
 
     let $el = bnode.el;
     let [newBNode, getBNode] = bnode.bnode;
-    let [setHook, playHook] = bnode.hook
+    let [setHook, playHook] = bnode.hook;
 
     // Skip the node
     bnode[SKIP] = true;
@@ -29,7 +29,7 @@ export let hydrateEach = (bnode: BNode, attrName: string, attrValue: string) => 
     if (!index) index = INDEX;
 
     // Error message
-    let msg = `the ${attrName} ${DIRECTIVE} ` + REQUIRES as 'the b-each directive requires';
+    let msg = space('the', attrName, DIRECTIVE, REQUIRES) as 'the b-each directive requires';
 
     // Check if the `item` alias is a valid variable name
     if (!test(item, variableNameRegex) || !test(index, variableNameRegex))
@@ -47,9 +47,12 @@ export let hydrateEach = (bnode: BNode, attrName: string, attrValue: string) => 
     // Check if the prop is an observed state (array or object)
     let isObservedState = accessedProp && isState(value);
 
+    let stateCreated = false;
+
     // If the `value` is a number fill an array with numbers starting from 1 to the number of `value`
     if (isNumber(value)) {
         value = state(arrayFill(value, 1));
+        stateCreated = true;
 
         if (accessedProp) {
             effect(() => {
@@ -67,12 +70,12 @@ export let hydrateEach = (bnode: BNode, attrName: string, attrValue: string) => 
 
     // TODO: it might be worth it to write a function to only replace or reorder the items in the array that changed instead of removing and re-adding all the items. This will improve performance when the array is large and only a few items change.
 
-    // Get the node's location in the DOM
-    let nextEl = nextSibling($el);
-    let parentEl = getParent($el)!;
+    // Hold the node's location with a placeholder
+    bnode.ph = createComment(attrName);
+    insertNodes($el, REPLACE_WITH, bnode.ph);
 
-    // Remove the node from the DOM
-    removeNode($el);
+    // Ensure the element will go through the cleanup process
+    saveToParent(bnode, $el);
 
     // Keep track of the mounted items
     let mountedItems: ObjectType = {};
@@ -93,13 +96,16 @@ export let hydrateEach = (bnode: BNode, attrName: string, attrValue: string) => 
         let _el = cloneNode($el) as HTMLElement;
 
         // Add the node to the DOM
-        insertNode(_el, parentEl, nextEl);
+        insertNodes(bnode.ph as any, BEFORE, _el);
 
         // Create a new bnode
-        let _bnode = newBNode(_el);
+        let _bnode = newBNode(_el, $el);
 
-        // Make sure the node has at least one attribute so it doesn't get removed
-        saveAttr(_bnode, '', '');
+        // If the bnode is a copy of an b-if element, mark it as such
+        // This can be used by b-transition and other directives that might need to know
+        if (hasProp(bnode[ATTR], B_IF)) {
+            _bnode[ATTR][B_IF] = '';
+        }
 
         // The $each context
         let _each: ObjectType = state({});
@@ -109,7 +115,11 @@ export let hydrateEach = (bnode: BNode, attrName: string, attrValue: string) => 
         setProp(_each, index, i, 'c');
 
         // Save the $each context
-        setProp(_bnode.ctx, $EACH, _each, 'wc');
+        setProp(_bnode.ctx, $EACH, _each, 'c');
+
+        saveCleanup(_bnode, () => {
+            delState(_each);
+        });
 
         // Make sure the `index` never changes
         saveCleanup(_bnode, watch(_each, index, ({[NEW_VALUE]:newValue}) => {
@@ -129,7 +139,7 @@ export let hydrateEach = (bnode: BNode, attrName: string, attrValue: string) => 
         mountedItems[i] = [_el, i];
 
         // Hydrate the new node
-        bnode[HYDRATE](_el);
+        bnode[HYDRATE](_el, $el);
     });
 
     // Update an existing item
@@ -160,7 +170,7 @@ export let hydrateEach = (bnode: BNode, attrName: string, attrValue: string) => 
         bnode[DEHYDRATE](_el);
 
         // Remove the node from the mountedItems set
-        deleteKey(mountedItems, i);
+        delProp(mountedItems, i);
     });
 
     let operations: ObjectType = {
@@ -177,12 +187,23 @@ export let hydrateEach = (bnode: BNode, attrName: string, attrValue: string) => 
 
     // Watch the prop for changes (if it's an observed state)
     if (accessedProp) {
-        // Save the cleanup function
+        // Cleanup watcher
         saveCleanup(bnode, watch(value, UNDEFINED, ({[OPERATION]: operation, prop, [NEW_VALUE]: newValue}) => {
             // Perform the operation
             operations[operation]([prop, newValue]);
         }));
     }
+
+    // Unmount all items on cleanup
+    saveCleanup(bnode, () => {
+        for (let i in mountedItems) {
+            operations[DELETE]([Number(i), null]);
+        }
+        // Delete the state created for the number, if any
+        if (stateCreated) {
+            delState(value);
+        }
+    });
 }
 
 export let eachDirective: Directive = [B_EACH, hydrateEach];

@@ -5,7 +5,7 @@ import { SELECT, INPUT, TEXTAREA, CHECKBOX, RADIO, VALUE, ARRAY, DIRECTIVE, REQU
 import { listen, onCompositionStart, onCompositionEnd, getAttr, queryAll, getTagName } from '../tools/dom';
 import { saveCleanup } from '../app';
 import { D, newMap } from '../tools/object';
-import { parse, trim } from '../tools/string';
+import { parse, space, trim } from '../tools/string';
 import { isNull, isArray, getType, isUndefined, isString, isBoolean, isNumber } from '../tools/typeCheck';
 import { getAccessedProp } from '../reactivity/track';
 
@@ -83,8 +83,8 @@ export let hydrateModel = (bnode: BNode, attrName: string, attrValue: string) =>
     let [setHook, playHook] = bnode.hook;
 
     // Reusable strings
-    let THE_MODEL_DIRECTIVE = `the ${attrName} ` + DIRECTIVE;
-    let REQUIRES_A_REACTIVE_VALUE = REQUIRES + ` a reactive ` + VALUE;
+    let THE_MODEL_DIRECTIVE = space('the', attrName, DIRECTIVE);
+    let REQUIRES_A_REACTIVE_VALUE = space(REQUIRES, 'a reactive', VALUE);
     let SELECTED = SELECT+'ed' as 'selected';
 
     // The node, its tag, and its type

@@ -16,7 +16,7 @@ declare module "briojs" {
     export let teleportDirective: Directive;
     export let ifDirective: Directive;
     export let showDirective: Directive;
-    export let transitionDirectives: [string, Directive][];
+    export let transitionDirective: Directive;
     export let intersectionDirectives: [string, Directive][];
     export let resizeDirectives: [string, Directive][];
     export let onDirective: Directive;
@@ -25,8 +25,4 @@ declare module "briojs" {
     export let maskDirective: Directive;
     export let moneyMask: ($mask: MaskContext) => void
     export let setDefaultMaskTokens: (maskTokens: MaskTokensObject) => void;
-
-    export let animeAnimationEngine: AnimationEngine;
-    export let gsapAnimationEngine: AnimationEngine;
-    export let webAnimationsApiAnimationEngine: AnimationEngine;
 }

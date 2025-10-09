@@ -5,7 +5,7 @@
  * @param position the position to start the search
  * @returns true if the value is found, else false
  */
-export declare let has: (value: string | any[], item: string, position?: number) => boolean;
+export declare let has: (value: string | any[], item: any, position?: number) => boolean;
 export declare let entries: (value: any) => [string, any][];
 /**
  * Returns a section of a string or a copy of a section of an array
@@ -18,6 +18,7 @@ export declare let slice: (value: string | any[], start?: number | undefined, en
 /** Returns the size/length of a value */
 export declare let size: (value: any) => number;
 export declare let wait: (callback: FunctionType, ms?: number) => number;
+export declare let clearWait: (id: number) => void;
 export declare let waitAsync: (callback: FunctionType, ms?: number) => Promise<unknown>;
 /**
  * Debounce: the callback function will only be called after the delay has passed since the last call.
@@ -33,9 +34,8 @@ export declare let debounce: (callback: Function, delay?: number) => (...args: a
  * @returns A throttled function
  */
 export declare let throttle: (callback: Function, delay: number) => (...args: any[]) => any;
-export declare let uuid: () => `${string}-${string}-${string}-${string}-${string}`;
 /**
- * Generates a random string of a specified length (default is 8)
+ * Generates a unique string of a minimum length.
  * @param length
  */
 export declare let uid: (length?: number) => string;

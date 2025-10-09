@@ -50,7 +50,6 @@ type AppObject = {
     evalEffect: (bnode: BNode, attrName: string, attrValue: string, callback: (node: HTMLElement) => HookFunction) => void,
     bnode: [NewBNode, GetBNode],
     hook: [SetHook, PlayHook],
-    transition: [PlayTransition, ReverseTransition],
     // route: [SetRoute, Route],
     // insert: (content: any, where: "outer" | "inner" | "text" | "before" | "first" | "last" | "after", target: HTMLElement | string, options?: InsertOptions) => Promise<any>,
 
@@ -83,6 +82,12 @@ type GlobalContext = {
     $watch: Watch,
     $effect: Effect,
     $tools: BrioTools,
+    $validate: (data: ObjectType) => {
+        prop: (name: string, rules: SchemaRules) => void;
+        rule: (name: string, fn: RuleFn, message?: MessageFn) => void;
+        validate: () => boolean;
+        errors: ObjectType;
+    }
 }
 
 type BrioTools = {
@@ -92,6 +97,9 @@ type BrioTools = {
 
     /** Performs a in-place deep sync between `target` and `source` values */
     sync: (target: any, source: any) => any;
+
+    /** Creates a deep clone of the given value */
+    clone: (value: any) => any;
 }
 
 /** The global $set object */
@@ -107,7 +115,6 @@ type SetObject = {
     data: SetAsset,
     mask: SetAsset,
     maskToken: SetAsset,
-    animationEngine: (engine: AnimationEngine) => void,
 }
 
 type SetContext = (contextName: string, contextValue: any) => void;
@@ -160,6 +167,9 @@ type BNode = {
     /** The local context available to all expressions evaluated with this bnode. e.g. $el, $data, $props, $refs, $uid, etc. */
     ctx: Context,
 
+    /** The parent bnode */
+    parent: BNode | undefined,
+
     /** The element itself */
     el: HTMLElement,
 
@@ -196,6 +206,7 @@ type LocalContext = {
     $el: HTMLElement,
     $refs: ObjectType,
     $uid: (uidName: string) => string,
+    $cleanup: (fn: FunctionType) => void,
     $props: ObjectType,
     $data: ObjectType,
     $each?: ObjectType,
@@ -216,7 +227,6 @@ type HydrationTools = {
     evalEffect: (bnode: BNode, attrName: string, attrValue: string, callback: (node: HTMLElement) => HookFunction) => void,
     bnode: [NewVnode, GetVnode],
     hooks: [SetHook, PlayHook],
-    transition: [PlayTransition, ReverseTransition],
 };
 
 /** The object that holds the saved templates */

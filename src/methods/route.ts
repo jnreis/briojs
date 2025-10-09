@@ -3,7 +3,7 @@ import { logError, size } from "../tools";
 import { arrayAdd, each, filter } from "../tools/array";
 import { NULL, OUTER, PATHNAME, CANNOT__$CAP, FUNCTION, HTML, NEW_LINE, REMOVE, ROUTE } from "../tools/constants";
 import { href } from "../tools/dom";
-import { deleteKey, getKeys, L } from "../tools/object";
+import { delProp, getKeys, L } from "../tools/object";
 import { split, startsWith, trim } from "../tools/string";
 import { isArray, isFunction } from "../tools/typeCheck";
 import { http } from "./http";
@@ -123,7 +123,7 @@ export let newRouter = (routes: RoutesObject, routeRules: ObjectType, insert: Fu
         if (found) routesAt[symbol]({
             params,
             path: routePath,
-            [REMOVE]: () => deleteKey(routesAt, symbol)
+            [REMOVE]: () => delProp(routesAt, symbol)
         });
 
         // Otherwise, fetch and swap the page

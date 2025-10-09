@@ -16,7 +16,10 @@ export let ATTR: 'attr' = 'attr';
 export let ATTRIBUTE__$CAP: 'Attribute' = 'Attribute';
 
 export let B_: 'b-' = 'b-';
-export let B_RUN: 'b-run' = 'b-run';
+export let B_IF: 'b-if' = 'b-if';
+export let B_IGNORE: 'b-ignore' = 'b-ignore';
+export let B_SAVE: 'b-save' = 'b-save';
+export let B_SHOW: 'b-show' = 'b-show';
 export let BEFORE: 'before' = 'before';
 export let BEGIN: 'begin' = 'begin';
 export let BODY: 'body' = 'body';
@@ -28,7 +31,7 @@ export let CANNOT__$CAP: 'Cannot ' = 'Cannot ';
 export let CHECKBOX: 'checkbox' = 'checkbox';
 export let CHECKED: 'checked' = 'checked';
 export let CHILD__$CAP: 'Child' = 'Child';
-export let CLASS_LIST: 'classList' = 'classList';
+export let CLASS: 'class' = 'class';
 export let CLOSEST: 'closest' = 'closest';
 export let COMPOSI: 'composi' = 'composi';
 export let CONTENT: 'content' = 'content';
@@ -74,6 +77,7 @@ export let INVALID__$CAP: 'Invalid' = 'Invalid';
 export let LENGTH: 'length' = 'length';
 
 export let MASK: 'mask' = 'mask';
+export let MESSAGE: 'message' = 'message';
 export let METHOD: 'method' = 'method';
 export let MUST_BE: 'must be' = 'must be';
 
@@ -81,6 +85,7 @@ export let NEW_LINE = '\n';
 export let NEW_VALUE: 'newValue' = 'newValue';
 export let NAME: 'name' = 'name';
 export let NODE__$CAP: 'Node' = 'Node';
+export let NODES: 'nodes' = 'nodes';
 export let NOT_FOUND: 'not found.' = 'not found.';
 export let NULL: null = null;
 export let NUMBER: 'number' = 'number';
@@ -163,14 +168,11 @@ export let $PROPS = $+PROPS as '$props';
 export let B_DATA = B_+DATA as 'b-data';
 export let B_EACH = B_+EACH as 'b-each';
 export let B_HTML = B_+HTML as 'b-html';
-export let B_IF: 'b-if' = 'b-if';
-export let B_IGNORE: 'b-ignore' = 'b-ignore';
-export let B_SAVE: 'b-save' = 'b-save';
-export let B_SHOW: 'b-show' = 'b-show';
 export let B_TEMPLATE = B_+TEMPLATE as 'b-template';
 export let B_TEXT = B_+TEXT as 'b-text';
 
 export let CACHE_EXP = CACHE + 'Exp' as 'cacheExp';
+export let CLASS_LIST = CLASS + 'List' as 'classList';
 export let CLONE_NODE = 'clone' + NODE__$CAP as 'cloneNode';
 export let COMPOSING = COMPOSI + 'ng' as 'composing';
 export let COMPOSITION_START = COMPOSI + TION + START as 'compositionstart';
@@ -190,6 +192,8 @@ export let FIRST_CHILD = 'first' + CHILD__$CAP as 'firstChild';
 export let FUNCTION = 'func' + TION as 'function';
 
 export let GET_ATTRIBUTE = GET + ATTRIBUTE__$CAP as 'getAttribute';
+export let GET_PROPERTY_VALUE = GET + PROPERTY__$CAP + 'Value' as 'getPropertyValue';
+export let GET_PROPERTY_PRIORITY = GET + PROPERTY__$CAP + 'Priority' as 'getPropertyPriority';
 
 export let HEADERS = HEAD + 'ers' as 'headers';
 export let HYDRATED = HYDRATE + 'd' as 'hydrated';
@@ -218,12 +222,14 @@ export let PROTOTYPE = 'proto' + TYPE as 'prototype';
 
 export let REMOVE_ATTRIBUTE = REMOVE + ATTRIBUTE__$CAP as 'removeAttribute';
 export let REMOVE_EVENT_LISTENER = REMOVE + EVENT_LISTENER__$CAP as 'removeEventListener';
+export let REMOVE_PROPERTY = REMOVE + PROPERTY__$CAP as 'removeProperty';
 export let REPLACE_WITH = REPLACE + WITH__$CAP as 'replaceWith';
 export let REPLACE_CHILDREN = REPLACE + 'Children' as 'replaceChildren';
 export let ROUTE_RULE = ROUTE + 'Rule' as 'routeRule';
 
 export let SELECTION_START = SELECT + 'ionStart' as 'selectionStart';
 export let SET_ATTRIBUTE = 'set' + ATTRIBUTE__$CAP as 'setAttribute';
+export let SET_PROPERTY = 'set' + PROPERTY__$CAP as 'setProperty';
 export let STARTS_WITH = START + 's' + WITH__$CAP as 'startsWith';
 export let STORAGE_AREA = STORAGE + 'Area' as 'storageArea';
 

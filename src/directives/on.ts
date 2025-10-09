@@ -3,7 +3,7 @@ import { has, debounce, throttle, wait, logError } from '../tools';
 import { each, every } from '../tools/array';
 import { DELETE, FUNCTION, PREVENT_DEFAULT, TARGET, REQUIRES_ACTION_TYPE, EVENT, DOCUMENT, DEBOUNCE, OPTIONS, THROTTLE, PREVENT, $, DETAIL } from '../tools/constants';
 import { emit, isElementVisible, listen } from '../tools/dom';
-import { D, deleteKey, deleteKeys, getKeys, W, countKeys, getProp } from '../tools/object';
+import { D, delProp, deleteKeys, getKeys, W, countKeys, getProp } from '../tools/object';
 import { lower, split } from '../tools/string';
 import { getType, isFunction } from '../tools/typeCheck';
 
@@ -204,9 +204,6 @@ export let hydrateOn = (bnode: BNode, attrName: string, attrValue: string) => {
     saveCleanup(bnode, listen(target, event, listenFn, options));
 }
 
-let delKey = (e: any, pressedKeys: ObjectType) => {
-    let key = lower(e.key);
-    if (pressedKeys[key]) deleteKey(pressedKeys, key);
-}
+let delKey = (e: any, pressedKeys: ObjectType) => delProp(pressedKeys, lower(e.key));
 
 export let onDirective: Directive = [/^(b-on-|on-)[\w-]+$/, hydrateOn]; // on-click="action" on-click-prevent

@@ -1,4 +1,6 @@
+import { saveCleanup } from "../app";
 import { delAttr, getAttr } from "../tools/dom";
+import { delProp } from "../tools/object";
 
 /**
  * NOTES:
@@ -21,5 +23,8 @@ export let hydrateRefs = async (bnode: BNode, attrName: string, el: HTMLElement)
 
         // Remove the attribute from the node
         delAttr(el, attrName);
+
+        // Cleanup
+        saveCleanup(bnode, () => delProp($refs, attrValue));
     }
 }

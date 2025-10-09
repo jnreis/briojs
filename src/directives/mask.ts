@@ -9,9 +9,9 @@ import { match, replace, split, startsWith } from "../tools/string";
 /** Set the default mask tokens */
 export let setDefaultMaskTokens = (maskTokens: MaskTokensObject) => {
 
-    maskTokens['#'] = /\d/; // only numbers
-    maskTokens['&'] = /[\p{Letter}]/u; // only letters (unicode)
-    maskTokens['*'] = /[\p{Letter}\d]/u; // letters and numbers (unicode)
+    maskTokens['#'] = /\p{Nd}/u; // only numbers
+    maskTokens['&'] = /[\p{L}]/u; // only letters (unicode)
+    maskTokens['*'] = /[\p{L}\p{Nd}]/u; // letters and numbers (unicode)
     // maskTokens['H'] = /[a-f\d]/i; // hexadecimal
 }
 

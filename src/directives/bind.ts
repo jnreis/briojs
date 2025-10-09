@@ -4,6 +4,8 @@ import { setAttr, delAttr, getAttr, forcePropertyAssignment, sanitizeAttrName } 
 import { expToFn } from '../tools/evaluation';
 import { camelCase } from '../tools/string';
 
+// TODO: disable all the fields in a form when a disabled attribute is present on the form element
+
 /**
  * Option
  * @option `prop`   Also set a specific DOM property.
@@ -34,7 +36,7 @@ export let hydrateBind = (bnode: BNode, attrName: string, attrValue: string) => 
     _attrName = sanitizeAttrName(_attrName);
 
     // Get the attribute's initial value
-    let initialAttrValue = getAttr(bnode.el, _attrName) || '';
+    let initialAttrValue = getAttr(bnode.el, _attrName);
 
     // Options
     let options = bnode[OPTIONS][attrName] || {};
@@ -42,7 +44,7 @@ export let hydrateBind = (bnode: BNode, attrName: string, attrValue: string) => 
     // Evaluate the attribute value as an effect
     bnode[EVAL_EFFECT](bnode, attrName, attrValue, (node: HTMLElement) => (call) => {
 
-        let value = call(initialAttrValue);
+        let value = call(initialAttrValue || '');
 
         /**
          * Always set the DOM property for these attributes. No matter what the value is.
@@ -60,6 +62,12 @@ export let hydrateBind = (bnode: BNode, attrName: string, attrValue: string) => 
         // Remove attribute
         else delAttr(node, _attrName);
     });
+
+    // // Cleanup: restore the attribute's initial value
+    // saveCleanup(bnode, () => {
+    //     if (isNull(initialAttrValue)) delAttr(bnode.el, _attrName);
+    //     else setAttr(bnode.el, _attrName, initialAttrValue!);
+    // })
 }
 
 export let bindDirective: Directive = [/^(b-bind-|bind-)[\w-$]+$/, hydrateBind];

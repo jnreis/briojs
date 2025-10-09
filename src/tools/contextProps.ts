@@ -1,8 +1,8 @@
-import { has, size } from ".";
-import { arrayAdd, indexOf, map } from "./array";
+import { size } from ".";
+import { arrayAdd, map } from "./array";
 import { $DATA, $EACH, $PROPS, $STORE, $TOOLS, INDEX } from "./constants";
 import { newSet } from "./object";
-import { replace, split, test, trim } from "./string";
+import { replace, split, trim } from "./string";
 
 export const reserved = newSet([
     // ECMAScript reserved keywords
@@ -22,13 +22,13 @@ export let findUsedButNotDeclaredVariables = (code: string) => {
 
     // 1. Capture declared variables/functions/params/imports
     let declarationRegexes = [
-        /\b(?:var|let|const)\s+([a-z_$][\w$]*)/gi,
-        /\bfunction\s+([a-z_$][\w$]*)/gi,
-        /\bclass\s+([a-z_$][\w$]*)/gi,
-        /\bimport\s+([a-z_$][\w$]*)/gi,
-        /\bfunction\s*[^(]*\(([^)]*)\)/g,
-        /\(([^)]*)\)\s*=>/g,
-        /\b([a-z_$][\w$]*)\s*=>/gi,
+        /\b(?:var|let|const)\s+([a-z_$][\w$]*)/gi, // variable declarations
+        /\bfunction\s+([a-z_$][\w$]*)/gi, // function declarations
+        /\bclass\s+([a-z_$][\w$]*)/gi, // class declarations
+        /\bimport\s+([a-z_$][\w$]*)/gi, // import statements
+        /\bfunction\s*[^(]*\(([^)]*)\)/g, // function parameters
+        /\(([^)]*)\)\s*=>/g, // arrow function parameters (parentheses)
+        /\b([a-z_$][\w$]*)\s*=>/gi, // arrow function parameters (single param without parentheses)
     ];
 
     for (let regex of declarationRegexes) {
@@ -86,21 +86,11 @@ export let findUsedButNotDeclaredVariables = (code: string) => {
     }
 
     // 3. Find object literal keys and mark their start positions
-    let objectKeyIndexes = newSet() as Set<number>;
-    let objectKeyRegex = /{([^}]+)}/g;
+    let objectKeys = newSet() as Set<string>;
+    let objectKeyRegex = /\b([a-z_$][\w$]*)\s*:/gi;
     while ((match = objectKeyRegex.exec(code)) !== null) {
-        let body = match[1];
-        let offset = match[INDEX];
-        let pairs = split(body, ",");
-        for (let pair of pairs) {
-            if (has(pair, ":")) {
-                let [key] = map(split(pair, ":"), part => trim(part));
-                if (key && test(key, variableNameRegex)) {
-                    let index = indexOf(code, key, offset);
-                    if (index !== -1) objectKeyIndexes.add(index);
-                }
-            }
-        }
+        // Add the object key to the set
+        objectKeys.add(match[1]);
     }
 
     // 4. Final variable extraction
@@ -113,7 +103,7 @@ export let findUsedButNotDeclaredVariables = (code: string) => {
         if (reserved.has(name) || 
             declared.has(name) || 
             before === "." || 
-            objectKeyIndexes.has(index) ||
+            objectKeys.has(name) ||
             exclusionRanges.some(([start, end]) => index >= start && index < end)
         ) continue;
 
@@ -125,14 +115,15 @@ export let findUsedButNotDeclaredVariables = (code: string) => {
         ]);
     }
 
+    // Debug
+    // console.warn('findUsedButNotDeclaredVariables:', { declared, objectKeys, exclusionRanges, found });
+
     return found;
 }
 
 export let replaceUsedButNotDeclaredVariables = (bnode: BNode, code: string) => {
-    // console.warn('Initial code:', code);
 
     let found = findUsedButNotDeclaredVariables(code);
-    console.log('Found variables:', found);
 
     let updatedCode = '';
     let lastIndex = 0;
@@ -146,7 +137,7 @@ export let replaceUsedButNotDeclaredVariables = (bnode: BNode, code: string) => 
 
         // Is in one of these contexts?
         // TODO: make this dynamic. set by the developer.
-        for (let obj of [$EACH, $DATA, $PROPS, $STORE, $TOOLS]) {
+        for (let obj of [$EACH, '$uid', $DATA, $PROPS, $STORE, $TOOLS]) {
 
             // Check if the variable is a property of a known context object
             if (ctx[obj] && name in ctx[obj]) {
@@ -162,8 +153,6 @@ export let replaceUsedButNotDeclaredVariables = (bnode: BNode, code: string) => 
             }
         }
     }
-
-    // console.warn('Final code:', updatedCode + code.slice(lastIndex));
 
     return updatedCode + code.slice(lastIndex);
 }

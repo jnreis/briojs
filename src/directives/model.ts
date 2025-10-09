@@ -80,8 +80,6 @@ let nodeModifiers: Map<Node, string[]> = newMap();
  */
 export let hydrateModel = (bnode: BNode, attrName: string, attrValue: string) => {
 
-    let [setHook, playHook] = bnode.hook;
-
     // Reusable strings
     let THE_MODEL_DIRECTIVE = space('the', attrName, DIRECTIVE);
     let REQUIRES_A_REACTIVE_VALUE = space(REQUIRES, 'a reactive', VALUE);
@@ -252,7 +250,7 @@ export let hydrateModel = (bnode: BNode, attrName: string, attrValue: string) =>
 
     // UPDATES THE PROP
     let events: ObjectType = {};
-    setHook(node, attrName, (_: FunctionType) => {
+    let cb = () => {
 
         value = stateValue();
 
@@ -282,7 +280,7 @@ export let hydrateModel = (bnode: BNode, attrName: string, attrValue: string) =>
         // Handle other input types
         // Note: When a single checkbox with a value attribute is unchecked, the getNodeValue function returns the value attribute, if present, instead of false. In this case, the value should be set to false.
         else stateValue(isCheckboxOrRadio && !node[CHECKED] ? false : getNodeValue(node));
-    });
+    };
 
     // Handle composition events
     if (isInput([TEXT,'search','url','tel',EMAIL,'password']) || tag == TEXTAREA) {
@@ -295,7 +293,7 @@ export let hydrateModel = (bnode: BNode, attrName: string, attrValue: string) =>
         ? 'change' 
         : INPUT;
 
-    events[event] = () => playHook(node, attrName, stateValue);
+    events[event] = cb;
 
     // Add the event listeners and save the cleanup functions
     for (let [eventName, fn] of entries(events)) {

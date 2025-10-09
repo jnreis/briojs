@@ -1,3 +1,5 @@
+type DirectiveCallback = (context: any) => Promise<void> | void;
+
 type DirectivesArray = [string | RegExp, HydrateDirective][];
 
 /** The hydration function of a directive */

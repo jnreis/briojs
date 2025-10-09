@@ -36,7 +36,6 @@ type AppObject = {
     /** The directives to be hydrated */
     directives: Directive[],
     bnodes: Map<Node, BNode>,
-    hooks: Hooks,
 
     masks: MasksObject,
     maskTokens: MaskTokensObject,
@@ -47,9 +46,8 @@ type AppObject = {
     ctxArgs: FunctionType,
     exec: (bnode: BNode, exp: string, args?: string, returns?: boolean | "text") => FunctionType,
     cacheExp: CacheExp,
-    evalEffect: (bnode: BNode, attrName: string, attrValue: string, callback: (node: HTMLElement) => HookFunction) => void,
+    evalEffect: (bnode: BNode, attrName: string, attrValue: string, callback: (node: HTMLElement) => DirectiveCallback) => void,
     bnode: [NewBNode, GetBNode],
-    hook: [SetHook, PlayHook],
     // route: [SetRoute, Route],
     // insert: (content: any, where: "outer" | "inner" | "text" | "before" | "first" | "last" | "after", target: HTMLElement | string, options?: InsertOptions) => Promise<any>,
 
@@ -105,7 +103,6 @@ type BrioTools = {
 
 /** The global $set object */
 type SetObject = {
-    hook: SetHook,
     route: SetRoute,
     router: SetRouter,
     routeRule: SetAsset,
@@ -194,7 +191,7 @@ type BNode = {
     cFns: FunctionType[],
 
     /** Skip the hydration process */
-    skip?: boolean,
+    skip: number,
 
     app: AppObject,
 } & DomObject & AppObject;
@@ -222,13 +219,6 @@ type ContextFunction = (contextDestructured: Context) => (...args: any[]) => any
 
 type NewVnode = (el: HTMLElement, ctxNode?: Node) => BNode;
 type GetVnode = (node: Node) => BNode | undefined;
-
-/** The tools passed to the hydration function of a directive */
-type HydrationTools = {
-    evalEffect: (bnode: BNode, attrName: string, attrValue: string, callback: (node: HTMLElement) => HookFunction) => void,
-    bnode: [NewVnode, GetVnode],
-    hooks: [SetHook, PlayHook],
-};
 
 /** The object that holds the saved templates */
 type TemplateObject = {

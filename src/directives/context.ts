@@ -1,8 +1,7 @@
-import { newFn } from '../tools/evaluation';
 import { logError, wait } from '../tools';
 import { getDescriptor, setProp } from '../tools/object';
 import { getType, isElementNode, isObject } from '../tools/typeCheck';
-import { DIRECTIVE, OBJECT, SKIP, REQUIRES_ACTION_TYPE, PROPS, DATA, B_DATA, $, CTX_ARGS, B_, B_SAVE, B_IGNORE, TEMPLATE, CONTENT, NODES } from '../tools/constants';
+import { DIRECTIVE, OBJECT, SKIP, REQUIRES_ACTION_TYPE, PROPS, DATA, B_DATA, $, B_, B_SAVE, B_IGNORE, TEMPLATE, CONTENT, NODES, PARENT } from '../tools/constants';
 import { arrayAdd, each } from '../tools/array';
 import { getTagName, queryAll } from '../tools/dom';
 import { hydrateRefs } from './refs';
@@ -20,50 +19,45 @@ import { delState } from '../reactivity';
 
 export let hydrateContext = async (bnode: BNode, attrName: string, attrValue: string) => {
 
-    let [setHook, playHook] = bnode.hook;
-
     let isData = attrName == B_DATA;
     let ctxType = isData ? DATA : PROPS;
 
     let assetObject = bnode[ctxType];
+
+    let parent = bnode[PARENT];
 
     let ctxFn: FunctionType = !attrValue
         // Attribute value returns an empty object if not provided
         ? () => ({})
 
         // Get the asset or evaluate the attribute value
-        : assetObject[attrValue] || newFn(bnode[CTX_ARGS](), attrValue);
+        : assetObject[attrValue] || bnode.exec(parent || bnode, attrValue);
 
     let context = bnode.ctx[$ + ctxType];
 
-    setHook(bnode.el, attrName, async () => {
+    // Evaluate the new context
+    let newContext: ObjectType = await ctxFn(parent?.ctx || bnode.ctx);
 
-        // Evaluate the new context
-        let newContext: ObjectType = await ctxFn(bnode.ctx);
+    // Check if newContext is an object. If not, log an error
+    if (!isObject(newContext)) {
+        bnode[SKIP] = 3; // Skip the element and its children
+        return logError(REQUIRES_ACTION_TYPE(DIRECTIVE, attrName, 'an ' + OBJECT, getType(newContext)));
+    }
 
-        // Check if newContext is an object. If not, log an error
-        if (!isObject(newContext)) {
-            bnode[SKIP] = true;
-            return logError(REQUIRES_ACTION_TYPE(DIRECTIVE, attrName, 'an ' + OBJECT, getType(newContext)));
-        }
+    // Set the new context
+    for (let key in newContext) setProp(context, key, newContext[key], getDescriptor(newContext, key));
 
-        // Set the new context
-        for (let key in newContext) setProp(context, key, newContext[key], getDescriptor(newContext, key));
+    // If the context is a data context, hydrate refs and slots
+    if (isData) {
+        await updateDataLevelContext(bnode);
+    }
 
-        // If the context is a data context, hydrate refs and slots
-        if (isData) {
-            await updateDataLevelContext(bnode);
-        }
-
-        // Cleanup the data context when the bnode is removed
-        saveCleanup(bnode, () => {
-            wait(() => {
-                delState(bnode.ctx[$ + ctxType]);
-            });
+    // Cleanup the data context when the bnode is removed
+    saveCleanup(bnode, () => {
+        wait(() => {
+            delState(bnode.ctx[$ + ctxType]);
         });
     });
-
-    await playHook(bnode.el, attrName, context);
 }
 
 export let propsDirective: Directive = [B_+PROPS, hydrateContext];
@@ -104,28 +98,20 @@ let deepQuery = (selector: string, root: Node) => {
 
 let dataLevelContext = async (bnode: BNode, attrName: string, logic: FunctionType) => {
 
-    let [setHook, playHook] = bnode.hook;
-
     let $el = bnode.el;
 
-    setHook($el, attrName, () => {
+    let els: HTMLElement[] = [];
 
-        let els: HTMLElement[] = [];
+    each(bnode[NODES] || [$el], el => {
+        if (isElementNode(el)) {
+            // Query all refs or slots not inside another context
+            let query = deepQuery(dataLevelSelector(attrName), el);
 
-        each(bnode[NODES] || [$el], el => {
-            if (isElementNode(el)) {
-                // Query all refs or slots not inside another context
-                let query = deepQuery(dataLevelSelector(attrName), el);
-
-                arrayAdd(els, el, ...query);
-            }
-        });
-
-        each(els, el => logic(bnode, attrName, el));
+            arrayAdd(els, el, ...query);
+        }
     });
 
-    // Play the hook
-    await playHook($el, attrName);
+    each(els, el => logic(bnode, attrName, el));
 }
 
 export let updateDataLevelContext = async (bnode: BNode) => {

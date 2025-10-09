@@ -62,8 +62,6 @@ export let hydrateMask = (bnode: BNode, attrName: string, attrValue: string) => 
     let $el: any = bnode.el;
     let masks = bnode[MASKS];
 
-    let [setHook, playHook] = bnode.hook;
-
     // If the element has no value or selectionStart properties, return
     if (!(VALUE in $el && SELECTION_START in $el))
         return logError('the', attrName, DIRECTIVE, CAN_ONLY_BE_USED_ON, TEXTAREA, ELEMENT + 's and textual', INPUT, 'types (text, email, etc.).');
@@ -85,7 +83,7 @@ export let hydrateMask = (bnode: BNode, attrName: string, attrValue: string) => 
         [OUTPUT]: '',
     };
 
-    setHook($el, attrName, () => {
+    let _mask = () => {
 
         // Get the current value of the input
         $mask[VALUE] = $el[VALUE];
@@ -114,15 +112,14 @@ export let hydrateMask = (bnode: BNode, attrName: string, attrValue: string) => 
             emit($el, MASK, $mask);
         }
 
-    });
+    };
 
-    wait(() => playHook($el, attrName), 7);
-
-    // This listener will `capture` and process the input value before any other listeners.
-    let cleanup = listen($el, INPUT, () => playHook($el, attrName), true);
+    // Initial mask application
+    wait(_mask, 7);
 
     // Save cleanup function
-    saveCleanup(bnode, cleanup);
+    // This listener will `capture` and process the input value before any other listeners.
+    saveCleanup(bnode, listen($el, INPUT, _mask, true));
 }
 
 // /** Mask Item: [character, quantifier, isToken, isOptional, isMultiple] */

@@ -1,5 +1,5 @@
 import { size, slice } from ".";
-import { arrayAdd, map } from "./array";
+import { arrayAdd, map, some } from "./array";
 import { $DATA, $EACH, $PROPS, $STORE, $TOOLS, CLASS, DELETE, INDEX, SUPER } from "./constants";
 import { newSet } from "./object";
 import { match, replace, split, trim } from "./string";
@@ -11,8 +11,6 @@ export const reserved = newSet([
     SUPER, "switch", "this", "throw", "try", "typeof", "var", "void", "while", "with", "yield", "enum",
     "await", "implements", "package", "protected", "interface", "private", "public", "static", "null", "true", "false",
 ]) as Set<string>;
-
-console.log('reserved keywords:', Array.from(reserved).join(', '));
 
 export let variableNameRegex = /^[a-z_$][\w$]*$/i;
 
@@ -91,8 +89,10 @@ export let findUsedButNotDeclaredVariables = (code: string) => {
     let objectKeys = newSet() as Set<string>;
     let objectKeyRegex = /\b([a-z_$][\w$]*)\s*:/gi;
     while ((matched = objectKeyRegex.exec(code)) !== null) {
-        // Add the object key to the set
-        objectKeys.add(matched[1]);
+        // Add the object key to the set, if not in an exclusion range
+        if (!inRange(exclusionRanges, matched[INDEX])) {
+            objectKeys.add(matched[1]);
+        }
     }
 
     // 4. Final variable extraction
@@ -106,7 +106,7 @@ export let findUsedButNotDeclaredVariables = (code: string) => {
             declared.has(name) || 
             before === "." || 
             objectKeys.has(name) ||
-            exclusionRanges.some(([start, end]) => index >= start && index < end)
+            inRange(exclusionRanges, index)
         ) continue;
 
         // Add the found variable to the set
@@ -122,6 +122,9 @@ export let findUsedButNotDeclaredVariables = (code: string) => {
 
     return found;
 }
+
+export let inRange = (ranges: [number, number][], index: number) => 
+    some(ranges, ([start, end]) => index >= start && index < end);
 
 export let replaceUsedButNotDeclaredVariables = (bnode: BNode, code: string) => {
 

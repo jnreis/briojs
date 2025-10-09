@@ -8,16 +8,12 @@ import { expToFn } from "../tools/evaluation";
 
 export let hydrateEffect = (bnode: BNode, attrName: string, attrValue: string) => {
 
-    /**
-     * The `b-effect` directive requires the following function signature:
-     * ($controls) => void
-     */
-    attrValue = expToFn(attrValue, '$controls', false);
+    attrValue = expToFn(attrValue, '', false);
 
     // Evaluate the attribute value as an effect
-    bnode[EVAL_EFFECT](bnode, attrName, attrValue, () => async (call, controls: HookControls) => {
+    bnode[EVAL_EFFECT](bnode, attrName, attrValue, () => async (call) => {
         // Call the expression
-        await call(controls);
+        await call();
     });
 
 }

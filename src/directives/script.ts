@@ -17,9 +17,7 @@ export let hydrateScript = async (bnode: BNode, attrName: string, attrValue: str
     let isScript = getTagName(el) == SCRIPT;
 
     // Skip the hydration of the text node of this script element
-    bnode[SKIP] = isScript;
-
-    let [setHook, playHook] = bnode.hook;
+    bnode[SKIP] = 2;
 
     // Get the asset or evaluate the attribute value
     let scripts: any = attrValue ? assetObject[attrValue] || bnode.exec(bnode, attrValue)() : [];
@@ -37,49 +35,42 @@ export let hydrateScript = async (bnode: BNode, attrName: string, attrValue: str
      */
     saveToParent(bnode, el);
 
-    // Set the hook
-    setHook(el, attrName, async () => {
+    // Add this script element to the list of scripts
+    if (isScript) {
 
-        // Add this script element to the list of scripts
-        if (isScript) {
+        // Get the src attribute, if it exists
+        let src = getAttr(el, 'src');
 
-            // Get the src attribute, if it exists
-            let src = getAttr(el, 'src');
-    
-            // Mark the script as loaded, if it has a src link
-            if (src) loadedScripts.add(src);
+        // Mark the script as loaded, if it has a src link
+        if (src) loadedScripts.add(src);
 
-            // Get the content of the script element
-            let content = src ? await http.get(src) : getNodeContent(el);
+        // Get the content of the script element
+        let content = src ? await http.get(src) : getNodeContent(el);
 
-            // Include code from this script element, if any
-            if (content) arrayAdd(scripts, sanitizeAttrValue(content));
+        // Include code from this script element, if any
+        if (content) arrayAdd(scripts, sanitizeAttrValue(content));
 
-            // Remove this script element
-            removeNode(el);
+        // Remove this script element
+        removeNode(el);
+    }
+
+    for (let script of scripts) {
+        // Get the script function/string
+        let fn = script;
+
+        // Evaluate the script
+        if (isString(fn)) {
+            let scriptFn = isStringFunction(fn);
+            // Scripts can access context properties directly
+            // e.g. `console.log(name)` instead of `console.log($data.name)`
+            fn = newFn(bnode[CTX_ARGS](), replaceUsedButNotDeclaredVariables(bnode, fn), scriptFn);
+            if (scriptFn) fn = fn(bnode.ctx);
         }
 
-        for (let script of scripts) {
-            // Get the script function/string
-            let fn = script;
-
-            // Evaluate the script
-            if (isString(fn)) {
-                let scriptFn = isStringFunction(fn);
-                // Scripts can access context properties directly
-                // e.g. `console.log(name)` instead of `console.log($data.name)`
-                fn = newFn(bnode[CTX_ARGS](), replaceUsedButNotDeclaredVariables(bnode, fn), scriptFn);
-                if (scriptFn) fn = fn(bnode.ctx);
-            }
-
-            // Execute the script
-            if (isFunction(fn))
-                await fn(bnode.ctx);
-        };
-    });
-
-    // Play the hook
-    await playHook(el, attrName);
+        // Execute the script
+        if (isFunction(fn))
+            await fn(bnode.ctx);
+    }
 }
 
 export let scriptDirective: Directive = [B_+SCRIPT, hydrateScript];

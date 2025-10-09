@@ -17,7 +17,7 @@ export let hydrateIf = (bnode: BNode, attrName: string, attrValue: string) => {
     insertNodes(el, REPLACE_WITH, bnode.ph);
 
     // Interrupt the hydration process
-    bnode[SKIP] = true;
+    bnode[SKIP] = 3;
 
     // Ensure the element will go through the cleanup process
     saveToParent(bnode, el);

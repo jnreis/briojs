@@ -18,36 +18,27 @@ export let hydrateTemplate = async (bnode: BNode, attrName: string, attrValue: s
         el[INNER_HTML] = '';
     }
 
-    let [setHook, playHook] = bnode.hook;
+    // Hydrate HTML content
+    if (isString(template)) {
 
-    // Set the hook
-    setHook(el, attrName, async () => {
+        // Insert and hydrate the template content
+        await bnode[INSERT](trim(template), BEFORE, el, {
+            then: (insertedNodes: Node[]) => {
+                // The nodes that were inserted
+                bnode[NODES] = insertedNodes;
+            }
+        });
 
-        // Hydrate HTML content
-        if (isString(template)) {
+        // Ensure the element will go through the cleanup process
+        saveToParent(bnode, el);
 
-            // Insert and hydrate the template content
-            await bnode[INSERT](trim(template), BEFORE, el, {
-                then: (insertedNodes: Node[]) => {
-                    // The nodes that were inserted
-                    bnode[NODES] = insertedNodes;
-                }
-            });
+        // Remove the wrapper element
+        removeNode(el);
 
-            // Ensure the element will go through the cleanup process
-            saveToParent(bnode, el);
-
-            // Remove the wrapper element
-            removeNode(el);
-
-            // Update the $refs and $slots objects
-            await updateDataLevelContext(bnode);
-        }
-        else logWarn(attrName + ':', INVALID__$CAP, VALUE, '\n', template);
-    });
-
-    // Play the hook
-    await playHook(el, attrName);
+        // Update the $refs and $slots objects
+        await updateDataLevelContext(bnode);
+    }
+    else logWarn(attrName + ':', INVALID__$CAP, VALUE, '\n', template);
 }
 
 export let templateDirective: Directive = [B_TEMPLATE, hydrateTemplate];

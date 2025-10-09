@@ -8,10 +8,9 @@ import { arrayAdd, each, join, map } from "./tools/array";
 import { TEXT, TEXT_CONTENT, ATTR, DELETE, INNER_HTML, PARENT, HYDRATE, $PROPS, NULL, B_DATA, SCRIPT, ELEMENT, NOT_FOUND, $DATA, $EACH, STYLE, B_, TEMPLATE, UNDEFINED, OPTIONS, ROUTE, CTX_ARGS, EVAL_EFFECT, NEW_LINE, BRIO, STORAGE, STATE, PROPS, DEHYDRATE, INSERT, CACHE_EXP, NUMBER, CLOSEST, DIRECTIVES, MASKS, MASK_TOKENS, DATA, MASK_TOKEN, ROUTE_RULE, B_SAVE, OUTER_HTML, $STORE, $TOOLS, SKIP, CONTENT, NODES, B_IF, MESSAGE, VALIDATE, CLONE } from "./tools/constants";
 import { walk, getAttr, delAttr, getParent, queryAll, getTagName, getNodeContent, removeNode, eachAttribute, query, emit, listen, href, childNodes, setAttr } from "./tools/dom";
 import { expToFn, newFn } from "./tools/evaluation";
-import { newHooks } from "./tools/hook";
 import { countKeys, hasProp, getProp, getKeys, newMap, setProp, setObjectKeys, W, newSet, S, sync, clone } from "./tools/object";
-import { isStringNumeric, replace, replaceAll, split, startsWith, test, trim, wrapInBackticks } from "./tools/string";
-import { isTextNode, isElementNode, isNull, isRegExp, isUndefined, isString, isNode, isFunction } from "./tools/typeCheck";
+import { isStringNumeric, replace, replaceAll, split, startsWith, test, trim } from "./tools/string";
+import { isTextNode, isElementNode, isNull, isRegExp, isString, isNode, isFunction } from "./tools/typeCheck";
 import { validate } from "./methods/validate";
 
 // TODO: some notes that may be useful when writing documentation
@@ -77,6 +76,15 @@ export let newApp = (): AppObject => {
                 /** Cleanup functions */
                 cFns: [],
 
+                /**
+                 * Skip the hydration process
+                 * - 0: not hydrated (default)
+                 * - 1: skip self
+                 * - 2: skip children
+                 * - 3: skip self and children
+                 */
+                [SKIP]: 0,
+
                 ...$dom,
                 ...app,
             };
@@ -98,23 +106,19 @@ export let newApp = (): AppObject => {
     }
 
     /** Evaluate the attribute as an effect */
-    let evalEffect = (bnode: BNode, attrName: string, attrValue: string, callback: (node: HTMLElement) => HookFunction) => {
+    let evalEffect = (bnode: BNode, _attrName: string, attrValue: string, callback: (node: HTMLElement) => DirectiveCallback) => {
 
         let $el = bnode.el;
 
-        /**
-         * Set the directive hook. Priority 0. Other hooks can be added.
-         * - Hooks with higher priority will be called first.
-         * - Hooks with lower priority (negative numbers) will be called after.
-         */
-        setHook($el, attrName, callback($el));
+        // Get the directive callback
+        let cb = callback($el);
 
         // The context. Which most likely refers to reactive properties.
         let context = exec(bnode, attrValue);
 
         // Create a new effect, and save the cleanup function.
         // This sets up the reactivity.
-        saveCleanup(bnode, effect(() => playHook($el, attrName, context)));
+        saveCleanup(bnode, effect(() => cb(context)));
     }
 
     /**
@@ -220,10 +224,10 @@ export let newApp = (): AppObject => {
             let bnode = newBNode(node as any, ctxNode);
 
             // Evaluate the expression
-            let call = exec(bnode, `$el.${TEXT_CONTENT}=` + wrapInBackticks(sanitizedText), '', false);
+            let value = exec(bnode, sanitizedText, '', TEXT);
 
             // Save the cleanup function
-            saveCleanup(bnode, effect(call));
+            saveCleanup(bnode, effect(() => node[TEXT_CONTENT] = value()));
 
             // Save attribute
             saveAttr(bnode, TEXT, text);
@@ -242,8 +246,7 @@ export let newApp = (): AppObject => {
         let bnode = newBNode(node, ctxNode);
 
         // Skip hydrated elements
-        // Note: Hydrated elements have the skip property
-        if (!isUndefined(getSkip(bnode))) return true;
+        if (isSkip(bnode, 3)) return true;
 
         /**
          * Check the attributes against the directives.
@@ -281,8 +284,8 @@ export let newApp = (): AppObject => {
             // Hydrate the attributes for the directive
             for (let [attrName, attrValue] of hydrateAttributes) {
 
-                // Stop hydrating the element
-                if (getSkip(bnode)) break;
+                // Stop hydrating the directives of this element
+                if (isSkip(bnode, 1) || isSkip(bnode, 3)) break;
 
                 // Save attribute
                 saveAttr(bnode, attrName, attrValue);
@@ -291,21 +294,21 @@ export let newApp = (): AppObject => {
                 await hydrationFn(bnode, attrName, sanitizeAttrValue(attrValue));
             }
 
-            // Stop hydrating the element
-            if (getSkip(bnode)) break;
+            // Stop hydrating the directives of this element
+            if (isSkip(bnode, 1) || isSkip(bnode, 3)) break;
         }
 
-        // Mark the element as hydrated by setting the skip property
-        if (isUndefined(getSkip(bnode)))
-            bnode[SKIP] = false;
+        // Mark the directives of this element as hydrated
+        if (isSkip(bnode, 0))
+            bnode[SKIP] = 1;
 
         // Remove the bnode if no attributes were hydrated and no context node was provided
         // Note: The bnode is not removed if it has a context node because it may be used by its children
         if (!countKeys(bnode[ATTR]) && !ctxNode)
             bnodes[DELETE](node);
 
-        // Hydrate the children, if the element should not be skipped
-        return !getSkip(bnode);
+        // Hydrate the children, if not skipped
+        return !isSkip(bnode, 2) && !isSkip(bnode, 3);
     }
 
     /**
@@ -412,7 +415,6 @@ export let newApp = (): AppObject => {
     }
 
     let bnodes: Map<Node, BNode> = newMap();
-    let hooks: Hooks = newMap();
     let directives: Directive[] = [];
     let template: CacheAssetObject = {};
     let routes: RoutesObject = {};
@@ -446,9 +448,6 @@ export let newApp = (): AppObject => {
         $cleanup: (bnode: BNode) => (fn: FunctionType) => saveCleanup(bnode, fn),
     };
 
-    /** Hook methods */
-    let [setHook, playHook] = newHooks(hooks);
-
     /** The $insert method of this app */
     let insert = newInsert(hydrate, dehydrate, template);
 
@@ -459,7 +458,6 @@ export let newApp = (): AppObject => {
     if (!settings[ROUTE]) setRouter(route);
 
     let $set: SetObject = {
-        hook: setHook,
         [ROUTE]: setRoute,
         router: setRouter,
         [ROUTE_RULE]: setAsset(ROUTE_RULE+'s' as 'routeRules'),
@@ -526,7 +524,6 @@ export let newApp = (): AppObject => {
         lcFns: localContextFns,
         [DIRECTIVES]: directives,
         bnodes,
-        hooks,
 
         [MASKS]: {},
         [MASK_TOKENS]: {},
@@ -543,7 +540,6 @@ export let newApp = (): AppObject => {
         [CTX_ARGS]: updateContextArgs,
         [EVAL_EFFECT]: evalEffect,
         bnode: [newBNode, getBNode],
-        hook: [setHook, playHook],
         // insert,
         // route: [SetRoute, Route],
     };
@@ -554,8 +550,8 @@ export let newApp = (): AppObject => {
     return app;
 }
 
-/** Get the skip property from the bnode */
-let getSkip = (bnode: BNode) => bnode.skip;
+/** Check the hydration level to skip */
+let isSkip = (bnode: BNode, status: number) => bnode[SKIP] == status;
 
 /** Save the cleanup function to the bnode */
 export let saveCleanup = (bnode: BNode, cleanupFn: FunctionType) => {

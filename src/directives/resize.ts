@@ -13,8 +13,6 @@ import { split } from "../tools/string";
  */
 export let hydrateResize = (bnode: BNode, attrName: string, attrValue: string) => {
 
-    let [setHook, playHook] = bnode.hook;
-
     let _attrName = sliceAttrName(attrName, 5); // 5: b-on-, 3: on-
 
     let [_directiveName] = split(_attrName, '-');
@@ -31,7 +29,7 @@ export let hydrateResize = (bnode: BNode, attrName: string, attrValue: string) =
     let expFn = bnode.exec(bnode, attrValue, '$size', false);
 
     // Set the directive hook
-    setHook($el, attrName, debounce(expFn, options[DEBOUNCE] || 100));
+    let cb = debounce(expFn, options[DEBOUNCE] || 100);
 
     let observer = new ResizeObserver(entries => {
 
@@ -41,7 +39,7 @@ export let hydrateResize = (bnode: BNode, attrName: string, attrValue: string) =
          * Execute the expression
          * The expression will receive the width and height of the element
          */
-        playHook($el, attrName, [ box.inlineSize, box.blockSize ]);
+        cb([ box.inlineSize, box.blockSize ]);
     });
 
     // Observe the element

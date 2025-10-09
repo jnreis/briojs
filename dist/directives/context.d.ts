@@ -5,7 +5,7 @@
  *   - contextName: b-use="contextName"
  *   - array of context names: b-use="['context1', 'context2']"
  */
-export declare let hydrateContext: (bnode: BNode, attrName: string, attrValue: string) => Promise<void>;
+export declare let hydrateContext: (bnode: BNode, attrName: string, attrValue: string) => Promise<any>;
 export declare let propsDirective: Directive;
 export declare let dataDirective: Directive;
 export declare let updateDataLevelContext: (bnode: BNode) => Promise<void>;

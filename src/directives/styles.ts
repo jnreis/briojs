@@ -13,8 +13,6 @@ export let hydrateStyle = (bnode: BNode, attrName: string, attrValue: string) =>
     // Skip style elements
     if (attrValue && getTagName(el) != STYLE) {
 
-        let [setHook, playHook] = bnode.hook;
-
         let assetObject = bnode[STYLE];
 
         // Get the asset or evaluate the attribute value
@@ -29,32 +27,25 @@ export let hydrateStyle = (bnode: BNode, attrName: string, attrValue: string) =>
         // Create a unique prefix for the CSS selectors
         let prefix = uid();
 
-        // Set the hook
-        setHook(el, attrName, () => {
+        // Add the selector to the element
+        setClass(el, prefix);
 
-            // Add the selector to the element
-            setClass(el, prefix);
+        // Create a style element
+        let style = createElement(STYLE);
 
-            // Create a style element
-            let style = createElement(STYLE);
+        // Set the style content
+        style[TEXT_CONTENT] = prefixCssSelectors(join(styles, NEW_LINE), '.'+prefix);
 
-            // Set the style content
-            style[TEXT_CONTENT] = prefixCssSelectors(join(styles, NEW_LINE), '.'+prefix);
+        // Hydrate the style element
+        bnode[HYDRATE](style, el);
 
-            // Hydrate the style element
-            bnode[HYDRATE](style, el);
+        // Insert the style element after the current element
+        insertNodes(el, AFTER, style);
 
-            // Insert the style element after the current element
-            insertNodes(el, AFTER, style);
-
-            // Remove the style element
-            saveCleanup(bnode, () => {
-                bnode[DEHYDRATE](style);
-            });
+        // Remove the style element
+        saveCleanup(bnode, () => {
+            bnode[DEHYDRATE](style);
         });
-
-        // Play the hook
-        playHook(el, attrName, prefix);
     }
 }
 
@@ -75,7 +66,6 @@ let prefixCssSelectors = (css: string, prefix: string) => {
 
     // Replace template items with a placeholder
     // IMPORTANT: this is necessary to avoid conflicts with the template items
-    // TODO: this code may need replaceUsedButNotDeclaredVariables, to directly refence keys in the $each and $data contexts
     while (test(css, templateRegex)) {
         let value = match(css, templateRegex);
         if (value) {

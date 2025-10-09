@@ -14,8 +14,6 @@ import { DISCONNECT, OBSERVE, ONCE, OPTIONS, DEBOUNCE, EXIT, ON_ENTER, B_, ON_EX
  * @option `threshold`  Either a single number or an array of numbers which indicate at what percentage of the target's visibility the observer's callback should be
  */
 export let hydrateIntersection = (bnode: BNode, attrName: string, attrValue: string) => {
-
-    let [setHook, playHook] = bnode.hook;
     
     let _attrName = sliceAttrName(attrName, 5); // 5: b-on-, 3: on-
     
@@ -29,16 +27,16 @@ export let hydrateIntersection = (bnode: BNode, attrName: string, attrValue: str
     // Evaluate the expression
     let expFn = bnode.exec(bnode, attrValue, '$entry', false);
 
-    // Set the directive hook
-    setHook($el, attrName, debounce(expFn, options[DEBOUNCE] || 100));
+    // Debounce the expression function
+    let debouncedExpFn = debounce(expFn, options[DEBOUNCE] || 100);
 
     let observer = new IntersectionObserver(entries => {
-        each(entries, async (entry: IntersectionObserverEntry) => {
+        each(entries, (entry: IntersectionObserverEntry) => {
             // Ignore if intersecting and the directive is `exit`
             if (entry.isIntersecting == (directiveName == EXIT)) return;
 
             // Execute the expression, if the event handler is a function
-            await playHook($el, attrName, entry);
+            debouncedExpFn(entry);
 
             // If the directive has the `once` option, disconnect the observer
             if (options[ONCE]) observer[DISCONNECT]();

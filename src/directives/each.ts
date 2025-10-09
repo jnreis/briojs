@@ -14,10 +14,9 @@ export let hydrateEach = (bnode: BNode, attrName: string, attrValue: string) => 
 
     let $el = bnode.el;
     let [newBNode, getBNode] = bnode.bnode;
-    let [setHook, playHook] = bnode.hook;
 
     // Skip the node
-    bnode[SKIP] = true;
+    bnode[SKIP] = 3;
 
     // Split the alias and the prop expression
     let [alias, propExp] = map(split(attrValue, ' in '), trim);
@@ -82,15 +81,8 @@ export let hydrateEach = (bnode: BNode, attrName: string, attrValue: string) => 
 
     type EachContext = [number, any];
 
-    /** b-each-create */
-    let ATTR_NAME_CREATE = attrName + '-' + CREATE;
-    /** b-each-update */
-    let ATTR_NAME_UPDATE = attrName + '-' + UPDATE;
-    /** b-each-delete */
-    let ATTR_NAME_DELETE = attrName + '-' + DELETE;
-
     // Mount a new item
-    setHook($el, ATTR_NAME_CREATE, ([i, v]: EachContext) => {
+    let _create = ([i, v]: EachContext) => {
 
         // Create a new node
         let _el = cloneNode($el) as HTMLElement;
@@ -140,10 +132,10 @@ export let hydrateEach = (bnode: BNode, attrName: string, attrValue: string) => 
 
         // Hydrate the new node
         bnode[HYDRATE](_el, $el);
-    });
+    };
 
     // Update an existing item
-    setHook($el, ATTR_NAME_UPDATE, ([i, v]: EachContext) => {
+    let _update = ([i, v]: EachContext) => {
 
         // Get the existing node
         let mountedItem = mountedItems[i];
@@ -157,10 +149,10 @@ export let hydrateEach = (bnode: BNode, attrName: string, attrValue: string) => 
             _each[index] = i;
             mountedItem[1] = i;
         }
-    });
+    };
 
     // Unmount an existing item
-    setHook($el, ATTR_NAME_DELETE, ([i, _]: EachContext) => {
+    let _delete = ([i, _]: EachContext) => {
 
         // Get the existing node
         let [_el] = mountedItems[i];
@@ -171,12 +163,12 @@ export let hydrateEach = (bnode: BNode, attrName: string, attrValue: string) => 
 
         // Remove the node from the mountedItems set
         delProp(mountedItems, i);
-    });
+    };
 
     let operations: ObjectType = {
-        [CREATE]: (context: any) => playHook($el, ATTR_NAME_CREATE, context),
-        [UPDATE]: (context: any) => playHook($el, ATTR_NAME_UPDATE, context),
-        [DELETE]: (context: any) => playHook($el, ATTR_NAME_DELETE, context),
+        [CREATE]: _create,
+        [UPDATE]: _update,
+        [DELETE]: _delete,
     }
 
     // Initialize all the items

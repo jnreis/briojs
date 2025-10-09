@@ -57,8 +57,6 @@ let keysMap: ObjectType = {
  */
 export let hydrateOn = (bnode: BNode, attrName: string, attrValue: string) => {
 
-    let [setHook, playHook] = bnode.hook;
-
     let _attrName = sliceAttrName(attrName, 5); // 5: b-on-, 3: on-
 
     let [event, ...booleanOptions] = split(_attrName, '-');
@@ -92,9 +90,6 @@ export let hydrateOn = (bnode: BNode, attrName: string, attrValue: string) => {
 
     // Wrap the function with throttle
     if (THROTTLE in options) fn = throttle(fn, options[THROTTLE]);
-
-    // Set the hook
-    setHook($el, attrName, fn);
 
     // The target element
     if (options[OUTSIDE] || options[DOCUMENT]) target = D as any;
@@ -197,7 +192,7 @@ export let hydrateOn = (bnode: BNode, attrName: string, attrValue: string) => {
         }
 
         // Run the function
-        playHook($el, attrName, e);
+        fn(e);
     }
 
     // Create listener and save the cleanup function

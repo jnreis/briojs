@@ -8,8 +8,6 @@ setup({
         // Load all directives
         setAllDirectives(app);
 
-        // each(queryAll(`[b-${HYDRATE}]`), el => app.gc.$dom[HYDRATE](el));
-
         return app;
     }
 });

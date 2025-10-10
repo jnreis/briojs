@@ -7,7 +7,7 @@
     </head>
     <body b-props="{level1: 1}">
 
-        <script b-script b-effect="console.log('level1 changed:', level1)">
+        <script b-script>
             () => {
                 let v = validate($props);
                 v.prop('level1', [
@@ -51,12 +51,6 @@
             }
         </script>
 
-        <script b-script>
-            () => {
-                console.log('Second script executed');
-            }
-        </script>
-
         <!-- <input id="input" type="text" b-model="$props.level1" class="mb-1"> -->
 
         <div b-ref="square" b-show="level1" class="square" b-transition="['.button-in-start', '.button-out-start']"></div>
@@ -64,8 +58,7 @@
         <button class="button" on-click="level1 = !level1">Toggle Level 1 (b-if)</button>
 
         <div b-if="level1" b-data="{dshow: true, ctx: 'context' }" b-each="n in 2">
-            <h4>NOTE: the b-if bellow is not working</h4>
-            <div b-style="bg-light-gray" class="someclass" b-if="dshow" b-props="{gshow: () => dshow, ushow: (v) => dshow = v}" b-data="{show: true, e2: n, pd: '1rem'}" b-each="n in 2" b-uid="['field1']" b-effect="console.log('$data', $data, '$props', $props)">
+            <div b-style="bg-light-gray" class="someclass" b-if="dshow" b-props="{gshow: () => dshow, ushow: (v) => dshow = v}" b-data="{show: true, e2: n, pd: '1rem'}" b-each="n in 2" b-uid="['field1']">
                 <strong>{{n}} {{field1}}</strong>
                 <br>
                 <p>outer b-data dshow : {{gshow()}}</p>

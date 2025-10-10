@@ -175,7 +175,6 @@ export let B_HTML = B_+HTML as 'b-html';
 export let B_TEMPLATE = B_+TEMPLATE as 'b-template';
 export let B_TEXT = B_+TEXT as 'b-text';
 
-export let CACHE_EXP = CACHE + 'Exp' as 'cacheExp';
 export let CLASS_LIST = CLASS + 'List' as 'classList';
 export let CLONE_NODE = CLONE + NODE__$CAP as 'cloneNode';
 export let COMPOSING = COMPOSI + 'ng' as 'composing';

@@ -33,7 +33,7 @@ export let hydrateContext = async (bnode: BNode, attrName: string, attrValue: st
         // Get the asset or evaluate the attribute value
         : assetObject[attrValue] || bnode.exec(parent || bnode, attrValue);
 
-    let context = bnode.ctx[$ + ctxType];
+    let context = bnode.ctx[$ + ctxType as keyof Context];
 
     // Evaluate the new context
     let newContext: ObjectType = await ctxFn(parent?.ctx || bnode.ctx);
@@ -55,7 +55,7 @@ export let hydrateContext = async (bnode: BNode, attrName: string, attrValue: st
     // Cleanup the data context when the bnode is removed
     saveCleanup(bnode, () => {
         wait(() => {
-            delState(bnode.ctx[$ + ctxType]);
+            delState(bnode.ctx[$ + ctxType as keyof Context]);
         });
     });
 }

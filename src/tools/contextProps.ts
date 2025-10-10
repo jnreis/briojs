@@ -141,8 +141,7 @@ export let replaceUsedButNotDeclaredVariables = (bnode: BNode, code: string) => 
         if (name in ctx) continue;
 
         // Is in one of these contexts?
-        // TODO: make this dynamic. set by the developer.
-        for (let obj of [$EACH, '$uid', $DATA, $PROPS, $STORE, $TOOLS]) {
+        for (let obj of [$EACH, '$uid', $DATA, $PROPS, $STORE, $TOOLS] as (keyof Context)[]) {
 
             // Check if the variable is a property of a known context object
             if (ctx[obj] && name in ctx[obj]) {

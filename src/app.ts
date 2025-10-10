@@ -5,7 +5,7 @@ import { replaceUsedButNotDeclaredVariables } from "./tools/contextProps";
 import { effect, state, storageEvent, watch } from "./reactivity";
 import { has, logError, slice, uid } from "./tools";
 import { arrayAdd, each, join, map } from "./tools/array";
-import { TEXT, TEXT_CONTENT, ATTR, DELETE, INNER_HTML, PARENT, HYDRATE, $PROPS, NULL, B_DATA, SCRIPT, ELEMENT, NOT_FOUND, $DATA, $EACH, STYLE, B_, TEMPLATE, UNDEFINED, OPTIONS, ROUTE, CTX_ARGS, EVAL_EFFECT, NEW_LINE, BRIO, STORAGE, STATE, PROPS, DEHYDRATE, INSERT, CACHE_EXP, NUMBER, CLOSEST, DIRECTIVES, MASKS, MASK_TOKENS, DATA, MASK_TOKEN, ROUTE_RULE, B_SAVE, OUTER_HTML, $STORE, $TOOLS, SKIP, CONTENT, NODES, B_IF, MESSAGE, VALIDATE, CLONE } from "./tools/constants";
+import { TEXT, TEXT_CONTENT, ATTR, DELETE, INNER_HTML, PARENT, HYDRATE, $PROPS, NULL, B_DATA, SCRIPT, $DATA, $EACH, STYLE, B_, TEMPLATE, UNDEFINED, OPTIONS, ROUTE, CTX_ARGS, EVAL_EFFECT, NEW_LINE, BRIO, STORAGE, STATE, PROPS, DEHYDRATE, INSERT, NUMBER, DIRECTIVES, MASKS, MASK_TOKENS, DATA, MASK_TOKEN, ROUTE_RULE, B_SAVE, OUTER_HTML, $STORE, $TOOLS, SKIP, CONTENT, NODES, B_IF, MESSAGE, VALIDATE, CLONE } from "./tools/constants";
 import { walk, getAttr, delAttr, getParent, queryAll, getTagName, getNodeContent, removeNode, eachAttribute, query, emit, listen, href, childNodes, setAttr } from "./tools/dom";
 import { expToFn, newFn } from "./tools/evaluation";
 import { countKeys, hasProp, getProp, getKeys, newMap, setProp, setObjectKeys, W, newSet, S, sync, clone } from "./tools/object";
@@ -477,12 +477,6 @@ export let newApp = (): AppObject => {
         [INSERT]: insert, 
         [ROUTE]: route,
         emit, listen, query, queryAll,
-        /** Get the closest parent element of a target element that has a directive (b-data by default) */
-        [CLOSEST](target: HTMLElement | string, directiveName: string = B_DATA) {
-            let _bnode = closestBNode(query(target)!, bnode => directiveName in bnode[ATTR]);
-            if (!_bnode) logError(CLOSEST+':', ELEMENT, NOT_FOUND);
-            return _bnode?.el;
-        },
         /** Get the local context of an element */
         context: (target: HTMLElement | string) => getBNode(query(target)!)?.ctx,
     }
@@ -507,9 +501,7 @@ export let newApp = (): AppObject => {
     };
 
     // The arguments used by the evaluate function
-    let ctxArgs: string;
-    let updateContextArgs = () => ctxArgs = `{${join(getKeys(globalContext))},${join(getKeys(localContextFns))}}`;
-    updateContextArgs();
+    let ctxArgs = `{${join(getKeys(globalContext))},${join(getKeys(localContextFns))}}`;
 
     /** App context */
     let app: AppObject = {
@@ -521,7 +513,6 @@ export let newApp = (): AppObject => {
         data: {},
 
         // ! HYDRATION
-        lcFns: localContextFns,
         [DIRECTIVES]: directives,
         bnodes,
 
@@ -536,8 +527,7 @@ export let newApp = (): AppObject => {
 
         // ! TOOLS
         exec,
-        [CACHE_EXP]: cacheExp,
-        [CTX_ARGS]: updateContextArgs,
+        [CTX_ARGS]: ctxArgs,
         [EVAL_EFFECT]: evalEffect,
         bnode: [newBNode, getBNode],
         // insert,
@@ -624,7 +614,7 @@ let newContext = (contextName: string, directiveName: string, inherit?: boolean)
     let el = bnode.el as HTMLElement;
 
     // Get the parent context, if any
-    let parentContext = parent ? parent.ctx[contextName] : NULL;
+    let parentContext = parent ? parent.ctx[contextName as keyof Context] : NULL;
 
     let isElement = isElementNode(el);
     let hasDirective = isElement && !isNull(getAttr(el, directiveName));
@@ -647,7 +637,7 @@ let newContext = (contextName: string, directiveName: string, inherit?: boolean)
 }
 
 let newDataLevelContext = (contextName: string) => 
-    (bnode: BNode, parent?: BNode) => !parent || (isElementNode(bnode.el) && !isNull(getAttr(bnode.el as HTMLElement, B_DATA))) ? {} : parent.ctx[contextName];
+    (bnode: BNode, parent?: BNode) => !parent || (isElementNode(bnode.el) && !isNull(getAttr(bnode.el as HTMLElement, B_DATA))) ? {} : parent.ctx[contextName as keyof Context];
 
 /** Sets the primary router */
 let setRouter = (routeFn: FunctionType) => {

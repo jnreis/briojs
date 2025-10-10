@@ -31,8 +31,6 @@ type AppObject = {
     },
 
     // ! HYDRATION
-    /** How the local context should be set up for each element */
-    lcFns: LocalContextFns,
     /** The directives to be hydrated */
     directives: Directive[],
     bnodes: Map<Node, BNode>,
@@ -43,9 +41,8 @@ type AppObject = {
     routes: RoutesObject,
     routeRules: RouteRulesObject,
 
-    ctxArgs: FunctionType,
+    ctxArgs: string,
     exec: (bnode: BNode, exp: string, args?: string, returns?: boolean | "text") => FunctionType,
-    cacheExp: CacheExp,
     evalEffect: (bnode: BNode, attrName: string, attrValue: string, callback: (node: HTMLElement) => DirectiveCallback) => void,
     bnode: [NewBNode, GetBNode],
     // route: [SetRoute, Route],
@@ -141,7 +138,6 @@ type DomObject = {
     listen: (target: HTMLElement | string, eventName: string, callback: (event: Event) => void, options?: boolean | AddEventListenerOptions) => () => void,
     query: (selector: string | Node, root?: Node) => Element | undefined,
     queryAll: (selector: string, root?: Node) => Element[],
-    closest(target: HTMLElement | string, directiveName?: string): HTMLElement | undefined,
     context: (target: HTMLElement | string) => ObjectType | undefined,
 }
 
@@ -192,8 +188,6 @@ type BNode = {
 
     /** Skip the hydration process */
     skip: number,
-
-    app: AppObject,
 } & DomObject & AppObject;
 
 type NewBNode = (el: HTMLElement, ctxNode?: Node) => BNode;
@@ -202,13 +196,13 @@ type GetBNode = (node: Node) => BNode | undefined;
 /** The local context of a bnode */
 type LocalContext = {
     $el: HTMLElement,
-    $refs: ObjectType,
-    $uid: (uidName: string) => string,
-    $cleanup: (fn: FunctionType) => void,
+    $uid: ObjectType,
     $props: ObjectType,
     $data: ObjectType,
+    $refs: ObjectType,
+    $slots: ObjectType,
     $each?: ObjectType,
-    [contextName: string]: any,
+    $cleanup: (fn: FunctionType) => void,
 }
 
 type LocalContextFns = {

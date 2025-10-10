@@ -8,7 +8,7 @@ import { newFn } from "../tools/evaluation";
 import { isStringFunction } from "../tools/string";
 import { isArray, isFunction, isString } from "../tools/typeCheck";
 
-export let hydrateScript = async (bnode: BNode, attrName: string, attrValue: string) => {
+export let hydrateScript = async (bnode: BNode, _attrName: string, attrValue: string) => {
 
     let el = bnode.el as HTMLScriptElement;
 
@@ -63,7 +63,7 @@ export let hydrateScript = async (bnode: BNode, attrName: string, attrValue: str
             let scriptFn = isStringFunction(fn);
             // Scripts can access context properties directly
             // e.g. `console.log(name)` instead of `console.log($data.name)`
-            fn = newFn(bnode[CTX_ARGS](), replaceUsedButNotDeclaredVariables(bnode, fn), scriptFn);
+            fn = newFn(bnode[CTX_ARGS], replaceUsedButNotDeclaredVariables(bnode, fn), scriptFn);
             if (scriptFn) fn = fn(bnode.ctx);
         }
 

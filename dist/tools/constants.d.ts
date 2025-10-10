@@ -141,7 +141,6 @@ export declare let B_EACH: "b-each";
 export declare let B_HTML: "b-html";
 export declare let B_TEMPLATE: "b-template";
 export declare let B_TEXT: "b-text";
-export declare let CACHE_EXP: "cacheExp";
 export declare let CLASS_LIST: "classList";
 export declare let CLONE_NODE: "cloneNode";
 export declare let COMPOSING: "composing";

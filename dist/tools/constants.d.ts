@@ -1,5 +1,6 @@
 export declare let BRIO: 'brio';
 export declare let $: '$';
+export declare let $SLOTS: '$slots';
 export declare let $STORE: '$store';
 export declare let $TOOLS: '$tools';
 export declare let AFTER: 'after';
@@ -136,6 +137,7 @@ export declare let ADD_EVENT_LISTENER: "addEventListener";
 export declare let $DATA: "$data";
 export declare let $EACH: "$each";
 export declare let $PROPS: "$props";
+export declare let $REFS: "$refs";
 export declare let B_DATA: "b-data";
 export declare let B_EACH: "b-each";
 export declare let B_HTML: "b-html";

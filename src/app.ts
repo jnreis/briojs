@@ -5,7 +5,7 @@ import { replaceUsedButNotDeclaredVariables } from "./tools/contextProps";
 import { effect, state, storageEvent, watch } from "./reactivity";
 import { has, logError, slice, uid } from "./tools";
 import { arrayAdd, each, join, map } from "./tools/array";
-import { TEXT, TEXT_CONTENT, ATTR, DELETE, INNER_HTML, PARENT, HYDRATE, $PROPS, NULL, B_DATA, SCRIPT, $DATA, $EACH, STYLE, B_, TEMPLATE, UNDEFINED, OPTIONS, ROUTE, CTX_ARGS, EVAL_EFFECT, NEW_LINE, BRIO, STORAGE, STATE, PROPS, DEHYDRATE, INSERT, NUMBER, DIRECTIVES, MASKS, MASK_TOKENS, DATA, MASK_TOKEN, ROUTE_RULE, B_SAVE, OUTER_HTML, $STORE, $TOOLS, SKIP, CONTENT, NODES, B_IF, MESSAGE, VALIDATE, CLONE } from "./tools/constants";
+import { TEXT, TEXT_CONTENT, ATTR, DELETE, INNER_HTML, PARENT, HYDRATE, $PROPS, NULL, B_DATA, SCRIPT, $DATA, $EACH, STYLE, B_, TEMPLATE, UNDEFINED, OPTIONS, ROUTE, CTX_ARGS, EVAL_EFFECT, NEW_LINE, BRIO, STORAGE, STATE, PROPS, DEHYDRATE, INSERT, NUMBER, DIRECTIVES, MASKS, MASK_TOKENS, DATA, MASK_TOKEN, ROUTE_RULE, B_SAVE, OUTER_HTML, $STORE, $TOOLS, SKIP, CONTENT, NODES, B_IF, MESSAGE, VALIDATE, CLONE, $REFS, $SLOTS } from "./tools/constants";
 import { walk, getAttr, delAttr, getParent, queryAll, getTagName, getNodeContent, removeNode, eachAttribute, query, emit, listen, href, childNodes, setAttr } from "./tools/dom";
 import { expToFn, newFn } from "./tools/evaluation";
 import { countKeys, hasProp, getProp, getKeys, newMap, setProp, setObjectKeys, W, newSet, S, sync, clone } from "./tools/object";
@@ -439,8 +439,8 @@ export let newApp = (): AppObject => {
 
         // Data Level Context:
         // Referenced under the same $data context, not including nested $data contexts
-        $refs: newDataLevelContext('$refs'),
-        $slots: newDataLevelContext('$slots'),
+        [$REFS]: newDataLevelContext($REFS),
+        [$SLOTS]: newDataLevelContext($SLOTS),
 
         // The $each context
         [$EACH]: (_: BNode, parent?: BNode) => parent?.ctx[$EACH],

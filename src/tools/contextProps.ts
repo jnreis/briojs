@@ -1,6 +1,6 @@
 import { size, slice } from ".";
 import { arrayAdd, map, some } from "./array";
-import { $DATA, $EACH, $PROPS, $STORE, $TOOLS, CLASS, DELETE, INDEX, SUPER } from "./constants";
+import { $DATA, $EACH, $PROPS, $REFS, $SLOTS, $STORE, $TOOLS, CLASS, DELETE, INDEX, SUPER } from "./constants";
 import { newSet } from "./object";
 import { match, replace, split, trim } from "./string";
 
@@ -141,7 +141,7 @@ export let replaceUsedButNotDeclaredVariables = (bnode: BNode, code: string) => 
         if (name in ctx) continue;
 
         // Is in one of these contexts?
-        for (let obj of [$EACH, '$uid', $DATA, $PROPS, $STORE, $TOOLS] as (keyof Context)[]) {
+        for (let obj of [$EACH, '$uid', $REFS, $SLOTS, $DATA, $PROPS, $STORE, $TOOLS] as (keyof Context)[]) {
 
             // Check if the variable is a property of a known context object
             if (ctx[obj] && name in ctx[obj]) {

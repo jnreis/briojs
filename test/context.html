@@ -8,7 +8,7 @@
     <body b-props="{level1: 1}">
 
         <script b-script>
-            () => {
+            (ctx) => {
                 let v = validate($props);
                 v.prop('level1', [
                     { name: 'required', value: true },
@@ -16,7 +16,7 @@
                     { name: 'in', value: [2, 4, 6] },
                 ]);
                 v.validate();
-                console.log('validation errors:', v.errors);
+                console.log('validation errors:', v.errors, ctx);
 
                 // console.warn('clone', clone);
 

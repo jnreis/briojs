@@ -1,4 +1,5 @@
 import { saveCleanup } from "../app";
+import { $REFS } from "../tools/constants";
 import { delAttr, getAttr } from "../tools/dom";
 import { delProp } from "../tools/object";
 
@@ -15,7 +16,7 @@ export let hydrateRefs = async (bnode: BNode, attrName: string, el: HTMLElement)
     if (attrValue) {
 
         // Get the context object
-        let $refs = bnode.ctx.$refs;
+        let $refs = bnode.ctx[$REFS];
 
         // Add the ref to the context
         // NOTE: if multiple elements share the same ref name within a b-data context, only the last one will be available in the $refs object.

@@ -5,6 +5,7 @@ export let BRIO: 'brio' = 'brio';
  */
 
 export let $: '$' = '$';
+export let $SLOTS: '$slots' = '$slots';
 export let $STORE: '$store' = '$store';
 export let $TOOLS: '$tools' = '$tools';
 
@@ -168,6 +169,7 @@ export let ADD_EVENT_LISTENER = 'add' + EVENT_LISTENER__$CAP as 'addEventListene
 export let $DATA = $+DATA as '$data';
 export let $EACH = $+EACH as '$each';
 export let $PROPS = $+PROPS as '$props';
+export let $REFS = $+REFS as '$refs';
 
 export let B_DATA = B_+DATA as 'b-data';
 export let B_EACH = B_+EACH as 'b-each';

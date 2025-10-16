@@ -24,15 +24,15 @@ export let hydrateTeleport = (bnode: BNode, attrName: string, attrValue: string)
     catch {}
 
     // Evaluate the attribute value as an effect
-    bnode[EVAL_EFFECT](bnode, attrName, attrValue, (node: HTMLElement) => (value) => {
+    bnode[EVAL_EFFECT](bnode, attrName, attrValue, (node: HTMLElement) => (exp) => {
         try {
-            let v = value();
+            let value = exp();
             // If the value is an array, the first item is the target element and the second is the position
-            if (isArray(v)) {
-                [target, where] = v;
+            if (isArray(value)) {
+                [target, where] = value;
             }
             // Otherwise, the value is the target element
-            else target = query(v);
+            else target = query(value);
         }
         catch {}
 

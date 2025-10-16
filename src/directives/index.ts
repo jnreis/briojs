@@ -18,7 +18,7 @@ import { modelDirective } from './model';
 import { maskDirective, moneyMask, setDefaultMaskTokens } from './mask';
 import { effectDirective } from './effect';
 import { arrayAdd, each } from '../tools/array';
-import { DIRECTIVES } from '../tools/constants';
+import { DIRECTIVES, MASK_TOKENS, MASKS } from '../tools/constants';
 
 /**
  * Active directives
@@ -43,7 +43,7 @@ export let allDirectives: [string | RegExp, HydrateDirective][] = [
     /**
      * Context directives
      * Notes:
-     * - the order of inference is: $each, $uid, $data, $props, $store, $tools
+     * - the order of inference is: $each, $data, $props, $store, $tools
      */
     propsDirective,
     dataDirective,
@@ -145,8 +145,8 @@ export let setAllDirectives = (app: AppObject) => {
     each(allDirectives, directive => arrayAdd(app[DIRECTIVES], directive));
 
     // Load the money mask
-    app.masks.money = moneyMask;
+    app[MASKS].money = moneyMask;
 
     // Set the default mask tokens
-    setDefaultMaskTokens(app.maskTokens);
+    setDefaultMaskTokens(app[MASK_TOKENS]);
 }

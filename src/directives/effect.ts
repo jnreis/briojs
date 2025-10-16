@@ -11,9 +11,9 @@ export let hydrateEffect = (bnode: BNode, attrName: string, attrValue: string) =
     attrValue = expToFn(attrValue, '', false);
 
     // Evaluate the attribute value as an effect
-    bnode[EVAL_EFFECT](bnode, attrName, attrValue, () => async (call) => {
+    bnode[EVAL_EFFECT](bnode, attrName, attrValue, () => async (exp) => {
         // Call the expression
-        await call();
+        await exp();
     });
 
 }

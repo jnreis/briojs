@@ -57,14 +57,8 @@
 
         <button class="button" on-click="level1 = !level1">Toggle Level 1 (b-if)</button>
 
-        <div b-if="level1" b-data="{dshow: true, ctx: 'context' }" b-each="n in 2">
-            <div b-style="bg-light-gray" class="someclass" b-if="dshow" b-props="{gshow: () => dshow, ushow: (v) => dshow = v}" b-data="{show: true, e2: n, pd: '1rem'}" b-each="n in 2" b-uid="['field1']">
-                <strong>{{n}} {{field1}}</strong>
-                <br>
-                <p>outer b-data dshow : {{gshow()}}</p>
-                <button on-click="ushow(gshow() ? false : true)">Toggle Show</button>
-            </div>
-            <br>
+        <div b-if="level1" class="b-each" b-data="{dshow: true, items: [4, 5] }" b-each="n in items">
+            {{n}}
         </div>
 
         <style>
@@ -109,11 +103,21 @@
             }
         </style>
 
+        <template b-template="my-template-2"></template>
+
         <script>
             window.addEventListener('brio', () => {
                 let app = brio.newApp();
                 console.log('App initialized', app);
                 let {$dom, $state, $effect, $watch} = app.gc;
+                app.template['my-template-2'] = `
+                    <div b-data="{field1: 'field from level 1', pd: '0.5rem'}" b-uid="['field1']">
+                        <strong>Inside template - level1: {{level1}}</strong>
+                        <br>
+                        <p>field1: {{field1}}</p>
+                        <input type="text" b-model="field1" class="mb-1">
+                    </div>
+                    <br>`;
                 $dom.hydrate('body');
             });
         </script>

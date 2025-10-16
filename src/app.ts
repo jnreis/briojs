@@ -18,6 +18,15 @@ import { validate } from "./methods/validate";
 // * Most of the raw values are expressions, or references to a prop or method in the scope
 // * All raw values are converted to functions that return the value of the expression, or void in some cases
 
+/**
+ * TODO: I have this js frontend framework called Brio.js.
+Its purpose is, like others frontend frameworks, to be a tools to create reactive and dynamic UIs. However it works directly with pure HTML, it can hydrate HTML in the page by calling $dom.hydrate(someElementOrSelector), it can also hydrate HTML strings by calling the $dom.insert(content, where, target).
+An app is created by calling the newApp function. That returns a AppObject.
+However I want to review with you its hydration process, and the very structure of the code because, even though it works, it feels fragile and rudimentary.
+As of right now the hydrate walks the DOM, and hydrates the HTMLElement with directives or Text nodes with mustache or template literal syntaxes. However the element MUST be in the DOM, which can be cumbersome for directives that stops the hydration flow, like b-if, b-each, etc.
+Suggest improvements to the exist structure AND suggest a new and improved structure.
+ */
+
 export let symbol = S(BRIO);
 
 export let settings: ObjectType = {};
@@ -108,10 +117,8 @@ export let newApp = (): AppObject => {
     /** Evaluate the attribute as an effect */
     let evalEffect = (bnode: BNode, _attrName: string, attrValue: string, callback: (node: HTMLElement) => DirectiveCallback) => {
 
-        let $el = bnode.el;
-
         // Get the directive callback
-        let cb = callback($el);
+        let cb = callback(bnode.el);
 
         // The context. Which most likely refers to reactive properties.
         let context = exec(bnode, attrValue);
@@ -128,7 +135,7 @@ export let newApp = (): AppObject => {
      * @param node The node to hydrate
      * @param ctxNode The node to inherit context from
      */
-    let hydrate = (node: Node, ctxNode?: Node) => {
+    let hydrate = async (node: Node, ctxNode?: Node) => {
 
         // Query the node, if a string is provided
         if (isString(node)) node = query(node)!;
@@ -140,11 +147,15 @@ export let newApp = (): AppObject => {
 
         if (isNode(node)) {
 
+            // Test representation of the node
+            // let rep = nodeRep(node);
+            // console.log('rep', rep);
+
             // Register elements with the b-save attribute
             saveAssets(node as HTMLElement);
 
             // Recursively hydrate the nodes
-            walk(node, async (_node: Node) => {
+            await walk(node, async (_node: Node) => {
                 let result = false;
 
                 // Only pass the context node the node it was called with
@@ -287,7 +298,13 @@ export let newApp = (): AppObject => {
                 // Stop hydrating the directives of this element
                 if (isSkip(bnode, 1) || isSkip(bnode, 3)) break;
 
-                // Save attribute
+                /** 
+                 * Save attribute before hydration
+                 * Notes: 
+                 *   b-if and b-each make a copy of the element.
+                 *   Having the attribute saved before prevents infinite loops in those directives.
+                 *   Other directives may also benefit from this, but for now only these two need it.
+                 */
                 saveAttr(bnode, attrName, attrValue);
 
                 // Hydrate the directive
@@ -372,7 +389,7 @@ export let newApp = (): AppObject => {
         let cacheKey: string;
 
         // Make sure the expression is a function
-        exp = expToFn(exp, args, returns);
+        exp = replaceUsedButNotDeclaredVariables(bnode, expToFn(exp, args, returns));
 
         // Check if the expression is already cached
         if (exp in cached) {
@@ -387,7 +404,7 @@ export let newApp = (): AppObject => {
              * This allows the use of "{{ propName }}" instead of "{{ $data.propName }}".
              * The default context list and order is: $each, $data, $props, $store, $tools.
              */
-            cache[cacheKey] = newFn(ctxArgs, replaceUsedButNotDeclaredVariables(bnode, exp));
+            cache[cacheKey] = newFn(ctxArgs, exp);
 
             // Save the cache key
             cached[exp] = cacheKey;
@@ -669,3 +686,58 @@ export let setup = (brioWindow: ObjectType = {}) => {
 
 export let sliceAttrName = (attrName: string, charsWithPrefix: number) =>
     slice(attrName, startsWith(attrName, B_) ? charsWithPrefix : charsWithPrefix - 2) as string;
+
+/** Node representation */
+type NodeRep = {
+    tag: string;
+    attrs: Record<string, string>;
+    // dirs: Record<string, string>;
+    children: NodeRep[];
+    /** Undefined for root node */
+    parent?: NodeRep;
+    /** Only for text nodes */
+    text?: string;
+}
+
+/**
+ * Parse a Node into a NodeRep object
+ * @param node 
+ * @param ctxNode 
+ */
+let nodeRep = (node: Node, parent?: NodeRep): NodeRep => {
+
+    let rep: NodeRep = {
+        tag: '',
+        attrs: {},
+        children: [],
+        parent,
+    };
+
+    if (isElementNode(node)) {
+
+        // Get tag name
+        rep.tag = getTagName(node);
+
+        // Get attributes
+        eachAttribute(node as HTMLElement, (name, value) => {
+            rep.attrs[name] = value;
+        });
+
+        // Get child nodes
+        // If the node is a template, get the content child nodes
+        let children = childNodes(rep.tag == TEMPLATE ? (node as HTMLTemplateElement)[CONTENT] : node);
+
+        // Get node representation of child nodes
+        each(children, child => {
+            // Note: only include HTML elements and Text nodes with content
+            if (isElementNode(child) || (isTextNode(child) && getNodeContent(child))) {
+                arrayAdd(rep.children, nodeRep(child, rep));
+            }
+        });
+    }
+    else if (isTextNode(node)) {
+        rep.text = getNodeContent(node);
+    }
+
+    return rep;
+}

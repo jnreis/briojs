@@ -10,13 +10,14 @@ import { B_TRANSITION_KEY } from "./transition";
 export let hydrateIf = (bnode: BNode, attrName: string, attrValue: string) => {
 
     let el = bnode.el as HTMLElement;
-    let originalElement = cloneNode(el) as HTMLElement;
+
+    // Create a placeholder comment node
+    bnode.ph = createComment(attrName);
 
     // Hold the node's location with a placeholder
-    bnode.ph = createComment(attrName);
     insertNodes(el, REPLACE_WITH, bnode.ph);
 
-    // Interrupt the hydration process
+    // Interrupt the hydration process for the remaining directives and child nodes
     bnode[SKIP] = 3;
 
     // Ensure the element will go through the cleanup process
@@ -24,58 +25,62 @@ export let hydrateIf = (bnode: BNode, attrName: string, attrValue: string) => {
 
     let [newBNode] = bnode.bnode;
 
-    // The hydrated copy
-    let _bnode: BNode | undefined;
-    let _transition: FunctionType | undefined;
-    let _remove = () => {
+    // The hydrated copy of the element
+    let hydratedBnode: BNode | undefined;
+
+    // Transition function, if any
+    let transition: FunctionType | undefined;
+
+    // Dehydrate the element
+    let dehydrate = () => {
         // Dehydrates and removes the element
-        bnode[DEHYDRATE](_bnode!.el as HTMLElement);
+        bnode[DEHYDRATE](hydratedBnode!.el as HTMLElement);
 
         // Clear the reference
-        _bnode = UNDEFINED;
+        hydratedBnode = UNDEFINED;
     }
 
     // Evaluate the attribute value as an effect
-    bnode[EVAL_EFFECT](bnode, attrName, attrValue, () => (call) => {
+    bnode[EVAL_EFFECT](bnode, attrName, attrValue, () => (exp) => {
         // Get the value
-        let value = call();
+        let value = exp();
 
         // Wait for the next tick.
         // * This is necessary for some directives to work properly (e.g. `on-click-outside`, `b-transition`, etc.)
-        wait(() => {
+        wait(async () => {
 
             // Add
             if (value) {
-                if (!_bnode) {
+                if (!hydratedBnode) {
                     // Make a copy of the non-hydrated element
-                    let elCopy = cloneNode(originalElement) as HTMLElement;
+                    let elCopy = cloneNode(el) as HTMLElement;
 
                     // Insert the non-hydrated element after the placeholder
                     insertNodes(bnode.ph as any, AFTER, elCopy);
 
                     // Create a new bnode
-                    _bnode = newBNode(elCopy, el);
+                    hydratedBnode = newBNode(elCopy, el);
 
-                    // Mark the _bnode as a b-if copy
-                    _bnode[ATTR][B_IF] = '';
+                    // Mark the hydratedBnode as a b-if copy
+                    hydratedBnode[ATTR][B_IF] = '';
 
                     // Hydrate the element
-                    bnode[HYDRATE](elCopy, el);
+                    await bnode[HYDRATE](elCopy, el);
 
                     // Ensure the element copy will go through the cleanup process
                     saveToParent(bnode, elCopy);
                 }
 
                 // If there's a transition, play it
-                _transition = _bnode[OPTIONS][B_TRANSITION_KEY];
-                if (_transition) _transition(true);
+                transition = hydratedBnode[OPTIONS][B_TRANSITION_KEY];
+                if (transition) transition(true);
             }
             // Remove existing copy
-            else if (!value && _bnode) {
+            else if (!value && hydratedBnode) {
                 // Remove after the transition
-                if (_transition) _transition(false, _remove);
+                if (transition) transition(false, dehydrate);
                 // Just remove
-                else _remove();
+                else dehydrate();
             }
         });
     });

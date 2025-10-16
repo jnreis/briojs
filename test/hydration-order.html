@@ -17,6 +17,12 @@
         }
     </script>
 
+    <template b-template b-if="name" b-props="{p1: 'Property 1', p2: 'Property 2'}" b-data="{name: 'Brio.js'}" b-each="i in [1,2,3]">
+        <p b-text="`Hello, ${name}! This is item #${i}.`"></p>
+        <p b-text="`Props: ${p1}, ${p2}`"></p>
+    </template>
+    <input type="text" b-model="name" />
+
     <!-- This b-effect will only log the name after the script has run -->
     <div b-effect="console.log('name:', name)"></div>
 

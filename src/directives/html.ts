@@ -17,10 +17,10 @@ export let hydrateHtml = (where: 'inner'|'text') => (bnode: BNode, attrName: str
 
         if (attrValue) {
             // Evaluate the attribute value as an effect
-            bnode[EVAL_EFFECT](bnode, attrName, attrValue, (node: HTMLElement) => async (value) => {
+            bnode[EVAL_EFFECT](bnode, attrName, attrValue, (node: HTMLElement) => async (exp) => {
 
                 // Hydrate HTML content
-                await bnode[INSERT](value(), where, node);
+                await bnode[INSERT](exp(), where, node);
 
                 // Update the $refs and $slots objects
                 if (where == INNER) await updateDataLevelContext(bnode);

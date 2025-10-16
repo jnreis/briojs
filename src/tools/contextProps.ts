@@ -1,6 +1,6 @@
 import { size, slice } from ".";
 import { arrayAdd, map, some } from "./array";
-import { $DATA, $EACH, $PROPS, $REFS, $SLOTS, $STORE, $TOOLS, CLASS, DELETE, INDEX, SUPER } from "./constants";
+import { $DATA, $EACH, $PROPS, $STORE, $TOOLS, CLASS, DELETE, INDEX, SUPER } from "./constants";
 import { newSet } from "./object";
 import { match, replace, split, trim } from "./string";
 

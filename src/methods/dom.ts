@@ -182,8 +182,9 @@ export let newInsert = (hydrate: FunctionType, dehydrate: FunctionType, template
     });
 
     // Hydrate the inserted nodes
-    if (getProp(options, HYDRATE, true))
-        each(insertedNodes, node => hydrate(node, el));
+    if (getProp(options, HYDRATE, true)) {
+        for (let node of insertedNodes) await hydrate(node, el);
+    }
 
     // Hydrate the inserted nodes
     let then = getProp(options, 'then');

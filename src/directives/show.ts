@@ -18,9 +18,9 @@ export let hydrateShow = (bnode: BNode, attrName: string, attrValue: string) => 
     if (initialDisplay == 'none') initialDisplay = 'block';
 
     // Evaluate the attribute value as an effect
-    bnode[EVAL_EFFECT](bnode, attrName, attrValue, (node: HTMLElement) => (call) => {
+    bnode[EVAL_EFFECT](bnode, attrName, attrValue, (node: HTMLElement) => (exp) => {
         // Get the value
-        let value = call();
+        let value = exp();
 
         // Check if the parent node exists
         if (getParent(node)) {

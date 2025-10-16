@@ -130,7 +130,7 @@ type SetRouter = (route: FunctionType) => void;
 
 /** The global $dom object */
 type DomObject = {
-    hydrate: (node: Node, ctxNode?: Node) => void,
+    hydrate: (node: Node, ctxNode?: Node) => Promise<void>,
     dehydrate: (node: Node, _removeNode?: boolean, _removeBNode?: boolean) => void,
     insert: (content: any, where: "outer" | "inner" | "text" | "before" | "first" | "last" | "after", target: HTMLElement | string, options?: InsertOptions) => Promise<any>,
     route: Route,

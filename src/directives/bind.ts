@@ -42,9 +42,9 @@ export let hydrateBind = (bnode: BNode, attrName: string, attrValue: string) => 
     let options = bnode[OPTIONS][attrName] || {};
 
     // Evaluate the attribute value as an effect
-    bnode[EVAL_EFFECT](bnode, attrName, attrValue, (node: HTMLElement) => (call) => {
+    bnode[EVAL_EFFECT](bnode, attrName, attrValue, (node: HTMLElement) => (exp) => {
 
-        let value = call(initialAttrValue || '');
+        let value = exp(initialAttrValue || '');
 
         /**
          * Always set the DOM property for these attributes. No matter what the value is.

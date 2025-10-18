@@ -60,11 +60,11 @@ export let hydrateScript = async (bnode: BNode, _attrName: string, attrValue: st
 
         // Evaluate the script
         if (isString(fn)) {
-            let scriptFn = isStringFunction(fn);
+            let stringIsFn = isStringFunction(fn);
             // Scripts can access context properties directly
-            // e.g. `console.log(name)` instead of `console.log($data.name)`
-            fn = newFn(bnode[CTX_ARGS], replaceUsedButNotDeclaredVariables(bnode, fn), scriptFn);
-            if (scriptFn) fn = fn(bnode.ctx);
+            // e.g. `console.log($data.name)` can be written as `console.log(name)`
+            fn = newFn(bnode[CTX_ARGS], replaceUsedButNotDeclaredVariables(bnode, fn), stringIsFn);
+            if (stringIsFn) fn = fn(bnode.ctx);
         }
 
         // Execute the script

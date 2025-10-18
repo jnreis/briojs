@@ -57,7 +57,7 @@ export declare let parseHTML: (html: string) => Document;
 export declare let getTagName: (node: any) => string;
 export declare let listen: (target: HTMLElement | string, eventName: string, callback: (event: Event) => void, options?: boolean | AddEventListenerOptions) => () => void;
 export declare let emit: (target: HTMLElement | string, eventName: string, eventData?: any) => boolean;
-export declare let walk: (node: Node, callback: WalkSyncCallback | WalkAsyncCallback) => Promise<void>;
+export declare let walk: (node: Node, callback: WalkSyncCallback | WalkAsyncCallback, walkTemplate?: boolean) => Promise<void>;
 export declare let onCompositionStart: (e: Event) => boolean;
 export declare let onCompositionEnd: (e: Event) => void;
 export declare let getStyle: (node: HTMLElement) => CSSStyleDeclaration;

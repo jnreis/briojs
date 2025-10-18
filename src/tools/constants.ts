@@ -5,6 +5,7 @@ export let BRIO: 'brio' = 'brio';
  */
 
 export let $: '$' = '$';
+export let $REFS: '$refs' = '$refs';
 export let $SLOTS: '$slots' = '$slots';
 export let $STORE: '$store' = '$store';
 export let $TOOLS: '$tools' = '$tools';
@@ -20,6 +21,7 @@ export let A_VALID: 'a valid' = 'a valid';
 export let B_: 'b-' = 'b-';
 export let B_IF: 'b-if' = 'b-if';
 export let B_IGNORE: 'b-ignore' = 'b-ignore';
+export let B_REF: 'b-ref' = 'b-ref';
 export let B_SAVE: 'b-save' = 'b-save';
 export let B_SHOW: 'b-show' = 'b-show';
 export let BEFORE: 'before' = 'before';
@@ -122,7 +124,6 @@ export let PROPS: 'props' = 'props';
 export let PUT: 'put' = 'put';
 
 export let RADIO: 'radio' = 'radio';
-export let REFS: 'refs' = 'refs';
 export let REMOVE: 'remove' = 'remove';
 export let REPLACE: 'replace' = 'replace';
 export let REQUIRES: 'requires' = 'requires';
@@ -169,7 +170,6 @@ export let ADD_EVENT_LISTENER = 'add' + EVENT_LISTENER__$CAP as 'addEventListene
 export let $DATA = $+DATA as '$data';
 export let $EACH = $+EACH as '$each';
 export let $PROPS = $+PROPS as '$props';
-export let $REFS = $+REFS as '$refs';
 
 export let B_DATA = B_+DATA as 'b-data';
 export let B_EACH = B_+EACH as 'b-each';

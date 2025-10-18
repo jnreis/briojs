@@ -1,10 +1,9 @@
-import { saveToParent } from "../app";
+import { saveToParent, updateDataLevelContext } from "../app";
 import { logWarn } from "../tools";
-import { B_TEMPLATE, BEFORE, INNER_HTML, INSERT, INVALID__$CAP, NODES, TEMPLATE, VALUE } from "../tools/constants";
+import { B_TEMPLATE, BEFORE, HYDRATE, INNER_HTML, INSERT, INVALID__$CAP, NEW_LINE, NODES, SKIP, TEMPLATE, VALUE } from "../tools/constants";
 import { removeNode } from "../tools/dom";
 import { trim } from "../tools/string";
 import { isString } from "../tools/typeCheck";
-import { updateDataLevelContext } from "./context";
 
 export let hydrateTemplate = async (bnode: BNode, attrName: string, attrValue: string) => {
 
@@ -13,20 +12,15 @@ export let hydrateTemplate = async (bnode: BNode, attrName: string, attrValue: s
     // Evaluate the attribute value, if it does not match a saved template
     let template = attrValue ? bnode[TEMPLATE][attrValue] || bnode.exec(bnode, attrValue)() : el[INNER_HTML];
 
-    if (!attrValue) {
-        // Clear the inner HTML of the element, to prevent duplicate content
-        el[INNER_HTML] = '';
-    }
+    // Skip the node
+    bnode[SKIP] = 2;
 
     // Hydrate HTML content
     if (isString(template)) {
 
-        // Insert and hydrate the template content
-        await bnode[INSERT](trim(template), BEFORE, el, {
-            then: (insertedNodes: Node[]) => {
-                // The nodes that were inserted
-                bnode[NODES] = insertedNodes;
-            }
+        // Insert the nodes from the template
+        bnode[NODES] = await bnode[INSERT](trim(template), BEFORE, el, {
+            [HYDRATE]: false
         });
 
         // Ensure the element will go through the cleanup process
@@ -37,8 +31,11 @@ export let hydrateTemplate = async (bnode: BNode, attrName: string, attrValue: s
 
         // Update the $refs and $slots objects
         await updateDataLevelContext(bnode);
+
+        // Hydrate the inserted nodes
+        for (let node of bnode[NODES] as Node[]) await bnode[HYDRATE](node, el);
     }
-    else logWarn(attrName + ':', INVALID__$CAP, VALUE, '\n', template);
+    else logWarn(attrName + ':', INVALID__$CAP, VALUE, NEW_LINE, template);
 }
 
 export let templateDirective: Directive = [B_TEMPLATE, hydrateTemplate];

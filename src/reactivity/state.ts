@@ -123,46 +123,6 @@ export let state: State = (target: any, options?: StateOptions) => {
             // Set the new value
             let result: boolean = R.set(target, prop, newValue, proxied);
 
-            /**
-             * If an observed array/object is being reassigned to a new observed array/object, update the refs listeners.
-             * This will keep track of where the observed state is being referenced in other states and ensure that property listeners are notified correctly.
-             */
-            // if (isState(oldValue) && isState(newValue)) {
-            //     let oldStateObject = getStateObject(oldValue);
-
-            //     // The new value is already an observed state
-            //     if (isNewValueState) {
-            //         // Copy the referenced items from the old state object to the new state object
-            //         each(oldStateObject[REFS], ([state, prop]) => 
-            //             addPropertyReference(state, prop, newValue)
-            //         );
-            //     }
-
-            //     // The new value was not an observed state, copy the existing state object
-            //     else {
-            //         let newStateObject = getStateObject(newValue);
-            //         console.log('state - copying state object:', oldStateObject.proxied, 'to', newStateObject.proxied);
-            //         // each([PROPS, REFS, SKIP, STATE], (item: keyof StateObject) => newStateObject[item] = deepClone(oldStateObject[item]));
-            //         newStateObject[REFS] = [...newStateObject[REFS], ...oldStateObject[REFS]];
-            //     }
-            // }
-
-            // // Remove the property reference from the old value, if it is a state
-            // removePropertyReference(proxied, prop, oldValue);
-
-            // // Add the property reference to the new value, if it is a state
-            // addPropertyReference(proxied, prop, newValue);
-
-            // // Call the onSet functions for the property, if any
-            // if (stateObject[ON_SET][prop]) {
-            //     each(stateObject[ON_SET][prop], fn => fn({
-            //         [STATE]: proxied, 
-            //         prop, 
-            //         [NEW_VALUE]: newValue, 
-            //         [OLD_VALUE]: oldValue
-            //     }, stateObject, fn));
-            // }
-
             // Notify listeners about the property change
             notifyListeners(stateObject, context);
 
@@ -282,33 +242,6 @@ let notifyListeners = (stateObject: StateObject, context: ListenerFunctionContex
         each(propStateObject, (order, fn) => listeners.set(fn, order));
     }
 
-    // // Prepare to notify the property listeners of other objects that have this new value as a property
-    // each([...stateObject[REFS]], ([state, property]) => {
-
-    //     // This proxied state is referenced in the property of another state object
-    //     if (state[property] === context[STATE]) {
-
-    //         // Get the state object of the referenced state
-    //         let newStateObject = getStateObject(state);
-
-    //         // If the referenced state object has listeners for the property, add them to the listeners map
-    //         if (newStateObject && newStateObject[PROPS][property]) {
-
-    //             console.warn('notify listeners - newStateObject:', newStateObject[PROPS][property].size);
-
-    //             // Prepare to notify the listeners of the property in the referenced state object
-    //             each(newStateObject[PROPS][property], (order, fn) => {
-    //                 if(listeners.has(fn)) {
-    //                     console.warn('notify listeners - duplicate listener:', fn, 'in', newStateObject[PROPS][property]);
-    //                 }
-    //                 listeners.set(fn, order);
-    //             });
-    //         }
-    //     }
-    //     // Remove the property reference from this state object
-    //     else removePropertyReference(state, property, context[STATE]);
-    // });
-
     // Notify state listeners in this state object
     each(stateObject[STATE], (order, fn) => listeners.set(fn, order));
 
@@ -326,28 +259,3 @@ let setContextOperation = (context: ListenerFunctionContext) => {
     // Set the operation in the context
     context[OPERATION] = isUndefined(context[OLD_VALUE]) ? CREATE : isUndefined(context[NEW_VALUE]) ? DELETE : UPDATE;
 }
-
-// let addPropertyReference = (state: any, prop: Prop, value: any) => {
-//     if (isState(value) && state[prop] === value) {
-
-//         let refs = getStateObject(value)[REFS];
-
-//         // If the property is not already referenced, add it
-//         if (!refs.some(([s, p]) => s === state && p === prop)) {
-//             arrayAdd(refs, [state, prop]);
-//         }
-//     }
-// }
-
-// let removePropertyReference = (state: any, prop: Prop, value: any) => {
-//     if (isState(value)) {
-
-//         let refs = getStateObject(value)[REFS];
-
-//         // Remove the reference to the property
-//         let index = refs.findIndex(([s, p]) => s === state && p === prop);
-//         if (index !== -1) {
-//             refs.splice(index, 1);
-//         }
-//     }
-// }

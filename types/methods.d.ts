@@ -3,8 +3,6 @@ type InsertOptions = {
     select?: string,
     /** Whether to hydrate the inserted nodes (default: true) */
     hydrate?: boolean,
-    /** An async callback function to be called with the inserted nodes */
-    then?: (nodes: Node[]) => Promise<void> | void
 }
 
 /**

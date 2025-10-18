@@ -1,6 +1,6 @@
 import { has, slice } from ".";
 import { arrayFrom, arrayReverse, each, indexOf } from "./array";
-import { COMPOSING, DISPLAY, HREF, HTML, INPUT, TARGET, TEXT, TEXT_CONTENT, AFTER, VALUE, CHECKED, SELECT, CLASS_LIST, REMOVE, GET_ATTRIBUTE, SET_ATTRIBUTE, REMOVE_ATTRIBUTE, ADD_EVENT_LISTENER, REMOVE_EVENT_LISTENER, INNER_HTML, OUTER_HTML, BEFORE, APPEND, INSERT_ADJACENT_HTML, CLONE_NODE, PARENT_NODE, PREVIOUS_SIBLING, NEXT_SIBLING, FIRST_CHILD, LAST_CHILD, CREATE_ELEMENT, DETAIL, CREATE_COMMENT, STYLE, GET_PROPERTY_VALUE, GET_PROPERTY_PRIORITY, SET_PROPERTY, REMOVE_PROPERTY, TRANSITION } from "./constants";
+import { COMPOSING, DISPLAY, HREF, HTML, INPUT, TARGET, TEXT, TEXT_CONTENT, AFTER, VALUE, CHECKED, SELECT, CLASS_LIST, REMOVE, GET_ATTRIBUTE, SET_ATTRIBUTE, REMOVE_ATTRIBUTE, ADD_EVENT_LISTENER, REMOVE_EVENT_LISTENER, INNER_HTML, OUTER_HTML, BEFORE, APPEND, INSERT_ADJACENT_HTML, CLONE_NODE, PARENT_NODE, PREVIOUS_SIBLING, NEXT_SIBLING, FIRST_CHILD, LAST_CHILD, CREATE_ELEMENT, DETAIL, CREATE_COMMENT, STYLE, GET_PROPERTY_VALUE, GET_PROPERTY_PRIORITY, SET_PROPERTY, REMOVE_PROPERTY, TRANSITION, CONTENT, TEMPLATE } from "./constants";
 import { D, L, W } from "./object";
 import { lower, replace, startsWith, trim } from "./string";
 import { isElementNode, isString } from "./typeCheck";
@@ -209,12 +209,12 @@ export let emit = (target: HTMLElement|string, eventName: string, eventData?: an
     }));
 
 // Traverse DOM tree
-export let walk = async (node: Node, callback: WalkSyncCallback | WalkAsyncCallback) => {
+export let walk = async (node: Node, callback: WalkSyncCallback | WalkAsyncCallback, walkTemplate: boolean = false) => {
     // If callback returns false, don't walk through child nodes
     if (await callback(node)) {
         // Recursively walk through child nodes
-        for (let child of childNodes(node)) {
-            await walk(child, callback);
+        for (let child of childNodes(walkTemplate && getTagName(node) == TEMPLATE ? (node as HTMLTemplateElement)[CONTENT] : node)) {
+            await walk(child, callback, walkTemplate);
         }
     }
 }

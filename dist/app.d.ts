@@ -36,3 +36,4 @@ export declare let mustacheRegex: RegExp;
 export declare let replaceMustache: (text: string, replacement?: any) => string;
 export declare let setup: (brioWindow?: ObjectType) => void;
 export declare let sliceAttrName: (attrName: string, charsWithPrefix: number) => string;
+export declare let updateDataLevelContext: (bnode: BNode) => Promise<void>;

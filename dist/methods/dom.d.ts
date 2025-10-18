@@ -12,7 +12,6 @@
  * @param target The element to insert the content relative to
  * @param options.select A selector to query an element from the content
  * @param options.hydrate Whether to hydrate the inserted nodes (default: true)
- * @param options.then A callback function to be called with the inserted nodes
  *
  * @example
  * $dom.insert('<html lang="en"><head>...</head><body>...</body></html>', 'outer', 'html');

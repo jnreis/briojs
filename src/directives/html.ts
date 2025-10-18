@@ -1,12 +1,16 @@
-import { ATTR, B_HTML, B_TEMPLATE, B_TEXT, EVAL_EFFECT, INNER, INSERT, TEMPLATE, TEXT } from "../tools/constants";
+import { updateDataLevelContext } from "../app";
+import { ATTR, B_HTML, B_TEMPLATE, B_TEXT, EVAL_EFFECT, HYDRATE, INNER, INSERT, SKIP, TEMPLATE, TEXT } from "../tools/constants";
+import { hasProp } from "../tools/object";
 import { wrapInBackticks } from "../tools/string";
-import { updateDataLevelContext } from "./context";
 
 export let hydrateHtml = (where: 'inner'|'text') => (bnode: BNode, attrName: string, attrValue: string) => {
 
     // Single template hydration:
     // If b-template or b-html have been hydrated skip the hydration
-    if (!bnode[ATTR][B_TEMPLATE] && !bnode[ATTR][B_HTML]) {
+    if (!(hasProp(bnode[ATTR], B_TEMPLATE) || (hasProp(bnode[ATTR], B_HTML) && where == TEXT))) {
+
+        // Skip the hydration of the child nodes
+        bnode[SKIP] = 2;
 
         let templates = bnode[TEMPLATE];
 
@@ -19,15 +23,22 @@ export let hydrateHtml = (where: 'inner'|'text') => (bnode: BNode, attrName: str
             // Evaluate the attribute value as an effect
             bnode[EVAL_EFFECT](bnode, attrName, attrValue, (node: HTMLElement) => async (exp) => {
 
-                // Hydrate HTML content
-                await bnode[INSERT](exp(), where, node);
+                // Insert the evaluated content into the DOM
+                await bnode[INSERT](exp(), where, node, {
+                    [HYDRATE]: false
+                });
 
-                // Update the $refs and $slots objects
+                // Update the $slots and $refs objects
                 if (where == INNER) await updateDataLevelContext(bnode);
+
+                // Skip the rehydration of the node
+                bnode[SKIP] = 1;
+
+                // Hydrate the inserted nodes
+                bnode[HYDRATE](node);
             });
         }
     }
-
 }
 
 export let htmlDirective: Directive = [B_HTML, hydrateHtml(INNER)];

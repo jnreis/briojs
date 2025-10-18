@@ -1,5 +1,5 @@
 import { arrayAdd } from "./array";
-import { ENTRIES, ERROR, LENGTH } from "./constants";
+import { ENTRIES, ERROR, LENGTH, NEW_LINE } from "./constants";
 import { hasProp, newMap, newSet, O } from "./object";
 import { replace } from "./string";
 import { isArray, isInstance, isMap, isNull, isObject, isSet, isUndefined } from "./typeCheck";
@@ -99,13 +99,13 @@ export let log = (type: 'log'|'warn'|'error', ...details: any[]): any => console
  * Logs a warning message.
  * @returns Brio.js warn: `...details`
  */
-export let logWarn = (...details: any[]) => log('warn', 'warn:\n', ...details);
+export let logWarn = (...details: any[]) => log('warn', 'warn:', NEW_LINE, ...details);
 
 /**
  * Logs an error message.
  * @returns Brio.js detected an error: `...details`
  */
-export let logError = (...details: any[]) => log(ERROR, `detected an ${ERROR}:\n`, ...details);
+export let logError = (...details: any[]) => log(ERROR, `detected an ${ERROR}:`, NEW_LINE, ...details);
 
 
 export let deepClone = (value: any, seen = new WeakMap()) => {

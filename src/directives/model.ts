@@ -98,8 +98,7 @@ export let hydrateModel = (bnode: BNode, attrName: string, attrValue: string) =>
     let stateValue = getAccessedProp(bnode.exec(bnode, attrValue));
 
     if (!stateValue) {
-        logError(THE_MODEL_DIRECTIVE, REQUIRES_A_REACTIVE_VALUE, node);
-        return;
+        return logError(THE_MODEL_DIRECTIVE, REQUIRES_A_REACTIVE_VALUE, node);
     }
 
     // Get the reactive value

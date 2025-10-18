@@ -4,11 +4,11 @@ import { newRouter } from "./methods/route";
 import { replaceUsedButNotDeclaredVariables } from "./tools/contextProps";
 import { effect, state, storageEvent, watch } from "./reactivity";
 import { has, logError, slice, uid } from "./tools";
-import { arrayAdd, each, join, map } from "./tools/array";
-import { TEXT, TEXT_CONTENT, ATTR, DELETE, INNER_HTML, PARENT, HYDRATE, $PROPS, NULL, B_DATA, SCRIPT, $DATA, $EACH, STYLE, B_, TEMPLATE, UNDEFINED, OPTIONS, ROUTE, CTX_ARGS, EVAL_EFFECT, NEW_LINE, BRIO, STORAGE, STATE, PROPS, DEHYDRATE, INSERT, NUMBER, DIRECTIVES, MASKS, MASK_TOKENS, DATA, MASK_TOKEN, ROUTE_RULE, B_SAVE, OUTER_HTML, $STORE, $TOOLS, SKIP, CONTENT, NODES, B_IF, MESSAGE, VALIDATE, CLONE, $REFS, $SLOTS } from "./tools/constants";
-import { walk, getAttr, delAttr, getParent, queryAll, getTagName, getNodeContent, removeNode, eachAttribute, query, emit, listen, href, childNodes, setAttr } from "./tools/dom";
+import { arrayAdd, each, join, map, some } from "./tools/array";
+import { TEXT, TEXT_CONTENT, ATTR, DELETE, INNER_HTML, PARENT, HYDRATE, $PROPS, NULL, B_DATA, SCRIPT, $DATA, $EACH, STYLE, B_, TEMPLATE, UNDEFINED, OPTIONS, ROUTE, CTX_ARGS, EVAL_EFFECT, NEW_LINE, BRIO, STORAGE, STATE, PROPS, DEHYDRATE, INSERT, NUMBER, DIRECTIVES, MASKS, MASK_TOKENS, DATA, MASK_TOKEN, ROUTE_RULE, B_SAVE, OUTER_HTML, $STORE, $TOOLS, SKIP, NODES, B_IF, MESSAGE, VALIDATE, CLONE, $REFS, $SLOTS, B_EACH, B_TEMPLATE, B_REF } from "./tools/constants";
+import { walk, getAttr, delAttr, getParent, queryAll, getTagName, getNodeContent, removeNode, eachAttribute, query, emit, listen, href, setAttr } from "./tools/dom";
 import { expToFn, newFn } from "./tools/evaluation";
-import { countKeys, hasProp, getProp, getKeys, newMap, setProp, setObjectKeys, W, newSet, S, sync, clone } from "./tools/object";
+import { countKeys, hasProp, getProp, getKeys, newMap, setProp, setObjectKeys, W, newSet, S, sync, clone, delProp } from "./tools/object";
 import { isStringNumeric, replace, replaceAll, split, startsWith, test, trim } from "./tools/string";
 import { isTextNode, isElementNode, isNull, isRegExp, isString, isNode, isFunction } from "./tools/typeCheck";
 import { validate } from "./methods/validate";
@@ -147,12 +147,8 @@ export let newApp = (): AppObject => {
 
         if (isNode(node)) {
 
-            // Test representation of the node
-            // let rep = nodeRep(node);
-            // console.log('rep', rep);
-
             // Register elements with the b-save attribute
-            saveAssets(node as HTMLElement);
+            await saveAssets(node as HTMLElement);
 
             // Recursively hydrate the nodes
             await walk(node, async (_node: Node) => {
@@ -329,54 +325,26 @@ export let newApp = (): AppObject => {
     }
 
     /**
-     * Save assets in the element.
+     * Save template, script, and style assets from the node and its children.
      * 
      * Assets are elements with the b-save attribute.
      * 
-     * Note: elements with the b-save attribute are removed from the DOM if they do not also have the b-hydrate attribute.
+     * Note: elements with the b-save attribute are removed from the DOM.
      */
-    let saveAssets = (element: HTMLElement) => {
+    let saveAssets = async (node: Node) => {
+        let assets = await getElementsByDirective(node, B_SAVE, []);
 
-        if (isElementNode(element)) {
-            // Query all elements with the b-save attribute
-            let elements = queryAll(TEMPLATE+`,[${B_SAVE}]`, element);
+        // Get the HTML content of the saved nodes
+        each(assets, ([assetName, el]) => {
+            let tagName = getTagName(el);
 
-            // Include the element, if it has the b-save attribute or is a template
-            if (getAttr(element, B_SAVE) || getTagName(element) == TEMPLATE)
-                arrayAdd(elements, element);
+            // Determine the asset type (script, style, or template)
+            let assetType = (tagName != SCRIPT && tagName != STYLE) ? TEMPLATE : tagName;
 
-            // Register each asset
-            each(elements, (el: HTMLElement) => {
-                // Get the asset name
-                let assetName = getAttr(el, B_SAVE);
+            let assetValue = el[assetType == TEMPLATE ? OUTER_HTML : INNER_HTML];
 
-                // Remove the b-save attribute
-                delAttr(el, B_SAVE);
-
-                let tagName = getTagName(el);
-
-                // Recursively register elements in the template
-                if (tagName == TEMPLATE)
-                    each(childNodes((el as HTMLTemplateElement)[CONTENT]), el => saveAssets(el));
-
-                // Save the asset
-                if (assetName) {
-                    let isScript = tagName == SCRIPT;
-
-                    // Determine the asset type (script, style, or template)
-                    let assetType = isScript ? SCRIPT : tagName == STYLE ? STYLE : TEMPLATE;
-
-                    let assetValue = el[tagName == TEMPLATE ? OUTER_HTML : INNER_HTML];
-
-                    app[assetType][assetName] = isScript
-                        ? newFn(ctxArgs, sanitizeAttrValue(assetValue), false)
-                        : assetValue;
-
-                    // Remove the element, if it does not have the b-hydrate attribute
-                    if (isNull(getAttr(el, B_+HYDRATE))) removeNode(el);
-                }
-            });
-        }
+            app[assetType][assetName] = trim(assetValue);
+        });
     }
 
     let setAsset = (assetType: AssetType) => (assetName: string, assetValue: any) => {
@@ -388,7 +356,11 @@ export let newApp = (): AppObject => {
         // The cache key
         let cacheKey: string;
 
-        // Make sure the expression is a function
+        /**
+         * Make sure the expression is a function and auto-fill the references to props in the context objects.
+         * This allows the use of "{{ $data.propName }}" to be written as "{{ propName }}".
+         * The default context list and order is: $each, $data, $props, $store, $tools.
+         */
         exp = replaceUsedButNotDeclaredVariables(bnode, expToFn(exp, args, returns));
 
         // Check if the expression is already cached
@@ -399,11 +371,7 @@ export let newApp = (): AppObject => {
             // Generate a unique key for the function
             cacheKey = uid();
 
-            /**
-             * Cache the function and auto-fill the references to props in the context objects.
-             * This allows the use of "{{ propName }}" instead of "{{ $data.propName }}".
-             * The default context list and order is: $each, $data, $props, $store, $tools.
-             */
+            // Cache the function
             cache[cacheKey] = newFn(ctxArgs, exp);
 
             // Save the cache key
@@ -687,57 +655,74 @@ export let setup = (brioWindow: ObjectType = {}) => {
 export let sliceAttrName = (attrName: string, charsWithPrefix: number) =>
     slice(attrName, startsWith(attrName, B_) ? charsWithPrefix : charsWithPrefix - 2) as string;
 
-/** Node representation */
-type NodeRep = {
-    tag: string;
-    attrs: Record<string, string>;
-    // dirs: Record<string, string>;
-    children: NodeRep[];
-    /** Undefined for root node */
-    parent?: NodeRep;
-    /** Only for text nodes */
-    text?: string;
+export let updateDataLevelContext = async (bnode: BNode) => {
+    // Elements with the b-slot directive and does not have the b-data directive
+    await _updateDataLevelContext(bnode, 'b-slot');
+    // Elements with the b-ref directive and does not have the b-if, b-each, b-template, or b-data directives
+    await _updateDataLevelContext(bnode, B_REF);
 }
 
-/**
- * Parse a Node into a NodeRep object
- * @param node 
- * @param ctxNode 
- */
-let nodeRep = (node: Node, parent?: NodeRep): NodeRep => {
+let _updateDataLevelContext = async (bnode: BNode, directiveName: 'b-slot' | 'b-ref') => {
+    // Check if is slot or ref
+    let isRef = directiveName == B_REF;
 
-    let rep: NodeRep = {
-        tag: '',
-        attrs: {},
-        children: [],
-        parent,
-    };
+    // Get the context object
+    let ctx = bnode.ctx[isRef ? $REFS : $SLOTS];
 
-    if (isElementNode(node)) {
+    // Get the skip directives
+    let skipDirectives = isRef ? [B_IF, B_EACH, B_TEMPLATE, B_DATA] : [B_DATA];
 
-        // Get tag name
-        rep.tag = getTagName(node);
+    // Iterate over all nodes in the bnode
+    for (let node of bnode[NODES] || [bnode.el]) {
 
-        // Get attributes
-        eachAttribute(node as HTMLElement, (name, value) => {
-            rep.attrs[name] = value;
+        // Get all assets in the node
+        let assets = await getElementsByDirective(node, directiveName, skipDirectives);
+    
+        // Add each asset to the context
+        each(assets, ([assetName, el]) => {
+    
+            /**
+             * b-ref: the element itself.
+             * b-slot: the outer HTML of the element.
+             * 
+             * Note: If multiple elements share the same asset name within a b-data context, only the last one will be available in the context.
+             */
+            ctx[assetName] = isRef ? el : el[OUTER_HTML];
+    
+            // Cleanup
+            saveCleanup(bnode, () => delProp(ctx, assetName));
         });
+    }
+}
 
-        // Get child nodes
-        // If the node is a template, get the content child nodes
-        let children = childNodes(rep.tag == TEMPLATE ? (node as HTMLTemplateElement)[CONTENT] : node);
+let getElementsByDirective = async (node: Node, directiveName: 'b-save' | 'b-slot' | 'b-ref', skipDirectives: string[]) => {
+    let nodes: [string, HTMLElement][] = [];
 
-        // Get node representation of child nodes
-        each(children, child => {
-            // Note: only include HTML elements and Text nodes with content
-            if (isElementNode(child) || (isTextNode(child) && getNodeContent(child))) {
-                arrayAdd(rep.children, nodeRep(child, rep));
+    // If directive is b-ref, do not remove the node from the DOM and do not walk into templates
+    let isNotRef = directiveName != B_REF;
+
+    await walk(node, n => {
+        if (isElementNode(n)) {
+
+            // Skip elements that have any of the skipDirectives
+            if (some(skipDirectives, d => !isNull(getAttr(n as HTMLElement, d)))) return false;
+
+            // Get the asset name
+            let assetName = getAttr(n as HTMLElement, directiveName);
+
+            if (assetName) {
+                // Remove the directive attribute
+                delAttr(n as HTMLElement, directiveName);
+
+                // Add the asset to the list
+                arrayAdd(nodes, [assetName, n as HTMLElement]);
+
+                // Remove the node from the DOM
+                if (isNotRef) removeNode(n as HTMLElement);
             }
-        });
-    }
-    else if (isTextNode(node)) {
-        rep.text = getNodeContent(node);
-    }
+        }
+        return true;
+    }, isNotRef);
 
-    return rep;
+    return nodes;
 }

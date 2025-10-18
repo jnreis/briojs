@@ -14,6 +14,7 @@
     </style>
 </head>
 <body>
+    <hr b-script="my-script">
     <!--
         IMPORTANT FEATURE:
             1. Ability provide the parent context when creating vnodes.
@@ -71,7 +72,7 @@
                     </template>
     -->
 
-    <template b-save="counter">
+    <template b-template b-save="counter" b-ref="counter">
         <script b-script>
             try {
                 $props.count = 33;
@@ -86,14 +87,14 @@
 
         {{ $props.count}} Blah
 
-        <template b-save="second">
+        <template b-save="second" b-ref="second" b-slot="second">
             <h2>Heading Second</h2>
-            <div b-save="third">
+            <div b-save="third" b-ref="third" b-slot="third">
                 <h3>Heading 3 {{ $props.count }}</h3>
             </div>
         </template>
 
-        <style b-save="bg-light-gray">
+        <style b-save="bg-light-gray" b-ref="bg-light-gray" b-slot="bg-light-gray">
             & {
                 background-color: lightgray;
                 padding: 1rem;
@@ -112,9 +113,9 @@
         b-save will only get the innerHTML of any element.
     -->
 
-    <template b-hydrate>
+    <template b-template>
 
-        <script b-script>
+        <script b-script b-ref="tmp-script">
             try {
                 if (!$props.hasOwnProperty('count'))
                     $props.count = 1010;
@@ -132,12 +133,9 @@
         <button on-click="$props.html = $props.html1">Show HTML 1</button>`;
 
                 $props.html = $props.html1;
+                console.log('$props.html', $props);
             } catch {}
         </script>
-
-        <template b-html="$props.html"></template>
-
-        <hr>
 
         <div b-template="$props.html"></div>
 
@@ -160,9 +158,14 @@
 
         <hr>
 
+        <script b-save="my-script">
+            () => {
+                console.log('My saved script!');
+            }
+        </script>
+
         <!-- Template with slots -->
-        <template b-save="my-card">
-            <!-- TODO: elements with a b-slot -->
+        <template b-template b-save="my-card" b-ref="my-card">
             <h2 b-template="$slots.title || $el.outerHTML">
                 Title goes here
             </h2>
@@ -176,9 +179,8 @@
             </h4>
         </template>
 
-        <!-- TODO: b-html, b-text, and b-template should get the outerHTML of the elements with a b-slot directive -->
-        <div b-html="my-card">
-            <h2 b-slot="title">The title</h2>
+        <div b-text="my-card" b-html="my-card">
+            <h2 b-slot="title" b-ref="abtemplate">The title</h2>
             <div b-slot="content">
                 <p>The content</p>
             </div>
@@ -186,6 +188,8 @@
         </div>
 
     </template>
+
+    <input type="text" b-model="1">
 
     <script type="module" src="/src/briojs.min.ts"></script>
 
@@ -195,7 +199,7 @@
             let {$dom, $state, $effect, $watch} = app.gc;
             $dom.hydrate('body');
 
-            // console.log(app);
+            console.log(app);
 
             // let ctx = $state({
             //     items: [

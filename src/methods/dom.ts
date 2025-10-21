@@ -1,7 +1,7 @@
 import { loadedScripts } from "../app";
 import { logError } from "../tools";
 import { each, filter, sort } from "../tools/array";
-import { AFTER, BEFORE, BEGIN, BODY, ELEMENT, END, HTML, HYDRATE, INNER_HTML, NOT_FOUND, OUTER, OUTER_HTML, SELECT, TEXT, TEXT_CONTENT, INNER, PARENT, HEAD, SCRIPT, ONCE, STYLE, REPLACE_WITH, B_, INSERT } from "../tools/constants";
+import { AFTER, BEFORE, BEGIN, BODY, ELEMENT, END, HTML, HYDRATE, INNER_HTML, NOT_FOUND, OUTER, OUTER_HTML, SELECT, TEXT, TEXT_CONTENT, INNER, PARENT, HEAD, SCRIPT, ONCE, STYLE, REPLACE_WITH, B_, $INSERT } from "../tools/constants";
 import { childNodes, createElement, eachAttribute, forcePropertyAssignment, getAttr, getParent, getTagName, insertHTML, insertNodes, parseHTML, query, queryAll, setAttr } from "../tools/dom";
 import { getProp, newSet } from "../tools/object";
 import { isNode, isNull } from "../tools/typeCheck";
@@ -37,9 +37,6 @@ export let newInsert = (hydrate: FunctionType, dehydrate: FunctionType, template
         : where == 'last' ? BEFORE+END // last - insert content as the last child of the element
         : where == AFTER ? AFTER+END // after - insert content after the element
         : where; // full name: outerHTML, innerHTML, textContent, beforebegin, afterbegin, beforeend, afterend
-
-    // Method name
-    let $INSERT = '$dom.'+INSERT as '$dom.insert';
 
     /** The element to insert the content relative to */
     let el = query(target) as any;

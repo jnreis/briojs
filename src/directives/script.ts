@@ -1,7 +1,7 @@
-import { loadedScripts, sanitizeAttrValue, saveToParent } from "../app";
+import { ctxKey, loadedScripts, sanitizeAttrValue, saveToParent } from "../app";
 import { http } from "../methods/http";
 import { arrayAdd, map } from "../tools/array";
-import { B_, CTX_ARGS, SCRIPT, SKIP } from "../tools/constants";
+import { B_, SCRIPT, SKIP } from "../tools/constants";
 import { replaceUsedButNotDeclaredVariables } from "../tools/contextProps";
 import { getAttr, getNodeContent, getTagName, removeNode } from "../tools/dom";
 import { newFn } from "../tools/evaluation";
@@ -63,13 +63,13 @@ export let hydrateScript = async (bnode: BNode, _attrName: string, attrValue: st
             let stringIsFn = isStringFunction(fn);
             // Scripts can access context properties directly
             // e.g. `console.log($data.name)` can be written as `console.log(name)`
-            fn = newFn(bnode[CTX_ARGS], replaceUsedButNotDeclaredVariables(bnode, fn), stringIsFn);
-            if (stringIsFn) fn = fn(bnode.ctx);
+            fn = newFn(ctxKey, replaceUsedButNotDeclaredVariables(bnode, fn), stringIsFn);
+            if (stringIsFn) fn = fn(bnode[ctxKey]);
         }
 
         // Execute the script
         if (isFunction(fn))
-            await fn(bnode.ctx);
+            await fn(bnode[ctxKey]);
     }
 }
 

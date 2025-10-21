@@ -1,9 +1,9 @@
 import { delState, effect, isState, state, watch } from '../reactivity';
 import { entries, logError } from '../tools';
 import { arrayFill, map } from '../tools/array';
-import { ARRAY, OBJECT, DIRECTIVE, REQUIRES, CREATE, UPDATE, DELETE, SKIP, NUMBER, $EACH, HYDRATE, DEHYDRATE, NEW_VALUE, INDEX, OPERATION, UNDEFINED, B_EACH, BEFORE, REPLACE_WITH, B_IF, ATTR, A_VALID } from '../tools/constants';
+import { ARRAY, OBJECT, DIRECTIVE, REQUIRES, CREATE, UPDATE, DELETE, SKIP, NUMBER, $EACH, NEW_VALUE, INDEX, OPERATION, UNDEFINED, B_EACH, BEFORE, REPLACE_WITH, B_IF, ATTR, A_VALID, $DEHYDRATE, $HYDRATE } from '../tools/constants';
 import { cloneNode, createComment, insertNodes } from '../tools/dom';
-import { saveCleanup, saveToParent } from '../app';
+import { ctxKey, saveCleanup, saveToParent } from '../app';
 import { delProp, hasProp, setProp, sync } from '../tools/object';
 import { space, split, test, trim } from '../tools/string';
 import { isArray, isNumber, isObject } from '../tools/typeCheck';
@@ -107,7 +107,7 @@ export let hydrateEach = (bnode: BNode, attrName: string, attrValue: string) => 
         setProp(_each, index, i, 'c');
 
         // Save the $each context
-        setProp(_bnode.ctx, $EACH, _each, 'c');
+        setProp(_bnode[ctxKey], $EACH, _each, 'c');
 
         saveCleanup(_bnode, () => {
             delState(_each);
@@ -131,7 +131,7 @@ export let hydrateEach = (bnode: BNode, attrName: string, attrValue: string) => 
         mountedItems[i] = [_el, i];
 
         // Hydrate the new node
-        bnode[HYDRATE](_el, $el);
+        bnode.gc[$HYDRATE](_el, $el);
     };
 
     // Update an existing item
@@ -144,7 +144,7 @@ export let hydrateEach = (bnode: BNode, attrName: string, attrValue: string) => 
 
         // Update the context
         if (_bnode) {
-            let _each = _bnode.ctx[$EACH] as ObjectType;
+            let _each = _bnode[ctxKey][$EACH] as ObjectType;
             _each[item] = v;
             _each[index] = i;
             mountedItem[1] = i;
@@ -159,7 +159,7 @@ export let hydrateEach = (bnode: BNode, attrName: string, attrValue: string) => 
 
         // Dehydrate the node.
         // This will completely revert the node to its original state before hydration by removing all the effects and the context.
-        bnode[DEHYDRATE](_el);
+        bnode.gc[$DEHYDRATE](_el);
 
         // Remove the node from the mountedItems set
         delProp(mountedItems, i);

@@ -1,6 +1,6 @@
 import { saveToParent } from "../app";
 import { wait } from "../tools";
-import { AFTER, ATTR, B_IF, DEHYDRATE, EVAL_EFFECT, HYDRATE, OPTIONS, REPLACE_WITH, SKIP, UNDEFINED } from "../tools/constants";
+import { $DEHYDRATE, $HYDRATE, AFTER, ATTR, B_IF, EVAL_EFFECT, OPTIONS, REPLACE_WITH, SKIP, UNDEFINED } from "../tools/constants";
 import { cloneNode, createComment, insertNodes } from "../tools/dom";
 import { B_TRANSITION_KEY } from "./transition";
 
@@ -34,7 +34,7 @@ export let hydrateIf = (bnode: BNode, attrName: string, attrValue: string) => {
     // Dehydrate the element
     let dehydrate = () => {
         // Dehydrates and removes the element
-        bnode[DEHYDRATE](hydratedBnode!.el as HTMLElement);
+        bnode.gc[$DEHYDRATE](hydratedBnode!.el as HTMLElement);
 
         // Clear the reference
         hydratedBnode = UNDEFINED;
@@ -65,7 +65,7 @@ export let hydrateIf = (bnode: BNode, attrName: string, attrValue: string) => {
                     hydratedBnode[ATTR][B_IF] = '';
 
                     // Hydrate the element
-                    await bnode[HYDRATE](elCopy, el);
+                    await bnode.gc[$HYDRATE](elCopy, el);
 
                     // Ensure the element copy will go through the cleanup process
                     saveToParent(bnode, elCopy);

@@ -1,12 +1,12 @@
 import { replaceMustache, saveCleanup, templateRegex } from "../app";
 import { has, uid } from "../tools";
 import { arrayAdd, each, filter, join, map } from "../tools/array";
-import { AFTER, B_, DEHYDRATE, HYDRATE, NEW_LINE, STYLE, TEXT_CONTENT } from "../tools/constants";
+import { $DEHYDRATE, $HYDRATE, AFTER, B_, NEW_LINE, STYLE, TEXT_CONTENT } from "../tools/constants";
 import { createElement, getTagName, insertNodes, setClass } from "../tools/dom";
 import { match, replace, split, test, trim } from "../tools/string";
 import { isArray } from "../tools/typeCheck";
 
-export let hydrateStyle = (bnode: BNode, attrName: string, attrValue: string) => {
+export let hydrateStyle = (bnode: BNode, _attrName: string, attrValue: string) => {
 
     let el = bnode.el;
 
@@ -37,14 +37,14 @@ export let hydrateStyle = (bnode: BNode, attrName: string, attrValue: string) =>
         style[TEXT_CONTENT] = prefixCssSelectors(join(styles, NEW_LINE), '.'+prefix);
 
         // Hydrate the style element
-        bnode[HYDRATE](style, el);
+        bnode.gc[$HYDRATE](style, el);
 
         // Insert the style element after the current element
         insertNodes(el, AFTER, style);
 
         // Remove the style element
         saveCleanup(bnode, () => {
-            bnode[DEHYDRATE](style);
+            bnode.gc[$DEHYDRATE](style);
         });
     }
 }

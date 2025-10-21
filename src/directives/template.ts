@@ -1,6 +1,6 @@
 import { saveToParent, updateDataLevelContext } from "../app";
 import { logWarn } from "../tools";
-import { B_TEMPLATE, BEFORE, HYDRATE, INNER_HTML, INSERT, INVALID__$CAP, NEW_LINE, NODES, SKIP, TEMPLATE, VALUE } from "../tools/constants";
+import { $HYDRATE, $INSERT, B_TEMPLATE, BEFORE, HYDRATE, INNER_HTML, INVALID__$CAP, NEW_LINE, NODES, SKIP, TEMPLATE, VALUE } from "../tools/constants";
 import { removeNode } from "../tools/dom";
 import { trim } from "../tools/string";
 import { isString } from "../tools/typeCheck";
@@ -19,7 +19,7 @@ export let hydrateTemplate = async (bnode: BNode, attrName: string, attrValue: s
     if (isString(template)) {
 
         // Insert the nodes from the template
-        bnode[NODES] = await bnode[INSERT](trim(template), BEFORE, el, {
+        bnode[NODES] = await bnode.gc[$INSERT](trim(template), BEFORE, el, {
             [HYDRATE]: false
         });
 
@@ -33,7 +33,7 @@ export let hydrateTemplate = async (bnode: BNode, attrName: string, attrValue: s
         await updateDataLevelContext(bnode);
 
         // Hydrate the inserted nodes
-        for (let node of bnode[NODES] as Node[]) await bnode[HYDRATE](node, el);
+        for (let node of bnode[NODES] as Node[]) await bnode.gc[$HYDRATE](node, el);
     }
     else logWarn(attrName + ':', INVALID__$CAP, VALUE, NEW_LINE, template);
 }

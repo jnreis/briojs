@@ -168,7 +168,10 @@ export let WITH__$CAP: 'With' = 'With';
 export let ADD_EVENT_LISTENER = 'add' + EVENT_LISTENER__$CAP as 'addEventListener';
 
 export let $DATA = $+DATA as '$data';
+export let $DEHYDRATE = '$de' + HYDRATE as '$dehydrate';
 export let $EACH = $+EACH as '$each';
+export let $HYDRATE = $+HYDRATE as '$hydrate';
+export let $INSERT = $+INSERT as '$insert';
 export let $PROPS = $+PROPS as '$props';
 
 export let B_DATA = B_+DATA as 'b-data';
@@ -187,7 +190,6 @@ export let CREATE_ELEMENT = CREATE + 'Element' as 'createElement';
 
 export let DEFINE_PROPERTY = DEFINE + PROPERTY__$CAP as 'defineProperty';
 export let DEFINE_PROPERTIES = DEFINE + PROPERT__$CAP + 'ies' as 'defineProperties';
-export let DEHYDRATE = 'de' + HYDRATE as 'dehydrate';
 export let DELETE_PROPERTY = DELETE + PROPERTY__$CAP as 'deleteProperty';
 export let DIRECTIVES = DIRECTIVE + 's' as 'directives';
 

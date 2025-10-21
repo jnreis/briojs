@@ -1,4 +1,5 @@
 import { size, slice } from ".";
+import { ctxKey } from "../app";
 import { arrayAdd, map, some } from "./array";
 import { $DATA, $EACH, $PROPS, $STORE, $TOOLS, CLASS, DELETE, INDEX, SUPER } from "./constants";
 import { newSet } from "./object";
@@ -133,27 +134,32 @@ export let replaceUsedButNotDeclaredVariables = (bnode: BNode, code: string) => 
     let updatedCode = '';
     let lastIndex = 0;
 
-    let ctx = bnode.ctx;
+    let ctx = bnode[ctxKey];
 
     for (let [name, start, end] of found) {
 
-        // The name of the variables in the context are reserved keywords
-        if (name in ctx) continue;
-
+        // Is in the main context?
+        if (name in ctx) {
+            // Prepend with the context key
+            updatedCode += slice(code, lastIndex, start) + `${ctxKey}.${name}`;
+            lastIndex = end;
+        }
         // Is in one of these contexts?
-        for (let obj of [$EACH, $DATA, $PROPS, $STORE, $TOOLS] as (keyof Context)[]) {
-
-            // Check if the variable is a property of a known context object
-            if (ctx[obj] && name in ctx[obj]) {
-
-                // Slice the code until the end of the variable
-                updatedCode += slice(code, lastIndex, start) + `${obj}.${name}`;
-
-                // Update the last index to the end of the variable
-                lastIndex = end;
-
-                // Stop at the first match
-                break;
+        else {
+            for (let obj of [$EACH, $DATA, $PROPS, $STORE, $TOOLS] as (keyof Context)[]) {
+    
+                // Check if the variable is a property of a known context object
+                if (ctx[obj] && name in ctx[obj]) {
+    
+                    // Slice the code until the end of the variable
+                    updatedCode += slice(code, lastIndex, start) + `${ctxKey}.${obj}.${name}`;
+    
+                    // Update the last index to the end of the variable
+                    lastIndex = end;
+    
+                    // Stop at the first match
+                    break;
+                }
             }
         }
     }

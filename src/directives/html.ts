@@ -1,5 +1,5 @@
 import { updateDataLevelContext } from "../app";
-import { ATTR, B_HTML, B_TEMPLATE, B_TEXT, EVAL_EFFECT, HYDRATE, INNER, INSERT, SKIP, TEMPLATE, TEXT } from "../tools/constants";
+import { $HYDRATE, $INSERT, ATTR, B_HTML, B_TEMPLATE, B_TEXT, EVAL_EFFECT, HYDRATE, INNER, SKIP, TEMPLATE, TEXT } from "../tools/constants";
 import { hasProp } from "../tools/object";
 import { wrapInBackticks } from "../tools/string";
 
@@ -24,7 +24,7 @@ export let hydrateHtml = (where: 'inner'|'text') => (bnode: BNode, attrName: str
             bnode[EVAL_EFFECT](bnode, attrName, attrValue, (node: HTMLElement) => async (exp) => {
 
                 // Insert the evaluated content into the DOM
-                await bnode[INSERT](exp(), where, node, {
+                await bnode.gc[$INSERT](exp(), where, node, {
                     [HYDRATE]: false
                 });
 
@@ -35,7 +35,7 @@ export let hydrateHtml = (where: 'inner'|'text') => (bnode: BNode, attrName: str
                 bnode[SKIP] = 1;
 
                 // Hydrate the inserted nodes
-                bnode[HYDRATE](node);
+                bnode.gc[$HYDRATE](node);
             });
         }
     }

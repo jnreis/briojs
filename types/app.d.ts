@@ -3,29 +3,22 @@ type AppsObject = {
 }
 
 type AppObject = {
-    // ! CACHE
-    // cache: CacheObject,
-
     template: {
         [templateName: string]: string
     },
 
-    /** `(ctx: Context) => string` */
     style: {
         [styleName: string]: string
     },
 
-    /** `(ctx: Context) => void` */
     script: {
         [scriptName: string]: (ctx: Context) => void
     },
 
-    /** `(ctx: Context) => ObjectType` */
     props: {
         [propsName: string]: (ctx: Context) => ObjectType
     },
 
-    /** `(ctx: Context) => ObjectType` */
     data: {
         [dataName: string]: (ctx: Context) => ObjectType
     },
@@ -41,12 +34,9 @@ type AppObject = {
     routes: RoutesObject,
     routeRules: RouteRulesObject,
 
-    ctxArgs: string,
     exec: (bnode: BNode, exp: string, args?: string, returns?: boolean | "text") => FunctionType,
     evalEffect: (bnode: BNode, attrName: string, attrValue: string, callback: (node: HTMLElement) => DirectiveCallback) => void,
     bnode: [NewBNode, GetBNode],
-    // route: [SetRoute, Route],
-    // insert: (content: any, where: "outer" | "inner" | "text" | "before" | "first" | "last" | "after", target: HTMLElement | string, options?: InsertOptions) => Promise<any>,
 
     // ! PUBLIC CONTEXT
     /** The public items available to all contexts */
@@ -69,28 +59,26 @@ type CacheKey = string;
 
 /** The global context of an app */
 type GlobalContext = {
-    $dom: DomObject,
     $http: HttpObject,
     $set: SetObject,
     $store: ObjectType,
     $state: State,
     $watch: Watch,
     $effect: Effect,
-    $tools: BrioTools,
-}
+} & DomObject & BrioTools & ObjectType;
 
 type BrioTools = {
-    hasProp: (object: any, key: string) => boolean;
-    getProp: (object: any, key: string, defaultValue?: any) => any;
-    setProp: (object: any, key: string, descriptor?: PropertyDescriptorShorthand) => void;
+    $hasProp: (object: any, key: string) => boolean;
+    $getProp: (object: any, key: string, defaultValue?: any) => any;
+    $setProp: (object: any, key: string, descriptor?: PropertyDescriptorShorthand) => void;
 
     /** Performs a in-place deep sync between `target` and `source` values */
-    sync: (target: any, source: any) => any;
+    $sync: (target: any, source: any) => any;
 
     /** Creates a deep clone of the given value */
-    clone: (value: any) => any;
+    $clone: (value: any) => any;
 
-    validate: (data: ObjectType) => {
+    $validate: (data: ObjectType) => {
         prop: (name: string, rules: SchemaRules) => void;
         rule: (name: string, fn: RuleFn, message?: MessageFn) => void;
         validate: () => boolean;
@@ -130,15 +118,13 @@ type SetRouter = (route: FunctionType) => void;
 
 /** The global $dom object */
 type DomObject = {
-    hydrate: (node: Node, ctxNode?: Node) => Promise<void>,
-    dehydrate: (node: Node, _removeNode?: boolean, _removeBNode?: boolean) => void,
-    insert: (content: any, where: "outer" | "inner" | "text" | "before" | "first" | "last" | "after", target: HTMLElement | string, options?: InsertOptions) => Promise<any>,
-    route: Route,
-    emit: (target: HTMLElement | string, eventName: string, eventData?: any) => boolean,
-    listen: (target: HTMLElement | string, eventName: string, callback: (event: Event) => void, options?: boolean | AddEventListenerOptions) => () => void,
-    query: (selector: string | Node, root?: Node) => Element | undefined,
-    queryAll: (selector: string, root?: Node) => Element[],
-    context: (target: HTMLElement | string) => ObjectType | undefined,
+    $hydrate: (node: Node, ctxNode?: Node) => Promise<void>,
+    $dehydrate: (node: Node, _removeNode?: boolean, _removeBNode?: boolean) => void,
+    $insert: (content: any, where: "outer" | "inner" | "text" | "before" | "first" | "last" | "after", target: HTMLElement | string, options?: InsertOptions) => Promise<any>,
+    $route: Route,
+    $emit: (target: HTMLElement | string, eventName: string, eventData?: any) => boolean,
+    $listen: (target: HTMLElement | string, eventName: string, callback: (event: Event) => void, options?: boolean | AddEventListenerOptions) => () => void,
+    $context: (target: HTMLElement | string) => ObjectType | undefined,
 }
 
 /** Route rule function */
@@ -158,8 +144,8 @@ type HttpMethod = (endpoint: string, body?: any, options?: HttpOptions) => Promi
 
 /** Virtual Node */
 type BNode = {
-    /** The local context available to all expressions evaluated with this bnode. e.g. $el, $data, $props, $refs, $uid, etc. */
-    ctx: Context,
+    /** Local and global context */
+    [ctxKey: string]: Context,
 
     /** The parent bnode */
     parent: BNode | undefined,
@@ -188,7 +174,7 @@ type BNode = {
 
     /** Skip the hydration process */
     skip: number,
-} & DomObject & AppObject;
+} & AppObject;
 
 type NewBNode = (el: HTMLElement, ctxNode?: Node) => BNode;
 type GetBNode = (node: Node) => BNode | undefined;
@@ -203,7 +189,7 @@ type LocalContext = {
     $slots: ObjectType,
     $each?: ObjectType,
     $cleanup: (fn: FunctionType) => void,
-}
+} & ObjectType;
 
 type LocalContextFns = {
     [contextName: string]: (bnode: BNode, parent?: BNode) => any,

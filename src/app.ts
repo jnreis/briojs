@@ -5,10 +5,10 @@ import { replaceUsedButNotDeclaredVariables } from "./tools/contextProps";
 import { effect, state, storageEvent, watch } from "./reactivity";
 import { has, logError, slice, uid } from "./tools";
 import { arrayAdd, each, join, map, some } from "./tools/array";
-import { TEXT, TEXT_CONTENT, ATTR, DELETE, INNER_HTML, PARENT, HYDRATE, $PROPS, NULL, B_DATA, SCRIPT, $DATA, $EACH, STYLE, B_, TEMPLATE, UNDEFINED, OPTIONS, ROUTE, CTX_ARGS, EVAL_EFFECT, NEW_LINE, BRIO, STORAGE, STATE, PROPS, DEHYDRATE, INSERT, NUMBER, DIRECTIVES, MASKS, MASK_TOKENS, DATA, MASK_TOKEN, ROUTE_RULE, B_SAVE, OUTER_HTML, $STORE, $TOOLS, SKIP, NODES, B_IF, MESSAGE, VALIDATE, CLONE, $REFS, $SLOTS, B_EACH, B_TEMPLATE, B_REF } from "./tools/constants";
-import { walk, getAttr, delAttr, getParent, queryAll, getTagName, getNodeContent, removeNode, eachAttribute, query, emit, listen, href, setAttr } from "./tools/dom";
+import { TEXT, TEXT_CONTENT, ATTR, DELETE, INNER_HTML, PARENT, $PROPS, NULL, B_DATA, SCRIPT, $DATA, $EACH, STYLE, B_, TEMPLATE, UNDEFINED, OPTIONS, ROUTE, EVAL_EFFECT, NEW_LINE, BRIO, STORAGE, STATE, PROPS, NUMBER, DIRECTIVES, MASKS, MASK_TOKENS, DATA, MASK_TOKEN, ROUTE_RULE, B_SAVE, OUTER_HTML, $STORE, SKIP, NODES, B_IF, MESSAGE, VALIDATE, CLONE, $REFS, $SLOTS, B_EACH, B_TEMPLATE, B_REF, $, $DEHYDRATE, $HYDRATE, $INSERT } from "./tools/constants";
+import { walk, getAttr, delAttr, getParent, getTagName, getNodeContent, removeNode, eachAttribute, query, emit, listen, href, setAttr } from "./tools/dom";
 import { expToFn, newFn } from "./tools/evaluation";
-import { countKeys, hasProp, getProp, getKeys, newMap, setProp, setObjectKeys, W, newSet, S, sync, clone, delProp } from "./tools/object";
+import { countKeys, hasProp, getProp, newMap, setProp, setObjectKeys, W, newSet, S, sync, clone, delProp, getKeys } from "./tools/object";
 import { isStringNumeric, replace, replaceAll, split, startsWith, test, trim } from "./tools/string";
 import { isTextNode, isElementNode, isNull, isRegExp, isString, isNode, isFunction } from "./tools/typeCheck";
 import { validate } from "./methods/validate";
@@ -26,6 +26,9 @@ However I want to review with you its hydration process, and the very structure 
 As of right now the hydrate walks the DOM, and hydrates the HTMLElement with directives or Text nodes with mustache or template literal syntaxes. However the element MUST be in the DOM, which can be cumbersome for directives that stops the hydration flow, like b-if, b-each, etc.
 Suggest improvements to the exist structure AND suggest a new and improved structure.
  */
+
+/** The arguments used by the evaluate function */
+export let ctxKey = uid();
 
 export let symbol = S(BRIO);
 
@@ -66,10 +69,10 @@ export let newApp = (): AppObject => {
             // Get the parent bnode
             let parent = ctxNode ? getBNode(ctxNode) : closestBNode(ctxNode ? ctxNode : el);
 
+            // @ts-ignore
             bnode = {
                 // Local context
-                // @ts-ignore
-                ctx: {...globalContext},
+                [ctxKey]: {...gc},
 
                 // A reference to the element. Convenience for internal use.
                 el,
@@ -94,14 +97,13 @@ export let newApp = (): AppObject => {
                  */
                 [SKIP]: 0,
 
-                ...$dom,
                 ...app,
             };
 
             // Set the local context
             for (let key in localContextFns) {
                 let v = localContextFns[key](bnode, parent);
-                if (v) setProp(bnode.ctx, key, v, 'c');
+                if (v) setProp(bnode[ctxKey], key, v, 'c');
             }
 
             // Save the bnode
@@ -194,7 +196,7 @@ export let newApp = (): AppObject => {
             if (bnode) {
                 // Dehydrate the child nodes
                 if (bnode[NODES]) {
-                    each(bnode[NODES], childNode => bnode[DEHYDRATE](childNode, _removeNode, _removeBNode));
+                    each(bnode[NODES], childNode => dehydrate(childNode, _removeNode, _removeBNode));
                 }
 
                 // Remove the placeholder
@@ -372,7 +374,7 @@ export let newApp = (): AppObject => {
             cacheKey = uid();
 
             // Cache the function
-            cache[cacheKey] = newFn(ctxArgs, exp);
+            cache[cacheKey] = newFn(ctxKey, exp);
 
             // Save the cache key
             cached[exp] = cacheKey;
@@ -388,7 +390,7 @@ export let newApp = (): AppObject => {
             // Get the cache key or evaluate the expression
             let cacheKey = exp in cache ? exp : cacheExp(bnode, exp, args, returns);
 
-            fn = cache[cacheKey](bnode.ctx);
+            fn = cache[cacheKey](bnode[ctxKey]);
         }
         catch (error: any) {
             logError(error[MESSAGE]);
@@ -428,7 +430,7 @@ export let newApp = (): AppObject => {
         [$SLOTS]: newDataLevelContext($SLOTS),
 
         // The $each context
-        [$EACH]: (_: BNode, parent?: BNode) => parent?.ctx[$EACH],
+        [$EACH]: (_: BNode, parent?: BNode) => parent?.[ctxKey][$EACH],
 
         $cleanup: (bnode: BNode) => (fn: FunctionType) => saveCleanup(bnode, fn),
     };
@@ -455,38 +457,39 @@ export let newApp = (): AppObject => {
         [MASK_TOKEN]: setAsset(MASK_TOKENS),
     }
 
-    /** Global context: $dom methods */
-    let $dom = {
-        [HYDRATE]: hydrate, 
-        [DEHYDRATE]: dehydrate, 
-        [INSERT]: insert, 
-        [ROUTE]: route,
-        emit, listen, query, queryAll,
-        /** Get the local context of an element */
-        context: (target: HTMLElement | string) => getBNode(query(target)!)?.ctx,
-    }
-
     /** The global context of this app */
-    let globalContext: GlobalContext = {
-        $dom,
-        $http: http,
+    let gc: ObjectType = {
+        [$DEHYDRATE]: dehydrate,
+        [$HYDRATE]: hydrate,
+        [$INSERT]: insert,
         $set,
         [$STORE]: state({}),
-        $state: state,
-        $watch: watch,
-        $effect: effect,
-        [$TOOLS]: {
-            hasProp,
-            getProp,
-            setProp,
-            sync,
-            [CLONE]: clone,
-            [VALIDATE]: validate,
-        },
     };
 
-    // The arguments used by the evaluate function
-    let ctxArgs = `{${join(getKeys(globalContext))},${join(getKeys(localContextFns))}}`;
+    /** Unprefixed global context */
+    let _gc: ObjectType = {
+        [ROUTE]: route,
+        emit,
+        listen,
+        /** Get the local context of an element */
+        context: (target: HTMLElement | string) => getBNode(query(target)!)?.[ctxKey],
+
+        http,
+        state,
+        watch,
+        effect,
+
+        // Tools
+        hasProp,
+        getProp,
+        setProp,
+        sync,
+        [CLONE]: clone,
+        [VALIDATE]: validate,
+    };
+
+    // Prefix global context keys with $
+    each(getKeys(_gc), key => gc[$+key] = _gc[key]);
 
     /** App context */
     let app: AppObject = {
@@ -508,19 +511,16 @@ export let newApp = (): AppObject => {
         routeRules,
 
         // ! PUBLIC CONTEXT
-        gc: globalContext,
+        gc: gc as GlobalContext,
 
         // ! TOOLS
         exec,
-        [CTX_ARGS]: ctxArgs,
         [EVAL_EFFECT]: evalEffect,
         bnode: [newBNode, getBNode],
-        // insert,
-        // route: [SetRoute, Route],
     };
 
     // Prevent the items in these objects from being changed or deleted
-    each([$set, $dom, http, globalContext, app], obj => setObjectKeys(obj, 'wc'));
+    each([$set, http, gc, app], obj => setObjectKeys(obj, 'wc'));
 
     return app;
 }
@@ -599,7 +599,7 @@ let newContext = (contextName: string, directiveName: string, inherit?: boolean)
     let el = bnode.el as HTMLElement;
 
     // Get the parent context, if any
-    let parentContext = parent ? parent.ctx[contextName as keyof Context] : NULL;
+    let parentContext = parent ? parent[ctxKey][contextName as keyof Context] : NULL;
 
     let isElement = isElementNode(el);
     let hasDirective = isElement && !isNull(getAttr(el, directiveName));
@@ -622,7 +622,7 @@ let newContext = (contextName: string, directiveName: string, inherit?: boolean)
 }
 
 let newDataLevelContext = (contextName: string) => 
-    (bnode: BNode, parent?: BNode) => !parent || (isElementNode(bnode.el) && !isNull(getAttr(bnode.el as HTMLElement, B_DATA))) ? {} : parent.ctx[contextName as keyof Context];
+    (bnode: BNode, parent?: BNode) => !parent || (isElementNode(bnode.el) && !isNull(getAttr(bnode.el as HTMLElement, B_DATA))) ? {} : parent[ctxKey][contextName as keyof Context];
 
 /** Sets the primary router */
 let setRouter = (routeFn: FunctionType) => {
@@ -667,7 +667,7 @@ let _updateDataLevelContext = async (bnode: BNode, directiveName: 'b-slot' | 'b-
     let isRef = directiveName == B_REF;
 
     // Get the context object
-    let ctx = bnode.ctx[isRef ? $REFS : $SLOTS];
+    let ctx = bnode[ctxKey][isRef ? $REFS : $SLOTS];
 
     // Get the skip directives
     let skipDirectives = isRef ? [B_IF, B_EACH, B_TEMPLATE, B_DATA] : [B_DATA];

@@ -1,4 +1,4 @@
-import { saveCleanup, updateDataLevelContext } from '../app';
+import { ctxKey, saveCleanup, updateDataLevelContext } from '../app';
 import { logError, wait } from '../tools';
 import { getDescriptor, setProp } from '../tools/object';
 import { getType, isObject } from '../tools/typeCheck';
@@ -29,10 +29,10 @@ export let hydrateContext = async (bnode: BNode, attrName: string, attrValue: st
         // Get the asset or evaluate the attribute value
         : assetObject[attrValue] || bnode.exec(parent || bnode, attrValue);
 
-    let context = bnode.ctx[$ + ctxType as keyof Context];
+    let context = bnode[ctxKey][$ + ctxType as keyof Context];
 
     // Evaluate the new context
-    let newContext: ObjectType = await ctxFn(parent?.ctx || bnode.ctx);
+    let newContext: ObjectType = await ctxFn(parent?.[ctxKey] || bnode[ctxKey]);
 
     // Check if newContext is an object. If not, log an error
     if (!isObject(newContext)) {
@@ -49,7 +49,7 @@ export let hydrateContext = async (bnode: BNode, attrName: string, attrValue: st
     // Cleanup the data context when the bnode is removed
     saveCleanup(bnode, () => {
         wait(() => {
-            delState(bnode.ctx[$ + ctxType as keyof Context]);
+            delState(bnode[ctxKey][$ + ctxType as keyof Context]);
         });
     });
 }

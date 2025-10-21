@@ -14,6 +14,13 @@
     </style>
 </head>
 <body>
+
+    <!-- Counter -->
+    <div b-data="{ count: 0 }">
+        <button on-click="count++">Increment</button>
+        <button on-click="count--">Decrement</button>
+        <p>Count: <span>{{ count }}</span></p>
+    </div>
     <hr b-script="my-script">
     <!--
         IMPORTANT FEATURE:
@@ -189,15 +196,13 @@
 
     </template>
 
-    <input type="text" b-model="1">
-
     <script type="module" src="/src/briojs.min.ts"></script>
 
     <script>
         window.addEventListener('brio', () => {
             let app = brio.newApp();
-            let {$dom, $state, $effect, $watch} = app.gc;
-            $dom.hydrate('body');
+            let {$hydrate, $state, $effect, $watch} = app.gc;
+            $hydrate('body');
 
             console.log(app);
 

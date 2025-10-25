@@ -1,7 +1,7 @@
-import { ctxKey, loadedScripts, sanitizeAttrValue, saveToParent } from "../app";
+import { ctxKey, sanitizeAttrValue, saveToParent } from "../app";
 import { http } from "../methods/http";
 import { arrayAdd, map } from "../tools/array";
-import { B_, SCRIPT, SKIP } from "../tools/constants";
+import { B_SCRIPT, SCRIPT, SKIP } from "../tools/constants";
 import { replaceUsedButNotDeclaredVariables } from "../tools/contextProps";
 import { getAttr, getNodeContent, getTagName, removeNode } from "../tools/dom";
 import { newFn } from "../tools/evaluation";
@@ -41,9 +41,6 @@ export let hydrateScript = async (bnode: BNode, _attrName: string, attrValue: st
         // Get the src attribute, if it exists
         let src = getAttr(el, 'src');
 
-        // Mark the script as loaded, if it has a src link
-        if (src) loadedScripts.add(src);
-
         // Get the content of the script element
         let content = src ? await http.get(src) : getNodeContent(el);
 
@@ -62,7 +59,7 @@ export let hydrateScript = async (bnode: BNode, _attrName: string, attrValue: st
         if (isString(fn)) {
             let stringIsFn = isStringFunction(fn);
             // Scripts can access context properties directly
-            // e.g. `console.log($data.name)` can be written as `console.log(name)`
+            // Example: `console.log($data.name)` can be written as `console.log(name)`
             fn = newFn(ctxKey, replaceUsedButNotDeclaredVariables(bnode, fn), stringIsFn);
             if (stringIsFn) fn = fn(bnode[ctxKey]);
         }
@@ -73,4 +70,4 @@ export let hydrateScript = async (bnode: BNode, _attrName: string, attrValue: st
     }
 }
 
-export let scriptDirective: Directive = [B_+SCRIPT, hydrateScript];
+export let scriptDirective: Directive = [B_SCRIPT, hydrateScript];

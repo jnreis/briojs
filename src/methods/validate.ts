@@ -11,7 +11,7 @@ let regexLetters = '\\p{L}';
 let regexNumbers = '\\p{Nd}';
 let regexEmail = newRegExp(replaceAll(replaceAll('^(?!.*\\.{2})[w._%+-]+@(?:[w](?:[w-]*[w])?\\.)+[l]{2,}$', /w/, regexLetters + regexNumbers), /l/, regexLetters), 'u');
 
-export let validate = (data: ObjectType) => {
+export let validator = (data: ObjectType) => {
     let props: SchemaObject = {};
     let errors: ObjectType = {};
     if (!data) data = {};

@@ -1,13 +1,12 @@
-import { updateDataLevelContext } from "../app";
-import { $HYDRATE, $INSERT, ATTR, B_HTML, B_TEMPLATE, B_TEXT, EVAL_EFFECT, HYDRATE, INNER, SKIP, TEMPLATE, TEXT } from "../tools/constants";
+import { $INSERT, ATTR, B_HTML, B_TEMPLATE, B_TEXT, EVAL_EFFECT, REPLACE_CHILDREN, SKIP, TEMPLATE, TEXT } from "../tools/constants";
 import { hasProp } from "../tools/object";
 import { wrapInBackticks } from "../tools/string";
 
-export let hydrateHtml = (where: 'inner'|'text') => (bnode: BNode, attrName: string, attrValue: string) => {
+export let hydrateHtml = (placement: 'replaceChildren'|'text') => (bnode: BNode, attrName: string, attrValue: string) => {
 
     // Single template hydration:
     // If b-template or b-html have been hydrated skip the hydration
-    if (!(hasProp(bnode[ATTR], B_TEMPLATE) || (hasProp(bnode[ATTR], B_HTML) && where == TEXT))) {
+    if (!(hasProp(bnode[ATTR], B_TEMPLATE) || (hasProp(bnode[ATTR], B_HTML) && placement == TEXT))) {
 
         // Skip the hydration of the child nodes
         bnode[SKIP] = 2;
@@ -24,22 +23,14 @@ export let hydrateHtml = (where: 'inner'|'text') => (bnode: BNode, attrName: str
             bnode[EVAL_EFFECT](bnode, attrName, attrValue, (node: HTMLElement) => async (exp) => {
 
                 // Insert the evaluated content into the DOM
-                await bnode.gc[$INSERT](exp(), where, node, {
-                    [HYDRATE]: false
-                });
-
-                // Update the $slots and $refs objects
-                if (where == INNER) await updateDataLevelContext(bnode);
+                await bnode.gc[$INSERT](node, placement, exp());
 
                 // Skip the rehydration of the node
-                bnode[SKIP] = 1;
-
-                // Hydrate the inserted nodes
-                bnode.gc[$HYDRATE](node);
+                bnode[SKIP] = 3;
             });
         }
     }
 }
 
-export let htmlDirective: Directive = [B_HTML, hydrateHtml(INNER)];
+export let htmlDirective: Directive = [B_HTML, hydrateHtml(REPLACE_CHILDREN)];
 export let textDirective: Directive = [B_TEXT, hydrateHtml(TEXT)];

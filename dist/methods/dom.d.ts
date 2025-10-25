@@ -1,21 +1,15 @@
 /**
- * Inserts an HTML string into the DOM relative to an element
+ * Inserts an HTML string or Node into the DOM relative to a Node.
  *
- * When the target is the HTML element the whole document is replaced.
+ * *Notes*:
+ * - Targeting the `html` element is not allowed.
+ * - The `head` and `body` elements only support `replaceChildren`, `prepend`, and `append` insertions.
  *
- * When the target is the HEAD or BODY element the child nodes of the element are replaced.
- *
- * The content may also be the name of a template.
- *
- * @param content The content to insert
- * @param where Where to insert the content (outer, inner, text, before, after, first, last)
- * @param target The element to insert the content relative to
- * @param options.select A selector to query an element from the content
+ * @param target The Node to insert the content relative to (Node or selector)
+ * @param placement Where to insert the content (before, after, prepend, append, replaceWith, replaceChildren, text)
+ * @param content The content to insert (HTML string, Node, template name, or Promise)
+ * @param options.selector A selector to query an element from the content
  * @param options.hydrate Whether to hydrate the inserted nodes (default: true)
- *
- * @example
- * $dom.insert('<html lang="en"><head>...</head><body>...</body></html>', 'outer', 'html');
- * $dom.insert('<div>...</div>', 'inner', 'body');
- * $dom.insert('Hello, World!', 'text', 'p');
+ * @returns The inserted nodes
  */
-export declare let newInsert: (hydrate: FunctionType, dehydrate: FunctionType, templates: ObjectType) => (content: any, where: "outer" | "inner" | "text" | "before" | "first" | "last" | "after", target: HTMLElement | string, options?: InsertOptions) => Promise<any>;
+export declare let newInsert: (app: AppObject) => (target: HTMLElement | string, placement: "before" | "after" | "prepend" | "append" | "replaceWith" | "replaceChildren" | "text", content: any, options?: InsertOptions) => Promise<any>;

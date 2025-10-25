@@ -1,14 +1,13 @@
 import { symbol } from "../app";
 import { logError, size } from "../tools";
 import { arrayAdd, each, filter } from "../tools/array";
-import { NULL, OUTER, PATHNAME, CANNOT__$CAP, FUNCTION, HTML, NEW_LINE, REMOVE, ROUTE } from "../tools/constants";
-import { href } from "../tools/dom";
+import { NULL, PATHNAME, CANNOT__$CAP, FUNCTION, NEW_LINE, REMOVE, ROUTE } from "../tools/constants";
+import { href, sameOrigin } from "../tools/dom";
 import { delProp, getKeys, L } from "../tools/object";
 import { split, startsWith, trim } from "../tools/string";
 import { isArray, isFunction } from "../tools/typeCheck";
-import { http } from "./http";
 
-export let newRouter = (routes: RoutesObject, routeRules: ObjectType, insert: FunctionType): [SetRoute, Route] => ([
+export let newRouter = (routes: RoutesObject, routeRules: ObjectType): [SetRoute, GetRoute] => ([
     // Set a route
     (routePath: string, routeFunction: FunctionType) => {
         if (isFunction(routeFunction)) {
@@ -35,19 +34,14 @@ export let newRouter = (routes: RoutesObject, routeRules: ObjectType, insert: Fu
     },
 
     /**
-     * Route to a path.
+     * Get a route function by path.
      * 
-     * Notes:
-     * - If the path matches a route, the route function is called with the params and path. Otherwise, the page is fetched and swapped.
-     * - If the path is not on the same origin, a redirect is performed.
-     * 
-     * @returns `null` if redirected, `true` if the route was found, or `false` if the route was not found
+     * @returns The route function, or `undefined` if not found, or `null` if not the same origin
      */
     (routePath: string) => {
 
-        // Redirect to the path if it is not on the same origin
-        if (!startsWith(href(routePath), L.origin)) {
-            L.href = routePath;
+        // Not the same origin, return null
+        if (!sameOrigin(routePath)) {
             return NULL;
         }
 
@@ -119,19 +113,35 @@ export let newRouter = (routes: RoutesObject, routeRules: ObjectType, insert: Fu
         // The route was found if the last segment has a route function
         found = found && routesAt[symbol] ? 1 : 0;
 
-        // The route was found, call the route function
-        if (found) routesAt[symbol]({
-            params,
-            path: routePath,
-            [REMOVE]: () => delProp(routesAt, symbol)
-        });
-
-        // Otherwise, fetch and swap the page
-        else insert(http.get(routePath), OUTER, HTML);
-
-        // Push the href to the history
-        if (routePath != L[PATHNAME]) history.pushState(NULL, '', routePath);
-
-        return !!found;
+        // If the route was found, return a function to call the route
+        if (found) {
+            return () => routesAt[symbol]({
+                params,
+                path: routePath,
+                [REMOVE]: () => delProp(routesAt, symbol)
+            });
+        }
     }
-])
+]);
+
+/** Go to a route or URL */
+export let go = (routePath: string, routeFn: FunctionType | undefined | null) => {
+
+    // Normalize the route path
+    routePath = href(routePath, PATHNAME);
+
+    // Same origin and a route function exists
+    if (routeFn && sameOrigin(routePath)) {
+
+        // Call the route function
+        routeFn();
+
+        // Push the route to the history
+        // Note: do not push the route to the history when the browser back/forward buttons are used. This is because the browser will handle the history automatically.
+        if (routePath != L[PATHNAME]) history.pushState(NULL, '', routePath);
+    }
+    // Not same origin or no route function, go to the URL
+    else {
+        L.href = routePath;
+    }
+}

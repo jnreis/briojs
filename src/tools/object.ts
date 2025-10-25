@@ -55,7 +55,7 @@ let descriptorShorthand = [
  * @shorthand
  * - `w`: not writable (can not be changed)
  * - `c`: not configurable (can not be deleted)
- * - `e`: not enumerable (can not be iterated over)
+ * - `e`: not enumerable (can not be listed or iterated over)
  * @example
  * setProp(obj, 'key', 'value', 'wce');
  */
@@ -165,7 +165,7 @@ export let newRegExp = (pattern: RegExp | string, flags?: string) => new Regex(p
 
 
 /**
- * Performs a in-place deep sync between `target` and `source` values
+ * Performs a in-place deep sync from `source` to `target`.
  * 
  * Note: this mutates the target.
  */

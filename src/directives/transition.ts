@@ -168,6 +168,7 @@ let newTransition = (el: HTMLElement, inSelector: string, outSelector: string) =
                 setStyleProps(el, outPosition, noTransition);
                 nextFrame(() => {
                     delStyleProps(el, noTransition);
+                    _onEnd && _onEnd();
                 });
             }
 

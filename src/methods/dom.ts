@@ -1,185 +1,170 @@
-import { loadedScripts } from "../app";
-import { logError } from "../tools";
-import { each, filter, sort } from "../tools/array";
-import { AFTER, BEFORE, BEGIN, BODY, ELEMENT, END, HTML, HYDRATE, INNER_HTML, NOT_FOUND, OUTER, OUTER_HTML, SELECT, TEXT, TEXT_CONTENT, INNER, PARENT, HEAD, SCRIPT, ONCE, STYLE, REPLACE_WITH, B_, $INSERT } from "../tools/constants";
-import { childNodes, createElement, eachAttribute, forcePropertyAssignment, getAttr, getParent, getTagName, insertHTML, insertNodes, parseHTML, query, queryAll, setAttr } from "../tools/dom";
-import { getProp, newSet } from "../tools/object";
-import { isNode, isNull } from "../tools/typeCheck";
+import { updateDataLevelContext } from "../app";
+import { logError, size, slice } from "../tools";
+import { arrayAdd, each, every, join, some } from "../tools/array";
+import { BODY, ELEMENT, HTML, HYDRATE, INNER_HTML, NOT_FOUND, TEXT, TEXT_CONTENT, HEAD, SCRIPT, REPLACE_WITH, $INSERT, TEMPLATE, $HYDRATE, $DEHYDRATE, B_SCRIPT, B_IGNORE, B_SAVE, B_SLOT, CONTENT, PREPEND, APPEND, REPLACE_CHILDREN, MUST_BE, OF_TYPE, NODE__$CAP, TARGET, STRING, SELECTOR, BEFORE, AFTER, HTML__$UPPER } from "../tools/constants";
+import { childNodes, createElement, eachAttribute, forcePropertyAssignment, getAttr, getTagName, insertNodes, query, queryAll, setAttr } from "../tools/dom";
+import { getProp } from "../tools/object";
+import { upper } from "../tools/string";
+import { isElementNode, isNode, isNull, isString } from "../tools/typeCheck";
+
+let onlySupportInsertions = (placement: string[]) => `only supports ${join(slice(placement, 0, -1) as string[], ', ')}, and ${placement[size(placement) - 1]} insertions`;
 
 /**
- * Inserts an HTML string into the DOM relative to an element
+ * Inserts an HTML string or Node into the DOM relative to a Node.
  * 
- * When the target is the HTML element the whole document is replaced.
+ * *Notes*:
+ * - Targeting the `html` element is not allowed.
+ * - The `head` and `body` elements only support `replaceChildren`, `prepend`, and `append` insertions.
  * 
- * When the target is the HEAD or BODY element the child nodes of the element are replaced.
- * 
- * The content may also be the name of a template.
- * 
- * @param content The content to insert
- * @param where Where to insert the content (outer, inner, text, before, after, first, last)
- * @param target The element to insert the content relative to
- * @param options.select A selector to query an element from the content
+ * @param target The Node to insert the content relative to (Node or selector)
+ * @param placement Where to insert the content (before, after, prepend, append, replaceWith, replaceChildren, text)
+ * @param content The content to insert (HTML string, Node, template name, or Promise)
+ * @param options.selector A selector to query an element from the content
  * @param options.hydrate Whether to hydrate the inserted nodes (default: true)
- * 
- * @example
- * $dom.insert('<html lang="en"><head>...</head><body>...</body></html>', 'outer', 'html');
- * $dom.insert('<div>...</div>', 'inner', 'body');
- * $dom.insert('Hello, World!', 'text', 'p');
+ * @returns The inserted nodes
  */
-export let newInsert = (hydrate: FunctionType, dehydrate: FunctionType, templates: ObjectType) => async (content: any, where: 'outer'|'inner'|'text'|'before'|'first'|'last'|'after', target: HTMLElement | string, options?: InsertOptions) => {
+export let newInsert = (app: AppObject) => async (target: HTMLElement | string, placement: 'before'|'after'|'prepend'|'append'|'replaceWith'|'replaceChildren'|'text', content: any, options?: InsertOptions) => {
 
-    // Where to insert the content
-    let location = where == OUTER ? OUTER_HTML // outer - insert content as outerHTML of element
-        : where == INNER ? INNER_HTML // inner - insert content as innerHTML of element
-        : where == TEXT ? TEXT_CONTENT // text - insert content as textContent of element
-        : where == BEFORE ? BEFORE+BEGIN // before - insert content before the element
-        : where == 'first' ? AFTER+BEGIN // first - insert content as the first child of the element
-        : where == 'last' ? BEFORE+END // last - insert content as the last child of the element
-        : where == AFTER ? AFTER+END // after - insert content after the element
-        : where; // full name: outerHTML, innerHTML, textContent, beforebegin, afterbegin, beforeend, afterend
+    let $INSERT_ = $INSERT + ':' as '$insert:';
 
-    /** The element to insert the content relative to */
+    // Where to insert the content (textContent for 'text' placement)
+    let place = placement == TEXT ? TEXT_CONTENT : placement;
+
+    let placementOptions = [BEFORE, AFTER, PREPEND, APPEND, REPLACE_WITH, REPLACE_CHILDREN, TEXT];
+
+    let hasPlacement = () => some(placementOptions, p => p == placement);
+
+    // Log an error if the placement is invalid
+    if (!hasPlacement())
+        return logError($INSERT_, onlySupportInsertions(placementOptions));
+
+    /** The `node` to insert the content relative to */
     let el = query(target) as any;
-    let head = query(HEAD)!;
-    let body = query(BODY)!;
 
-    // Log an error if the element is not found
-    if (!el) return logError($INSERT, ELEMENT, NOT_FOUND);
+    // Log an error if the target is not a valid Node
+    if (!isNode(el))
+        return logError($INSERT_, TARGET, MUST_BE, OF_TYPE, NODE__$CAP);
 
-    // If the target is the <head> or <body> element, only the innerHTML location is allowed
-    if (head == el || body == el) location = INNER_HTML;
+    // Log an error if the target is the <html> element
+    if (query(HTML) == el)
+        return logError($INSERT_, TARGET, 'cannot be the', HTML__$UPPER, ELEMENT);
 
-    // Reusable location checks
-    let isHTML = query(HTML) == el;
-    let isText = location == TEXT_CONTENT;
-    let isInner = isText || location == INNER_HTML;
-    let isOuter = location == OUTER_HTML;
+    placementOptions = [REPLACE_CHILDREN, PREPEND, APPEND];
 
-    /** The parent element. If the location `isInner`, the parent is the element itself */
-    let parent = isInner ? el : getParent(el);
-
-    // Log an error if the parent element is not found
-    if (!parent && !isHTML) return logError($INSERT, PARENT, ELEMENT, NOT_FOUND);
-
+    // `head` and `body` only support replaceChildren, prepend, and append insertions
+    if ((query(HEAD) == el || query(BODY) == el) && !hasPlacement())
+        return logError($INSERT_, upper(getTagName(el)), ELEMENT, onlySupportInsertions(placementOptions));
 
     // ! GET THE CONTENT
 
     // Await the content, in case it is a promise
     content = await content;
 
+    let templates = app[TEMPLATE];
+
     // The content is a template
-    if (content in templates) content = templates[content]();
+    if (content in templates) content = templates[content];
+
+    let isText = place == TEXT_CONTENT;
+    let parsedContent = content;
+    let parsed = false;
 
     // Parse the content if it is a string
-    let htmlContent = isNode(content) ? content : parseHTML(content);
+    if (!isText && isString(content)) {
+        parsedContent = createElement('div');
+        parsedContent[INNER_HTML] = content;
+        parsed = true;
+    }
 
-    // Query the content using the provided selector
-    let optionSelect = getProp(options, SELECT) as string;
-    if (optionSelect) content = query(optionSelect, htmlContent);
+    // The content must be a Node or a string
+    if (!isText && !isNode(parsedContent))
+        return logError($INSERT_, CONTENT, MUST_BE, OF_TYPE, NODE__$CAP, 'or', STRING);
 
-    // Get the outerHTML of the content if it is a node
-    if (isNode(content)) content = content[OUTER_HTML];
+    // Query a HTMLElement using the provided selector
+    let selector = getProp(options, SELECTOR) as string;
+    if (!isText && selector && isString(selector)) {
+
+        // Query the selector from the parsed content
+        parsedContent = query(selector, parsedContent) as HTMLElement;
+
+        // Log an error if the selector did not find a valid Node
+        if (!isNode(parsedContent))
+            return logError($INSERT_, ELEMENT, NOT_FOUND);
+    }
 
 
     // ! CLEANUP THE DOM
 
-    // isOuter: Dehydrate the element
-    if (isOuter || isHTML) dehydrate(el, false);
+    let dehydrate = app.gc[$DEHYDRATE];
 
-    // isInner: Dehydrate and remove the child nodes
-    if (isInner) each(childNodes(el), node => dehydrate(node));
+    // Dehydrate but keep the element
+    if (place == REPLACE_WITH) await dehydrate(el, false);
 
-
-    // ! CACHE THE NODES
-
-    // Cache the current child nodes of the element and its parent
-    let cachedNodes = newSet(childNodes(el)) as Set<Node>;
-    if (parent) each(childNodes(parent), node => cachedNodes.add(node));
-
-    /** Filter the new nodes */
-    let filterNewNodes = (parentNode: Node) => filter(childNodes(parentNode), node => !cachedNodes.has(node));
-
-    /** The inserted nodes */
-    let insertedNodes: Node[] = [];
+    // Dehydrate and remove the child nodes
+    else if (isText || place == REPLACE_CHILDREN) {
+        for (let node of childNodes(el)) await dehydrate(node, false);
+    }
 
 
     // ! INSERT THE NODES
 
-    /**
-     * IMPORTANT!
-     * When the target is <html> the whole document is replaced.
-     */
-    if (isHTML) {
-        el[INNER_HTML] = query(HTML, htmlContent)![INNER_HTML];
+    /** The inserted nodes */
+    let insertedNodes: Node[] = parsed ? childNodes(parsedContent) : [parsedContent];
 
-        // Get the inserted nodes
-        insertedNodes = [el, ...queryAll(SCRIPT, el)];
-    }
-    /**
-     * IMPORTANT!
-     * When the target is <head> or <body> the child nodes of the element are replaced.
-     */
-    else if (isInner) {
-        el[isText ? TEXT_CONTENT : INNER_HTML] = content;
+    // Insert the nodes into the DOM at the specified placement
+    insertNodes(el, isText ? REPLACE_CHILDREN : place as 'before'|'after'|'prepend'|'append'|'replaceWith'|'replaceChildren', ...insertedNodes);
 
-        // Get the inserted nodes
-        insertedNodes = childNodes(el);
-    }
-    // Insert content as outerHTML of the element. This will replace the element itself.
-    else if (isOuter) {
-        el[OUTER_HTML] = content;
-
-        // Get the inserted nodes
-        insertedNodes = filterNewNodes(parent);
-    }
-    // Insert content before, after, or as the first or last child of the element
-    else {
-        insertHTML(el, location as InsertPosition, content);
-
-        // Get the inserted nodes
-        insertedNodes = filterNewNodes(location == BEFORE+BEGIN || location == AFTER+END ? parent : el);
-    }
-
-    // Sort inserted style elements first, then the rest.
-    // Note: This is necessary to ensure they are registered before other elements are hydrated.
-    sort(insertedNodes, (a, b) => {
-        let aIsStyle = getTagName(a) == STYLE;
-        let bIsStyle = getTagName(b) == STYLE;
-        return aIsStyle && !bIsStyle ? -1
-            : bIsStyle && !aIsStyle ? 1
-            : 0;
-    });
+    // Get the inserted nodes from text insertion
+    if (isText) insertedNodes = childNodes(el);
 
     // Load/execute script elements
-    each(insertedNodes, scriptElement => {
+    each(insertedNodes, el => {
 
-        // IMPORTANT: Don't load the external script if it has already been loaded and marked as "b-load-once"
-        if (// is script element
-            getTagName(scriptElement) == SCRIPT &&
-            // is not b-script
-            isNull(getAttr(scriptElement, B_+SCRIPT)) &&
-            // should load: !(b-load-once attribute AND script already loaded)
-            !(!isNull(getAttr(scriptElement, 'b-load-'+ONCE)) && loadedScripts.has(getAttr(scriptElement, 'src') as string))
-        ) {
+        let scripts: HTMLScriptElement[] = [];
 
-            // Create a new script element
-            let newScriptElement = createElement(SCRIPT);
+        // Element is a script
+        if (getTagName(el) == SCRIPT) arrayAdd(scripts, el);
 
-            // Copy the attributes from the old script
-            eachAttribute(scriptElement, (name, value) => setAttr(newScriptElement, name, value, forcePropertyAssignment(name) && name));
+        // Find script elements inside the inserted element
+        else if (isElementNode(el)) arrayAdd(scripts, ...queryAll(SCRIPT, el));
 
-            // Copy the innerHTML
-            newScriptElement[INNER_HTML] = scriptElement[INNER_HTML];
+        each(scripts, scriptElement => {
+            // IMPORTANT: Don't load the script if it has the b-script, b-ignore, b-save, or b-slot directive
+            if (every([B_SCRIPT, B_IGNORE, B_SAVE, B_SLOT], directive => isNull(getAttr(scriptElement, directive)))) {
 
-            // Replace the old script element with the new one
-            // Note: This will load/execute the script
-            insertNodes(scriptElement, REPLACE_WITH, newScriptElement);
-        }
+                // Create a new script element
+                let newScriptElement = createElement(SCRIPT);
+
+                // Copy the attributes from the old script
+                eachAttribute(scriptElement, (name, value) => setAttr(newScriptElement, name, value, forcePropertyAssignment(name) && name));
+
+                // Copy the innerHTML
+                newScriptElement[INNER_HTML] = scriptElement[INNER_HTML];
+
+                // Replace the old script element with the new one
+                // Note: This will load/execute the script
+                insertNodes(scriptElement, REPLACE_WITH, newScriptElement);
+            }
+        });
     });
 
     // Hydrate the inserted nodes
     if (getProp(options, HYDRATE, true)) {
-        for (let node of insertedNodes) await hydrate(node, el);
+
+        let newBNode = app.bnode[0];
+
+        for (let node of insertedNodes) {
+            if (isElementNode(node)) {
+                // Create a new bnode
+                let bnode = newBNode(node as HTMLElement, el);
+
+                // Update the $refs and $slots objects
+                await updateDataLevelContext(bnode);
+            }
+
+            // Hydrate the node
+            await app.gc[$HYDRATE](node, el);
+        }
     }
 
     // Return the inserted nodes

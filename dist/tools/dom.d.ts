@@ -62,8 +62,11 @@ export declare let onCompositionStart: (e: Event) => boolean;
 export declare let onCompositionEnd: (e: Event) => void;
 export declare let getStyle: (node: HTMLElement) => CSSStyleDeclaration;
 export declare let isElementVisible: (node: HTMLElement) => boolean;
-export declare let url: (_url: string | URL, base?: string | URL) => URL;
+/** Create a URL object */
+/** Get a part of a URL */
 export declare let href: (_url?: string, part?: "href" | "origin" | "pathname" | "search") => string;
+/** Check if a route path is on the same origin */
+export declare let sameOrigin: (routePath: string) => boolean;
 /**
  * Check if a property assignment should be forced.
  *

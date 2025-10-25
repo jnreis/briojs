@@ -1,6 +1,7 @@
 import { addPropertyListener, isState, addStateListener } from '.';
 import { logError } from '../tools';
 import { ARRAY, OBJECT, STATE, CANNOT__$CAP } from '../tools/constants';
+import { isNumber, isString } from '../tools/typeCheck';
 
 /**
  * Watches for changes to a specific prop or an entire observed object/array and executes a function when changes are detected.
@@ -21,7 +22,7 @@ export let watch = (proxied: any, prop: string | number | null | undefined | sym
     }
 
     // Watch for changes to a specific prop
-    else if (/*hasProp(proxied, prop as string)*/ prop || prop === 0) {
+    else if (isString(prop) || isNumber(prop)) {
         cleanup = addPropertyListener(proxied, prop as string, listener, priority);
     }
 

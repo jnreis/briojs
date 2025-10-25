@@ -1,6 +1,6 @@
-import { saveToParent, updateDataLevelContext } from "../app";
+import { saveToParent } from "../app";
 import { logWarn } from "../tools";
-import { $HYDRATE, $INSERT, B_TEMPLATE, BEFORE, HYDRATE, INNER_HTML, INVALID__$CAP, NEW_LINE, NODES, SKIP, TEMPLATE, VALUE } from "../tools/constants";
+import { $INSERT, B_TEMPLATE, BEFORE, INNER_HTML, INVALID__$CAP, NEW_LINE, NODES, SKIP, TEMPLATE, VALUE } from "../tools/constants";
 import { removeNode } from "../tools/dom";
 import { trim } from "../tools/string";
 import { isString } from "../tools/typeCheck";
@@ -19,21 +19,13 @@ export let hydrateTemplate = async (bnode: BNode, attrName: string, attrValue: s
     if (isString(template)) {
 
         // Insert the nodes from the template
-        bnode[NODES] = await bnode.gc[$INSERT](trim(template), BEFORE, el, {
-            [HYDRATE]: false
-        });
+        bnode[NODES] = await bnode.gc[$INSERT](el, BEFORE, trim(template));
 
         // Ensure the element will go through the cleanup process
         saveToParent(bnode, el);
 
         // Remove the wrapper element
         removeNode(el);
-
-        // Update the $refs and $slots objects
-        await updateDataLevelContext(bnode);
-
-        // Hydrate the inserted nodes
-        for (let node of bnode[NODES] as Node[]) await bnode.gc[$HYDRATE](node, el);
     }
     else logWarn(attrName + ':', INVALID__$CAP, VALUE, NEW_LINE, template);
 }

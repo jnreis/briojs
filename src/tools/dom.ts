@@ -191,7 +191,7 @@ export let getTagName = (node: any) =>
 // Listen to an event on a node with a callback and return a clean up function
 export let listen = (target: HTMLElement|string, eventName: string, callback: (event: Event) => void, options?: boolean | AddEventListenerOptions) => {
     // Get the target element, if it is a string
-    if (isString(target)) target = query(target)! as HTMLElement;
+    target = query(target) as HTMLElement;
 
     // Add the event listener
     (target  as HTMLElement)[ADD_EVENT_LISTENER](eventName, callback, options);
@@ -239,12 +239,16 @@ export let isElementVisible = (node: HTMLElement) => {
     return !(!getParent(node) || style[DISPLAY] == 'none' || style.visibility == 'hidden' || style.opacity == '0');
 }
 
+/** Create a URL object */
+// export let newURL = (_url: string | URL, base?: string | URL) =>
+//     new URL(_url, base);
 
-export let url = (_url: string | URL, base?: string | URL) =>
-    new URL(_url, base);
-
+/** Get a part of a URL */
 export let href = (_url: string = '', part: 'href'|'origin'|'pathname'|'search' = HREF) =>
-    url(_url, L[HREF])[part];
+    new URL(_url, L[HREF])[part];
+
+/** Check if a route path is on the same origin */
+export let sameOrigin = (routePath: string) => startsWith(href(routePath), L.origin);
 
 /**
  * Check if a property assignment should be forced.
@@ -256,7 +260,7 @@ export let href = (_url: string = '', part: 'href'|'origin'|'pathname'|'search' 
  * - The properties `value`, `checked`, and `selected` reflect the current state of the element
  */
 export let forcePropertyAssignment = (attrName: string) =>
-    has([VALUE, CHECKED, SELECT+'ed'], attrName);
+    has(['src', VALUE, CHECKED, SELECT+'ed'], attrName);
 
 export let sanitizeAttrName = (attrName: string) => 
     replace(replace(attrName, /[^a-z0-9_-]/gi, ''), /^[^a-z_]+/i, '');

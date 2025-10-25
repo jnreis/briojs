@@ -27,7 +27,7 @@
  * $store object:
  * - Default stores: data, directive, mask, maskToken, props, routeRules, script, style, template
  */
-export { settings, newApp, setup } from './app';
+export { newApp, setup } from './app';
 export { setAllDirectives } from './directives';
 export { ignoreDirective } from './directives/ignore';
 export { eachDirective } from './directives/each';

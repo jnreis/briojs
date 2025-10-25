@@ -1,19 +1,18 @@
 import { getStateObject, isState, stateObjects, initPropFns } from '.';
 import { trackProps, accessedProps } from './track';
 import { arrayAdd, arrayFrom, each, sort, sortPriority } from '../tools/array';
-import { R, createContext, getProp, hasProp, newMap, newSet, setObjectKeys, setProp } from '../tools/object';
+import { R, createContext, hasProp, newMap, newSet, setObjectKeys, setProp } from '../tools/object';
 import { isArray, isObject, isUndefined } from '../tools/typeCheck';
-import { CREATE, DEFINE_PROPERTY, DELETE, DELETE_PROPERTY, NULL, PARENT, PROPS, STATE, VALUE, UNDEFINED, UPDATE, NEW_VALUE, OLD_VALUE, OPERATION, TARGET } from '../tools/constants';
+import { CREATE, DEFINE_PROPERTY, DELETE, DELETE_PROPERTY, PROPS, STATE, VALUE, UNDEFINED, UPDATE, NEW_VALUE, OLD_VALUE, OPERATION, TARGET } from '../tools/constants';
 
 /**
  * State wrapps an object/array in a Proxy to track changes and notify listeners.
  * @param {Object|Array} target The object/array to observe
- * @param {Object} [options] Options for the state
- * @param {Object} [options.parent] The parent state object
+ * @param {Object} [parent] The parent state object, if any
  * @returns proxied
 */
 // @ts-ignore
-export let state: State = (target: any, options?: StateOptions) => {
+export let state: State = (target: any, parent?: any) => {
 
     /**
      * Do not observe the target if:
@@ -21,12 +20,6 @@ export let state: State = (target: any, options?: StateOptions) => {
      * - The target is not an object/array.
      */
     if (!isArrayOrObject(target) || isState(target)) return target;
-
-    /** The parent state object */
-    let parent = getProp(options, PARENT, NULL) as any;
-
-    // State options
-    options = { [PARENT]: parent };
 
     // Proxy handler
     let handler = {
@@ -39,7 +32,7 @@ export let state: State = (target: any, options?: StateOptions) => {
              * 
              * @example:
                let s1 = state({ a: 1 });
-               let s2 = state({ b: 2 }, { parent: s1});
+               let s2 = state({ b: 2 }, s1);
 
                s2.a; // prop 'a' is in s1, so it WILL NOT be tracked for s2. The get trap will be triggered for s1 and it will be properly tracked.
                s2.b; // prop 'b' is in s2, so it will be tracked for s2.
@@ -61,8 +54,8 @@ export let state: State = (target: any, options?: StateOptions) => {
              * To demonstrate this behavior, consider the following example:
              * 
                 let s1 = state({ a: 1 });
-                let s2 = state({ b: 2 }, { parent: s1});
-                let s3 = state({ c: 3 }, { parent: s2});
+                let s2 = state({ b: 2 }, s1);
+                let s3 = state({ c: 3 }, s2);
 
                 s3.d = 4; // this would trigger the set trap in s3, s2, and finally s1. The property 'd' would be set in s1.
 
@@ -165,7 +158,7 @@ export let state: State = (target: any, options?: StateOptions) => {
     }
 
     // Create a proxy for the object/array
-    const proxied = new Proxy(isState(parent) ? createContext(parent, target) : target, handler);
+    const proxied = new Proxy(isState(parent) && isObject(parent) ? createContext(parent, target) : target, handler);
 
     /**
      * Skip specific keys/indexes from being automatically observed.

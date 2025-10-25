@@ -24,6 +24,7 @@ export let B_IGNORE: 'b-ignore' = 'b-ignore';
 export let B_REF: 'b-ref' = 'b-ref';
 export let B_SAVE: 'b-save' = 'b-save';
 export let B_SHOW: 'b-show' = 'b-show';
+export let B_SLOT: 'b-slot' = 'b-slot';
 export let BEFORE: 'before' = 'before';
 export let BEGIN: 'begin' = 'begin';
 export let BODY: 'body' = 'body';
@@ -154,7 +155,7 @@ export let TYPE: 'type' = 'type';
 export let UNDEFINED: undefined = undefined;
 export let UPDATE: 'update' = 'update';
 
-export let VALIDATE: 'validate' = 'validate';
+export let VALID: 'valid' = 'valid';
 export let VALUE: 'value' = 'value';
 
 export let WITH__$CAP: 'With' = 'With';
@@ -177,6 +178,7 @@ export let $PROPS = $+PROPS as '$props';
 export let B_DATA = B_+DATA as 'b-data';
 export let B_EACH = B_+EACH as 'b-each';
 export let B_HTML = B_+HTML as 'b-html';
+export let B_SCRIPT = B_+SCRIPT as 'b-script';
 export let B_TEMPLATE = B_+TEMPLATE as 'b-template';
 export let B_TEXT = B_+TEXT as 'b-text';
 
@@ -235,6 +237,7 @@ export let REPLACE_CHILDREN = REPLACE + 'Children' as 'replaceChildren';
 export let ROUTE_RULE = ROUTE + 'Rule' as 'routeRule';
 
 export let SELECTION_START = SELECT + 'ionStart' as 'selectionStart';
+export let SELECTOR = SELECT + 'or' as 'selector';
 export let SET_ATTRIBUTE = 'set' + ATTRIBUTE__$CAP as 'setAttribute';
 export let SET_PROPERTY = 'set' + PROPERTY__$CAP as 'setProperty';
 export let STARTS_WITH = START + 's' + WITH__$CAP as 'startsWith';
@@ -244,6 +247,8 @@ export let TARGET = 'tar' + GET as 'target';
 export let TEXTAREA = TEXT + 'area' as 'textarea';
 export let TEXT_CONTENT = TEXT + CONTENT__$CAP as 'textContent';
 
+export let VALIDATE = VALID + 'ate' as 'validate';
+export let VALIDATOR = VALID + 'ator' as 'validator';
 
 
 /*

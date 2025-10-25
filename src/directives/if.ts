@@ -1,7 +1,6 @@
-import { saveToParent } from "../app";
-import { wait } from "../tools";
+import { saveToParent, updateDataLevelContext } from "../app";
 import { $DEHYDRATE, $HYDRATE, AFTER, ATTR, B_IF, EVAL_EFFECT, OPTIONS, REPLACE_WITH, SKIP, UNDEFINED } from "../tools/constants";
-import { cloneNode, createComment, insertNodes } from "../tools/dom";
+import { cloneNode, createComment, insertNodes, nextFrame } from "../tools/dom";
 import { B_TRANSITION_KEY } from "./transition";
 
 /**
@@ -47,7 +46,7 @@ export let hydrateIf = (bnode: BNode, attrName: string, attrValue: string) => {
 
         // Wait for the next tick.
         // * This is necessary for some directives to work properly (e.g. `on-click-outside`, `b-transition`, etc.)
-        wait(async () => {
+        nextFrame(async () => {
 
             // Add
             if (value) {
@@ -63,6 +62,9 @@ export let hydrateIf = (bnode: BNode, attrName: string, attrValue: string) => {
 
                     // Mark the hydratedBnode as a b-if copy
                     hydratedBnode[ATTR][B_IF] = '';
+
+                    // Update the $slots and $refs objects
+                    await updateDataLevelContext(hydratedBnode);
 
                     // Hydrate the element
                     await bnode.gc[$HYDRATE](elCopy, el);

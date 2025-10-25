@@ -6,8 +6,11 @@ However I want to review with you its hydration process, and the very structure 
 As of right now the hydrate walks the DOM, and hydrates the HTMLElement with directives or Text nodes with mustache or template literal syntaxes. However the element MUST be in the DOM, which can be cumbersome for directives that stops the hydration flow, like b-if, b-each, etc.
 Suggest improvements to the exist structure AND suggest a new and improved structure.
  */
+/** The arguments used by the evaluate function */
+export declare let ctxKey: string;
 export declare let symbol: symbol;
-export declare let settings: ObjectType;
+/** The router for each app */
+export declare let routers: GetRoute[];
 export declare let loadedScripts: Set<string>;
 /** Create a new app */
 export declare let newApp: () => AppObject;

@@ -1,17 +1,17 @@
 import { newInsert } from "./methods/dom";
 import { http } from "./methods/http";
-import { newRouter } from "./methods/route";
+import { go, newRouter } from "./methods/route";
 import { replaceUsedButNotDeclaredVariables } from "./tools/contextProps";
 import { effect, state, storageEvent, watch } from "./reactivity";
 import { has, logError, slice, uid } from "./tools";
-import { arrayAdd, each, join, map, some } from "./tools/array";
-import { TEXT, TEXT_CONTENT, ATTR, DELETE, INNER_HTML, PARENT, $PROPS, NULL, B_DATA, SCRIPT, $DATA, $EACH, STYLE, B_, TEMPLATE, UNDEFINED, OPTIONS, ROUTE, EVAL_EFFECT, NEW_LINE, BRIO, STORAGE, STATE, PROPS, NUMBER, DIRECTIVES, MASKS, MASK_TOKENS, DATA, MASK_TOKEN, ROUTE_RULE, B_SAVE, OUTER_HTML, $STORE, SKIP, NODES, B_IF, MESSAGE, VALIDATE, CLONE, $REFS, $SLOTS, B_EACH, B_TEMPLATE, B_REF, $, $DEHYDRATE, $HYDRATE, $INSERT } from "./tools/constants";
+import { arrayAdd, each, find, join, map, some } from "./tools/array";
+import { TEXT, TEXT_CONTENT, ATTR, DELETE, INNER_HTML, PARENT, $PROPS, NULL, B_DATA, SCRIPT, $DATA, $EACH, STYLE, B_, TEMPLATE, UNDEFINED, OPTIONS, ROUTE, EVAL_EFFECT, NEW_LINE, BRIO, STORAGE, STATE, PROPS, NUMBER, DIRECTIVES, MASKS, MASK_TOKENS, DATA, MASK_TOKEN, ROUTE_RULE, B_SAVE, OUTER_HTML, $STORE, SKIP, NODES, B_IF, MESSAGE, CLONE, $REFS, $SLOTS, B_EACH, B_TEMPLATE, B_REF, $, $DEHYDRATE, $HYDRATE, $INSERT, VALIDATOR, B_SCRIPT, B_SLOT } from "./tools/constants";
 import { walk, getAttr, delAttr, getParent, getTagName, getNodeContent, removeNode, eachAttribute, query, emit, listen, href, setAttr } from "./tools/dom";
 import { expToFn, newFn } from "./tools/evaluation";
 import { countKeys, hasProp, getProp, newMap, setProp, setObjectKeys, W, newSet, S, sync, clone, delProp, getKeys } from "./tools/object";
 import { isStringNumeric, replace, replaceAll, split, startsWith, test, trim } from "./tools/string";
-import { isTextNode, isElementNode, isNull, isRegExp, isString, isNode, isFunction } from "./tools/typeCheck";
-import { validate } from "./methods/validate";
+import { isTextNode, isElementNode, isNull, isRegExp, isString, isNode } from "./tools/typeCheck";
+import { validator } from "./methods/validate";
 
 // TODO: some notes that may be useful when writing documentation
 // * Effects are functions that are called when a dependency changes
@@ -32,7 +32,8 @@ export let ctxKey = uid();
 
 export let symbol = S(BRIO);
 
-export let settings: ObjectType = {};
+/** The router for each app */
+export let routers: GetRoute[] = [];
 
 export let loadedScripts = newSet() as Set<string>;
 
@@ -67,7 +68,7 @@ export let newApp = (): AppObject => {
         if (!bnode) {
 
             // Get the parent bnode
-            let parent = ctxNode ? getBNode(ctxNode) : closestBNode(ctxNode ? ctxNode : el);
+            let parent = ctxNode && getBNode(ctxNode) || closestBNode(ctxNode ? ctxNode : el);
 
             // @ts-ignore
             bnode = {
@@ -156,7 +157,7 @@ export let newApp = (): AppObject => {
             await walk(node, async (_node: Node) => {
                 let result = false;
 
-                // Only pass the context node the node it was called with
+                // The context node for the current node
                 let _ctxNode = node == _node ? ctxNode : UNDEFINED;
 
                 // Hydrate Text nodes
@@ -170,7 +171,7 @@ export let newApp = (): AppObject => {
                     let tagName = getTagName(_node);
 
                     // Ignore script elements that do not have the b-script attribute
-                    if (tagName == SCRIPT && isNull(getAttr(_node as HTMLElement, B_+SCRIPT))) {
+                    if (tagName == SCRIPT && isNull(getAttr(_node as HTMLElement, B_SCRIPT))) {
                         result = false;
                     }
                     // Hydrate the element
@@ -186,17 +187,19 @@ export let newApp = (): AppObject => {
     /**
      * Remove all the effects and bnode from the node and its children
      */
-    let dehydrate = (node: Node, _removeNode = true, _removeBNode = true) => {
+    let dehydrate = async (node: Node, _removeNode = true, _removeBNode = true) => {
 
         // Dehydrate the node and its children
-        walk(node, (n) => {
+        await walk(node, async (n) => {
             let bnode = getBNode(n);
 
             // Remove the effects
             if (bnode) {
                 // Dehydrate the child nodes
                 if (bnode[NODES]) {
-                    each(bnode[NODES], childNode => dehydrate(childNode, _removeNode, _removeBNode));
+                    for (let childNode of bnode[NODES]!) {
+                        await dehydrate(childNode, _removeNode, _removeBNode);
+                    }
                 }
 
                 // Remove the placeholder
@@ -319,7 +322,7 @@ export let newApp = (): AppObject => {
 
         // Remove the bnode if no attributes were hydrated and no context node was provided
         // Note: The bnode is not removed if it has a context node because it may be used by its children
-        if (!countKeys(bnode[ATTR]) && !ctxNode)
+        if (!countKeys(bnode[ATTR]))
             bnodes[DELETE](node);
 
         // Hydrate the children, if not skipped
@@ -435,18 +438,14 @@ export let newApp = (): AppObject => {
         $cleanup: (bnode: BNode) => (fn: FunctionType) => saveCleanup(bnode, fn),
     };
 
-    /** The $insert method of this app */
-    let insert = newInsert(hydrate, dehydrate, template);
-
     /** Router methods */
-    let [setRoute, route] = newRouter(routes, routeRules, insert);
+    let [setRoute, getRoute] = newRouter(routes, routeRules);
 
-    // Make the router of the first instance the primary router
-    if (!settings[ROUTE]) setRouter(route);
+    // The route function for this app
+    let route = (routePath: string) => go(routePath, getRoute(routePath));
 
     let $set: SetObject = {
         [ROUTE]: setRoute,
-        router: setRouter,
         [ROUTE_RULE]: setAsset(ROUTE_RULE+'s' as 'routeRules'),
         [TEMPLATE]: setAsset(TEMPLATE),
         [STYLE]: setAsset(STYLE),
@@ -461,7 +460,6 @@ export let newApp = (): AppObject => {
     let gc: ObjectType = {
         [$DEHYDRATE]: dehydrate,
         [$HYDRATE]: hydrate,
-        [$INSERT]: insert,
         $set,
         [$STORE]: state({}),
     };
@@ -485,7 +483,7 @@ export let newApp = (): AppObject => {
         setProp,
         sync,
         [CLONE]: clone,
-        [VALIDATE]: validate,
+        [VALIDATOR]: validator,
     };
 
     // Prefix global context keys with $
@@ -518,6 +516,11 @@ export let newApp = (): AppObject => {
         [EVAL_EFFECT]: evalEffect,
         bnode: [newBNode, getBNode],
     };
+
+    /** The $insert method of this app */
+    gc[$INSERT] = newInsert(app);
+
+    arrayAdd(routers, getRoute);
 
     // Prevent the items in these objects from being changed or deleted
     each([$set, http, gc, app], obj => setObjectKeys(obj, 'wc'));
@@ -599,7 +602,7 @@ let newContext = (contextName: string, directiveName: string, inherit?: boolean)
     let el = bnode.el as HTMLElement;
 
     // Get the parent context, if any
-    let parentContext = parent ? parent[ctxKey][contextName as keyof Context] : NULL;
+    let parentContext = parent ? parent[ctxKey][contextName as '$data' | '$props'] : NULL;
 
     let isElement = isElementNode(el);
     let hasDirective = isElement && !isNull(getAttr(el, directiveName));
@@ -618,17 +621,16 @@ let newContext = (contextName: string, directiveName: string, inherit?: boolean)
     }
 
     // Return the context
-    return createNewState && !isBif ? state({}, {[PARENT]: inherit && parentContext}) : parentContext || {};
+    return createNewState && !isBif ? state({}, inherit && parentContext) : parentContext || {};
 }
 
 let newDataLevelContext = (contextName: string) => 
     (bnode: BNode, parent?: BNode) => !parent || (isElementNode(bnode.el) && !isNull(getAttr(bnode.el as HTMLElement, B_DATA))) ? {} : parent[ctxKey][contextName as keyof Context];
 
-/** Sets the primary router */
-let setRouter = (routeFn: FunctionType) => {
-    if (isFunction(routeFn)) {
-        settings[ROUTE] = () => routeFn(href());
-    }
+/** Handle route changes on popstate */
+let onPopState = () => {
+    let routePath = href();
+    go(routePath, find(routers, getRoute => getRoute(routePath)));
 }
 
 export let setup = (brioWindow: ObjectType = {}) => {
@@ -645,11 +647,11 @@ export let setup = (brioWindow: ObjectType = {}) => {
         listen(W as any, STORAGE, storageEvent as any);
 
         // Listen to route changes and update the view
-        listen(W as any, 'pop'+STATE, settings[ROUTE]);
-
-        // Emit the 'brio' event to let listeners know that Brio is ready
-        emit(W as any, BRIO);
+        listen(W as any, 'pop'+STATE, onPopState);
     }
+
+    // Emit the 'brio' event to let listeners know that Brio is ready
+    emit(W as any, BRIO);
 }
 
 export let sliceAttrName = (attrName: string, charsWithPrefix: number) =>
@@ -657,7 +659,7 @@ export let sliceAttrName = (attrName: string, charsWithPrefix: number) =>
 
 export let updateDataLevelContext = async (bnode: BNode) => {
     // Elements with the b-slot directive and does not have the b-data directive
-    await _updateDataLevelContext(bnode, 'b-slot');
+    await _updateDataLevelContext(bnode, B_SLOT);
     // Elements with the b-ref directive and does not have the b-if, b-each, b-template, or b-data directives
     await _updateDataLevelContext(bnode, B_REF);
 }
@@ -670,7 +672,7 @@ let _updateDataLevelContext = async (bnode: BNode, directiveName: 'b-slot' | 'b-
     let ctx = bnode[ctxKey][isRef ? $REFS : $SLOTS];
 
     // Get the skip directives
-    let skipDirectives = isRef ? [B_IF, B_EACH, B_TEMPLATE, B_DATA] : [B_DATA];
+    let skipDirectives = isRef ? [/*B_IF, */B_EACH, B_TEMPLATE, B_DATA] : [B_DATA];
 
     // Iterate over all nodes in the bnode
     for (let node of bnode[NODES] || [bnode.el]) {

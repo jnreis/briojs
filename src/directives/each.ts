@@ -3,7 +3,7 @@ import { entries, logError } from '../tools';
 import { arrayFill, map } from '../tools/array';
 import { ARRAY, OBJECT, DIRECTIVE, REQUIRES, CREATE, UPDATE, DELETE, SKIP, NUMBER, $EACH, NEW_VALUE, INDEX, OPERATION, UNDEFINED, B_EACH, BEFORE, REPLACE_WITH, B_IF, ATTR, A_VALID, $DEHYDRATE, $HYDRATE } from '../tools/constants';
 import { cloneNode, createComment, insertNodes } from '../tools/dom';
-import { ctxKey, saveCleanup, saveToParent } from '../app';
+import { ctxKey, saveCleanup, saveToParent, updateDataLevelContext } from '../app';
 import { delProp, hasProp, setProp, sync } from '../tools/object';
 import { space, split, test, trim } from '../tools/string';
 import { isArray, isNumber, isObject } from '../tools/typeCheck';
@@ -130,8 +130,11 @@ export let hydrateEach = (bnode: BNode, attrName: string, attrValue: string) => 
         // Add the node to the mountedItems map
         mountedItems[i] = [_el, i];
 
-        // Hydrate the new node
-        bnode.gc[$HYDRATE](_el, $el);
+        // Update the $slots and $refs objects
+        updateDataLevelContext(_bnode).then(() => {
+            // Hydrate the new node
+            bnode.gc[$HYDRATE](_el, $el);
+        });
     };
 
     // Update an existing item

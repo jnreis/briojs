@@ -1,6 +1,5 @@
-import { wait } from '../tools';
 import { B_SHOW, DISPLAY, EVAL_EFFECT, OPTIONS, STYLE } from '../tools/constants';
-import { getParent, getStyle } from '../tools/dom';
+import { getParent, getStyle, nextFrame } from '../tools/dom';
 import { B_TRANSITION_KEY } from './transition';
 
 /**
@@ -26,7 +25,7 @@ export let hydrateShow = (bnode: BNode, attrName: string, attrValue: string) => 
         if (getParent(node)) {
             // Wait for the next tick.
             // * This is necessary for some directives to work properly (e.g. `on-click-outside`)
-            wait(() => {
+            nextFrame(() => {
                 let transition = bnode[OPTIONS][B_TRANSITION_KEY];
                 // Show the element
                 if (value) {

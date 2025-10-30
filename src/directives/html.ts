@@ -20,10 +20,10 @@ export let hydrateHtml = (placement: 'replaceChildren'|'text') => (bnode: BNode,
 
         if (attrValue) {
             // Evaluate the attribute value as an effect
-            bnode[EVAL_EFFECT](bnode, attrName, attrValue, (node: HTMLElement) => async (exp) => {
+            bnode[EVAL_EFFECT](bnode, attrValue, async (ctxFn) => {
 
                 // Insert the evaluated content into the DOM
-                await bnode.gc[$INSERT](node, placement, exp());
+                await bnode.gc[$INSERT](bnode.el, placement, ctxFn());
 
                 // Skip the rehydration of the node
                 bnode[SKIP] = 3;

@@ -6,8 +6,7 @@
     <title>Counter Example</title>
 </head>
 <body
-    b-hydrate
-    bind-id="$uid('temp')"
+    bind-id="$uid.temp"
     b-uid="['temp']"
     b-data="{
         h1Color: 'red',
@@ -19,7 +18,7 @@
     b-effect="
     $set.route('/test/:slug', route => {
         console.log('custom route', route);
-        $dom.insert($http.get(`/test/${route.params.slug}`), 'outer', 'html');
+        $insert($http.get(`/test/${route.params.slug}`), 'outer', 'html');
     });
 ">
     <h1 bind-style="`color: {{$data.h1Color}};`">Heading 1 is red</h1>
@@ -32,11 +31,11 @@
 
     <hr>
 
-    <button on-click="$dom.route('/test/load.html')" b-ref="globalButtonRef">
+    <button on-click="$route('/test/load.html')" b-ref="globalButtonRef">
         Go to Load
     </button>
 
-    <button on-click="$dom.route('https://selectwebstudio.com')">
+    <button on-click="$route('https://selectwebstudio.com')">
         Go to Select Web Studio
     </button>
 
@@ -80,37 +79,16 @@
         }
     </style>
 
-    <script b-ignore b-load-once type="module" src="/src/cdn.ts"></script>
+    <script b-ignore type="module" src="/src/briojs.min.ts"></script>
 
-    <!-- <script>
+    <script>
         window.addEventListener('brio', () => {
             let app = brio.newApp('body');
 
-            let $state = app.$state;
-            let { skip, persist, session } = $state;
-
-            let data = $state({
-                // skip1: skip({
-                //     count: 0
-                // }),
-                val: {
-                    count: 123
-                },
-                // session1: session({
-                //     count: 456
-                // })
-            })
-
-            data.val = session(data.val);
-            data.val = persist(data.val);
-
-            console.log('data', data, app);
+            app.gc.$hydrate('body');
 
             console.log('app', app);
-            // console.log('skip', 'skip' in $state , data.skip1);
-            // console.log('persist', 'persist' in $state, data.persist1);
-            // console.log('session', 'session' in $state, data.session1);
         })
-    </script> -->
+    </script>
 </body>
 </html>

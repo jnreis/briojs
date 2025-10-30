@@ -1,12 +1,11 @@
-import { ctxKey, sanitizeAttrValue, saveToParent } from "../app";
+import { sanitizeAttrValue, saveToParent } from "../app";
 import { http } from "../methods/http";
-import { arrayAdd, map } from "../tools/array";
+import { arrayAdd, each } from "../tools/array";
 import { B_SCRIPT, SCRIPT, SKIP } from "../tools/constants";
-import { replaceUsedButNotDeclaredVariables } from "../tools/contextProps";
 import { getAttr, getNodeContent, getTagName, removeNode } from "../tools/dom";
 import { newFn } from "../tools/evaluation";
-import { isStringFunction } from "../tools/string";
-import { isArray, isFunction, isString } from "../tools/typeCheck";
+import { isStringFunction, split, trim } from "../tools/string";
+import { isFunction, isString } from "../tools/typeCheck";
 
 export let hydrateScript = async (bnode: BNode, _attrName: string, attrValue: string) => {
 
@@ -14,19 +13,16 @@ export let hydrateScript = async (bnode: BNode, _attrName: string, attrValue: st
 
     let assetObject = bnode[SCRIPT];
 
-    let isScript = getTagName(el) == SCRIPT;
-
     // Skip the hydration of the text node of this script element
     bnode[SKIP] = 2;
 
-    // Get the asset or evaluate the attribute value
-    let scripts: any = attrValue ? assetObject[attrValue] || bnode.exec(bnode, attrValue)() : [];
+    let scripts: any[] = [];
 
-    // Get the scripts
-    scripts = map(
-        isArray(scripts) ? scripts : [scripts],
-        script => assetObject[script] || script
-    );
+    // Get the scripts from the attribute value
+    each(split(attrValue, ','), name => {
+        name = trim(name);
+        if (name && name in assetObject) arrayAdd(scripts, assetObject[name]);
+    });
 
     /**
      * Since the script element will be removed, it needs to be saved to the parent
@@ -36,7 +32,7 @@ export let hydrateScript = async (bnode: BNode, _attrName: string, attrValue: st
     saveToParent(bnode, el);
 
     // Add this script element to the list of scripts
-    if (isScript) {
+    if (getTagName(el) == SCRIPT) {
 
         // Get the src attribute, if it exists
         let src = getAttr(el, 'src');
@@ -58,15 +54,16 @@ export let hydrateScript = async (bnode: BNode, _attrName: string, attrValue: st
         // Evaluate the script
         if (isString(fn)) {
             let stringIsFn = isStringFunction(fn);
-            // Scripts can access context properties directly
-            // Example: `console.log($data.name)` can be written as `console.log(name)`
-            fn = newFn(ctxKey, replaceUsedButNotDeclaredVariables(bnode, fn), stringIsFn);
-            if (stringIsFn) fn = fn(bnode[ctxKey]);
+
+            fn = newFn('', fn, stringIsFn);
+
+            // If the script is a string function, evaluate it to get the actual function
+            if (stringIsFn) fn = fn();
         }
 
         // Execute the script
         if (isFunction(fn))
-            await fn(bnode[ctxKey]);
+            await fn(bnode.ctx);
     }
 }
 

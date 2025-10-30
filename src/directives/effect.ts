@@ -6,14 +6,13 @@ import { expToFn } from "../tools/evaluation";
  * - get all accessed properties using replaceUsedButNotDeclaredVariables and pass them as dependencies to the effect
  */
 
-export let hydrateEffect = (bnode: BNode, attrName: string, attrValue: string) => {
+export let hydrateEffect = (bnode: BNode, _attrName: string, attrValue: string) => {
 
     attrValue = expToFn(attrValue, '', false);
 
     // Evaluate the attribute value as an effect
-    bnode[EVAL_EFFECT](bnode, attrName, attrValue, () => async (exp) => {
-        // Call the expression
-        await exp();
+    bnode[EVAL_EFFECT](bnode, attrValue, async (ctxFn) => {
+        await ctxFn();
     });
 
 }

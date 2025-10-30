@@ -3,15 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>b-each</title>
+    <title>b-for</title>
 </head>
 <body>
-    <h1>b-each</h1>
+    <h1>b-for</h1>
 
     <div b-data="app" b-props="{ person: 'Jhonathan', people: ['John','Jane','James'], p2: [{id: 1, label: 'User 1'}, {id: 2, label: 'User 2'}], count: 3}">
         <pre>{{ JSON.stringify($props) }}</pre>
         <!-- <div class="cards">
-            <div class="card" b-each="person, index in count" b-props="{isActive: false}">
+            <div class="card" b-for="person, index in count" b-props="{isActive: false}">
                 <p>{{index}} - {{ person }}</p>
                 <p>isActive: {{ isActive }}</p>
                 <button on-click="isActive = !isActive">
@@ -20,7 +20,7 @@
             </div>
         </div> -->
         <div class="cards">
-            <div class="card" b-each="item in data" b-props="{isActive: false}">
+            <div class="card" b-for="item in data">
                 <p>{{item.id}} - {{ item.label }}</p>
             </div>
         </div>
@@ -41,18 +41,27 @@
             <button on-click="sync(people, ['Alice', 'Bob', 'Charlie']);">Reassign</button>
         </div> -->
         <!-- <div class="card mt-3">
-            <p>The "person" prop is different from the "person" variable in the b-each loop: {{ person }}</p>
+            <p>The "person" prop is different from the "person" variable in the b-for loop: {{ person }}</p>
             <button on-click="person = 'Jack'">Make it Jack</button>
         </div> -->
     </div>
 
-    <script type="module" src="/dist/briojs.min.js"></script>
+    <script type="module" src="/src/briojs.min.ts"></script>
 
     <script>
         window.addEventListener('brio', () => {
-            let app = brio.newApp();
-            let {$dom, $state, $effect, $watch, $store} = app.gc;
-            $dom.hydrate('body');
+            let {bnodes, gc: {$hydrate, $set}} = brio.newApp();
+            $set.data('app', () => {
+                return {
+                    data: [
+                        {id: 1, label: 'User 1'},
+                        {id: 2, label: 'User 2'},
+                        {id: 3, label: 'User 3'},
+                    ]
+                }
+            });
+            $hydrate('body');
+            console.warn('Brio.js is ready:', bnodes);
 
             // let obj = $state({
             //     person: 'Jhonathan',

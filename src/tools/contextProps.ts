@@ -1,7 +1,7 @@
 import { size, slice } from ".";
 import { ctxKey } from "../app";
 import { arrayAdd, map, some } from "./array";
-import { $DATA, $EACH, $PROPS, $STORE, $TOOLS, CLASS, DELETE, INDEX, SUPER } from "./constants";
+import { $DATA, $FOR, $PROPS, $STORE, $TOOLS, CLASS, DELETE, INDEX, SUPER } from "./constants";
 import { newSet } from "./object";
 import { match, replace, split, trim } from "./string";
 
@@ -23,11 +23,8 @@ export let findUsedButNotDeclaredVariables = (code: string) => {
 
     // 1. Capture declared variables/functions/params/imports
     let declarationRegexes = [
-        /\b(?:var|let|const)\s+([a-z_$][\w$]*)/gi, // variable declarations
-        /\bfunction\s+([a-z_$][\w$]*)/gi, // function declarations
-        /\bclass\s+([a-z_$][\w$]*)/gi, // class declarations
-        /\bimport\s+([a-z_$][\w$]*)/gi, // import statements
-        /\bfunction\s*[^(]*\(([^)]*)\)/g, // function parameters
+        /\b(?:var|let|const|function|class)\s+([a-z_$][\w$]*)/gi, // simple variable declarations
+        /\b(?:function|catch)\s*[^(]*\(([^)]*)\)\s*{/g, // function parameters
         /\(([^)]*)\)\s*=>/g, // arrow function parameters (parentheses)
         /\b([a-z_$][\w$]*)\s*=>/gi, // arrow function parameters (single param without parentheses)
     ];
@@ -86,9 +83,10 @@ export let findUsedButNotDeclaredVariables = (code: string) => {
         }
     }
 
-    // 3. Find object literal keys and mark their start positions
+    // 3. Find object literal keys or method keys and mark their start positions
     let objectKeys = newSet() as Set<string>;
-    let objectKeyRegex = /\b([a-z_$][\w$]*)\s*:/gi;
+    // Updated regex: matches both key: and key()
+    let objectKeyRegex = /\b([a-z_$][\w$]*)\s*(:|\()/gi;
     while ((matched = objectKeyRegex.exec(code)) !== null) {
         // Add the object key to the set, if not in an exclusion range
         if (!inRange(exclusionRanges, matched[INDEX])) {
@@ -134,7 +132,7 @@ export let replaceUsedButNotDeclaredVariables = (bnode: BNode, code: string) => 
     let updatedCode = '';
     let lastIndex = 0;
 
-    let ctx = bnode[ctxKey];
+    let ctx = bnode.ctx;
 
     for (let [name, start, end] of found) {
 
@@ -146,7 +144,7 @@ export let replaceUsedButNotDeclaredVariables = (bnode: BNode, code: string) => 
         }
         // Is in one of these contexts?
         else {
-            for (let obj of [$EACH, $DATA, $PROPS, $STORE, $TOOLS] as (keyof Context)[]) {
+            for (let obj of [$FOR, $DATA, $PROPS, $STORE, $TOOLS] as (keyof Context)[]) {
     
                 // Check if the variable is a property of a known context object
                 if (ctx[obj] && name in ctx[obj]) {

@@ -3,6 +3,7 @@
 Welcome to the official documentation for Brio.js, a powerful JavaScript framework designed to simplify web development. This guide will help you get started with Brio.js, explore its features, and understand how to use it effectively in your projects.
 
 ## Table of Contents
+
 - [Brio.js Documentation](#briojs-documentation)
   - [Table of Contents](#table-of-contents)
   - [Introduction](#introduction)
@@ -15,12 +16,15 @@ Welcome to the official documentation for Brio.js, a powerful JavaScript framewo
     - [Methods](#methods)
 
 ## Introduction
+
 Brio.js is a simple, fast, and lightweight JavaScript framework for building dynamic web applications. It provides a set of directives, methods, and properties that make it easy to create interactive user interfaces right on the browser.
 
 ## Installation
+
 You can install Brio.js via npm or by including the script directly in your HTML file.
 
 ### Using npm
+
 To install Brio.js via npm, run the following command:
 
 ```bash
@@ -28,6 +32,7 @@ npm install briojs
 ```
 
 ### Including the Script
+
 Alternatively, you can include Brio.js directly in your HTML file:
 
 ```html
@@ -59,11 +64,13 @@ Alternatively, you can include Brio.js directly in your HTML file:
 ```
 
 ## Getting Started
+
 To get started with Brio.js, create a new HTML file and include the Brio.js script as shown above. You can then start using Brio.js directives to build your application.
 
 ## Core Features
 
 ### Directives
+
 Brio.js provides several directives to enhance your HTML elements:
 
 - `b-save`: Saves template, script, and style assets straight out the DOM to be reused globally. The element itself is removed from the DOM after processing.
@@ -72,8 +79,8 @@ Brio.js provides several directives to enhance your HTML elements:
 - `b-props`: Merges a new $props context object under a parent $props context, if any. An object can be passed as initial props, but it's optional.
 - `b-data`: Creates a new $data context object for the element and its children not under another $data context. An object can be passed as initial data, but it's optional. This is equivalent to creating a component.
 - `b-slot`: Saves the outer HTML of the element and places it in the $slots context object under the required slot name. The $slots context lives under a b-data context.
-- `b-ref`: Saves a reference to the element in the $refs context object under the required ref name. The $refs context lives under a b-data context. It cannot be used alongside b-if, b-each, and b-template.
-- `b-each`: Renders the element for each item in an array, object, or number.
+- `b-ref`: Saves a reference to the element in the $refs context object under the required ref name. The $refs context lives under a b-data context. It cannot be used alongside b-if, b-for, and b-template.
+- `b-for`: Renders the element for each item in an array, object, or number.
 - `b-uid`: Creates a new $uid context for the element and its children not under another $uid context. It requires an array of strings. Each string will be the key for a unique identifier stored in $uid.
 - `b-template`: Hydrates the element and its children, but does not render the element in the DOM, only its children. It should not be used with self-closing elements. It cannot be used alongside b-show, b-html, b-text, b-style, bind-*, b-model, b-mask, b-transition, on-*, because these directives need to be hydrated on the element itself and not on its children.
 - `b-show`: Shows or hides the element based on an expression.
@@ -104,6 +111,7 @@ Brio.js provides several directives to enhance your HTML elements:
 - `b-effect`: Runs a side effect function whenever the reactive values used inside the function change. Example: `<div b-effect="console.log(count)"></div>`
 
 ### Methods
+
 Brio.js provides several methods to interact with the framework programmatically:
 
 - `$cleanup(fn)`: Registers a cleanup function to be called when the element is being dehydrated and removed from the DOM.
@@ -114,8 +122,7 @@ Brio.js provides several methods to interact with the framework programmatically
 - `$emit(node, eventName, eventData?)`: Emits a custom event from the specified node, triggering any event listeners attached to that event name.
 - `$getProp(object, propName, defaultValue?)`: Retrieves a property value from the specified object. If the property does not exist, it returns the default value if provided.
 - `$hasProp(object, propName)`: Checks if the specified property exists on the given object.
-- `$http.delete(endpoint, body?, options?)`: Sends an HTTP DELETE request to the specified endpoint with an optional body and options.
-- `$http[get|post|put|patch|delete](endpoint, body?, options?)`: Sends an HTTP request to the specified endpoint with an optional body and options. Supports GET, POST, PUT, PATCH, and DELETE methods. If the body is an object or array, it will be automatically be encoded to URLSearchParams for GET and DELETE requests or if the Content-Type is not specified, it will be stringified to JSON if the Content-Type is application/json, or FormData if the Content-Type is multipart/form-data. The response will be automatically parsed whenever possible. A parser can be specified in the options to override the default behavior, options are: arrayBuffer, blob, formData, json, and text
+- `$http[get|post|put|patch|delete](endpoint, body?, options?)`: Sends an HTTP request to the specified endpoint with an optional body and options. Supports GET, POST, PUT, PATCH, and DELETE methods. If the body is an object or array, it will be automatically be encoded to URLSearchParams for GET and DELETE requests or if the Content-Type is not specified, it will be stringified to JSON if the Content-Type is application/json, or FormData if the Content-Type is multipart/form-data. The response will be automatically parsed whenever possible. A `parser` can be specified in the options to override the default behavior, options are: arrayBuffer, blob, formData, json, and text.
 - `$hydrate(node, contextNode?)`: Hydrates the specified node and its children, processing all Brio.js directives and initializing the necessary data, effects, and event listeners. An optional context node can be provided to inherit context from.
 - `$insert(target, placement, content, options?)`: Inserts the specified content into the DOM at the specified location relative to the target node. The content can be a HTML string, Node, saved template name, or a promise that resolves to one of them. The `placement` parameter specifies the insertion point: before, after, prepend, append, replaceWith, replaceChildren, text. The options parameter can include `hydrate` (boolean) to indicate whether to hydrate the inserted content, and `selector` (string) to query an specific element from the parsed content. It returns an array of inserted nodes.
 - `$listen(node, eventName, callback, options?)`: Adds an event listener to the specified node for the given event name. The callback function will be called whenever the event is triggered. The options parameter can include standard event listener options such as `capture`, `once`, `passive`, etc. It returns a function to remove the event listener.

@@ -43,7 +43,7 @@ type StateOptions = {
 }
 
 type State = {
-    (target: any, options?: StateOptions): any,
+    (target: any, parent?: any): any,
     skip: (value: any) => any,
     persist: (value: any, alias?: string) => any,
     session: (value: any, alias?: string) => any,

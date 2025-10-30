@@ -19,24 +19,24 @@
         <button b-a4>Decrement</button>
     </div>
 
-    <script b-ignore b-load-once type="module" src="/src/index.ts"></script>
+    <script b-ignore type="module" src="/src/briojs.min.ts"></script>
 
     <script>
         window.addEventListener('brio', () => {
 
-            let {$set: {fn: newFn}, $dom: {query, hydrate}, $store} = brio.newApp();
+            let {$set: {fn: newFn}, $hydrate, $store} = brio.newApp();
 
             console.log('$store', $store);
 
-            query('[b-a1]').setAttribute('b-data', newFn(() => ({ count: 120 })));
-            query('[b-a2]').setAttribute('b-text', newFn(({$data}) => () => `Counter: ${$data.count}`));
-            query('[b-a3]').setAttribute('on-click', newFn(({$data}) => () => $data.count++));
-            query('[b-a4]').setAttribute('on-click', newFn(({$data}) => ($event) => {
+            document.querySelector('[b-a1]').setAttribute('b-data', newFn(() => ({ count: 120 })));
+            document.querySelector('[b-a2]').setAttribute('b-text', newFn(({$data}) => () => `Counter: ${$data.count}`));
+            document.querySelector('[b-a3]').setAttribute('on-click', newFn(({$data}) => () => $data.count++));
+            document.querySelector('[b-a4]').setAttribute('on-click', newFn(({$data}) => ($event) => {
                 $data.count--;
                 console.log('event', $event);
             }));
 
-            hydrate('[b-a1]');
+            $hydrate('[b-a1]');
         });
     </script>
 </body>

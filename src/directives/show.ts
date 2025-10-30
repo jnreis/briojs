@@ -9,6 +9,8 @@ import { B_TRANSITION_KEY } from './transition';
  */
 export let hydrateShow = (bnode: BNode, attrName: string, attrValue: string) => {
 
+    let el = bnode.el;
+
     // Get the initial display value
     let initialDisplay = getStyle(bnode.el)[DISPLAY];
 
@@ -17,27 +19,27 @@ export let hydrateShow = (bnode: BNode, attrName: string, attrValue: string) => 
     if (initialDisplay == 'none') initialDisplay = 'block';
 
     // Evaluate the attribute value as an effect
-    bnode[EVAL_EFFECT](bnode, attrName, attrValue, (node: HTMLElement) => (exp) => {
+    bnode[EVAL_EFFECT](bnode, attrValue, (ctxFn) => {
         // Get the value
-        let value = exp();
+        let value = ctxFn();
 
         // Check if the parent node exists
-        if (getParent(node)) {
+        if (getParent(el)) {
             // Wait for the next tick.
             // * This is necessary for some directives to work properly (e.g. `on-click-outside`)
             nextFrame(() => {
                 let transition = bnode[OPTIONS][B_TRANSITION_KEY];
                 // Show the element
                 if (value) {
-                    node[STYLE][DISPLAY] = initialDisplay;
+                    el[STYLE][DISPLAY] = initialDisplay;
                     if (transition) transition(true);
                 }
                 // Hide the element after the transition
                 else if (transition) {
-                    transition(false, () => hideElement(node));
+                    transition(false, () => hideElement(el));
                 }
                 // Just hide the element
-                else hideElement(node);
+                else hideElement(el);
             });
         }
     });

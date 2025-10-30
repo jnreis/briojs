@@ -5,7 +5,7 @@ declare module "briojs" {
 
     export let setAllDirectives: (app: AppObject) => void;
     export let ignoreDirective: Directive;
-    export let eachDirective: Directive;
+    export let forDirective: Directive;
     export let propsDirective: Directive;
     export let dataDirective: Directive;
     export let uidDirective: Directive;

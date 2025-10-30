@@ -5,9 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hook</title>
 </head>
-<body b-hydrate b-props="{hook: [1,2,3], input: '123'}">
+<body b-props="{hook: [1,2,3], input: '123'}">
 
     <!-- 
+        !!! HOOKS ARE DEPRECATED !!!
+
         General notes about hooks:
         - Hooks are functions that run before or after the primary function of a directive.
         - Hooks with the highest priority run first.
@@ -59,9 +61,9 @@
     <button b-ref="click" on-click="$props.hook.push($props.input)">Add</button>
     <button on-click="$props.hook.pop()">Remove Last</button>
 
-    <div b-ref="each" b-each="n in $props.hook">
-        Number is {{ $each.n }}
-        <input type="text" b-model="$each.n">
+    <div b-ref="each" b-for="n in $props.hook">
+        Number is {{ $for.n }}
+        <input type="text" b-model="$for.n">
     </div>
 
     <div 
@@ -84,25 +86,14 @@
         Intersection
     </div>
 
-    <!-- <script b-script>
-        () => {
-            $set.hook($refs.input, 'b-model', () => {
-                console.log('Hook before');
-            }, 1)
-            $set.hook($refs.input, 'b-model', () => {
-                console.log('Hook after');
-            }, -1)
-        }
-    </script> -->
+    <script type="module" src="/src/briojs.min.ts"></script>
 
-        <script type="module" src="/src/briojs.min.ts"></script>
-
-        <script>
-            window.addEventListener('brio', () => {
-                let app = brio.newApp();
-                let {$dom, $state, $effect, $watch} = app.gc;
-                $dom.hydrate('body');
-            });
-        </script>
+    <script>
+        window.addEventListener('brio', () => {
+            let app = brio.newApp();
+            let {$hydrate, $state, $effect, $watch} = app.gc;
+            $hydrate('body');
+        });
+    </script>
 </body>
 </html>

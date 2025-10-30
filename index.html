@@ -62,81 +62,33 @@
   </head>
   <body hidden bind-hidden="false">
 
-    <h1 b-hydrate="async () => console.log('b-hydrate', await $http.get('https://dummyjson.com/test'))">Brio.js</h1>
+    <h1 b-effect="async () => console.log('b-effect', await $http.get('https://dummyjson.com/test'))">Brio.js</h1>
     <button on-click="console.log('on-click', $event)">Outside a props</button>
 
     <div b-props="{a: 'template'}">
       Fall back content for input
     </div>
 
-    <button b-props="{ ranCount: 0 }" b-init="$hook(document.querySelector('#button1'), 'on-click', ($context, $controls) => {
-      console.log('$hook before', $context);
-      $controls.play();
-      $props.ranCount++;
-      if ($props.ranCount == 3) $controls.remove();
-    }, 1);
-    $hook(document.querySelector('#button1'), 'on-click', ($context, $controls) => {
-      console.log('$hook after', $context);
-    });">Add $hook "From a parent scope"</button>
+    <button b-props="{ ranCount: 0 }">Add $hook "From a parent scope"</button>
 
     <div b-props="{
-      animations: new Map(),
-      count: $persist(110, 'theCount'), 
-      search: $session(''),
+      count: $state.persist(110, 'theCount'), 
+      search: $state.session(''),
       search2: null,
       first: 'John', 
       last: 'Doe', 
       value: 'abc', 
-      checked: true, 
       vehicle: ['Bike', 'Boat'], 
-      pick: 'one', 
       get double() {
         return this.count * 2;
       },
       set double(value) {
         this.count = value / 2;
       },
-      isOpen: true,
-      toggle() {
-        this.isOpen = !this.isOpen;
-      },
-      func() {
-        console.log(this);
-      },
-      options: {
-        duration: 1500, 
-        iterations: Infinity, 
-        direction: 'alternate', 
-        easing: 'ease-in-out'
-      },
-      slide($el) {
-        $el.animate([
-          {transform: ' translateX(2rem) translateY(2rem) scale(0.85)'}
-        ], this.options);
-      },
-      animation1: null,
       item: 'abc',
       items: ['Apple','Banana','Cherry'],
       obj: { a: 1, b: 2, c: 3 },
-      s: {
-        duper: {
-          nested: {
-            value: 'Hello'
-          }
-        }
-      },
-      t1: null,
-    }" b-init="console.log('$props', $props)">
-      <button on-click="$out($store.a1, $props.isOpen)">Play $out</button>
-      <button on-click="$in($store.a1, $props.isOpen)">Play $in</button>
-      <button no-effect="console.log('effect', $props.isOpen)" on-click="$props.toggle" b-html="$props.isOpen"></button>
-      <!-- <h1 uppercase init="$el.animate([{transform: 'translateX(300px)'}], {duration: 2000, iterations: Infinity, direction: 'alternate', easing: 'ease-in-out'})">Brio.js</h1> -->
-      <!-- <h2 effect="$animate([{opacity: '0.05'}], {direction: 'alternate', iterations: Infinity, duration: 1000})">The $animate method</h2> -->
-      <div b-ref="a1" style="display: flex;">
-        <h2 b-if="$props.isOpen" before-if2="$out($props.animations.get('t1'), $context, $next)" after-if2="$in($props.animations.get('t1'), $context, $next)">Hello 👋.</h2>
-      </div>
-      <!-- <p>Hi. <span html="`<strong>${ first } ${ last }</strong>`"></span></p> -->
-      <!-- <p b-class="4 * count">Hello, ${ first } ${ last }!</p> -->
+    }">
 
       <button on-click="console.log($event.detail)">Test event</button>
 
@@ -147,7 +99,7 @@
 
       <p>${ $props.first }, ${$props.search2}</p>
 
-      <input type="text" b-mask-dynamic="$mask.money()" b-model="$props.search" on-keyup-enter="console.warn('on-keyup-enter')">
+      <input type="text" b-mask="money" b-model="$props.search" on-keyup-enter="console.warn('on-keyup-enter')">
 
       <button on-click="$props.search = ''">Clear search</button>
 
@@ -167,25 +119,26 @@
 
       <!-- Just the value -->
       <!-- <div class="items-wrapper">
-        <div class="items" b-each="item in items">
+        <div class="items" b-for="item in items">
           <p>${ item }</p>
         </div>
       </div> -->
 
       <!-- Index and value -->
       <!-- <div class="items-wrapper">
-        <div class="items" b-each="itemx, index in items">
+        <div class="items" b-for="itemx, index in items">
           <p>${index}. ${ itemx }</p>
         </div>
       </div> -->
 
-      <!-- b-each with object -->
+      <!-- b-for with object -->
       <div class="items-wrapper">
-        <h3 b-hydrate="$data.a = 'abc'">b-each with object</h3>
-        <div class="items" b-each="v, i in $props.obj">
-          <p b-hydrate="console.log('context', $dom.context($el))">{{ $each.i }}: {{ $each.v }}</p>
-          <input type="text" b-model="$each.v">
-          <button on-click="delete $props.obj[$each.i]">Remove</button>
+        <h3>b-for with object</h3>
+        <div class="items" b-for="v, i in $props.obj">
+            {{$for.v}}
+          <p>{{ $for.i }}: {{ $for.v }}</p>
+          <input type="text" b-model="$for.v">
+          <button on-click="delete $props.obj[$for.i]">Remove</button>
           <button on-click="console.log($props.obj, $props)">Log obj</button>
           <div>
             <div><div><div b-hydrated="console.log('$data', $data)">
@@ -202,13 +155,13 @@
         </form>
       </div>
 
-      <!-- b-each with array -->
+      <!-- b-for with array -->
       <!-- <div class="items-wrapper">
-        <h3>b-each with array</h3>
-        <div class="items" b-each="v, i in $props.items" b-props-hydrated="console.log('context', $dom.context($el))">
-          <p>{{ $each.i }}: {{ $each.v }}</p>
-          <input type="text" b-model="$each.v">
-          <button on-click="$props.items.splice($each.i, 1)">Remove</button>
+        <h3>b-for with array</h3>
+        <div class="items" b-for="v, i in $props.items" b-props-hydrated="console.log('context', $context($el))">
+          <p>{{ $for.i }}: {{ $for.v }}</p>
+          <input type="text" b-model="$for.v">
+          <button on-click="$props.items.splice($for.i, 1)">Remove</button>
           <button on-click="console.log($props.items, $props)">Log items</button>
         </div>
         <form 
@@ -271,7 +224,7 @@
         <div b-ref="prop2div">
           <button b-ref="button1" on-click="console.log($refs, $props)" b-teleport="body" style="background-color: red;">Inside Ref</button>
         </div>
-        <button b-ref="button1" on-click="console.log($refs); $set.store('$s2', {store2: 'Hey there!'})">Outside Ref</button>
+        <button b-ref="button1" on-click="console.log($refs)">Outside Ref</button>
       </div>
       <button b-ref="button3" on-click="console.log($refs)">From a parent scope</button>
     </div>
@@ -280,7 +233,7 @@
 
     <div b-props="{count: 0, increment() {this.count++} }">
       <h2>Counter 1: ${$props.count}</h2>
-      <button on-mousedown="$props.increment" on-click="console.log('context', $dom.context($el))">Increment</button>
+      <button on-mousedown="$props.increment">Increment</button>
       <div b-props="{
         count: 0,
         increment() {
@@ -293,58 +246,31 @@
       </div>
     </div>
 
-    <script>
-      document.addEventListener('brio:init', () => {
-        // brio.addProps('c1', () => {
-        //   return {
-        //     count: 0,
-        //     increment() {
-        //       this.count++;
-        //     }
-        //   }
-        // });
-
-        // let e="eventCallback";
-        // brio.addAnimationEngine({
-        //   name:"GSAP",
-        //   validate:n=>[e,"yoyo"].every(e=>e in n),
-        //   play:e=>{e.play()},
-        //   reverse:e=>{e.reverse()},
-        //   onComplete:(n,o)=>{n[e]("onComplete",o),n[e]("onReverseComplete",o)}
-        // });
-
-        // // Add global hook
-        // setTimeout(() => {
-        //   brio.addHook('*', 'b-each-update', ($context) => {
-        //     console.log('Global hook b-each-update', $context);
-        //   });
-        // }, 2000);
-      });
-    </script>
-
     <!-- <div x-data="{count: 0}">
       <h2>Counter 2: <span x-text="count"></span></h2>
       <button @click="count++">Increment</button>
     </div> -->
 
-    <script defer src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
-    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.2/anime.min.js" integrity="sha512-aNMyYYxdIxIaot0Y1/PLuEu3eipGCmsEUBrUq+7aVyPGMFH8z0eTP0tkqAvv34fzN6z+201d3T8HPb1svWSKHQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script type="module" src="/src/briojs.min.ts"></script>
 
-    <script type="module" src="/src/index.ts"></script>
+    <script b-script>
+        () => {
+            let obj = { a: 1, b: 2 };
+            let arr = [10, 20];
+            const { a: newA, b: newB } = obj;
+            const [x, y] = arr;
+        }
+    </script>
 
     <script>
       window.addEventListener('brio', () => {
 
         let app = brio.newApp();
-        let {$dom,$set,$state} = app;
-
-        let store = $state({a1: null, count: 123});
-
-        $set.store('store', store);
+        let {$hydrate} = app.gc;
 
         console.log('app', app);
 
-        $dom.hydrate($dom.query('body'));
+        $hydrate('body');
       });
     </script>
   </body>

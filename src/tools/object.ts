@@ -59,27 +59,20 @@ let descriptorShorthand = [
  * @example
  * setProp(obj, 'key', 'value', 'wce');
  */
-export let setProp = (object: any, key: string, value: any = UNDEFINED, descriptor: any = {}) => {
+export let setProp = (object: any, key: string, value: any = UNDEFINED, descriptor: any = '') => {
 
-    let quickFalse = '';
     if (isString(descriptor)) {
-        quickFalse = descriptor;
-        descriptor = {};
+        let shorthand = descriptor;
+
+        // Create a descriptor with the value
+        descriptor = {[VALUE]: value};
+
+        // Iterate over each shorthand and set the actual descriptor keys
+        each(descriptorShorthand, ([shorthandKey, actualKey]) => {
+            // Set the descriptor key to false if the shorthand is present
+            descriptor[actualKey] = !has(shorthand, shorthandKey);
+        });
     }
-
-    each(descriptorShorthand, ([shortKey, longKey]) => {
-
-        // If the short key is set, map it to the long key
-        if (hasProp(descriptor, shortKey)) {
-            descriptor[longKey] = descriptor[shortKey];
-        }
-        // If the long key is not set, set it to false if the short key is not in quickFalse
-        else if (!hasProp(descriptor, longKey)) {
-            descriptor[longKey] = !has(quickFalse, shortKey);
-        }
-    });
-
-    descriptor[VALUE] = value;
 
     // Define the property on the object
     O[DEFINE_PROPERTY](object, key, descriptor);

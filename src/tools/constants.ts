@@ -1,3 +1,5 @@
+import { space } from "./string";
+
 export let BRIO: 'brio' = 'brio';
 
 /*
@@ -5,6 +7,7 @@ export let BRIO: 'brio' = 'brio';
  */
 
 export let $: '$' = '$';
+export let $FOR: '$for' = '$for';
 export let $REFS: '$refs' = '$refs';
 export let $SLOTS: '$slots' = '$slots';
 export let $STORE: '$store' = '$store';
@@ -19,6 +22,7 @@ export let ATTRIBUTE__$CAP: 'Attribute' = 'Attribute';
 export let A_VALID: 'a valid' = 'a valid';
 
 export let B_: 'b-' = 'b-';
+export let B_FOR: 'b-for' = 'b-for';
 export let B_IF: 'b-if' = 'b-if';
 export let B_IGNORE: 'b-ignore' = 'b-ignore';
 export let B_REF: 'b-ref' = 'b-ref';
@@ -54,7 +58,6 @@ export let DISCONNECT: 'disconnect' = 'disconnect';
 export let DISPLAY: 'display' = 'display';
 export let DOCUMENT: 'document' = 'document';
 
-export let EACH: 'each' = 'each';
 export let ELEMENT: 'element' = 'element';
 export let EMAIL: 'email' = 'email';
 export let END: 'end' = 'end';
@@ -65,7 +68,6 @@ export let EVAL_EFFECT: 'evalEffect' = 'evalEffect';
 export let EVENT: 'event' = 'event';
 export let EVENT_LISTENER__$CAP: 'EventListener' = 'EventListener';
 export let EXIT: 'exit' = 'exit';
-export let CTX_ARGS: 'ctxArgs' = 'ctxArgs';
 
 export let GET: 'get' = 'get';
 
@@ -170,13 +172,11 @@ export let ADD_EVENT_LISTENER = 'add' + EVENT_LISTENER__$CAP as 'addEventListene
 
 export let $DATA = $+DATA as '$data';
 export let $DEHYDRATE = '$de' + HYDRATE as '$dehydrate';
-export let $EACH = $+EACH as '$each';
 export let $HYDRATE = $+HYDRATE as '$hydrate';
 export let $INSERT = $+INSERT as '$insert';
 export let $PROPS = $+PROPS as '$props';
 
 export let B_DATA = B_+DATA as 'b-data';
-export let B_EACH = B_+EACH as 'b-each';
 export let B_HTML = B_+HTML as 'b-html';
 export let B_SCRIPT = B_+SCRIPT as 'b-script';
 export let B_TEMPLATE = B_+TEMPLATE as 'b-template';
@@ -275,3 +275,6 @@ export let REQUIRES_ACTION_TYPE = (action: string, actionName: string, actionTyp
 
 /** but got [something else] instead. */
 export let BUT_GOT_INSTEAD = (somethingElse: string) => `but got ${somethingElse} instead.`;
+
+export let REQUIRES_REACTIVE_VALUE = (directiveName: string) =>
+    space(directiveName, REQUIRES, 'a reactive', VALUE) as '[directive] requires a reactive value.';

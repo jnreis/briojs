@@ -14,16 +14,16 @@ import { DISCONNECT, OBSERVE, ONCE, OPTIONS, DEBOUNCE, EXIT, ON_ENTER, B_, ON_EX
  * @option `threshold`  Either a single number or an array of numbers which indicate at what percentage of the target's visibility the observer's callback should be
  */
 export let hydrateIntersection = (bnode: BNode, attrName: string, attrValue: string) => {
-    
+
     let _attrName = sliceAttrName(attrName, 5); // 5: b-on-, 3: on-
-    
+
     let [directiveName] = split(_attrName, '-');
-    
+
     // Options
     let options = bnode[OPTIONS][attrName] || {};
-    
+
     let $el = bnode.el;
-    
+
     // Evaluate the expression
     let expFn = bnode.exec(bnode, attrValue, '$entry', false);
 

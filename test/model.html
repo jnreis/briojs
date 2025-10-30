@@ -21,7 +21,7 @@
         }
     </style>
 </head>
-<body b-hydrate>
+<body>
 
     <!-- <script b-script type="brio" src="/dist/mask.money.js"></script> -->
 
@@ -29,7 +29,7 @@
     <div b-props="{state: null, options: ['Brio.js', 1.2, null, true, false]}">
         <h4>Single Select: {{$props.state}} ({{$plugins.type($props.state)}})</h4>
         <select b-model="$props.state">
-          <option b-each="option in $props.options" bind-value="$each.option">{{$each.option}}</option>
+          <option b-for="option in $props.options" bind-value="$for.option">{{$for.option}}</option>
         </select>
     </div>
 
@@ -37,34 +37,34 @@
     <div b-props="{state: null, options: ['Brio.js', 1.2, null, true, false]}">
         <h4>Multiple Select: {{$props.state}} ({{$plugins.type($props.state)}})</h4>
         <select b-model="$props.state" multiple>
-          <option b-each="option in $props.options" bind-value="$each.option">{{$each.option}}</option>
+          <option b-for="option in $props.options" bind-value="$for.option">{{$for.option}}</option>
         </select>
     </div>
 
     <!-- Single Checkbox -->
     <div b-props="{state: null, options: ['Brio.js', 1.2, null, true, false]}">
         <h4>Single Checkbox: {{$props.state}} ({{$plugins.type($props.state)}})</h4>
-        <div b-each="option in $props.options" b-uid="['single-checkbox']">
-            <input type="checkbox" bind-id="$uid('single-checkbox')" bind-name="$uid('single-checkbox')" bind-value="$each.option" b-model="$props.state">
-            <label bind-for="$uid('single-checkbox')">The {{$plugins.type($each.option)}} {{$each.option}}</label><br>
+        <div b-for="option in $props.options" b-uid="['single-checkbox']">
+            <input type="checkbox" bind-id="$uid['single-checkbox']" bind-name="$uid['single-checkbox']" bind-value="$for.option" b-model="$props.state">
+            <label bind-for="$uid['single-checkbox']">The {{$plugins.type($for.option)}} {{$for.option}}</label><br>
         </div>
     </div>
 
     <!-- Multiple Checkbox -->
     <div b-props="{state: null, options: ['Brio.js', 1.2, null, true, false]}">
         <h4>Multiple Checkbox: {{$props.state}} ({{$plugins.type($props.state)}})</h4>
-        <div b-each="option in $props.options" b-uid="['multiple-checkbox']">
-            <input type="checkbox" bind-id="$uid('multiple-checkbox')" name="multiple-checkbox" bind-value="$each.option" b-model="$props.state">
-            <label bind-for="$uid('multiple-checkbox')">The {{$plugins.type($each.option)}} {{$each.option}}</label><br>
+        <div b-for="option in $props.options" b-uid="['multiple-checkbox']">
+            <input type="checkbox" bind-id="$uid['multiple-checkbox']" name="multiple-checkbox" bind-value="$for.option" b-model="$props.state">
+            <label bind-for="$uid['multiple-checkbox']">The {{$plugins.type($for.option)}} {{$for.option}}</label><br>
         </div>
     </div>
 
     <!-- Radio Input -->
     <div b-props="{state: null, options: ['Brio.js', 1.2, null, true, false]}">
         <h4>Radio Input: {{$props.state}} ({{$plugins.type($props.state)}})</h4>
-        <div b-each="option in $props.options" b-uid="['radio-input']">
-            <input type="radio" bind-id="$uid('radio-input')" bind-value="$each.option" b-model="$props.state">
-            <label bind-for="$uid('radio-input')">The {{$plugins.type($each.option)}} {{$each.option}}</label><br>
+        <div b-for="option in $props.options" b-uid="['radio-input']">
+            <input type="radio" bind-id="$uid['radio-input']" bind-value="$for.option" b-model="$props.state">
+            <label bind-for="$uid['radio-input']">The {{$plugins.type($for.option)}} {{$for.option}}</label><br>
         </div>
     </div>
 
@@ -187,7 +187,7 @@
                 type: (value) => Object.prototype.toString.call(value).slice(8, -1).toLowerCase()
             }
 
-            gc.$dom.hydrate('body');
+            gc.$hydrate('body');
         })
     </script>
 </body>

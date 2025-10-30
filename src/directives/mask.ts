@@ -1,8 +1,8 @@
 import { saveCleanup } from "../app";
-import { entries, has, logError, size, slice, wait } from "../tools";
+import { entries, has, logError, size, slice } from "../tools";
 import { arrayAdd, find, indexOf, join } from "../tools/array";
 import { B_, CAN_ONLY_BE_USED_ON, DIRECTIVE, ELEMENT, INDEX, INPUT, MASK, MASK_TOKENS, MASKS, OPTIONS, SELECTION_START, TEXTAREA, TOKENS, VALUE } from "../tools/constants";
-import { emit, listen } from "../tools/dom";
+import { emit, listen, nextFrame } from "../tools/dom";
 import { getProp, getKeys, newRegExp } from "../tools/object";
 import { match, replace, split, startsWith } from "../tools/string";
 
@@ -115,7 +115,7 @@ export let hydrateMask = (bnode: BNode, attrName: string, attrValue: string) => 
     };
 
     // Initial mask application
-    wait(_mask, 7);
+    nextFrame(_mask);
 
     // Save cleanup function
     // This listener will `capture` and process the input value before any other listeners.

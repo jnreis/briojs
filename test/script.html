@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <script b-script>
+        ({$data}) => {
+            console.log('Hello from b-script directive!', $data);
+
+            $data.name = 'BrioJS';
+
+            $data.getName = () => $data.name + ' is awesome!';
+
+            $data.bindFn = ($initial) => `${$initial || 'Hi'}, ${$data.name}!`;
+
+            $data.bindFn2 = $data.bindFn;
+        }
+    </script>
+
+    <!-- Text Binding -->
+    <h1>{{ $data.name }}</h1>
+
+    <!-- Bind Directive -->
+    <input type="text" bind-name bind-fn="$data.bindFn2">
+
+    <script type="module" src="/src/briojs.min.ts"></script>
+    <script>
+        window.addEventListener('brio', () => {
+            let app = brio.newApp('body');
+
+            app.gc.$hydrate('body');
+
+            console.log('app', app);
+        })
+    </script>
+</body>
+</html>

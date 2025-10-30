@@ -9,7 +9,7 @@
 
         <script b-script>
             (ctx) => {
-                let v = validate($props);
+                let v = $validator($props);
                 v.prop('level1', [
                     { name: 'required', value: true },
                     { name: 'type', value: ['boolean', 'string'] },
@@ -57,7 +57,7 @@
 
         <button class="button" on-click="level1 = !level1">Toggle Level 1 (b-if)</button>
 
-        <div b-if="level1" class="b-each" b-data="{dshow: true, items: [4, 5] }" b-each="n in items">
+        <div b-if="level1" class="b-for" b-data="{dshow: true, items: [4, 5] }" b-for="n in items">
             {{n}}
         </div>
 
@@ -96,7 +96,7 @@
 
         <script type="module" src="/src/briojs.min.ts"></script>
 
-        <style b-save="bg-light-gray">
+        <style b-save="bg-light-gray" b-data="{pd: '1rem'}">
             & {
                 background-color: lightcyan;
                 padding: {{pd}};
@@ -105,20 +105,19 @@
 
         <template b-template="my-template-2"></template>
 
+        <div b-save="my-template-2" b-data="{field1: 'field from level 1', pd: '0.5rem'}" b-uid="['field1']">
+            <strong>Inside template - level1: {{level1}}</strong>
+            <br>
+            <p>field1: {{field1}}</p>
+            <input type="text" b-model="field1" class="mb-1">
+        </div>
+        <br>
+
         <script>
             window.addEventListener('brio', () => {
                 let app = brio.newApp();
                 console.log('App initialized', app);
-                let {$dom, $state, $effect, $watch} = app.gc;
-                app.template['my-template-2'] = `
-                    <div b-data="{field1: 'field from level 1', pd: '0.5rem'}" b-uid="['field1']">
-                        <strong>Inside template - level1: {{level1}}</strong>
-                        <br>
-                        <p>field1: {{field1}}</p>
-                        <input type="text" b-model="field1" class="mb-1">
-                    </div>
-                    <br>`;
-                $dom.hydrate('body');
+                app.gc.$hydrate('body');
             });
         </script>
     </body>

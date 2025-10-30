@@ -75,8 +75,8 @@
         <script>
             window.addEventListener('brio', () => {
                 let app = brio.newApp();
-                let {$dom, $state, $effect, $watch} = app.gc;
-                $dom.hydrate('body');
+                let {$hydrate, $state, $effect, $watch} = app.gc;
+                $hydrate('body');
             });
 
             // function h(type, props, ...children) {

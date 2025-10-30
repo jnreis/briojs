@@ -32,7 +32,7 @@
 export { newApp, setup } from "./app";
 export { setAllDirectives } from "./directives";
 export { ignoreDirective } from "./directives/ignore";
-export { eachDirective } from "./directives/each";
+export { forDirective } from "./directives/for";
 export { propsDirective, dataDirective } from "./directives/context";
 export { uidDirective } from "./directives/uid";
 export { htmlDirective } from "./directives/html";

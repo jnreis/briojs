@@ -9,6 +9,8 @@ export let hydrateTeleport = (bnode: BNode, attrName: string, attrValue: string)
 
     // Where to teleport the node in relation to the target element. Default is 'after'.
 
+    let el = bnode.el;
+
     let target: any;
     let where: 'before' | 'after' | 'prepend' | 'append';
     try {
@@ -24,9 +26,9 @@ export let hydrateTeleport = (bnode: BNode, attrName: string, attrValue: string)
     catch {}
 
     // Evaluate the attribute value as an effect
-    bnode[EVAL_EFFECT](bnode, attrName, attrValue, (node: HTMLElement) => (exp) => {
+    bnode[EVAL_EFFECT](bnode, attrValue, (ctxFn) => {
         try {
-            let value = exp();
+            let value = ctxFn();
             // If the value is an array, the first item is the target element and the second is the position
             if (isArray(value)) {
                 [target, where] = value;
@@ -45,10 +47,10 @@ export let hydrateTeleport = (bnode: BNode, attrName: string, attrValue: string)
         // Teleport the node to the target element
         // Note: the teleported node(s) may be the b-if placeholder (ph), or the b-template nodes (nodes), or the node itself.
         if (isNode(target)) {
-            insertNodes(target, where, ...(bnode[NODES] || [node]));
+            insertNodes(target, where, ...(bnode[NODES] || [el]));
 
             // Ensure the element will go through the cleanup process
-            saveToParent(bnode, node);
+            saveToParent(bnode, el);
         }
 
         // If the target is not found, log a warning

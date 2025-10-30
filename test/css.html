@@ -32,13 +32,13 @@
         </style>
     </div>
 
-    <script b-load-once type="module" src="/src/cdn.ts"></script>
+    <script type="module" src="/src/briojs.min.ts"></script>
 
     <script>
         window.addEventListener('brio', () => {
 
             // Create a new app
-            let {gc: {$set, $dom}} = brio.newApp();
+            let {gc: {$set, $hydrate}} = brio.newApp();
 
             console.log('set', $set);
 
@@ -62,7 +62,7 @@
             });
 
             // Hydrate the app
-            $dom.hydrate('body');
+            $hydrate.hydrate('body');
         });
     </script>
 </body>

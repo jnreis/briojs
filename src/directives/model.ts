@@ -1,8 +1,8 @@
 import { effect } from '../reactivity';
-import { entries, has, logError, logWarn, size, wait } from '../tools';
+import { entries, has, logError, logWarn, size } from '../tools';
 import { arrayAdd, arrayFrom, each, join } from '../tools/array';
 import { SELECT, INPUT, TEXTAREA, CHECKBOX, RADIO, VALUE, ARRAY, DIRECTIVE, REQUIRES, COMPOSING, ELEMENT, CAN_ONLY_BE_USED_ON, BOOLEAN, STRING, NUMBER, CHECKED, BUT_GOT_INSTEAD, TEXT, OF_TYPE, OPTIONS, COMPOSITION_START, COMPOSITION_END, EMAIL } from '../tools/constants';
-import { listen, onCompositionStart, onCompositionEnd, getAttr, queryAll, getTagName } from '../tools/dom';
+import { listen, onCompositionStart, onCompositionEnd, getAttr, queryAll, getTagName, nextFrame } from '../tools/dom';
 import { saveCleanup } from '../app';
 import { D, newMap } from '../tools/object';
 import { parse, space, trim } from '../tools/string';
@@ -95,7 +95,7 @@ export let hydrateModel = (bnode: BNode, attrName: string, attrValue: string) =>
         return logError(THE_MODEL_DIRECTIVE, CAN_ONLY_BE_USED_ON, INPUT, `, ${TEXTAREA}, and ${SELECT} ${ELEMENT}s.`, node);
 
     // Evaluate the expression to get the reactive value
-    let stateValue = getAccessedProp(bnode.exec(bnode, attrValue));
+    let [stateValue, setStateValue] = getAccessedProp(bnode.exec(bnode, attrValue));
 
     if (!stateValue) {
         return logError(THE_MODEL_DIRECTIVE, REQUIRES_A_REACTIVE_VALUE, node);
@@ -156,19 +156,19 @@ export let hydrateModel = (bnode: BNode, attrName: string, attrValue: string) =>
             [INPUT, RADIO, [NUMBER, STRING, BOOLEAN]],
             [INPUT, NUMBER, [NUMBER]],
             [INPUT, 'range', [NUMBER]],
-    
+
             [INPUT, '', [NUMBER, STRING]],
             [TEXTAREA, '', [NUMBER, STRING]],
             [SELECT, '', [NUMBER, STRING, BOOLEAN, ARRAY]],
         ];
-        
+
         // Apply special validation
         for (let [_tag, _type, _typesArray] of rules) {
 
             // Not the correct tag or type, continue looking
             if (!(tag == _tag && (!_type || type == _type)))
                 continue;
-    
+
             // The type is invalid, log an error and return
             if (!(isNull(value) || isUndefined(value) || has(_typesArray, getType(value))))
                 logWarn(THE_MODEL_DIRECTIVE, REQUIRES_A_REACTIVE_VALUE, OF_TYPE, join(_typesArray, ' or '), `for ${tag == INPUT ? type+' ' : ''}${_tag} ${ELEMENT}s,`, BUT_GOT_INSTEAD(getType(value)), node);
@@ -179,7 +179,7 @@ export let hydrateModel = (bnode: BNode, attrName: string, attrValue: string) =>
 
     // Wait for the node to be fully hydrated before running the special validation
     // Note: this is necessary because the reactive state may be used by multiple elements scattered throughout the template (e.g. multiple checkboxes in a group).
-    wait(() => {
+    nextFrame(() => {
         validate();
 
         // Save modifiers
@@ -188,7 +188,7 @@ export let hydrateModel = (bnode: BNode, attrName: string, attrValue: string) =>
 
         else if (isInput(CHECKBOX))
             nodeModifiers.set(node, modifiers);
-    }, 1);
+    });
 
 
     // UPDATES THE DOM
@@ -244,7 +244,7 @@ export let hydrateModel = (bnode: BNode, attrName: string, attrValue: string) =>
 
     // Save the effect
     // Note: wait to save the effect until the node is fully hydrated because the model directive may depend on the bind directive to bind the value attribute.
-    wait(() => saveCleanup(bnode, effect(watchFn)), 5); // 1ms is enough, but give it a little extra time to be safe
+    nextFrame(() => saveCleanup(bnode, effect(watchFn))); // 1ms is enough, but give it a little extra time to be safe
 
 
     // UPDATES THE PROP
@@ -273,12 +273,12 @@ export let hydrateModel = (bnode: BNode, attrName: string, attrValue: string) =>
             });
 
             // Update the reactive state. This will trigger a DOM update
-            stateValue(newValue);
+            setStateValue!(newValue);
         }
 
         // Handle other input types
         // Note: When a single checkbox with a value attribute is unchecked, the getNodeValue function returns the value attribute, if present, instead of false. In this case, the value should be set to false.
-        else stateValue(isCheckboxOrRadio && !node[CHECKED] ? false : getNodeValue(node));
+        else setStateValue!(isCheckboxOrRadio && !node[CHECKED] ? false : getNodeValue(node));
     };
 
     // Handle composition events

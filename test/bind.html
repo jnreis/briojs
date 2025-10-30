@@ -37,12 +37,15 @@
         }
     </style>
 </head>
-<body b-hydrate>
+<body b-data="{ name: 'Brio.js', get firstName() {
+    console.log('firstName getter called');
+    return this.name.split(' ')[0];
+} }">
 
-    <script b-script>
-        async () => {
+    <script b-script b-effect="console.log('firstName', firstName)">
+        async (ctx) => {
             $data.name = 'Brio.js is awesome!';
-            console.log('Brio is the best!');
+            console.log('Brio is the best!', $data);
         }
     </script>
 
@@ -83,7 +86,7 @@
     </div>
 
     <div>
-        <h4 b-bind-name>Full syntax</h4>
+        <h4 b-bind-name="$data.name">Full syntax</h4>
         <p><code>b-bind-[attr-name]="[prop or expression]"</code></p>
         <p>Example: <code>b-bind-name="name"</code></p>
     </div>
@@ -129,7 +132,7 @@
     <script>
         window.addEventListener('brio', () => {
             let {gc} = brio.newApp();
-            gc.$dom.hydrate('[b-hydrate]');
+            gc.$hydrate('body');
             console.warn('Brio.js is ready:', gc);
         });
     </script>

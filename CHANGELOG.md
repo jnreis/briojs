@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.0] - 2025-10-24
+
+The items in this two objects are now at the global context and the objects `$dom` and `$tools` not longer exist.
+
+- Object.keys(\$dom) = ['hydrate', 'dehydrate', 'insert', 'route', 'emit', 'listen', 'query', 'queryAll', 'context']
+- Object.keys(\$tools) = ['hasProp', 'getProp', 'setProp', 'sync', 'clone', 'validate']
+
+
+The insert method now has the `target` first and `content` third. The `select` option is now called `selector`.
+
+- \$dom.insert(content, where, target, {select: String, hydrate: Boolean}) -> \$insert(target, placement, content, {selector: String, hydrate: Boolean})
+
+The \$uid method is now an object.
+
+- \$uid('test') -> \$uid.test
+
+- b-each directive was renamed to b-for. \$each is now \$for.
+
 ## [0.26.0] - 2025-02-10
 
 - A more modular approach was taken to the core. Now the core is a much thinner layer that directives, hooks, routes, route rules, templates, scripts, styles, props, data, masks, mask tokens, and animation engines can be added to. This can effectively be used to create a custom version of Brio.js and load reusable assets on demand.

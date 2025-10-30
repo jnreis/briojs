@@ -38,26 +38,25 @@
         <p class="text-white">Template 2</p>
     </template>
 
-    <script type="module" src="/src/index.ts"></script>
+    <script type="module" src="/src/briojs.min.ts"></script>
 
     <script>
         window.addEventListener('brio', () => {
-            let {$dom, $set} = brio.newApp();
+            let app = brio.newApp();
+            let {$hydrate, $set} = app.gc;
 
-            let c1 = $dom.query('[b-template="c1"]').innerHTML;
-            let c2 = $dom.query('[b-template="c2"]').innerHTML;
+            let c1 = document.querySelector('[b-template="c1"]').innerHTML;
+            let c2 = document.querySelector('[b-template="c2"]').innerHTML;
 
             $set.template('c1', c1);
             $set.template('c2', c2);
 
-            // $dom.queryAll('[b-template="c1"]').forEach($dom.hydrate);
-
-            $dom.hydrate('#app');
+            $hydrate('#app');
 
             let builder = brio.newApp();
 
             builder.$set.template('c1', c1);
-            builder.$dom.hydrate('#builder');
+            builder.$hydrate('#builder');
         })
     </script>
 </body>

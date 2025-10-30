@@ -5,16 +5,16 @@
 <div b-boost 
     style="margin-top: 1rem;" 
     b-props="{ count: 0 }" 
-    b-each="item, index in 3" 
-    b-effect="console.log('b-each index:', $each.index, '; item:', $each.item)"
+    b-for="item, index in 3" 
+    b-effect="console.log('b-for index:', $for.index, '; item:', $for.item)"
 >
 
     <div>Count: {{ $props.count }}</div>
-    <div>Item: {{ $each.item }}</div>
-    <div>Index: {{ $each.index }}</div>
+    <div>Item: {{ $for.item }}</div>
+    <div>Index: {{ $for.index }}</div>
 
-    <button on-click="$each.item--">Decrement</button>
-    <button on-click="$each.item++">Increment</button>
+    <button on-click="$for.item--">Decrement</button>
+    <button on-click="$for.item++">Increment</button>
 
     <button on-click="console.log('contactLink', $refs)">Get contact link element</button>
 

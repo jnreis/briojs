@@ -4,88 +4,34 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
-</head>
-<body>
-    <script b-script src="http://localhost:5173/dist/plugins.animation.engine.gsap.min.js"></script>
-    <script b-script>
-        // Simple gsap animations
-        () => {
-            $store.gsap = $state.skip({});
-            $store.gsapBounce = (el) => {
-                return gsap.fromTo(el, {y: -50, opacity: 0}, {y: 0, opacity: 1, duration: 0.5, ease: 'bounce.out'});
-            };
-            $data.playTransition = true;
-            $store.gsap.animatedElement = $store.gsapBounce($refs.animatedElement);
-
-            $set.hook($refs.animatedElement, 'b-if', (ctx, controls) => {
-                controls.play();
-                setTimeout(() => {
-                    if (ctx()) $store.gsap.animatedElement.play();
-                }, 100);
-            }, Infinity);
+    <style>
+        .show-in {
+            opacity: 0;
+            transform: scale(0.8);
+            transition: opacity 1s, transform 1s;
         }
-    </script>
-    
+        .show-out {
+            opacity: 1;
+            transform: translateY(50px);
+            transition: opacity 1.5s, transform 1.5s;
+        }
+    </style>
+</head>
+<body b-props="{show: true}">
     <h1>b-transition</h1>
     <p>This page demonstrates the use of b-transition with GSAP animations.</p>
 
-    <div b-ref="animText">This will be animated</div>
+    <div b-if="show" b-transition="['.show-in', '.show-out']">This will be animated</div>
 
-    <button on-click="animateInOut($refs.animText, true)">Play</button>
-    <button on-click="animateInOut($refs.animText, false)">Reverse</button>
+    <button on-click="show = true">Show</button>
+    <button on-click="show = false">Hide</button>
 
-    <script defer src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
     <script type="module" src="/src/briojs.min.ts"></script>
     <script>
         window.addEventListener('brio', () => {
-            let {gc} = brio.newApp();
-            gc.$dom.hydrate('body');
-            console.warn('Brio.js is ready:', gc);
+            let {gc: {$hydrate}} = brio.newApp();
+            $hydrate('body');
         });
-        // Store animations so they can be reversed mid-play
-        const animations = new WeakMap();
-
-        function animateInOut(el, show) {
-            let anim = animations.get(el);
-
-            if (!anim) {
-                // Create animation once
-                anim = el.animate(
-                [
-                    { opacity: 0, transform: 'translateY(-10px)' },
-                    { opacity: 1, transform: 'translateY(0)' }
-                ],
-                {
-                    duration: 3000,
-                    easing: 'ease',
-                    fill: 'forwards' // Keep last keyframe state
-                }
-                );
-
-                // Pause at start so we control when it plays
-                anim.pause();
-                anim.currentTime = 0;
-
-                animations.set(el, anim);
-            }
-
-            if (show) {
-                el.style.display = ''; // Make sure it's in the flow
-                anim.playbackRate = 1; // Forward
-                anim.play();
-            } else {
-                anim.playbackRate = -1; // Reverse
-                anim.play();
-
-                // Remove after reverse finishes
-                anim.finished.then(() => {
-                    if (anim.playbackRate < 0) {
-                        el.style.display = 'none';
-                    }
-                });
-            }
-        }
-
     </script>
 </body>
 </html>

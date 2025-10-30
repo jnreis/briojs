@@ -1,5 +1,5 @@
 import { ignoreDirective } from './ignore';
-import { eachDirective } from './each';
+import { forDirective } from './for';
 import { dataDirective, propsDirective } from './context';
 import { uidDirective } from './uid';
 import { htmlDirective, textDirective } from './html';
@@ -43,16 +43,16 @@ export let allDirectives: [string | RegExp, HydrateDirective][] = [
     /**
      * Context directives
      * Notes:
-     * - the order of inference is: $each, $data, $props, $store, $tools
+     * - the order of inference is: $for, $data, $props, $store, $tools
      */
     propsDirective,
     dataDirective,
 
     /** List rendering
      * Notes:
-     * - b-each stops the hydration flow of the element and starts a new hydration flow for each item it creates
+     * - b-for stops the hydration flow of the element and starts a new hydration flow for each item it creates
      */
-    eachDirective,
+    forDirective,
 
     /**
      * Unique ID generator
@@ -68,7 +68,7 @@ export let allDirectives: [string | RegExp, HydrateDirective][] = [
      *   - the b-template directive SHOULD NOT be used with elements that are self-closing (e.g. <img />, <input />, etc.)
      *   - the b-template directive CANNOT be used with: b-show, b-html, b-text, b-style, bind-*, b-model, b-mask, b-transition, on-*
      *     this is because these directives need to be hydrated on the element itself and not on its content
-     *   - the b-template directive CAN be used with: b-ignore, b-props, b-data, b-ref, b-slot, b-if, b-each, b-uid, b-teleport, b-script, b-effect
+     *   - the b-template directive CAN be used with: b-ignore, b-props, b-data, b-ref, b-slot, b-if, b-for, b-uid, b-teleport, b-script, b-effect
      */
     templateDirective,
 

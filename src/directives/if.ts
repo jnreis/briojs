@@ -40,9 +40,9 @@ export let hydrateIf = (bnode: BNode, attrName: string, attrValue: string) => {
     }
 
     // Evaluate the attribute value as an effect
-    bnode[EVAL_EFFECT](bnode, attrName, attrValue, () => (exp) => {
+    bnode[EVAL_EFFECT](bnode, attrValue, (ctxFn) => {
         // Get the value
-        let value = exp();
+        let value = ctxFn();
 
         // Wait for the next tick.
         // * This is necessary for some directives to work properly (e.g. `on-click-outside`, `b-transition`, etc.)

@@ -26,6 +26,12 @@ type RouteRulesObject = {
 }
 
 type SetRoute = (routePath: string, routeFunction: RouteFunction) => void;
+/**
+ * Get a route function by path.
+ * 
+ * @returns The route function, or `undefined` if not found, or `null` if not the same origin
+ */
+type GetRoute = (routePath: string) => FunctionType | undefined | null;
 
 type RouteFunctionArgs = {
     params: ObjectType,

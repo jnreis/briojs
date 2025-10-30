@@ -5,18 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
 </head>
-<body b-hydrate>
-	<script type="module" src="http://localhost:4321/src/pages/index.astro?astro&type=script&index=0&lang.ts"></script>
-
+<body>
 	<!-- Simple Counter -->
-	<div b-script="c1">
-		<h3 is:raw>Count: {{ $props.count }}</h3>
+	<div b-props="{count: 0}">
+		<h3>Count: {{ $props.count }}</h3>
 		<button on-click="$props.count++">Increment</button>
 		<button on-click="$props.count--">Decrement</button>
 	</div>
 
-	<template is:raw>Count: {{ $props.count }}</template>
+	<template>Count: {{ $props.count }}</template>
 
-    <script b-ignore type="module" src="/src/index.ts"></script>
+    <script b-ignore type="module" src="/src/briojs.min.ts"></script>
+
+    <script>
+        window.addEventListener('brio', () => {
+            let app = brio.newApp();
+            let {$hydrate} = app.gc;
+
+            $hydrate('body');
+        })
+    </script>
 </body>
 </html>

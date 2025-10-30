@@ -1,6 +1,7 @@
 // * TYPES
 
 import { size } from "../tools";
+import { UNDEFINED } from "../tools/constants";
 import { isUndefined } from "../tools/typeCheck";
 
 
@@ -41,7 +42,7 @@ export let getAccessedProps = (trigger: FunctionType): AccessedProp[] => {
  * Get the accessed property of an observed state as a function.
  * When called with a value, the property is set to that value.
  */
-export let getAccessedProp = (trigger: FunctionType) => {
+export let getAccessedProp = (trigger: FunctionType): [() => any, (value: any) => void, any, Prop] | [undefined] => {
     // Get the accessed properties
     let accessedProps = getAccessedProps(trigger);
 
@@ -53,6 +54,7 @@ export let getAccessedProp = (trigger: FunctionType) => {
          * If a new value is not defined, return the value of the property.
          * Otherwise, set the value of the property.
          */
-        return (newValue?: any) => isUndefined(newValue) ? state[prop] : state[prop] = newValue;
+        return [() => state[prop], (value: any) => state[prop] = value, state, prop];
     }
+    return [UNDEFINED];
 }

@@ -35,7 +35,7 @@ type AppObject = {
     routeRules: RouteRulesObject,
 
     exec: (bnode: BNode, exp: string, args?: string, returns?: boolean | "text") => FunctionType,
-    evalEffect: (bnode: BNode, attrName: string, attrValue: string, callback: (node: HTMLElement) => DirectiveCallback) => void,
+    evalEffect: (bnode: BNode, exp: string, callback: DirectiveCallback) => void,
     bnode: [NewBNode, GetBNode],
 
     // ! PUBLIC CONTEXT
@@ -65,7 +65,7 @@ type GlobalContext = {
     $state: State,
     $watch: Watch,
     $effect: Effect,
-} & DomObject & BrioTools & ObjectType;
+} & DomObject & BrioTools;
 
 type BrioTools = {
     $hasProp: (object: any, key: string) => boolean;
@@ -78,7 +78,7 @@ type BrioTools = {
     /** Creates a deep clone of the given value */
     $clone: (value: any) => any;
 
-    $validate: (data: ObjectType) => {
+    $validator: (data: ObjectType) => {
         prop: (name: string, rules: SchemaRules) => void;
         rule: (name: string, fn: RuleFn, message?: MessageFn) => void;
         validate: () => boolean;
@@ -89,7 +89,6 @@ type BrioTools = {
 /** The global $set object */
 type SetObject = {
     route: SetRoute,
-    router: SetRouter,
     routeRule: SetAsset,
     template: SetAsset,
     script: SetAsset,
@@ -111,16 +110,12 @@ type GetCache = (key: string, type?: keyof CacheObject) => any;
 type SetCache = (value: any, key?: string, type?: keyof CacheObject) => string;
 type CacheExp = (bnode: BNode, exp: string, args?: string, returns?: boolean | "text") => string;
 type EvalFn = (exp: string, args?: string, returns?: boolean | "text") => FunctionType;
-type SetCtxArgs = (args: string) => string;
-
-/** Sets the primary router */
-type SetRouter = (route: FunctionType) => void;
 
 /** The global $dom object */
 type DomObject = {
     $hydrate: (node: Node, ctxNode?: Node) => Promise<void>,
-    $dehydrate: (node: Node, _removeNode?: boolean, _removeBNode?: boolean) => void,
-    $insert: (content: any, where: "outer" | "inner" | "text" | "before" | "first" | "last" | "after", target: HTMLElement | string, options?: InsertOptions) => Promise<any>,
+    $dehydrate: (node: Node, _removeNode?: boolean, _removeBNode?: boolean) => Promise<void>,
+    $insert: (content: any, where: 'before'|'after'|'prepend'|'append'|'replaceWith'|'replaceChildren'|'text', target: HTMLElement | string, options?: InsertOptions) => Promise<any>,
     $route: Route,
     $emit: (target: HTMLElement | string, eventName: string, eventData?: any) => boolean,
     $listen: (target: HTMLElement | string, eventName: string, callback: (event: Event) => void, options?: boolean | AddEventListenerOptions) => () => void,
@@ -145,7 +140,7 @@ type HttpMethod = (endpoint: string, body?: any, options?: HttpOptions) => Promi
 /** Virtual Node */
 type BNode = {
     /** Local and global context */
-    [ctxKey: string]: Context,
+    ctx: Context,
 
     /** The parent bnode */
     parent: BNode | undefined,
@@ -187,9 +182,9 @@ type LocalContext = {
     $data: ObjectType,
     $refs: ObjectType,
     $slots: ObjectType,
-    $each?: ObjectType,
+    $for?: ObjectType,
     $cleanup: (fn: FunctionType) => void,
-} & ObjectType;
+};
 
 type LocalContextFns = {
     [contextName: string]: (bnode: BNode, parent?: BNode) => any,

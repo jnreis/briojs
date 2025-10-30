@@ -6,10 +6,7 @@
         <title>Counter</title>
     </head>
     <body>
-        <div
-            b-hydrate
-            class="m-2 flex items-center rounded-md border border-slate-600 p-2"
-        >
+        <div class="m-2 flex items-center rounded-md border border-slate-600 p-2">
             <script b-script>
                 try {
                     $data.MAX_COUNT = 3;
@@ -73,14 +70,12 @@
             </div>
         </div>
 
-        <script type="module" b-ignore src="/src/cdn.ts"></script>
+        <script type="module" b-ignore src="/src/briojs.min.ts"></script>
 
         <script>
             window.addEventListener('brio', () => {
-                console.log('Brio is ready');
-
-                let {gc:{$dom}} = brio.newApp();
-                $dom.hydrate('body');
+                let app = brio.newApp();
+                app.gc.$hydrate('body');
             });
         </script>
     </body>

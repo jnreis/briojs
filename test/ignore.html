@@ -5,13 +5,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>b-ignore</title>
 </head>
-<body>
+<body b-props="{ name: 'Brio.js' }">
     <h1>b-ignore</h1>
 
-    <div b-props="{ name: 'Brio.js' }" b-ignore>
-        <p>Hello from ${name}</p>
+    <div b-ignore>
+        <p>Hello from <span>{{name}}</span></p>
     </div>
 
-    <script type="module" src="/src/index.ts"></script>
+    <input type="text" b-model="name">
+
+    <script type="module" src="/src/briojs.min.ts"></script>
+
+    <script>
+        window.addEventListener('brio', async () => {
+            let app = brio.newApp();
+            let {$hydrate} = app.gc;
+
+            await $hydrate('body');
+
+            console.log('ignore.html', app);
+        });
+    </script>
 </body>
 </html>

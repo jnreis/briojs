@@ -1,11 +1,8 @@
-import { evalContextProp, getContextProp, saveCleanup, sliceAttrName } from '../app';
-import { effect } from '../reactivity';
-import { getAccessedProp } from '../reactivity/track';
+import { sliceAttrName } from '../app';
 import { logWarn } from '../tools';
 import { BUT_GOT_INSTEAD, EVAL_EFFECT, NEW_LINE, OPTIONS, REQUIRES_REACTIVE_VALUE } from '../tools/constants';
 import { setAttr, delAttr, getAttr, forcePropertyAssignment, sanitizeAttrName } from '../tools/dom';
 import { camelCase } from '../tools/string';
-import { isFunction } from '../tools/typeCheck';
 
 // TODO: disable all the fields in a form when a disabled attribute is present on the form element
 
@@ -24,8 +21,6 @@ export let hydrateBind = (bnode: BNode, attrName: string, attrValue: string) => 
 
     let _attrName = sliceAttrName(attrName, 7); // 7: b-bind-, 5: bind-
 
-    let propName = attrValue || camelCase(_attrName);
-
     /**
      * Make sure the attribute value is a function that takes the attribute's initial value as an argument.
      * 
@@ -41,10 +36,7 @@ export let hydrateBind = (bnode: BNode, attrName: string, attrValue: string) => 
      * - all other cases, including underscores, are used as is. Examples: firstname and first_name will be used as is.
      * - for any other cases, use the regular bind syntax (e.g., `b-bind-first-name="FirstName"`).
      */
-    // attrValue = expToFn(attrValue || camelCase(_attrName), '$initial');
-
-    // Get the context property
-    // let [getContext] = getContextProp(bnode, propName);
+    let propName = attrValue || camelCase(_attrName);
 
     // Sanitize the attribute name to ensure it is a valid HTML attribute name
     // This is necessary because some attributes may contain special characters that are not valid in HTML.

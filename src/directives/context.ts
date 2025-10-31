@@ -1,8 +1,8 @@
 import { saveCleanup, updateDataLevelContext } from '../app';
 import { logError, wait } from '../tools';
 import { getDescriptor, setProp } from '../tools/object';
-import { getType, isObject } from '../tools/typeCheck';
-import { DIRECTIVE, OBJECT, SKIP, REQUIRES_ACTION_TYPE, PROPS, DATA, B_DATA, $, B_, PARENT } from '../tools/constants';
+import { getType, isFunction, isObject } from '../tools/typeCheck';
+import { DIRECTIVE, OBJECT, SKIP, REQUIRES_ACTION_TYPE, PROPS, DATA, B_DATA, $, B_, PARENT, $DATA, $PROPS } from '../tools/constants';
 import { delState } from '../reactivity';
 
 /**
@@ -15,33 +15,27 @@ import { delState } from '../reactivity';
 
 export let hydrateContext = async (bnode: BNode, attrName: string, attrValue: string) => {
 
+    // Determine if it's a data or props directive
     let isData = attrName == B_DATA;
-    let ctxType = isData ? DATA : PROPS;
 
-    let assetObject = bnode[ctxType];
+    // Determine the context name
+    let $ctxName = isData ? $DATA : $PROPS;
 
-    let parent = bnode[PARENT];
-
-    let ctxFn: FunctionType = !attrValue
-        // Attribute value returns an empty object if not provided
-        ? () => ({})
-
-        // Get the asset or evaluate the attribute value
-        : assetObject[attrValue] || bnode.exec(parent || bnode, attrValue);
-
-    let context = bnode.ctx[$ + ctxType as keyof Context];
+    // Get the asset function
+    let assetFn = bnode[isData ? DATA : PROPS][attrValue];
 
     // Evaluate the new context
-    let newContext: ObjectType = await ctxFn(parent?.ctx || bnode.ctx);
+    let newContext: ObjectType = isFunction(assetFn) ? await assetFn(bnode[PARENT]?.ctx || bnode.ctx) : {};
 
     // Check if newContext is an object. If not, log an error
     if (!isObject(newContext)) {
-        bnode[SKIP] = 3; // Skip the element and its children
+        // Skip the hydration of the element and its children
+        bnode[SKIP] = 3;
         return logError(REQUIRES_ACTION_TYPE(DIRECTIVE, attrName, 'an ' + OBJECT, getType(newContext)));
     }
 
     // Set the new context
-    for (let key in newContext) setProp(context, key, newContext[key], getDescriptor(newContext, key));
+    for (let key in newContext) setProp(bnode.ctx[$ctxName], key, newContext[key], getDescriptor(newContext, key));
 
     // If the context is a data context, hydrate refs and slots
     if (isData) await updateDataLevelContext(bnode);
@@ -49,7 +43,7 @@ export let hydrateContext = async (bnode: BNode, attrName: string, attrValue: st
     // Cleanup the data context when the bnode is removed
     saveCleanup(bnode, () => {
         wait(() => {
-            delState(bnode.ctx[$ + ctxType as keyof Context]);
+            delState(bnode.ctx[$ctxName]);
         });
     });
 }

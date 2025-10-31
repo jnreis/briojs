@@ -27,9 +27,6 @@ As of right now the hydrate walks the DOM, and hydrates the HTMLElement with dir
 Suggest improvements to the exist structure AND suggest a new and improved structure.
  */
 
-/** The arguments used by the evaluate function */
-export let ctxKey = uid(4);
-
 export let symbol = S(BRIO);
 
 /** The router for each app */

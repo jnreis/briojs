@@ -1,5 +1,4 @@
 import { size, slice } from ".";
-import { ctxKey } from "../app";
 import { arrayAdd, map, some } from "./array";
 import { $DATA, $FOR, $PROPS, $STORE, $TOOLS, CLASS, DELETE, INDEX, SUPER } from "./constants";
 import { newSet } from "./object";
@@ -136,28 +135,20 @@ export let replaceUsedButNotDeclaredVariables = (bnode: BNode, code: string) => 
 
     for (let [name, start, end] of found) {
 
-        // Is in the main context?
-        if (name in ctx) {
-            // Prepend with the context key
-            updatedCode += slice(code, lastIndex, start) + `${ctxKey}.${name}`;
-            lastIndex = end;
-        }
         // Is in one of these contexts?
-        else {
-            for (let obj of [$FOR, $DATA, $PROPS, $STORE, $TOOLS] as (keyof Context)[]) {
-    
-                // Check if the variable is a property of a known context object
-                if (ctx[obj] && name in ctx[obj]) {
-    
-                    // Slice the code until the end of the variable
-                    updatedCode += slice(code, lastIndex, start) + `${ctxKey}.${obj}.${name}`;
-    
-                    // Update the last index to the end of the variable
-                    lastIndex = end;
-    
-                    // Stop at the first match
-                    break;
-                }
+        for (let obj of [$FOR, $DATA, $PROPS, $STORE, $TOOLS] as (keyof Context)[]) {
+
+            // Check if the variable is a property of a known context object
+            if (ctx[obj] && name in ctx[obj]) {
+
+                // Slice the code until the end of the variable
+                updatedCode += slice(code, lastIndex, start) + `${obj}.${name}`;
+
+                // Update the last index to the end of the variable
+                lastIndex = end;
+
+                // Stop at the first match
+                break;
             }
         }
     }

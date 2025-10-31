@@ -16,11 +16,11 @@ type AppObject = {
     },
 
     props: {
-        [propsName: string]: (ctx: Context) => ObjectType
+        [propsName: string]: (ctx: Context) => ObjectType | Promise<ObjectType>
     },
 
     data: {
-        [dataName: string]: (ctx: Context) => ObjectType
+        [dataName: string]: (ctx: Context) => ObjectType | Promise<ObjectType>
     },
 
     // ! HYDRATION

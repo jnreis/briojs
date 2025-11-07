@@ -1,5 +1,5 @@
-import { saveToParent, updateDataLevelContext } from "../app";
-import { $DEHYDRATE, $HYDRATE, AFTER, ATTR, B_IF, EVAL_EFFECT, OPTIONS, REPLACE_WITH, SKIP, UNDEFINED } from "../tools/constants";
+import { evalEffect, saveToParent, updateDataLevelContext } from "../app";
+import { $DEHYDRATE, $HYDRATE, AFTER, ATTR, B_IF, OPTIONS, REPLACE_WITH, SKIP, UNDEFINED } from "../tools/constants";
 import { cloneNode, createComment, insertNodes, nextFrame } from "../tools/dom";
 import { B_TRANSITION_KEY } from "./transition";
 
@@ -40,7 +40,7 @@ export let hydrateIf = (bnode: BNode, attrName: string, attrValue: string) => {
     }
 
     // Evaluate the attribute value as an effect
-    bnode[EVAL_EFFECT](bnode, attrValue, (ctxFn) => {
+    evalEffect(bnode, attrValue, (ctxFn) => {
         // Get the value
         let value = ctxFn();
 
@@ -63,7 +63,7 @@ export let hydrateIf = (bnode: BNode, attrName: string, attrValue: string) => {
                     // Mark the hydratedBnode as a b-if copy
                     hydratedBnode[ATTR][B_IF] = '';
 
-                    // Update the $slots and $refs objects
+                    // Update the $slot and $ref objects
                     await updateDataLevelContext(hydratedBnode);
 
                     // Hydrate the element

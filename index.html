@@ -217,16 +217,16 @@
 
     <div b-data="{p1: true}" b-ref="prop1">
       <div b-class="$props.p1">
-        <button on-click="console.log($props, $refs, $el, $root($el), $uid, $data.p1)">Log Magic attributes</button>
-        <button id="button1" b-ref="button1" on-click="console.log($refs, $s2)">From a parent scope</button>
+        <button on-click="console.log($props, $ref, $el, $root($el), $uid, $data.p1)">Log Magic attributes</button>
+        <button id="button1" b-ref="button1" on-click="console.log($ref, $s2)">From a parent scope</button>
       </div>
-      <div b-data="{refs: 123}" b-ref="prop2">
+      <div b-data="{ref: 123}" b-ref="prop2">
         <div b-ref="prop2div">
-          <button b-ref="button1" on-click="console.log($refs, $props)" b-teleport="body" style="background-color: red;">Inside Ref</button>
+          <button b-ref="button1" on-click="console.log($ref, $props)" b-teleport="document.querySelector('body')" style="background-color: red;">Inside Ref</button>
         </div>
-        <button b-ref="button1" on-click="console.log($refs)">Outside Ref</button>
+        <button b-ref="button1" on-click="console.log($ref)">Outside Ref</button>
       </div>
-      <button b-ref="button3" on-click="console.log($refs)">From a parent scope</button>
+      <button b-ref="button3" on-click="console.log($ref)">From a parent scope</button>
     </div>
 
     <hr>

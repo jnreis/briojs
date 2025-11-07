@@ -1,9 +1,9 @@
-import { saveToParent } from "../app";
+import { evalEffect, saveToParent } from "../app";
 import { has, logWarn } from "../tools";
-import { AFTER, APPEND, B_, BEFORE, ELEMENT, EVAL_EFFECT, NODES, NOT_FOUND, PREPEND, TELEPORT, TEXT } from "../tools/constants";
-import { insertNodes, query } from "../tools/dom";
-import { expToFn } from "../tools/evaluation";
-import { isArray, isNode } from "../tools/typeCheck";
+import { AFTER, APPEND, B_, BEFORE, ELEMENT, NODES, NOT_FOUND, PREPEND, TELEPORT } from "../tools/constants";
+import { insertNodes } from "../tools/dom";
+import { wrapInBackticks } from "../tools/string";
+import { isArray, isNode, isString } from "../tools/typeCheck";
 
 export let hydrateTeleport = (bnode: BNode, attrName: string, attrValue: string) => {
 
@@ -11,32 +11,27 @@ export let hydrateTeleport = (bnode: BNode, attrName: string, attrValue: string)
 
     let el = bnode.el;
 
-    let target: any;
+    let target: any = attrValue;
     let where: 'before' | 'after' | 'prepend' | 'append';
-    try {
-        // Try to query the target element using the attribute value.
-        // This will determine if the attribute value is a selector.
-        target = query(attrValue);
 
-        // Wrap the attribute value in a function that returns the selector as a string.
-        // Otherwise, evalEffect will evaluate the selector as a variable and most likely throw an error.
-        if (isNode(target))
-            attrValue = expToFn(attrValue, '', TEXT);
-    }
-    catch {}
+    let $ref = bnode.ctx.$ref;
+
+    // Check if the target is a $ref
+    if (target in $ref)
+        target = wrapInBackticks(target);
 
     // Evaluate the attribute value as an effect
-    bnode[EVAL_EFFECT](bnode, attrValue, (ctxFn) => {
-        try {
-            let value = ctxFn();
-            // If the value is an array, the first item is the target element and the second is the position
-            if (isArray(value)) {
-                [target, where] = value;
-            }
-            // Otherwise, the value is the target element
-            else target = query(value);
-        }
-        catch {}
+    evalEffect(bnode, target, (ctxFn) => {
+
+        target = ctxFn();
+
+        // If the value is an array, the first item is the target and the second is the position
+        if (isArray(target))
+            [target, where] = target;
+
+        // Get the target element from $ref, if applicable
+        if (isString(target) && target in $ref)
+            target = $ref[target];
 
         // Make sure `where` is only one of the following values: 'before', 'after', 'prepend', 'append'.
         // This is to prevent values that not related to positioning the node from being passed. E.g. 'replaceWith', 'replaceChildren', 'remove', etc.

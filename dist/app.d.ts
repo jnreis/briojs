@@ -3,11 +3,9 @@
 Its purpose is, like others frontend frameworks, to be a tools to create reactive and dynamic UIs. However it works directly with pure HTML, it can hydrate HTML in the page by calling $dom.hydrate(someElementOrSelector), it can also hydrate HTML strings by calling the $dom.insert(content, where, target).
 An app is created by calling the newApp function. That returns a AppObject.
 However I want to review with you its hydration process, and the very structure of the code because, even though it works, it feels fragile and rudimentary.
-As of right now the hydrate walks the DOM, and hydrates the HTMLElement with directives or Text nodes with mustache or template literal syntaxes. However the element MUST be in the DOM, which can be cumbersome for directives that stops the hydration flow, like b-if, b-each, etc.
+As of right now the hydrate walks the DOM, and hydrates the HTMLElement with directives or Text nodes with mustache or template literal syntaxes. However the element MUST be in the DOM, which can be cumbersome for directives that stops the hydration flow, like b-if, b-for, etc.
 Suggest improvements to the exist structure AND suggest a new and improved structure.
  */
-/** The arguments used by the evaluate function */
-export declare let ctxKey: string;
 export declare let symbol: symbol;
 /** The router for each app */
 export declare let routers: GetRoute[];
@@ -38,5 +36,19 @@ export declare let mustacheRegex: RegExp;
 /** Sanitize string and replace mustache syntax with template literals */
 export declare let replaceMustache: (text: string, replacement?: any) => string;
 export declare let setup: (brioWindow?: ObjectType) => void;
-export declare let sliceAttrName: (attrName: string, charsWithPrefix: number) => string;
+export declare let sliceAttrName: (attrName: string) => string;
 export declare let updateDataLevelContext: (bnode: BNode) => Promise<void>;
+export declare let genContextArgs: (bnode: BNode, exp: string) => string;
+/** Auto-fill the context name if missing and found in one of the data related contexts */
+export declare let autoFillContextName: (bnode: BNode, propName: string) => string;
+/** Evaluate the attribute as an effect */
+export declare let evalEffect: (bnode: BNode, exp: string, callback: DirectiveCallback) => void;
+export declare let evalContextProp: (bnode: BNode, propName: string) => FunctionType | undefined;
+export declare let getContextProp: (ctxFn: FunctionType, ...ctxArgs: any[]) => any;
+/**
+ * Get all saved assets from an asset object based on an asset name or expression.
+ * @param bnode
+ * @param assetObject
+ * @param assetName The name of an asset or an expression that evaluates to an array of asset names
+ */
+export declare let getSavedAssets: (bnode: BNode, assetObject: ObjectType, assetName: string) => any[];

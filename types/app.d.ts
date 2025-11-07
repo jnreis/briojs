@@ -35,7 +35,7 @@ type AppObject = {
     routeRules: RouteRulesObject,
 
     exec: (bnode: BNode, exp: string, args?: string, returns?: boolean | "text") => FunctionType,
-    evalEffect: (bnode: BNode, exp: string, callback: DirectiveCallback) => void,
+    // evalEffect: (bnode: BNode, exp: string, callback: DirectiveCallback) => void,
     bnode: [NewBNode, GetBNode],
 
     // ! PUBLIC CONTEXT
@@ -65,6 +65,7 @@ type GlobalContext = {
     $state: State,
     $watch: Watch,
     $effect: Effect,
+    $uid: (length?: number) => string,
 } & DomObject & BrioTools;
 
 type BrioTools = {
@@ -154,8 +155,8 @@ type BNode = {
     /** The actual nodes in the DOM */
     nodes?: Node[],
 
-    /** UID context */
-    uid: ObjectType,
+    /** Unique ID context */
+    id: ObjectType,
 
     options: ObjectType,
 
@@ -177,11 +178,11 @@ type GetBNode = (node: Node) => BNode | undefined;
 /** The local context of a bnode */
 type LocalContext = {
     $el: HTMLElement,
-    $uid: ObjectType,
+    $id: ObjectType,
     $props: ObjectType,
     $data: ObjectType,
-    $refs: ObjectType,
-    $slots: ObjectType,
+    $ref: ObjectType,
+    $slot: ObjectType,
     $for?: ObjectType,
     $cleanup: (fn: FunctionType) => void,
 };

@@ -14,6 +14,61 @@ export const reserved = newSet([
 
 export let variableNameRegex = /^[a-z_$][\w$]*$/i;
 
+/**
+ * Find variables used in a template literal
+ * 
+ * @param templateLiteral Template literal to analyze. Must not include surrounding backticks.
+ * @returns A set of variable names found within template literals.
+ */
+export let findVariablesInTemplateLiteral = (templateLiteral: string) => {
+    
+    let found: Set<[string, number, number]> = newSet();
+
+    let openBackticks = 1;
+    let openTemplateExpressions = 0;
+    let quote: `'` | `"` | `` = '';
+
+    // Regex to match quotes, backticks, template expressions, and variable names
+    let regex = /('|"|`|\${|}|[a-z_$][\w$]*)/g;
+
+    let matched;
+    while ((matched = regex.exec(templateLiteral)) !== null) {
+        let index = matched[INDEX];
+        let prevChar = templateLiteral[index - 1] || '';
+
+        // Escaped character, skip processing
+        if (prevChar == '\\') {
+            console.warn('Escaped character, skipping:', matched[0]);
+            continue;
+        }
+
+        let matchStr = matched[0];
+
+        // In quote, ignore everything until the quote is closed
+        if (quote) {
+            // Close quote
+            if (matchStr == quote) quote = '';
+        }
+        // Open quote
+        else if (matchStr == `'` || matchStr == `"`) {
+            quote = matchStr;
+        }
+        // Open/close backticks
+        else if (matchStr == '`') {
+            openBackticks += openBackticks <= openTemplateExpressions ? 1 : -1;
+        }
+        else if (matchStr == '${' || matchStr == '}') {
+            openTemplateExpressions += matchStr == '}' ? -1 : 1;
+        }
+        // Capture variable if in template expression within backticks
+        else if (openBackticks > 0 && openBackticks == openTemplateExpressions && prevChar != '.') {
+            found.add([matchStr, index, index + size(matchStr)]);
+        }
+    }
+
+    return found;
+}
+
 export let findUsedButNotDeclaredVariables = (code: string) => {
 
     let identifierRegex = /[a-z_$][\w$]*/gi;
@@ -124,9 +179,9 @@ export let findUsedButNotDeclaredVariables = (code: string) => {
 export let inRange = (ranges: [number, number][], index: number) => 
     some(ranges, ([start, end]) => index >= start && index < end);
 
-export let replaceUsedButNotDeclaredVariables = (bnode: BNode, code: string) => {
+export let prefixPropsInContext = (bnode: BNode, code: string) => {
 
-    let found = findUsedButNotDeclaredVariables(code);
+    let found = findVariablesInTemplateLiteral(code);
 
     let updatedCode = '';
     let lastIndex = 0;

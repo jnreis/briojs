@@ -38,13 +38,13 @@ export let hydrateFor = (bnode: BNode, attrName: string, attrValue: string) => {
     let evalExp = bnode.exec(bnode, propExp);
 
     // Evaluate the expression to get the reactive value
-    let [accessedProp] = getAccessedProp(evalExp);
+    let [_state, _prop] = getAccessedProp(evalExp) as [any, Prop];
 
     // Get the value of the expression
-    let value = accessedProp ? accessedProp() : evalExp();
+    let value = _state ? _state[_prop] : evalExp();
 
     // Check if the prop is an observed state (array or object)
-    let isObservedState = accessedProp && isState(value);
+    let isObservedState = _state && isState(value);
 
     let stateCreated = false;
 
@@ -53,13 +53,14 @@ export let hydrateFor = (bnode: BNode, attrName: string, attrValue: string) => {
         value = state(arrayFill(value, 1));
         stateCreated = true;
 
-        if (accessedProp) {
+        // Keep the array length in sync with the number
+        if (_state) {
             effect(() => {
-                let n = accessedProp();
+                let n = _state[_prop] || 0;
                 if (isNumber(n)) {
                     sync(value, arrayFill(n, 1));
                 }
-            }, () => accessedProp());
+            }, () => _state[_prop]);
         }
     }
 
@@ -79,7 +80,7 @@ export let hydrateFor = (bnode: BNode, attrName: string, attrValue: string) => {
     // Keep track of the mounted items
     let mountedItems: ObjectType = {};
 
-    type ForContext = [number, any];
+    type ForContext = [number|string, any];
 
     // Mount a new item
     let _create = async ([i, v]: ForContext) => {
@@ -133,7 +134,7 @@ export let hydrateFor = (bnode: BNode, attrName: string, attrValue: string) => {
         // Add the node to the mountedItems map
         mountedItems[i] = [_el, i];
 
-        // Update the $slots and $refs objects
+        // Update the $slot and $ref objects
         await updateDataLevelContext(_bnode);
 
         // Hydrate the new node
@@ -180,11 +181,11 @@ export let hydrateFor = (bnode: BNode, attrName: string, attrValue: string) => {
     // Initialize all the items
     for (let entry of entries(value)) {
         // Create a new node for each item
-        operations[CREATE](entry);
+        _create(entry);
     }
 
     // Watch the prop for changes (if it's an observed state)
-    if (accessedProp) {
+    if (_state) {
         // Cleanup watcher
         saveCleanup(bnode, watch(value, UNDEFINED, ({[OPERATION]: operation, prop, [NEW_VALUE]: newValue}) => {
             // Perform the operation
@@ -195,7 +196,7 @@ export let hydrateFor = (bnode: BNode, attrName: string, attrValue: string) => {
     // Unmount all items on cleanup
     saveCleanup(bnode, () => {
         for (let i in mountedItems) {
-            operations[DELETE]([Number(i), null]);
+            _delete([Number(i), null]);
         }
         // Delete the state created for the number, if any
         if (stateCreated) {

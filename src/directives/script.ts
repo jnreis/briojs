@@ -1,38 +1,31 @@
-import { sanitizeAttrValue, saveToParent } from "../app";
+import { genContextArgs, getSavedAssets, sanitizeAttrValue, saveToParent } from "../app";
 import { http } from "../methods/http";
-import { arrayAdd, each } from "../tools/array";
+import { arrayAdd } from "../tools/array";
 import { B_SCRIPT, SCRIPT, SKIP } from "../tools/constants";
 import { getAttr, getNodeContent, getTagName, removeNode } from "../tools/dom";
 import { newFn } from "../tools/evaluation";
-import { isStringFunction, split, trim } from "../tools/string";
+import { isStringFunction } from "../tools/string";
 import { isFunction, isString } from "../tools/typeCheck";
 
-export let hydrateScript = async (bnode: BNode, _attrName: string, attrValue: string) => {
+export let hydrateScript = async (bnode: BNode, attrName: string, attrValue: string) => {
 
     let el = bnode.el as HTMLScriptElement;
-
-    let assetObject = bnode[SCRIPT];
 
     // Skip the hydration of the text node of this script element
     bnode[SKIP] = 2;
 
-    let scripts: any[] = [];
-
-    // Get the scripts from the attribute value
-    each(split(attrValue, ','), name => {
-        name = trim(name);
-        if (name && name in assetObject) arrayAdd(scripts, assetObject[name]);
-    });
-
-    /**
-     * Since the script element will be removed, it needs to be saved to the parent
-     * to ensure the element will go through the cleanup process and will trigger
-     * any cleanup functions registered on the bnode
-     */
-    saveToParent(bnode, el);
+    // Get all saved scripts from the attribute value
+    let scripts = getSavedAssets(bnode, bnode[SCRIPT], attrValue);
 
     // Add this script element to the list of scripts
     if (getTagName(el) == SCRIPT) {
+
+        /**
+         * Since the script element will be removed, it needs to be saved to the parent
+         * to ensure the element will go through the cleanup process and will trigger
+         * any cleanup functions registered on the bnode
+         */
+        saveToParent(bnode, el);
 
         // Get the src attribute, if it exists
         let src = getAttr(el, 'src');
@@ -55,10 +48,10 @@ export let hydrateScript = async (bnode: BNode, _attrName: string, attrValue: st
         if (isString(fn)) {
             let stringIsFn = isStringFunction(fn);
 
-            fn = newFn('', fn, stringIsFn);
+            fn = newFn(genContextArgs(bnode, fn), fn, stringIsFn);
 
-            // If the script is a string function, evaluate it to get the actual function
-            if (stringIsFn) fn = fn();
+            // If the script is a string function, call the wrapper function to get the actual function
+            if (stringIsFn) fn = fn(bnode.ctx);
         }
 
         // Execute the script

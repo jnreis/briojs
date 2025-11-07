@@ -13,7 +13,7 @@ import { split } from "../tools/string";
  */
 export let hydrateResize = (bnode: BNode, attrName: string, attrValue: string) => {
 
-    let _attrName = sliceAttrName(attrName, 5); // 5: b-on-, 3: on-
+    let _attrName = sliceAttrName(attrName); // 5: b-on-, 3: on-
 
     let [_directiveName] = split(_attrName, '-');
 

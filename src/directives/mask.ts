@@ -6,6 +6,8 @@ import { emit, listen, nextFrame } from "../tools/dom";
 import { getProp, getKeys, newRegExp } from "../tools/object";
 import { match, replace, split, startsWith } from "../tools/string";
 
+// TODO: this whole directive needs to be reviewed and tested thoroughly
+
 /** Set the default mask tokens */
 export let setDefaultMaskTokens = (maskTokens: MaskTokensObject) => {
 

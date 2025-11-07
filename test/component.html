@@ -173,15 +173,15 @@
 
         <!-- Template with slots -->
         <template b-template b-save="my-card" b-ref="my-card">
-            <h2 b-template="$slots.title || $el.outerHTML">
+            <h2 b-template="$slot.title || $el.outerHTML">
                 Title goes here
             </h2>
 
-            <h3 b-for="n in 5" b-template="$slots.content || $el.outerHTML">
+            <h3 b-for="n in 5" b-template="$slot.content || $el.outerHTML">
                 Content goes here
             </h3>
 
-            <h4 b-template="$slots.footer || $el.outerHTML">
+            <h4 b-template="$slot.footer || $el.outerHTML">
                 Footer goes here
             </h4>
         </template>

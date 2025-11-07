@@ -158,7 +158,7 @@ export let newInsert = (app: AppObject) => async (target: HTMLElement | string, 
                 // Create a new bnode
                 let bnode = newBNode(node as HTMLElement, el);
 
-                // Update the $refs and $slots objects
+                // Update the $ref and $slot objects
                 await updateDataLevelContext(bnode);
             }
 

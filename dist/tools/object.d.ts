@@ -21,9 +21,9 @@ export declare let delProp: (object: any, key: Prop) => boolean;
  * @param key - The key that will be set
  * @param descriptor - The PropertyDescriptor or a string of shorthand letters to quickly mark a descriptor option as false.
  * @shorthand
- * - `w`: not writable (can not be changed)
- * - `c`: not configurable (can not be deleted)
- * - `e`: not enumerable (can not be listed or iterated over)
+ * - `w`: not writable (cannot be changed)
+ * - `c`: not configurable (cannot be deleted)
+ * - `e`: not enumerable (cannot be listed or iterated over)
  * @example
  * setProp(obj, 'key', 'value', 'wce');
  */
@@ -46,9 +46,9 @@ export declare let getProto: (object: any) => any;
 /**
  * Updates the descriptor of each key in an object.
  * @param object - The object to update
- * @param descriptor.w - The keys are writable (can be changed)
- * @param descriptor.e - The keys are enumerable (can be iterated over)
- * @param descriptor.c - The keys are configurable (can be deleted)
+ * @param descriptor.w - The keys are not writable (cannot be changed)
+ * @param descriptor.e - The keys are not enumerable (cannot be iterated over)
+ * @param descriptor.c - The keys are not configurable (cannot be deleted)
  */
 export declare let setObjectKeys: (object: any, descriptor?: any) => void;
 /**

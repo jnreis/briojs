@@ -77,6 +77,13 @@ export declare let sameOrigin: (routePath: string) => boolean;
  * - The properties `value`, `checked`, and `selected` reflect the current state of the element
  */
 export declare let forcePropertyAssignment: (attrName: string) => boolean;
+/**
+ * Sanitize an attribute name to ensure it is a valid HTML attribute name.
+ *
+ * Rules for valid HTML attribute name:
+ * - must start with a letter or underscore
+ * - subsequent characters can be letters, numbers, underscores, or hyphens
+ */
 export declare let sanitizeAttrName: (attrName: string) => string;
 /**
  * ! UNUSED. MAY BE REMOVED IN THE FUTURE

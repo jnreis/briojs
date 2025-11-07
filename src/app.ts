@@ -2,16 +2,17 @@ import { newInsert } from "./methods/dom";
 import { http } from "./methods/http";
 import { go, newRouter } from "./methods/route";
 import { effect, state, storageEvent, watch } from "./reactivity";
-import { has, logError, slice, uid } from "./tools";
+import { has, logError, uid } from "./tools";
 import { arrayAdd, each, filter, find, join, map, some } from "./tools/array";
-import { TEXT, TEXT_CONTENT, ATTR, DELETE, INNER_HTML, PARENT, $PROPS, NULL, B_DATA, SCRIPT, $DATA, STYLE, B_, TEMPLATE, UNDEFINED, OPTIONS, ROUTE, EVAL_EFFECT, NEW_LINE, BRIO, STORAGE, STATE, PROPS, NUMBER, DIRECTIVES, MASKS, MASK_TOKENS, DATA, MASK_TOKEN, ROUTE_RULE, B_SAVE, OUTER_HTML, $STORE, SKIP, NODES, B_IF, MESSAGE, CLONE, $REFS, $SLOTS, B_TEMPLATE, B_REF, $, $DEHYDRATE, $HYDRATE, $INSERT, VALIDATOR, B_SCRIPT, B_SLOT, B_FOR, $FOR, $TOOLS } from "./tools/constants";
+import { TEXT, TEXT_CONTENT, ATTR, DELETE, INNER_HTML, PARENT, $PROPS, NULL, B_DATA, SCRIPT, $DATA, STYLE, B_, TEMPLATE, UNDEFINED, OPTIONS, ROUTE, NEW_LINE, BRIO, STORAGE, STATE, PROPS, NUMBER, DIRECTIVES, MASKS, MASK_TOKENS, DATA, MASK_TOKEN, ROUTE_RULE, B_SAVE, OUTER_HTML, $STORE, SKIP, NODES, B_IF, MESSAGE, CLONE, $REF, $SLOT, B_TEMPLATE, B_REF, $, $DEHYDRATE, $HYDRATE, $INSERT, VALIDATOR, B_SCRIPT, B_SLOT, B_FOR, $FOR, $TOOLS } from "./tools/constants";
 import { walk, getAttr, delAttr, getParent, getTagName, getNodeContent, removeNode, eachAttribute, query, emit, listen, href, setAttr } from "./tools/dom";
 import { expToFn, newFn } from "./tools/evaluation";
 import { countKeys, hasProp, getProp, newMap, setProp, setObjectKeys, W, newSet, S, sync, clone, delProp, getKeys } from "./tools/object";
 import { isStringNumeric, replace, replaceAll, split, startsWith, test, trim } from "./tools/string";
-import { isTextNode, isElementNode, isNull, isRegExp, isString, isNode, isFunction } from "./tools/typeCheck";
+import { isTextNode, isElementNode, isNull, isRegExp, isString, isNode, isFunction, isArray } from "./tools/typeCheck";
 import { validator } from "./methods/validate";
 import { getAccessedProp } from "./reactivity/track";
+import { prefixPropsInContext } from "./tools/contextProps";
 
 // TODO: some notes that may be useful when writing documentation
 // * Effects are functions that are called when a dependency changes
@@ -77,8 +78,8 @@ export let newApp = (): AppObject => {
 
                 [PARENT]: parent,
 
-                // UID context
-                uid: getProp(parent, 'uid', {}),
+                // Unique ID context
+                id: getProp(parent, 'id', {}),
 
                 /** Attributes or directives */
                 attr: {},
@@ -112,17 +113,6 @@ export let newApp = (): AppObject => {
 
         // Create a new bnode
         return bnode;
-    }
-
-    /** Evaluate the attribute as an effect */
-    let evalEffect = (bnode: BNode, exp: string, callback: DirectiveCallback) => {
-
-        // The context function
-        let ctxFn = evalContextProp(bnode, exp);
-
-        // Create a new effect, and save the cleanup function.
-        // This sets up the reactivity.
-        saveCleanup(bnode, effect(() => callback(ctxFn)));
     }
 
     /**
@@ -230,7 +220,7 @@ export let newApp = (): AppObject => {
             let bnode = newBNode(node as any, ctxNode);
 
             // Evaluate the expression
-            let value = exec(bnode, sanitizedText, '', TEXT);
+            let value = exec(bnode, prefixPropsInContext(bnode, sanitizedText), '', TEXT);
 
             // Save the cleanup function
             saveCleanup(bnode, effect(() => node[TEXT_CONTENT] = value(bnode.ctx)));
@@ -360,7 +350,7 @@ export let newApp = (): AppObject => {
          * This allows the use of "{{ $data.propName }}" to be written as "{{ propName }}".
          * The default context list and order is: $for, $data, $props, $store, $tools.
          */
-        exp = expToFn(exp, args, returns);
+        exp = expToFn(autoFillContextName(bnode, exp), args, returns);
 
         // Check if the expression is already cached
         if (exp in cached) {
@@ -407,8 +397,6 @@ export let newApp = (): AppObject => {
     let cache: CacheObject = {};
     let cached: ObjectType = {};
 
-    console.log('cache:', cache, cached);
-
     /** Defines how the local context should be set up for each element */
     let localContextFns: LocalContextFns = {
         // The $data context
@@ -422,14 +410,14 @@ export let newApp = (): AppObject => {
 
         // Data Level Context:
         // Referenced under the same $data context, not including nested $data contexts
-        [$REFS]: newDataLevelContext($REFS),
-        [$SLOTS]: newDataLevelContext($SLOTS),
+        [$REF]: newDataLevelContext($REF),
+        [$SLOT]: newDataLevelContext($SLOT),
 
         // The element itself
         $el: (bnode: BNode) => bnode.el,
 
         // Unique identifier for the element
-        $uid: (bnode: BNode) => bnode.uid,
+        $id: (bnode: BNode) => bnode.id,
 
         $cleanup: (bnode: BNode) => (fn: FunctionType) => saveCleanup(bnode, fn),
     };
@@ -480,6 +468,7 @@ export let newApp = (): AppObject => {
         sync,
         [CLONE]: clone,
         [VALIDATOR]: validator,
+        uid,
     };
 
     // Prefix global context keys with $
@@ -509,7 +498,6 @@ export let newApp = (): AppObject => {
 
         // ! TOOLS
         exec,
-        [EVAL_EFFECT]: evalEffect,
         bnode: [newBNode, getBNode],
     };
 
@@ -579,7 +567,7 @@ export let saveAttr = (bnode: BNode, attrName: string, attrValue: string) => {
  * Without this, the evaluate function may throw an error for some expressions.
  */
 export let sanitizeAttrValue = (text: string) => 
-    replace(trim(join(map(split(text, NEW_LINE), line => startsWith(trim(line), '//') ? '' : line), NEW_LINE)), /;$/, '');
+    replace(join(map(split(text, NEW_LINE), line => startsWith(trim(line), '//') ? '' : line), NEW_LINE), /;$/, '');
 
 /** Match template literal ${} */
 export let templateRegex = /\${((?!.*\${).*?)}/;
@@ -650,8 +638,10 @@ export let setup = (brioWindow: ObjectType = {}) => {
     emit(W as any, BRIO);
 }
 
-export let sliceAttrName = (attrName: string, charsWithPrefix: number) =>
-    slice(attrName, startsWith(attrName, B_) ? charsWithPrefix : charsWithPrefix - 2) as string;
+export let sliceAttrName = (attrName: string) => {
+    let match = attrName.match(/^(b-\w+|bind|on)(-([\w-$]+))?$/) || [];
+    return match[3] || '';
+}
 
 export let updateDataLevelContext = async (bnode: BNode) => {
     // Elements with the b-slot directive and does not have the b-data directive
@@ -665,7 +655,7 @@ let _updateDataLevelContext = async (bnode: BNode, directiveName: 'b-slot' | 'b-
     let isRef = directiveName == B_REF;
 
     // Get the context object
-    let ctx = bnode.ctx[isRef ? $REFS : $SLOTS];
+    let ctx = bnode.ctx[isRef ? $REF : $SLOT];
 
     // Get the skip directives
     let skipDirectives = isRef ? [/*B_IF,*/ B_FOR, B_TEMPLATE, B_DATA] : [B_DATA];
@@ -728,9 +718,8 @@ let getElementsByDirective = async (node: Node, directiveName: 'b-save' | 'b-slo
 export let genContextArgs = (bnode: BNode, exp: string): string =>
     '{' + join(filter(getKeys(bnode.ctx), ctxName => has(exp, ctxName)), ',') + '}';
 
-export let evalContextProp = (bnode: BNode, propName: string): FunctionType | undefined => {
-
-    // Auto-fill the context name if missing and found in one of the data related contexts
+/** Auto-fill the context name if missing and found in one of the data related contexts */
+export let autoFillContextName = (bnode: BNode, propName: string): string => {
     for (let ctxName of [$FOR, $DATA, $PROPS, $STORE, $TOOLS]) {
         let ctx = bnode.ctx[ctxName as '$data'];
         if (ctx && propName in ctx) {
@@ -738,12 +727,27 @@ export let evalContextProp = (bnode: BNode, propName: string): FunctionType | un
             break;
         }
     }
+    return propName;
+}
+
+/** Evaluate the attribute as an effect */
+export let evalEffect = (bnode: BNode, exp: string, callback: DirectiveCallback) => {
+
+    // The context function
+    let ctxFn = bnode.exec(bnode, exp);
+
+    // Create a new effect, and save the cleanup function
+    // This sets up the reactivity
+    saveCleanup(bnode, effect(() => callback(ctxFn)));
+}
+
+export let evalContextProp = (bnode: BNode, propName: string): FunctionType | undefined => {
 
     // Evaluate the property
     let ctxFn = bnode.exec(bnode, propName);
 
     // Get the accessed state and prop
-    let [,, state, prop] = getAccessedProp(ctxFn) as [any, any, any, Prop];
+    let [state, prop] = getAccessedProp(ctxFn) as [any, Prop];
 
     // If found, return the property as a function
     if (state && prop in state) {
@@ -754,4 +758,37 @@ export let evalContextProp = (bnode: BNode, propName: string): FunctionType | un
 export let getContextProp = (ctxFn: FunctionType, ...ctxArgs: any[]) => {
     let value = ctxFn();
     return isFunction(value) ? value(...ctxArgs) : value;
+}
+
+/**
+ * Get all saved assets from an asset object based on an asset name or expression.
+ * @param bnode
+ * @param assetObject 
+ * @param assetName The name of an asset or an expression that evaluates to an array of asset names
+ */
+export let getSavedAssets = (bnode: BNode, assetObject: ObjectType, assetName: string) => {
+
+    let assets: any[] = [];
+
+    // Get the asset name(s)
+    if (assetName) {
+        // If the assetName is a direct reference, get the actual value
+        if (assetName in assetObject) {
+            arrayAdd(assets, assetObject[assetName]);
+        }
+        // If the assetName is not a direct reference, evaluate it
+        else {
+            assetName = bnode.exec(bnode, assetName)();
+
+            // If the evaluated assetName is an array of references, get the actual values
+            if (isArray(assetName)) {
+                each(assetName, name => {
+                    if (name in assetObject)
+                        arrayAdd(assets, assetObject[name]);
+                });
+            }
+        }
+    }
+
+    return assets;
 }

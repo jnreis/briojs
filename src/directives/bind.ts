@@ -1,10 +1,8 @@
-import { sliceAttrName } from '../app';
+import { evalEffect, sliceAttrName } from '../app';
 import { logWarn } from '../tools';
-import { BUT_GOT_INSTEAD, EVAL_EFFECT, NEW_LINE, OPTIONS, REQUIRES_REACTIVE_VALUE } from '../tools/constants';
+import { BUT_GOT_INSTEAD, NEW_LINE, OPTIONS, REQUIRES_REACTIVE_VALUE } from '../tools/constants';
 import { setAttr, delAttr, getAttr, forcePropertyAssignment, sanitizeAttrName } from '../tools/dom';
 import { camelCase } from '../tools/string';
-
-// TODO: disable all the fields in a form when a disabled attribute is present on the form element
 
 /**
  * Bind Directive
@@ -15,11 +13,11 @@ import { camelCase } from '../tools/string';
  *
  * @option `prop`   Also set a specific DOM property.
  */
-export let hydrateBind = (bnode: BNode, attrName: string, attrValue: string) => {
+export let hydrateBind = (bnode: BNode, dirName: string, dirValue: string) => {
 
     let el = bnode.el;
 
-    let _attrName = sliceAttrName(attrName, 7); // 7: b-bind-, 5: bind-
+    let attrName = sliceAttrName(dirName);
 
     /**
      * Make sure the attribute value is a function that takes the attribute's initial value as an argument.
@@ -31,28 +29,28 @@ export let hydrateBind = (bnode: BNode, attrName: string, attrValue: string) => 
      * - subsequent characters can be letters, numbers, underscores, or hyphens
      * - uppercase letters are treated as lowercase (HTML is case-insensitive)
      * - any special characters are removed for the purpose of setting the attribute value, but not for context lookup.
-     * Context lookup using shorthand syntax (_attrName):
+     * Context lookup using shorthand syntax (attrName):
      * - attribute names with hyphens (e.g., "first-name") are converted to camelCase (e.g., "firstName").
      * - all other cases, including underscores, are used as is. Examples: firstname and first_name will be used as is.
      * - for any other cases, use the regular bind syntax (e.g., `b-bind-first-name="FirstName"`).
      */
-    let propName = attrValue || camelCase(_attrName);
+    let stateProp = dirValue || camelCase(attrName);
 
     // Sanitize the attribute name to ensure it is a valid HTML attribute name
     // This is necessary because some attributes may contain special characters that are not valid in HTML.
-    _attrName = sanitizeAttrName(_attrName);
+    attrName = sanitizeAttrName(attrName);
 
     // Get the attribute's initial value
-    let initialAttrValue = getAttr(bnode.el, _attrName);
+    let initialAttrValue = getAttr(el, attrName);
 
     // Options
-    let options = bnode[OPTIONS][attrName] || {};
+    let options = bnode[OPTIONS][dirName] || {};
 
     // Evaluate the attribute value as an effect
-    bnode[EVAL_EFFECT](bnode, propName, (ctxFn) => {
+    evalEffect(bnode, stateProp, (ctxFn) => {
 
         if (!ctxFn)
-            return logWarn(REQUIRES_REACTIVE_VALUE(attrName), BUT_GOT_INSTEAD(attrName+`="${attrValue}"`), NEW_LINE, el);
+            return logWarn(REQUIRES_REACTIVE_VALUE(dirName), BUT_GOT_INSTEAD(dirName+`="${dirValue}"`), NEW_LINE, el);
 
         let value = ctxFn(initialAttrValue || '');
 
@@ -62,22 +60,22 @@ export let hydrateBind = (bnode: BNode, attrName: string, attrValue: string) => 
          * - Updating the "src" property normalizes the path and ensures the new resource is loaded
          * - The properties "value", "checked", and "selected" reflect the current state of the element
          */
-        let forceBind = options.prop || forcePropertyAssignment(_attrName) && _attrName;
+        let forceBind = options.prop || forcePropertyAssignment(attrName) && attrName;
 
         // Set attribute
         if (value || forceBind) {
-            setAttr(el, _attrName, !forceBind && value === true ? '' : value, forceBind);
+            setAttr(el, attrName, !forceBind && value === true ? '' : value, forceBind);
         }
 
         // Remove attribute
-        else delAttr(el, _attrName);
+        else delAttr(el, attrName);
     });
 
     // // Cleanup: restore the attribute's initial value
     // saveCleanup(bnode, () => {
-    //     if (isNull(initialAttrValue)) delAttr(bnode.el, _attrName);
-    //     else setAttr(bnode.el, _attrName, initialAttrValue!);
+    //     if (isNull(initialAttrValue)) delAttr(el, attrName);
+    //     else setAttr(el, attrName, initialAttrValue!);
     // })
 }
 
-export let bindDirective: Directive = [/^(b-bind-|bind-)[\w-$]+$/, hydrateBind];
+export let bindDirective: Directive = [/^(b-bind|bind)-([\w-$]+)$/, hydrateBind];

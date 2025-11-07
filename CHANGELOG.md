@@ -7,23 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.0] - 2025-11-05
+
+`$refs` is now `$ref`.
+
+`$slots` is now `$slot`.
+
+`$uid` is now `$id`.
+
+`b-data` and `b-props` now only take a function that may be globally saved or from the parent context.
+
 ## [1.2.0] - 2025-10-24
 
 The items in this two objects are now at the global context and the objects `$dom` and `$tools` not longer exist.
 
-- Object.keys(\$dom) = ['hydrate', 'dehydrate', 'insert', 'route', 'emit', 'listen', 'query', 'queryAll', 'context']
-- Object.keys(\$tools) = ['hasProp', 'getProp', 'setProp', 'sync', 'clone', 'validate']
-
+- Object.keys(`$dom`) = ['hydrate', 'dehydrate', 'insert', 'route', 'emit', 'listen', 'query', 'queryAll', 'context']
+- Object.keys(`$tools`) = ['hasProp', 'getProp', 'setProp', 'sync', 'clone', 'validate']
 
 The insert method now has the `target` first and `content` third. The `select` option is now called `selector`.
 
-- \$dom.insert(content, where, target, {select: String, hydrate: Boolean}) -> \$insert(target, placement, content, {selector: String, hydrate: Boolean})
+- `$dom`.insert(content, where, target, {select: String, hydrate: Boolean}) -> `$insert`(target, placement, content, {selector: String, hydrate: Boolean})
 
-The \$uid method is now an object.
+The `$uid` method is now an object.
 
-- \$uid('test') -> \$uid.test
+- `$uid`('test') -> `$uid`.test
 
-- b-each directive was renamed to b-for. \$each is now \$for.
+- `b-each` directive was renamed to `b-for`. `$each` is now `$for`.
 
 ## [0.26.0] - 2025-02-10
 
@@ -32,8 +41,7 @@ The \$uid method is now an object.
 
 ## [0.25.0] - 2025-01-24
 
-- The $store object now houses directive array, and the following objects: routeRule, template, script, style, props, data. These reusable items are used by Brio.js and can be modified for maximum flexibility.
-
+- The `$store` object now houses directive array, and the following objects: routeRule, template, script, style, props, data. These reusable items are used by Brio.js and can be modified for maximum flexibility.
 
 ## [0.24.0] - 2024-09-20
 
@@ -41,7 +49,7 @@ The \$uid method is now an object.
 - brio.newApp() returns the Global Scope (gc) object with all magic methods and properties and it can be used to add directives, methods, transition engines, stores, components, props, data, hooks, etc.
 - A `brio` event is dispatched in the window object to indicate that Brio.js is ready. This event can be used to start the hydration process.
 - A simple router was added to the core. It can be used to create single-page applications or to make a multi-page application feel like a single-page application.
-- The evaluation module is no longer using `with()` to directly access the properties of $props. Properties now are accessed using the $props object. This change is more clear and performant.
+- The evaluation module is no longer using `with()` to directly access the properties of `$props`. Properties now are accessed using the `$props` object. This change is more clear and performant.
 - The `vnode` object was refactored to be more efficient and flexible. It now has the structure to handle the addition of local context during runtime.
 - The `b-save` directive was added to register reusable HTML snippets (template, script, style). It run at the beginning of the hydration process. A `b-save` can be added to any html element, including `<template>` elements.
 - `on-resize` directive was added to the core. It is a thin wrapper around the ResizeObserver API.
@@ -59,7 +67,7 @@ The \$uid method is now an object.
 
 ## [0.20.0] - 2024-08-24
 
-- Child $props were not reacting to changes when the prop belonged to a parent $props.
+- Child `$props` were not reacting to changes when the prop belonged to a parent `$props`.
 - State will no longer attempt to observe getters and setters.
 
 ## [0.19.0] - 2024-08-12
@@ -83,7 +91,7 @@ The \$uid method is now an object.
 
 - Prepared Brio for becoming fully modular. The core is now a thin layer that can be extended with directives, methods, transition engines, and stores. With this change, even the core methods can be removed if they are not needed.
 - Reserved names are now better tracked and handled.
-- The b-if, b-show, and b-each directives are above the b-props directive in the hydration order.
+- The `b-if`, `b-show`, and `b-each` directives are above the `b-props` directive in the hydration order.
 - The framework was prepared to receive a new interceptor system that will allow the developer to place functions anywhere in the hydration and evaluation processes.
 
 ## [0.16.0] - 2024-07-29
@@ -95,7 +103,7 @@ The \$uid method is now an object.
 - The `bind` directive now has a shorthand syntax. E.g. b-name="name" can be written as b-name. It also force the binding of the "src", "value", "checked", "selected", and "disabled" attributes and set their DOM properties.
 - The `model` directive went through a major refactoring. The reactive state is now trully the source of truth. The handling of multiple checkboxes and multiple select options is now very robust. In addition, null, number, and boolean strings are now automatically typecasted. The "raw" modifier was added to the directive to prevent the typecasting when needed. The validation is much more robust and error messages are more informative.
 - The built-in methods are now being loaded using a loop. This makes it easier to add new methods, improves readability, and reduces the size of the code.
-- A $type magic method was added. It is a more robust and reliable way to check the type of a value.
+- A `$type` magic method was added. It is a more robust and reliable way to check the type of a value.
 - The helper methods "size", "isNumber", "isNumeric", and "toNumber" have been adjusted and refined to be more reliable and robust, by handling more edge cases.
 - The `bind` and `model` directives have been properly tested and documented.
 
@@ -105,7 +113,7 @@ The \$uid method is now an object.
 
 ## [0.13.0] - 2024-06-22
 
-- The `$http` magic property is now a magic method. It allows the use of the `get`, `post`, `put`, `patch`, and `delete` methods. As well as creating custom instances of $http with base URL and global options.
+- The `$http` magic property is now a magic method. It allows the use of the `get`, `post`, `put`, `patch`, and `delete` methods. As well as creating custom instances of `$http` with base URL and global options.
 
 ## [0.12.0] - 2024-06-21
 
@@ -176,7 +184,7 @@ The \$uid method is now an object.
 ## [0.6.0] - 2024-06-06
 
 - Added a new `$animate` magic method. It is a thin wrapper around the Web Animations API that allows `opacity`, `blur`, and all `transforms`, as well as `duration`, `easing`, `delay`, `endDelay`, and `pause` properties.
-- The `$in` and `$out` magic methods were updated to make the $ctx and $next parameters optional. This will facilitate the use of these methods in other contexts where programmatic transitions are needed.
+- The `$in` and `$out` magic methods were updated to make the `$ctx` and `$next` parameters optional. This will facilitate the use of these methods in other contexts where programmatic transitions are needed.
 
 ## [0.5.0] - 2024-06-05
 

@@ -1,6 +1,6 @@
 import { has, slice } from ".";
 import { arrayFrom, arrayReverse, each, indexOf } from "./array";
-import { COMPOSING, DISPLAY, HREF, HTML, INPUT, TARGET, TEXT, TEXT_CONTENT, AFTER, VALUE, CHECKED, SELECT, CLASS_LIST, REMOVE, GET_ATTRIBUTE, SET_ATTRIBUTE, REMOVE_ATTRIBUTE, ADD_EVENT_LISTENER, REMOVE_EVENT_LISTENER, INNER_HTML, OUTER_HTML, BEFORE, APPEND, INSERT_ADJACENT_HTML, CLONE_NODE, PARENT_NODE, PREVIOUS_SIBLING, NEXT_SIBLING, FIRST_CHILD, LAST_CHILD, CREATE_ELEMENT, DETAIL, CREATE_COMMENT, STYLE, GET_PROPERTY_VALUE, GET_PROPERTY_PRIORITY, SET_PROPERTY, REMOVE_PROPERTY, TRANSITION, CONTENT, TEMPLATE } from "./constants";
+import { COMPOSING, DISPLAY, HREF, HTML, INPUT, TARGET, TEXT, TEXT_CONTENT, AFTER, VALUE, CHECKED, SELECT, CLASS_LIST, REMOVE, GET_ATTRIBUTE, SET_ATTRIBUTE, REMOVE_ATTRIBUTE, ADD_EVENT_LISTENER, REMOVE_EVENT_LISTENER, INNER_HTML, OUTER_HTML, BEFORE, APPEND, INSERT_ADJACENT_HTML, CLONE_NODE, PARENT_NODE, PREVIOUS_SIBLING, NEXT_SIBLING, FIRST_CHILD, LAST_CHILD, CREATE_ELEMENT, DETAIL, CREATE_COMMENT, STYLE, GET_PROPERTY_VALUE, GET_PROPERTY_PRIORITY, SET_PROPERTY, REMOVE_PROPERTY, TRANSITION, CONTENT, TEMPLATE, SELECTOR_TEXT } from "./constants";
 import { D, L, W } from "./object";
 import { lower, replace, startsWith, trim } from "./string";
 import { isElementNode, isString } from "./typeCheck";
@@ -262,8 +262,15 @@ export let sameOrigin = (routePath: string) => startsWith(href(routePath), L.ori
 export let forcePropertyAssignment = (attrName: string) =>
     has(['src', VALUE, CHECKED, SELECT+'ed'], attrName);
 
+/**
+ * Sanitize an attribute name to ensure it is a valid HTML attribute name.
+ * 
+ * Rules for valid HTML attribute name:
+ * - must start with a letter or underscore
+ * - subsequent characters can be letters, numbers, underscores, or hyphens
+ */
 export let sanitizeAttrName = (attrName: string) => 
-    replace(replace(attrName, /[^a-z0-9_-]/gi, ''), /^[^a-z_]+/i, '');
+    replace(replace(attrName, /[^\w-]/g, ''), /^[^a-z_]+/i, '');
 
 
 /**
@@ -312,7 +319,7 @@ export let getStylesFromSelector = (selector: string) => {
   for (let sheet of document.styleSheets) {
     try {
       for (let rule of sheet.cssRules) {
-        if ((rule as CSSStyleRule).selectorText == selector) {
+        if ((rule as CSSStyleRule)[SELECTOR_TEXT] == selector) {
           return getDeclaredStyles((rule as CSSStyleRule)[STYLE]);
         }
       }

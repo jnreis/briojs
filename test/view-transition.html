@@ -21,7 +21,7 @@
         <p b-ref="p2">Lorem ipsum dolor sit amet consectetur adipisicing elit. Natus ut, aut laboriosam labore quae aliquam adipisci veritatis quisquam? Nulla culpa harum ut at necessitatibus porro quia maxime pariatur error earum.</p>
         <h2 b-ref="h2">View Transition</h2>
     </div>
-    <button on-click="createTransition($refs.h1, $refs.h2, 1000)">
+    <button on-click="createTransition($ref.h1, $ref.h2, 1000)">
         Change View
     </button>
 
@@ -105,7 +105,7 @@
 }
 
         // // Optional: Update on window resize
-        // window.addEventListener('resize', updatePosition($refs.h2, $refs.h1));
+        // window.addEventListener('resize', updatePosition($ref.h2, $ref.h1));
     </script>
 </body>
 </html>

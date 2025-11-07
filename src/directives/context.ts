@@ -2,7 +2,7 @@ import { saveCleanup, updateDataLevelContext } from '../app';
 import { logError, wait } from '../tools';
 import { getDescriptor, setProp } from '../tools/object';
 import { getType, isFunction, isObject } from '../tools/typeCheck';
-import { DIRECTIVE, OBJECT, SKIP, REQUIRES_ACTION_TYPE, PROPS, DATA, B_DATA, $, B_, PARENT, $DATA, $PROPS } from '../tools/constants';
+import { DIRECTIVE, OBJECT, SKIP, REQUIRES_ACTION_TYPE, PROPS, DATA, B_DATA, B_, PARENT, $DATA, $PROPS } from '../tools/constants';
 import { delState } from '../reactivity';
 
 /**
@@ -24,8 +24,16 @@ export let hydrateContext = async (bnode: BNode, attrName: string, attrValue: st
     // Get the asset function
     let assetFn = bnode[isData ? DATA : PROPS][attrValue];
 
+    // Get the base bnode. Where to get the context from
+    let baseBNode = bnode[PARENT] || bnode;
+
+    // Not an asset function. Execute the expression to get the context function, if any
+    if (!isFunction(assetFn) && attrValue) {
+        assetFn = bnode.exec(baseBNode, attrValue)();
+    }
+
     // Evaluate the new context
-    let newContext: ObjectType = isFunction(assetFn) ? await assetFn(bnode[PARENT]?.ctx || bnode.ctx) : {};
+    let newContext: ObjectType = isFunction(assetFn) ? await assetFn(baseBNode.ctx) : {};
 
     // Check if newContext is an object. If not, log an error
     if (!isObject(newContext)) {
@@ -37,7 +45,7 @@ export let hydrateContext = async (bnode: BNode, attrName: string, attrValue: st
     // Set the new context
     for (let key in newContext) setProp(bnode.ctx[$ctxName], key, newContext[key], getDescriptor(newContext, key));
 
-    // If the context is a data context, hydrate refs and slots
+    // If the context is a data context, hydrate b-slot and b-ref
     if (isData) await updateDataLevelContext(bnode);
 
     // Cleanup the data context when the bnode is removed

@@ -8,8 +8,8 @@ export let BRIO: 'brio' = 'brio';
 
 export let $: '$' = '$';
 export let $FOR: '$for' = '$for';
-export let $REFS: '$refs' = '$refs';
-export let $SLOTS: '$slots' = '$slots';
+export let $REF: '$ref' = '$ref';
+export let $SLOT: '$slot' = '$slot';
 export let $STORE: '$store' = '$store';
 export let $TOOLS: '$tools' = '$tools';
 
@@ -262,6 +262,8 @@ export let GET_OWN_PROPERTY_DESCRIPTORS = GET_OWN_PROPERTY_DESCRIPTOR + 's' as '
 export let GET_OWN_PROPERTY_NAMES = GET + OWN_PROPERTY + 'Names' as 'getOwnPropertyNames';
 
 export let HAS_OWN_PROPERTY = 'has' + OWN_PROPERTY as 'hasOwnProperty';
+
+export let SELECTOR_TEXT = SELECTOR + 'Text' as 'selectorText';
 
 
 

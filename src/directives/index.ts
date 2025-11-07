@@ -1,7 +1,7 @@
 import { ignoreDirective } from './ignore';
 import { forDirective } from './for';
 import { dataDirective, propsDirective } from './context';
-import { uidDirective } from './uid';
+import { idDirective } from './id';
 import { htmlDirective, textDirective } from './html';
 import { templateDirective } from './template';
 import { scriptDirective } from './script';
@@ -44,6 +44,7 @@ export let allDirectives: [string | RegExp, HydrateDirective][] = [
      * Context directives
      * Notes:
      * - the order of inference is: $for, $data, $props, $store, $tools
+     * - b-slot and b-ref are hydrated after b-data
      */
     propsDirective,
     dataDirective,
@@ -57,7 +58,16 @@ export let allDirectives: [string | RegExp, HydrateDirective][] = [
     /**
      * Unique ID generator
      */
-    uidDirective,
+    idDirective,
+
+    /**
+     * Run one or more scripts on the element, right after the context ($props, $data, $slot, $ref, $for, $id) is set up.
+     * Notes:
+     * - the b-script directive may hold one script or an array of scripts
+     * - the script(s) are executed in order and awaited
+     * - when b-script is in a script element the content of the src file or text content is added to the list of scripts to be executed
+     */
+    scriptDirective,
 
     /**
      * Static template hydration
@@ -68,7 +78,7 @@ export let allDirectives: [string | RegExp, HydrateDirective][] = [
      *   - the b-template directive SHOULD NOT be used with elements that are self-closing (e.g. <img />, <input />, etc.)
      *   - the b-template directive CANNOT be used with: b-show, b-html, b-text, b-style, bind-*, b-model, b-mask, b-transition, on-*
      *     this is because these directives need to be hydrated on the element itself and not on its content
-     *   - the b-template directive CAN be used with: b-ignore, b-props, b-data, b-ref, b-slot, b-if, b-for, b-uid, b-teleport, b-script, b-effect
+     *   - the b-template directive CAN be used with: b-ignore, b-props, b-data, b-ref, b-slot, b-if, b-for, b-id, b-teleport, b-script, b-effect
      */
     templateDirective,
 
@@ -86,15 +96,6 @@ export let allDirectives: [string | RegExp, HydrateDirective][] = [
      * - b-teleport also works with the b-if and b-template directives
      */
     teleportDirective,
-
-    /**
-     * Run one or more scripts on the element
-     * Notes:
-     * - the b-script directive may hold one script or an array of scripts
-     * - the script(s) are executed in order and awaited
-     * - when b-script is in a script element the content of the src file or text content is added to the list of scripts to be executed
-     */
-    scriptDirective,
 
     /**
      * Dynamic hydration of HTML or text content and styles
@@ -127,10 +128,11 @@ export let allDirectives: [string | RegExp, HydrateDirective][] = [
     // ['b-boost', hydrateBoost],
     transitionDirective, // b-transition, b-transition-play, b-transition-reverse
 
+    /**
+     * Event directives
+     */
     ...intersectionDirectives, // [b-on|on]-enter, [b-on|on]-exit
-
     ...resizeDirectives, // [b-on|on]-resize
-
     onDirective, // [b-on|on]-[eventName]
 
     /**

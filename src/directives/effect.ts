@@ -1,20 +1,20 @@
-import { EVAL_EFFECT } from "../tools/constants";
+import { autoFillContextName, saveCleanup } from "../app";
+import { effect } from "../reactivity";
 import { expToFn } from "../tools/evaluation";
 
-/**
- * TODO:
- * - get all accessed properties using replaceUsedButNotDeclaredVariables and pass them as dependencies to the effect
- */
+export let hydrateEffect = async (bnode: BNode, _attrName: string, attrValue: string) => {
 
-export let hydrateEffect = (bnode: BNode, _attrName: string, attrValue: string) => {
+    // Auto-fill context name
+    attrValue = autoFillContextName(bnode, attrValue);
 
     attrValue = expToFn(attrValue, '', false);
 
-    // Evaluate the attribute value as an effect
-    bnode[EVAL_EFFECT](bnode, attrValue, async (ctxFn) => {
-        await ctxFn();
-    });
+    // Evaluate the expression to get the function
+    let fn = bnode.exec(bnode, attrValue);
 
+    // Create an effect for the function and save the cleanup
+    // Note: the effect does not work on async functions
+    saveCleanup(bnode, effect(() => fn()));
 }
 
 export let effectDirective: Directive = ['b-effect', hydrateEffect];

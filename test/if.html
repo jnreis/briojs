@@ -18,7 +18,7 @@
             $set.props('show', (ctx) => ({
                 show: true, 
                 show2: true,
-                where: $refs.redBox,
+                where: $ref.redBox,
                 log() {
                     console.log('show $props', this);
                     console.log('show ctx item', ctx);
@@ -66,8 +66,8 @@
         <button on-click="$props.show2 = !$props.show2">{{ $props.show2 ? 'Remove2' : 'Add2' }}</button>
         <button on-click="$props.show2 = !$props.show2">{{ $props.show2 ? 'Remove2' : 'Add2' }}</button>
 
-        <button on-click="$props.where = [$refs.blackBox, 'append']">Teleport to black box</button>
-        <button on-click="$props.where = $refs.redBox">Teleport to red box</button>
+        <button on-click="$props.where = [$ref.blackBox, 'append']">Teleport to black box</button>
+        <button on-click="$props.where = $ref.redBox">Teleport to red box</button>
     </div> -->
 
         <script type="module" src="/src/briojs.min.ts"></script>

@@ -34,7 +34,7 @@ export { setAllDirectives } from "./directives";
 export { ignoreDirective } from "./directives/ignore";
 export { forDirective } from "./directives/for";
 export { propsDirective, dataDirective } from "./directives/context";
-export { uidDirective } from "./directives/uid";
+export { idDirective } from "./directives/id";
 export { htmlDirective } from "./directives/html";
 export { templateDirective } from "./directives/template";
 export { scriptDirective } from "./directives/script";
@@ -51,7 +51,7 @@ export { modelDirective } from "./directives/model";
 export { maskDirective, moneyMask, setDefaultMaskTokens } from "./directives/mask";
 
 // ! BUG LIST
-// - [ ] FIX: methods can not be used in addProps.
+// - [ ] FIX: methods cannot be used in addProps.
 
 // TODO LIST
 
@@ -68,7 +68,7 @@ export { maskDirective, moneyMask, setDefaultMaskTokens } from "./directives/mas
 // - [x] Implement a "$insert" method to insert some content (html or text) at a specific position in the DOM.
 // - [x] Implement a router. It should use the history API and cache the body of previous pages to avoid re-rendering.
 
-// - [x] Implement a `$context` method to get the context of an element, which includes the $el, $props, $refs, and $uid.
+// - [x] Implement a `$context` method to get the context of an element, which includes the $el, $props, $ref, and $id.
 
 // - [x] Nested props are not reacting to changes. If a parent $props has a year property, and the year property is changed from a nested $props, the year property in the parent $props does not react to the change.
 

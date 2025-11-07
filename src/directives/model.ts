@@ -9,6 +9,8 @@ import { parse, space, trim } from '../tools/string';
 import { isNull, isArray, getType, isUndefined, isString, isBoolean, isNumber } from '../tools/typeCheck';
 import { getAccessedProp } from '../reactivity/track';
 
+// TODO: this whole directive needs to be reviewed and tested thoroughly
+
 /**
  * MODEL DIRECTIVE
  * The model directive is used to create a two-way binding between a reactive state and an input, textarea, or select element.
@@ -70,6 +72,7 @@ import { getAccessedProp } from '../reactivity/track';
  * - This is used to apply the modifiers to the value of the checkbox or select option that don't have direct access to the modifiers.
  * - Without this, the value of these elements would not be properly modified.
  */
+// TODO: before using the node make sure it belongs to the same app instance as the bnode
 let nodeModifiers: Map<Node, string[]> = newMap();
 
 /**
@@ -84,6 +87,7 @@ export let hydrateModel = (bnode: BNode, attrName: string, attrValue: string) =>
     let THE_MODEL_DIRECTIVE = space('the', attrName, DIRECTIVE);
     let REQUIRES_A_REACTIVE_VALUE = space(REQUIRES, 'a reactive', VALUE);
     let SELECTED = SELECT+'ed' as 'selected';
+    let ATTRIBUTE = attrName+`="${attrValue}"`;
 
     // The node, its tag, and its type
     let node = bnode.el as any;
@@ -92,17 +96,17 @@ export let hydrateModel = (bnode: BNode, attrName: string, attrValue: string) =>
 
     // ! ERROR: The model directive can only be used on input, textarea, and select elements.
     if (!has([INPUT,TEXTAREA,SELECT], tag))
-        return logError(THE_MODEL_DIRECTIVE, CAN_ONLY_BE_USED_ON, INPUT, `, ${TEXTAREA}, and ${SELECT} ${ELEMENT}s.`, node);
+        return logError(THE_MODEL_DIRECTIVE, CAN_ONLY_BE_USED_ON, INPUT, `, ${TEXTAREA}, and ${SELECT} ${ELEMENT}s.`, ATTRIBUTE, node);
 
     // Evaluate the expression to get the reactive value
-    let [stateValue, setStateValue] = getAccessedProp(bnode.exec(bnode, attrValue));
+    let [_state, _prop] = getAccessedProp(bnode.exec(bnode, attrValue)) as [any, Prop];
 
-    if (!stateValue) {
-        return logError(THE_MODEL_DIRECTIVE, REQUIRES_A_REACTIVE_VALUE, node);
+    if (!_state) {
+        return logError(THE_MODEL_DIRECTIVE, REQUIRES_A_REACTIVE_VALUE, ATTRIBUTE, node);
     }
 
     // Get the reactive value
-    let value = stateValue();
+    let value = _state[_prop];
     let nodeValue: any;
 
     /** Get all the nodes that hold value for the reactive state */
@@ -171,7 +175,7 @@ export let hydrateModel = (bnode: BNode, attrName: string, attrValue: string) =>
 
             // The type is invalid, log an error and return
             if (!(isNull(value) || isUndefined(value) || has(_typesArray, getType(value))))
-                logWarn(THE_MODEL_DIRECTIVE, REQUIRES_A_REACTIVE_VALUE, OF_TYPE, join(_typesArray, ' or '), `for ${tag == INPUT ? type+' ' : ''}${_tag} ${ELEMENT}s,`, BUT_GOT_INSTEAD(getType(value)), node);
+                logWarn(THE_MODEL_DIRECTIVE, REQUIRES_A_REACTIVE_VALUE, OF_TYPE, join(_typesArray, ' or '), `for ${tag == INPUT ? type+' ' : ''}${_tag} ${ELEMENT}s,`, BUT_GOT_INSTEAD(getType(value)), ATTRIBUTE, node);
 
             break;
         }
@@ -194,7 +198,7 @@ export let hydrateModel = (bnode: BNode, attrName: string, attrValue: string) =>
     // UPDATES THE DOM
     let watchFn = () => {
 
-        value = stateValue();
+        value = _state[_prop];
         nodeValue = getNodeValue(node);
 
         // Handle input and textarea elements
@@ -251,7 +255,7 @@ export let hydrateModel = (bnode: BNode, attrName: string, attrValue: string) =>
     let events: ObjectType = {};
     let cb = () => {
 
-        value = stateValue();
+        value = _state[_prop];
 
         // Handle multiple select options and checkboxes
         if ((tag == SELECT && node.multiple) || isCheckboxGroup()) {
@@ -273,12 +277,12 @@ export let hydrateModel = (bnode: BNode, attrName: string, attrValue: string) =>
             });
 
             // Update the reactive state. This will trigger a DOM update
-            setStateValue!(newValue);
+            _state[_prop] = newValue;
         }
 
         // Handle other input types
         // Note: When a single checkbox with a value attribute is unchecked, the getNodeValue function returns the value attribute, if present, instead of false. In this case, the value should be set to false.
-        else setStateValue!(isCheckboxOrRadio && !node[CHECKED] ? false : getNodeValue(node));
+        else _state[_prop] = isCheckboxOrRadio && !node[CHECKED] ? false : getNodeValue(node);
     };
 
     // Handle composition events

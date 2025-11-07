@@ -1,6 +1,6 @@
 {
   "name": "briojs",
-  "version": "1.2.0",
+  "version": "2.0.0",
   "description": "A simple, fast, and lightweight JavaScript framework for building dynamic web applications.",
   "author": {
     "name": "Jhonathan Reis",
@@ -40,7 +40,7 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "node scripts/build.js && yalc publish"
+    "build": "node scripts/build.js"
   },
   "devDependencies": {
     "@types/node": "^22.10.10",

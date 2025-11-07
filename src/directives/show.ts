@@ -1,4 +1,5 @@
-import { B_SHOW, DISPLAY, EVAL_EFFECT, OPTIONS, STYLE } from '../tools/constants';
+import { evalEffect } from '../app';
+import { B_SHOW, DISPLAY, OPTIONS, STYLE } from '../tools/constants';
 import { getParent, getStyle, nextFrame } from '../tools/dom';
 import { B_TRANSITION_KEY } from './transition';
 
@@ -19,7 +20,7 @@ export let hydrateShow = (bnode: BNode, attrName: string, attrValue: string) => 
     if (initialDisplay == 'none') initialDisplay = 'block';
 
     // Evaluate the attribute value as an effect
-    bnode[EVAL_EFFECT](bnode, attrValue, (ctxFn) => {
+    evalEffect(bnode, attrValue, (ctxFn) => {
         // Get the value
         let value = ctxFn();
 

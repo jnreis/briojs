@@ -8,38 +8,38 @@ import { isArray, isString } from '../tools/typeCheck';
 let ids: ObjectType = {};
 // console.log('ids', ids);
 
-export let hydrateUid = async (bnode: BNode, attrName: string, attrValue: string) => {
+export let hydrateId = async (bnode: BNode, attrName: string, attrValue: string) => {
 
-    // Check if the UID expression is empty
+    // Check if the unique ID expression is empty
     if (attrValue) {
 
-        // Evaluate the UID expression
+        // Evaluate the unique ID expression
         let newUid = bnode.exec(bnode, attrValue)();
 
-        // Check if the UID expression is not an array of strings. If so, throw an error
+        // Check if the unique ID expression is not an array of strings. If so, throw an error
         if (!isArray(newUid) || !every(newUid, isString))
             return logError('the', attrName, DIRECTIVE, MUST_BE, `an ${ARRAY} of ${STRING}(s).`);
 
-        // Convert the UID's to an object and save them in the context
-        bnode.uid = newUid.reduce((acc: any, idName: string) => {
+        // Convert the unique IDs to an object and save them in the context
+        bnode.id = newUid.reduce((acc: any, idName: string) => {
 
             let id = uid(5);
 
-            // Keep track of all generated UID's
+            // Keep track of all generated unique IDs
             ids[id] = true;
 
-            // Add the UID to the context
+            // Add the unique ID to the context
             setProp(acc, idName, id, 'wc');
 
             return acc;
         }, {});
 
-        // Cleanup: remove the UID's from the global list
+        // Cleanup: remove the unique IDs from the global list
         saveCleanup(bnode, () => {
-            for (let key in bnode.uid) delProp(ids, bnode.uid[key]);
+            for (let key in bnode.id) delProp(ids, bnode.id[key]);
         });
 
     }
 }
 
-export let uidDirective: Directive = ['b-uid', hydrateUid];
+export let idDirective: Directive = ['b-id', hydrateId];

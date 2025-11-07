@@ -1,11 +1,15 @@
-import { replaceMustache, saveCleanup, templateRegex } from "../app";
-import { has, uid } from "../tools";
-import { arrayAdd, each, filter, join, map } from "../tools/array";
-import { $DEHYDRATE, $HYDRATE, AFTER, B_, NEW_LINE, STYLE, TEXT_CONTENT } from "../tools/constants";
+import { getSavedAssets, saveCleanup } from "../app";
+import { uid } from "../tools";
+import { arrayAdd, join } from "../tools/array";
+import { $DEHYDRATE, $HYDRATE, AFTER, B_, NEW_LINE, SELECTOR_TEXT, STYLE, TEXT_CONTENT } from "../tools/constants";
 import { createElement, getTagName, insertNodes, setClass } from "../tools/dom";
-import { match, replace, split, test, trim } from "../tools/string";
-import { isArray } from "../tools/typeCheck";
+import { replace } from "../tools/string";
 
+/**
+ * Hydrate the style directive.
+ * 
+ * It may receive one or more style asset names or CSS strings.
+ */
 export let hydrateStyle = (bnode: BNode, _attrName: string, attrValue: string) => {
 
     let el = bnode.el;
@@ -13,16 +17,8 @@ export let hydrateStyle = (bnode: BNode, _attrName: string, attrValue: string) =
     // Skip style elements
     if (attrValue && getTagName(el) != STYLE) {
 
-        let assetObject = bnode[STYLE];
-
-        // Get the asset or evaluate the attribute value
-        let styles = assetObject[attrValue] || bnode.exec(bnode, attrValue)();
-
-        // Get the styles
-        styles = map(
-            isArray(styles) ? styles : [styles],
-            style => assetObject[style] || style
-        );
+        // Get all saved styles from the attribute value
+        let styles = getSavedAssets(bnode, bnode[STYLE], attrValue);
 
         // Create a unique prefix for the CSS selectors
         let prefix = uid();
@@ -31,16 +27,19 @@ export let hydrateStyle = (bnode: BNode, _attrName: string, attrValue: string) =
         setClass(el, prefix);
 
         // Create a style element
-        let style = createElement(STYLE);
-
-        // Set the style content
-        style[TEXT_CONTENT] = prefixCssSelectors(join(styles, NEW_LINE), '.'+prefix);
-
-        // Hydrate the style element
-        bnode.gc[$HYDRATE](style, el);
+        let style = createElement(STYLE) as HTMLStyleElement;
 
         // Insert the style element after the current element
         insertNodes(el, AFTER, style);
+
+        // Set the initial style content
+        style[TEXT_CONTENT] = join(styles, NEW_LINE);
+
+        // Set the prefixed CSS content
+        style[TEXT_CONTENT] = prefixCssSelectors(style, '.'+prefix);
+
+        // Hydrate the style element
+        bnode.gc[$HYDRATE](style, el);
 
         // Remove the style element
         saveCleanup(bnode, () => {
@@ -51,61 +50,21 @@ export let hydrateStyle = (bnode: BNode, _attrName: string, attrValue: string) =
 
 
 /** Prefix the CSS selectors with a given prefix */
-let prefixCssSelectors = (css: string, prefix: string) => {
+let prefixCssSelectors = (css: HTMLStyleElement, prefix: string) => {
 
-    // Remove comments
-    css = replace(css, /\/\*[\s\S]*?\*\//g, '');
+    let rules: string[] = [];
 
-    // Replace mustache syntax in the CSS
-    css = replaceMustache(css);
+    console.log('CSS Rules:', css);
 
-    // Matched template items in the CSS
-    let templateItems: string[] = [];
+    for (let rule of css.sheet?.cssRules as CSSRuleList || []) {
+        // Get the selector
+        let selector = (rule as CSSStyleRule)[SELECTOR_TEXT];
 
-    let placeholder = uid();
-
-    // Replace template items with a placeholder
-    // IMPORTANT: this is necessary to avoid conflicts with the template items
-    while (test(css, templateRegex)) {
-        let value = match(css, templateRegex);
-        if (value) {
-            arrayAdd(templateItems, value[0]);
-            css = replace(css, templateRegex, placeholder);
-        }
+        // Add the CSS rule with the prefixed selector
+        arrayAdd(rules, replace(rule.cssText, selector, prefix + ' ' + selector));
     }
 
-    // Split the CSS string into individual rules
-    let rules = filter(split(css, '}'), trim);
-
-    let indent = NEW_LINE + '    ';
-
-    // Process each rule
-    let processRules = (rule: string) => {
-        // Split the rule into selectors and declarations
-        let [selectors, declarations] = split(rule, '{');
-
-        // Prefix selectors
-        let prefixedSelectors = map(
-            map(split(selectors, ','), trim),
-            selector => has(selector, '&') ? replace(selector, /&/g, prefix) : prefix+' '+selector
-        );
-
-        // Format declarations
-        declarations = join(map(filter(split(declarations || '', NEW_LINE), trim), trim), indent);
-
-        // Reconstruct the rule
-        return join(prefixedSelectors, ',') + ` {${indent + declarations + NEW_LINE}}`;
-    };
-
-    // Join the prefixed rules back into a single string
-    let prefixed = join(map(rules, processRules), NEW_LINE);
-
-    // Replace the placeholders with the original template items
-    each(templateItems, item => {
-        prefixed = replace(prefixed, placeholder, item);
-    });
-
-    return prefixed;
+    return join(rules, NEW_LINE);
 }
 
 export let styleDirective: Directive = [B_+STYLE, hydrateStyle];

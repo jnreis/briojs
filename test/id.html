@@ -3,24 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>b-uid</title>
+    <title>b-id</title>
 </head>
 <body>
-    <h1>b-uid</h1>
+    <h1>b-id</h1>
 
-    <div b-uid="['text-input']">
-        <label bind-for="$uid['text-input']">{{ $uid['text-input'] }}</label>
+    <div b-id="['text-input']">
+        <label bind-for="$id['text-input']">{{ $id['text-input'] }}</label>
         <!-- for="text-input-1" -->
 
-        <input type="text" bind-id="$uid['text-input']" bind-value="$uid['text-input']">
+        <input type="text" bind-id="$id['text-input']" bind-value="$id['text-input']">
         <!-- id="text-input-1" -->
     </div>
 
-    <div b-uid="['text-input']">
-        <label bind-for="$uid['text-input']">{{ $uid['text-input'] }}</label>
+    <div b-id="['text-input']">
+        <label bind-for="$id['text-input']">{{ $id['text-input'] }}</label>
         <!-- for="text-input-2" -->
 
-        <input type="text" bind-id="$uid['text-input']" bind-value="$uid['text-input']">
+        <input type="text" bind-id="$id['text-input']" bind-value="$id['text-input']">
         <!-- id="text-input-2" -->
     </div>
 

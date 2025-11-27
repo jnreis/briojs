@@ -19,7 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.2.0] - 2025-10-24
 
-The items in this two objects are now at the global context and the objects `$dom` and `$tools` not longer exist.
+The items in the objects `$dom` and `$tools` are now at the global context and the objects `$dom` and `$tools` not longer exist.
 
 - Object.keys(`$dom`) = ['hydrate', 'dehydrate', 'insert', 'route', 'emit', 'listen', 'query', 'queryAll', 'context']
 - Object.keys(`$tools`) = ['hasProp', 'getProp', 'setProp', 'sync', 'clone', 'validate']

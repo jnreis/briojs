@@ -16,6 +16,15 @@ export declare let newApp: () => AppObject;
 export declare let saveCleanup: (bnode: BNode, cleanupFn: FunctionType) => void;
 /** Saves an element to the parent's nodes array. These nodes will be used for cleanup and other operations */
 export declare let saveToParent: (bnode: BNode, el: HTMLElement) => void;
+/** Get the first inserted node from a list of nodes */
+export declare let getFirstInsertedNode: (bnode: BNode) => any;
+/**
+ * Get the inserted nodes from a bnode.
+ * - Including placeholders
+ * - Not including b-template, but including its nodes. Recursively, for nested b-templates.
+ */
+export declare let getInsertedNodes: (bnode: BNode) => Node[];
+export declare let removeInsertedNodes: (bnode: BNode) => void;
 /**
  * Evaluate attribute, if any
  * @param defaultAttrValue A string to fall back to if the attribute has no value. Default is an empty object.

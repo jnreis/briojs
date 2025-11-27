@@ -14,7 +14,7 @@ import { isArray, isInstance, isMap, isNull, isObject, isSet, isUndefined } from
 export let has = (value: string|any[], item: any, position?: number) =>
     value.includes(item, position);
 
-export let entries = (value: any): [string, any][] =>
+export let entries = (value: any): [string | number, any][] =>
     isObject(value) ? O[ENTRIES](value) : value[ENTRIES]();
 
 /**

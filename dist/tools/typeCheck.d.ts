@@ -29,7 +29,7 @@ export declare let isNumber: (value: any) => boolean;
 /**
  * Check if a value is numeric.
  * - it must be a number or a string that can be converted to a number
- * - it must be finite, not NaN or Infinity
+ * - it must not be NaN
  */
 export declare let isNumeric: (value: any) => boolean;
 /** Check if a value is a boolean */

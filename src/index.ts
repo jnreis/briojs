@@ -48,7 +48,7 @@ export { resizeDirectives } from "./directives/resize";
 export { onDirective } from "./directives/on";
 export { bindDirective } from "./directives/bind";
 export { modelDirective } from "./directives/model";
-export { maskDirective, moneyMask, setDefaultMaskTokens } from "./directives/mask";
+export { maskDirective } from "./directives/mask";
 
 // ! BUG LIST
 // - [ ] FIX: methods cannot be used in addProps.

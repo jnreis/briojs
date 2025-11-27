@@ -151,7 +151,7 @@ export let newInsert = (app: AppObject) => async (target: HTMLElement | string, 
     // Hydrate the inserted nodes
     if (getProp(options, HYDRATE, true)) {
 
-        let newBNode = app.bnode[0];
+        let [newBNode] = app.bnode;
 
         for (let node of insertedNodes) {
             if (isElementNode(node)) {

@@ -1,20 +1,15 @@
-import { autoFillContextName, saveCleanup } from "../app";
-import { effect } from "../reactivity";
-import { expToFn } from "../tools/evaluation";
+import { evalEffect } from "../app";
+import { isFunction } from "../tools/typeCheck";
 
 export let hydrateEffect = async (bnode: BNode, _attrName: string, attrValue: string) => {
 
-    // Auto-fill context name
-    attrValue = autoFillContextName(bnode, attrValue);
+    evalEffect(bnode, attrValue, (ctxFn) => {
+        // Get value
+        let value = ctxFn();
 
-    attrValue = expToFn(attrValue, '', false);
-
-    // Evaluate the expression to get the function
-    let fn = bnode.exec(bnode, attrValue);
-
-    // Create an effect for the function and save the cleanup
-    // Note: the effect does not work on async functions
-    saveCleanup(bnode, effect(() => fn()));
+        // If the returned value is a function, call it
+        if (isFunction(value)) value();
+    });
 }
 
 export let effectDirective: Directive = ['b-effect', hydrateEffect];

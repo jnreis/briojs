@@ -1,7 +1,7 @@
 import { evalEffect, saveToParent, updateDataLevelContext } from "../app";
-import { $DEHYDRATE, $HYDRATE, AFTER, ATTR, B_IF, OPTIONS, REPLACE_WITH, SKIP, UNDEFINED } from "../tools/constants";
+import { $DEHYDRATE, $HYDRATE, AFTER, ATTR, B_IF, REPLACE_WITH, SKIP, UNDEFINED } from "../tools/constants";
 import { cloneNode, createComment, insertNodes, nextFrame } from "../tools/dom";
-import { B_TRANSITION_KEY } from "./transition";
+import { transitions } from "./transition";
 
 /**
  * Must reference a prop, method, or be an expression that returns a value that can be converted to a boolean
@@ -44,7 +44,7 @@ export let hydrateIf = (bnode: BNode, attrName: string, attrValue: string) => {
         // Get the value
         let value = ctxFn();
 
-        // Wait for the next tick.
+        // Wait for the next frame
         // * This is necessary for some directives to work properly (e.g. `on-click-outside`, `b-transition`, etc.)
         nextFrame(async () => {
 
@@ -74,7 +74,7 @@ export let hydrateIf = (bnode: BNode, attrName: string, attrValue: string) => {
                 }
 
                 // If there's a transition, play it
-                transition = hydratedBnode[OPTIONS][B_TRANSITION_KEY];
+                transition = transitions.get(hydratedBnode.el);
                 if (transition) transition(true);
             }
             // Remove existing copy

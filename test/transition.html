@@ -4,24 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
-    <style>
-        .show-in {
-            opacity: 0;
-            transform: scale(0.8);
-            transition: opacity 1s, transform 1s;
-        }
-        .show-out {
-            opacity: 1;
-            transform: translateY(50px);
-            transition: opacity 1.5s, transform 1.5s;
-        }
-    </style>
 </head>
-<body b-props="{show: true}">
+<body b-props="main">
     <h1>b-transition</h1>
-    <p>This page demonstrates the use of b-transition with GSAP animations.</p>
+    <p>This page demonstrates the use of b-transition with CSS transitions.</p>
 
-    <div b-if="show" b-transition="['.show-in', '.show-out']">This will be animated</div>
+    <div b-ref="text" b-show="show" b-transition="[['in-position', 'in-transition'],['in-position', 'out-transition']]">This will be animated</div>
 
     <button on-click="show = true">Show</button>
     <button on-click="show = false">Hide</button>
@@ -29,9 +17,28 @@
     <script type="module" src="/src/briojs.min.ts"></script>
     <script>
         window.addEventListener('brio', () => {
-            let {gc: {$hydrate}} = brio.newApp();
+            let {gc: {$hydrate, $set}} = brio.newApp();
+            $set.props('main', () => ({
+                show: true
+            }));
             $hydrate('body');
         });
     </script>
+    <style>
+        .in-position {
+            opacity: 0;
+            transform: scale(.95);
+        }
+        .in-transition {
+            transition: transform .2s ease-in-out;
+        }
+        .out-position {
+            opacity: 1;
+            transform: scale(1);
+        }
+        .out-transition {
+            transition: opacity 2.1s, transform 2.1s;
+        }
+    </style>
 </body>
 </html>

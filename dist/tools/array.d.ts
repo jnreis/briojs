@@ -99,4 +99,12 @@ export declare let arrayFrom: (arrayLike: any) => unknown[];
  * @param startAt the number to start at
  */
 export declare let arrayFill: (length: number, startAt?: number) => number[];
+/**
+ * Returns the last item in an array
+ */
+export declare let lastItem: (array: any[]) => any;
+/**
+ * Returns the last index of an array. `-1` if the array is empty.
+ */
+export declare let lastIndex: (array: any[]) => number;
 export {};

@@ -49,12 +49,12 @@ export let isSetter = (object: Object, key: string) => {
 export let isString = (value: any) => is(value, STRING);
 
 /** Check if a value is a number */
-export let isNumber = (value: any) => is(value, NUMBER) && isFinite(value);
+export let isNumber = (value: any) => is(value, NUMBER) && !isNaN(value);
 
 /**
  * Check if a value is numeric.
  * - it must be a number or a string that can be converted to a number
- * - it must be finite, not NaN or Infinity
+ * - it must not be NaN
  */
 export let isNumeric = (value: any) => isNumber(parseFloat(value)) && isNumber(Number(value));
 

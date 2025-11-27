@@ -13,62 +13,24 @@
     <body>
 
     <script b-script>
-        async () => {
-            // Set reusable props
-            $set.props('show', (ctx) => ({
-                show: true, 
-                show2: true,
-                where: $ref.redBox,
-                log() {
-                    console.log('show $props', this);
-                    console.log('show ctx item', ctx);
-                }
-            }));
-            $set.data('show', (ctx) => ({ show: false, show2: false, 
-                log() {
-                    console.log('show $data', this);
-                    console.log('show ctx item', ctx);
-                }
-            }));
-
-            $data.theIf = true;
-            $data.theShow = true;
+        () => {
+            $data.if1 = true;
+            $data.if2 = false;
         }
     </script>
 
     <template 
         b-template
-        b-if="$data.theIf" 
-        b-show="$data.theShow" 
-        b-script="console.log('The template script')" 
-        b-effect="console.log('Template', '\n', 'theIf:', $data.theIf, '\n', 'theShow:', $data.theShow)"
+        b-if="if1" 
+        b-effect="console.log('1', $data.if1)"
     >
-        <div b-template b-if="$data.theShow" b-effect="console.log('H1', '\n', 'theIf:', $data.theIf, '\n', 'theShow:', $data.theShow)">
-            <h1>b-if</h1>
-            <p>This element is conditionally rendered based on the value of <code>theIf</code>.</p>
+        <h2>b-if 1</h2>
+        <div b-template b-if="if2" b-effect="console.log('2', $data.if2)">
+            <h3>b-if 2</h3>
         </div>
     </template>
-    <button b-ref="btn" on-click-prevent="$data.theIf = !$data.theIf">Toggle If</button>
-    <button on-click="$data.theShow = !$data.theShow">Toggle Show</button>
-
-    <!-- <div b-props="show" b-props-hydrated="$props.log">
-        <h1>b-if</h1>
-    
-        <div b-show="$props.show" class="hide" style="border: 1px solid red; padding: 10px;">
-            <p b-ref="redBox" b-if="$props.show">Toggle this paragraph</p>
-            <p b-if="$props.show2" b-teleport="$props.where">Toggle this paragraph 2</p>
-            <p b-data="show" b-data-hydrated="$data.log" id="lastParagraph">Toggle this paragraph 3 {{ $data.show2 }}</p>
-        </div>
-        <div b-ref="blackBox" style="margin: 10px 0; border: 1px solid black; padding: 10px; color: green;">
-
-        </div>
-        <button on-click="$props.show = !$props.show">{{ $props.show ? 'Remove' : 'Add' }}</button>
-        <button on-click="$props.show2 = !$props.show2">{{ $props.show2 ? 'Remove2' : 'Add2' }}</button>
-        <button on-click="$props.show2 = !$props.show2">{{ $props.show2 ? 'Remove2' : 'Add2' }}</button>
-
-        <button on-click="$props.where = [$ref.blackBox, 'append']">Teleport to black box</button>
-        <button on-click="$props.where = $ref.redBox">Teleport to red box</button>
-    </div> -->
+    <button on-click="$data.if1 = !$data.if1">Toggle If 1</button>
+    <button on-click="$data.if2 = !$data.if2">Toggle If 2</button>
 
         <script type="module" src="/src/briojs.min.ts"></script>
 
@@ -78,83 +40,6 @@
                 let {$hydrate, $state, $effect, $watch} = app.gc;
                 $hydrate('body');
             });
-
-            // function h(type, props, ...children) {
-            //     return { type, props: props || {}, children: children.flat() };
-            // }
-
-            // function render(vnode) {
-            //     if (typeof vnode === "string") {
-            //         return document.createTextNode(vnode);
-            //     }
-
-            //     const el = document.createElement(vnode.type);
-
-            //     for (const [key, value] of Object.entries(vnode.props)) {
-            //         el.setAttribute(key, value);
-            //     }
-
-            //     vnode.children.forEach((child) => {
-            //         el.appendChild(render(child));
-            //     });
-
-            //     return el;
-            // }
-
-            // function diff(oldVNode, newVNode) {
-            //     // Replace if different types or text
-            //     if (
-            //         typeof oldVNode !== typeof newVNode ||
-            //         (typeof oldVNode === "string" && oldVNode !== newVNode) ||
-            //         oldVNode.type !== newVNode.type
-            //     ) {
-            //         return (parent, el) => {
-            //             const newEl = render(newVNode);
-            //             parent.replaceChild(newEl, el);
-            //             return newEl;
-            //         };
-            //     }
-
-            //     // Patch props and children
-            //     return (parent, el) => {
-            //         // Update attributes
-            //         for (const [key, value] of Object.entries(newVNode.props)) {
-            //             el.setAttribute(key, value);
-            //         }
-
-            //         // Diff children
-            //         const childPatches = [];
-            //         const max = Math.max(
-            //             oldVNode.children.length,
-            //             newVNode.children.length
-            //         );
-            //         for (let i = 0; i < max; i++) {
-            //             childPatches.push(
-            //                 diff(oldVNode.children[i], newVNode.children[i])
-            //             );
-            //         }
-
-            //         childPatches.forEach((patch, i) => {
-            //             if (patch) {
-            //                 patch(el, el.childNodes[i]);
-            //             }
-            //         });
-
-            //         return el;
-            //     };
-            // }
-
-            // let oldVNode = h("div", {}, h("h1", null, "Hello"));
-            // let root = render(oldVNode);
-            // document.body.appendChild(root);
-
-            // // Later...
-            // setTimeout(() => {
-            //     const newVNode = h("div", {}, h("h1", null, "Hello World"));
-            //     const patch = diff(oldVNode, newVNode);
-            //     root = patch(document.body, root);
-            //     oldVNode = newVNode;
-            // }, 2000);
         </script>
     </body>
 </html>

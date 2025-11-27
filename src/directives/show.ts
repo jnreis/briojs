@@ -1,7 +1,12 @@
-import { evalEffect } from '../app';
-import { B_SHOW, DISPLAY, OPTIONS, STYLE } from '../tools/constants';
-import { getParent, getStyle, nextFrame } from '../tools/dom';
-import { B_TRANSITION_KEY } from './transition';
+import { evalEffect, getFirstInsertedNode, getInsertedNodes, removeInsertedNodes } from '../app';
+import { has } from '../tools';
+import { filter } from '../tools/array';
+import { AFTER, B_SHOW, BEFORE, DELETE } from '../tools/constants';
+import { createComment, insertNodes, nextFrame } from '../tools/dom';
+import { newMap } from '../tools/object';
+import { transitions } from './transition';
+
+let hiddenNodes: Map<Node, BNode> = newMap();
 
 /**
  * b-show is the same as b-if but the element is not removed from the DOM
@@ -10,45 +15,77 @@ import { B_TRANSITION_KEY } from './transition';
  */
 export let hydrateShow = (bnode: BNode, attrName: string, attrValue: string) => {
 
-    let el = bnode.el;
+    // Create a placeholder comment node
+    bnode.ph = createComment(attrName);
 
-    // Get the initial display value
-    let initialDisplay = getStyle(bnode.el)[DISPLAY];
+    // Hold the node's location with a placeholder
+    insertNodes(getFirstInsertedNode(bnode), BEFORE, bnode.ph);
 
-    // If the initial display value is 'none', set it to 'block'
-    // * This is necessary because the 'none' value is used to hide the element
-    if (initialDisplay == 'none') initialDisplay = 'block';
+    // // Save the show effect function for later use
+    // // Example: nested b-show directives
+    // hiddenNodes.set(bnode.ph, bnode);
+
+    // Transition function, if any
+    let transition: FunctionType | undefined;
+
+    let hideNodes = () => {
+        // Remove the inserted nodes
+        removeInsertedNodes(bnode);
+
+        // Mark this bnode as hidden
+        hiddenNodes.set(bnode.ph as Comment, bnode);
+    }
 
     // Evaluate the attribute value as an effect
-    evalEffect(bnode, attrValue, (ctxFn) => {
+    evalEffect(bnode, attrValue, (ctxFn: FunctionType) => {
+
         // Get the value
         let value = ctxFn();
 
-        // Check if the parent node exists
-        if (getParent(el)) {
-            // Wait for the next tick.
-            // * This is necessary for some directives to work properly (e.g. `on-click-outside`)
-            nextFrame(() => {
-                let transition = bnode[OPTIONS][B_TRANSITION_KEY];
-                // Show the element
-                if (value) {
-                    el[STYLE][DISPLAY] = initialDisplay;
-                    if (transition) transition(true);
+        // Wait for the next tick.
+        // * This is necessary for some directives to work properly (e.g. `on-click-outside`, `b-transition`, etc.)
+        nextFrame(() => {
+            // Get the nodes to insert or remove
+            let nodes = getInsertedNodes(bnode);
+
+            // Get the transition function, if any
+            transition = transitions.get(bnode.el);
+
+            // Show the node(s)
+            if (value) {
+                // Reinstate the node(s) if they are hidden
+                if (hiddenNodes.has(bnode.ph as Comment)) {
+                    // Trigger the show effect for nested b-show directives
+                    // This ensures that hidden nested b-show remain hidden
+                    for (let node of nodes) {
+                        if (hiddenNodes.has(node) && node !== bnode.ph) {
+                            let nestedBnode = hiddenNodes.get(node)!;
+    
+                            let nestedHiddenNodes = getInsertedNodes(nestedBnode);
+    
+                            // Remove the hidden nodes from the `nodes` list, except the placeholder
+                            nodes = filter(nodes, n => !has(nestedHiddenNodes, n) || n === nestedBnode.ph);
+                        }
+                    }
+    
+                    // Remove this bnode from the hidden nodes map
+                    hiddenNodes[DELETE](bnode.ph as Comment);
+    
+                    // Insert the nodes after the placeholder
+                    insertNodes(bnode.ph as any, AFTER, ...nodes);
                 }
-                // Hide the element after the transition
-                else if (transition) {
-                    transition(false, () => hideElement(el));
-                }
-                // Just hide the element
-                else hideElement(el);
-            });
-        }
+
+                // Play the transition in, if any
+                if (transition) transition!(true);
+            }
+
+            // Hide the nodes(s) after transition out, if any
+            else if (transition) transition(false, hideNodes);
+
+            // Immediately hide the nodes if no transition
+            else hideNodes();
+        });
     });
 }
 
 export let showDirective: Directive = [B_SHOW, hydrateShow];
-
-
-let hideElement = (el: HTMLElement) => {
-    el[STYLE][DISPLAY] = 'none';
-}

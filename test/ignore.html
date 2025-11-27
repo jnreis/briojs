@@ -5,13 +5,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>b-ignore</title>
 </head>
-<body b-props="{ name: 'Brio.js' }">
+<body b-props>
+
+    <script b-script>
+        () => {
+            $props.name = 'Brio.js';
+        };
+    </script>
+
     <h1>b-ignore</h1>
 
+    <!-- Ignored -->
     <div b-ignore>
         <p>Hello from <span>{{name}}</span></p>
     </div>
 
+    <!-- Not ignored -->
     <input type="text" b-model="name">
 
     <script type="module" src="/src/briojs.min.ts"></script>

@@ -9,8 +9,6 @@ import { parse, space, trim } from '../tools/string';
 import { isNull, isArray, getType, isUndefined, isString, isBoolean, isNumber } from '../tools/typeCheck';
 import { getAccessedProp } from '../reactivity/track';
 
-// TODO: this whole directive needs to be reviewed and tested thoroughly
-
 /**
  * MODEL DIRECTIVE
  * The model directive is used to create a two-way binding between a reactive state and an input, textarea, or select element.
@@ -72,7 +70,6 @@ import { getAccessedProp } from '../reactivity/track';
  * - This is used to apply the modifiers to the value of the checkbox or select option that don't have direct access to the modifiers.
  * - Without this, the value of these elements would not be properly modified.
  */
-// TODO: before using the node make sure it belongs to the same app instance as the bnode
 let nodeModifiers: Map<Node, string[]> = newMap();
 
 /**
@@ -300,7 +297,7 @@ export let hydrateModel = (bnode: BNode, attrName: string, attrValue: string) =>
 
     // Add the event listeners and save the cleanup functions
     for (let [eventName, fn] of entries(events)) {
-        saveCleanup(bnode, listen(node, eventName, fn));
+        saveCleanup(bnode, listen(node, eventName as string, fn));
     }
 }
 

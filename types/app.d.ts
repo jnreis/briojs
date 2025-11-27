@@ -84,7 +84,9 @@ type BrioTools = {
         rule: (name: string, fn: RuleFn, message?: MessageFn) => void;
         validate: () => boolean;
         errors: ObjectType;
-    }
+    };
+
+    $getType: (value: any) => string;
 }
 
 /** The global $set object */
@@ -154,6 +156,9 @@ type BNode = {
 
     /** The actual nodes in the DOM */
     nodes?: Node[],
+
+    /** Child nodes not in the DOM that need to be dehydrated when the parent node is dehydrated */
+    dehydrateChildren?: Node[],
 
     /** Unique ID context */
     id: ObjectType,

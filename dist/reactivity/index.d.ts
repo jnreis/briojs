@@ -26,7 +26,7 @@ export declare let addStateListener: (proxied: any, fn: ListenerFunction, priori
  * Add a listener to a property of an observed state
  * @returns The disposer function to remove the listener from the property and state (if the property is also an observed state)
  */
-export declare let addPropertyListener: (proxied: any, prop: string | number, fn: ListenerFunction, priority?: number) => () => boolean;
+export declare let addPropertyListener: (proxied: any, prop: string | number, fn: ListenerFunction, priority?: number) => () => void;
 export { state } from './state';
 export { effect } from './effect';
 export { watch } from './watch';

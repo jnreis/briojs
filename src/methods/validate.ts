@@ -107,7 +107,7 @@ export let validator = (data: ObjectType) => {
                     }
                     // Default message
                     else {
-                        arrayAdd(errors[propName], messages[ruleName](propName, ruleValue, data) || propName + ' is invalid.');
+                        arrayAdd(errors[propName], messages[ruleName](propName as string, ruleValue, data) || propName + ' is invalid.');
                     }
                 }
             }

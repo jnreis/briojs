@@ -217,7 +217,7 @@
 
     <div b-data="{p1: true}" b-ref="prop1">
       <div b-class="$props.p1">
-        <button on-click="console.log($props, $ref, $el, $root($el), $uid, $data.p1)">Log Magic attributes</button>
+        <button on-click="console.log($props, $ref, $el, $root($el), $id, $data.p1)">Log Magic attributes</button>
         <button id="button1" b-ref="button1" on-click="console.log($ref, $s2)">From a parent scope</button>
       </div>
       <div b-data="{ref: 123}" b-ref="prop2">

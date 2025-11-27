@@ -68,7 +68,18 @@ export let addPropertyListener = (proxied: any, prop: string | number, fn: Liste
     // This will notify the listener when the property is set/deleted
     propsObject[prop].set(fn, priority);
 
-    return () => propsObject[prop][DELETE](fn);
+    // If the property value is an observed state, add the listener to the state as well
+    let propValue = proxied[prop];
+    let stateDisposer: FunctionType | undefined;
+    if (isState(propValue)) {
+        stateDisposer = addStateListener(propValue, fn, priority) as FunctionType;
+    }
+
+    // Return the disposer function to remove the listener from the property
+    return () => {
+        if (stateDisposer) stateDisposer();
+        propsObject[prop][DELETE](fn);
+    }
 }
 
 setProp(state, 'persist', (value: any, alias?: string) => storage(localStorage, value, alias), 'wc');

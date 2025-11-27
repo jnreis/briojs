@@ -6,7 +6,7 @@
  * @returns true if the value is found, else false
  */
 export declare let has: (value: string | any[], item: any, position?: number) => boolean;
-export declare let entries: (value: any) => [string, any][];
+export declare let entries: (value: any) => [string | number, any][];
 /**
  * Returns a section of a string or a copy of a section of an array
  * @param value the string or array to take a slice from

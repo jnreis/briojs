@@ -4,12 +4,12 @@ import { go, newRouter } from "./methods/route";
 import { effect, state, storageEvent, watch } from "./reactivity";
 import { has, logError, uid } from "./tools";
 import { arrayAdd, each, filter, find, join, map, some } from "./tools/array";
-import { TEXT, TEXT_CONTENT, ATTR, DELETE, INNER_HTML, PARENT, $PROPS, NULL, B_DATA, SCRIPT, $DATA, STYLE, B_, TEMPLATE, UNDEFINED, OPTIONS, ROUTE, NEW_LINE, BRIO, STORAGE, STATE, PROPS, NUMBER, DIRECTIVES, MASKS, MASK_TOKENS, DATA, MASK_TOKEN, ROUTE_RULE, B_SAVE, OUTER_HTML, $STORE, SKIP, NODES, B_IF, MESSAGE, CLONE, $REF, $SLOT, B_TEMPLATE, B_REF, $, $DEHYDRATE, $HYDRATE, $INSERT, VALIDATOR, B_SCRIPT, B_SLOT, B_FOR, $FOR, $TOOLS } from "./tools/constants";
+import { TEXT, TEXT_CONTENT, ATTR, DELETE, INNER_HTML, PARENT, $PROPS, NULL, B_DATA, SCRIPT, $DATA, STYLE, B_, TEMPLATE, UNDEFINED, OPTIONS, ROUTE, NEW_LINE, BRIO, STORAGE, STATE, PROPS, NUMBER, DIRECTIVES, MASKS, MASK_TOKENS, DATA, MASK_TOKEN, ROUTE_RULE, B_SAVE, OUTER_HTML, $STORE, SKIP, NODES, B_IF, MESSAGE, CLONE, $REF, $SLOT, B_TEMPLATE, B_REF, $, $DEHYDRATE, $HYDRATE, $INSERT, VALIDATOR, B_SCRIPT, B_SLOT, B_FOR, $FOR, DEHYDRATE_CHILDREN } from "./tools/constants";
 import { walk, getAttr, delAttr, getParent, getTagName, getNodeContent, removeNode, eachAttribute, query, emit, listen, href, setAttr } from "./tools/dom";
 import { expToFn, newFn } from "./tools/evaluation";
 import { countKeys, hasProp, getProp, newMap, setProp, setObjectKeys, W, newSet, S, sync, clone, delProp, getKeys } from "./tools/object";
 import { isStringNumeric, replace, replaceAll, split, startsWith, test, trim } from "./tools/string";
-import { isTextNode, isElementNode, isNull, isRegExp, isString, isNode, isFunction, isArray } from "./tools/typeCheck";
+import { isTextNode, isElementNode, isNull, isRegExp, isString, isNode, isFunction, isArray, getType } from "./tools/typeCheck";
 import { validator } from "./methods/validate";
 import { getAccessedProp } from "./reactivity/track";
 import { prefixPropsInContext } from "./tools/contextProps";
@@ -179,27 +179,32 @@ export let newApp = (): AppObject => {
 
             // Remove the effects
             if (bnode) {
-                // Dehydrate the child nodes
+                // Dehydrate nodes in the DOM
                 if (bnode[NODES]) {
-                    for (let childNode of bnode[NODES]!) {
+                    for (let domNode of bnode[NODES] as Node[]) {
+                        await dehydrate(domNode, _removeNode, _removeBNode);
+                    }
+                }
+
+                // Dehydrate child nodes NOT in the DOM
+                if (bnode[DEHYDRATE_CHILDREN]) {
+                    for (let childNode of bnode[DEHYDRATE_CHILDREN] as Node[]) {
                         await dehydrate(childNode, _removeNode, _removeBNode);
                     }
                 }
 
                 // Remove the placeholder
-                if (bnode.ph) {
-                    removeNode(bnode.ph as any);
-                }
+                if (bnode.ph) removeNode(bnode.ph as any);
 
                 // Call the cleanup functions
                 each(bnode.cFns, cleanupFn => cleanupFn());
 
                 // Remove the bnode
                 if (_removeBNode) bnodes[DELETE](n);
-
-                // Remove the node
-                if (_removeNode) removeNode(n as HTMLElement);
             }
+
+            // Remove the node
+            if (_removeNode) removeNode(n as HTMLElement);
 
             return true;
         });
@@ -220,7 +225,7 @@ export let newApp = (): AppObject => {
             let bnode = newBNode(node as any, ctxNode);
 
             // Evaluate the expression
-            let value = exec(bnode, prefixPropsInContext(bnode, sanitizedText), '', TEXT);
+            let value = exec(bnode, sanitizedText, '', TEXT);
 
             // Save the cleanup function
             saveCleanup(bnode, effect(() => node[TEXT_CONTENT] = value(bnode.ctx)));
@@ -348,9 +353,9 @@ export let newApp = (): AppObject => {
         /**
          * Make sure the expression is a function and auto-fill the references to props in the context objects.
          * This allows the use of "{{ $data.propName }}" to be written as "{{ propName }}".
-         * The default context list and order is: $for, $data, $props, $store, $tools.
+         * The default context list and order is: $for, $data, $props, $store.
          */
-        exp = expToFn(autoFillContextName(bnode, exp), args, returns);
+        exp = expToFn(prefixPropsInContext(bnode, exp, returns != TEXT), args, returns);
 
         // Check if the expression is already cached
         if (exp in cached) {
@@ -469,6 +474,7 @@ export let newApp = (): AppObject => {
         [CLONE]: clone,
         [VALIDATOR]: validator,
         uid,
+        getType,
     };
 
     // Prefix global context keys with $
@@ -496,7 +502,6 @@ export let newApp = (): AppObject => {
         // ! PUBLIC CONTEXT
         gc: gc as GlobalContext,
 
-        // ! TOOLS
         exec,
         bnode: [newBNode, getBNode],
     };
@@ -525,14 +530,49 @@ export let saveToParent = (bnode: BNode, el: HTMLElement) => {
     let parent = bnode[PARENT];
     if (parent) {
         // Ensure the parent has a nodes array
-        if (!parent[NODES]) {
-            parent[NODES] = [];
+        if (!parent[DEHYDRATE_CHILDREN]) {
+            parent[DEHYDRATE_CHILDREN] = [];
         }
         // Add the element to the parent's nodes array, if not already present
-        if (!has(parent[NODES]!, el)) {
-            arrayAdd(parent[NODES]!, el);
+        if (!has(parent[DEHYDRATE_CHILDREN] as Node[], el)) {
+            arrayAdd(parent[DEHYDRATE_CHILDREN] as Node[], el);
         }
     }
+}
+
+/** Get the first inserted node from a list of nodes */
+export let getFirstInsertedNode = (bnode: BNode) => find(getInsertedNodes(bnode), node => getParent(node));
+
+/**
+ * Get the inserted nodes from a bnode.
+ * - Including placeholders
+ * - Not including b-template, but including its nodes. Recursively, for nested b-templates.
+ */
+export let getInsertedNodes = (bnode: BNode) => {
+    let nodes: Node[] = [];
+
+    let [, getBNode] = bnode.bnode;
+
+    if (bnode.ph) arrayAdd(nodes, bnode.ph);
+
+    each(bnode[NODES] || [bnode.el], node => {
+        let templateBnode = getBNode(node);
+        // b-template nodes are skipped, but their nodes are included
+        if (templateBnode && hasProp(templateBnode.attr, B_TEMPLATE)) {
+            arrayAdd(nodes, ...getInsertedNodes(templateBnode));
+        }
+        else {
+            arrayAdd(nodes, node);
+        }
+    });
+
+    return nodes;
+}
+
+export let removeInsertedNodes = (bnode: BNode) => {
+    each(getInsertedNodes(bnode), node => {
+        if (node != bnode.ph) removeNode(node);
+    })
 }
 
 /**
@@ -720,7 +760,7 @@ export let genContextArgs = (bnode: BNode, exp: string): string =>
 
 /** Auto-fill the context name if missing and found in one of the data related contexts */
 export let autoFillContextName = (bnode: BNode, propName: string): string => {
-    for (let ctxName of [$FOR, $DATA, $PROPS, $STORE, $TOOLS]) {
+    for (let ctxName of [$FOR, $DATA, $PROPS, $STORE]) {
         let ctx = bnode.ctx[ctxName as '$data'];
         if (ctx && propName in ctx) {
             propName = ctxName + '.' + propName;

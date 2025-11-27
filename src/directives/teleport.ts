@@ -1,17 +1,15 @@
-import { evalEffect, saveToParent } from "../app";
+import { evalEffect, getInsertedNodes, saveToParent } from "../app";
 import { has, logWarn } from "../tools";
-import { AFTER, APPEND, B_, BEFORE, ELEMENT, NODES, NOT_FOUND, PREPEND, TELEPORT } from "../tools/constants";
+import { AFTER, APPEND, B_, BEFORE, ELEMENT, NOT_FOUND, PREPEND, TELEPORT } from "../tools/constants";
 import { insertNodes } from "../tools/dom";
 import { wrapInBackticks } from "../tools/string";
 import { isArray, isNode, isString } from "../tools/typeCheck";
 
 export let hydrateTeleport = (bnode: BNode, attrName: string, attrValue: string) => {
 
-    // Where to teleport the node in relation to the target element. Default is 'after'.
-
-    let el = bnode.el;
-
     let target: any = attrValue;
+
+    // Where to teleport the node in relation to the target element. Default is 'after'.
     let where: 'before' | 'after' | 'prepend' | 'append';
 
     let $ref = bnode.ctx.$ref;
@@ -40,12 +38,12 @@ export let hydrateTeleport = (bnode: BNode, attrName: string, attrValue: string)
             where = AFTER;
 
         // Teleport the node to the target element
-        // Note: the teleported node(s) may be the b-if placeholder (ph), or the b-template nodes (nodes), or the node itself.
+        // Note: the teleported node(s) may include placeholder, or the b-template nodes, or the node itself.
         if (isNode(target)) {
-            insertNodes(target, where, ...(bnode[NODES] || [el]));
+            insertNodes(target, where, ...getInsertedNodes(bnode));
 
             // Ensure the element will go through the cleanup process
-            saveToParent(bnode, el);
+            saveToParent(bnode, bnode.el);
         }
 
         // If the target is not found, log a warning

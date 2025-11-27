@@ -12,7 +12,7 @@ import { getAccessedProp } from '../reactivity/track';
 
 export let hydrateFor = (bnode: BNode, attrName: string, attrValue: string) => {
 
-    let $el = bnode.el;
+    let el = bnode.el;
     let [newBNode, getBNode] = bnode.bnode;
 
     // Skip the node and its children
@@ -72,10 +72,10 @@ export let hydrateFor = (bnode: BNode, attrName: string, attrValue: string) => {
 
     // Hold the node's location with a placeholder
     bnode.ph = createComment(attrName);
-    insertNodes($el, REPLACE_WITH, bnode.ph);
+    insertNodes(el, REPLACE_WITH, bnode.ph);
 
     // Ensure the element will go through the cleanup process
-    saveToParent(bnode, $el);
+    saveToParent(bnode, el);
 
     // Keep track of the mounted items
     let mountedItems: ObjectType = {};
@@ -86,13 +86,13 @@ export let hydrateFor = (bnode: BNode, attrName: string, attrValue: string) => {
     let _create = async ([i, v]: ForContext) => {
 
         // Create a new node
-        let _el = cloneNode($el) as HTMLElement;
+        let _el = cloneNode(el) as HTMLElement;
 
         // Add the node to the DOM
         insertNodes(bnode.ph as any, BEFORE, _el);
 
         // Create a new bnode
-        let _bnode = newBNode(_el, $el);
+        let _bnode = newBNode(_el, el);
 
         // Mark the bnode as a b-for item
         _bnode[ATTR][attrName] = '';
@@ -104,7 +104,7 @@ export let hydrateFor = (bnode: BNode, attrName: string, attrValue: string) => {
         }
 
         // The $for context
-        let _for: ObjectType = state({});
+        let _for: ObjectType = state({}, _bnode.ctx[$FOR]);
 
         // Set the properties of the $for context
         setProp(_for, item, v, 'c');
@@ -138,7 +138,7 @@ export let hydrateFor = (bnode: BNode, attrName: string, attrValue: string) => {
         await updateDataLevelContext(_bnode);
 
         // Hydrate the new node
-        await bnode.gc[$HYDRATE](_el, $el);
+        await bnode.gc[$HYDRATE](_el, el);
     };
 
     // Update an existing item

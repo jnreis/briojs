@@ -11,7 +11,6 @@ export let $FOR: '$for' = '$for';
 export let $REF: '$ref' = '$ref';
 export let $SLOT: '$slot' = '$slot';
 export let $STORE: '$store' = '$store';
-export let $TOOLS: '$tools' = '$tools';
 
 export let AFTER: 'after' = 'after';
 export let ANIMATION: 'animation' = 'animation';
@@ -182,6 +181,7 @@ export let B_SCRIPT = B_+SCRIPT as 'b-script';
 export let B_TEMPLATE = B_+TEMPLATE as 'b-template';
 export let B_TEXT = B_+TEXT as 'b-text';
 
+export let CHILDREN__$CAP = CHILD__$CAP + 'ren' as 'Children';
 export let CLASS_LIST = CLASS + 'List' as 'classList';
 export let CLONE_NODE = CLONE + NODE__$CAP as 'cloneNode';
 export let COMPOSING = COMPOSI + 'ng' as 'composing';
@@ -192,6 +192,7 @@ export let CREATE_ELEMENT = CREATE + 'Element' as 'createElement';
 
 export let DEFINE_PROPERTY = DEFINE + PROPERTY__$CAP as 'defineProperty';
 export let DEFINE_PROPERTIES = DEFINE + PROPERT__$CAP + 'ies' as 'defineProperties';
+export let DEHYDRATE_CHILDREN = 'de' + HYDRATE + CHILDREN__$CAP as 'dehydrateChildren';
 export let DELETE_PROPERTY = DELETE + PROPERTY__$CAP as 'deleteProperty';
 export let DIRECTIVES = DIRECTIVE + 's' as 'directives';
 
@@ -233,7 +234,7 @@ export let REMOVE_ATTRIBUTE = REMOVE + ATTRIBUTE__$CAP as 'removeAttribute';
 export let REMOVE_EVENT_LISTENER = REMOVE + EVENT_LISTENER__$CAP as 'removeEventListener';
 export let REMOVE_PROPERTY = REMOVE + PROPERTY__$CAP as 'removeProperty';
 export let REPLACE_WITH = REPLACE + WITH__$CAP as 'replaceWith';
-export let REPLACE_CHILDREN = REPLACE + 'Children' as 'replaceChildren';
+export let REPLACE_CHILDREN = REPLACE + CHILDREN__$CAP as 'replaceChildren';
 export let ROUTE_RULE = ROUTE + 'Rule' as 'routeRule';
 
 export let SELECTION_START = SELECT + 'ionStart' as 'selectionStart';

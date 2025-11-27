@@ -15,10 +15,10 @@ import { resizeDirectives } from './resize';
 import { onDirective } from './on';
 import { bindDirective } from './bind';
 import { modelDirective } from './model';
-import { maskDirective, moneyMask, setDefaultMaskTokens } from './mask';
+import { maskDirective } from './mask';
 import { effectDirective } from './effect';
 import { arrayAdd, each } from '../tools/array';
-import { DIRECTIVES, MASK_TOKENS, MASKS } from '../tools/constants';
+import { DIRECTIVES } from '../tools/constants';
 
 /**
  * Active directives
@@ -43,7 +43,7 @@ export let allDirectives: [string | RegExp, HydrateDirective][] = [
     /**
      * Context directives
      * Notes:
-     * - the order of inference is: $for, $data, $props, $store, $tools
+     * - the order of inference is: $for, $data, $props, $store
      * - b-slot and b-ref are hydrated after b-data
      */
     propsDirective,
@@ -76,9 +76,9 @@ export let allDirectives: [string | RegExp, HydrateDirective][] = [
      * - the element that contains the b-template directive is removed from the DOM and its content is inserted in its place
      *   and because of that:
      *   - the b-template directive SHOULD NOT be used with elements that are self-closing (e.g. <img />, <input />, etc.)
-     *   - the b-template directive CANNOT be used with: b-show, b-html, b-text, b-style, bind-*, b-model, b-mask, b-transition, on-*
+     *   - the b-template directive CANNOT be used with: b-html, b-text, b-style, bind-*, b-model, b-mask, b-transition, on-*
      *     this is because these directives need to be hydrated on the element itself and not on its content
-     *   - the b-template directive CAN be used with: b-ignore, b-props, b-data, b-ref, b-slot, b-if, b-for, b-id, b-teleport, b-script, b-effect
+     *   - the b-template directive CAN be used with: b-ignore, b-props, b-data, b-ref, b-slot, b-if, b-for, b-id, b-script, b-show, b-teleport, b-effect
      */
     templateDirective,
 
@@ -89,6 +89,9 @@ export let allDirectives: [string | RegExp, HydrateDirective][] = [
      * - the b-show directive toggles the `display` of the element based on the condition
      */
     showDirective,
+
+    // ['b-boost', hydrateBoost],
+    transitionDirective, // b-transition, b-transition-play, b-transition-reverse
 
     /**
      * The b-teleport moves the element to a different location in the DOM.
@@ -125,9 +128,6 @@ export let allDirectives: [string | RegExp, HydrateDirective][] = [
     modelDirective,
     maskDirective,
 
-    // ['b-boost', hydrateBoost],
-    transitionDirective, // b-transition, b-transition-play, b-transition-reverse
-
     /**
      * Event directives
      */
@@ -145,10 +145,4 @@ export let allDirectives: [string | RegExp, HydrateDirective][] = [
 
 export let setAllDirectives = (app: AppObject) => {
     each(allDirectives, directive => arrayAdd(app[DIRECTIVES], directive));
-
-    // Load the money mask
-    app[MASKS].money = moneyMask;
-
-    // Set the default mask tokens
-    setDefaultMaskTokens(app[MASK_TOKENS]);
 }

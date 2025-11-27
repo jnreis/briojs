@@ -1,16 +1,6 @@
 import { size, slice } from ".";
-import { arrayAdd, map, some } from "./array";
-import { $DATA, $FOR, $PROPS, $STORE, $TOOLS, CLASS, DELETE, INDEX, SUPER } from "./constants";
+import { $DATA, $FOR, $PROPS, $STORE, INDEX } from "./constants";
 import { newSet } from "./object";
-import { match, replace, split, trim } from "./string";
-
-export const reserved = newSet([
-    // ECMAScript reserved keywords
-    "break", "case", "catch", CLASS, "const", "continue", "debugger", "default", DELETE, "do", "else",
-    "export", "extends", "finally", "for", "function", "if", "import", "in", "instanceof", "let", "new", "return",
-    SUPER, "switch", "this", "throw", "try", "typeof", "var", "void", "while", "with", "yield", "enum",
-    "await", "implements", "package", "protected", "interface", "private", "public", "static", "null", "true", "false",
-]) as Set<string>;
 
 export let variableNameRegex = /^[a-z_$][\w$]*$/i;
 
@@ -20,16 +10,16 @@ export let variableNameRegex = /^[a-z_$][\w$]*$/i;
  * @param templateLiteral Template literal to analyze. Must not include surrounding backticks.
  * @returns A set of variable names found within template literals.
  */
-export let findVariablesInTemplateLiteral = (templateLiteral: string) => {
+export let findVariablesInTemplateLiteral = (templateLiteral: string, wrapInTemplateExp = false) => {
     
     let found: Set<[string, number, number]> = newSet();
 
     let openBackticks = 1;
-    let openTemplateExpressions = 0;
+    let openTemplateExpressions = wrapInTemplateExp ? 1 : 0;
     let quote: `'` | `"` | `` = '';
 
     // Regex to match quotes, backticks, template expressions, and variable names
-    let regex = /('|"|`|\${|}|[a-z_$][\w$]*)/g;
+    let regex = /('|"|`|\${|}|[a-z_$][\w$]*)/gi;
 
     let matched;
     while ((matched = regex.exec(templateLiteral)) !== null) {
@@ -38,7 +28,6 @@ export let findVariablesInTemplateLiteral = (templateLiteral: string) => {
 
         // Escaped character, skip processing
         if (prevChar == '\\') {
-            console.warn('Escaped character, skipping:', matched[0]);
             continue;
         }
 
@@ -69,119 +58,9 @@ export let findVariablesInTemplateLiteral = (templateLiteral: string) => {
     return found;
 }
 
-export let findUsedButNotDeclaredVariables = (code: string) => {
+export let prefixPropsInContext = (bnode: BNode, code: string, wrapInTemplateExp = false) => {
 
-    let identifierRegex = /[a-z_$][\w$]*/gi;
-
-    let declared = newSet() as Set<string>;
-
-    // 1. Capture declared variables/functions/params/imports
-    let declarationRegexes = [
-        /\b(?:var|let|const|function|class)\s+([a-z_$][\w$]*)/gi, // simple variable declarations
-        /\b(?:function|catch)\s*[^(]*\(([^)]*)\)\s*{/g, // function parameters
-        /\(([^)]*)\)\s*=>/g, // arrow function parameters (parentheses)
-        /\b([a-z_$][\w$]*)\s*=>/gi, // arrow function parameters (single param without parentheses)
-    ];
-
-    for (let regex of declarationRegexes) {
-        let matched;
-        while ((matched = regex.exec(code)) !== null) {
-            let raw = matched[1];
-            if (raw) {
-                let names = map(split(raw, ","), (s) => replace(trim(s), /=.*$/, ""));
-                for (let name of names) {
-                    if (match(name, variableNameRegex)) {
-                        declared.add(name);
-                    }
-                }
-            }
-        }
-    }
-
-    // 2. Exclude string ranges (including template literal non-${})
-    let exclusionRanges: [number, number][] = [];
-    let stringRegex = /(['"`])(?:\\[\s\S]|(?!\1)[^\\])*\1/g;
-    let templateExprRegex = /\$\{([\s\S]*?)\}/g;
-
-    let matched;
-    while ((matched = stringRegex.exec(code)) !== null) {
-        let quote = matched[1];
-        let start = matched[INDEX];
-        let end = start + size(matched[0]);
-
-        if (quote === "`") {
-            let content = matched[0];
-            let baseOffset = matched[INDEX];
-            let lastEnd = 0;
-            let subMatch;
-            while ((subMatch = templateExprRegex.exec(content)) !== null) {
-                // NOTE: By excluding `${` and `}` also fix the issue of `$` being treated as a variable
-                let subStart = subMatch[INDEX] + 2; // +2 to account for the ${ prefix
-                let subEnd = subStart + size(subMatch[0]) - 3; // -3 to account for the } suffix
-                if (subStart > lastEnd) {
-                    arrayAdd(exclusionRanges, [
-                        baseOffset + lastEnd,
-                        baseOffset + subStart,
-                    ]);
-                }
-                lastEnd = subEnd;
-            }
-            if (lastEnd < size(content)) {
-                arrayAdd(exclusionRanges, [
-                    baseOffset + lastEnd,
-                    baseOffset + size(content),
-                ]);
-            }
-        } else {
-            arrayAdd(exclusionRanges, [start, end]);
-        }
-    }
-
-    // 3. Find object literal keys or method keys and mark their start positions
-    let objectKeys = newSet() as Set<string>;
-    // Updated regex: matches both key: and key()
-    let objectKeyRegex = /\b([a-z_$][\w$]*)\s*(:|\()/gi;
-    while ((matched = objectKeyRegex.exec(code)) !== null) {
-        // Add the object key to the set, if not in an exclusion range
-        if (!inRange(exclusionRanges, matched[INDEX])) {
-            objectKeys.add(matched[1]);
-        }
-    }
-
-    // 4. Final variable extraction
-    let found: [string, number, number][] = [];
-    while ((matched = identifierRegex.exec(code)) !== null) {
-        let name = matched[0];
-        let index = matched[INDEX];
-        let before = code[index - 1];
-
-        if (reserved.has(name) || 
-            declared.has(name) || 
-            before === "." || 
-            objectKeys.has(name) ||
-            inRange(exclusionRanges, index)
-        ) continue;
-
-        // Add the found variable to the set
-        arrayAdd(found, [
-            name,
-            index, // start index of the variable
-            index + size(name), // end index of the variable
-        ]);
-    }
-
-    // Debug
-    // console.warn('findUsedButNotDeclaredVariables:', { declared, objectKeys, exclusionRanges, found });
-
-    return found;
-}
-
-export let inRange = (ranges: [number, number][], index: number) => 
-    some(ranges, ([start, end]) => index >= start && index < end);
-
-export let prefixPropsInContext = (bnode: BNode, code: string) => {
-
-    let found = findVariablesInTemplateLiteral(code);
+    let found = findVariablesInTemplateLiteral(code, wrapInTemplateExp);
 
     let updatedCode = '';
     let lastIndex = 0;
@@ -191,7 +70,7 @@ export let prefixPropsInContext = (bnode: BNode, code: string) => {
     for (let [name, start, end] of found) {
 
         // Is in one of these contexts?
-        for (let obj of [$FOR, $DATA, $PROPS, $STORE, $TOOLS] as (keyof Context)[]) {
+        for (let obj of [$FOR, $DATA, $PROPS, $STORE] as (keyof Context)[]) {
 
             // Check if the variable is a property of a known context object
             if (ctx[obj] && name in ctx[obj]) {

@@ -143,3 +143,14 @@ export let arrayFrom = (arrayLike: any) =>
 export let arrayFill = (length: number, startAt: number = 0): number[] =>
     map(arrayFrom({ [LENGTH]: length }), (_, i) => startAt + i);
 
+/**
+ * Returns the last item in an array
+ */
+export let lastItem = (array: any[]) =>
+    array[lastIndex(array)];
+
+/**
+ * Returns the last index of an array. `-1` if the array is empty.
+ */
+export let lastIndex = (array: any[]) =>
+    array[LENGTH] - 1;

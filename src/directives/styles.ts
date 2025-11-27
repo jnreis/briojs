@@ -54,8 +54,6 @@ let prefixCssSelectors = (css: HTMLStyleElement, prefix: string) => {
 
     let rules: string[] = [];
 
-    console.log('CSS Rules:', css);
-
     for (let rule of css.sheet?.cssRules as CSSRuleList || []) {
         // Get the selector
         let selector = (rule as CSSStyleRule)[SELECTOR_TEXT];

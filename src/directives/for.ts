@@ -68,8 +68,6 @@ export let hydrateFor = (bnode: BNode, attrName: string, attrValue: string) => {
     if (!(isArray(value) || isObject(value)))
         return logError(msg, `an ${ARRAY}, ${OBJECT}, or ${NUMBER}.`);
 
-    // TODO: it might be worth it to write a function to only replace or reorder the items in the array that changed instead of removing and re-adding all the items. This will improve performance when the array is large and only a few items change.
-
     // Hold the node's location with a placeholder
     bnode.ph = createComment(attrName);
     insertNodes(el, REPLACE_WITH, bnode.ph);

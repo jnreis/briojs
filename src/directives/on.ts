@@ -7,8 +7,6 @@ import { D, delProp, deleteKeys, getKeys, W, countKeys, getProp } from '../tools
 import { lower, split } from '../tools/string';
 import { getType, isFunction } from '../tools/typeCheck';
 
-// TODO: this whole directive needs to be reviewed and tested thoroughly
-
 let KEYUP = 'keyup';
 let KEYDOWN = 'keydown';
 let OUTSIDE = 'outside';

@@ -14,20 +14,6 @@ import { validator } from "./methods/validate";
 import { getAccessedProp } from "./reactivity/track";
 import { prefixPropsInContext } from "./tools/contextProps";
 
-// TODO: some notes that may be useful when writing documentation
-// * Effects are functions that are called when a dependency changes
-// * Most of the raw values are expressions, or references to a prop or method in the scope
-// * All raw values are converted to functions that return the value of the expression, or void in some cases
-
-/**
- * TODO: I have this js frontend framework called Brio.js.
-Its purpose is, like others frontend frameworks, to be a tools to create reactive and dynamic UIs. However it works directly with pure HTML, it can hydrate HTML in the page by calling $dom.hydrate(someElementOrSelector), it can also hydrate HTML strings by calling the $dom.insert(content, where, target).
-An app is created by calling the newApp function. That returns a AppObject.
-However I want to review with you its hydration process, and the very structure of the code because, even though it works, it feels fragile and rudimentary.
-As of right now the hydrate walks the DOM, and hydrates the HTMLElement with directives or Text nodes with mustache or template literal syntaxes. However the element MUST be in the DOM, which can be cumbersome for directives that stops the hydration flow, like b-if, b-for, etc.
-Suggest improvements to the exist structure AND suggest a new and improved structure.
- */
-
 export let symbol = S(BRIO);
 
 /** The router for each app */

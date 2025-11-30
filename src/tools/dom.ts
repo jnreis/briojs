@@ -2,7 +2,7 @@ import { has, slice } from ".";
 import { arrayFrom, arrayReverse, each, indexOf } from "./array";
 import { COMPOSING, DISPLAY, HREF, HTML, INPUT, TARGET, TEXT, TEXT_CONTENT, AFTER, VALUE, CHECKED, SELECT, CLASS_LIST, REMOVE, GET_ATTRIBUTE, SET_ATTRIBUTE, REMOVE_ATTRIBUTE, ADD_EVENT_LISTENER, REMOVE_EVENT_LISTENER, INNER_HTML, OUTER_HTML, BEFORE, APPEND, INSERT_ADJACENT_HTML, CLONE_NODE, PARENT_NODE, PREVIOUS_SIBLING, NEXT_SIBLING, FIRST_CHILD, LAST_CHILD, CREATE_ELEMENT, DETAIL, CREATE_COMMENT, STYLE, GET_PROPERTY_VALUE, GET_PROPERTY_PRIORITY, SET_PROPERTY, REMOVE_PROPERTY, TRANSITION, CONTENT, TEMPLATE, SELECTOR_TEXT } from "./constants";
 import { D, L, W } from "./object";
-import { lower, replace, startsWith, trim } from "./string";
+import { endsWith, lower, replace, startsWith, trim } from "./string";
 import { isElementNode, isString } from "./typeCheck";
 
 
@@ -291,10 +291,16 @@ export let cssSupport = (property: string, value: string) => {
     return supported;
 }
 
-export let getDeclaredStyles = (style: CSSStyleDeclaration): StyleProps => {
-    let styles: Record<string, [string, string]> = {};
+export let getDeclaredStyles = (style: CSSStyleDeclaration) => {
+    let styles: StyleProps = {};
     for (let prop of style) {
-        styles[prop] = [style[GET_PROPERTY_VALUE](prop), style[GET_PROPERTY_PRIORITY](prop)];
+        // Get the property value
+        styles[prop] = style[GET_PROPERTY_VALUE](prop);
+
+        // Check for !important priority
+        let priority = style[GET_PROPERTY_PRIORITY](prop);
+        if (priority == IMPORTANT)
+            styles[prop] += ' !'+IMPORTANT;
     }
     return styles;
 }
@@ -329,7 +335,26 @@ export let getStylesFromSelector = (selector: string) => {
   }
 }
 
-export let setStyleProp = (el: HTMLElement, prop: string, value: string, priority?: string) => {
+export let getStylesFromSelectors = (selectors: string[]) => {
+    let combinedStyles: StyleProps = {};
+    for (let selector of selectors) {
+        combinedStyles = { ...combinedStyles, ...getStylesFromSelector(selector) };
+    }
+    return combinedStyles;
+}
+
+let IMPORTANT: 'important' = 'important';
+
+export let setStyleProp = (el: HTMLElement, prop: string, value: string) => {
+    // Check for !important priority
+    let priority = '';
+
+    if (endsWith(value+'', '!'+IMPORTANT)) {
+        value = trim(slice(value, 0, -10) as string);
+        priority = IMPORTANT;
+    }
+
+    // Set the style property
     el[STYLE][SET_PROPERTY](prop, value, priority);
 }
 
@@ -340,7 +365,7 @@ export let delStyleProp = (el: HTMLElement, prop: string) => {
 export let setStyleProps = (el: HTMLElement, ...styleProps: StyleProps[]) => {
     for (let styles of styleProps) {
         for (let prop in styles) {
-            setStyleProp(el, prop, ...styles[prop]);
+            setStyleProp(el, prop, styles[prop]);
         }
     }
 }

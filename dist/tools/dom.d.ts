@@ -99,7 +99,8 @@ export declare let getDeclaredStyles: (style: CSSStyleDeclaration) => StyleProps
  */
 export declare let splitTransitionStyles: (styles: StyleProps) => [StyleProps, StyleProps];
 export declare let getStylesFromSelector: (selector: string) => StyleProps | undefined;
-export declare let setStyleProp: (el: HTMLElement, prop: string, value: string, priority?: string) => void;
+export declare let getStylesFromSelectors: (selectors: string[]) => StyleProps;
+export declare let setStyleProp: (el: HTMLElement, prop: string, value: string) => void;
 export declare let delStyleProp: (el: HTMLElement, prop: string) => void;
 export declare let setStyleProps: (el: HTMLElement, ...styleProps: StyleProps[]) => void;
 export declare let delStyleProps: (el: HTMLElement, ...styleProps: StyleProps[]) => void;

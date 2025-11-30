@@ -41,7 +41,7 @@ type MaskTokensObject = {
 //     value?: string,
 // }
 
-type StyleProps = Record<string, [string, string]>;
+type StyleProps = Record<string, string>;
 
 type MaskItem = string | MaskCharacter;
 type MaskFunction = ($mask: MaskContext) => void;

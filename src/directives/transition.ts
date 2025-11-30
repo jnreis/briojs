@@ -1,9 +1,9 @@
 import { saveCleanup } from "../app";
 import { logError, wait } from "../tools";
-import { ATTR, B_, B_IF, B_SHOW, DELETE, DIRECTIVE, ELEMENT, END, INVALID__$CAP, MUST_BE, NODES, REMOVE, TARGET, TRANSITION } from "../tools/constants";
-import { listen, nextFrame, delClass, setClass } from "../tools/dom";
+import { ATTR, B_, B_IF, B_SHOW, DELETE, DIRECTIVE, ELEMENT, END, INVALID__$CAP, MUST_BE, NODES, OBJECT, REMOVE, STYLE, TARGET, TRANSITION } from "../tools/constants";
+import { listen, nextFrame, getDeclaredStyles, splitTransitionStyles, delStyleProps, setStyleProps } from "../tools/dom";
 import { hasProp, newMap, setProp } from "../tools/object";
-import { isElementNode } from "../tools/typeCheck";
+import { isArray, isElementNode, isObject } from "../tools/typeCheck";
 
 export let transitions = newMap() as Map<Node, FunctionType>;
 
@@ -18,10 +18,24 @@ export let hydrateTransition = (bnode: BNode, attrName: string, attrValue: strin
         return logError('the', attrName, DIRECTIVE, MUST_BE, 'used with', B_IF, 'or', B_SHOW + '.');
 
     // Evaluate the animation expression
-    let [inOptions, outOptions] = bnode.exec(bnode, attrValue)();
+    let styles = bnode.exec(bnode, attrValue)();
 
-    // if (isArray(selectors) || size(selectors) == 2) {
-    let transition = newTransition(bnode.el, inOptions, outOptions);
+    // Just an object for both in and out styles
+    if (!isArray(styles)) styles = [styles];
+
+    // Get in and out styles
+    let [inStyles, outStyles] = styles;
+
+    // Make sure inStyles is an object
+    if (!isObject(inStyles))
+        return logError('the', attrName, MUST_BE, 'an', OBJECT + '.');
+
+    // If outStyles is not an object, use inStyles as outStyles
+    if (!isObject(outStyles))
+        outStyles = inStyles;
+
+    // Create a new transition for the element
+    let transition = newTransition(bnode.el, inStyles, outStyles);
 
     // Save the transition function
     transitions.set(bnode.el, transition);
@@ -41,15 +55,19 @@ export let transitionDirective: Directive = [B_+TRANSITION, hydrateTransition];
  * @param fromPosition to come from
  * @param fromTransition to come from
  */
-let toBase = (el: HTMLElement, oldPosition: string, oldTransition: string, fromPosition: string, fromTransition: string) => {
+let toBase = (el: HTMLElement, oldStyles: StyleProps, fromStyles: StyleProps) => {
+
+    let [oldTransition, oldPosition] = splitTransitionStyles(oldStyles);
+    let [fromTransition, fromPosition] = splitTransitionStyles(fromStyles);
+
     // Delete old position and transition classes
-    delClass(el, oldPosition, oldTransition, fromTransition);
+    delStyleProps(el, oldPosition, oldTransition, fromTransition);
     // Place the element at the starting position
-    setClass(el, fromPosition);
+    setStyleProps(el, fromPosition);
     // Move the element to the base position with transition, on the next frame
     nextFrame(() => {
-        setClass(el, fromTransition);
-        delClass(el, fromPosition);
+        setStyleProps(el, fromTransition);
+        delStyleProps(el, fromPosition);
     });
 }
 
@@ -61,19 +79,20 @@ let toBase = (el: HTMLElement, oldPosition: string, oldTransition: string, fromP
  * @param toPosition to go to
  * @param toTransition to go to
  */
-let fromBase = (el: HTMLElement, oldPosition: string, oldTransition: string, toPosition: string, toTransition: string) => {
+let fromBase = (el: HTMLElement, oldStyles: StyleProps, toStyles: StyleProps) => {
+
+    let [oldTransition, oldPosition] = splitTransitionStyles(oldStyles);
+    let [toTransition, toPosition] = splitTransitionStyles(toStyles);
+
     // Delete old position and transition classes
-    delClass(el, oldPosition, oldTransition);
+    delStyleProps(el, oldPosition, oldTransition);
     // Move the element to the end position with transition
-    setClass(el, toPosition, toTransition);
+    setStyleProps(el, toPosition, toTransition);
 }
 
 let now = () => new Date().getTime();
 
-let newTransition = (el: HTMLElement, inOptions: [string, string], outOptions: [string, string]) => {
-
-    let [inPosition, inTransition] = inOptions;
-    let [outPosition, outTransition] = outOptions;
+let newTransition = (el: HTMLElement, inStyles: StyleProps, outStyles: StyleProps) => {
 
     // Make sure the element exists
     if (!isElementNode(el))
@@ -101,6 +120,9 @@ let newTransition = (el: HTMLElement, inOptions: [string, string], outOptions: [
      */
     let status = READY;
 
+    // Get initial inline styles to restore later
+    let initialStyles = getDeclaredStyles(el[STYLE]);
+
     // On run callback
     let ranAt = 0;
 
@@ -126,6 +148,11 @@ let newTransition = (el: HTMLElement, inOptions: [string, string], outOptions: [
             else if (status == REVERSING) {
                 status = READY;
             }
+
+            delStyleProps(el, inStyles, outStyles);
+
+            // Restore initial inline styles
+            setStyleProps(el, initialStyles);
 
             // Call the _onEnd callback if provided
             if (_onEnd) _onEnd();
@@ -154,14 +181,14 @@ let newTransition = (el: HTMLElement, inOptions: [string, string], outOptions: [
             // Reverse the Out transition
             if (isIn === false && status == PLAYING) {
                 status = REVERSING;
-                toBase(el, inPosition, inTransition, outPosition, outTransition);
+                toBase(el, inStyles, outStyles);
             }
 
             // Play in
             else {
                 isIn = true;
                 status = PLAYING;
-                toBase(el, outPosition, outTransition, inPosition, inTransition);
+                toBase(el, outStyles, inStyles);
             }
         }
         // Play Out
@@ -176,14 +203,14 @@ let newTransition = (el: HTMLElement, inOptions: [string, string], outOptions: [
             // Reverse the In transition
             else if (isIn && status == PLAYING) {
                 status = REVERSING;
-                fromBase(el, outPosition, outTransition, inPosition, inTransition);
+                fromBase(el, outStyles, inStyles);
             }
 
             // Play out
             else {
                 isIn = false;
                 status = PLAYING;
-                fromBase(el, inPosition, inTransition, outPosition, outTransition);
+                fromBase(el, inStyles, outStyles);
             }
         }
 
@@ -200,42 +227,3 @@ let newTransition = (el: HTMLElement, inOptions: [string, string], outOptions: [
 
     return play;
 }
-
-// let parseTimes = (timeStr: string): number[] => filter(map(split(timeStr, ','), item => {
-//     let matched = match(trim(item), /^(-?\d*\.?\d+)(ms|s)/);
-//     if (matched) {
-//         let [_, value, unit] = matched;
-//         return toNumber(value) * (unit == 's' ? 1000 : 1)
-//     }
-// }), item => item);
-
-// let getTransitionDuration = (transitionProps: StyleProps): number => {
-//     let total = 0;
-
-//     each(['duration', 'delay'], prop => {
-//         let key = TRANSITION+'-'+prop;
-//         if (transitionProps[key]) {
-//             total += M.max(...parseTimes(transitionProps[key][0]), 0);
-//         }
-//     });
-
-//     return total;
-// }
-
-// let splitTransitionProps = (styleProps: Record<string, string>): [StyleProps, StyleProps] => {
-
-//     let _IMPORTANT = '!' + IMPORTANT as '!important';
-
-//     let transitionProps: StyleProps = {};
-//     let otherProps: StyleProps = {};
-
-//     for (let prop in styleProps) {
-//         let priority = has(styleProps[prop], _IMPORTANT) ? IMPORTANT : '';
-//         let value = trim(replace(styleProps[prop], _IMPORTANT, ''));
-
-//         // Separate transition properties from other style properties
-//         (startsWith(prop, TRANSITION) ? transitionProps : otherProps)[prop] = [value, priority];
-//     }
-
-//     return [transitionProps, otherProps];
-// }

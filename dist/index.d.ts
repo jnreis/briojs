@@ -1,31 +1,9 @@
 /**
- * I need to wrap it up and release the first version of this amazing framework by the end of the month.
- * This means I need to finish the following tasks:
- * - Complete all pending TODOs. [DONE]
- * - Test each feature to make sure it works as expected. [IN PROGRESS]
- * IMPORTANT: - Test the framework with Astro. Make sure TailwindCSS recognizes dynamic classes (see: tailwind-merge). [IN PROGRESS]
+ * Before each release:
+ * - Test each feature to make sure it works as expected.
  * - Write documentation for each feature.
- * - Write a getting started guide.
- * - Create a website for the framework.
- * - Create a GitHub repository and push the code.
- * - Publish the package to npm.
- * - Create a Twitter account for the framework.
- * - Promote the framework on social media, forums, and other platforms (Reddit, Hacker News, LinkedIn).
- */
-/**
- * Each app has the following items:
- *
- * Reactivity methods:
- * - $state. Includes: skip, persist, session. Example: $state.skip()
- * - $effect
- * - $watch
- * $http methods object: get, post, put, patch, delete
- * $set methods object: hook, route, router
- * $dom methods object:
- * - Brio specific: closest, context, dehydrate, hydrate, insert, route
- * - Browser specific: emit, listen, query, queryAll
- * $store object:
- * - Default stores: data, directive, mask, maskToken, props, routeRules, script, style, template
+ * - Publish to GitHub and npm.
+ * - Promote on social media (X, LinkedIn, etc.), forums, and other platforms (Reddit, Hacker News).
  */
 export { newApp, setup } from './app';
 export { setAllDirectives } from './directives';

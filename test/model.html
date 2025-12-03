@@ -25,7 +25,7 @@
 
     <script b-script>
         () => {
-            $set.props('main', () => ({
+            $set.data('main', () => ({
                 state: null, 
                 options: ['Brio.js', 1.2, null, true, false]
             }));
@@ -35,7 +35,7 @@
     <!-- <script b-script type="brio" src="/dist/mask.money.js"></script> -->
 
     <!-- Single Select -->
-    <div b-props="main">
+    <div b-data="main">
         <h4>Single Select: {{state}} ({{$getType(state)}})</h4>
         <select b-model="state">
           <option b-for="option in options" bind-value="option">{{option}}</option>
@@ -43,19 +43,25 @@
     </div>
 
     <!-- Multiple Select -->
-    <div b-props="main">
+    <div b-data="main">
         <h4>Multiple Select: {{state}} ({{$getType(state)}})</h4>
         <select b-model="state" multiple>
           <option b-for="option in options" bind-value="option">{{option}}</option>
         </select>
     </div>
 
-    <div b-props="main">
+    <div b-data="main">
         <input type="checkbox" name="singleCheckbox" value="false" b-model="state" b-options="{'b-model': {raw: true} }"> {{state}} ({{$getType(state)}})
     </div>
 
     <!-- Single Checkbox -->
-    <div b-props="main">
+    <div b-data="main">
+        <script b-script>
+            () => {
+                $data.options[3] = 1;
+                $data.options[4] = 0;
+            }
+        </script>
         <h4>Single Checkbox: {{state}} ({{$getType(state)}})</h4>
         <div b-for="option in options" b-id="['singleCheckbox']">
             <input type="checkbox" bind-id="$id.singleCheckbox" bind-name="$id.singleCheckbox" bind-value="option" b-model="state">
@@ -64,7 +70,7 @@
     </div>
 
     <!-- Multiple Checkbox -->
-    <div b-props="main">
+    <div b-data="main">
         <h4>Multiple Checkbox: {{state}} ({{$getType(state)}})</h4>
         <div b-for="option in options" b-id="['multipleCheckbox']">
             <input type="checkbox" bind-id="$id.multipleCheckbox" name="multiple-checkbox" bind-value="option" b-model="state">
@@ -73,7 +79,7 @@
     </div>
 
     <!-- Radio Input -->
-    <div b-props="main">
+    <div b-data="main">
         <h4>Radio Input: {{state}} ({{$getType(state)}})</h4>
         <div b-for="option in options" b-id="['radioInput', 'another']">
             <input type="radio" bind-id="$id.radioInput" bind-value="option" b-model="state">
@@ -82,10 +88,10 @@
     </div>
 
     <!-- Text input -->
-    <div b-props>
+    <div b-data>
         <script b-script>
             () => {
-                $setProp($props, 'state', '12345');
+                $setProp($data, 'state', '12345');
             }
         </script>
         <h4>Text input: {{state}} ({{$getType(state)}})</h4>
@@ -99,10 +105,10 @@
     </div>
 
     <!-- Textarea -->
-    <div b-props>
+    <div b-data>
         <script b-script>
             () => {
-                $setProp($props, 'state', '');
+                $setProp($data, 'state', '');
             }
         </script>
         <h4>Multiline Textarea ({{$getType(state)}})</h4>
@@ -111,58 +117,58 @@
     </div>
 
     <!-- Number input -->
-    <div b-props="main">
+    <div b-data="main">
         <h4>Number input: {{state}} ({{$getType(state)}})</h4>
         <input type="number" b-model="state">
     </div>
 
     <!-- Number input (raw) -->
-    <div b-props="main">
+    <div b-data="main">
         <h4>Number input (raw): {{state}} ({{$getType(state)}})</h4>
         <input type="number" b-model="state" b-options="{'b-model': {raw: true} }">
     </div>
 
     <!-- Range input -->
-    <div b-props="main">
+    <div b-data="main">
         <h4>Range input: {{state}} ({{$getType(state)}})</h4>
         <input type="range" b-model="state">
     </div>
 
     <!-- Email input -->
-    <div b-props="main">
+    <div b-data="main">
         <h4>Email input: {{state}} ({{$getType(state)}})</h4>
         <input type="email" b-model="state" b-options="{'b-model': {trim: true} }" b-effect="console.warn('Email changed to:', state)">
     </div>
 
     <!-- Tel input -->
-    <div b-props="main">
+    <div b-data="main">
         <h4>Tel input: {{state}} ({{$getType(state)}})</h4>
         <input type="tel" b-model="state" b-mask="['(', $mask.number(3), ') ', $mask.number(3), '-', $mask.number(4)]">
     </div>
 
     <!-- Password input -->
-    <div b-props="main">
+    <div b-data="main">
         <h4>Password input: {{state}} ({{$getType(state)}})</h4>
         <input type="password" b-model="state">
     </div>
 
     <!-- Search input -->
-    <div b-props="main">
+    <div b-data="main">
         <h4>Search input: {{state}} ({{$getType(state)}})</h4>
         <input type="search" b-model="state">
     </div>
 
     <!-- Url input -->
-    <div b-props="main">
+    <div b-data="main">
         <h4>Url input: {{state}} ({{$getType(state)}})</h4>
         <input type="url" b-model="state">
     </div>
 
     <!-- File input -->
-    <div b-props>
+    <div b-data>
         <script b-script>
             () => {
-                $setProp($props, 'state', '');
+                $setProp($data, 'state', '');
             }
         </script>
         <h4>File input: {{state}} ({{$getType(state)}})</h4>
@@ -170,10 +176,10 @@
     </div>
 
     <!-- Color input -->
-    <div b-props>
+    <div b-data>
         <script b-script>
             () => {
-                $setProp($props, 'state', '#ff0000');
+                $setProp($data, 'state', '#ff0000');
             }
         </script>
         <h4>Color input: {{state}} ({{$getType(state)}})</h4>
@@ -181,37 +187,37 @@
     </div>
 
     <!-- Date input -->
-    <div b-props="main">
+    <div b-data="main">
         <h4>Date input: {{state}} ({{$getType(state)}})</h4>
         <input type="date" b-model="state">
     </div>
 
     <!-- Time input -->
-    <div b-props="main">
+    <div b-data="main">
         <h4>Time input: {{state}} ({{$getType(state)}})</h4>
         <input type="time" b-model="state">
     </div>
 
     <!-- Datetime input -->
-    <div b-props="main">
+    <div b-data="main">
         <h4>Datetime input: {{state}} ({{$getType(state)}})</h4>
         <input type="datetime-local" b-model="state">
     </div>
 
     <!-- Month input -->
-    <div b-props="main">
+    <div b-data="main">
         <h4>Month input: {{state}} ({{$getType(state)}})</h4>
         <input type="month" b-model="state">
     </div>
 
     <!-- Week input -->
-    <div b-props="main">
+    <div b-data="main">
         <h4>Week input: {{state}} ({{$getType(state)}})</h4>
         <input type="week" b-model="state">
     </div>
 
     <!-- Hidden input -->
-    <div b-props="main">
+    <div b-data="main">
         <h4>Hidden input: {{state}} ({{$getType(state)}})</h4>
         <input type="hidden" b-model="state">
     </div>

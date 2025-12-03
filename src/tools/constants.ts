@@ -249,7 +249,6 @@ export let TEXTAREA = TEXT + 'area' as 'textarea';
 export let TEXT_CONTENT = TEXT + CONTENT__$CAP as 'textContent';
 
 export let VALIDATE = VALID + 'ate' as 'validate';
-export let VALIDATOR = VALID + 'ator' as 'validator';
 
 
 /*

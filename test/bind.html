@@ -37,19 +37,82 @@
         }
     </style>
 </head>
-<body b-data="{ name: 'Brio.js', get firstName() {
-    console.log('firstName getter called');
-    return this.name.split(' ')[0];
-} }">
+<body b-data>
 
-    <script b-script b-effect="console.log('firstName', firstName)">
-        async (ctx) => {
+    <script b-script b-effect="console.log('firstName', $data.firstName)">
+        (ctx) => {
+            $data.name = 'Brio.js';
+            $setProp($data, 'firstName', undefined, {
+                get() {
+                    console.log('firstName getter called');
+                    return this.name.split(' ')[0];
+                }
+            });
+
             $data.name = 'Brio.js is awesome!';
             console.log('Brio is the best!', $data);
+
+            $data.style = {
+                color: 'white',
+                'background-color': 'teal',
+                padding: '10px',
+                'border-radius': '5px',
+                border: 'none'
+            };
+
+            $data.class = {
+                'p-4': true,
+                'bg-blue-500': true,
+                'text-white': true,
+                'rounded': true
+            }
+
+            $data.toggleP4Class = () => {
+                $data.class['p-4'] = !$data.class['p-4'];
+            }
+
+            $data.toggleBgBlueClass = () => {
+                $data.class['bg-blue-500'] = !$data.class['bg-blue-500'];
+            }
+
+            $data.toggleTextWhiteClass = () => {
+                $data.class['text-white'] = !$data.class['text-white'];
+            }
+
+            $data.toggleRoundedClass = () => {
+                $data.class['rounded'] = !$data.class['rounded'];
+            }
         }
     </script>
 
     <h1>Bind Directive</h1>
+
+    <div bind-style>
+        bind style
+    </div>
+
+    <div bind-class>
+        bind class
+    </div>
+
+    <!-- Toggle p-4 class -->
+    <button on-click="$data.class['p-4'] = !$data.class['p-4']">
+        Toggle p-4 class
+    </button>
+    <!-- Toggle bg-blue-500 class -->
+    <button on-click="toggleBgBlueClass">
+        Toggle bg-blue-500 class
+    </button>
+    <!-- Toggle text-white class -->
+    <button on-click="toggleTextWhiteClass">
+        Toggle text-white class
+    </button>
+    <!-- Toggle rounded class -->
+    <button on-click="toggleRoundedClass" b-effect="console.log('parent data', $data, $props)">
+        Toggle rounded class
+    </button>
+
+    <div b-data="{style: $data.style}" b-effect="console.log('child data', $data, $props)"></div>
 
     <p>The bind directive is used to bind a prop/expression to a DOM attribute. The attribute value is updated when any of its reactive data change, if any.</p>
 
@@ -131,10 +194,20 @@
 
     <script>
         window.addEventListener('brio', () => {
-            let {gc} = brio.newApp();
-            gc.$hydrate('body');
+            let app = brio.newApp();
+            let gc = app.gc;
             console.warn('Brio.js is ready:', gc);
+            gc.$hydrate('body');
+
+            console.log('gc 2:', gc, app);
         });
+
+            let someData = {
+                nn: 'some value',
+                style: {
+                    padding: '10px',
+                }
+            }
     </script>
 </body>
 </html>

@@ -1,8 +1,10 @@
 import { evalEffect, sliceAttrName } from '../app';
 import { logWarn } from '../tools';
-import { BUT_GOT_INSTEAD, NEW_LINE, OPTIONS, REQUIRES_REACTIVE_VALUE } from '../tools/constants';
-import { setAttr, delAttr, getAttr, forcePropertyAssignment, sanitizeAttrName } from '../tools/dom';
+import { BUT_GOT_INSTEAD, CLASS, NEW_LINE, OPTIONS, REQUIRES_REACTIVE_VALUE, STYLE } from '../tools/constants';
+import { setAttr, delAttr, getAttr, forcePropertyAssignment, sanitizeAttrName, setStyleProps, setClass, delClass } from '../tools/dom';
+import { expToFn } from '../tools/evaluation';
 import { camelCase } from '../tools/string';
+import { isObject } from '../tools/typeCheck';
 
 /**
  * Bind Directive
@@ -34,7 +36,7 @@ export let hydrateBind = (bnode: BNode, dirName: string, dirValue: string) => {
      * - all other cases, including underscores, are used as is. Examples: firstname and first_name will be used as is.
      * - for any other cases, use the regular bind syntax (e.g., `b-bind-first-name="FirstName"`).
      */
-    let stateProp = dirValue || camelCase(attrName);
+    let stateProp = expToFn(dirValue || camelCase(attrName), '$initial');
 
     // Sanitize the attribute name to ensure it is a valid HTML attribute name
     // This is necessary because some attributes may contain special characters that are not valid in HTML.
@@ -64,7 +66,21 @@ export let hydrateBind = (bnode: BNode, dirName: string, dirValue: string) => {
 
         // Set attribute
         if (value || forceBind) {
-            setAttr(el, attrName, !forceBind && value === true ? '' : value, forceBind);
+            // Special handling for style attribute with object value
+            if (attrName == STYLE && isObject(value)) {
+                setStyleProps(el, value as StyleProps);
+            }
+            // Special handling for class attribute with object value
+            else if (attrName == CLASS && isObject(value)) {
+                for (let className in value) {
+                    if (value[className]) setClass(el, className);
+                    else delClass(el, className);
+                }
+            }
+            // Everything else
+            else {
+                setAttr(el, attrName, !forceBind && value === true ? '' : value, forceBind);
+            }
         }
 
         // Remove attribute

@@ -2,17 +2,16 @@ import { newInsert } from "./methods/dom";
 import { http } from "./methods/http";
 import { go, newRouter } from "./methods/route";
 import { effect, state, storageEvent, watch } from "./reactivity";
-import { has, logError, uid } from "./tools";
+import { has, logError, size, slice, uid } from "./tools";
 import { arrayAdd, each, filter, find, join, map, some } from "./tools/array";
-import { TEXT, TEXT_CONTENT, ATTR, DELETE, INNER_HTML, PARENT, $PROPS, NULL, B_DATA, SCRIPT, $DATA, STYLE, B_, TEMPLATE, UNDEFINED, OPTIONS, ROUTE, NEW_LINE, BRIO, STORAGE, STATE, PROPS, NUMBER, DIRECTIVES, MASKS, MASK_TOKENS, DATA, MASK_TOKEN, ROUTE_RULE, B_SAVE, OUTER_HTML, $STORE, SKIP, NODES, B_IF, MESSAGE, CLONE, $REF, $SLOT, B_TEMPLATE, B_REF, $, $DEHYDRATE, $HYDRATE, $INSERT, VALIDATOR, B_SCRIPT, B_SLOT, B_FOR, $FOR, DEHYDRATE_CHILDREN } from "./tools/constants";
+import { TEXT, TEXT_CONTENT, ATTR, DELETE, INNER_HTML, PARENT, $PROPS, NULL, B_DATA, SCRIPT, $DATA, STYLE, B_, TEMPLATE, UNDEFINED, OPTIONS, ROUTE, NEW_LINE, BRIO, STORAGE, STATE, PROPS, NUMBER, DIRECTIVES, DATA, ROUTE_RULE, B_SAVE, OUTER_HTML, $STORE, SKIP, NODES, B_IF, MESSAGE, CLONE, $REF, $SLOT, B_TEMPLATE, B_REF, $, $DEHYDRATE, $HYDRATE, $INSERT, B_SCRIPT, B_SLOT, B_FOR, $FOR, DEHYDRATE_CHILDREN, VALIDATE, INDEX } from "./tools/constants";
 import { walk, getAttr, delAttr, getParent, getTagName, getNodeContent, removeNode, eachAttribute, query, emit, listen, href, setAttr } from "./tools/dom";
 import { expToFn, newFn } from "./tools/evaluation";
 import { countKeys, hasProp, getProp, newMap, setProp, setObjectKeys, W, newSet, S, sync, clone, delProp, getKeys } from "./tools/object";
-import { isStringNumeric, replace, replaceAll, split, startsWith, test, trim } from "./tools/string";
+import { isStringNumeric, replace, replaceAll, split, startsWith, test, trim, wrapInBackticks } from "./tools/string";
 import { isTextNode, isElementNode, isNull, isRegExp, isString, isNode, isFunction, isArray, getType } from "./tools/typeCheck";
-import { validator } from "./methods/validate";
+import { validate } from "./methods/validate";
 import { getAccessedProp } from "./reactivity/track";
-import { prefixPropsInContext } from "./tools/contextProps";
 
 export let symbol = S(BRIO);
 
@@ -94,7 +93,7 @@ export let newApp = (): AppObject => {
             // Save the bnode
             bnodes.set(el, bnode);
 
-            bnode[OPTIONS] = evalAttr(bnode, B_+OPTIONS)();
+            bnode[OPTIONS] = evalAttr(bnode, B_+OPTIONS)(bnode.ctx);
         }
 
         // Create a new bnode
@@ -211,7 +210,7 @@ export let newApp = (): AppObject => {
             let bnode = newBNode(node as any, ctxNode);
 
             // Evaluate the expression
-            let value = exec(bnode, sanitizedText, '', TEXT);
+            let value = exec(bnode, wrapInBackticks(sanitizedText));
 
             // Save the cleanup function
             saveCleanup(bnode, effect(() => node[TEXT_CONTENT] = value(bnode.ctx)));
@@ -332,7 +331,7 @@ export let newApp = (): AppObject => {
         app[assetType][assetName] = assetValue;
     }
 
-    let cacheExp = (bnode: BNode, exp: string, args: string = '', returns: boolean | 'text' = true) => {
+    let cacheExp = (bnode: BNode, exp: string, args: string = '', returns: boolean = true, autoFill: boolean = true) => {
         // The cache key
         let cacheKey: string;
 
@@ -341,7 +340,7 @@ export let newApp = (): AppObject => {
          * This allows the use of "{{ $data.propName }}" to be written as "{{ propName }}".
          * The default context list and order is: $for, $data, $props, $store.
          */
-        exp = expToFn(prefixPropsInContext(bnode, exp, returns != TEXT), args, returns);
+        exp = expToFn(autoFill ? autoFillContext(bnode, exp) : exp, args, returns);
 
         // Check if the expression is already cached
         if (exp in cached) {
@@ -361,12 +360,12 @@ export let newApp = (): AppObject => {
         return cacheKey;
     }
 
-    let exec = (bnode: BNode, exp: string, args: string = '', returns: boolean | 'text' = true) => {
+    let exec = (bnode: BNode, exp: string, args: string = '', returns: boolean = true, autoFill: boolean = true) => {
         let fn: FunctionType;
 
         try {
             // Get the cache key or evaluate the expression
-            let cacheKey = exp in cache ? exp : cacheExp(bnode, exp, args, returns);
+            let cacheKey = exp in cache ? exp : cacheExp(bnode, exp, args, returns, autoFill);
 
             fn = cache[cacheKey](bnode.ctx);
         }
@@ -394,7 +393,7 @@ export let newApp = (): AppObject => {
         [$DATA]: newContext($DATA, B_DATA),
 
         // Reactive properties defined in the element or inherited from the parent context
-        [$PROPS]: newContext($PROPS, B_+PROPS, true),
+        [$PROPS]: (_: BNode, parent?: BNode) => parent?.ctx[$PROPS] || {},
 
         // The $for context
         [$FOR]: (_: BNode, parent?: BNode) => parent?.ctx[$FOR],
@@ -427,8 +426,6 @@ export let newApp = (): AppObject => {
         [SCRIPT]: setAsset(SCRIPT),
         [PROPS]: setAsset(PROPS),
         data: setAsset(DATA),
-        mask: setAsset(MASKS),
-        [MASK_TOKEN]: setAsset(MASK_TOKENS),
     }
 
     /** The global context of this app */
@@ -458,7 +455,7 @@ export let newApp = (): AppObject => {
         setProp,
         sync,
         [CLONE]: clone,
-        [VALIDATOR]: validator,
+        [VALIDATE]: validate,
         uid,
         getType,
     };
@@ -478,9 +475,6 @@ export let newApp = (): AppObject => {
         // ! HYDRATION
         [DIRECTIVES]: directives,
         bnodes,
-
-        [MASKS]: {},
-        [MASK_TOKENS]: {},
 
         routes,
         routeRules,
@@ -565,7 +559,9 @@ export let removeInsertedNodes = (bnode: BNode) => {
  * Evaluate attribute, if any
  * @param defaultAttrValue A string to fall back to if the attribute has no value. Default is an empty object.
  */
-export let evalAttr = (bnode: BNode, attrName: string, defaultAttrValue: string = '{}') => {
+export let evalAttr = (bnode: BNode, attrName: string, defaultAttrValue: any = {}) => {
+
+    let fn = () => defaultAttrValue;
 
     // Get the attribute value
     let attrValue = isElementNode(bnode.el) ? getAttr(bnode.el, attrName) : null;
@@ -573,10 +569,13 @@ export let evalAttr = (bnode: BNode, attrName: string, defaultAttrValue: string 
     // Remove the attribute
     if (!isNull(attrValue)) saveAttr(bnode, attrName, attrValue!);
 
-    attrValue = sanitizeAttrValue(attrValue || defaultAttrValue);
+    if (attrValue && trim(attrValue)) {
+        attrValue = sanitizeAttrValue(attrValue);
+        fn = bnode.exec(bnode, attrValue, genContextArgs(bnode, attrValue));
+    }
 
     // Evaluate and return
-    return bnode.exec(bnode, attrValue);
+    return fn as (ctx: Context) => any;
 }
 
 /** Saves the attribute to the bnode and removes it from the node */
@@ -664,6 +663,7 @@ export let setup = (brioWindow: ObjectType = {}) => {
     emit(W as any, BRIO);
 }
 
+/** Slice the attribute name to get the part after the directive prefix */
 export let sliceAttrName = (attrName: string) => {
     let match = attrName.match(/^(b-\w+|bind|on)(-([\w-$]+))?$/) || [];
     return match[3] || '';
@@ -754,6 +754,29 @@ export let autoFillContextName = (bnode: BNode, propName: string): string => {
         }
     }
     return propName;
+}
+
+let varNameInExpRegex = /(?<![.`'"][\w\s$]*)[a-z_$][\w$]*(?![\w\s$]*[:`'"{])/i;
+
+export let autoFillContext = (bnode: BNode, exp: string): string => {
+    let i = 0;
+    let newExp = '';
+    let matched;
+    while ((matched = varNameInExpRegex.exec(slice(exp, i) as string)) !== null) {
+        let index = matched[INDEX];
+        let propName = matched[0];
+
+        // Auto-fill the context name, if missing
+        let propNameFilled = autoFillContextName(bnode, propName);
+
+        // Build the new expression
+        newExp += slice(exp, i, i + index) + propNameFilled;
+
+        // Move the index forward
+        i += index + size(propName);
+    }
+
+    return newExp + slice(exp, i);
 }
 
 /** Evaluate the attribute as an effect */

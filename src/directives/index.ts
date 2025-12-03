@@ -1,6 +1,6 @@
 import { ignoreDirective } from './ignore';
 import { forDirective } from './for';
-import { dataDirective, propsDirective } from './context';
+import { dataDirective } from './data';
 import { idDirective } from './id';
 import { htmlDirective, textDirective } from './html';
 import { templateDirective } from './template';
@@ -41,12 +41,11 @@ export let allDirectives: [string | RegExp, HydrateDirective][] = [
     ifDirective,
 
     /**
-     * Context directives
+     * Data context
      * Notes:
      * - the order of inference is: $for, $data, $props, $store
      * - b-slot and b-ref are hydrated after b-data
      */
-    propsDirective,
     dataDirective,
 
     /** List rendering

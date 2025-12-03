@@ -5,18 +5,18 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>context</title>
     </head>
-    <body b-props="{level1: 1}">
+    <body b-data="{level1: 1}">
 
         <script b-script>
             (ctx) => {
-                let v = $validator($props);
-                v.prop('level1', [
-                    { name: 'required', value: true },
-                    { name: 'type', value: ['boolean', 'string'] },
-                    { name: 'in', value: [2, 4, 6] },
-                ]);
-                v.validate();
-                console.log('validation errors:', v.errors, ctx);
+                let v = $validate($data, {
+                    level1: [
+                        { name: 'required', value: true },
+                        { name: 'type', value: ['boolean', 'string'] },
+                        { name: 'in', value: [2, 4, 6] },
+                    ]
+                });
+                console.log('validation errors:', v, ctx);
 
                 // console.warn('clone', clone);
 
@@ -51,15 +51,22 @@
             }
         </script>
 
-        <!-- <input id="input" type="text" b-model="$props.level1" class="mb-1"> -->
+        <!-- <input id="input" type="text" b-model="level1" class="mb-1"> -->
 
-        <div b-ref="square" b-show="level1" class="square" b-transition="['.button-in-start', '.button-out-start']"></div>
+        <div b-ref="square" b-show="level1" class="square" b-transition="[{
+                background: 'blue',
+                transform: 'translateX(300px)',
+                transition: 'transform 2s ease-in-out, background 2.5s ease'
+            }, {
+                transform: 'translate(70px, 250px) scale(0.5)',
+                transition: 'transform 1s ease-in-out'
+            }]"></div>
 
         <button class="button" on-click="level1 = !level1">Toggle Level 1 (b-if)</button>
 
-        <div b-if="level1" class="b-for" b-data="{dshow: true, items: [4, 5] }" b-for="n in items">
+        <!-- <div b-if="level1" class="b-for" b-data="{dshow: true, items: [4, 5] }" b-for="n in items">
             {{n}}
-        </div>
+        </div> -->
 
         <style>
             .button {
@@ -105,7 +112,7 @@
 
         <template b-template="my-template-2"></template>
 
-        <div b-save="my-template-2" b-data="{field1: 'field from level 1', pd: '0.5rem'}" b-id="['field1']">
+        <div b-save="my-template-2" b-data="{field1: 'field from level 1', pd: '0.5rem', level1: level1}" b-id="['field1']">
             <strong>Inside template - level1: {{level1}}</strong>
             <br>
             <p>field1: {{field1}}</p>

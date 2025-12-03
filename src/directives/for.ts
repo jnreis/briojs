@@ -7,8 +7,9 @@ import { saveCleanup, saveToParent, updateDataLevelContext } from '../app';
 import { delProp, hasProp, setProp, sync } from '../tools/object';
 import { space, split, test, trim } from '../tools/string';
 import { isArray, isNumber, isObject } from '../tools/typeCheck';
-import { variableNameRegex } from '../tools/contextProps';
 import { getAccessedProp } from '../reactivity/track';
+
+let variableNameRegex = /^[a-z_$][\w$]*$/i;
 
 export let hydrateFor = (bnode: BNode, attrName: string, attrValue: string) => {
 

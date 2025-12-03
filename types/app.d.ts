@@ -28,13 +28,10 @@ type AppObject = {
     directives: Directive[],
     bnodes: Map<Node, BNode>,
 
-    masks: MasksObject,
-    maskTokens: MaskTokensObject,
-
     routes: RoutesObject,
     routeRules: RouteRulesObject,
 
-    exec: (bnode: BNode, exp: string, args?: string, returns?: boolean | "text") => FunctionType,
+    exec: (bnode: BNode, exp: string, args?: string, returns?: boolean, autoFill?: boolean) => FunctionType,
     // evalEffect: (bnode: BNode, exp: string, callback: DirectiveCallback) => void,
     bnode: [NewBNode, GetBNode],
 
@@ -79,7 +76,7 @@ type BrioTools = {
     /** Creates a deep clone of the given value */
     $clone: (value: any) => any;
 
-    $validator: (data: ObjectType) => {
+    $validate: (data: ObjectType) => {
         prop: (name: string, rules: SchemaRules) => void;
         rule: (name: string, fn: RuleFn, message?: MessageFn) => void;
         validate: () => boolean;
@@ -98,8 +95,6 @@ type SetObject = {
     style: SetAsset,
     props: SetAsset,
     data: SetAsset,
-    mask: SetAsset,
-    maskToken: SetAsset,
 }
 
 type SetContext = (contextName: string, contextValue: any) => void;
@@ -216,6 +211,6 @@ type StyleObject = {
     [styleName: string]: () => string
 }
 
-type AssetType = 'template' | 'script' | 'style' | 'props' | 'data' | 'masks' | 'maskTokens' | 'routeRules';
+type AssetType = 'template' | 'script' | 'style' | 'props' | 'data' | 'routeRules';
 type SetAsset = (assetName: string, assetValue: any) => void;
 type GetAsset = (assetType: AssetType, assetName: string) => FunctionType;

@@ -47,7 +47,6 @@ export let hydrateIf = (bnode: BNode, attrName: string, attrValue: string) => {
         // Wait for the next frame
         // * This is necessary for some directives to work properly (e.g. `on-click-outside`, `b-transition`, etc.)
         nextFrame(async () => {
-
             // Add
             if (value) {
                 if (!hydratedBnode) {

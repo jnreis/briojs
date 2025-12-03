@@ -2,8 +2,6 @@ import { size, slice } from ".";
 import { $DATA, $FOR, $PROPS, $STORE, INDEX } from "./constants";
 import { newSet } from "./object";
 
-export let variableNameRegex = /^[a-z_$][\w$]*$/i;
-
 /**
  * Find variables used in a template literal
  * 

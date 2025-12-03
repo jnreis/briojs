@@ -55,15 +55,15 @@ export let transitionDirective: Directive = [B_+TRANSITION, hydrateTransition];
  * @param fromPosition to come from
  * @param fromTransition to come from
  */
-let toBase = (el: HTMLElement, oldStyles: StyleProps, fromStyles: StyleProps) => {
+let toBase = (el: HTMLElement, oldStyles: StyleProps, fromStyles: StyleProps, disableTransition?: boolean) => {
 
     let [oldTransition, oldPosition] = splitTransitionStyles(oldStyles);
     let [fromTransition, fromPosition] = splitTransitionStyles(fromStyles);
 
     // Delete old position and transition classes
     delStyleProps(el, oldPosition, oldTransition, fromTransition);
-    // Place the element at the starting position
-    setStyleProps(el, fromPosition);
+    // Place the element at the starting position without transition
+    setStyleProps(el, fromPosition, disableTransition ? {[TRANSITION]: 'none'} : {});
     // Move the element to the base position with transition, on the next frame
     nextFrame(() => {
         setStyleProps(el, fromTransition);
@@ -186,9 +186,9 @@ let newTransition = (el: HTMLElement, inStyles: StyleProps, outStyles: StyleProp
 
             // Play in
             else {
+                toBase(el, outStyles, inStyles, status == READY);
                 isIn = true;
                 status = PLAYING;
-                toBase(el, outStyles, inStyles);
             }
         }
         // Play Out

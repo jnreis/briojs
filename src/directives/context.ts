@@ -4,6 +4,7 @@ import { getDescriptor, setProp } from '../tools/object';
 import { getType, isFunction, isObject } from '../tools/typeCheck';
 import { DIRECTIVE, OBJECT, SKIP, REQUIRES_ACTION_TYPE, PROPS, DATA, B_DATA, B_, PARENT, $DATA, $PROPS } from '../tools/constants';
 import { delState } from '../reactivity';
+import { isStringFunction } from '../tools/string';
 
 /**
  * TODO?
@@ -28,7 +29,7 @@ export let hydrateContext = async (bnode: BNode, attrName: string, attrValue: st
     let baseBNode = bnode[PARENT] || bnode;
 
     // Not an asset function. Execute the expression to get the context function, if any
-    if (!isFunction(assetFn) && attrValue) {
+    if (!isFunction(assetFn) && attrValue && !isStringFunction(attrValue)) {
         assetFn = bnode.exec(baseBNode, attrValue)();
     }
 

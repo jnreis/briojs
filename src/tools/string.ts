@@ -1,6 +1,6 @@
 import { slice } from '.';
 import { arrayReverse, join, map } from './array';
-import { DELETE, ENDS_WITH, REPLACE, STARTS_WITH, TO_STRING } from './constants';
+import { ENDS_WITH, REPLACE, STARTS_WITH, TO_STRING } from './constants';
 
 export let toString = (value: any, radix?: number | undefined) => value[TO_STRING](radix);
 
@@ -56,10 +56,6 @@ export let isStringAlpha = (value: string) => test(value, /^[a-z]+$/i);
  * @param value - The string to check
  */
 export let isStringNumeric = (value: string) => test(value, /^\d+$/);
-
-/** Check if a string is a valid path, but not a delete statement */
-export let isPath = (exp: string) =>
-    test(exp, /^(\w|\s|\.|\$|`|'|"|(\[(.|\s)+?\]))*;?$/g) && !startsWith(exp, DELETE+' ');
 
 /**
  * Check if a string is an anonymous function or arrow function

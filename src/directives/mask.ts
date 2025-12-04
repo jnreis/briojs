@@ -1,7 +1,7 @@
 import { saveCleanup } from "../app";
 import { entries, logError, size } from "../tools";
 import { arrayAdd, each, indexOf } from "../tools/array";
-import { B_, CAN_ONLY_BE_USED_ON, DIRECTIVE, ELEMENT, INPUT, MASK, SELECTION_START, TEXTAREA, VALUE } from "../tools/constants";
+import { B_, CAN_ONLY_BE_USED_ON, DIRECTIVE, ELEMENT, INPUT, MASK, NUMBER, SELECTION_START, TEXTAREA, VALUE } from "../tools/constants";
 import { emit, listen, nextFrame } from "../tools/dom";
 import { getProp } from "../tools/object";
 import { split, test } from "../tools/string";
@@ -64,7 +64,7 @@ export let hydrateMask = (bnode: BNode, attrName: string, attrValue: string) => 
         [OUTPUT]: '',
         char,
         letter,
-        number,
+        [NUMBER]: number,
         alpha,
         money,
     };

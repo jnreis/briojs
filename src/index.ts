@@ -11,7 +11,7 @@ export { newApp, setup } from "./app";
 export { setAllDirectives } from "./directives";
 export { ignoreDirective } from "./directives/ignore";
 export { forDirective } from "./directives/for";
-export { propsDirective, dataDirective } from "./directives/context";
+export { dataDirective } from "./directives/data";
 export { idDirective } from "./directives/id";
 export { htmlDirective } from "./directives/html";
 export { templateDirective } from "./directives/template";

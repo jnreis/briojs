@@ -16,7 +16,7 @@
 <body>
 
     <!-- Counter -->
-    <div b-data="{ count: 0 }">
+    <div b-data="{ count: 0 }" b-effect="console.log('$data', $data)">
         <button on-click="count++">Increment</button>
         <button on-click="count--">Decrement</button>
         <p>Count: <span>{{ count }}</span></p>
@@ -80,25 +80,44 @@
                     </template>
     -->
 
-    <template b-template b-save="counter" b-ref="counter">
+    <template b-template b-save="counter" b-ref="counter" b-props="{
+        name: {
+            type: 'string',
+            isText: true,
+        },
+        tags: 'array',
+        isActive: ['boolean', 'number', 'undefined'],
+        data: {
+            type: ['boolean', 'number'],
+            required: true,
+            default: true,
+            warn: (value) => value !== false && value !== 0 ? 'data must be false or 0.' : null,
+            isText: false, // if true, the value will be wrapped in backticks
+        }
+    }">
         <script b-script>
             try {
-                $props.count = 33;
+                $data.count = 33;
             } catch {}
         </script>
         <div b-style="bg-light-gray">
             <h1>Counter</h1>
-            <p>Count: {{ $props.count }}</p>
-            <button on-click="$props.count--">Decrement</button>
-            <button on-click="$props.count++">Increment</button>
+            <p>Count: {{ $data.count }}</p>
+            <button on-click="$data.count--">Decrement</button>
+            <button on-click="$data.count++">Increment</button>
+
+            <p>Name prop: {{ $props.name }}</p>
+            <p>Tags prop: {{ $props.tags }}</p>
+            <p>isActive prop: {{ $props.isActive }}</p>
+            <p>Data prop: {{ JSON.stringify($props.data) }}</p>
         </div>
 
-        {{ $props.count}} Blah
+        {{ $data.count}} Blah
 
         <template b-save="second" b-ref="second" b-slot="second">
             <h2>Heading Second</h2>
             <div b-save="third" b-ref="third" b-slot="third">
-                <h3>Heading 3 {{ $props.count }}</h3>
+                <h3>Heading 3 {{ $data.count }}</h3>
             </div>
         </template>
 
@@ -125,30 +144,30 @@
 
         <script b-script b-ref="tmp-script">
             try {
-                if (!$props.hasOwnProperty('count'))
-                    $props.count = 1010;
+                if (!$data.hasOwnProperty('count'))
+                    $data.count = 1010;
             } catch {}
         </script>
 
         <!-- <script src="http://localhost:5173/dist/fn.js"></script> -->
 
-        <!-- <div b-props="{count:0}" b-html="counter"></div> -->
+        <!-- <div b-data="{count:0}" b-html="counter"></div> -->
         <script b-script>
             try {
-                $props.html1 = `<h3>HTML 1 {{ $props.count }}</h3>
-        <button on-click="$props.html = $props.html2">Show HTML 2</button>`;
-                $props.html2 = `<h3>HTML 2 {{ $props.count }}</h3>
-        <button on-click="$props.html = $props.html1">Show HTML 1</button>`;
+                $data.html1 = `<h3>HTML 1 {{ $data.count }}</h3>
+        <button on-click="$data.html = $data.html2">Show HTML 2</button>`;
+                $data.html2 = `<h3>HTML 2 {{ $data.count }}</h3>
+        <button on-click="$data.html = $data.html1">Show HTML 1</button>`;
 
-                $props.html = $props.html1;
+                $data.html = $data.html1;
             } catch {}
         </script>
 
-        <div b-template="$props.html"></div>
+        <div b-template="$data.html"></div>
 
         <hr>
 
-        <div b-html="$props.html"></div>
+        <div b-html="$data.html"></div>
 
         <hr>
 
@@ -156,12 +175,12 @@
 
         <hr>
 
-        <div b-html="counter"></div>
+        <template b-template="counter" name="John has tags: ${[1,2,3].join(', ')}" tags="[1,2,3]" isActive data></template>
 
         <hr>
 
-        <button on-click="$props.count--">Subtract</button>
-        <button on-click="$props.count++">Add</button>
+        <button on-click="$data.count--">Subtract</button>
+        <button on-click="$data.count++">Add</button>
 
         <hr>
 

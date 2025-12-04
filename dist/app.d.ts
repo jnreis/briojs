@@ -21,7 +21,7 @@ export declare let removeInsertedNodes: (bnode: BNode) => void;
  * Evaluate attribute, if any
  * @param defaultAttrValue A string to fall back to if the attribute has no value. Default is an empty object.
  */
-export declare let evalAttr: (bnode: BNode, attrName: string, defaultAttrValue?: string) => FunctionType;
+export declare let evalAttr: (bnode: BNode, attrName: string, defaultAttrValue?: any) => (ctx: Context) => any;
 /** Saves the attribute to the bnode and removes it from the node */
 export declare let saveAttr: (bnode: BNode, attrName: string, attrValue: string) => void;
 /**
@@ -37,11 +37,13 @@ export declare let mustacheRegex: RegExp;
 /** Sanitize string and replace mustache syntax with template literals */
 export declare let replaceMustache: (text: string, replacement?: any) => string;
 export declare let setup: (brioWindow?: ObjectType) => void;
+/** Slice the attribute name to get the part after the directive prefix */
 export declare let sliceAttrName: (attrName: string) => string;
 export declare let updateDataLevelContext: (bnode: BNode) => Promise<void>;
 export declare let genContextArgs: (bnode: BNode, exp: string) => string;
 /** Auto-fill the context name if missing and found in one of the data related contexts */
 export declare let autoFillContextName: (bnode: BNode, propName: string) => string;
+export declare let autoFillContext: (bnode: BNode, exp: string) => string;
 /** Evaluate the attribute as an effect */
 export declare let evalEffect: (bnode: BNode, exp: string, callback: DirectiveCallback) => void;
 export declare let evalContextProp: (bnode: BNode, propName: string) => FunctionType | undefined;

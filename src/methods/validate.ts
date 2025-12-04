@@ -1,9 +1,9 @@
 import { entries, has, logWarn, size } from "../tools";
 import { arrayAdd, join } from "../tools/array";
-import { A_VALID, EMAIL, MESSAGE, MUST_BE, NAME, OF_TYPE, VALUE } from "../tools/constants";
+import { A_VALID, EMAIL, MUST_BE, OF_TYPE } from "../tools/constants";
 import { countKeys, newRegExp } from "../tools/object";
 import { replaceAll, space, test } from "../tools/string";
-import { getType, isArray, isNumber, isObject, isString } from "../tools/typeCheck";
+import { getType, isArray, isNumber, isString } from "../tools/typeCheck";
 
 let REQUIRED: 'required' = 'required';
 let MATCHES: 'matches' = 'matches';
@@ -11,7 +11,7 @@ let regexLetters = '\\p{L}';
 let regexNumbers = '\\p{Nd}';
 let regexEmail = newRegExp(replaceAll(replaceAll('^(?!.*\\.{2})[w._%+-]+@(?:[w](?:[w-]*[w])?\\.)+[l]{2,}$', /w/, regexLetters + regexNumbers), /l/, regexLetters), 'u');
 
-export let validate = (data: ObjectType, props: SchemaObject, customRules?: RulesObject, customMessages?: MessageObject) => {
+export let validate = (data: ObjectType, schema: SchemaObject, customRules?: RulesObject, customMessages?: MessageObject) => {
     let errors: ObjectType = {};
     if (!data) data = {};
 
@@ -64,44 +64,31 @@ export let validate = (data: ObjectType, props: SchemaObject, customRules?: Rule
         ...customMessages || {}
     };
 
-    for (let [propName, propRules] of entries(props || {})) {
+    for (let [propName, propRules] of entries(schema || {})) {
         let value = data[propName];
 
-        for (let rule of propRules) {
-            let ruleName: string = '';
-            let ruleValue: any = '';
-            let ruleMessage: string = '';
-
-            if (isString(rule)) {
-                ruleName = rule;
-            }
-            else if (isObject(rule)) {
-                ruleName = rule[NAME];
-                ruleValue = rule[VALUE];
-                ruleMessage = rule[MESSAGE];
-            }
+        for (let [ruleName, [ruleValue, ruleMessage]] of entries(propRules)) {
 
             let ruleFn = rules[ruleName];
-            if (!ruleFn) {
-                logWarn('Unknown rule: ' + ruleName);
-                continue;
-            }
 
-            let passed = ruleFn(value, ruleValue, data);
+            if (ruleFn) {
+                let passed = ruleFn(value, ruleValue, data);
 
-            if (!passed) {
-                // Initialize the errors array for the property
-                if (!errors[propName]) errors[propName] = [];
+                if (!passed) {
+                    // Initialize the errors array for the property
+                    if (!errors[propName]) errors[propName] = [];
 
-                // Custom rule message has priority over the default message
-                if (ruleMessage) {
-                    arrayAdd(errors[propName], ruleMessage);
-                }
-                // Default message
-                else {
-                    arrayAdd(errors[propName], messages[ruleName](propName as string, ruleValue, data) || propName + ' is invalid.');
+                    // Custom rule message has priority over the default message
+                    if (ruleMessage) {
+                        arrayAdd(errors[propName], ruleMessage);
+                    }
+                    // Default message
+                    else {
+                        arrayAdd(errors[propName], messages[ruleName](propName as string, ruleValue, data) || propName + ' is invalid.');
+                    }
                 }
             }
+            else logWarn('Unknown rule: ' + ruleName);
         }
     }
 

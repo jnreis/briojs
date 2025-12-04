@@ -1,4 +1,3 @@
-export declare let variableNameRegex: RegExp;
 /**
  * Find variables used in a template literal
  *

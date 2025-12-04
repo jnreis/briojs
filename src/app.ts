@@ -380,7 +380,7 @@ export let newApp = (): AppObject => {
 
     let bnodes: Map<Node, BNode> = newMap();
     let directives: Directive[] = [];
-    let template: CacheAssetObject = {};
+    let template: TemplateObject = {};
     let routes: RoutesObject = {};
     let routeRules: RouteRulesObject = { [NUMBER]: isStringNumeric };
 

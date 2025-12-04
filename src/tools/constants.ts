@@ -1,5 +1,3 @@
-import { space } from "./string";
-
 export let BRIO: 'brio' = 'brio';
 
 /*
@@ -50,6 +48,7 @@ export let CREATE: 'create' = 'create';
 export let DATA: 'data' = 'data';
 export let DEBOUNCE: 'debounce' = 'debounce';
 export let DETAIL: 'detail' = 'detail';
+export let DEFAULT: 'default' = 'default';
 export let DEFINE: 'define' = 'define';
 export let DELETE: 'delete' = 'delete';
 export let DIRECTIVE: 'directive' = 'directive';
@@ -128,7 +127,7 @@ export let PUT: 'put' = 'put';
 export let RADIO: 'radio' = 'radio';
 export let REMOVE: 'remove' = 'remove';
 export let REPLACE: 'replace' = 'replace';
-export let REQUIRES: 'requires' = 'requires';
+export let REQUIRE: 'require' = 'require';
 export let REVERSE: 'reverse' = 'reverse';
 export let ROUTE: 'route' = 'route';
 
@@ -235,6 +234,8 @@ export let REMOVE_EVENT_LISTENER = REMOVE + EVENT_LISTENER__$CAP as 'removeEvent
 export let REMOVE_PROPERTY = REMOVE + PROPERTY__$CAP as 'removeProperty';
 export let REPLACE_WITH = REPLACE + WITH__$CAP as 'replaceWith';
 export let REPLACE_CHILDREN = REPLACE + CHILDREN__$CAP as 'replaceChildren';
+export let REQUIRES = REQUIRE + 's' as 'requires';
+export let REQUIRED = REQUIRE + 'd' as 'required';
 export let ROUTE_RULE = ROUTE + 'Rule' as 'routeRule';
 
 export let SELECTION_START = SELECT + 'ionStart' as 'selectionStart';
@@ -278,5 +279,4 @@ export let REQUIRES_ACTION_TYPE = (action: string, actionName: string, actionTyp
 /** but got [something else] instead. */
 export let BUT_GOT_INSTEAD = (somethingElse: string) => `but got ${somethingElse} instead.`;
 
-export let REQUIRES_REACTIVE_VALUE = (directiveName: string) =>
-    space(directiveName, REQUIRES, 'a reactive', VALUE) as '[directive] requires a reactive value.';
+export let REQUIRES_REACTIVE_VALUE = REQUIRES + ' a reactive ' + VALUE as 'requires a reactive value.';

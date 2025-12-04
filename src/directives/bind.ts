@@ -52,7 +52,7 @@ export let hydrateBind = (bnode: BNode, dirName: string, dirValue: string) => {
     evalEffect(bnode, stateProp, (ctxFn) => {
 
         if (!ctxFn)
-            return logWarn(REQUIRES_REACTIVE_VALUE(dirName), BUT_GOT_INSTEAD(dirName+`="${dirValue}"`), NEW_LINE, el);
+            return logWarn(dirValue, REQUIRES_REACTIVE_VALUE, BUT_GOT_INSTEAD(dirName+`="${dirValue}"`), NEW_LINE, el);
 
         let value = ctxFn(initialAttrValue || '');
 

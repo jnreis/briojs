@@ -1,11 +1,12 @@
 import { updateDataLevelContext } from "../app";
-import { logError, size, slice } from "../tools";
+import { has, logError, logWarn, size, slice } from "../tools";
 import { arrayAdd, each, every, join, some } from "../tools/array";
-import { BODY, ELEMENT, HTML, HYDRATE, INNER_HTML, NOT_FOUND, TEXT, TEXT_CONTENT, HEAD, SCRIPT, REPLACE_WITH, $INSERT, TEMPLATE, $HYDRATE, $DEHYDRATE, B_SCRIPT, B_IGNORE, B_SAVE, B_SLOT, CONTENT, PREPEND, APPEND, REPLACE_CHILDREN, MUST_BE, OF_TYPE, NODE__$CAP, TARGET, STRING, SELECTOR, BEFORE, AFTER, HTML__$UPPER } from "../tools/constants";
-import { childNodes, createElement, eachAttribute, forcePropertyAssignment, getAttr, getTagName, insertNodes, query, queryAll, setAttr } from "../tools/dom";
-import { getProp } from "../tools/object";
-import { upper } from "../tools/string";
-import { isElementNode, isNode, isNull, isString } from "../tools/typeCheck";
+import { BODY, ELEMENT, HTML, HYDRATE, INNER_HTML, NOT_FOUND, TEXT, TEXT_CONTENT, HEAD, SCRIPT, REPLACE_WITH, $INSERT, TEMPLATE, $HYDRATE, $DEHYDRATE, B_SCRIPT, B_IGNORE, B_SAVE, B_SLOT, CONTENT, PREPEND, APPEND, REPLACE_CHILDREN, MUST_BE, OF_TYPE, NODE__$CAP, TARGET, STRING, SELECTOR, BEFORE, AFTER, HTML__$UPPER, B_, PROPS, FUNCTION, BUT_GOT_INSTEAD, $PROPS, DEFAULT, REQUIRED, INVALID__$CAP } from "../tools/constants";
+import { childNodes, createElement, delAttr, eachAttribute, forcePropertyAssignment, getAttr, getTagName, insertNodes, query, queryAll, setAttr } from "../tools/dom";
+import { newFn } from "../tools/evaluation";
+import { countKeys, getProp } from "../tools/object";
+import { space, trim, upper, wrapInBackticks } from "../tools/string";
+import { getType, isArray, isElementNode, isFunction, isNode, isNull, isObject, isString, isUndefined } from "../tools/typeCheck";
 
 let onlySupportInsertions = (placement: string[]) => `only supports ${join(slice(placement, 0, -1) as string[], ', ')}, and ${placement[size(placement) - 1]} insertions`;
 
@@ -72,7 +73,7 @@ export let newInsert = (app: AppObject) => async (target: HTMLElement | string, 
     // Parse the content if it is a string
     if (!isText && isString(content)) {
         parsedContent = createElement('div');
-        parsedContent[INNER_HTML] = content;
+        parsedContent[INNER_HTML] = trim(content);
         parsed = true;
     }
 
@@ -92,6 +93,93 @@ export let newInsert = (app: AppObject) => async (target: HTMLElement | string, 
             return logError($INSERT_, ELEMENT, NOT_FOUND);
     }
 
+    let [newBNode, getBNode] = app.bnode;
+
+    // ! VALIDATE PROPS
+    let propsValues: ObjectType = {};
+
+    // Get props schema from b-props attribute
+    if (!isText) {
+        // Get props schema
+        let propsSchema: ObjectType = {};
+        let propsAttr = getAttr(parsedContent.children[0], B_+PROPS);
+        if (propsAttr) {
+            propsSchema = newFn('', propsAttr)() || {};
+        }
+
+        // Process each prop
+        let propsWarns: string[] = [];
+        for (let propName in propsSchema) {
+            let schema = propsSchema[propName];
+
+            let type: any = schema;
+            let required = false;
+            let isText = false;
+            let warn;
+
+            if (isObject(schema)) {
+                type = schema.type;
+                required = !!schema[REQUIRED];
+                warn = schema.warn;
+                isText = !!schema.isText;
+            }
+
+            // Ensure type is an array
+            if (!isArray(type)) type = [type];
+
+            // Get the prop value
+            let value: any = getAttr(el, propName);
+
+            // Delete the attribute after getting its value
+            delAttr(el, propName);
+
+            // If the value is text, wrap it in backticks to be evaluated as a string
+            if (isText && value) value = wrapInBackticks(value);
+
+            // Evaluate the prop value
+            // Note: if the attribute is present but empty, the value will default to true
+            if (isString(value)) value = newFn('', value || 'true')();
+
+            let isNullOrUndefined = isNull(value) || isUndefined(value);
+
+            // Invalid type
+            if (!has(type, getType(value))) {
+
+                // Check required
+                // The prop is required if specified in the schema and the value is null or undefined
+                if (required && isNullOrUndefined) {
+                    arrayAdd(propsWarns, 'Missing required prop: ' + propName + '.');
+                }
+                // Type warning message
+                else {
+                    arrayAdd(propsWarns, space(INVALID__$CAP, 'prop type for', propName + ':', MUST_BE, OF_TYPE, join(type, ' or ') + ',', BUT_GOT_INSTEAD(getType(value))));
+                }
+            }
+
+            // The `warn` function perform a custom validation and may return a warning message
+            if (isFunction(warn)) {
+                let message = warn(value, propName);
+                if (message) arrayAdd(propsWarns, message);
+            }
+
+            // Use the default value if no value is provided
+            if (isNullOrUndefined && DEFAULT in schema) {
+                let defaultValue = schema[DEFAULT];
+                value = isFunction(defaultValue) && !has(type, FUNCTION) ? defaultValue() : defaultValue;
+            }
+
+            // Set the prop value
+            propsValues[propName] = value;
+        }
+        // Log all prop warnings
+        each(propsWarns, message => logWarn(message, el));
+    }
+
+    // Set the props values in the bnode context
+    if (countKeys(propsValues)) {
+        let bnode = getBNode(el) as BNode;
+        bnode.ctx[$PROPS] = propsValues;
+    }
 
     // ! CLEANUP THE DOM
 
@@ -150,8 +238,6 @@ export let newInsert = (app: AppObject) => async (target: HTMLElement | string, 
 
     // Hydrate the inserted nodes
     if (getProp(options, HYDRATE, true)) {
-
-        let [newBNode] = app.bnode;
 
         for (let node of insertedNodes) {
             if (isElementNode(node)) {

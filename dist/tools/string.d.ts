@@ -22,8 +22,6 @@ export declare let isStringAlpha: (value: string) => boolean;
  * @param value - The string to check
  */
 export declare let isStringNumeric: (value: string) => boolean;
-/** Check if a string is a valid path, but not a delete statement */
-export declare let isPath: (exp: string) => boolean;
 /**
  * Check if a string is an anonymous function or arrow function
  * @param value - The string to check e.g. `function() {}` or `() => {}` or `async function() {}` or `async () => {}`

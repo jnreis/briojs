@@ -1,7 +1,7 @@
 import { effect } from '../reactivity';
 import { entries, has, logError, logWarn, size } from '../tools';
 import { arrayAdd, arrayFrom, each, join } from '../tools/array';
-import { SELECT, INPUT, TEXTAREA, CHECKBOX, RADIO, VALUE, ARRAY, DIRECTIVE, REQUIRES, COMPOSING, ELEMENT, CAN_ONLY_BE_USED_ON, BOOLEAN, STRING, NUMBER, CHECKED, BUT_GOT_INSTEAD, TEXT, OF_TYPE, OPTIONS, COMPOSITION_START, COMPOSITION_END, EMAIL } from '../tools/constants';
+import { SELECT, INPUT, TEXTAREA, CHECKBOX, RADIO, VALUE, ARRAY, DIRECTIVE, COMPOSING, ELEMENT, CAN_ONLY_BE_USED_ON, BOOLEAN, STRING, NUMBER, CHECKED, BUT_GOT_INSTEAD, TEXT, OF_TYPE, OPTIONS, COMPOSITION_START, COMPOSITION_END, EMAIL, REQUIRES_REACTIVE_VALUE } from '../tools/constants';
 import { listen, onCompositionStart, onCompositionEnd, getAttr, queryAll, getTagName, nextFrame } from '../tools/dom';
 import { saveCleanup } from '../app';
 import { D, newMap } from '../tools/object';
@@ -82,7 +82,6 @@ export let hydrateModel = (bnode: BNode, attrName: string, attrValue: string) =>
 
     // Reusable strings
     let THE_MODEL_DIRECTIVE = space('the', attrName, DIRECTIVE);
-    let REQUIRES_A_REACTIVE_VALUE = space(REQUIRES, 'a reactive', VALUE);
     let SELECTED = SELECT+'ed' as 'selected';
     let ATTRIBUTE = attrName+`="${attrValue}"`;
 
@@ -99,7 +98,7 @@ export let hydrateModel = (bnode: BNode, attrName: string, attrValue: string) =>
     let [_state, _prop] = getAccessedProp(bnode.exec(bnode, attrValue)) as [any, Prop];
 
     if (!_state) {
-        return logError(THE_MODEL_DIRECTIVE, REQUIRES_A_REACTIVE_VALUE, ATTRIBUTE, node);
+        return logError(THE_MODEL_DIRECTIVE, REQUIRES_REACTIVE_VALUE, ATTRIBUTE, node);
     }
 
     // Get the reactive value
@@ -172,7 +171,7 @@ export let hydrateModel = (bnode: BNode, attrName: string, attrValue: string) =>
 
             // The type is invalid, log an error and return
             if (!(isNull(value) || isUndefined(value) || has(_typesArray, getType(value))))
-                logWarn(THE_MODEL_DIRECTIVE, REQUIRES_A_REACTIVE_VALUE, OF_TYPE, join(_typesArray, ' or '), `for ${tag == INPUT ? type+' ' : ''}${_tag} ${ELEMENT}s,`, BUT_GOT_INSTEAD(getType(value)), ATTRIBUTE, node);
+                logWarn(THE_MODEL_DIRECTIVE, REQUIRES_REACTIVE_VALUE, OF_TYPE, join(_typesArray, ' or '), `for ${tag == INPUT ? type+' ' : ''}${_tag} ${ELEMENT}s,`, BUT_GOT_INSTEAD(getType(value)), ATTRIBUTE, node);
 
             break;
         }

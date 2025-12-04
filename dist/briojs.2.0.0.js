@@ -1,223 +1,268 @@
-let Q = (e) => e.trim(), Se = (e) => e.toLowerCase(), se = (e, t, l) => e.split(t, l), Rr = (e) => e.toUpperCase(), ms = (e) => Rr(e[0]) + Fe(e, 1), ds = (e) => Se(e[0]) + Fe(e, 1), nt = (e, t, l) => e[Tf](t, l), Yl = (e, t, l) => e[ef](t, l), Ee = (e, t) => t.test(e), ke = (e, t, l) => e[yi](t, l), kl = (e, t, l) => {
-  for (; Ee(e, t); )
-    e = ke(e, t, l);
+let rl = "brio", At = "$", st = "$for", Gl = "$ref", Vl = "$slot", yr = "$store", ot = "after", cl = "append", Tt = "array", ne = "attr", Ei = "Attribute", Nr = "a valid", q = "b-", Ar = "b-for", we = "b-if", Or = "b-ignore", oi = "b-ref", _r = "b-save", sl = "b-show", Sr = "b-slot", Xt = "before", gs = "body", fl = "boolean", wr = "can only be used on", Ir = "Cannot ", be = "checkbox", lt = "checked", xs = "Child", Pr = "class", mr = "clone", Ti = "composi", ui = "content", Cr = "Content", jt = "create", qt = "data", El = "debounce", Dr = "detail", $i = "default", dr = "define", v = "delete", je = "directive", Kl = "disconnect", Ls = "display", pi = "document", Ue = "element", al = "email", gr = "end", Ui = "entries", Mi = "error", Fi = "event", xr = "EventListener", Lr = "exit", qe = "get", $r = "head", Bi = "href", hi = "html", Ri = "HTML", ml = "hydrate", Ur = "index", $s = "inner", Us = "insert", Cl = "Invalid", Xl = "length", Mr = "mask", Ms = "message", Fs = "method", ie = "must be", me = `
+`, ft = "newValue", Bs = "name", ol = "Node", ut = "nodes", Fr = "not found.", Ot = null, Z = "number", _t = "object", Br = "observe", dt = "oldValue", yi = "on-", vi = yi + "enter", Hi = yi + Lr, Yi = yi + "resize", vs = "once", Ni = "operation", Be = "options", Hs = "outer", Dl = "parent", ki = "patch", Ys = "post", jl = "prepend", vr = "prevent", Hr = "Propert", Qe = Hr + "y", Me = "props", Yr = "put", Wi = "radio", Ye = "remove", Ai = "replace", kr = "require", Tl = "route", re = "script", J = "skip", Q = "select", se = "state", Wr = "start", Oi = "storage", xe = "string", ee = "style", ks = "super", zr = "teleport", Re = "template", Ae = "text", zi = "throttle", _i = "tion", Ws = "toString", at = "transition", Gr = "type", oe, Vr = "update", zs = "valid", $ = "value", Si = "With", Gs = "add" + xr, Ht = At + qt, Qt = "$de" + ml, Jt = At + ml, dl = At + Us, ul = At + Me, ze = q + qt, Kr = q + hi, wi = q + re, gl = q + Re, Vs = q + Ae, Xr = xs + "ren", jr = Pr + "List", Ks = mr + ol, pl = Ti + "ng", Xs = Ti + _i + Wr, js = Ti + _i + gr, qs = jt + "Comment", Qs = jt + "Element", ql = dr + Qe, Js = dr + Hr + "ies", rt = "de" + ml + Xr, Gi = v + Qe, qr = je + "s", Zs = "ends" + Si, Zt = "func" + _i, bs = qe + Ei, ef = qe + Qe + "Value", tf = qe + Qe + "Priority", Vi = $r + "ers", $t = $s + Ri, Y = "in" + Yr, Ut = "of " + Gr, Qr = Hs + Ri, Jr = "Own" + Qe, lf = Dl + ol, hl = "path" + Bs, rf = vr + "Default", Zr = "proto" + Gr, sf = Ye + Ei, ff = Ye + xr, af = Ye + Qe, Mt = Ai + Si, gt = Ai + Xr, Ii = kr + "s", nf = kr + "d", Ki = Tl + "Rule", Yl = Q + "ionStart", br = Q + "or", cf = "set" + Ei, Ef = "set" + Qe, of = Wr + "s" + Si, Tf = Oi + "Area", ce = "tar" + qe, it = Ae + "area", Ge = Ae + Cr, uf = zs + "ate", pf = "async" + Zt, es = qe + Jr + "Descriptor", hf = es + "s", Rf = "has" + Jr, yf = br + "Text", ts = (e, t, l, i) => `the ${e} ${t} ${Ii} ${l}, ` + xl(i), xl = (e) => `but got ${e} instead.`, Ql = Ii + " a reactive " + $, D = (e, ...t) => e.push(...t), Nf = (e, t) => e.sort(t), Te = (e, t) => e.join(t), m = (e, t) => e.forEach(t), Fe = (e, t, l) => e.map(t, l), Ft = (e, t, l) => e.filter(t, l), Pi = (e, t, l) => e.find(t, l), mi = (e, t, l) => e.every(t, l), ls = (e, t, l) => e.some(t, l), Af = (e, t, l) => e.indexOf(t, l), Of = (e, t) => t[1] - e[1], Ve = (e) => Array.from(e), Xi = (e, t = 0) => Fe(Ve({ [Xl]: e }), (l, i) => t + i), k = (e) => e.trim(), Ie = (e) => e.toLowerCase(), Ee = (e, t, l) => e.split(t, l), _f = (e, t) => e.match(t), is = (e) => e.toUpperCase(), Sf = (e) => is(e[0]) + Ne(e, 1), wf = (e) => Ie(e[0]) + Ne(e, 1), Ke = (e, t, l) => e[of](t, l), Jl = (e, t, l) => e[Zs](t, l), X = (e, t) => t.test(e), Xe = (e, t, l) => e[Ai](t, l), Zl = (e, t, l) => {
+  for (; X(e, t); )
+    e = Xe(e, t, l);
   return e;
-}, gs = (e) => Ee(e, /^\d+$/), xs = (e) => Ee(e, /^(\w|\s|\.|\$|`|'|"|(\[(.|\s)+?\]))*;?$/g) && !nt(e, v + " "), hr = (e) => Ee(Q(e), /^((async\s+)?function\s*\([^)]*\)\s*{[^}]*}|(async\s*)?(?:\([^()]*\)|[$\w]+)\s*=>)/), Ls = (e) => ds(Ne($e(se(e, "-"), ms), "")), yr = (e) => JSON.stringify(e), si = (e, t) => {
+}, If = (e) => X(e, /^\d+$/), rs = (e) => X(k(e), /^((async\s+)?function\s*\([^)]*\)\s*{[^}]*}|(async\s*)?(?:\([^()]*\)|[$\w]+)\s*=>)/), Pf = (e) => wf(Te(Fe(Ee(e, "-"), Sf), "")), ss = (e) => JSON.stringify(e), Ci = (e, t) => {
   try {
     e = JSON.parse(e, t);
   } catch {
   }
   return e;
-}, fi = (e) => "`" + e + "`", b = (...e) => Ne(e, " "), el = "brio", yt = "$", rt = "$for", zl = "$ref", Kl = "$slot", Nr = "$store", Et = "after", sl = "append", ct = "array", fe = "attr", ai = "Attribute", Ar = "a valid", k = "b-", _r = "b-for", Ie = "b-if", Or = "b-ignore", ni = "b-ref", Sr = "b-save", tl = "b-show", Ir = "b-slot", Kt = "before", $s = "body", ll = "boolean", wr = "can only be used on", Pr = "Cannot ", Ze = "checkbox", tt = "checked", Ms = "Child", Us = "class", Cr = "clone", Ei = "composi", ci = "content", Dr = "Content", Gt = "create", Nt = "data", fl = "debounce", mr = "detail", dr = "define", v = "delete", Ve = "directive", Gl = "disconnect", Bs = "display", oi = "document", Le = "element", il = "email", gr = "end", Li = "entries", $i = "error", Mi = "event", xr = "EventListener", Lr = "exit", We = "get", $r = "head", Ui = "href", Ti = "html", ui = "HTML", Pl = "hydrate", Mr = "index", Fs = "inner", vs = "insert", pi = "Invalid", Vl = "length", Cl = "mask", Ur = "message", Hs = "method", pe = "must be", Pe = `
-`, st = "newValue", Br = "name", al = "Node", ot = "nodes", Fr = "not found.", At = null, Z = "number", _t = "object", vr = "observe", Dt = "oldValue", Ri = "on-", Bi = Ri + "enter", Fi = Ri + Lr, vi = Ri + "resize", Ys = "once", hi = "operation", Me = "options", ks = "outer", Dl = "parent", Hi = "patch", zs = "post", Wl = "prepend", Hr = "prevent", Yr = "Propert", je = Yr + "y", he = "props", kr = "put", Yi = "radio", Xe = "remove", yi = "replace", ml = "requires", nl = "route", ee = "script", j = "skip", V = "select", te = "state", zr = "start", Ni = "storage", de = "string", ie = "style", Ks = "super", Kr = "teleport", Re = "template", W = "text", ki = "throttle", Ai = "tion", Gs = "toString", xt = "transition", Gr = "type", ce, Vr = "update", Wr = "valid", C = "value", _i = "With", Vs = "add" + xr, El = yt + Nt, Vt = "$de" + Pl, Wt = yt + Pl, dl = yt + vs, cl = yt + he, Ue = k + Nt, jr = k + Ti, Oi = k + ee, gl = k + Re, Ws = k + W, Xr = Ms + "ren", js = Us + "List", Xs = Cr + al, ol = Ei + "ng", qs = Ei + Ai + zr, Qs = Ei + Ai + gr, Js = Gt + "Comment", Zs = Gt + "Element", jl = dr + je, bs = dr + Yr + "ies", it = "de" + Pl + Xr, zi = v + je, qr = Ve + "s", ef = "ends" + _i, xl = "func" + Ai, tf = We + ai, lf = We + je + "Value", rf = We + je + "Priority", Ki = $r + "ers", Lt = Fs + ui, H = "in" + kr, Gi = Cl + "s", Qr = Cl + "Token", Vi = Qr + "s", Tl = "of " + Gr, Jr = ks + ui, Zr = "Own" + je, sf = Dl + al, ul = "path" + Br, ff = Hr + "Default", br = "proto" + Gr, af = Xe + ai, nf = Xe + xr, Ef = Xe + je, $t = yi + _i, mt = yi + Xr, Wi = nl + "Rule", Bl = V + "ionStart", es = V + "or", cf = "set" + ai, of = "set" + je, Tf = zr + "s" + _i, uf = Ni + "Area", ae = "tar" + We, lt = W + "area", ze = W + Dr, pf = Wr + "ate", Rf = Wr + "ator", hf = "async" + xl, ts = We + Zr + "Descriptor", yf = ts + "s", Nf = "has" + Zr, Af = es + "Text", ls = (e, t, l, i) => `the ${e} ${t} ${ml} ${l}, ` + Si(i), Si = (e) => `but got ${e} instead.`, _f = (e) => b(e, ml, "a reactive", C), D = (e, ...t) => e.push(...t), Of = (e, t) => e.sort(t), Ne = (e, t) => e.join(t), I = (e, t) => e.forEach(t), $e = (e, t, l) => e.map(t, l), Mt = (e, t, l) => e.filter(t, l), Ii = (e, t, l) => e.find(t, l), wi = (e, t, l) => e.every(t, l), is = (e, t, l) => e.some(t, l), Sf = (e, t, l) => e.indexOf(t, l), If = (e, t) => t[1] - e[1], Ke = (e) => Array.from(e), ji = (e, t = 0) => $e(Ke({ [Vl]: e }), (l, i) => t + i), Ge = (e) => Se(Fe(Ae[br][Gs].call(e), 8, -1)), qe = (e, t) => Ge(e) === t, ne = (e) => e === At, pl = (e) => e === ce, X = (e) => qe(e, _t), $ = (e) => qe(e, ct), Be = (e) => wf(e) || Pf(e), wf = (e) => qe(e, xl), Pf = (e) => qe(e, hf), U = (e) => qe(e, de), Ce = (e) => qe(e, Z) && !isNaN(e), Cf = (e) => qe(e, ll), Df = (e) => Ot(e, rs), Ot = (e, t) => e instanceof t, ft = (e) => Ot(e, Node), mf = (e) => Ot(e, Text), De = (e) => Ot(e, HTMLElement), Xl = (e) => Ot(e, Map), ql = (e) => Ot(e, Set), ge = window, Ae = Object, wt = Reflect, Rl = location, St = ge[oi], df = Symbol, rs = RegExp, z = (e, t) => Ae[br][Nf].call(e, t), we = (e, t, l) => {
+}, Ll = (e) => "`" + e + "`", he = (...e) => Te(e, " "), Ce = (e) => Ie(Ne(_e[Zr][Ws].call(e), 8, -1)), Je = (e, t) => Ce(e) === t, te = (e) => e === Ot, Yt = (e) => e === oe, z = (e) => Je(e, _t), F = (e) => Je(e, Tt), Oe = (e) => mf(e) || Cf(e), mf = (e) => Je(e, Zt), Cf = (e) => Je(e, pf), B = (e) => Je(e, xe), De = (e) => Je(e, Z) && !isNaN(e), Df = (e) => Je(e, fl), df = (e) => St(e, fs), St = (e, t) => e instanceof t, nt = (e) => St(e, Node), gf = (e) => St(e, Text), de = (e) => St(e, HTMLElement), bl = (e) => St(e, Map), ei = (e) => St(e, Set), Le = window, _e = Object, mt = Reflect, Rl = location, wt = Le[pi], xf = Symbol, fs = RegExp, G = (e, t) => _e[Zr][Rf].call(e, t), Pe = (e, t, l) => {
   let i = l;
   try {
     i = t in e ? e[t] : l;
   } catch {
   }
   return i;
-}, Qe = (e, t) => delete e[t], gf = [
+}, Ze = (e, t) => delete e[t], Lf = [
   ["w", "writable"],
   ["e", "enumerable"],
   ["c", "configurable"]
-], Y = (e, t, l = ce, i = "") => {
-  if (U(i)) {
+], W = (e, t, l = oe, i = "") => {
+  if (B(i)) {
     let r = i;
-    i = { [C]: l }, I(gf, ([n, a]) => {
-      i[a] = !M(r, n);
+    i = { [$]: l }, m(Lf, ([a, s]) => {
+      i[s] = !U(r, a);
     });
   }
-  Ae[jl](e, t, i);
-}, Ut = (e) => P(ye(e)), ye = (e) => Ae.keys(e), xf = (e = At) => Ae[Gt](e), Lf = (e, t = {}) => {
-  const l = xf(e);
-  return Ae[bs](
+  _e[ql](e, t, i);
+}, ct = (e) => C(ye(e)), ye = (e) => _e.keys(e), $f = (e = Ot) => _e[jt](e), Uf = (e, t = {}) => {
+  const l = $f(e);
+  return _e[Js](
     l,
-    Ae[yf](t)
+    _e[hf](t)
   ), l;
-}, $f = (e, t, l = Ae) => l[ts](e, t), Mf = (e) => Ae.getPrototypeOf(e), Pi = (e, t = {}) => {
-  I(ye(e), (l) => {
-    Y(e, l, e[l], t);
+}, Mf = (e, t, l = _e) => l[es](e, t), Ff = (e) => _e.getPrototypeOf(e), Di = (e, t = {}) => {
+  m(ye(e), (l) => {
+    W(e, l, e[l], t);
   });
-}, Ci = (e) => I(ye(e), (t) => {
-  Qe(e, t);
-}), Te = (e = ce) => new Map(e), jt = (e = ce) => new Set(e), Uf = (e, t) => new rs(e, t), Bt = (e, t) => {
+}, as = (e) => m(ye(e), (t) => {
+  Ze(e, t);
+}), pe = (e = oe) => new Map(e), $l = (e = oe) => new Set(e), Bf = (e, t) => new fs(e, t), Bt = (e, t) => {
   if (e === t) return e;
-  if ($(e) && $(t)) {
-    for (; P(e) > P(t); ) e.pop();
-    for (let l = 0; l < P(t); l++)
-      l < P(e) ? e[l] = Bt(e[l], t[l]) : e.push(xe(t[l]));
-  } else if (Xl(e) && Xl(t)) {
-    let l = Te(e);
+  if (F(e) && F(t)) {
+    for (; C(e) > C(t); ) e.pop();
+    for (let l = 0; l < C(t); l++)
+      l < C(e) ? e[l] = Bt(e[l], t[l]) : e.push($e(t[l]));
+  } else if (bl(e) && bl(t)) {
+    let l = pe(e);
     e.clear();
-    for (let [i, r] of Je(t))
-      e.set(i, l.has(i) ? Bt(l.get(i), r) : xe(r));
-  } else if (ql(e) && ql(t)) {
+    for (let [i, r] of ve(t))
+      e.set(i, l.has(i) ? Bt(l.get(i), r) : $e(r));
+  } else if (ei(e) && ei(t)) {
     e.clear();
     for (let l of t)
       e.add(l);
-  } else if (X(e) && X(t)) {
+  } else if (z(e) && z(t)) {
     let l = { ...e };
-    Ci(e);
+    as(e);
     for (let i in t)
-      z(t, i) && (e[i] = z(l, i) ? Bt(l[i], t[i]) : xe(t[i]));
+      G(t, i) && (e[i] = G(l, i) ? Bt(l[i], t[i]) : $e(t[i]));
   } else
     return t;
   return e;
-}, xe = (e) => {
+}, $e = (e) => {
   let t = e;
-  if (X(e)) {
+  if (z(e)) {
     let l = {};
     for (let i in e)
-      z(e, i) && (l[i] = xe(e[i]));
+      G(e, i) && (l[i] = $e(e[i]));
     t = l;
   }
-  return $(e) && (t = $e(e, xe)), Xl(e) && (t = Te($e(Ke(Je(e)), ([l, i]) => [l, xe(i)]))), ql(e) && (t = jt($e(Ke(e), xe))), t;
-}, M = (e, t, l) => e.includes(t, l), Je = (e) => X(e) ? Ae[Li](e) : e[Li](), Fe = (e, t, l) => e.slice(t, l), P = (e) => pl(e[Vl]) ? e.size : e[Vl], Xt = (e, t = 0) => setTimeout(e, t), Bf = (e) => {
+  return F(e) && (t = Fe(e, $e)), bl(e) && (t = pe(Fe(Ve(ve(e)), ([l, i]) => [l, $e(i)]))), ei(e) && (t = $l(Fe(Ve(e), $e))), t;
+}, U = (e, t, l) => e.includes(t, l), ve = (e) => z(e) ? _e[Ui](e) : e[Ui](), Ne = (e, t, l) => e.slice(t, l), C = (e) => Yt(e[Xl]) ? e.size : e[Xl], bt = (e, t = 0) => setTimeout(e, t), vf = (e) => {
   clearTimeout(e);
-}, hl = (e, t) => {
+}, yl = (e, t) => {
   let l;
   return (...i) => {
-    Bf(l), l = Xt(() => e(...i), t);
+    vf(l), l = bt(() => e(...i), t);
   };
-}, Ff = (e, t) => {
+}, Hf = (e, t) => {
   let l = 0;
   return (...i) => {
     let r = Date.now();
     if (!(r - l < t))
       return l = r, e(...i);
   };
-}, Xi = {}, qi = (e) => Fe(ke(crypto.randomUUID(), /-/g, ""), 0, e - 1), yl = (e = 8) => {
+}, ji = {}, qi = (e) => Ne(Xe(crypto.randomUUID(), /-/g, ""), 0, e - 1), Nl = (e = 8) => {
   let t = qi(e);
-  for (; t in Xi; ) t = qi(P(t) + 1);
-  return Xi[t] = !0, "b" + t;
-}, ss = (e, ...t) => console[e]("Brio.js", ...t), qt = (...e) => ss("warn", "warn:", Pe, ...e), x = (...e) => ss($i, `detected an ${$i}:`, Pe, ...e), Di = (e, t = St) => Ke(t.querySelectorAll(e)), le = (e, t = St) => U(e) ? Di(e, t)[0] : e, _e = (e, t, ...l) => e[t](...l), fs = (e) => e[Xs](!0), as = (e, t) => I(Ke(e.attributes), ({ name: l, [C]: i }) => t(l, i)), Tt = (e) => e[Xe](), Nl = (e) => e[sf], ns = (e) => Q(e[ze] || ""), rl = (e) => [...e.childNodes], J = (e, t) => e[tf](t), mi = (e, t, l, i) => {
+  for (; t in ji; ) t = qi(C(t) + 1);
+  return ji[t] = !0, "b" + t;
+}, ns = (e, ...t) => console[e]("Brio.js", ...t), It = (...e) => ns("warn", "warn:", me, ...e), M = (...e) => ns(Mi, `detected an ${Mi}:`, me, ...e), di = (e, t = wt) => Ve(t.querySelectorAll(e)), fe = (e, t = wt) => B(e) ? di(e, t)[0] : e, Se = (e, t, ...l) => e[t](...l), cs = (e) => e[Ks](!0), Es = (e, t) => m(Ve(e.attributes), ({ name: l, [$]: i }) => t(l, i)), pt = (e) => e[Ye](), Al = (e) => e[lf], os = (e) => k(e[Ge] || ""), nl = (e) => [...e.childNodes], j = (e, t) => e[bs](t), gi = (e, t, l, i) => {
   i && (e[i] = l), e[cf](t, l);
-}, di = (e, t) => e[af](t), vf = (e, ...t) => e[js].add(...t), Qi = requestAnimationFrame, ut = (e) => Qi(() => Qi(e)), Ql = (e, t) => St[Zs](e, t), gi = (e) => St[Js](e), ve = (e) => Se(e.tagName || ""), re = (e, t, l, i) => (e = le(e), e[Vs](t, l, i), () => e[nf](t, l)), Ye = (e, t, l) => le(e).dispatchEvent(new CustomEvent(Se(ke(t, /[^a-z\d]/gi, "")), {
+}, Ul = (e, t) => e[sf](t), Ts = (e, ...t) => e[jr].add(...t), Yf = (e, ...t) => e[jr][Ye](...t), Qi = requestAnimationFrame, ht = (e) => Qi(() => Qi(e)), ti = (e, t) => wt[Qs](e, t), xi = (e) => wt[qs](e), He = (e) => Ie(e.tagName || ""), ae = (e, t, l, i) => (e = fe(e), e[Gs](t, l, i), () => e[ff](t, l)), We = (e, t, l) => fe(e).dispatchEvent(new CustomEvent(Ie(Xe(t, /[^a-z\d]/gi, "")), {
   bubbles: !0,
   cancelable: !0,
-  [mr]: l
-})), Al = async (e, t, l = !1) => {
+  [Dr]: l
+})), Ol = async (e, t, l = !1) => {
   if (await t(e))
-    for (let i of rl(l && ve(e) == Re ? e[ci] : e))
-      await Al(i, t, l);
-}, Hf = (e) => e[ae][ol] = !0, Yf = (e) => {
-  let t = e[ae];
-  t[ol] && (t[ol] = !1, Ye(t, H));
-}, kf = (e) => ge.getComputedStyle(e), zf = (e) => {
-  let t = kf(e);
-  return !(!Nl(e) || t[Bs] == "none" || t.visibility == "hidden" || t.opacity == "0");
-}, vt = (e = "", t = Ui) => new URL(e, Rl[Ui])[t], Es = (e) => nt(vt(e), Rl.origin), cs = (e) => M(["src", C, tt, V + "ed"], e), Kf = (e) => ke(ke(e, /[^\w-]/g, ""), /^[^a-z_]+/i, ""), Gf = (e) => {
+    for (let i of nl(l && He(e) == Re ? e[ui] : e))
+      await Ol(i, t, l);
+}, kf = (e) => e[ce][pl] = !0, Wf = (e) => {
+  let t = e[ce];
+  t[pl] && (t[pl] = !1, We(t, Y));
+}, zf = (e) => Le.getComputedStyle(e), Gf = (e) => {
+  let t = zf(e);
+  return !(!Al(e) || t[Ls] == "none" || t.visibility == "hidden" || t.opacity == "0");
+}, kt = (e = "", t = Bi) => new URL(e, Rl[Bi])[t], us = (e) => Ke(kt(e), Rl.origin), ps = (e) => U(["src", $, lt, Q + "ed"], e), Vf = (e) => Xe(Xe(e, /[^\w-]/g, ""), /^[^a-z_]+/i, ""), Kf = (e) => {
   let t = {};
   for (let l of e)
-    t[l] = e[lf](l), e[rf](l) == Ol && (t[l] += " !" + Ol);
+    t[l] = e[ef](l), e[tf](l) == Sl && (t[l] += " !" + Sl);
   return t;
 }, _l = (e) => {
   let t = {}, l = {};
   for (let i in e)
-    (nt(i, xt) ? t : l)[i] = e[i];
+    (Ke(i, at) ? t : l)[i] = e[i];
   return [t, l];
-}, Ol = "important", Vf = (e, t, l) => {
+}, Sl = "important", Xf = (e, t, l) => {
   let i = "";
-  Yl(l + "", "!" + Ol) && (l = Q(Fe(l, 0, -10)), i = Ol), e[ie][of](t, l, i);
-}, Wf = (e, t) => {
-  e[ie][Ef](t);
-}, Sl = (e, ...t) => {
+  Jl(l + "", "!" + Sl) && (l = k(Ne(l, 0, -10)), i = Sl), e[ee][Ef](t, l, i);
+}, jf = (e, t) => {
+  e[ee][af](t);
+}, Wt = (e, ...t) => {
   for (let l of t)
     for (let i in l)
-      Vf(e, i, l[i]);
-}, Il = (e, ...t) => {
+      Xf(e, i, l[i]);
+}, wl = (e, ...t) => {
   for (let l of t)
     for (let i in l)
-      Wf(e, i);
-}, Ji = (e) => `only supports ${Ne(Fe(e, 0, -1), ", ")}, and ${e[P(e) - 1]} insertions`, jf = (e) => async (t, l, i, r) => {
-  let n = dl + ":", a = l == W ? ze : l, f = [Kt, Et, Wl, sl, $t, mt, W], E = () => is(f, (O) => O == l);
-  if (!E())
-    return x(n, Ji(f));
-  let s = le(t);
-  if (!ft(s))
-    return x(n, ae, pe, Tl, al);
-  if (le(Ti) == s)
-    return x(n, ae, "cannot be the", ui, Le);
-  if (f = [mt, Wl, sl], (le($r) == s || le($s) == s) && !E())
-    return x(n, Rr(ve(s)), Le, Ji(f));
+      jf(e, i);
+}, Il = (e, t, l = !0) => new Function(e, l ? `return(${t})` : t), hs = (e, t = "", l = !0) => (Qf(e) && !l && (e += `(${t})`), rs(e) || (e = Vt(e), e = `(${t})=>` + (l ? `(${e})` : `{${e}}`)), e), qf = /^\s/, Ji = /^[a-z_$][\w$]*/i, Zi = /^\[[^\]]*\]/, bi = /^\([^\)]*\)/, Qf = (e) => {
+  if (e = k(e), !e || Ke(e, v + " ")) return !1;
+  let t = C(e), l = 0;
+  for (let i = 0; i < t; i++) {
+    let r = Ne(e, i), a = 0, s, n = l != 0 && l != 4;
+    if (X(r, qf))
+      continue;
+    if (!n && X(r, Ji))
+      a = 1, s = Ji;
+    else if (n && X(r, Zi))
+      a = 2, s = Zi;
+    else if (n && X(r, bi))
+      a = 3, s = bi;
+    else if (n && Ke(r, "."))
+      a = 4, s = /^\./;
+    else return !1;
+    let f = _f(r, s);
+    i += C(f[0]) - 1, l = a;
+  }
+  return l == 1 || l == 2;
+}, er = (e) => `only supports ${Te(Ne(e, 0, -1), ", ")}, and ${e[C(e) - 1]} insertions`, Jf = (e) => async (t, l, i, r) => {
+  let a = dl + ":", s = l == Ae ? Ge : l, n = [Xt, ot, jl, cl, Mt, gt, Ae], f = () => ls(n, (g) => g == l);
+  if (!f())
+    return M(a, er(n));
+  let c = fe(t);
+  if (!nt(c))
+    return M(a, ce, ie, Ut, ol);
+  if (fe(hi) == c)
+    return M(a, ce, "cannot be the", Ri, Ue);
+  if (n = [gt, jl, cl], (fe($r) == c || fe(gs) == c) && !f())
+    return M(a, is(He(c)), Ue, er(n));
   i = await i;
-  let c = e[Re];
-  i in c && (i = c[i]);
-  let p = a == ze, T = i, y = !1;
-  if (!p && U(i) && (T = Ql("div"), T[Lt] = i, y = !0), !p && !ft(T))
-    return x(n, ci, pe, Tl, al, "or", de);
-  let h = we(r, es);
-  if (!p && h && U(h) && (T = le(h, T), !ft(T)))
-    return x(n, Le, Fr);
-  let S = e.gc[Vt];
-  if (a == $t) await S(s, !1);
-  else if (p || a == mt)
-    for (let O of rl(s)) await S(O, !1);
-  let A = y ? rl(T) : [T];
-  if (_e(s, p ? mt : a, ...A), p && (A = rl(s)), I(A, (O) => {
-    let m = [];
-    ve(O) == ee ? D(m, O) : De(O) && D(m, ...Di(ee, O)), I(m, (K) => {
-      if (wi([Oi, Or, Sr, Ir], (G) => ne(J(K, G)))) {
-        let G = Ql(ee);
-        as(K, (Oe, w) => mi(G, Oe, w, cs(Oe) && Oe)), G[Lt] = K[Lt], _e(K, $t, G);
+  let T = e[Re];
+  i in T && (i = T[i]);
+  let o = s == Ge, R = i, A = !1;
+  if (!o && B(i) && (R = ti("div"), R[$t] = k(i), A = !0), !o && !nt(R))
+    return M(a, ui, ie, Ut, ol, "or", xe);
+  let h = Pe(r, br);
+  if (!o && h && B(h) && (R = fe(h, R), !nt(R)))
+    return M(a, Ue, Fr);
+  let [x, w] = e.bnode, d = {};
+  if (!o) {
+    let g = {}, V = j(R.children[0], q + Me);
+    V && (g = Il("", V)() || {});
+    let O = [];
+    for (let I in g) {
+      let P = g[I], y = P, E = !1, p = !1, u;
+      z(P) && (y = P.type, E = !!P[nf], u = P.warn, p = !!P.isText), F(y) || (y = [y]);
+      let N = j(c, I);
+      Ul(c, I), p && N && (N = Ll(N)), B(N) && (N = Il("", N || "true")());
+      let S = te(N) || Yt(N);
+      if (U(y, Ce(N)) || (E && S ? D(O, "Missing required prop: " + I + ".") : D(O, he(Cl, "prop type for", I + ":", ie, Ut, Te(y, " or ") + ",", xl(Ce(N))))), Oe(u)) {
+        let _ = u(N, I);
+        _ && D(O, _);
+      }
+      if (S && $i in P) {
+        let _ = P[$i];
+        N = Oe(_) && !U(y, Zt) ? _() : _;
+      }
+      d[I] = N;
+    }
+    m(O, (I) => It(I, c));
+  }
+  if (ct(d)) {
+    let g = w(c);
+    g.ctx[ul] = d;
+  }
+  let H = e.gc[Qt];
+  if (s == Mt) await H(c, !1);
+  else if (o || s == gt)
+    for (let g of nl(c)) await H(g, !1);
+  let le = A ? nl(R) : [R];
+  if (Se(c, o ? gt : s, ...le), o && (le = nl(c)), m(le, (g) => {
+    let V = [];
+    He(g) == re ? D(V, g) : de(g) && D(V, ...di(re, g)), m(V, (O) => {
+      if (mi([wi, Or, _r, Sr], (I) => te(j(O, I)))) {
+        let I = ti(re);
+        Es(O, (P, y) => gi(I, P, y, ps(P) && P)), I[$t] = O[$t], Se(O, Mt, I);
       }
     });
-  }), we(r, Pl, !0)) {
-    let [O] = e.bnode;
-    for (let m of A) {
-      if (De(m)) {
-        let K = O(m, s);
-        await Ml(K);
+  }), Pe(r, ml, !0))
+    for (let g of le) {
+      if (de(g)) {
+        let V = x(g, c);
+        await Bl(V);
       }
-      await e.gc[Wt](m, s);
+      await e.gc[Jt](g, c);
     }
-  }
-  return A;
-}, Fl = (e, t = "", l = "") => {
-  let i = t == Nt ? FormData : URLSearchParams, r = new i(), n = (a, f = "") => {
-    X(a) || $(a) ? I(Je(a), ([E, s]) => {
-      let c = f ? `${f}[${E}]` : E;
-      n(s, c);
-    }) : r[sl](f, a);
+  return le;
+}, kl = (e, t = "", l = "") => {
+  let i = t == qt ? FormData : URLSearchParams, r = new i(), a = (s, n = "") => {
+    z(s) || F(s) ? m(ve(s), ([f, c]) => {
+      let T = n ? `${n}[${f}]` : f;
+      a(c, T);
+    }) : r[cl](n, s);
   };
-  return n(e, l), r;
-}, Pt = (e) => async (t, l, i = {}) => {
-  let r = "status", n = Dr + "-Type", a = we(i, "parser");
-  if (X(l)) {
-    let f = i[Ki] || {}, E = Ii(ye(f), (c) => Se(c) == Se(n)), s = Se(f[E] || "");
-    Qe(f, E), e == We || e == v ? (t += Fl(l), l = ce) : Yl(s, "json") ? (l = yr(l), f[n] = "application/json") : Yl(s, "form-data") ? l = Fl(l, Nt) : l = Fl(l), i[Ki] = f;
+  return a(e, l), r;
+}, Ct = (e) => async (t, l, i = {}) => {
+  let r = "status", a = Cr + "-Type", s = Pe(i, "parser");
+  if (z(l)) {
+    let n = i[Vi] || {}, f = Pi(ye(n), (T) => Ie(T) == Ie(a)), c = Ie(n[f] || "");
+    Ze(n, f), e == qe || e == v ? (t += kl(l), l = oe) : Jl(c, "json") ? (l = ss(l), n[a] = "application/json") : Jl(c, "form-data") ? l = kl(l, qt) : l = kl(l), i[Vi] = n;
   }
   try {
-    let f = await fetch(t, { ...i, [Hs]: e, body: l }), E = await f[a || W]();
-    if (!a)
+    let n = await fetch(t, { ...i, [Fs]: e, body: l }), f = await n[s || Ae]();
+    if (!s)
       try {
-        E = si(E);
+        f = Ci(f);
       } catch {
       }
-    if (!f.ok) {
-      let s = new Error(`HTTP ${f[r]}! Status text: ` + f.statusText);
-      throw s.response = f, s[ci] = E, s;
+    if (!n.ok) {
+      let c = new Error(`HTTP ${n[r]}! Status text: ` + n.statusText);
+      throw c.response = n, c[ui] = f, c;
     }
-    return E;
-  } catch (f) {
-    throw f;
+    return f;
+  } catch (n) {
+    throw n;
   }
-}, Jl = {
-  get: Pt(We),
-  post: Pt(zs),
-  put: Pt(kr),
-  [Hi]: Pt(Hi),
-  [v]: Pt(v)
-}, Xf = (e, t) => [
+}, li = {
+  get: Ct(qe),
+  post: Ct(Ys),
+  put: Ct(Yr),
+  [ki]: Ct(ki),
+  [v]: Ct(v)
+}, Zf = (e, t) => [
   // Set a route
   (l, i) => {
-    if (Be(i)) {
-      l = vt(l, ul);
-      let r = Mt(se(l, "/"), Q), n = P(r) - 1, a = e;
-      I(r, (f, E) => {
-        f in a || (a[f] = {}), a = a[f], E == n && (a[gt] = i);
+    if (Oe(i)) {
+      l = kt(l, hl);
+      let r = Ft(Ee(l, "/"), k), a = C(r) - 1, s = e;
+      m(r, (n, f) => {
+        n in s || (s[n] = {}), s = s[n], f == a && (s[Lt] = i);
       });
-    } else x(Pr, "set route without a", nl, xl, Pe, l);
+    } else M(Ir, "set route without a", Tl, Zt, me, l);
   },
   /**
    * Get a route function by path.
@@ -225,233 +270,200 @@ let Q = (e) => e.trim(), Se = (e) => e.toLowerCase(), se = (e, t, l) => e.split(
    * @returns The route function, or `undefined` if not found, or `null` if not the same origin
    */
   (l) => {
-    if (!Es(l))
-      return At;
-    l = vt(l, ul);
-    let i = Mt(se(l, "/"), Q), r = e, n = {}, a = 0;
-    for (let f of i) {
-      if (a = 0, f in r && !nt(f, ":"))
-        r = r[f], a = 1;
-      else for (let E of ye(r))
-        if (nt(E, ":")) {
-          let [s, c] = Mt(se(E, ":"), Q);
-          if (!c || c && c in t && t[c](f)) {
-            let p = n[s];
-            p ? $(p) ? D(p, f) : n[s] = [p, f] : n[s] = f, r = r[E], a = 1;
+    if (!us(l))
+      return Ot;
+    l = kt(l, hl);
+    let i = Ft(Ee(l, "/"), k), r = e, a = {}, s = 0;
+    for (let n of i) {
+      if (s = 0, n in r && !Ke(n, ":"))
+        r = r[n], s = 1;
+      else for (let f of ye(r))
+        if (Ke(f, ":")) {
+          let [c, T] = Ft(Ee(f, ":"), k);
+          if (!T || T && T in t && t[T](n)) {
+            let o = a[c];
+            o ? F(o) ? D(o, n) : a[c] = [o, n] : a[c] = n, r = r[f], s = 1;
             break;
           }
         }
-      if (!a) break;
+      if (!s) break;
     }
-    if (a = a && r[gt] ? 1 : 0, a)
-      return () => r[gt]({
-        params: n,
+    if (s = s && r[Lt] ? 1 : 0, s)
+      return () => r[Lt]({
+        params: a,
         path: l,
-        [Xe]: () => Qe(r, gt)
+        [Ye]: () => Ze(r, Lt)
       });
   }
-], os = (e, t) => {
-  e = vt(e, ul), t && Es(e) ? (t(), e != Rl[ul] && history.pushState(At, "", e)) : Rl.href = e;
-}, qf = (e) => xi(({ [te]: t, prop: l }) => (Yt(t)[j].add(l), e)), Zl = !1, bl = [], Ts = (e) => (bl = [], Zl = !0, e({}), Zl = !1, [...bl]), us = (e) => {
-  let t = Ts(e), l = P(t), [i, r] = t[l - 1] || [];
+], Rs = (e, t) => {
+  e = kt(e, hl), t && us(e) ? (t(), e != Rl[hl] && history.pushState(Ot, "", e)) : Rl.href = e;
+}, bf = (e) => Li(({ [se]: t, prop: l }) => (Gt(t)[J].add(l), e)), ii = !1, ri = [], ys = (e) => (ri = [], ii = !0, e({}), ii = !1, [...ri]), Ns = (e) => {
+  let t = ys(e), l = C(t), [i, r] = t[l - 1] || [];
   return [i, r];
-}, oe = (e, t) => {
-  if (!Zi(e) || pt(e)) return e;
+}, ue = (e, t) => {
+  if (!tr(e) || Rt(e)) return e;
   let l = {
-    get(a, f) {
-      return Zl && (z(a, f) || !(f in a)) && D(bl, [i, f]), wt.get(a, f, i);
+    get(s, n) {
+      return ii && (G(s, n) || !(n in s)) && D(ri, [i, n]), mt.get(s, n, i);
     },
-    set(a, f, E) {
-      f in a || Y(a, f);
-      let s = i[f];
-      if (s === E) return !0;
-      let c = Yt(i), p = {
-        [ae]: a,
-        [te]: i,
-        prop: f,
-        [Dt]: s
+    set(s, n, f) {
+      n in s || W(s, n);
+      let c = i[n];
+      if (c === f) return !0;
+      let T = Gt(i), o = {
+        [ce]: s,
+        [se]: i,
+        prop: n,
+        [dt]: c
         // [NEW_VALUE]: newValue,
         // [OPERATION]: UNDEFINED,
       };
-      Pi(p, "wc"), dt.has(E) && (dt[v](E), E = E(p)), r.has(f) || (E = oe(E)), p[st] = E, Qf(p);
-      let T = wt.set(a, f, E, i);
-      return bi(c, p), T;
+      Di(o, "wc"), xt.has(f) && (xt[v](f), f = f(o)), r.has(n) || (f = ue(f)), o[ft] = f, ea(o);
+      let R = mt.set(s, n, f, i);
+      return lr(T, o), R;
     },
-    [zi](a, f) {
-      let E = a[f], s = wt[zi](a, f);
-      return bi(Yt(i), {
-        [ae]: a,
-        [te]: i,
-        prop: f,
-        [Dt]: E,
-        [st]: ce,
-        [hi]: v
-      }), s;
+    [Gi](s, n) {
+      let f = s[n], c = mt[Gi](s, n);
+      return lr(Gt(i), {
+        [ce]: s,
+        [se]: i,
+        prop: n,
+        [dt]: f,
+        [ft]: oe,
+        [Ni]: v
+      }), c;
     },
-    [jl](a, f, E) {
-      let s = E[C], c = i[f];
-      return dt.has(s) && (E[C] = s({ [te]: i, prop: f, [st]: s, [Dt]: c })), !r.has(f) && C in E && (E[C] = oe(E[C])), wt[jl](a, f, E);
+    [ql](s, n, f) {
+      let c = f[$], T = i[n];
+      return xt.has(c) && (f[$] = c({ [se]: i, prop: n, [ft]: c, [dt]: T })), !r.has(n) && $ in f && (f[$] = ue(f[$])), mt[ql](s, n, f);
     }
   };
-  const i = new Proxy(pt(t) && X(t) ? Lf(t, e) : e, l), r = jt();
-  let n = {
+  const i = new Proxy(Rt(t) && z(t) ? Uf(t, e) : e, l), r = $l();
+  let a = {
     // [PARENT]: parent,
     // [TARGET]: target,
     // proxied,
-    [te]: Te(),
-    [he]: {},
+    [se]: pe(),
+    [Me]: {},
     skip: r
     // refs: [],
     // [ON_SET]: {},
   };
-  Ll.set(i, n);
-  for (let a in e) {
-    let f = e[a];
-    dt.has(f) && (f = f({
-      [ae]: e,
-      [te]: i,
-      prop: a,
-      [Dt]: ce
-    })), !r.has(a) && Zi(f) && wt.set(e, a, f, i);
+  Ml.set(i, a);
+  for (let s in e) {
+    let n = e[s];
+    xt.has(n) && (n = n({
+      [ce]: e,
+      [se]: i,
+      prop: s,
+      [dt]: oe
+    })), !r.has(s) && tr(n) && mt.set(e, s, n, i);
   }
   return i;
-}, Zi = (e) => $(e) || X(e), bi = (e, t) => {
-  let l = Te(), i = e[he][t.prop];
-  i && I(i, (n, a) => l.set(a, n)), I(e[te], (n, a) => l.set(a, n));
-  let r = Ke(l);
-  Of(r, If);
-  for (let [n] of r) n(t);
-}, Qf = (e) => {
-  e[hi] = pl(e[Dt]) ? Gt : pl(e[st]) ? v : Vr;
-}, ps = "getItem", Rs = "setItem", ei = Te(), Jf = (e) => {
-  let t = Mf(e);
-  return t && z(t, ps) && z(t, Rs);
-}, ti = (e, t) => si(e[ps](t) || ""), er = (e, t, l) => e[Rs](t, yr(l)), tr = (e) => "_b_" + e, hs = (e, t, l) => Jf(e) ? (l && (l = tr(l), z(e, l) && (t = ti(e, l))), xi(({ [te]: r, prop: n }) => (ei.set(l, [r, n, e]), l = l || tr(n), z(e, l) ? t = ti(e, l) : er(e, l, t), Xt(() => Ft(r, n, () => {
-  er(e, l, r[n]);
-})), t))) : x(pi, Ni, _t), Zf = (e) => {
-  if (ei.has(e.key)) {
-    let [t, l, i] = ei.get(e.key);
-    i === e[uf] && (t[l] = ti(i, e.key));
+}, tr = (e) => F(e) || z(e), lr = (e, t) => {
+  let l = pe(), i = e[Me][t.prop];
+  i && m(i, (a, s) => l.set(s, a)), m(e[se], (a, s) => l.set(s, a));
+  let r = Ve(l);
+  Nf(r, Of);
+  for (let [a] of r) a(t);
+}, ea = (e) => {
+  e[Ni] = Yt(e[dt]) ? jt : Yt(e[ft]) ? v : Vr;
+}, As = "getItem", Os = "setItem", si = pe(), ta = (e) => {
+  let t = Ff(e);
+  return t && G(t, As) && G(t, Os);
+}, fi = (e, t) => Ci(e[As](t) || ""), ir = (e, t, l) => e[Os](t, ss(l)), rr = (e) => "_b_" + e, _s = (e, t, l) => ta(e) ? (l && (l = rr(l), G(e, l) && (t = fi(e, l))), Li(({ [se]: r, prop: a }) => (si.set(l, [r, a, e]), l = l || rr(a), G(e, l) ? t = fi(e, l) : ir(e, l, t), bt(() => vt(r, a, () => {
+  ir(e, l, r[a]);
+})), t))) : M(Cl, Oi, _t), la = (e) => {
+  if (si.has(e.key)) {
+    let [t, l, i] = si.get(e.key);
+    i === e[Tf] && (t[l] = fi(i, e.key));
   }
-}, Ht = (e, t, l = 0) => {
-  let i = [], r = Ts(t || e);
-  return I(r, ([n, a]) => {
-    D(i, Ns(n, a, e, l));
-  }), t && e({}), () => I(i, (n) => n());
-}, Ft = (e, t, l, i = 0) => {
+}, zt = (e, t, l = 0) => {
+  let i = [], r = ys(t || e);
+  return m(r, ([a, s]) => {
+    D(i, ws(a, s, e, l));
+  }), t && e({}), () => m(i, (a) => a());
+}, vt = (e, t, l, i = 0) => {
   let r;
-  return pt(e) ? U(t) || Ce(t) ? r = Ns(e, t, l, i) : r = ys(e, l, i) : (x(Pr + `watch non-${te} ${_t}/${ct}.`), r = () => {
+  return Rt(e) ? B(t) || De(t) ? r = ws(e, t, l, i) : r = Ss(e, l, i) : (M(Ir + `watch non-${se} ${_t}/${Tt}.`), r = () => {
   }), r;
-}, Ll = Te(), dt = jt(), xi = (e) => dt.add(e) && e, pt = (e) => Ll.has(e), Yt = (e) => Ll.get(e), li = (e) => Ll[v](e), ys = (e, t, l = 0) => {
-  if (pt(e)) {
-    let i = Yt(e)[te];
+}, Ml = pe(), xt = $l(), Li = (e) => xt.add(e) && e, Rt = (e) => Ml.has(e), Gt = (e) => Ml.get(e), ai = (e) => Ml[v](e), Ss = (e, t, l = 0) => {
+  if (Rt(e)) {
+    let i = Gt(e)[se];
     return i.set(t, l), () => i[v](t);
   }
-}, Ns = (e, t, l, i = 0) => {
-  let r = Yt(e)[he];
-  r[t] || (r[t] = Te()), r[t].set(l, i);
-  let n = e[t], a;
-  return pt(n) && (a = ys(n, l, i)), () => {
-    a && a(), r[t][v](l);
+}, ws = (e, t, l, i = 0) => {
+  let r = Gt(e)[Me];
+  r[t] || (r[t] = pe()), r[t].set(l, i);
+  let a = e[t], s;
+  return Rt(a) && (s = Ss(a, l, i)), () => {
+    s && s(), r[t][v](l);
   };
 };
-Y(oe, "persist", (e, t) => hs(localStorage, e, t), "wc");
-Y(oe, "session", (e, t) => hs(sessionStorage, e, t), "wc");
-Y(oe, "init", xi, "wc");
-Y(oe, j, qf, "wc");
-let As = (e, t, l = !0) => new Function(e, l ? `return(${t})` : t), bf = (e, t) => t ? fi(e) : kt(e), ea = (e, t = "", l = !0) => (xs(e) && !l && (e += `(${t})`), hr(e) || (e = bf(e, l == W), e = `(${t})=>` + (l ? `(${e})` : `{${e}}`)), e), vl = "required", lr = "matches", ir = "\\p{L}", ta = "\\p{Nd}", la = Uf(kl(kl("^(?!.*\\.{2})[w._%+-]+@(?:[w](?:[w-]*[w])?\\.)+[l]{2,}$", /w/, ir + ta), /l/, ir), "u"), ia = (e) => {
-  let t = {}, l = {};
+W(ue, "persist", (e, t) => _s(localStorage, e, t), "wc");
+W(ue, "session", (e, t) => _s(sessionStorage, e, t), "wc");
+W(ue, "init", Li, "wc");
+W(ue, J, bf, "wc");
+let Wl = "required", sr = "matches", fr = "\\p{L}", ia = "\\p{Nd}", ra = Bf(Zl(Zl("^(?!.*\\.{2})[w._%+-]+@(?:[w](?:[w-]*[w])?\\.)+[l]{2,}$", /w/, fr + ia), /l/, fr), "u"), sa = (e, t, l, i) => {
+  let r = {};
   e || (e = {});
-  let i = (s, c, p) => {
-    let T = !1;
-    return (U(s) || $(s)) && (T = p ? P(s) >= c : P(s) <= c), Ce(s) && (T = p ? s >= c : s <= c), T;
-  }, r = {
-    [vl]: (s) => !!s || s === 0,
-    min: (s, c) => i(s, c, !0),
-    max: (s, c) => i(s, c, !1),
-    [il]: (s) => U(s) && Ee(s, la),
-    same: (s, c, p) => s === p[c],
-    in: (s, c) => $(c) && M(c, s),
-    [lr]: (s, c) => U(s) && Ee(s, c),
-    type: (s, c) => r.in(Ge(s), $(c) ? c : [c])
+  let a = (f, c, T) => {
+    let o = !1;
+    return (B(f) || F(f)) && (o = T ? C(f) >= c : C(f) <= c), De(f) && (o = T ? f >= c : f <= c), o;
+  }, s = {
+    [Wl]: (f) => !!f || f === 0,
+    min: (f, c) => a(f, c, !0),
+    max: (f, c) => a(f, c, !1),
+    [al]: (f) => B(f) && X(f, ra),
+    same: (f, c, T) => f === T[c],
+    in: (f, c) => F(c) && U(c, f),
+    [sr]: (f, c) => B(f) && X(f, c),
+    type: (f, c) => s.in(Ce(f), F(c) ? c : [c]),
+    // Note that custom rules can override default rules
+    ...l || {}
   }, n = {
-    [vl]: (s) => b(s, "is", vl + "."),
-    min: (s, c) => b(s, pe, "at least", c + "."),
-    max: (s, c) => b(s, pe, "at most", c + "."),
-    [il]: (s) => b(s, pe, Ar, il + "."),
-    same: (s, c) => b(s, "must match", c + "."),
-    in: (s, c) => b(s, pe, "equal to", Ne(c, " or ") + "."),
-    [lr]: (s) => s + " has an invalid format.",
-    type: (s, c) => b(s, pe, Tl, ($(c) ? Ne(c, " or ") : c) + ".")
-  }, a = (s, c) => {
-    t[s] = c;
-  }, f = (s, c, p) => {
-    r[s] = c, p && (n[s] = p);
-  }, E = () => {
-    Ci(l);
-    for (let [s, c] of Je(t)) {
-      let p = e[s];
-      for (let T of c) {
-        let y = "", h = "", S = "";
-        U(T) ? y = T : X(T) && (y = T[Br], h = T[C], S = T[Ur]);
-        let A = r[y];
-        if (!A) {
-          qt("Unknown rule: " + y);
-          continue;
-        }
-        A(p, h, e) || (l[s] || (l[s] = []), S ? D(l[s], S) : D(l[s], n[y](s, h, e) || s + " is invalid."));
-      }
+    [Wl]: (f) => he(f, "is", Wl + "."),
+    min: (f, c) => he(f, ie, "at least", c + "."),
+    max: (f, c) => he(f, ie, "at most", c + "."),
+    [al]: (f) => he(f, ie, Nr, al + "."),
+    same: (f, c) => he(f, "must match", c + "."),
+    in: (f, c) => he(f, ie, "equal to", Te(c, " or ") + "."),
+    [sr]: (f) => f + " has an invalid format.",
+    type: (f, c) => he(f, ie, Ut, (F(c) ? Te(c, " or ") : c) + "."),
+    // Note that custom messages can override default messages
+    ...i || {}
+  };
+  for (let [f, c] of ve(t || {})) {
+    let T = e[f];
+    for (let [o, [R, A]] of ve(c)) {
+      let h = s[o];
+      h ? h(T, R, e) || (r[f] || (r[f] = []), A ? D(r[f], A) : D(r[f], n[o](f, R, e) || f + " is invalid.")) : It("Unknown rule: " + o);
     }
-    return !Ut(l);
-  };
-  return {
-    prop: a,
-    rule: f,
-    [pf]: E,
-    errors: l
-  };
-}, rr = /^[a-z_$][\w$]*$/i, ra = (e, t = !1) => {
-  let l = jt(), i = 1, r = t ? 1 : 0, n = "", a = /('|"|`|\${|}|[a-z_$][\w$]*)/gi, f;
-  for (; (f = a.exec(e)) !== null; ) {
-    let E = f[Mr], s = e[E - 1] || "";
-    if (s == "\\")
-      continue;
-    let c = f[0];
-    n ? c == n && (n = "") : c == "'" || c == '"' ? n = c : c == "`" ? i += i <= r ? 1 : -1 : c == "${" || c == "}" ? r += c == "}" ? -1 : 1 : i > 0 && i == r && s != "." && l.add([c, E, E + P(c)]);
   }
-  return l;
-}, sa = (e, t, l = !1) => {
-  let i = ra(t, l), r = "", n = 0, a = e.ctx;
-  for (let [f, E, s] of i)
-    for (let c of [rt, El, cl, Nr])
-      if (a[c] && f in a[c]) {
-        r += Fe(t, n, E) + `${c}.${f}`, n = s;
-        break;
-      }
-  return r + Fe(t, n);
-}, gt = df(el), _s = [];
-jt();
-let En = () => {
-  let e = (o) => p.get(o), t = (o, u = () => !0) => {
-    let R = o ? Nl(o) : At;
-    for (; R; ) {
-      let N = e(R);
-      if (N && u(N)) return N;
-      R = Nl(R);
+  return !ct(r) || r;
+}, Lt = xf(rl), Is = [];
+$l();
+let un = () => {
+  let e = (E) => o.get(E), t = (E, p = () => !0) => {
+    let u = E ? Al(E) : Ot;
+    for (; u; ) {
+      let N = e(u);
+      if (N && p(N)) return N;
+      u = Al(u);
     }
-  }, l = (o, u) => {
-    let R = e(o);
-    if (!R) {
-      let N = u && e(u) || t(u || o);
-      R = {
+  }, l = (E, p) => {
+    let u = e(E);
+    if (!u) {
+      let N = p && e(p) || t(p || E);
+      u = {
         // Local context
         // @ts-ignore
-        ctx: { ...B },
+        ctx: { ...I },
         // A reference to the element. Convenience for internal use.
-        el: o,
+        el: E,
         [Dl]: N,
         // Unique ID context
-        id: we(N, "id", {}),
+        id: Pe(N, "id", {}),
         /** Attributes or directives */
         attr: {},
         /** Cleanup functions */
@@ -463,676 +475,696 @@ let En = () => {
          * - 2: skip children
          * - 3: skip self and children
          */
-        [j]: 0,
-        ...L
+        [J]: 0,
+        ...y
       };
-      for (let _ in m) {
-        let g = m[_](R, N);
-        g && Y(R.ctx, _, g, "c");
+      for (let S in H) {
+        let _ = H[S](u, N);
+        _ && W(u.ctx, S, _, "c");
       }
-      p.set(o, R), R[Me] = na(R, k + Me)();
+      o.set(E, u), u[Be] = na(u, q + Be)(u.ctx);
     }
-    return R;
-  }, i = async (o, u) => {
-    U(o) && (o = le(o)), U(u) && (u = le(u)), ft(u) || (u = ce), ft(o) && (await f(o), await Al(o, async (R) => {
-      let N = !1, _ = o == R ? u : ce;
-      return mf(R) && ns(R) ? N = n(R, _) : De(R) && (ve(R) == ee && ne(J(R, Oi)) ? N = !1 : N = await a(R, _)), N;
+    return u;
+  }, i = async (E, p) => {
+    B(E) && (E = fe(E)), B(p) && (p = fe(p)), nt(p) || (p = oe), nt(E) && (await n(E), await Ol(E, async (u) => {
+      let N = !1, S = E == u ? p : oe;
+      return gf(u) && os(u) ? N = a(u, S) : de(u) && (He(u) == re && te(j(u, wi)) ? N = !1 : N = await s(u, S)), N;
     }));
-  }, r = async (o, u = !0, R = !0) => {
-    await Al(o, async (N) => {
-      let _ = e(N);
-      if (_) {
-        if (_[ot])
-          for (let g of _[ot])
-            await r(g, u, R);
-        if (_[it])
-          for (let g of _[it])
-            await r(g, u, R);
-        _.ph && Tt(_.ph), I(_.cFns, (g) => g()), R && p[v](N);
+  }, r = async (E, p = !0, u = !0) => {
+    await Ol(E, async (N) => {
+      let S = e(N);
+      if (S) {
+        if (S[ut])
+          for (let _ of S[ut])
+            await r(_, p, u);
+        if (S[rt])
+          for (let _ of S[rt])
+            await r(_, p, u);
+        S.ph && pt(S.ph), m(S.cFns, (_) => _()), u && o[v](N);
       }
-      return u && Tt(N), !0;
+      return p && pt(N), !0;
     });
-  }, n = (o, u) => {
-    let R = o[ze], N = oa(kt(R || ""));
-    if (N && Ee(N, Ea)) {
-      let _ = l(o, u), g = c(_, N, "", W);
-      d(_, Ht(() => o[ze] = g(_.ctx))), ii(_, W, R);
+  }, a = (E, p) => {
+    let u = E[Ge], N = oa(Vt(u || ""));
+    if (N && X(N, ca)) {
+      let S = l(E, p), _ = T(S, Ll(N));
+      L(S, zt(() => E[Ge] = _(S.ctx))), ni(S, Ae, u);
     }
     return !1;
-  }, a = async (o, u) => {
-    let R = l(o, u);
-    if (me(R, 3)) return !0;
-    for (let [N, _] of T) {
-      let g = [];
-      if (Df(N))
-        as(o, (ue, Qt) => {
-          Ee(ue, N) && D(g, [ue, Qt]);
+  }, s = async (E, p) => {
+    let u = l(E, p);
+    if (ge(u, 3)) return !0;
+    for (let [N, S] of R) {
+      let _ = [];
+      if (df(N))
+        Es(E, (K, el) => {
+          X(K, N) && D(_, [K, el]);
         });
       else {
-        let ue = J(o, N);
-        ne(ue) || D(g, [N, ue]);
+        let K = j(E, N);
+        te(K) || D(_, [N, K]);
       }
-      for (let [ue, Qt] of g) {
-        if (me(R, 1) || me(R, 3)) break;
-        ii(R, ue, Qt), await _(R, ue, kt(Qt));
+      for (let [K, el] of _) {
+        if (ge(u, 1) || ge(u, 3)) break;
+        ni(u, K, el), await S(u, K, Vt(el));
       }
-      if (me(R, 1) || me(R, 3)) break;
+      if (ge(u, 1) || ge(u, 3)) break;
     }
-    return me(R, 0) && (R[j] = 1), Ut(R[fe]) || p[v](o), !me(R, 2) && !me(R, 3);
-  }, f = async (o) => {
-    let u = await Os(o, Sr, []);
-    I(u, ([R, N]) => {
-      let _ = ve(N), g = _ != ee && _ != ie ? Re : _, ue = N[g == Re ? Jr : Lt];
-      L[g][R] = Q(ue);
+    return ge(u, 0) && (u[J] = 1), ct(u[ne]) || o[v](E), !ge(u, 2) && !ge(u, 3);
+  }, n = async (E) => {
+    let p = await Ps(E, _r, []);
+    m(p, ([u, N]) => {
+      let S = He(N), _ = S != re && S != ee ? Re : S, K = N[_ == Re ? Qr : $t];
+      y[_][u] = k(K);
     });
-  }, E = (o) => (u, R) => {
-    L[o][u] = R;
-  }, s = (o, u, R = "", N = !0) => {
+  }, f = (E) => (p, u) => {
+    y[E][p] = u;
+  }, c = (E, p, u = "", N = !0, S = !0) => {
     let _;
-    return u = ea(sa(o, u, N != W), R, N), u in O ? _ = O[u] : (_ = yl(), A[_] = As(Ss(o, u), u), O[u] = _), _;
-  }, c = (o, u, R = "", N = !0) => {
+    return p = hs(S ? Ra(E, p) : p, u, N), p in d ? _ = d[p] : (_ = Nl(), w[_] = Il(vl(E, p), p), d[p] = _), _;
+  }, T = (E, p, u = "", N = !0, S = !0) => {
     let _;
     try {
-      let g = u in A ? u : s(o, u, R, N);
-      _ = A[g](o.ctx);
-    } catch (g) {
-      x(g[Ur]), _ = () => gt;
+      let K = p in w ? p : c(E, p, u, N, S);
+      _ = w[K](E.ctx);
+    } catch (K) {
+      M(K[Ms]), _ = () => Lt;
     }
     return _;
-  }, p = Te(), T = [], y = {}, h = {}, S = { [Z]: gs }, A = {}, O = {}, m = {
+  }, o = pe(), R = [], A = {}, h = {}, x = { [Z]: If }, w = {}, d = {}, H = {
     // The $data context
-    [El]: sr(El, Ue),
+    [Ht]: Ta(Ht, ze),
     // Reactive properties defined in the element or inherited from the parent context
-    [cl]: sr(cl, k + he, !0),
+    [ul]: (E, p) => (p == null ? void 0 : p.ctx[ul]) || {},
     // The $for context
-    [rt]: (o, u) => u == null ? void 0 : u.ctx[rt],
+    [st]: (E, p) => p == null ? void 0 : p.ctx[st],
     // Data Level Context:
     // Referenced under the same $data context, not including nested $data contexts
-    [zl]: fr(zl),
-    [Kl]: fr(Kl),
+    [Gl]: ar(Gl),
+    [Vl]: ar(Vl),
     // The element itself
-    $el: (o) => o.el,
+    $el: (E) => E.el,
     // Unique identifier for the element
-    $id: (o) => o.id,
-    $cleanup: (o) => (u) => d(o, u)
-  }, [K, G] = Xf(h, S), Oe = (o) => os(o, G(o)), w = {
-    [nl]: K,
-    [Wi]: E(Wi + "s"),
-    [Re]: E(Re),
-    [ie]: E(ie),
-    [ee]: E(ee),
-    [he]: E(he),
-    data: E(Nt),
-    mask: E(Gi),
-    [Qr]: E(Vi)
-  }, B = {
-    [Nr]: oe({}),
-    $set: w,
-    [Wt]: i,
-    [Vt]: r
-  }, F = {
-    http: Jl,
-    state: oe,
-    watch: Ft,
-    effect: Ht,
-    [nl]: Oe,
-    emit: Ye,
-    listen: re,
+    $id: (E) => E.id,
+    $cleanup: (E) => (p) => L(E, p)
+  }, [le, g] = Zf(h, x), V = (E) => Rs(E, g(E)), O = {
+    [Tl]: le,
+    [Ki]: f(Ki + "s"),
+    [Re]: f(Re),
+    [ee]: f(ee),
+    [re]: f(re),
+    [Me]: f(Me),
+    data: f(qt)
+  }, I = {
+    [yr]: ue({}),
+    $set: O,
+    [Jt]: i,
+    [Qt]: r
+  }, P = {
+    http: li,
+    state: ue,
+    watch: vt,
+    effect: zt,
+    [Tl]: V,
+    emit: We,
+    listen: ae,
     /** Get the local context of an element */
-    context: (o) => {
-      var u;
-      return (u = e(le(o))) == null ? void 0 : u.ctx;
+    context: (E) => {
+      var p;
+      return (p = e(fe(E))) == null ? void 0 : p.ctx;
     },
     // Tools
-    hasProp: z,
-    getProp: we,
-    setProp: Y,
+    hasProp: G,
+    getProp: Pe,
+    setProp: W,
     sync: Bt,
-    [Cr]: xe,
-    [Rf]: ia,
-    uid: yl,
-    getType: Ge
+    [mr]: $e,
+    [uf]: sa,
+    uid: Nl,
+    getType: Ce
   };
-  I(ye(F), (o) => B[yt + o] = F[o]);
-  let L = {
-    [Re]: y,
-    [ie]: {},
+  m(ye(P), (E) => I[At + E] = P[E]);
+  let y = {
+    [Re]: A,
     [ee]: {},
-    [he]: {},
+    [re]: {},
+    [Me]: {},
     data: {},
     // ! HYDRATION
-    [qr]: T,
-    bnodes: p,
-    [Gi]: {},
-    [Vi]: {},
+    [qr]: R,
+    bnodes: o,
     routes: h,
-    routeRules: S,
+    routeRules: x,
     // ! PUBLIC CONTEXT
-    gc: B,
-    exec: c,
+    gc: I,
+    exec: T,
     bnode: [l, e]
   };
-  return B[dl] = jf(L), D(_s, G), I([w, Jl, B, L], (o) => Pi(o, "wc")), L;
-}, me = (e, t) => e[j] == t, d = (e, t) => {
+  return I[dl] = Jf(y), D(Is, g), m([O, li, I, y], (E) => Di(E, "wc")), y;
+}, ge = (e, t) => e[J] == t, L = (e, t) => {
   D(e.cFns, t);
-}, Rt = (e, t) => {
+}, yt = (e, t) => {
   let l = e[Dl];
-  l && (l[it] || (l[it] = []), M(l[it], t) || D(l[it], t));
-}, fa = (e) => Ii(ht(e), (t) => Nl(t)), ht = (e) => {
+  l && (l[rt] || (l[rt] = []), U(l[rt], t) || D(l[rt], t));
+}, fa = (e) => Pi(Nt(e), (t) => Al(t)), Nt = (e) => {
   let t = [], [, l] = e.bnode;
-  return e.ph && D(t, e.ph), I(e[ot] || [e.el], (i) => {
+  return e.ph && D(t, e.ph), m(e[ut] || [e.el], (i) => {
     let r = l(i);
-    r && z(r.attr, gl) ? D(t, ...ht(r)) : D(t, i);
+    r && G(r.attr, gl) ? D(t, ...Nt(r)) : D(t, i);
   }), t;
 }, aa = (e) => {
-  I(ht(e), (t) => {
-    t != e.ph && Tt(t);
+  m(Nt(e), (t) => {
+    t != e.ph && pt(t);
   });
-}, na = (e, t, l = "{}") => {
-  let i = De(e.el) ? J(e.el, t) : null;
-  return ne(i) || ii(e, t, i), i = kt(i || l), e.exec(e, i);
-}, ii = (e, t, l) => {
-  e[fe][t] = l, De(e.el) && di(e.el, t);
-}, kt = (e) => ke(Ne($e(se(e, Pe), (t) => nt(Q(t), "//") ? "" : t), Pe), /;$/, ""), Ea = /\${((?!.*\${).*?)}/, ca = /{{((?!.*{{).*?)}}/, oa = (e, t = "${$1}") => kl(e, ca, t), sr = (e, t, l) => (i, r) => {
-  let n = i.el, a = r ? r.ctx[e] : At, f = De(n), E = f && !ne(J(n, t)), s = f && (i[fe][Ie] || !ne(J(n, Ie))), c = f && (!a || E);
-  return c && !E && t == Ue && mi(n, Ue, ""), c && !s ? oe({}, l && a) : a || {};
-}, fr = (e) => (t, l) => !l || De(t.el) && !ne(J(t.el, Ue)) ? {} : l.ctx[e], Ta = () => {
-  let e = vt();
-  os(e, Ii(_s, (t) => t(e)));
-}, cn = (e = {}) => {
-  el in ge || (Pi(e, "wc"), Y(ge, el, e, "wc"), re(ge, Ni, Zf), re(ge, "pop" + te, Ta)), Ye(ge, el);
-}, $l = (e) => (e.match(/^(b-\w+|bind|on)(-([\w-$]+))?$/) || [])[3] || "", Ml = async (e) => {
-  await ar(e, Ir), await ar(e, ni);
-}, ar = async (e, t) => {
-  let l = t == ni, i = e.ctx[l ? zl : Kl], r = l ? [
+}, na = (e, t, l = {}) => {
+  let i = () => l, r = de(e.el) ? j(e.el, t) : null;
+  return te(r) || ni(e, t, r), r && k(r) && (r = Vt(r), i = e.exec(e, r, vl(e, r))), i;
+}, ni = (e, t, l) => {
+  e[ne][t] = l, de(e.el) && Ul(e.el, t);
+}, Vt = (e) => Xe(Te(Fe(Ee(e, me), (t) => Ke(k(t), "//") ? "" : t), me), /;$/, ""), ca = /\${((?!.*\${).*?)}/, Ea = /{{((?!.*{{).*?)}}/, oa = (e, t = "${$1}") => Zl(e, Ea, t), Ta = (e, t, l) => (i, r) => {
+  let a = i.el, s = r ? r.ctx[e] : Ot, n = de(a), f = n && !te(j(a, t)), c = n && (i[ne][we] || !te(j(a, we))), T = n && (!s || f);
+  return T && !f && t == ze && gi(a, ze, ""), T && !c ? ue({}, l) : s || {};
+}, ar = (e) => (t, l) => !l || de(t.el) && !te(j(t.el, ze)) ? {} : l.ctx[e], ua = () => {
+  let e = kt();
+  Rs(e, Pi(Is, (t) => t(e)));
+}, pn = (e = {}) => {
+  rl in Le || (Di(e, "wc"), W(Le, rl, e, "wc"), ae(Le, Oi, la), ae(Le, "pop" + se, ua)), We(Le, rl);
+}, Fl = (e) => (e.match(/^(b-\w+|bind|on)(-([\w-$]+))?$/) || [])[3] || "", Bl = async (e) => {
+  await nr(e, Sr), await nr(e, oi);
+}, nr = async (e, t) => {
+  let l = t == oi, i = e.ctx[l ? Gl : Vl], r = l ? [
     /*B_IF,*/
-    _r,
+    Ar,
     gl,
-    Ue
-  ] : [Ue];
-  for (let n of e[ot] || [e.el]) {
-    let a = await Os(n, t, r);
-    I(a, ([f, E]) => {
-      i[f] = l ? E : E[Jr], d(e, () => Qe(i, f));
+    ze
+  ] : [ze];
+  for (let a of e[ut] || [e.el]) {
+    let s = await Ps(a, t, r);
+    m(s, ([n, f]) => {
+      i[n] = l ? f : f[Qr], L(e, () => Ze(i, n));
     });
   }
-}, Os = async (e, t, l) => {
-  let i = [], r = t != ni;
-  return await Al(e, (n) => {
-    if (De(n)) {
-      if (is(l, (f) => !ne(J(n, f)))) return !1;
-      let a = J(n, t);
-      a && (di(n, t), D(i, [a, n]), r && Tt(n));
+}, Ps = async (e, t, l) => {
+  let i = [], r = t != oi;
+  return await Ol(e, (a) => {
+    if (de(a)) {
+      if (ls(l, (n) => !te(j(a, n)))) return !1;
+      let s = j(a, t);
+      s && (Ul(a, t), D(i, [s, a]), r && pt(a));
     }
     return !0;
   }, r), i;
-}, Ss = (e, t) => "{" + Ne(Mt(ye(e.ctx), (l) => M(t, l)), ",") + "}", It = (e, t, l) => {
+}, vl = (e, t) => "{" + Te(Ft(ye(e.ctx), (l) => U(t, l)), ",") + "}", pa = (e, t) => {
+  for (let l of [st, Ht, ul, yr]) {
+    let i = e.ctx[l];
+    if (i && t in i) {
+      t = l + "." + t;
+      break;
+    }
+  }
+  return t;
+}, ha = new RegExp("(?<![.`'\"][\\w\\s$]*)[a-z_$][\\w$]*(?![\\w\\s$]*[:`'\"{])", "i"), Ra = (e, t) => {
+  let l = 0, i = "", r;
+  for (; (r = ha.exec(Ne(t, l))) !== null; ) {
+    let a = r[Ur], s = r[0], n = pa(e, s);
+    i += Ne(t, l, l + a) + n, l += a + C(s);
+  }
+  return i + Ne(t, l);
+}, Pt = (e, t, l) => {
   let i = e.exec(e, t);
-  d(e, Ht(() => l(i)));
-}, Is = (e, t, l) => {
+  L(e, zt(() => l(i)));
+}, ms = (e, t, l) => {
   let i = [];
-  return l && (l in t ? D(i, t[l]) : (l = e.exec(e, l)(), $(l) && I(l, (r) => {
+  return l && (l in t ? D(i, t[l]) : (l = e.exec(e, l)(), F(l) && m(l, (r) => {
     r in t && D(i, t[r]);
   }))), i;
-}, ua = async (e, t) => {
-  e[j] = 3;
-}, pa = [Or, ua], Ra = (e, t, l) => {
-  let i = e.el, [r, n] = e.bnode;
-  e[j] = 3;
-  let [a, f] = $e(se(l, " in "), Q), [E, s] = $e(se(a, ","), Q);
-  s || (s = Mr);
-  let c = b("the", t, Ve, ml);
-  if (!Ee(E, rr) || !Ee(s, rr))
-    return x(c, Ar, "alias.");
-  let p = e.exec(e, f), [T, y] = us(p), h = T ? T[y] : p(), S = T && pt(h), A = !1;
-  if (Ce(h) && (h = oe(ji(h, 1)), A = !0, T && Ht(() => {
-    let w = T[y] || 0;
-    Ce(w) && Bt(h, ji(w, 1));
-  }, () => T[y])), !($(h) || X(h)))
-    return x(c, `an ${ct}, ${_t}, or ${Z}.`);
-  e.ph = gi(t), _e(i, $t, e.ph), Rt(e, i);
-  let O = {}, m = async ([w, B]) => {
-    let F = fs(i);
-    _e(e.ph, Kt, F);
-    let L = r(F, i);
-    L[fe][t] = "", z(e[fe], Ie) && (L[fe][Ie] = "");
-    let o = oe({}, L.ctx[rt]);
-    Y(o, E, B, "c"), Y(o, s, w, "c"), Y(L.ctx, rt, o, "c"), d(L, () => {
-      li(o);
-    }), d(L, Ft(o, s, ({ [st]: u }) => {
-      let R = O[w][1];
-      u !== R && (o[s] = R);
-    })), S && d(L, Ft(o, E, () => {
-      h[o[s]] = o[E];
-    })), O[w] = [F, w], await Ml(L), await e.gc[Wt](F, i);
-  }, K = ([w, B]) => {
-    let F = O[w], L = n(F && F[0]);
-    if (L) {
-      let o = L.ctx[rt];
-      o[E] = B, o[s] = w, F[1] = w;
+}, ya = async (e, t) => {
+  e[J] = 3;
+}, Na = [Or, ya], cr = /^[a-z_$][\w$]*$/i, Aa = (e, t, l) => {
+  let i = e.el, [r, a] = e.bnode;
+  e[J] = 3;
+  let [s, n] = Fe(Ee(l, " in "), k), [f, c] = Fe(Ee(s, ","), k);
+  c || (c = Ur);
+  let T = he("the", t, je, Ii);
+  if (!X(f, cr) || !X(c, cr))
+    return M(T, Nr, "alias.");
+  let o = e.exec(e, n), [R, A] = Ns(o), h = R ? R[A] : o(), x = R && Rt(h), w = !1;
+  if (De(h) && (h = ue(Xi(h, 1)), w = !0, R && zt(() => {
+    let O = R[A] || 0;
+    De(O) && Bt(h, Xi(O, 1));
+  }, () => R[A])), !(F(h) || z(h)))
+    return M(T, `an ${Tt}, ${_t}, or ${Z}.`);
+  e.ph = xi(t), Se(i, Mt, e.ph), yt(e, i);
+  let d = {}, H = async ([O, I]) => {
+    let P = cs(i);
+    Se(e.ph, Xt, P);
+    let y = r(P, i);
+    y[ne][t] = "", G(e[ne], we) && (y[ne][we] = "");
+    let E = ue({}, y.ctx[st]);
+    W(E, f, I, "c"), W(E, c, O, "c"), W(y.ctx, st, E, "c"), L(y, () => {
+      ai(E);
+    }), L(y, vt(E, c, ({ [ft]: p }) => {
+      let u = d[O][1];
+      p !== u && (E[c] = u);
+    })), x && L(y, vt(E, f, () => {
+      h[E[c]] = E[f];
+    })), d[O] = [P, O], await Bl(y), await e.gc[Jt](P, i);
+  }, le = ([O, I]) => {
+    let P = d[O], y = a(P && P[0]);
+    if (y) {
+      let E = y.ctx[st];
+      E[f] = I, E[c] = O, P[1] = O;
     }
-  }, G = ([w, B]) => {
-    let [F] = O[w];
-    e.gc[Vt](F), Qe(O, w);
-  }, Oe = {
-    [Gt]: m,
-    [Vr]: K,
-    [v]: G
+  }, g = ([O, I]) => {
+    let [P] = d[O];
+    e.gc[Qt](P), Ze(d, O);
+  }, V = {
+    [jt]: H,
+    [Vr]: le,
+    [v]: g
   };
-  for (let w of Je(h))
-    m(w);
-  T && d(e, Ft(h, ce, ({ [hi]: w, prop: B, [st]: F }) => {
-    Oe[w]([B, F]);
-  })), d(e, () => {
-    for (let w in O)
-      G([Number(w), null]);
-    A && li(h);
+  for (let O of ve(h))
+    H(O);
+  R && L(e, vt(h, oe, ({ [Ni]: O, prop: I, [ft]: P }) => {
+    V[O]([I, P]);
+  })), L(e, () => {
+    for (let O in d)
+      g([Number(O), null]);
+    w && ai(h);
   });
-}, ha = [_r, Ra], ws = async (e, t, l) => {
-  let i = t == Ue, r = i ? El : cl, n = e[i ? Nt : he][l], a = e[Dl] || e;
-  !Be(n) && l && (n = e.exec(a, l)());
-  let f = Be(n) ? await n(a.ctx) : {};
-  if (!X(f))
-    return e[j] = 3, x(ls(Ve, t, "an " + _t, Ge(f)));
-  for (let E in f) Y(e.ctx[r], E, f[E], $f(f, E));
-  i && await Ml(e), d(e, () => {
-    Xt(() => {
-      li(e.ctx[r]);
+}, Oa = [Ar, Aa], _a = async (e, t, l) => {
+  let i = e[Dl] || e, r = e.data[l];
+  !Oe(r) && l && (r = e.exec(i, l, vl(e, l)));
+  let a = Oe(r) ? await r(i.ctx) : {};
+  if (!z(a))
+    return e[J] = 3, M(ts(je, t, "an " + _t, Ce(a)));
+  for (let s in a) W(e.ctx[Ht], s, a[s], Mf(a, s));
+  await Bl(e), L(e, () => {
+    bt(() => {
+      ai(e.ctx[Ht]);
     });
   });
-}, ya = [k + he, ws], Na = [Ue, ws], nr = {}, Aa = async (e, t, l) => {
+}, Sa = [ze, _a], Er = {}, wa = async (e, t, l) => {
   if (l) {
     let i = e.exec(e, l)();
-    if (!$(i) || !wi(i, U))
-      return x("the", t, Ve, pe, `an ${ct} of ${de}(s).`);
-    e.id = i.reduce((r, n) => {
-      let a = yl(5);
-      return nr[a] = !0, Y(r, n, a, "wc"), r;
-    }, {}), d(e, () => {
-      for (let r in e.id) Qe(nr, e.id[r]);
+    if (!F(i) || !mi(i, B))
+      return M("the", t, je, ie, `an ${Tt} of ${xe}(s).`);
+    e.id = i.reduce((r, a) => {
+      let s = Nl(5);
+      return Er[s] = !0, W(r, a, s, "wc"), r;
+    }, {}), L(e, () => {
+      for (let r in e.id) Ze(Er, e.id[r]);
     });
   }
-}, _a = ["b-id", Aa], Ps = (e) => (t, l, i) => {
-  if (!(z(t[fe], gl) || z(t[fe], jr) && e == W)) {
-    t[j] = 2;
+}, Ia = ["b-id", wa], Cs = (e) => (t, l, i) => {
+  if (!(G(t[ne], gl) || G(t[ne], Kr) && e == Ae)) {
+    t[J] = 2;
     let r = t[Re];
-    i in r && (i = fi(i)), i && It(t, i, async (n) => {
-      await t.gc[dl](t.el, e, n()), t[j] = 3;
+    i in r && (i = Ll(i)), i && Pt(t, i, async (a) => {
+      await t.gc[dl](t.el, e, a()), t[J] = 3;
     });
   }
-}, Oa = [jr, Ps(mt)], Sa = [Ws, Ps(W)], Ia = async (e, t, l) => {
-  let i = e.el, r = l ? e[Re][l] || e.exec(e, l)() : i[Lt];
-  e[j] = 2, U(r) ? (e[ot] = await e.gc[dl](i, Kt, Q(r)), Rt(e, i), Tt(i)) : qt(t + ":", pi, C, Pe, r);
-}, wa = [gl, Ia], Pa = async (e, t, l) => {
+}, Pa = [Kr, Cs(gt)], ma = [Vs, Cs(Ae)], Ca = async (e, t, l) => {
+  let i = e.el, r = l ? e[Re][l] || e.exec(e, l)() : i[$t];
+  e[J] = 2, B(r) ? (e[ut] = await e.gc[dl](i, Xt, k(r)), yt(e, i), pt(i)) : It(t + ":", Cl, $, me, r);
+}, Da = [gl, Ca], da = async (e, t, l) => {
   let i = e.el;
-  e[j] = 2;
-  let r = Is(e, e[ee], l);
-  if (ve(i) == ee) {
-    Rt(e, i);
-    let n = J(i, "src"), a = n ? await Jl.get(n) : ns(i);
-    a && D(r, kt(a)), Tt(i);
+  e[J] = 2;
+  let r = ms(e, e[re], l);
+  if (He(i) == re) {
+    yt(e, i);
+    let a = j(i, "src"), s = a ? await li.get(a) : os(i);
+    s && D(r, Vt(s)), pt(i);
   }
-  for (let n of r) {
-    let a = n;
-    if (U(a)) {
-      let f = hr(a);
-      a = As(Ss(e, a), a, f), f && (a = a(e.ctx));
+  for (let a of r) {
+    let s = a;
+    if (B(s)) {
+      let n = rs(s);
+      s = Il(vl(e, s), s, n), n && (s = s(e.ctx));
     }
-    Be(a) && await a(e.ctx);
+    Oe(s) && await s(e.ctx);
   }
-}, Ca = [Oi, Pa], Da = (e, t, l) => {
+}, ga = [wi, da], xa = (e, t, l) => {
   let i = e.el;
-  if (l && ve(i) != ie) {
-    let r = Is(e, e[ie], l), n = yl();
-    vf(i, n);
-    let a = Ql(ie);
-    _e(i, Et, a), a[ze] = Ne(r, Pe), a[ze] = ma(a, "." + n), e.gc[Wt](a, i), d(e, () => {
-      e.gc[Vt](a);
+  if (l && He(i) != ee) {
+    let r = ms(e, e[ee], l), a = Nl();
+    Ts(i, a);
+    let s = ti(ee);
+    Se(i, ot, s), s[Ge] = Te(r, me), s[Ge] = La(s, "." + a), e.gc[Jt](s, i), L(e, () => {
+      e.gc[Qt](s);
     });
   }
-}, ma = (e, t) => {
+}, La = (e, t) => {
   var i;
   let l = [];
   for (let r of ((i = e.sheet) == null ? void 0 : i.cssRules) || []) {
-    let n = r[Af];
-    D(l, ke(r.cssText, n, t + " " + n));
+    let a = r[yf];
+    D(l, Xe(r.cssText, a, t + " " + a));
   }
-  return Ne(l, Pe);
-}, da = [k + ie, Da], ga = (e, t, l) => {
-  let i = l, r, n = e.ctx.$ref;
-  i in n && (i = fi(i)), It(e, i, (a) => {
-    i = a(), $(i) && ([i, r] = i), U(i) && i in n && (i = n[i]), M([Kt, Et, Wl, sl], r) || (r = Et), ft(i) ? (_e(i, r, ...ht(e)), Rt(e, e.el)) : qt(Kr, Le, Fr, t + `="${l}"`);
+  return Te(l, me);
+}, $a = [q + ee, xa], Ua = (e, t, l) => {
+  let i = l, r, a = e.ctx.$ref;
+  i in a && (i = Ll(i)), Pt(e, i, (s) => {
+    i = s(), F(i) && ([i, r] = i), B(i) && i in a && (i = a[i]), U([Xt, ot, jl, cl], r) || (r = ot), nt(i) ? (Se(i, r, ...Nt(e)), yt(e, e.el)) : It(zr, Ue, Fr, t + `="${l}"`);
   });
-}, xa = [k + Kr, ga], wl = Te(), La = (e, t, l) => {
-  if (e[ot]) return;
-  if (!(z(e[fe], Ie) ? Ie : z(e[fe], tl) ? tl : ""))
-    return x("the", t, Ve, pe, "used with", Ie, "or", tl + ".");
+}, Ma = [q + zr, Ua], Pl = pe(), Fa = (e, t, l) => {
+  if (e[ut]) return;
+  if (!(G(e[ne], we) ? we : G(e[ne], sl) ? sl : ""))
+    return M("the", t, je, ie, "used with", we, "or", sl + ".");
   let r = e.exec(e, l)();
-  $(r) || (r = [r]);
-  let [n, a] = r;
-  if (!X(n))
-    return x("the", t, pe, "an", _t + ".");
-  X(a) || (a = n);
-  let f = Ma(e.el, n, a);
-  wl.set(e.el, f), d(e, f[Xe]), d(e, () => wl[v](e.el));
-}, $a = [k + xt, La], Er = (e, t, l) => {
-  let [i, r] = _l(t), [n, a] = _l(l);
-  Il(e, r, i, n), Sl(e, a), ut(() => {
-    Sl(e, n), Il(e, a);
+  F(r) || (r = [r]);
+  let [a, s] = r;
+  if (!z(a))
+    return M("the", t, ie, "an", _t + ".");
+  z(s) || (s = a);
+  let n = va(e.el, a, s);
+  Pl.set(e.el, n), L(e, n[Ye]), L(e, () => Pl[v](e.el));
+}, Ba = [q + at, Fa], or = (e, t, l, i) => {
+  let [r, a] = _l(t), [s, n] = _l(l);
+  wl(e, a, r, s), Wt(e, n, i ? { [at]: "none" } : {}), ht(() => {
+    Wt(e, s), wl(e, n);
   });
-}, cr = (e, t, l) => {
-  let [i, r] = _l(t), [n, a] = _l(l);
-  Il(e, r, i), Sl(e, a, n);
-}, or = () => (/* @__PURE__ */ new Date()).getTime(), Ma = (e, t, l) => {
-  if (!De(e))
-    return x(pi, xt, Le, e);
-  let i = null, r = 1, n = 2, a = 3, f = 4, E = r, s = Gf(e[ie]), c = 0, p = re(e, xt + "run", (A) => {
-    A[ae] === e && (c = or());
-  }), T, y = re(e, xt + gr, (A) => {
-    A[ae] === e && (E == n ? E = f : E == a && (E = r), Il(e, t, l), Sl(e, s), T && T());
+}, Tr = (e, t, l) => {
+  let [i, r] = _l(t), [a, s] = _l(l);
+  wl(e, r, i), Wt(e, s, a);
+}, ur = () => (/* @__PURE__ */ new Date()).getTime(), va = (e, t, l) => {
+  if (!de(e))
+    return M(Cl, at, Ue, e);
+  let i = null, r = 1, a = 2, s = 3, n = 4, f = r, c = Kf(e[ee]), T = 0, o = ae(e, at + "run", (w) => {
+    w[ce] === e && (T = ur());
+  }), R, A = ae(e, at + gr, (w) => {
+    w[ce] === e && (f == a ? f = n : f == s && (f = r), wl(e, t, l), Wt(e, c), R && R());
   }), h = () => {
-    p(), y();
-  }, S = (A, O) => {
-    T = O;
-    let m = or();
-    A && i && E == f || !A && i === !1 && E == f || (A ? i === !1 && E == n ? (E = a, Er(e, t, l)) : (i = !0, E = n, Er(e, l, t)) : i === null ? (i = !1, E = f, T && T()) : i && E == n ? (E = a, cr(e, l, t)) : (i = !1, E = n, cr(e, t, l)), Xt(() => {
-      c < m && T && T();
+    o(), A();
+  }, x = (w, d) => {
+    R = d;
+    let H = ur();
+    w && i && f == n || !w && i === !1 && f == n || (w ? i === !1 && f == a ? (f = s, or(e, t, l)) : (or(e, l, t, f == r), i = !0, f = a) : i === null ? (i = !1, f = n, R && R()) : i && f == a ? (f = s, Tr(e, l, t)) : (i = !1, f = a, Tr(e, t, l)), bt(() => {
+      T < H && R && R();
     }, 50));
   };
-  return Y(S, Xe, h), S;
-}, Ua = (e, t, l) => {
+  return W(x, Ye, h), x;
+}, Ha = (e, t, l) => {
   let i = e.el;
-  e.ph = gi(t), _e(i, $t, e.ph), e[j] = 3, Rt(e, i);
-  let [r] = e.bnode, n, a, f = () => {
-    e.gc[Vt](n.el), n = ce;
+  e.ph = xi(t), Se(i, Mt, e.ph), e[J] = 3, yt(e, i);
+  let [r] = e.bnode, a, s, n = () => {
+    e.gc[Qt](a.el), a = oe;
   };
-  It(e, l, (E) => {
-    let s = E();
-    ut(async () => {
-      if (s) {
-        if (!n) {
-          let c = fs(i);
-          _e(e.ph, Et, c), n = r(c, i), n[fe][Ie] = "", await Ml(n), await e.gc[Wt](c, i), Rt(e, c);
+  Pt(e, l, (f) => {
+    let c = f();
+    ht(async () => {
+      if (c) {
+        if (!a) {
+          let T = cs(i);
+          Se(e.ph, ot, T), a = r(T, i), a[ne][we] = "", await Bl(a), await e.gc[Jt](T, i), yt(e, T);
         }
-        a = wl.get(n.el), a && a(!0);
-      } else !s && n && (a ? a(!1, f) : f());
+        s = Pl.get(a.el), s && s(!0);
+      } else !c && a && (s ? s(!1, n) : n());
     });
   });
-}, Ba = [Ie, Ua], Ct = Te(), Fa = (e, t, l) => {
-  e.ph = gi(t), _e(fa(e), Kt, e.ph);
+}, Ya = [we, Ha], Dt = pe(), ka = (e, t, l) => {
+  e.ph = xi(t), Se(fa(e), Xt, e.ph);
   let i, r = () => {
-    aa(e), Ct.set(e.ph, e);
+    aa(e), Dt.set(e.ph, e);
   };
-  It(e, l, (n) => {
-    let a = n();
-    ut(() => {
-      let f = ht(e);
-      if (i = wl.get(e.el), a) {
-        if (Ct.has(e.ph)) {
-          for (let E of f)
-            if (Ct.has(E) && E !== e.ph) {
-              let s = Ct.get(E), c = ht(s);
-              f = Mt(f, (p) => !M(c, p) || p === s.ph);
+  Pt(e, l, (a) => {
+    let s = a();
+    ht(() => {
+      let n = Nt(e);
+      if (i = Pl.get(e.el), s) {
+        if (Dt.has(e.ph)) {
+          for (let f of n)
+            if (Dt.has(f) && f !== e.ph) {
+              let c = Dt.get(f), T = Nt(c);
+              n = Ft(n, (o) => !U(T, o) || o === c.ph);
             }
-          Ct[v](e.ph), _e(e.ph, Et, ...f);
+          Dt[v](e.ph), Se(e.ph, ot, ...n);
         }
         i && i(!0);
       } else i ? i(!1, r) : r();
     });
   });
-}, va = [tl, Fa], Jt = (e, t, l) => {
-  let i = $l(t), [r] = se(i, "-"), n = e[Me][t] || {}, a = e.el, f = e.exec(e, l, "$entry", !1), E = hl(f, n[fl] || 100), s = new IntersectionObserver((c) => {
-    I(c, (p) => {
-      p.isIntersecting != (r == Lr) && (E(p), n[Ys] && s[Gl]());
+}, Wa = [sl, ka], tl = (e, t, l) => {
+  let i = Fl(t), [r] = Ee(i, "-"), a = e[Be][t] || {}, s = e.el, n = e.exec(e, l, "$entry", !1), f = yl(n, a[El] || 100), c = new IntersectionObserver((T) => {
+    m(T, (o) => {
+      o.isIntersecting != (r == Lr) && (f(o), a[vs] && c[Kl]());
     });
-  }, n);
-  s[vr](a), d(e, () => s[Gl]());
-}, Ha = [
-  [Bi, Jt],
-  [k + Bi, Jt],
-  [Fi, Jt],
-  [k + Fi, Jt]
-], Tr = (e, t, l) => {
-  let i = $l(t);
-  se(i, "-");
-  let r = e.el, n = e[Me][t] || {}, a = n[oi] ? le(Ti) : r, f = e.exec(e, l, "$size", !1), E = hl(f, n[fl] || 100), s = new ResizeObserver((c) => {
-    let p = c[0].borderBoxSize[0];
-    E([p.inlineSize, p.blockSize]);
+  }, a);
+  c[Br](s), L(e, () => c[Kl]());
+}, za = [
+  [vi, tl],
+  [q + vi, tl],
+  [Hi, tl],
+  [q + Hi, tl]
+], pr = (e, t, l) => {
+  let i = Fl(t);
+  Ee(i, "-");
+  let r = e.el, a = e[Be][t] || {}, s = a[pi] ? fe(hi) : r, n = e.exec(e, l, "$size", !1), f = yl(n, a[El] || 100), c = new ResizeObserver((T) => {
+    let o = T[0].borderBoxSize[0];
+    f([o.inlineSize, o.blockSize]);
   });
-  s[vr](a, n), d(e, () => s[Gl]());
-}, Ya = [
-  [vi, Tr],
-  [k + vi, Tr]
-], be = "keyup", et = "keydown", ur = "outside", ka = "window", Cs = "control", ri = "meta", Zt = "arrow", pr = [
-  ri,
-  Cs,
+  c[Br](s, a), L(e, () => c[Kl]());
+}, Ga = [
+  [Yi, pr],
+  [q + Yi, pr]
+], et = "keyup", tt = "keydown", hr = "outside", Va = "window", Ds = "control", ci = "meta", ll = "arrow", Rr = [
+  ci,
+  Ds,
   "shift",
   "alt",
   "fn"
-], za = {
-  ctrl: Cs,
-  cmd: ri,
-  [Ks]: ri,
+], Ka = {
+  ctrl: Ds,
+  cmd: ci,
+  [ks]: ci,
   esc: "escape",
   del: v,
-  up: Zt + "up",
-  down: Zt + "down",
-  left: Zt + "left",
-  right: Zt + "right"
-}, Ka = (e, t, l) => {
-  let i = $l(t), [r, ...n] = se(i, "-"), a = e.el, f = a, E = (h) => {
-    let S = e.exec(e, l, yt + Mi, !1);
-    Be(S) ? S(h) : x(ls(Mi, t, "a " + xl, Ge(S())));
-  }, s = e[Me][t] || {};
-  I(n, (h) => {
-    s[h] = !0;
-  }), fl in s && (E = hl(E, s[fl])), ki in s && (E = Ff(E, s[ki])), s[ur] || s[oi] ? f = St : s[ka] && (f = ge);
-  let c = {};
-  M([et, be], r) && I(we(s, "keys", []), (h) => {
-    c[za[h] || h] = !0;
+  up: ll + "up",
+  down: ll + "down",
+  left: ll + "left",
+  right: ll + "right"
+}, Xa = (e, t, l) => {
+  let i = Fl(t), [r, ...a] = Ee(i, "-"), s = e.el, n = s, f = (h) => {
+    let x = e.exec(e, l, At + Fi, !1);
+    Oe(x) ? x(h) : M(ts(Fi, t, "a " + Zt, Ce(x())));
+  }, c = e[Be][t] || {};
+  m(a, (h) => {
+    c[h] = !0;
+  }), El in c && (f = yl(f, c[El])), zi in c && (f = Hf(f, c[zi])), c[hr] || c[pi] ? n = wt : c[Va] && (n = Le);
+  let T = {};
+  U([tt, et], r) && m(Pe(c, "keys", []), (h) => {
+    T[Ka[h] || h] = !0;
   });
-  let p = Ut(c), T = r;
-  if (M([et, be], r) && p) {
+  let o = ct(T), R = r;
+  if (U([tt, et], r) && o) {
     let h = {};
     r = t;
-    let S = hl((A) => {
-      Ye(f, r, A);
+    let x = yl((w) => {
+      We(n, r, w);
     }, 600);
-    d(e, re(f, et, (A) => {
-      let O = Se(A.key);
-      h[O] || (h[O] = !0), Xt(() => {
-        h.meta && !M(pr, O) && Hl(A, h);
+    L(e, ae(n, tt, (w) => {
+      let d = Ie(w.key);
+      h[d] || (h[d] = !0), bt(() => {
+        h.meta && !U(Rr, d) && zl(w, h);
       });
-      let m = ye(h);
-      p > 1 && be == T && h.meta && !M(pr, O) ? S(m) : et == T && Ye(f, r, m);
-    })), d(e, re(f, be, (A) => {
-      et == T && Hl(A, h), Ye(f, r, ye(h)), be == T && Hl(A, h);
-    })), d(e, re(f, "focus", () => {
-      Ci(h);
+      let H = ye(h);
+      o > 1 && et == R && h.meta && !U(Rr, d) ? x(H) : tt == R && We(n, r, H);
+    })), L(e, ae(n, et, (w) => {
+      tt == R && zl(w, h), We(n, r, ye(h)), et == R && zl(w, h);
+    })), L(e, ae(n, "focus", () => {
+      as(h);
     }));
   }
-  d(e, re(f, r, (h) => {
-    if (s[Hr] && h[ff](), s.stop && h.stopPropagation(), !(s.self && h[ae] !== h.currentTarget) && !(s[ur] && (a.contains(h[ae]) || !zf(a)))) {
-      if (M([et, be], T)) {
-        let S = h[mr];
-        if (!(Ut(c) == Ut(S) && wi(ye(c), (A) => M(S, A))))
+  L(e, ae(n, r, (h) => {
+    if (c[vr] && h[rf](), c.stop && h.stopPropagation(), !(c.self && h[ce] !== h.currentTarget) && !(c[hr] && (s.contains(h[ce]) || !Gf(s)))) {
+      if (U([tt, et], R)) {
+        let x = h[Dr];
+        if (!(ct(T) == ct(x) && mi(ye(T), (w) => U(x, w))))
           return;
       }
-      E(h);
+      f(h);
     }
-  }, s));
-}, Hl = (e, t) => Qe(t, Se(e.key)), Ga = [/^(b-on|on)-([\w-$]+)$/, Ka], Va = (e, t, l) => {
-  let i = e.el, r = $l(t), n = l || Ls(r);
-  r = Kf(r);
-  let a = J(i, r), f = e[Me][t] || {};
-  It(e, n, (E) => {
-    if (!E)
-      return qt(_f(t), Si(t + `="${l}"`), Pe, i);
-    let s = E(a || ""), c = f.prop || cs(r) && r;
-    s || c ? mi(i, r, !c && s === !0 ? "" : s, c) : di(i, r);
+  }, c));
+}, zl = (e, t) => Ze(t, Ie(e.key)), ja = [/^(b-on|on)-([\w-$]+)$/, Xa], qa = (e, t, l) => {
+  let i = e.el, r = Fl(t), a = hs(l || Pf(r), "$initial");
+  r = Vf(r);
+  let s = j(i, r), n = e[Be][t] || {};
+  Pt(e, a, (f) => {
+    if (!f)
+      return It(l, Ql, xl(t + `="${l}"`), me, i);
+    let c = f(s || ""), T = n.prop || ps(r) && r;
+    if (c || T)
+      if (r == ee && z(c))
+        Wt(i, c);
+      else if (r == Pr && z(c))
+        for (let o in c)
+          c[o] ? Ts(i, o) : Yf(i, o);
+      else
+        gi(i, r, !T && c === !0 ? "" : c, T);
+    else Ul(i, r);
   });
-}, Wa = [/^(b-bind|bind)-([\w-$]+)$/, Va], bt = Te(), ja = (e, t, l) => {
-  let i = b("the", t, Ve), r = b(ml, "a reactive", C), n = V + "ed", a = t + `="${l}"`, f = e.el, E = ve(f), s = f.type;
-  if (!M([H, lt, V], E))
-    return x(i, wr, H, `, ${lt}, and ${V} ${Le}s.`, a, f);
-  let [c, p] = us(e.exec(e, l));
+}, Qa = [/^(b-bind|bind)-([\w-$]+)$/, qa], il = pe(), Ja = (e, t, l) => {
+  let i = he("the", t, je), r = Q + "ed", a = t + `="${l}"`, s = e.el, n = He(s), f = s.type;
+  if (!U([Y, it, Q], n))
+    return M(i, wr, Y, `, ${it}, and ${Q} ${Ue}s.`, a, s);
+  let [c, T] = Ns(e.exec(e, l));
   if (!c)
-    return x(i, r, a, f);
-  let T = c[p], y, h = () => Ke(E == V ? f[Me] : K()), S = e[Me][t] || {}, A = (o) => {
-    let u = o[ne(J(o, C)) && m ? tt : C], R = bt.get(o) || S;
-    if (U(u) && (R.trim && (u = Q(u)), !R.raw)) {
-      let N = si(u);
-      (Ce(N) || ne(N) || Cf(N)) && (u = N);
+    return M(i, Ql, a, s);
+  let o = c[T], R, A = () => Ve(n == Q ? s[Be] : H()), h = e[Be][t] || {}, x = (y) => {
+    let E = y[te(j(y, $)) && d ? lt : $], p = il.get(y) || h;
+    if (B(E) && (p.trim && (E = k(E)), !p.raw)) {
+      let u = Ci(E);
+      (De(u) || te(u) || Df(u)) && (E = u);
     }
-    return u;
-  }, O = (o) => E == H && M(o, s), m = O([Ze, Yi]), K = () => Di(H + `[type="${Ze}"][name="${f.name}"]`), G = () => O(Ze) && P(K()) > 1, Oe = () => {
-    let o = [
-      [H, Ze, [Z, de, ll, ct]],
-      [H, Yi, [Z, de, ll]],
-      [H, Z, [Z]],
-      [H, "range", [Z]],
-      [H, "", [Z, de]],
-      [lt, "", [Z, de]],
-      [V, "", [Z, de, ll, ct]]
+    return E;
+  }, w = (y) => n == Y && U(y, f), d = w([be, Wi]), H = () => di(Y + `[type="${be}"][name="${s.name}"]`), le = () => w(be) && C(H()) > 1, g = () => {
+    let y = [
+      [Y, be, [Z, xe, fl, Tt]],
+      [Y, Wi, [Z, xe, fl]],
+      [Y, Z, [Z]],
+      [Y, "range", [Z]],
+      [Y, "", [Z, xe]],
+      [it, "", [Z, xe]],
+      [Q, "", [Z, xe, fl, Tt]]
     ];
-    for (let [u, R, N] of o)
-      if (E == u && (!R || s == R)) {
-        ne(T) || pl(T) || M(N, Ge(T)) || qt(i, r, Tl, Ne(N, " or "), `for ${E == H ? s + " " : ""}${u} ${Le}s,`, Si(Ge(T)), a, f);
+    for (let [E, p, u] of y)
+      if (n == E && (!p || f == p)) {
+        te(o) || Yt(o) || U(u, Ce(o)) || It(i, Ql, Ut, Te(u, " or "), `for ${n == Y ? f + " " : ""}${E} ${Ue}s,`, xl(Ce(o)), a, s);
         break;
       }
   };
-  ut(() => {
-    Oe(), V == E ? I(h(), (o) => bt.set(o, S)) : O(Ze) && bt.set(f, S);
+  ht(() => {
+    g(), Q == n ? m(A(), (y) => il.set(y, h)) : w(be) && il.set(s, h);
   });
-  let w = () => {
-    if (T = c[p], y = A(f), M([H, lt], E))
-      if (s == Ze && $(T))
-        f[tt] = M(T, y);
-      else if (m)
-        f[tt] = T === y;
+  let V = () => {
+    if (o = c[T], R = x(s), U([Y, it], n))
+      if (f == be && F(o))
+        s[lt] = U(o, R);
+      else if (d)
+        s[lt] = o === R;
       else {
-        if (f[ol] || St.activeElement === f && T === y) return;
-        T !== y && (f[C] = T);
+        if (s[pl] || wt.activeElement === s && o === R) return;
+        o !== R && (s[$] = o);
       }
-    else E == V && ($(T) ? I(h(), (o) => {
-      o[n] = M(T, A(o));
-    }) : f[C] = T);
+    else n == Q && (F(o) ? m(A(), (y) => {
+      y[r] = U(o, x(y));
+    }) : s[$] = o);
   };
-  ut(() => d(e, Ht(w)));
-  let B = {}, F = () => {
-    if (T = c[p], E == V && f.multiple || G()) {
-      let o = [];
-      I(h(), (u) => {
-        E == V && bt.set(u, S), (u[n] || u[tt]) && D(o, A(u));
-      }), c[p] = o;
-    } else c[p] = m && !f[tt] ? !1 : A(f);
+  ht(() => L(e, zt(V)));
+  let O = {}, I = () => {
+    if (o = c[T], n == Q && s.multiple || le()) {
+      let y = [];
+      m(A(), (E) => {
+        n == Q && il.set(E, h), (E[r] || E[lt]) && D(y, x(E));
+      }), c[T] = y;
+    } else c[T] = d && !s[lt] ? !1 : x(s);
   };
-  (O([W, "search", "url", "tel", il, "password"]) || E == lt) && (B[qs] = Hf, B[Qs] = Yf);
-  let L = S.lazy || m || E == V ? "change" : H;
-  B[L] = F;
-  for (let [o, u] of Je(B))
-    d(e, re(f, o, u));
-}, Xa = ["b-model", ja], q = "output", He = "cursor", at = He + "Updated", qa = "updateCursor", Qa = (e, t, l) => {
+  (w([Ae, "search", "url", "tel", al, "password"]) || n == it) && (O[Xs] = kf, O[js] = Wf);
+  let P = h.lazy || d || n == Q ? "change" : Y;
+  O[P] = I;
+  for (let [y, E] of ve(O))
+    L(e, ae(s, y, E));
+}, Za = ["b-model", Ja], b = "output", ke = "cursor", Et = ke + "Updated", ba = "updateCursor", en = (e, t, l) => {
   let i = e.el;
-  if (!(C in i && Bl in i))
-    return x("the", t, Ve, wr, lt, Le + "s and textual", H, "types (text, email, etc.).");
+  if (!($ in i && Yl in i))
+    return M("the", t, je, wr, it, Ue + "s and textual", Y, "types (text, email, etc.).");
   let r = {
     exp: e.exec(e, l, "$mask"),
-    [C]: "",
-    [He]: i[Bl],
-    [qa]: zt,
-    [at]: !1,
-    [q]: "",
-    char: Ul,
-    letter: ln,
-    number: Ds,
-    alpha: rn,
-    money: en
-  }, n = () => {
-    r[C] = i[C], r[C] != r[q] && (r[He] = i[Bl], Ja(r), i[C] = r[q], i.setSelectionRange(r[He], r[He]), Ye(i, Cl, r));
+    [$]: "",
+    [ke]: i[Yl],
+    [ba]: Kt,
+    [Et]: !1,
+    [b]: "",
+    char: Hl,
+    letter: an,
+    [Z]: ds,
+    alpha: nn,
+    money: sn
+  }, a = () => {
+    r[$] = i[$], r[$] != r[b] && (r[ke] = i[Yl], tn(r), i[$] = r[b], i.setSelectionRange(r[ke], r[ke]), We(i, Mr, r));
   };
-  ut(n), d(e, re(i, H, n, !0));
-}, Ja = (e) => {
-  e[at] = !1, e[q] = "";
+  ht(a), L(e, ae(i, Y, a, !0));
+}, tn = (e) => {
+  e[Et] = !1, e[b] = "";
   let t = e.exp(e);
-  if (Be(t)) {
+  if (Oe(t)) {
     t(e);
     return;
   }
-  let l = e[C], i = 0, r = P(l);
-  I([...t], (n, a) => {
-    U(n) && P(n) > 1 && t.splice(a, 1, ...se(n, ""));
+  let l = e[$], i = 0, r = C(l);
+  m([...t], (a, s) => {
+    B(a) && C(a) > 1 && t.splice(s, 1, ...Ee(a, ""));
   });
-  for (let [n, a] of Je(t)) {
+  for (let [a, s] of ve(t)) {
     if (i >= r) break;
-    if ($(a)) {
-      let f = 0, [E, s, c] = a;
-      for (; i < r && f < c; ) {
-        if (E(l[i]))
-          f++, e[q] += l[i];
+    if (F(s)) {
+      let n = 0, [f, c, T] = s;
+      for (; i < r && n < T; ) {
+        if (f(l[i]))
+          n++, e[b] += l[i];
         else {
-          let p = !1, T, y = n;
-          for (; y > -1 && (T = Za(t, y + 1)); ) {
-            if (ba(T, l, i)) {
-              p = !0;
+          let o = !1, R, A = a;
+          for (; A > -1 && (R = ln(t, A + 1)); ) {
+            if (rn(R, l, i)) {
+              o = !0;
               break;
             }
-            y = Sf(t, T, y);
+            A = Af(t, R, A);
           }
-          if (p && f >= s) break;
+          if (o && n >= c) break;
         }
-        i++, zt(e, i);
+        i++, Kt(e, i);
       }
-    } else U(a) && (e[q] += a, l[i] == a && i++, zt(e, i));
+    } else B(s) && (e[b] += s, l[i] == s && i++, Kt(e, i));
   }
-}, Za = (e, t) => {
-  for (let l = t; l < P(e); l++) {
+}, ln = (e, t) => {
+  for (let l = t; l < C(e); l++) {
     let i = e[l];
-    if ($(i))
+    if (F(i))
       return i;
   }
-}, ba = (e, t, l) => {
+}, rn = (e, t, l) => {
   let i = !1;
-  if ($(e)) {
-    let [r, n, a] = e;
-    if (Be(r) && Ce(n) && Ce(a)) {
-      let f = 0, E = P(t);
-      for (let s = l; s < E && f < a; s++)
-        r(t[s]) && f++;
-      i = f > 0 && f >= n;
+  if (F(e)) {
+    let [r, a, s] = e;
+    if (Oe(r) && De(a) && De(s)) {
+      let n = 0, f = C(t);
+      for (let c = l; c < f && n < s; c++)
+        r(t[c]) && n++;
+      i = n > 0 && n >= a;
     }
   }
   return i;
-}, en = (e = {}) => (t) => {
-  let l = t[C], i = P(l), r = we(e, "thousands", ","), n = we(e, "decimal", "."), a = we(e, "precision", 2);
-  n == "," && (r = "."), r == "." && (n = ",");
-  let f = !1, E = !1, s = [], c = [], [p] = Ds();
-  for (let y = 0; y < i; y++)
-    l[y] == "-" ? !P(s) && !P(c) && (f = !0) : E ? P(c) < a && p(l[y]) && D(c, y) : l[y] == n ? E = !0 : p(l[y]) && (P(s) == 1 && l[s[0]] == "0" ? s[0] = y : D(s, y));
-  t[q] = f ? "-" : "";
-  let T = P(s);
-  t[at] = !1;
-  for (let y = 0; y < T; y++)
-    y > 0 && (T - y) % 3 == 0 && (t[q] += r), t[q] += l[s[y]], zt(t, s[y] + 1);
-  t[q] += E ? n : "";
-  for (let y = 0; y < P(c); y++)
-    t[q] += l[c[y]], zt(t, c[y] + 1);
+}, sn = (e = {}) => (t) => {
+  let l = t[$], i = C(l), r = Pe(e, "thousands", ","), a = Pe(e, "decimal", "."), s = Pe(e, "precision", 2);
+  a == "," && (r = "."), r == "." && (a = ",");
+  let n = !1, f = !1, c = [], T = [], [o] = ds();
+  for (let A = 0; A < i; A++)
+    l[A] == "-" ? !C(c) && !C(T) && (n = !0) : f ? C(T) < s && o(l[A]) && D(T, A) : l[A] == a ? f = !0 : o(l[A]) && (C(c) == 1 && l[c[0]] == "0" ? c[0] = A : D(c, A));
+  t[b] = n ? "-" : "";
+  let R = C(c);
+  t[Et] = !1;
+  for (let A = 0; A < R; A++)
+    A > 0 && (R - A) % 3 == 0 && (t[b] += r), t[b] += l[c[A]], Kt(t, c[A] + 1);
+  t[b] += f ? a : "";
+  for (let A = 0; A < C(T); A++)
+    t[b] += l[T[A]], Kt(t, T[A] + 1);
   return t;
-}, zt = (e, t) => {
-  if (!e[at]) {
-    let l = e[He];
-    l == 0 ? e[at] = !0 : l <= t && (e[at] = !0, e[He] = P(e[q]));
+}, Kt = (e, t) => {
+  if (!e[Et]) {
+    let l = e[ke];
+    l == 0 ? e[Et] = !0 : l <= t && (e[Et] = !0, e[ke] = C(e[b]));
   }
-}, tn = (e = 1, t = 1) => (e = Ce(e) && e >= 0 ? e : 1, t = Ce(t) && t > e ? t : e > 0 ? e : 1, [e, t]), Ul = (e, t, l) => [U(e) ? (r) => r == e : (r) => Ee(r, e), ...tn(t, l)], ln = (e, t) => Ul(new RegExp("\\p{L}", "u"), e, t), Ds = (e, t) => Ul(new RegExp("\\p{Nd}", "u"), e, t), rn = (e, t) => Ul(/[\p{L}\p{Nd}]/u, e, t), sn = [k + Cl, Qa], fn = async (e, t, l) => {
-  It(e, l, (i) => {
+}, fn = (e = 1, t = 1) => (e = De(e) && e >= 0 ? e : 1, t = De(t) && t > e ? t : e > 0 ? e : 1, [e, t]), Hl = (e, t, l) => [B(e) ? (r) => r == e : (r) => X(r, e), ...fn(t, l)], an = (e, t) => Hl(new RegExp("\\p{L}", "u"), e, t), ds = (e, t) => Hl(new RegExp("\\p{Nd}", "u"), e, t), nn = (e, t) => Hl(/[\p{L}\p{Nd}]/u, e, t), cn = [q + Mr, en], En = async (e, t, l) => {
+  Pt(e, l, (i) => {
     let r = i();
-    Be(r) && r();
+    Oe(r) && r();
   });
-}, an = ["b-effect", fn], nn = [
+}, on = ["b-effect", En], Tn = [
   /**
    * The b-ignore directive is used to stop the hydration of the element and its children.
    */
-  pa,
+  Na,
   /**
    * Conditional hydration
    * Notes:
@@ -1140,24 +1172,23 @@ let En = () => {
    * - the original element is replaced with a placeholder comment node to hold its location in the DOM
    * - whenever the condition evaluates to false, the copy of the element is dehydrated and removed from the DOM
    */
-  Ba,
+  Ya,
   /**
-   * Context directives
+   * Data context
    * Notes:
    * - the order of inference is: $for, $data, $props, $store
    * - b-slot and b-ref are hydrated after b-data
    */
-  ya,
-  Na,
+  Sa,
   /** List rendering
    * Notes:
    * - b-for stops the hydration flow of the element and starts a new hydration flow for each item it creates
    */
-  ha,
+  Oa,
   /**
    * Unique ID generator
    */
-  _a,
+  Ia,
   /**
    * Run one or more scripts on the element, right after the context ($props, $data, $slot, $ref, $for, $id) is set up.
    * Notes:
@@ -1165,7 +1196,7 @@ let En = () => {
    * - the script(s) are executed in order and awaited
    * - when b-script is in a script element the content of the src file or text content is added to the list of scripts to be executed
    */
-  Ca,
+  ga,
   /**
    * Static template hydration
    * Notes:
@@ -1177,37 +1208,37 @@ let En = () => {
    *     this is because these directives need to be hydrated on the element itself and not on its content
    *   - the b-template directive CAN be used with: b-ignore, b-props, b-data, b-ref, b-slot, b-if, b-for, b-id, b-script, b-show, b-teleport, b-effect
    */
-  wa,
+  Da,
   /**
    * Conditional display
    * Notes:
    * - the element is hydrated regardless of the condition
    * - the b-show directive toggles the `display` of the element based on the condition
    */
-  va,
+  Wa,
   // ['b-boost', hydrateBoost],
-  $a,
+  Ba,
   // b-transition, b-transition-play, b-transition-reverse
   /**
    * The b-teleport moves the element to a different location in the DOM.
    * Notes:
    * - b-teleport also works with the b-if and b-template directives
    */
-  xa,
+  Ma,
   /**
    * Dynamic hydration of HTML or text content and styles
    * Notes:
    * - if the element has a b-html and b-text directive, the b-html directive is hydrated and the b-text directive is ignored
    * - b-style always hydrates regardless of the b-html and b-text directives
    */
-  Oa,
-  Sa,
+  Pa,
+  ma,
   /**
    * Dynamic insertion of styles
    * Notes:
    * - the style element is inserted after the element that contains the b-style directive
    */
-  da,
+  $a,
   /**
    * Data binding directives
    * Used to bind data to an element's property or attribute
@@ -1216,50 +1247,49 @@ let En = () => {
    * - The `b-model` directive is used to create a two-way data binding between an input value and a reactive property
    * - The `b-mask` directive is used to format an input value using a mask
    */
-  Wa,
+  Qa,
   // [b-bind|bind]-[attributeName]
-  Xa,
-  sn,
+  Za,
+  cn,
   /**
    * Event directives
    */
-  ...Ha,
+  ...za,
   // [b-on|on]-enter, [b-on|on]-exit
-  ...Ya,
+  ...Ga,
   // [b-on|on]-resize
-  Ga,
+  ja,
   // [b-on|on]-[eventName]
   /**
    * b-effect: used to create an effect that run when its dependencies change.
    * It is perfect for small expressions, reactive or not.
    * Example: console.log(`Hello, ${$data.name}!`)
    */
-  an
-], on = (e) => {
-  I(nn, (t) => D(e[qr], t));
+  on
+], hn = (e) => {
+  m(Tn, (t) => D(e[qr], t));
 };
 export {
-  Wa as bindDirective,
-  Na as dataDirective,
-  ha as forDirective,
-  Oa as htmlDirective,
-  _a as idDirective,
-  Ba as ifDirective,
-  pa as ignoreDirective,
-  Ha as intersectionDirectives,
-  sn as maskDirective,
-  Xa as modelDirective,
-  En as newApp,
-  Ga as onDirective,
-  ya as propsDirective,
-  Ya as resizeDirectives,
-  Ca as scriptDirective,
-  on as setAllDirectives,
-  cn as setup,
-  va as showDirective,
-  da as styleDirective,
-  xa as teleportDirective,
-  wa as templateDirective,
-  $a as transitionDirective
+  Qa as bindDirective,
+  Sa as dataDirective,
+  Oa as forDirective,
+  Pa as htmlDirective,
+  Ia as idDirective,
+  Ya as ifDirective,
+  Na as ignoreDirective,
+  za as intersectionDirectives,
+  cn as maskDirective,
+  Za as modelDirective,
+  un as newApp,
+  ja as onDirective,
+  Ga as resizeDirectives,
+  ga as scriptDirective,
+  hn as setAllDirectives,
+  pn as setup,
+  Wa as showDirective,
+  $a as styleDirective,
+  Ma as teleportDirective,
+  Da as templateDirective,
+  Ba as transitionDirective
 };
 //# sourceMappingURL=briojs.2.0.0.js.map

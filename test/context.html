@@ -10,13 +10,13 @@
         <script b-script>
             (ctx) => {
                 let v = $validate($data, {
-                    level1: [
-                        { name: 'required', value: true },
-                        { name: 'type', value: ['boolean', 'string'] },
-                        { name: 'in', value: [2, 4, 6] },
-                    ]
+                    level1: {
+                        required: [true, 'Level 1 is required.'],
+                        type: [['boolean', 'number'], 'Level 1 must be a boolean or a string.'],
+                        in: [[2, 4, 6], 'Level 1 must be one of the following values: 2, 4, 6.'],
+                    }
                 });
-                console.log('validation errors:', v, ctx);
+                console.log('validate:', v);
 
                 // console.warn('clone', clone);
 
@@ -112,11 +112,14 @@
 
         <template b-template="my-template-2"></template>
 
-        <div b-save="my-template-2" b-data="{field1: 'field from level 1', pd: '0.5rem', level1: level1}" b-id="['field1']">
+        <div b-save="my-template-2" b-props="{name: {required: true, type: 'string', default: 'John', isText: true} }" b-data="{field1: 'field from level 1', pd: '0.5rem', level1: level1}" b-id="['field1']">
             <strong>Inside template - level1: {{level1}}</strong>
             <br>
             <p>field1: {{field1}}</p>
             <input type="text" b-model="field1" class="mb-1">
+            <p>
+                Name prop: {{ $props.name }}
+            </p>
         </div>
         <br>
 

@@ -3,9 +3,7 @@ type AppsObject = {
 }
 
 type AppObject = {
-    template: {
-        [templateName: string]: string
-    },
+    template: TemplateObject,
 
     style: {
         [styleName: string]: string
@@ -76,12 +74,7 @@ type BrioTools = {
     /** Creates a deep clone of the given value */
     $clone: (value: any) => any;
 
-    $validate: (data: ObjectType) => {
-        prop: (name: string, rules: SchemaRules) => void;
-        rule: (name: string, fn: RuleFn, message?: MessageFn) => void;
-        validate: () => boolean;
-        errors: ObjectType;
-    };
+    $validate: (data: ObjectType, schema: SchemaObject, customRules?: RulesObject, customMessages?: MessageObject) => true | ObjectType;
 
     $getType: (value: any) => string;
 }
@@ -198,7 +191,7 @@ type GetVnode = (node: Node) => BNode | undefined;
 
 /** The object that holds the saved templates */
 type TemplateObject = {
-    [templateName: string]: () => string
+    [templateName: string]: string
 }
 
 /** The object that holds the saved scripts */

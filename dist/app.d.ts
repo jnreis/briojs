@@ -32,8 +32,6 @@ export declare let saveAttr: (bnode: BNode, attrName: string, attrValue: string)
 export declare let sanitizeAttrValue: (text: string) => string;
 /** Match template literal ${} */
 export declare let templateRegex: RegExp;
-/** Match mustache syntax {{}} */
-export declare let mustacheRegex: RegExp;
 /** Sanitize string and replace mustache syntax with template literals */
 export declare let replaceMustache: (text: string, replacement?: any) => string;
 export declare let setup: (brioWindow?: ObjectType) => void;
@@ -44,6 +42,7 @@ export declare let genContextArgs: (bnode: BNode, exp: string) => string;
 /** Auto-fill the context name if missing and found in one of the data related contexts */
 export declare let autoFillContextName: (bnode: BNode, propName: string) => string;
 export declare let autoFillContext: (bnode: BNode, exp: string) => string;
+export declare let autoFillTemplateExpressions: (bnode: BNode, text: string) => string;
 /** Evaluate the attribute as an effect */
 export declare let evalEffect: (bnode: BNode, exp: string, callback: DirectiveCallback) => void;
 export declare let evalContextProp: (bnode: BNode, propName: string) => FunctionType | undefined;

@@ -93,7 +93,7 @@ export let newInsert = (app: AppObject) => async (target: HTMLElement | string, 
             return logError($INSERT_, ELEMENT, NOT_FOUND);
     }
 
-    let [newBNode, getBNode] = app.bnode;
+    let {n: newBNode, g: getBNode} = app.bnode;
 
     // ! VALIDATE PROPS
     let propsValues: ObjectType = {};

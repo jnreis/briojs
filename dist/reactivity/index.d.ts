@@ -31,3 +31,5 @@ export { state } from './state';
 export { effect } from './effect';
 export { watch } from './watch';
 export { storage, storageEvent } from './storage';
+export { computed } from './computed';
+export { persist, session } from './storage';

@@ -1,14 +1,16 @@
 import { getSavedAssets, saveCleanup } from "../app";
-import { uid } from "../tools";
-import { arrayAdd, join } from "../tools/array";
-import { $DEHYDRATE, $HYDRATE, AFTER, B_, NEW_LINE, SELECTOR_TEXT, STYLE, TEXT_CONTENT } from "../tools/constants";
+import { has, uid } from "../tools";
+import { join, map } from "../tools/array";
+import { $DEHYDRATE, $HYDRATE, AFTER, B_, NEW_LINE, STYLE, TEXT_CONTENT } from "../tools/constants";
 import { createElement, getTagName, insertNodes, setClass } from "../tools/dom";
-import { replace } from "../tools/string";
+import { replace, split, trim } from "../tools/string";
+
+let cssSelectorRegex = /(?<=(?:^|})\s*)\S(?:.\s*?)*?(?=\s*{)/g;
 
 /**
  * Hydrate the style directive.
  * 
- * It may receive one or more style asset names or CSS strings.
+ * It may receive one style asset name or an array of style asset names.
  */
 export let hydrateStyle = (bnode: BNode, _attrName: string, attrValue: string) => {
 
@@ -26,17 +28,36 @@ export let hydrateStyle = (bnode: BNode, _attrName: string, attrValue: string) =
         // Add the selector to the element
         setClass(el, prefix);
 
+        prefix = '.' + prefix;
+
         // Create a style element
         let style = createElement(STYLE) as HTMLStyleElement;
 
         // Insert the style element after the current element
         insertNodes(el, AFTER, style);
 
-        // Set the initial style content
-        style[TEXT_CONTENT] = join(styles, NEW_LINE);
+        let styleContent = join(styles, NEW_LINE);
 
-        // Set the prefixed CSS content
-        style[TEXT_CONTENT] = prefixCssSelectors(style, '.'+prefix);
+        // FORMAT STYLE CONTENT
+
+        // Indentation inside the braces
+        styleContent = replace(styleContent, /([{;])\s*/g, '$1' + NEW_LINE + '    ');
+
+        // Spacing around closing braces
+        styleContent = replace(styleContent, /\s*}\s*/g, NEW_LINE+ '}' +NEW_LINE);
+
+        // Set the style content with prefixed selectors
+        style[TEXT_CONTENT] = replace(styleContent, cssSelectorRegex, (selector: string) => {
+            let newSelector = trim(selector);
+
+            if (has(selector, '&')) {
+                newSelector = replace(newSelector, /&/g, prefix);
+            } else {
+                newSelector = join(map(split(newSelector, ','), s => prefix + ' ' + trim(s)), ',' + NEW_LINE);
+            }
+
+            return newSelector;
+        });
 
         // Hydrate the style element
         bnode.gc[$HYDRATE](style, el);
@@ -46,23 +67,6 @@ export let hydrateStyle = (bnode: BNode, _attrName: string, attrValue: string) =
             bnode.gc[$DEHYDRATE](style);
         });
     }
-}
-
-
-/** Prefix the CSS selectors with a given prefix */
-let prefixCssSelectors = (css: HTMLStyleElement, prefix: string) => {
-
-    let rules: string[] = [];
-
-    for (let rule of css.sheet?.cssRules as CSSRuleList || []) {
-        // Get the selector
-        let selector = (rule as CSSStyleRule)[SELECTOR_TEXT];
-
-        // Add the CSS rule with the prefixed selector
-        arrayAdd(rules, replace(rule.cssText, selector, prefix + ' ' + selector));
-    }
-
-    return join(rules, NEW_LINE);
 }
 
 export let styleDirective: Directive = [B_+STYLE, hydrateStyle];

@@ -22,7 +22,7 @@ export let hydrateIf = (bnode: BNode, attrName: string, attrValue: string) => {
     // Ensure the element will go through the cleanup process
     saveToParent(bnode, el);
 
-    let [newBNode] = bnode.bnode;
+    let {n: newBNode} = bnode.bnode;
 
     // The hydrated copy of the element
     let hydratedBnode: BNode | undefined;

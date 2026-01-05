@@ -1,11 +1,14 @@
 import { saveToParent } from "../app";
 import { logWarn } from "../tools";
-import { $INSERT, B_TEMPLATE, BEFORE, INNER_HTML, INVALID__$CAP, NEW_LINE, NODES, SKIP, TEMPLATE, VALUE } from "../tools/constants";
+import { $INSERT, B_TEMPLATE, BEFORE, INNER_HTML, INVALID__$CAP, NEW_LINE, NODES, OPTIONS, SKIP, TEMPLATE, VALUE } from "../tools/constants";
 import { removeNode } from "../tools/dom";
 import { trim } from "../tools/string";
 import { isString } from "../tools/typeCheck";
 
 export let hydrateTemplate = async (bnode: BNode, attrName: string, attrValue: string) => {
+    
+    // Options: {hydrate: boolean, selector: string}
+    let options = bnode[OPTIONS][attrName] || {};
 
     let el = bnode.el;
 
@@ -19,7 +22,7 @@ export let hydrateTemplate = async (bnode: BNode, attrName: string, attrValue: s
     if (isString(template)) {
 
         // Insert the nodes from the template
-        bnode[NODES] = await bnode.gc[$INSERT](el, BEFORE, trim(template));
+        bnode[NODES] = await bnode.gc[$INSERT](el, BEFORE, trim(template), options);
 
         // Ensure the element will go through the cleanup process
         saveToParent(bnode, el);

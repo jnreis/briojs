@@ -1,12 +1,12 @@
 import { newInsert } from "./methods/dom";
 import { http } from "./methods/http";
 import { go, newRouter } from "./methods/route";
-import { effect, state, storageEvent, watch } from "./reactivity";
-import { has, logError, size, slice, uid } from "./tools";
+import { computed, effect, persist, session, state, storageEvent, watch } from "./reactivity";
+import { has, logError, uid } from "./tools";
 import { arrayAdd, each, filter, find, join, map, some } from "./tools/array";
-import { TEXT, TEXT_CONTENT, ATTR, DELETE, INNER_HTML, PARENT, $PROPS, NULL, B_DATA, SCRIPT, $DATA, STYLE, B_, TEMPLATE, UNDEFINED, OPTIONS, ROUTE, NEW_LINE, BRIO, STORAGE, STATE, PROPS, NUMBER, DIRECTIVES, DATA, ROUTE_RULE, B_SAVE, OUTER_HTML, $STORE, SKIP, NODES, B_IF, MESSAGE, CLONE, $REF, $SLOT, B_TEMPLATE, B_REF, $, $DEHYDRATE, $HYDRATE, $INSERT, B_SCRIPT, B_SLOT, B_FOR, $FOR, DEHYDRATE_CHILDREN, VALIDATE, INDEX } from "./tools/constants";
+import { TEXT, TEXT_CONTENT, ATTR, DELETE, INNER_HTML, PARENT, $PROPS, NULL, B_DATA, SCRIPT, $DATA, STYLE, B_, TEMPLATE, UNDEFINED, OPTIONS, ROUTE, NEW_LINE, BRIO, STORAGE, STATE, NUMBER, DIRECTIVES, DATA, ROUTE_RULE, B_SAVE, OUTER_HTML, $STORE, SKIP, NODES, B_IF, MESSAGE, CLONE, $REF, $SLOT, B_TEMPLATE, B_REF, $, $DEHYDRATE, $HYDRATE, $INSERT, B_SCRIPT, B_SLOT, B_FOR, $FOR, DEHYDRATE_CHILDREN, VALIDATE } from "./tools/constants";
 import { walk, getAttr, delAttr, getParent, getTagName, getNodeContent, removeNode, eachAttribute, query, emit, listen, href, setAttr } from "./tools/dom";
-import { expToFn, newFn } from "./tools/evaluation";
+import { expToFn, getTemplateExpressions, newFn, setTemplateExpressions } from "./tools/evaluation";
 import { countKeys, hasProp, getProp, newMap, setProp, setObjectKeys, W, newSet, S, sync, clone, delProp, getKeys } from "./tools/object";
 import { isStringNumeric, replace, replaceAll, split, startsWith, test, trim, wrapInBackticks } from "./tools/string";
 import { isTextNode, isElementNode, isNull, isRegExp, isString, isNode, isFunction, isArray, getType } from "./tools/typeCheck";
@@ -209,8 +209,10 @@ export let newApp = (): AppObject => {
 
             let bnode = newBNode(node as any, ctxNode);
 
+            sanitizedText = autoFillTemplateExpressions(bnode, wrapInBackticks(sanitizedText));
+
             // Evaluate the expression
-            let value = exec(bnode, wrapInBackticks(sanitizedText));
+            let value = exec(bnode, sanitizedText, '', true, false);
 
             // Save the cleanup function
             saveCleanup(bnode, effect(() => node[TEXT_CONTENT] = value(bnode.ctx)));
@@ -424,7 +426,6 @@ export let newApp = (): AppObject => {
         [TEMPLATE]: setAsset(TEMPLATE),
         [STYLE]: setAsset(STYLE),
         [SCRIPT]: setAsset(SCRIPT),
-        [PROPS]: setAsset(PROPS),
         data: setAsset(DATA),
     }
 
@@ -439,9 +440,13 @@ export let newApp = (): AppObject => {
     /** Unprefixed global context */
     let _gc: ObjectType = {
         http,
-        state,
+
+        [STATE]: state,
         watch,
         effect,
+        computed,
+        persist,
+        session,
 
         [ROUTE]: route,
         emit,
@@ -469,12 +474,11 @@ export let newApp = (): AppObject => {
         [TEMPLATE]: template,
         [STYLE]: {},
         [SCRIPT]: {},
-        [PROPS]: {},
         data: {},
 
         // ! HYDRATION
         [DIRECTIVES]: directives,
-        bnodes,
+        bnode: {n: newBNode, g: getBNode, a: bnodes},
 
         routes,
         routeRules,
@@ -483,7 +487,6 @@ export let newApp = (): AppObject => {
         gc: gc as GlobalContext,
 
         exec,
-        bnode: [newBNode, getBNode],
     };
 
     /** The $insert method of this app */
@@ -531,7 +534,7 @@ export let getFirstInsertedNode = (bnode: BNode) => find(getInsertedNodes(bnode)
 export let getInsertedNodes = (bnode: BNode) => {
     let nodes: Node[] = [];
 
-    let [, getBNode] = bnode.bnode;
+    let {g: getBNode} = bnode.bnode;
 
     if (bnode.ph) arrayAdd(nodes, bnode.ph);
 
@@ -598,7 +601,7 @@ export let sanitizeAttrValue = (text: string) =>
 export let templateRegex = /\${((?!.*\${).*?)}/;
 
 /** Match mustache syntax {{}} */
-export let mustacheRegex: RegExp = /{{((?!.*{{).*?)}}/;
+let mustacheRegex: RegExp = /{{((?!.*{{).*?)}}/;
 
 /** Sanitize string and replace mustache syntax with template literals */
 export let replaceMustache = (text: string, replacement: any = '${$1}') => 
@@ -756,27 +759,20 @@ export let autoFillContextName = (bnode: BNode, propName: string): string => {
     return propName;
 }
 
-let varNameInExpRegex = /(?<![.`'"][\w\s$]*)[a-z_$][\w$]*(?![\w\s$]*[:`'"{])/i;
+let varNameInExpRegex = /(?<![.`'"][\w\s$]*)[a-z_$][\w$]*(?![\w\s$]*[:`'"{])/gi;
 
-export let autoFillContext = (bnode: BNode, exp: string): string => {
-    let i = 0;
-    let newExp = '';
-    let matched;
-    while ((matched = varNameInExpRegex.exec(slice(exp, i) as string)) !== null) {
-        let index = matched[INDEX];
-        let propName = matched[0];
+export let autoFillContext = (bnode: BNode, exp: string): string => 
+    replace(exp, varNameInExpRegex, (propName: string) => autoFillContextName(bnode, propName));
 
-        // Auto-fill the context name, if missing
-        let propNameFilled = autoFillContextName(bnode, propName);
+export let autoFillTemplateExpressions = (bnode: BNode, text: string): string => {
+    let [tempText, expressions] = getTemplateExpressions(text);
 
-        // Build the new expression
-        newExp += slice(exp, i, i + index) + propNameFilled;
-
-        // Move the index forward
-        i += index + size(propName);
+    for (let entry of expressions) {
+        entry[1] = autoFillContext(bnode, entry[1]);
     }
 
-    return newExp + slice(exp, i);
+    // Rebuild the text with the updated expressions
+    return setTemplateExpressions(tempText, expressions);
 }
 
 /** Evaluate the attribute as an effect */

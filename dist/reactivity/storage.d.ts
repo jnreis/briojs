@@ -9,4 +9,6 @@
  * @returns The property initialization function
  */
 export declare let storage: (_storage: any, value: any, alias?: string) => any;
+export declare let persist: (value: any, alias?: string) => any;
+export declare let session: (value: any, alias?: string) => any;
 export declare let storageEvent: (event: StorageEvent) => void;

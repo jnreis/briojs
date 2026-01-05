@@ -31,7 +31,7 @@ export let newHooks = (_hooks: Hooks): [SetHook, PlayHook] => ([
     async (target: any, hookName: string, context?: any) => {
         let hook = getHook(_hooks, target, hookName);
 
-        if (hook && size(hook)) {
+        if (hook && hook.size) {
             // Convert the map to an array
             let _fns = arrayFrom(hook) as [HookFunction, number][];
 

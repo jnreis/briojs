@@ -14,7 +14,7 @@ let variableNameRegex = /^[a-z_$][\w$]*$/i;
 export let hydrateFor = (bnode: BNode, attrName: string, attrValue: string) => {
 
     let el = bnode.el;
-    let [newBNode, getBNode] = bnode.bnode;
+    let {n: newBNode, g: getBNode} = bnode.bnode;
 
     // Skip the node and its children
     bnode[SKIP] = 3;

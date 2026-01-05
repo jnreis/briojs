@@ -16,7 +16,6 @@ export let APPEND: 'append' = 'append';
 export let ARRAY: 'array' = 'array';
 export let ATTR: 'attr' = 'attr';
 export let ATTRIBUTE__$CAP: 'Attribute' = 'Attribute';
-export let A_VALID: 'a valid' = 'a valid';
 
 export let B_: 'b-' = 'b-';
 export let B_FOR: 'b-for' = 'b-for';
@@ -165,6 +164,8 @@ export let WITH__$CAP: 'With' = 'With';
 /*
  * DIRECT DEPENDENCIES
  */
+
+export let A_VALID = 'a ' + VALID as 'a valid';
 
 export let ADD_EVENT_LISTENER = 'add' + EVENT_LISTENER__$CAP as 'addEventListener';
 

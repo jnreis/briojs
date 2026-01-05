@@ -2,7 +2,6 @@ import { DELETE, PROPS, SKIP, STATE } from '../tools/constants';
 import { newMap, newSet, setProp } from '../tools/object';
 import { skipProp } from './skip';
 import { state } from './state';
-import { storage } from './storage';
 
 // * VARIABLES
 
@@ -82,8 +81,6 @@ export let addPropertyListener = (proxied: any, prop: string | number, fn: Liste
     }
 }
 
-setProp(state, 'persist', (value: any, alias?: string) => storage(localStorage, value, alias), 'wc');
-setProp(state, 'session', (value: any, alias?: string) => storage(sessionStorage, value, alias), 'wc');
 setProp(state, 'init', initProp, 'wc');
 setProp(state, SKIP, skipProp, 'wc');
 
@@ -93,3 +90,5 @@ export { state } from './state';
 export { effect } from './effect';
 export { watch } from './watch';
 export { storage, storageEvent } from './storage';
+export { computed } from './computed';
+export { persist, session } from './storage';

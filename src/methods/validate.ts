@@ -1,11 +1,10 @@
 import { entries, has, logWarn, size } from "../tools";
 import { arrayAdd, join } from "../tools/array";
-import { A_VALID, EMAIL, MUST_BE, OF_TYPE } from "../tools/constants";
+import { A_VALID, EMAIL, MUST_BE, OF_TYPE, REQUIRED } from "../tools/constants";
 import { countKeys, newRegExp } from "../tools/object";
 import { replaceAll, space, test } from "../tools/string";
 import { getType, isArray, isNumber, isString } from "../tools/typeCheck";
 
-let REQUIRED: 'required' = 'required';
 let MATCHES: 'matches' = 'matches';
 let regexLetters = '\\p{L}';
 let regexNumbers = '\\p{Nd}';

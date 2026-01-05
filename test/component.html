@@ -13,13 +13,13 @@
         }
     </style>
 </head>
-<body>
+<body b-data="{count: 1}">
 
     <!-- Counter -->
-    <div b-data="{ count: 0 }" b-effect="console.log('$data', $data)">
-        <button on-click="count++">Increment</button>
-        <button on-click="count--">Decrement</button>
-        <p>Count: <span>{{ count }}</span></p>
+    <div b-data="d1" b-effect="console.log('$data', $data)">
+        <button on-click="add">Increment</button>
+        <button on-click="subtract">Decrement</button>
+        <p>Count 1: <span>{{ count + ` {{ count2 + ` {{ count3 }}` }}` }}</span></p>
     </div>
     <button on-click="$route('/test/ignore.html')">Go to Context</button>
     <hr b-script="my-script">
@@ -97,36 +97,29 @@
     }">
         <script b-script>
             try {
-                $data.count = 33;
+                count = 33;
             } catch {}
         </script>
         <div b-style="bg-light-gray">
             <h1>Counter</h1>
-            <p>Count: {{ $data.count }}</p>
-            <button on-click="$data.count--">Decrement</button>
-            <button on-click="$data.count++">Increment</button>
+            <p>Count: {{ count }}</p>
+            <button on-click="count--">Decrement</button>
+            <button on-click="count++">Increment</button>
 
-            <p>Name prop: {{ $props.name }}</p>
-            <p>Tags prop: {{ $props.tags }}</p>
-            <p>isActive prop: {{ $props.isActive }}</p>
-            <p>Data prop: {{ JSON.stringify($props.data) }}</p>
+            <p>Name prop: {{ name }}</p>
+            <p>Tags prop: {{ tags }}</p>
+            <p>isActive prop: {{ isActive }}</p>
+            <p>Data prop: {{ JSON.stringify(data) }}</p>
         </div>
 
-        {{ $data.count}} Blah
+        {{ count }} Blah
 
         <template b-save="second" b-ref="second" b-slot="second">
             <h2>Heading Second</h2>
             <div b-save="third" b-ref="third" b-slot="third">
-                <h3>Heading 3 {{ $data.count }}</h3>
+                <h3>Heading 3 {{ count }}</h3>
             </div>
         </template>
-
-        <style b-save="bg-light-gray" b-ref="bg-light-gray" b-slot="bg-light-gray">
-            & {
-                background-color: lightgray;
-                padding: 1rem;
-            }
-        </style>
 
         <style>
             h3 {
@@ -145,7 +138,7 @@
         <script b-script b-ref="tmp-script">
             try {
                 if (!$data.hasOwnProperty('count'))
-                    $data.count = 1010;
+                    count = 1010;
             } catch {}
         </script>
 
@@ -154,24 +147,24 @@
         <!-- <div b-data="{count:0}" b-html="counter"></div> -->
         <script b-script>
             try {
-                $data.html1 = `<h3>HTML 1 {{ $data.count }}</h3>
-        <button on-click="$data.html = $data.html2">Show HTML 2</button>`;
-                $data.html2 = `<h3>HTML 2 {{ $data.count }}</h3>
-        <button on-click="$data.html = $data.html1">Show HTML 1</button>`;
+                html1 = `<h3>HTML 1 {{ count }}</h3>
+        <button on-click="html = html2">Show HTML 2</button>`;
+                html2 = `<h3>HTML 2 {{ count }}</h3>
+        <button on-click="html = html1">Show HTML 1</button>`;
 
-                $data.html = $data.html1;
+                html = html1;
             } catch {}
         </script>
 
-        <div b-template="$data.html"></div>
+        <div b-template="html"></div>
 
         <hr>
 
-        <div b-html="$data.html"></div>
+        <div b-html="html"></div>
 
         <hr>
 
-        <div b-text="counter"></div>
+        <div b-text="counter" b-options="{ 'b-text': {hydrate: false} }"></div>
 
         <hr>
 
@@ -179,8 +172,8 @@
 
         <hr>
 
-        <button on-click="$data.count--">Subtract</button>
-        <button on-click="$data.count++">Add</button>
+        <button on-click="count--">Subtract</button>
+        <button on-click="count++">Add</button>
 
         <hr>
 
@@ -215,12 +208,37 @@
 
     </template>
 
+        <style b-save="bg-light-gray">
+            & {
+                background-color: lightgray;
+                padding: 1rem;
+            }
+            h1& {
+                color: darkblue;
+            }
+            .c1,.c2 { color: darkred;   }
+        </style>
+
     <script type="module" src="/src/briojs.min.ts"></script>
 
     <script>
         window.addEventListener('brio', () => {
             let app = brio.newApp();
-            let {$hydrate, $state, $effect, $watch} = app.gc;
+            let {$hydrate, $state, $effect, $watch, $set} = app.gc;
+
+            $set.data('d1', ({$data}, $parent) => ({
+                count: $parent.count,
+                count2: 10,
+                count3: 100,
+                add() {
+                    $data.count++;
+                    console.log($data, $parent);
+                },
+                subtract() {
+                    $data.count--;
+                    console.log($data, $parent);
+                }
+            }));
             $hydrate('body');
 
             console.log('component.html', app);

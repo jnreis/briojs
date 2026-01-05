@@ -7,19 +7,16 @@ import { delState } from '../reactivity';
 
 export let hydrateData = async (bnode: BNode, attrName: string, attrValue: string) => {
 
-    // Get the base bnode. Where to get the context from
-    let baseBNode = bnode[PARENT] || bnode;
-
     // Get the asset function
-    let assetFn = bnode.data[attrValue];
+    let assetFn: any = bnode.data[attrValue];
 
     // Not an asset function. Execute the expression to get the context function, if any
     if (!isFunction(assetFn) && attrValue) {
-        assetFn = bnode.exec(baseBNode, attrValue, genContextArgs(bnode, attrValue));
+        assetFn = bnode.exec(bnode, attrValue, genContextArgs(bnode, attrValue) + ',$'+PARENT);
     }
 
     // Get the new context object
-    let newContext: ObjectType = isFunction(assetFn) ? await assetFn(baseBNode.ctx) : {};
+    let newContext: ObjectType = isFunction(assetFn) ? await assetFn(bnode.ctx, bnode[PARENT]?.ctx[$DATA] || {}) : {};
 
     // Check if newContext is an object. If not, log an error
     if (!isObject(newContext)) {

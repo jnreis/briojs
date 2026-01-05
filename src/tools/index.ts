@@ -1,8 +1,8 @@
 import { arrayAdd } from "./array";
-import { ENTRIES, ERROR, LENGTH, NEW_LINE } from "./constants";
+import { ENTRIES, ERROR, LENGTH, NEW_LINE, TO_STRING } from "./constants";
 import { hasProp, newMap, newSet, O } from "./object";
 import { replace } from "./string";
-import { isArray, isInstance, isMap, isNull, isObject, isSet, isUndefined } from "./typeCheck";
+import { isArray, isInstance, isMap, isNull, isObject, isSet } from "./typeCheck";
 
 /**
  * Determines whether an string or array includes a certain value
@@ -28,7 +28,7 @@ export let slice = (value: string|any[], start?: number | undefined, end?: numbe
     value.slice(start, end);
 
 /** Returns the size/length of a value */
-export let size = (value: any): number => isUndefined(value[LENGTH]) ? value.size : value[LENGTH];
+export let size = (value: any): number => value[LENGTH];
 
 export let wait = (callback: FunctionType, ms = 0) => setTimeout(callback, ms);
 
@@ -70,7 +70,7 @@ export let throttle = (callback: Function, delay: number) => {
 
 let _uids: ObjectType = {};
 
-let _uid = (length: number) => slice(replace(crypto.randomUUID(), /-/g, ''), 0, length - 1) as string;
+let _uid = (length: number) => slice(replace(('b' + [1e20]), /[01]/g, () => crypto.getRandomValues(new Uint8Array(1))[0][TO_STRING](36)), 0, length) as string;
 
 /**
  * Generates a unique string of a minimum length.
@@ -86,7 +86,7 @@ export let uid = (length: number = 8): string => {
     // Mark the key as used
     _uids[key] = true;
 
-    return 'b' + key;
+    return key;
 }
 
 /**

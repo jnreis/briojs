@@ -13,10 +13,6 @@ type AppObject = {
         [scriptName: string]: (ctx: Context) => void
     },
 
-    props: {
-        [propsName: string]: (ctx: Context) => ObjectType | Promise<ObjectType>
-    },
-
     data: {
         [dataName: string]: (ctx: Context) => ObjectType | Promise<ObjectType>
     },
@@ -24,14 +20,12 @@ type AppObject = {
     // ! HYDRATION
     /** The directives to be hydrated */
     directives: Directive[],
-    bnodes: Map<Node, BNode>,
+    bnode: {n: NewBNode, g: GetBNode, a: Map<Node, BNode>},
 
     routes: RoutesObject,
     routeRules: RouteRulesObject,
 
     exec: (bnode: BNode, exp: string, args?: string, returns?: boolean, autoFill?: boolean) => FunctionType,
-    // evalEffect: (bnode: BNode, exp: string, callback: DirectiveCallback) => void,
-    bnode: [NewBNode, GetBNode],
 
     // ! PUBLIC CONTEXT
     /** The public items available to all contexts */
@@ -60,6 +54,12 @@ type GlobalContext = {
     $state: State,
     $watch: Watch,
     $effect: Effect,
+    $computed: Computed,
+    $persist: InitStorage,
+    $session: InitStorage,
+
+    $route: (routePath: string) => void,
+
     $uid: (length?: number) => string,
 } & DomObject & BrioTools;
 
@@ -86,7 +86,6 @@ type SetObject = {
     template: SetAsset,
     script: SetAsset,
     style: SetAsset,
-    props: SetAsset,
     data: SetAsset,
 }
 
@@ -204,6 +203,6 @@ type StyleObject = {
     [styleName: string]: () => string
 }
 
-type AssetType = 'template' | 'script' | 'style' | 'props' | 'data' | 'routeRules';
+type AssetType = 'template' | 'script' | 'style' | 'data' | 'routeRules';
 type SetAsset = (assetName: string, assetValue: any) => void;
 type GetAsset = (assetType: AssetType, assetName: string) => FunctionType;

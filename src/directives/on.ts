@@ -1,11 +1,11 @@
 import { saveCleanup, sliceAttrName } from '../app';
-import { has, debounce, throttle, wait, logError } from '../tools';
+import { has, debounce, throttle, wait } from '../tools';
 import { each, every } from '../tools/array';
-import { DELETE, FUNCTION, PREVENT_DEFAULT, TARGET, REQUIRES_ACTION_TYPE, EVENT, DOCUMENT, DEBOUNCE, OPTIONS, THROTTLE, PREVENT, $, DETAIL, SUPER } from '../tools/constants';
+import { DELETE, PREVENT_DEFAULT, TARGET, EVENT, DOCUMENT, DEBOUNCE, OPTIONS, THROTTLE, PREVENT, $, DETAIL, SUPER } from '../tools/constants';
 import { emit, isElementVisible, listen } from '../tools/dom';
 import { D, delProp, deleteKeys, getKeys, W, countKeys, getProp } from '../tools/object';
 import { lower, split } from '../tools/string';
-import { getType, isFunction } from '../tools/typeCheck';
+import { isFunction } from '../tools/typeCheck';
 
 let KEYUP = 'keyup';
 let KEYDOWN = 'keydown';
@@ -66,14 +66,15 @@ export let hydrateOn = (bnode: BNode, attrName: string, attrValue: string) => {
     // The target element
     let target = $el;
 
+    // Get the function, if any
+    let expFn = bnode.exec(bnode, attrValue, $+EVENT);
+
     // The function to call
     let fn = (e: any) => {
-        // Get the function, if any
-        let call = bnode.exec(bnode, attrValue, $+EVENT, false);
+        let expResult = expFn(e);
 
         // Check if the event handler is a function
-        if (isFunction(call)) call(e);
-        else logError(REQUIRES_ACTION_TYPE(EVENT, attrName, 'a ' + FUNCTION, getType(call())));
+        if (isFunction(expResult)) expResult(e);
     };
 
     // Options

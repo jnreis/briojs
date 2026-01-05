@@ -93,6 +93,10 @@ export let storage = (_storage: any, value: any, alias?: string) => {
     return initProp(initFn);
 }
 
+export let persist = (value: any, alias?: string) => storage(localStorage, value, alias);
+
+export let session = (value: any, alias?: string) => storage(sessionStorage, value, alias);
+
 export let storageEvent = (event: StorageEvent) => {
     // If the key is being observed
     if (_storageStack.has(event.key)) {

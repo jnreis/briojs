@@ -9,7 +9,22 @@
     <h1>b-for</h1>
 
     <div b-data="app" b-props="{ person: 'Jhonathan', people: ['John','Jane','James'], p2: [{id: 1, label: 'User 1'}, {id: 2, label: 'User 2'}], count: 3}">
+
+
+
+    <script b-script>
+        () => {
+            console.log('b-script executed', $data);
+            $data.c1 = $computed(() => {
+                return $data.data.length + ' items';
+            });
+        }
+    </script>
+
+    <div b-effect="console.log('c1 value', c1)"></div>
+
         <pre>{{ JSON.stringify($props) }}</pre>
+        <pre>{{ c1 }}</pre>
         <!-- <div class="cards">
             <div class="card" b-for="person, index in count" b-props="{isActive: false}">
                 <p>{{index}} - {{ person }}</p>
@@ -50,7 +65,8 @@
 
     <script>
         window.addEventListener('brio', () => {
-            let {bnodes, gc: {$hydrate, $set}} = brio.newApp();
+            let {bnode: {a: bnodes}, gc} = brio.newApp();
+            let {$hydrate, $set} = gc;
             $set.data('app', () => {
                 return {
                     data: [
@@ -61,7 +77,7 @@
                 }
             });
             $hydrate('body');
-            console.warn('Brio.js is ready:', bnodes);
+            console.warn('Brio.js is ready:', gc);
 
             // let obj = $state({
             //     person: 'Jhonathan',

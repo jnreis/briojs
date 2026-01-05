@@ -50,6 +50,8 @@ type State = {
 };
 type Watch = (proxied: any, prop: string | number | null, callback: ListenerFunction, priority?: number) => () => void;
 type Effect = (listener: ListenerFunction, dependencies?: ListenerFunction, priority?: number) => () => any;
+type Computed = (value: FunctionType) => FunctionType;
+type InitStorage = (value: any, alias?: string | undefined) => any;
 
 type Reactivity = {
     state: State,

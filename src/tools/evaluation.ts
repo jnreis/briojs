@@ -1,18 +1,14 @@
-import { DELETE } from "./constants";
-import { isStringFunction, match, startsWith, test, trim } from "./string";
-import { sanitizeAttrValue } from "../app";
-import { size, slice } from ".";
+import { isStringFunction, replace, test } from "./string";
+import { sanitizeAttrValue, templateRegex } from "../app";
+import { newSet } from "./object";
+import { arrayAdd } from "./array";
+import { size } from ".";
 
 export let newFn = (args: string, exp: string, returns: boolean = true) =>
     new Function(args, returns ? `return(${exp})` : exp) as FunctionType;
 
 /** Ensure an expression is a function */
 export let expToFn = (exp: string, args: string = '', returns: boolean = true) => {
-
-    // Call the expression as a function
-    if (isPath(exp) && !returns) {
-        exp += `(${args})`;
-    }
 
     if (!isStringFunction(exp)) {
         // If the expression returns text, wrap it in backticks
@@ -25,88 +21,63 @@ export let expToFn = (exp: string, args: string = '', returns: boolean = true) =
     return exp;
 }
 
-let startWithSpaceRegex = /^\s/;
-let startWithVariableRegex = /^[a-z_$][\w$]*/i;
-let startWithBracketRegex = /^\[[^\]]*\]/;
-let startWithParenthesisRegex = /^\([^\)]*\)/;
-
 /**
- * Check if a string is a valid path expression
+ * Find a missing character in a string among all Unicode characters (~1.1 million characters).
  * 
- * Notes:
- * - Delete statements are not considered valid paths.
- * - Function calls and bracket notation are allowed, however they must NOT include a closing parenthesis or bracket before their actual end. 
- *   This is because the regex finds the first closing parenthesis/bracket and assumes it is the end of the expression.
- *   However, this should not be an issue in most cases.
- *   - Valid: `fn(1,2,3).name`, `$data['name']`
- *   - Not valid: `fn(')').name`, `$data.['name]']`
+ * Useful for finding a unique placeholder character that does not exist in a given string.
+ * 
+ * Note it does not include surrogate halves (D800–DFFF) as they are invalid standalone codepoints.
+ * 
+ * @param str - The string to check
+ * @returns A character that is not present in the string
  */
-let isPath = (exp: string) => {
+export let missingChar = (str: string, exclude: Set<string> = newSet()) => {
+    // Fast lookup
+    let has: Set<string> = newSet(str);
 
-    exp = trim(exp);
+    // Unicode range goes up to U+10FFFF
+    for (let cp = 0x80; cp <= 0x10FFFF; cp++) {
+        // Skip surrogate halves (D800–DFFF) — invalid standalone codepoints
+        if (cp >= 0xD800 && cp <= 0xDFFF) continue;
 
-    // Is empty or a delete statement
-    if (!exp || startsWith(exp, DELETE+' ')) return false;
-
-    let lastIndex = size(exp);
-    /**
-     * 0. initial
-     * 1. variable name
-     * 2. bracket
-     * 3. parenthesis
-     * 4. dot notation
-     */
-    let lastMatchType: 0 | 1 | 2 | 3 | 4 = 0;
-    for (let i = 0; i < lastIndex; i++) {
-
-        // Get the remaining substring
-        let sub = slice(exp, i) as string;
-
-        let matchType: 0 | 1 | 2 | 3 | 4 = 0;
-        let matchRegex: RegExp;
-
-        let notFirstOrDot = lastMatchType != 0 && lastMatchType != 4;
-
-        // Is space
-        if (test(sub, startWithSpaceRegex)) {
-            continue;
-        }
-        // Variable name
-        // Valid: $data.name, $data['name'], $data['person'].name
-        // Not valid: .name, $data['person']name
-        else if (!notFirstOrDot && test(sub, startWithVariableRegex)) {
-            matchType = 1;
-            matchRegex = startWithVariableRegex;
-        }
-        // Bracket
-        // - Valid: $data['name'], $data[0]
-        // - Not valid: [0], $data.[0]
-        else if (notFirstOrDot && test(sub, startWithBracketRegex)) {
-            matchType = 2;
-            matchRegex = startWithBracketRegex;
-        }
-        // Parenthesis (function call)
-        // - Valid: $data()['name'], $data(0)
-        // - Not valid: (0), $data.(0)
-        else if (notFirstOrDot && test(sub, startWithParenthesisRegex)) {
-            matchType = 3;
-            matchRegex = startWithParenthesisRegex;
-        }
-        // Dot notation
-        // - Valid: $data.name, $data.name.first
-        // - Not valid: .name, $data..name
-        else if (notFirstOrDot && startsWith(sub, '.')) {
-            matchType = 4;
-            matchRegex = /^\./;
-        }
-        // Not a valid path
-        else return false;
-
-        // Update the index and last match type
-        let matched = match(sub, matchRegex);
-        i += size(matched![0]) - 1;
-        lastMatchType = matchType;
+        let ch = String.fromCodePoint(cp);
+        if (!has.has(ch) && !exclude.has(ch)) return ch;
     }
 
-    return lastMatchType == 1 || lastMatchType == 2;
+    // Nearly impossible to reach
+}
+
+export let getTemplateExpressions = (template: string): [string, [string, string][]] => {
+    let items: [string, string][] = [];
+    let placeholders: Set<string> = newSet();
+
+    while (test(template, templateRegex)) {
+        // Find a unique placeholder character
+        let placeholder = missingChar(template, placeholders);
+
+        // If no placeholder found, break the loop.
+        // Nearly impossible to reach.
+        if (!placeholder) break;
+
+        // Replace the matched expression with the placeholder
+        template = replace(template, templateRegex, (_: string, expression: string) => {
+            // Store the matched expression
+            arrayAdd(items, [placeholder, expression]);
+
+            // Keep track of used placeholders
+            placeholders.add(placeholder);
+
+            return placeholder;
+        });
+    }
+
+    return [template, items];
+}
+
+export let setTemplateExpressions = (template: string, expressions: [string, string][]) => {
+    for (let i = size(expressions) - 1; i >= 0;  i--) {
+        let [placeholder, expression] = expressions[i];
+        template = replace(template, placeholder, '${' + expression + '}');
+    }
+    return template;
 }

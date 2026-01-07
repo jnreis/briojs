@@ -34,24 +34,21 @@ export let hydrateScript = async (bnode: BNode, attrName: string, attrValue: str
         let content = src ? await http.get(src) : getNodeContent(el);
 
         // Include code from this script element, if any
-        if (content) arrayAdd(scripts, sanitizeAttrValue(content));
+        if (content) arrayAdd(scripts, content);
 
         // Remove this script element
         removeNode(el);
     }
 
-    for (let script of scripts) {
-        // Get the script function/string
-        let fn = script;
-
+    for (let fn of scripts) {
         // Evaluate the script
         if (isString(fn)) {
-            let stringIsFn = isStringFunction(fn);
+            let isStringFn = isStringFunction(fn);
 
-            fn = newFn(genContextArgs(bnode, fn), fn, stringIsFn);
+            fn = newFn(genContextArgs(bnode, fn), sanitizeAttrValue(fn), isStringFn);
 
             // If the script is a string function, call the wrapper function to get the actual function
-            if (stringIsFn) fn = fn(bnode.ctx);
+            if (isStringFn) fn = fn(bnode.ctx);
         }
 
         // Execute the script

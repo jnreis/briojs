@@ -22,8 +22,6 @@ export let hydrateIntersection = (bnode: BNode, attrName: string, attrValue: str
     // Options
     let options = bnode[OPTIONS][attrName] || {};
 
-    let $el = bnode.el;
-
     // Evaluate the expression
     let expFn = bnode.exec(bnode, attrValue, '$entry', false);
 
@@ -44,7 +42,7 @@ export let hydrateIntersection = (bnode: BNode, attrName: string, attrValue: str
     }, options);
 
     // Observe the element
-    observer[OBSERVE]($el);
+    observer[OBSERVE](bnode.el);
 
     // Save the cleanup function
     saveCleanup(bnode, () => observer[DISCONNECT]());

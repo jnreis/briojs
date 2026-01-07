@@ -5,7 +5,7 @@ import { computed, effect, persist, session, state, storageEvent, watch } from "
 import { has, logError, uid } from "./tools";
 import { arrayAdd, each, filter, find, join, map, some } from "./tools/array";
 import { TEXT, TEXT_CONTENT, ATTR, DELETE, INNER_HTML, PARENT, $PROPS, NULL, B_DATA, SCRIPT, $DATA, STYLE, B_, TEMPLATE, UNDEFINED, OPTIONS, ROUTE, NEW_LINE, BRIO, STORAGE, STATE, NUMBER, DIRECTIVES, DATA, ROUTE_RULE, B_SAVE, OUTER_HTML, $STORE, SKIP, NODES, B_IF, MESSAGE, CLONE, $REF, $SLOT, B_TEMPLATE, B_REF, $, $DEHYDRATE, $HYDRATE, $INSERT, B_SCRIPT, B_SLOT, B_FOR, $FOR, DEHYDRATE_CHILDREN, VALIDATE } from "./tools/constants";
-import { walk, getAttr, delAttr, getParent, getTagName, getNodeContent, removeNode, eachAttribute, query, emit, listen, href, setAttr } from "./tools/dom";
+import { walk, getAttr, delAttr, getParent, getTagName, getNodeContent, removeNode, eachAttribute, query, emit, listen, href, setAttr, hasAttr } from "./tools/dom";
 import { expToFn, getTemplateExpressions, newFn, setTemplateExpressions } from "./tools/evaluation";
 import { countKeys, hasProp, getProp, newMap, setProp, setObjectKeys, W, newSet, S, sync, clone, delProp, getKeys } from "./tools/object";
 import { isStringNumeric, replace, replaceAll, split, startsWith, test, trim, wrapInBackticks } from "./tools/string";
@@ -140,7 +140,7 @@ export let newApp = (): AppObject => {
                     let tagName = getTagName(_node);
 
                     // Ignore script elements that do not have the b-script attribute
-                    if (tagName == SCRIPT && isNull(getAttr(_node as HTMLElement, B_SCRIPT))) {
+                    if (tagName == SCRIPT && !hasAttr(_node as HTMLElement, B_SCRIPT)) {
                         result = false;
                     }
                     // Hydrate the element
@@ -203,7 +203,7 @@ export let newApp = (): AppObject => {
     let hydrateTextNode = (node: Text, ctxNode?: Node) => {
 
         let text = node[TEXT_CONTENT] as string;
-        let sanitizedText = replaceMustache(sanitizeAttrValue(text || ''));
+        let sanitizedText = replaceMustache(text || '');
 
         if (sanitizedText && test(sanitizedText, templateRegex)) {
 
@@ -317,13 +317,21 @@ export let newApp = (): AppObject => {
 
         // Get the HTML content of the saved nodes
         each(assets, ([assetName, el]) => {
+            // The tag name of the element
             let tagName = getTagName(el);
 
             // Determine the asset type (script, style, or template)
             let assetType = (tagName != SCRIPT && tagName != STYLE) ? TEMPLATE : tagName;
 
+            // The element is a template. Make sure it has the b-template directive so it can be properly hydrated later.
+            if (tagName == TEMPLATE && !hasAttr(el, B_TEMPLATE)) {
+                setAttr(el, B_TEMPLATE, '');
+            }
+
+            // Get the asset content
             let assetValue = el[assetType == TEMPLATE ? OUTER_HTML : INNER_HTML];
 
+            // Save the asset
             app[assetType][assetName] = trim(assetValue);
         });
     }
@@ -595,7 +603,7 @@ export let saveAttr = (bnode: BNode, attrName: string, attrValue: string) => {
  * Without this, the evaluate function may throw an error for some expressions.
  */
 export let sanitizeAttrValue = (text: string) => 
-    replace(join(map(split(text, NEW_LINE), line => startsWith(trim(line), '//') ? '' : line), NEW_LINE), /;$/, '');
+    replace(join(map(split(text, NEW_LINE), line => startsWith(trim(line), '//') ? '' : line), NEW_LINE), /;\s*$/, '');
 
 /** Match template literal ${} */
 export let templateRegex = /\${((?!.*\${).*?)}/;
@@ -611,16 +619,16 @@ export let replaceMustache = (text: string, replacement: any = '${$1}') =>
 /** Create a new context */
 let newContext = (contextName: string, directiveName: string, inherit?: boolean) => (bnode: BNode, parent: BNode|undefined) => {
     // The node element
-    let el = bnode.el as HTMLElement;
+    let el = bnode.el;
 
     // Get the parent context, if any
     let parentContext = parent ? parent.ctx[contextName as '$data' | '$props'] : NULL;
 
     let isElement = isElementNode(el);
-    let hasDirective = isElement && !isNull(getAttr(el, directiveName));
+    let hasDirective = isElement && hasAttr(el, directiveName);
 
     // Elements with b-if stop the hydration flow before b-data or b-props can be processed
-    let isBif = isElement && (bnode[ATTR][B_IF] || !isNull(getAttr(el, B_IF)));
+    let isBif = isElement && (bnode[ATTR][B_IF] || hasAttr(el, B_IF));
 
     // Determine if a new context should be created (is element with no parent context or with directive)
     let createNewState = isElement && (!parentContext || hasDirective);
@@ -637,7 +645,7 @@ let newContext = (contextName: string, directiveName: string, inherit?: boolean)
 }
 
 let newDataLevelContext = (contextName: string) => 
-    (bnode: BNode, parent?: BNode) => !parent || (isElementNode(bnode.el) && !isNull(getAttr(bnode.el as HTMLElement, B_DATA))) ? {} : parent.ctx[contextName as keyof Context];
+    (bnode: BNode, parent?: BNode) => !parent || (isElementNode(bnode.el) && hasAttr(bnode.el, B_DATA)) ? {} : parent.ctx[contextName as keyof Context];
 
 /** Handle route changes on popstate */
 let onPopState = () => {
@@ -722,7 +730,7 @@ let getElementsByDirective = async (node: Node, directiveName: 'b-save' | 'b-slo
         if (isElementNode(n)) {
 
             // Skip elements that have any of the skipDirectives
-            if (some(skipDirectives, d => !isNull(getAttr(n as HTMLElement, d)))) return false;
+            if (some(skipDirectives, d => hasAttr(n as HTMLElement, d))) return false;
 
             // Get the asset name
             let assetName = getAttr(n as HTMLElement, directiveName);

@@ -2,7 +2,7 @@ import { updateDataLevelContext } from "../app";
 import { has, logError, logWarn, size, slice } from "../tools";
 import { arrayAdd, each, every, join, some } from "../tools/array";
 import { BODY, ELEMENT, HTML, HYDRATE, INNER_HTML, NOT_FOUND, TEXT, TEXT_CONTENT, HEAD, SCRIPT, REPLACE_WITH, $INSERT, TEMPLATE, $HYDRATE, $DEHYDRATE, B_SCRIPT, B_IGNORE, B_SAVE, B_SLOT, CONTENT, PREPEND, APPEND, REPLACE_CHILDREN, MUST_BE, OF_TYPE, NODE__$CAP, TARGET, STRING, SELECTOR, BEFORE, AFTER, HTML__$UPPER, B_, PROPS, FUNCTION, BUT_GOT_INSTEAD, $PROPS, DEFAULT, REQUIRED, INVALID__$CAP } from "../tools/constants";
-import { childNodes, createElement, delAttr, eachAttribute, forcePropertyAssignment, getAttr, getTagName, insertNodes, query, queryAll, setAttr } from "../tools/dom";
+import { childNodes, createElement, delAttr, eachAttribute, forcePropertyAssignment, getAttr, getTagName, hasAttr, insertNodes, query, queryAll, setAttr } from "../tools/dom";
 import { newFn } from "../tools/evaluation";
 import { countKeys, getProp } from "../tools/object";
 import { space, trim, upper, wrapInBackticks } from "../tools/string";
@@ -120,8 +120,8 @@ export let newInsert = (app: AppObject) => async (target: HTMLElement | string, 
             if (isObject(schema)) {
                 type = schema.type;
                 required = !!schema[REQUIRED];
-                warn = schema.warn;
                 isText = !!schema.isText;
+                warn = schema.warn;
             }
 
             // Ensure type is an array
@@ -218,7 +218,7 @@ export let newInsert = (app: AppObject) => async (target: HTMLElement | string, 
 
         each(scripts, scriptElement => {
             // IMPORTANT: Don't load the script if it has the b-script, b-ignore, b-save, or b-slot directive
-            if (every([B_SCRIPT, B_IGNORE, B_SAVE, B_SLOT], directive => isNull(getAttr(scriptElement, directive)))) {
+            if (every([B_SCRIPT, B_IGNORE, B_SAVE, B_SLOT], directive => !hasAttr(scriptElement, directive))) {
 
                 // Create a new script element
                 let newScriptElement = createElement(SCRIPT);

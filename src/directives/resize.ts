@@ -17,13 +17,11 @@ export let hydrateResize = (bnode: BNode, attrName: string, attrValue: string) =
 
     let [_directiveName] = split(_attrName, '-');
 
-    let $el = bnode.el;
-
     // Options
     let options = bnode[OPTIONS][attrName] || {};
 
     // Get the target element
-    let target = options[DOCUMENT] ? query(HTML) as HTMLElement : $el;
+    let target = options[DOCUMENT] ? query(HTML) as HTMLElement : bnode.el;
 
     // Evaluate the expression
     let expFn = bnode.exec(bnode, attrValue, '$size', false);

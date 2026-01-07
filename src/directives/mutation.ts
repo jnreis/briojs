@@ -1,59 +1,99 @@
-import { saveCleanup, sliceAttrName } from "../app";
-import { debounce } from "../tools";
-import { each } from "../tools/array";
-import { split } from "../tools/string";
-import { DISCONNECT, OBSERVE, ONCE, OPTIONS, DEBOUNCE, EXIT, ON_ENTER, B_, ON_EXIT } from "../tools/constants";
+import { saveCleanup } from "../app";
+import { debounce, size } from "../tools";
+import { filter } from "../tools/array";
+import { DISCONNECT, OBSERVE, OPTIONS, DEBOUNCE, ON_, B_, TARGET, NODES, UNDEFINED } from "../tools/constants";
+
 
 /**
  * Hydrate the `b-intersect` directive
  * 
- * @option `once`       If true, the observer will only execute the callback once.
  * @option `debounce`   The time in milliseconds to wait before executing the callback.
- * @option `root`       The element that is used as the viewport for checking visibility of the target.
- * @option `rootMargin` Margin around the root. Can have values similar to the CSS margin property, e.g. "10px 20px 30px 40px" (top, right, bottom, left).
- * @option `threshold`  Either a single number or an array of numbers which indicate at what percentage of the target's visibility the observer's callback should be
+ * @option `target`     The target element to observe. If not provided, the element itself will be observed.
  */
-export let hydrateIntersection = (bnode: BNode, attrName: string, attrValue: string) => {
+export let hydrateMutationType = (mutationType: MutationRecordType, mutationOptions: ObjectType, mutationFilter: FunctionType) => (bnode: BNode, attrName: string, attrValue: string) => {
 
-    let _attrName = sliceAttrName(attrName); // 5: b-on-, 3: on-
-
-    let [directiveName] = split(_attrName, '-');
-
-    // Options
     let options = bnode[OPTIONS][attrName] || {};
 
-    let $el = bnode.el;
+    // Set up observer options
+    let observerOptions: ObjectType = {
+        [mutationType]: true
+    };
+
+    mutationOptions.subtree = false;
+    
+    // Get the mutation options related to the specific mutation type: childList, attributes, or characterData
+    for (let key in mutationOptions) {
+        observerOptions[key] = options[key] || mutationOptions[key];
+    }
 
     // Evaluate the expression
-    let expFn = bnode.exec(bnode, attrValue, '$entry', false);
+    let expFn = bnode.exec(bnode, attrValue, "$mutations", false);
 
-    // Debounce the expression function
     let debouncedExpFn = debounce(expFn, options[DEBOUNCE] || 100);
 
-    let observer = new IntersectionObserver(entries => {
-        each(entries, (entry: IntersectionObserverEntry) => {
-            // Ignore if intersecting and the directive is `exit`
-            if (entry.isIntersecting == (directiveName == EXIT)) return;
+    let observer = new MutationObserver(mutations => {
 
-            // Execute the expression, if the event handler is a function
-            debouncedExpFn(entry);
+        // Filter mutations by type
+        mutations = filterMutations(mutationType, mutationFilter, mutations);
 
-            // If the directive has the `once` option, disconnect the observer
-            if (options[ONCE]) observer[DISCONNECT]();
-        });
-    }, options);
+        // Execute the expression
+        if (size(mutations)) debouncedExpFn(mutations);
+    });
 
     // Observe the element
-    observer[OBSERVE]($el);
+    observer[OBSERVE](options[TARGET] || bnode.el, observerOptions);
 
     // Save the cleanup function
     saveCleanup(bnode, () => observer[DISCONNECT]());
-}
+};
 
-export let intersectionDirectives: Directive[] = [
-    [ON_ENTER, hydrateIntersection],
-    [B_+ON_ENTER, hydrateIntersection],
+// Helper to filter mutation records by type
+let filterMutations = (mutationType: MutationRecordType, mutationFilter: FunctionType, mutations: MutationRecord[]) =>
+    filter(mutations, m => m.type === mutationType && mutationFilter(m)) as MutationRecord[];
 
-    [ON_EXIT, hydrateIntersection],
-    [B_+ON_EXIT, hydrateIntersection],
+// Hydration for node added
+let hydrateMutationAdd = hydrateMutationType(
+    'childList',
+    {},
+    m => size(m.addedNodes)
+);
+
+// Hydration for node removed
+let hydrateMutationRemove = hydrateMutationType(
+    'childList',
+    {},
+    m => size(m.removedNodes)
+);
+
+// Hydration for attribute changes
+let hydrateMutationAttrs = hydrateMutationType(
+    'attributes',
+    { attributeOldValue: true, attributeFilter: UNDEFINED },
+    () => true
+);
+
+// Hydration for text changes
+let hydrateMutationText = hydrateMutationType(
+    'characterData',
+    { characterDataOldValue: true },
+    () => true
+);
+
+let ON_ADDED_NODES = ON_+"added"+NODES;
+let ON_REMOVED_NODES = ON_+"removed"+NODES;
+let ON_ATTRS = ON_+"attrs";
+let ON_TEXT = ON_+"text";
+
+export let mutationDirectives: Directive[] = [
+    [ON_ADDED_NODES, hydrateMutationAdd],
+    [B_+ON_ADDED_NODES, hydrateMutationAdd],
+
+    [ON_REMOVED_NODES, hydrateMutationRemove],
+    [B_+ON_REMOVED_NODES, hydrateMutationRemove],
+
+    [ON_ATTRS, hydrateMutationAttrs],
+    [B_+ON_ATTRS, hydrateMutationAttrs],
+
+    [ON_TEXT, hydrateMutationText],
+    [B_+ON_TEXT, hydrateMutationText],
 ];

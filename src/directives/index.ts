@@ -19,6 +19,7 @@ import { maskDirective } from './mask';
 import { effectDirective } from './effect';
 import { arrayAdd, each } from '../tools/array';
 import { DIRECTIVES } from '../tools/constants';
+import { mutationDirectives } from './mutation';
 
 /**
  * Active directives
@@ -131,6 +132,7 @@ export let allDirectives: [string | RegExp, HydrateDirective][] = [
      * Event directives
      */
     ...intersectionDirectives, // [b-on|on]-enter, [b-on|on]-exit
+    ...mutationDirectives, // [b-on|on]-[addednodes|removednodes|attrs|text]
     ...resizeDirectives, // [b-on|on]-resize
     onDirective, // [b-on|on]-[eventName]
 

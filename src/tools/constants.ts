@@ -68,6 +68,7 @@ export let EXIT: 'exit' = 'exit';
 
 export let GET: 'get' = 'get';
 
+export let HAS: 'has' = 'has';
 export let HEAD: 'head' = 'head';
 export let HOOKS: 'hooks' = 'hooks';
 export let HREF: 'href' = 'href';
@@ -204,6 +205,7 @@ export let FUNCTION = 'func' + TION as 'function';
 export let GET_ATTRIBUTE = GET + ATTRIBUTE__$CAP as 'getAttribute';
 export let GET_PROPERTY_VALUE = GET + PROPERTY__$CAP + 'Value' as 'getPropertyValue';
 export let GET_PROPERTY_PRIORITY = GET + PROPERTY__$CAP + 'Priority' as 'getPropertyPriority';
+export let HAS_ATTRIBUTE = HAS + ATTRIBUTE__$CAP as 'hasAttribute';
 
 export let HEADERS = HEAD + 'ers' as 'headers';
 export let HYDRATED = HYDRATE + 'd' as 'hydrated';
@@ -263,7 +265,7 @@ export let GET_OWN_PROPERTY_DESCRIPTOR = GET + OWN_PROPERTY + 'Descriptor' as 'g
 export let GET_OWN_PROPERTY_DESCRIPTORS = GET_OWN_PROPERTY_DESCRIPTOR + 's' as 'getOwnPropertyDescriptors';
 export let GET_OWN_PROPERTY_NAMES = GET + OWN_PROPERTY + 'Names' as 'getOwnPropertyNames';
 
-export let HAS_OWN_PROPERTY = 'has' + OWN_PROPERTY as 'hasOwnProperty';
+export let HAS_OWN_PROPERTY = HAS + OWN_PROPERTY as 'hasOwnProperty';
 
 export let SELECTOR_TEXT = SELECTOR + 'Text' as 'selectorText';
 

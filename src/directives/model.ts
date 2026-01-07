@@ -2,7 +2,7 @@ import { effect } from '../reactivity';
 import { entries, has, logError, logWarn, size } from '../tools';
 import { arrayAdd, arrayFrom, each, join } from '../tools/array';
 import { SELECT, INPUT, TEXTAREA, CHECKBOX, RADIO, VALUE, ARRAY, DIRECTIVE, COMPOSING, ELEMENT, CAN_ONLY_BE_USED_ON, BOOLEAN, STRING, NUMBER, CHECKED, BUT_GOT_INSTEAD, TEXT, OF_TYPE, OPTIONS, COMPOSITION_START, COMPOSITION_END, EMAIL, REQUIRES_REACTIVE_VALUE } from '../tools/constants';
-import { listen, onCompositionStart, onCompositionEnd, getAttr, queryAll, getTagName, nextFrame } from '../tools/dom';
+import { listen, onCompositionStart, onCompositionEnd, queryAll, getTagName, nextFrame, hasAttr } from '../tools/dom';
 import { saveCleanup } from '../app';
 import { D, newMap } from '../tools/object';
 import { parse, space, trim } from '../tools/string';
@@ -116,7 +116,7 @@ export let hydrateModel = (bnode: BNode, attrName: string, attrValue: string) =>
      */
     let getNodeValue = (node: any) => {
 
-        let value = node[isNull(getAttr(node, VALUE)) && isCheckboxOrRadio ? CHECKED : VALUE];
+        let value = node[!hasAttr(node, VALUE) && isCheckboxOrRadio ? CHECKED : VALUE];
 
         let _modifiers = nodeModifiers.get(node) || modifiers;
 

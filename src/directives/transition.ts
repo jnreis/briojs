@@ -7,7 +7,7 @@ import { isArray, isElementNode, isObject } from "../tools/typeCheck";
 
 export let transitions = newMap() as Map<Node, FunctionType>;
 
-export let hydrateTransition = (bnode: BNode, attrName: string, attrValue: string) => {
+let hydrateTransition = (bnode: BNode, attrName: string, attrValue: string) => {
 
     // b-transition cannot be used with b-template
     if (bnode[NODES]) return;

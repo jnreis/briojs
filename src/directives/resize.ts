@@ -11,7 +11,7 @@ import { split } from "../tools/string";
  * @option `debounce`   The time in milliseconds to wait before executing the callback.
  * @option `box`        The box type to observe: content-box, border-box, device-pixel-content-box
  */
-export let hydrateResize = (bnode: BNode, attrName: string, attrValue: string) => {
+let hydrateResize = (bnode: BNode, attrName: string, attrValue: string) => {
 
     let _attrName = sliceAttrName(attrName); // 5: b-on-, 3: on-
 

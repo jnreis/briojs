@@ -10,7 +10,7 @@ import { DISCONNECT, OBSERVE, OPTIONS, DEBOUNCE, ON_, B_, TARGET, NODES, UNDEFIN
  * @option `debounce`   The time in milliseconds to wait before executing the callback.
  * @option `target`     The target element to observe. If not provided, the element itself will be observed.
  */
-export let hydrateMutationType = (mutationType: MutationRecordType, mutationOptions: ObjectType, mutationFilter: FunctionType) => (bnode: BNode, attrName: string, attrValue: string) => {
+let hydrateMutationType = (mutationType: MutationRecordType, mutationOptions: ObjectType, mutationFilter: FunctionType) => (bnode: BNode, attrName: string, attrValue: string) => {
 
     let options = bnode[OPTIONS][attrName] || {};
 

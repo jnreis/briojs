@@ -46,7 +46,7 @@ let UPDATE_CURSOR: 'updateCursor' = 'updateCursor';
  * @option thousands (default: `,`)
  * @option precision (default: `2`)
  */
-export let hydrateMask = (bnode: BNode, attrName: string, attrValue: string) => {
+let hydrateMask = (bnode: BNode, attrName: string, attrValue: string) => {
 
     let $el: any = bnode.el;
 
@@ -102,7 +102,7 @@ export let hydrateMask = (bnode: BNode, attrName: string, attrValue: string) => 
     saveCleanup(bnode, listen($el, INPUT, _mask, true));
 }
 
-export let applyMask = ($mask: MaskContext) => {
+let applyMask = ($mask: MaskContext) => {
 
     $mask[CURSOR_UPDATED] = false;
     $mask[OUTPUT] = '';

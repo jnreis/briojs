@@ -1,24 +1,18 @@
 import { newInsert } from "./methods/dom";
 import { http } from "./methods/http";
-import { go, newRouter } from "./methods/route";
 import { computed, effect, persist, session, state, storageEvent, watch } from "./reactivity";
 import { has, logError, uid } from "./tools";
 import { arrayAdd, each, filter, find, join, map, some } from "./tools/array";
-import { TEXT, TEXT_CONTENT, ATTR, DELETE, INNER_HTML, PARENT, $PROPS, NULL, B_DATA, SCRIPT, $DATA, STYLE, B_, TEMPLATE, UNDEFINED, OPTIONS, ROUTE, NEW_LINE, BRIO, STORAGE, STATE, NUMBER, DIRECTIVES, DATA, ROUTE_RULE, B_SAVE, OUTER_HTML, $STORE, SKIP, NODES, B_IF, MESSAGE, CLONE, $REF, $SLOT, B_TEMPLATE, B_REF, $, $DEHYDRATE, $HYDRATE, $INSERT, B_SCRIPT, B_SLOT, B_FOR, $FOR, DEHYDRATE_CHILDREN, VALIDATE } from "./tools/constants";
-import { walk, getAttr, delAttr, getParent, getTagName, getNodeContent, removeNode, eachAttribute, query, emit, listen, href, setAttr, hasAttr } from "./tools/dom";
+import { TEXT, TEXT_CONTENT, ATTR, DELETE, INNER_HTML, PARENT, $PROPS, NULL, B_DATA, SCRIPT, $DATA, STYLE, B_, TEMPLATE, UNDEFINED, OPTIONS, NEW_LINE, BRIO, STORAGE, STATE, DIRECTIVES, DATA, B_SAVE, OUTER_HTML, $STORE, SKIP, NODES, B_IF, MESSAGE, CLONE, $REF, $SLOT, B_TEMPLATE, B_REF, $, $DEHYDRATE, $HYDRATE, $INSERT, B_SCRIPT, B_SLOT, B_FOR, $FOR, DEHYDRATE_CHILDREN, VALIDATE } from "./tools/constants";
+import { walk, getAttr, delAttr, getParent, getTagName, getNodeContent, removeNode, eachAttribute, query, emit, listen, setAttr, hasAttr } from "./tools/dom";
 import { expToFn, getTemplateExpressions, newFn, setTemplateExpressions } from "./tools/evaluation";
-import { countKeys, hasProp, getProp, newMap, setProp, setObjectKeys, W, newSet, S, sync, clone, delProp, getKeys } from "./tools/object";
-import { isStringNumeric, replace, replaceAll, split, startsWith, test, trim, wrapInBackticks } from "./tools/string";
-import { isTextNode, isElementNode, isNull, isRegExp, isString, isNode, isFunction, isArray, getType } from "./tools/typeCheck";
+import { countKeys, hasProp, getProp, newMap, setProp, setObjectKeys, W, S, sync, clone, delProp, getKeys, L } from "./tools/object";
+import { replace, replaceAll, split, startsWith, test, trim, wrapInBackticks } from "./tools/string";
+import { isTextNode, isElementNode, isNull, isRegExp, isString, isNode, isFunction, isArray, getType, isNumber } from "./tools/typeCheck";
 import { validate } from "./methods/validate";
 import { getAccessedProp } from "./reactivity/track";
 
 export let symbol = S(BRIO);
-
-/** The router for each app */
-export let routers: GetRoute[] = [];
-
-export let loadedScripts = newSet() as Set<string>;
 
 /** Create a new app */
 export let newApp = (): AppObject => {
@@ -391,8 +385,6 @@ export let newApp = (): AppObject => {
     let bnodes: Map<Node, BNode> = newMap();
     let directives: Directive[] = [];
     let template: TemplateObject = {};
-    let routes: RoutesObject = {};
-    let routeRules: RouteRulesObject = { [NUMBER]: isStringNumeric };
 
     let cache: CacheObject = {};
     let cached: ObjectType = {};
@@ -422,15 +414,7 @@ export let newApp = (): AppObject => {
         $cleanup: (bnode: BNode) => (fn: FunctionType) => saveCleanup(bnode, fn),
     };
 
-    /** Router methods */
-    let [setRoute, getRoute] = newRouter(routes, routeRules);
-
-    // The route function for this app
-    let route = (routePath: string) => go(routePath, getRoute(routePath));
-
     let $set: SetObject = {
-        [ROUTE]: setRoute,
-        [ROUTE_RULE]: setAsset(ROUTE_RULE+'s' as 'routeRules'),
         [TEMPLATE]: setAsset(TEMPLATE),
         [STYLE]: setAsset(STYLE),
         [SCRIPT]: setAsset(SCRIPT),
@@ -456,7 +440,7 @@ export let newApp = (): AppObject => {
         persist,
         session,
 
-        [ROUTE]: route,
+        go,
         emit,
         listen,
         /** Get the local context of an element */
@@ -488,9 +472,6 @@ export let newApp = (): AppObject => {
         [DIRECTIVES]: directives,
         bnode: {n: newBNode, g: getBNode, a: bnodes},
 
-        routes,
-        routeRules,
-
         // ! PUBLIC CONTEXT
         gc: gc as GlobalContext,
 
@@ -500,12 +481,19 @@ export let newApp = (): AppObject => {
     /** The $insert method of this app */
     gc[$INSERT] = newInsert(app);
 
-    arrayAdd(routers, getRoute);
-
     // Prevent the items in these objects from being changed or deleted
     each([$set, http, gc, app], obj => setObjectKeys(obj, 'wc'));
 
     return app;
+}
+
+let go = (routePath: string | number) => {
+    if (isNumber(routePath)) {
+        history.go(routePath as number);
+    }
+    else {
+        L.href = routePath as string;
+    }
 }
 
 /** Check the hydration level to skip */
@@ -570,7 +558,7 @@ export let removeInsertedNodes = (bnode: BNode) => {
  * Evaluate attribute, if any
  * @param defaultAttrValue A string to fall back to if the attribute has no value. Default is an empty object.
  */
-export let evalAttr = (bnode: BNode, attrName: string, defaultAttrValue: any = {}) => {
+let evalAttr = (bnode: BNode, attrName: string, defaultAttrValue: any = {}) => {
 
     let fn = () => defaultAttrValue;
 
@@ -590,7 +578,7 @@ export let evalAttr = (bnode: BNode, attrName: string, defaultAttrValue: any = {
 }
 
 /** Saves the attribute to the bnode and removes it from the node */
-export let saveAttr = (bnode: BNode, attrName: string, attrValue: string) => {
+let saveAttr = (bnode: BNode, attrName: string, attrValue: string) => {
     // Save the attribute to the bnode
     bnode[ATTR][attrName] = attrValue;
     // Remove the attribute from the node
@@ -612,7 +600,7 @@ export let templateRegex = /\${((?!.*\${).*?)}/;
 let mustacheRegex: RegExp = /{{((?!.*{{).*?)}}/;
 
 /** Sanitize string and replace mustache syntax with template literals */
-export let replaceMustache = (text: string, replacement: any = '${$1}') => 
+let replaceMustache = (text: string, replacement: any = '${$1}') => 
     replaceAll(text, mustacheRegex, replacement);
 
 
@@ -648,10 +636,10 @@ let newDataLevelContext = (contextName: string) =>
     (bnode: BNode, parent?: BNode) => !parent || (isElementNode(bnode.el) && hasAttr(bnode.el, B_DATA)) ? {} : parent.ctx[contextName as keyof Context];
 
 /** Handle route changes on popstate */
-let onPopState = () => {
-    let routePath = href();
-    go(routePath, find(routers, getRoute => getRoute(routePath)));
-}
+// let onPopState = () => {
+//     let routePath = href();
+//     go(routePath, find(routers, getRoute => getRoute(routePath)));
+// }
 
 export let setup = (brioWindow: ObjectType = {}) => {
     // This will prevent another instance of Brio from being initialized
@@ -666,8 +654,8 @@ export let setup = (brioWindow: ObjectType = {}) => {
         // Listen to storage events
         listen(W as any, STORAGE, storageEvent as any);
 
-        // Listen to route changes and update the view
-        listen(W as any, 'pop'+STATE, onPopState);
+        // // Listen to route changes and update the view
+        // listen(W as any, 'pop'+STATE, onPopState);
     }
 
     // Emit the 'brio' event to let listeners know that Brio is ready
@@ -756,7 +744,7 @@ export let genContextArgs = (bnode: BNode, exp: string): string =>
     '{' + join(filter(getKeys(bnode.ctx), ctxName => has(exp, ctxName)), ',') + '}';
 
 /** Auto-fill the context name if missing and found in one of the data related contexts */
-export let autoFillContextName = (bnode: BNode, propName: string): string => {
+let autoFillContextName = (bnode: BNode, propName: string): string => {
     for (let ctxName of [$FOR, $DATA, $PROPS, $STORE]) {
         let ctx = bnode.ctx[ctxName as '$data'];
         if (ctx && propName in ctx) {
@@ -769,10 +757,10 @@ export let autoFillContextName = (bnode: BNode, propName: string): string => {
 
 let varNameInExpRegex = /(?<![.`'"][\w\s$]*)[a-z_$][\w$]*(?![\w\s$]*[:`'"{])/gi;
 
-export let autoFillContext = (bnode: BNode, exp: string): string => 
+let autoFillContext = (bnode: BNode, exp: string): string => 
     replace(exp, varNameInExpRegex, (propName: string) => autoFillContextName(bnode, propName));
 
-export let autoFillTemplateExpressions = (bnode: BNode, text: string): string => {
+let autoFillTemplateExpressions = (bnode: BNode, text: string): string => {
     let [tempText, expressions] = getTemplateExpressions(text);
 
     for (let entry of expressions) {
@@ -794,6 +782,7 @@ export let evalEffect = (bnode: BNode, exp: string, callback: DirectiveCallback)
     saveCleanup(bnode, effect(() => callback(ctxFn)));
 }
 
+// ! NOT CURRENTLY USED
 export let evalContextProp = (bnode: BNode, propName: string): FunctionType | undefined => {
 
     // Evaluate the property
@@ -808,6 +797,7 @@ export let evalContextProp = (bnode: BNode, propName: string): FunctionType | un
     }
 }
 
+// ! NOT CURRENTLY USED
 export let getContextProp = (ctxFn: FunctionType, ...ctxArgs: any[]) => {
     let value = ctxFn();
     return isFunction(value) ? value(...ctxArgs) : value;

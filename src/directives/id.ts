@@ -8,7 +8,7 @@ import { isArray, isString } from '../tools/typeCheck';
 let ids: ObjectType = {};
 // console.log('ids', ids);
 
-export let hydrateId = async (bnode: BNode, attrName: string, attrValue: string) => {
+let hydrateId = async (bnode: BNode, attrName: string, attrValue: string) => {
 
     // Check if the unique ID expression is empty
     if (attrValue) {

@@ -22,9 +22,6 @@ type AppObject = {
     directives: Directive[],
     bnode: {n: NewBNode, g: GetBNode, a: Map<Node, BNode>},
 
-    routes: RoutesObject,
-    routeRules: RouteRulesObject,
-
     exec: (bnode: BNode, exp: string, args?: string, returns?: boolean, autoFill?: boolean) => FunctionType,
 
     // ! PUBLIC CONTEXT
@@ -58,7 +55,7 @@ type GlobalContext = {
     $persist: InitStorage,
     $session: InitStorage,
 
-    $route: (routePath: string) => void,
+    $go: (routePath: string | number) => void,
 
     $uid: (length?: number) => string,
 } & DomObject & BrioTools;
@@ -81,8 +78,6 @@ type BrioTools = {
 
 /** The global $set object */
 type SetObject = {
-    route: SetRoute,
-    routeRule: SetAsset,
     template: SetAsset,
     script: SetAsset,
     style: SetAsset,
@@ -106,7 +101,6 @@ type DomObject = {
     $hydrate: (node: Node, ctxNode?: Node) => Promise<void>,
     $dehydrate: (node: Node, _removeNode?: boolean, _removeBNode?: boolean) => Promise<void>,
     $insert: (content: any, where: 'before'|'after'|'prepend'|'append'|'replaceWith'|'replaceChildren'|'text', target: HTMLElement | string, options?: InsertOptions) => Promise<any>,
-    $route: Route,
     $emit: (target: HTMLElement | string, eventName: string, eventData?: any) => boolean,
     $listen: (target: HTMLElement | string, eventName: string, callback: (event: Event) => void, options?: boolean | AddEventListenerOptions) => () => void,
     $context: (target: HTMLElement | string) => ObjectType | undefined,
@@ -203,6 +197,6 @@ type StyleObject = {
     [styleName: string]: () => string
 }
 
-type AssetType = 'template' | 'script' | 'style' | 'data' | 'routeRules';
+type AssetType = 'template' | 'script' | 'style' | 'data';
 type SetAsset = (assetName: string, assetValue: any) => void;
 type GetAsset = (assetType: AssetType, assetName: string) => FunctionType;

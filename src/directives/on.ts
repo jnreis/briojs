@@ -55,7 +55,7 @@ let keysMap: ObjectType = {
  * @option `document`   If true, the event will only be dispatched if the target is the document.
  * @option `window`     If true, the event will only be dispatched if the target is the window.
  */
-export let hydrateOn = (bnode: BNode, attrName: string, attrValue: string) => {
+let hydrateOn = (bnode: BNode, attrName: string, attrValue: string) => {
 
     let _attrName = sliceAttrName(attrName); // 5: b-on-, 3: on-
 

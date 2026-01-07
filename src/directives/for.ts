@@ -11,7 +11,7 @@ import { getAccessedProp } from '../reactivity/track';
 
 let variableNameRegex = /^[a-z_$][\w$]*$/i;
 
-export let hydrateFor = (bnode: BNode, attrName: string, attrValue: string) => {
+let hydrateFor = (bnode: BNode, attrName: string, attrValue: string) => {
 
     let el = bnode.el;
     let {n: newBNode, g: getBNode} = bnode.bnode;

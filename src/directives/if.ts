@@ -6,7 +6,7 @@ import { transitions } from "./transition";
 /**
  * Must reference a prop, method, or be an expression that returns a value that can be converted to a boolean
  */
-export let hydrateIf = (bnode: BNode, attrName: string, attrValue: string) => {
+let hydrateIf = (bnode: BNode, attrName: string, attrValue: string) => {
 
     let el = bnode.el as HTMLElement;
 

@@ -3,7 +3,7 @@ import { $INSERT, ATTR, B_HTML, B_TEMPLATE, B_TEXT, OPTIONS, REPLACE_CHILDREN, S
 import { hasProp } from "../tools/object";
 import { wrapInBackticks } from "../tools/string";
 
-export let hydrateHtml = (placement: 'replaceChildren'|'text') => (bnode: BNode, attrName: string, attrValue: string) => {
+let hydrateHtml = (placement: 'replaceChildren'|'text') => (bnode: BNode, attrName: string, attrValue: string) => {
 
     // Single template hydration:
     // If b-template or b-html have been hydrated skip the hydration

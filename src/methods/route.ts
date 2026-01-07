@@ -128,7 +128,7 @@ export let newRouter = (routes: RoutesObject, routeRules: ObjectType): [SetRoute
 export let go = (routePath: string, routeFn: FunctionType | undefined | null) => {
 
     // Normalize the route path
-    routePath = href(routePath, PATHNAME);
+    routePath = href(routePath);
 
     // Same origin and a route function exists
     if (routeFn && sameOrigin(routePath)) {

@@ -78,7 +78,7 @@ let nodeModifiers: Map<Node, string[]> = newMap();
  * @option `raw`    prevents the value from being typecast to a number, boolean, or null.
  * @option `lazy`   listens for the change event instead of the input event.
  */
-export let hydrateModel = (bnode: BNode, attrName: string, attrValue: string) => {
+let hydrateModel = (bnode: BNode, attrName: string, attrValue: string) => {
 
     // Reusable strings
     let THE_MODEL_DIRECTIVE = space('the', attrName, DIRECTIVE);

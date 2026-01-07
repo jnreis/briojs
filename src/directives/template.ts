@@ -5,7 +5,7 @@ import { removeNode } from "../tools/dom";
 import { trim } from "../tools/string";
 import { isString } from "../tools/typeCheck";
 
-export let hydrateTemplate = async (bnode: BNode, attrName: string, attrValue: string) => {
+let hydrateTemplate = async (bnode: BNode, attrName: string, attrValue: string) => {
     
     // Options: {hydrate: boolean, selector: string}
     let options = bnode[OPTIONS][attrName] || {};

@@ -13,17 +13,13 @@ let hiddenNodes: Map<Node, BNode> = newMap();
  * 
  * Must reference a prop, method, or be an expression that returns a value that can be converted to a boolean
  */
-export let hydrateShow = (bnode: BNode, attrName: string, attrValue: string) => {
+let hydrateShow = (bnode: BNode, attrName: string, attrValue: string) => {
 
     // Create a placeholder comment node
     bnode.ph = createComment(attrName);
 
     // Hold the node's location with a placeholder
     insertNodes(getFirstInsertedNode(bnode), BEFORE, bnode.ph);
-
-    // // Save the show effect function for later use
-    // // Example: nested b-show directives
-    // hiddenNodes.set(bnode.ph, bnode);
 
     // Transition function, if any
     let transition: FunctionType | undefined;

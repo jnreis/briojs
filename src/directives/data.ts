@@ -5,7 +5,7 @@ import { getType, isFunction, isObject } from '../tools/typeCheck';
 import { DIRECTIVE, OBJECT, SKIP, REQUIRES_ACTION_TYPE, B_DATA, PARENT, $DATA } from '../tools/constants';
 import { delState } from '../reactivity';
 
-export let hydrateData = async (bnode: BNode, attrName: string, attrValue: string) => {
+let hydrateData = async (bnode: BNode, attrName: string, attrValue: string) => {
 
     // Get the asset function
     let assetFn: any = bnode.data[attrValue];

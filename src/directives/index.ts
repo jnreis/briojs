@@ -131,9 +131,9 @@ export let allDirectives: [string | RegExp, HydrateDirective][] = [
     /**
      * Event directives
      */
-    ...intersectionDirectives, // [b-on|on]-enter, [b-on|on]-exit
+    ...intersectionDirectives, // [b-on|on]-[enter|exit]
     ...mutationDirectives, // [b-on|on]-[addednodes|removednodes|attrs|text]
-    ...resizeDirectives, // [b-on|on]-resize
+    ...resizeDirectives, // [b-on|on]-[resize]
     onDirective, // [b-on|on]-[eventName]
 
     /**

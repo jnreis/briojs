@@ -13,7 +13,7 @@ import { DISCONNECT, OBSERVE, ONCE, OPTIONS, DEBOUNCE, EXIT, ON_ENTER, B_, ON_EX
  * @option `rootMargin` Margin around the root. Can have values similar to the CSS margin property, e.g. "10px 20px 30px 40px" (top, right, bottom, left).
  * @option `threshold`  Either a single number or an array of numbers which indicate at what percentage of the target's visibility the observer's callback should be
  */
-export let hydrateIntersection = (bnode: BNode, attrName: string, attrValue: string) => {
+let hydrateIntersection = (bnode: BNode, attrName: string, attrValue: string) => {
 
     let _attrName = sliceAttrName(attrName); // 5: b-on-, 3: on-
 

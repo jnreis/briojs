@@ -5,7 +5,7 @@ import { insertNodes } from "../tools/dom";
 import { wrapInBackticks } from "../tools/string";
 import { isArray, isNode, isString } from "../tools/typeCheck";
 
-export let hydrateTeleport = (bnode: BNode, attrName: string, attrValue: string) => {
+let hydrateTeleport = (bnode: BNode, attrName: string, attrValue: string) => {
 
     let target: any = attrValue;
 

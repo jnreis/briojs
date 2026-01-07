@@ -1,7 +1,7 @@
 import { evalEffect } from "../app";
 import { isFunction } from "../tools/typeCheck";
 
-export let hydrateEffect = async (bnode: BNode, _attrName: string, attrValue: string) => {
+let hydrateEffect = async (bnode: BNode, _attrName: string, attrValue: string) => {
 
     evalEffect(bnode, attrValue, (ctxFn) => {
         // Get value

@@ -44,6 +44,7 @@ export declare let getNodeContent: (node: Node) => string;
 /** Get the child nodes of a node as an array */
 export declare let childNodes: (node: Node) => ChildNode[];
 export declare let getAttr: (node: HTMLElement, attr: string) => string | null;
+export declare let hasAttr: (node: HTMLElement, attr: string) => boolean;
 export declare let setAttr: (node: HTMLElement, attr: string, value: string, prop?: string | false) => void;
 export declare let delAttr: (node: HTMLElement, attr: string) => void;
 export declare let setClass: (node: HTMLElement, ...className: string[]) => void;

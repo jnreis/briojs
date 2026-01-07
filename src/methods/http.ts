@@ -15,7 +15,7 @@ import { isArray, isObject } from '../tools/typeCheck';
  * - It is especially useful for file uploads.
  * - It does not work with GET and DELETE requests.
  */
-export let encodeParams = (obj: any, paramType = '', prefix = '') => {
+let encodeParams = (obj: any, paramType = '', prefix = '') => {
     let ParamsType = paramType == DATA ? FormData : URLSearchParams;
     let params = new ParamsType();
 

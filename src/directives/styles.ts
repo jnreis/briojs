@@ -12,7 +12,7 @@ let cssSelectorRegex = /(?<=(?:^|})\s*)\S(?:.\s*?)*?(?=\s*{)/g;
  * 
  * It may receive one style asset name or an array of style asset names.
  */
-export let hydrateStyle = (bnode: BNode, _attrName: string, attrValue: string) => {
+let hydrateStyle = (bnode: BNode, _attrName: string, attrValue: string) => {
 
     let el = bnode.el;
 

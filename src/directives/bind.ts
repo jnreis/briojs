@@ -15,7 +15,7 @@ import { isObject } from '../tools/typeCheck';
  *
  * @option `prop`   Also set a specific DOM property.
  */
-export let hydrateBind = (bnode: BNode, dirName: string, dirValue: string) => {
+let hydrateBind = (bnode: BNode, dirName: string, dirValue: string) => {
 
     let el = bnode.el;
 

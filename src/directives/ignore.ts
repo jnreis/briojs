@@ -1,6 +1,6 @@
 import { B_IGNORE, SKIP } from "../tools/constants";
 
-export let hydrateIgnore = async (bnode: BNode, _attrName: string) => {
+let hydrateIgnore = async (bnode: BNode, _attrName: string) => {
     bnode[SKIP] = 3;
 }
 

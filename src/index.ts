@@ -1,4 +1,6 @@
 // TODO
+// - $sync a reactive value if it has any listeners, so it doesn't lose reactivity.
+
 /**
  * Before each release:
  * - Test each feature to make sure it works as expected.

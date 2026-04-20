@@ -1,7 +1,7 @@
 import { getStateObject, isState, stateObjects, initPropFns } from '.';
 import { trackProps, accessedProps } from './track';
 import { arrayAdd, arrayFrom, each, sort, sortPriority } from '../tools/array';
-import { R, createContext, hasProp, newMap, newSet, setObjectKeys, setProp } from '../tools/object';
+import { R, createContext, hasProp, newMap, newSet, setObjectKeys, setProp, sync } from '../tools/object';
 import { isArray, isObject, isUndefined } from '../tools/typeCheck';
 import { CREATE, DEFINE_PROPERTY, DELETE, DELETE_PROPERTY, PROPS, STATE, VALUE, UNDEFINED, UPDATE, NEW_VALUE, OLD_VALUE, OPERATION, TARGET } from '../tools/constants';
 
@@ -103,9 +103,23 @@ export let state: State = (target: any, parent?: any) => {
 
             // let isNewValueState = isState(newValue);
 
+            // If the new value and old value are both arrays or both objects, sync the new value with the old value to preserve reactivity.
+            if (isArray(newValue) === isArray(oldValue) || isObject(newValue) === isObject(oldValue)) {
+                sync(oldValue, newValue);
+
+                // Set the operation in the context
+                setContextOperation(context);
+
+                // Notify listeners about the property change
+                notifyListeners(stateObject, context);
+
+                return true;
+            }
+
             // Attempt to observe the value if the property is not marked to skip observation
-            if (!skip.has(prop))
+            if (!skip.has(prop)) {
                 newValue = state(newValue);
+            }
 
             // Set the newValue in the context
             context[NEW_VALUE] = newValue;

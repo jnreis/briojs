@@ -101,34 +101,28 @@ export let state: State = (target: any, parent?: any) => {
                 newValue = newValue(context);
             }
 
-            // let isNewValueState = isState(newValue);
+            const isSameType = (isArray(newValue) && isArray(oldValue)) || (isObject(newValue) && isObject(oldValue));
 
             // If the new value and old value are both arrays or both objects, sync the new value with the old value to preserve reactivity.
-            if (isArray(newValue) === isArray(oldValue) || isObject(newValue) === isObject(oldValue)) {
+            if (isSameType) {
                 sync(oldValue, newValue);
-
-                // Set the operation in the context
-                setContextOperation(context);
-
-                // Notify listeners about the property change
-                notifyListeners(stateObject, context);
-
-                return true;
             }
 
             // Attempt to observe the value if the property is not marked to skip observation
-            if (!skip.has(prop)) {
+            // Note: When the new value and old value are of the same type, we sync them instead of replacing them to preserve reactivity.
+            // In this case, we don't need to observe the new value because we are not replacing the old value, we are just syncing it.
+            if (!skip.has(prop) && !isSameType) {
                 newValue = state(newValue);
             }
 
             // Set the newValue in the context
-            context[NEW_VALUE] = newValue;
+            context[NEW_VALUE] = isSameType ? oldValue : newValue;
 
             // Set the operation in the context
             setContextOperation(context);
 
             // Set the new value
-            let result: boolean = R.set(target, prop, newValue, proxied);
+            let result: boolean = isSameType ? true : R.set(target, prop, newValue, proxied);
 
             // Notify listeners about the property change
             notifyListeners(stateObject, context);

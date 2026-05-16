@@ -28,7 +28,7 @@ type MaskContext = {
     /** The masked output */
     output: string;
     /** Makes a character or regex a MaskCharacter */
-    char: (regex: string | RegExp, min?: number, max?: number) => MaskCharacter;
+    char: (regex: string[] | RegExp, min?: number, max?: number) => MaskCharacter;
     /** A MaskCharacter for letters */
     letter: (min?: number, max?: number) => MaskCharacter;
     /** A MaskCharacter for numbers */

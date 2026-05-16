@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hook</title>
+</head>
+<body>
+
+    <script type="module" src="/src/briojs.min.ts"></script>
+
+    <script>
+        window.addEventListener('brio', () => {
+            let app = brio.newApp();
+            let {$hydrate, $state, $effect, $watch} = app.gc;
+            $hydrate('body');
+            console.log('app hydrated', app);
+        });
+    </script>
+</body>
+</html>

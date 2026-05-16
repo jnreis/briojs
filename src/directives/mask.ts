@@ -1,35 +1,12 @@
 import { saveCleanup } from "../app";
-import { entries, logError, size } from "../tools";
-import { arrayAdd, each, indexOf } from "../tools/array";
+import { entries, has, logError, size } from "../tools";
+import { arrayAdd, each, every, indexOf } from "../tools/array";
 import { B_, CAN_ONLY_BE_USED_ON, DIRECTIVE, ELEMENT, INPUT, MASK, NUMBER, SELECTION_START, TEXTAREA, VALUE } from "../tools/constants";
 import { emit, listen, nextFrame } from "../tools/dom";
+import { destructuringObject } from "../tools/evaluation";
 import { getProp } from "../tools/object";
 import { split, test } from "../tools/string";
-import { isArray, isFunction, isNumber, isString } from "../tools/typeCheck";
-
-/**
- *  This is what I'm thinking for my mask directive:
- *
- *  Note 1: the mask syntax is purposely designed to be short, simple and easy to understand.
- *  Note 2: for more complex scenarios, a function that returns the mask can be used.
- *
- *  Default Tokens: Note that the tokens object will be made available so tokens may be added or removed.
- *  # = numbers
- *  & = letters (unicode)
- *  * = letters and numbers (unicode)
- *
- *  Quantifiers: Note that quantifiers only apply if the previous character is an unescaped token.
- *  + = all characters that match the regex until another token is found
- *  n = for example 3 would test each character until 3 characters matching the regex are found, if a character matches another token before 3 characters are matched it would return.
- *
- *  Escaping tokens and quantifiers:
- *  - Add "\\" before a token or quantifier to escape it. It will be treated as a regular character.
- *
- *  Examples:
- *  The mask "(#3) #3-#4" would take 7773334444 and turn into this (777) 333-4444. Or this mask "&+ &4" would be able to take in two works like John Doe.
- *
- *  The mask can be a string or a function that returns the string, which would allow for dynamic mask generation.
- */
+import { isArray, isFunction, isNumber, isRegExp, isString } from "../tools/typeCheck";
 
 /** */
 let OUTPUT: 'output' = 'output';
@@ -54,20 +31,27 @@ let hydrateMask = (bnode: BNode, attrName: string, attrValue: string) => {
     if (!(VALUE in $el && SELECTION_START in $el))
         return logError('the', attrName, DIRECTIVE, CAN_ONLY_BE_USED_ON, TEXTAREA, ELEMENT + 's and textual', INPUT, 'types (text, email, etc.).');
 
-    // Updated mask object
-    let $mask: MaskContext = {
-        exp: bnode.exec(bnode, attrValue, '$mask'),
-        [VALUE]: '',
-        [CURSOR]: $el[SELECTION_START],
-        [UPDATE_CURSOR]: updateCursor,
-        [CURSOR_UPDATED]: false,
-        [OUTPUT]: '',
+    // The mask expression will have access to these helper functions for defining the mask
+    let expHelpers = {
         char,
         letter,
         [NUMBER]: number,
         alpha,
         money,
+    }
+
+    // Updated mask object
+    let $mask: MaskContext = {
+        exp: () => {},
+        [VALUE]: '',
+        [CURSOR]: $el[SELECTION_START],
+        [UPDATE_CURSOR]: updateCursor,
+        [CURSOR_UPDATED]: false,
+        [OUTPUT]: '',
+        ...expHelpers,
     };
+
+    $mask.exp = bnode.exec(bnode, attrValue, destructuringObject(expHelpers, attrValue));
 
     let _mask = () => {
 
@@ -346,10 +330,15 @@ let minMax = (min: number = 1, max: number = 1): [number, number] => {
 }
 
 /** Makes a character or regex a MaskCharacter */
-let char = (_char: string | RegExp, min?: number, max?: number): MaskCharacter => {
+let char = (_char: string[] | RegExp, min?: number, max?: number): MaskCharacter => {
 
-    let testChar = isString(_char)
-        ? (char: string) => char == _char
+    // Is regex or array of single-character strings
+    if (!(isRegExp(_char) || (isArray(_char) && every(_char as string[], c => isString(c) && size(c) == 1)))) {
+        return logError('Invalid mask character definition. Expected an array of characters or a regular expression.');
+    }
+
+    let testChar = isArray(_char) 
+        ? (char: string) => has(_char as string[], char)
         : (char: string) => test(char, _char as RegExp);
 
     return [testChar, ...minMax(min, max)];
@@ -361,5 +350,7 @@ let number = (min?: number, max?: number) => char(/\p{Nd}/u, min, max);
 /** Special helper for alphanumeric test */
 let alpha = (min?: number, max?: number) => char(/[\p{L}\p{Nd}]/u, min, max);
 
-// Example: b-mask="#2-#2-#4"
+// First name, last name, example: b-mask="[letter(), ' ', letter()]"
+// Master card example: b-mask="[number(4), ' ', number(4), ' ', number(4), ' ', number(4)]"
+// Money example: b-mask="money({ thousands: ',', decimal: '.', precision: 2 })"
 export let maskDirective: Directive = [B_+MASK, hydrateMask];

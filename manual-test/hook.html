@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hook</title>
 </head>
-<body b-props="{hook: [1,2,3], input: '123'}">
+<body b-data="{hook: [1,2,3], input: '123', handleHover(event) { console.log('Hovered!', event) } }">
 
     <!-- 
         !!! HOOKS ARE DEPRECATED !!!
@@ -54,14 +54,14 @@
         - b-transition
      -->
 
-    <h1 b-ref="h1" bind-hook="$props.hook" b-options="{'bind-hook': {prop:'bindHook'} }"></h1>
+    <h1 b-ref="h1" bind-hook="$data.hook" b-options="{'bind-hook': {prop:'bindHook'} }"></h1>
 
-    <input id="input" type="text" b-model="$props.input">
+    <input id="input" type="text" b-model="$data.input">
 
-    <button b-ref="click" on-click="$props.hook.push($props.input)">Add</button>
-    <button on-click="$props.hook.pop()">Remove Last</button>
+    <button b-ref="click" on-click="$data.hook.push($data.input)">Add</button>
+    <button on-click="$data.hook.pop()">Remove Last</button>
 
-    <div b-ref="each" b-for="n in $props.hook">
+    <div b-ref="each" b-for="n in $data.hook">
         Number is {{ $for.n }}
         <input type="text" b-model="$for.n">
     </div>
@@ -76,6 +76,12 @@
         Resize me
     </div>
 
+    <div  on-resize="console.log('Element resized', $size)"
+  style="width: 200px; height: 100px; border: 3px solid black; margin: 50px; padding: 10px; resize: both; overflow: auto;"
+>
+  Resize this element to see the new size in the console.
+</div>
+
     <div
         on-enter="console.log('on-enter', $entry)"
         b-options="{
@@ -85,6 +91,42 @@
     >
         Intersection
     </div>
+
+    <div
+        on-exit="console.log('on-exit', $entry)"
+        b-options="{
+            'on-exit': {threshold: 1, debounce: 1000, once: true}
+        }"
+        style="height: 100px; border: 1px solid black; margin: 50px; padding: 10px;"
+    >
+        Intersection
+    </div>
+
+
+<!-- Listening to a click event using inline code -->
+<div on-click="console.log('Element clicked', $event)">
+  Click this element to see the event object in the console.
+</div>
+
+<!-- Listening to a click event using a function stored in $data -->
+<div
+  b-data="{
+    handleClick(event) {
+      console.log('handleClick:', event);
+    }
+  }"
+  on-click="handleClick">
+  Hover over this element to trigger the hover event.
+</div>
+
+<!-- Using b-effect to run a side effect whenever a reactive value changes -->
+<div b-data="{ count: 0, handleEffect() { console.log('The count is now', $data.count); } }" b-effect="handleEffect">
+  <button on-click="count++">Increment</button>
+  <button on-click="count--">Decrement</button>
+  <p>Count: {{ count }}</p>
+</div>
+
+<input type="text" on-keyup="console.log('Shift + Enter key pressed', $event)" b-options="{'on-keyup': {keys: ['shift', 'enter']} }">
 
     <script type="module" src="/src/briojs.min.ts"></script>
 

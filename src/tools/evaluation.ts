@@ -1,8 +1,8 @@
 import { isStringFunction, replace, test } from "./string";
 import { sanitizeAttrValue, templateRegex } from "../app";
-import { newSet } from "./object";
-import { arrayAdd } from "./array";
-import { size } from ".";
+import { getKeys, newSet } from "./object";
+import { arrayAdd, filter, join } from "./array";
+import { has, size } from ".";
 
 export let newFn = (args: string, exp: string, returns: boolean = true) =>
     new Function(args, returns ? `return(${exp})` : exp) as FunctionType;
@@ -81,3 +81,6 @@ export let setTemplateExpressions = (template: string, expressions: [string, str
     }
     return template;
 }
+
+export let destructuringObject = (obj: ObjectType, exp: string): string =>
+    '{' + join(filter(getKeys(obj), key => has(exp, key)), ',') + '}';

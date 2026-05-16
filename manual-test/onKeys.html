@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hook</title>
+</head>
+<body b-data="{handleKeydown(event) { console.log('Key pressed', event) }, handleKeyup(event) { console.log('Key released', event) } }">
+
+    <input 
+        type="text" 
+        on-keydown="console.log('Key pressed', $event)" 
+        on-keyup="console.log('Key released', $event)" 
+        b-options="{
+            'on-keydown': {
+                keys: ['shift', 'enter']
+            },
+            'on-keyup': {
+                keys: ['control', 'u']
+            }
+        }">
+
+    <script b-script b-data="{input: 'John', name: 'John', count: 0}">
+        ($ctx) => {
+            console.log('script element:', $ctx);
+            console.log('$context()', $context('input'));
+
+            $listen('body', 'test', (event) => {
+                console.log('Custom event received:', event);
+            });
+
+            $emit('body', 'test', { message: 'Hello from the custom event!' });
+
+            $insert('body', 'prepend', '<div b-text="message"><p id="myParagraph">Hello there!</p></div>', { selector: '#myParagraph' });
+
+            // Creating a reactive state object
+            $data.alice = $state({ name: 'Alice', age: 30 });
+
+            console.log($data.alice.name); // "Alice"
+
+            // Creating a reactive state object with a parent state
+            $data.addresses = $state([
+                { city: 'New York', country: 'USA' },
+                { city: 'London', country: 'UK' }
+            ], $data.alice);
+
+            console.log($data.addresses.name); // "Alice"
+
+            const target = { name: 'Jack', hobbies: ['reading', 'gaming'], age: 30 };
+            const targetHobbies = target.hobbies;
+            const source = { name: 'John', hobbies: ['traveling'], city: 'New York' };
+            const sourceHobbies = source.hobbies;
+            $sync(target, source);
+            console.log(target, targetHobbies === target.hobbies); // The target is now identical to the source but retains the same reference.
+
+            // Test $validate(data: ObjectType, schema: SchemaObject, customRules?: RulesObject, customMessages?: MessageObject)
+            const userData = { username: 'john_doe', email: 'john_doe@example.com', age: 25, password: '123qw23a', confirmPassword: '123qw23a', createdAt: '2026-01-01' };
+            const userSchema = {
+                username: [
+                    { name: 'required' },
+                    { name: 'type', value: 'string' },
+                    { name: 'min', value: 3 },
+                    { name: 'max', value: 20 },
+                    { name: 'matches', value: /^[a-zA-Z0-9_]+$/ },
+                ],
+                email: [
+                    { name: 'required' },
+                    { name: 'type', value: 'string' },
+                    { name: 'email' },
+                ],
+                age: [
+                    { name: 'required' },
+                    { name: 'type', value: 'number' },
+                    { name: 'min', value: 18 },
+                    { name: 'max', value: 65 },
+                ],
+                password: [
+                    { name: 'required' },
+                    { name: 'type', value: 'string' },
+                    { name: 'min', value: 8 },
+                    { name: 'max', value: 128 },
+                ],
+                confirmPassword: [
+                    { name: 'required' },
+                    { name: 'type', value: 'string' },
+                    { name: 'same', value: 'password' },
+                ],
+                createdAt: [
+                    { name: 'before', value: '2026-01-02' }, // Custom rule example
+                ],
+            };
+
+            const customRules = {
+                before: (value, ruleValue, data) => {
+                    const dateValue = new Date(value);
+                    const dateRuleValue = new Date(ruleValue);
+                    return dateValue < dateRuleValue;
+                },
+            };
+            const customMessages = {
+                before: (propName, ruleValue, data) => {
+                    console.log('Custom message function called with:', { propName, ruleValue, data });
+                    return `${propName} must be a date before ${ruleValue}.`
+                }
+            };
+            const validationResult = $validate(userData, userSchema, customRules, customMessages);
+            console.log('Validation result:', validationResult); // { valid: true, errors: {} }
+
+            $watch($data, null, (ctx) => {
+                console.log('Input changed to:', $data.input, 'Context:', ctx);
+            });
+
+            $data.input = 'Jane'; // This should trigger the watcher and log the new value and context.
+
+            $effect(({ newValue }) => {
+                console.log('Hi', $data.name, 'The count is now', newValue);
+            }, () => [$data.count]);
+
+            $data.count++; // This should trigger the effect and log the new count value.
+        }
+    </script>
+
+    <script type="module" src="/src/briojs.min.ts"></script>
+
+    <script>
+        window.addEventListener('brio', () => {
+            let app = brio.newApp();
+            let {$hydrate, $state, $effect, $watch} = app.gc;
+            $hydrate('body');
+            console.log('app hydrated', app);
+        });
+    </script>
+</body>
+</html>

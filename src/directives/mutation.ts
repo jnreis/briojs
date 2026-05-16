@@ -5,10 +5,16 @@ import { DISCONNECT, OBSERVE, OPTIONS, DEBOUNCE, ON_, B_, TARGET, NODES, UNDEFIN
 
 
 /**
- * Hydrate the `b-intersect` directive
+ * Hydrate the "mutation" directives
  * 
  * @option `debounce`   The time in milliseconds to wait before executing the callback.
- * @option `target`     The target element to observe. If not provided, the element itself will be observed.
+ * @option `target`     The target element to observe. If not provided, the element being hydrated will be observed.
+ * @option `subtree`    If true, the observer will also observe mutations in the subtree of the element.
+ * 
+ * @option `attributeOldValue` If true, the observer will record the previous value of the attribute. Default is true. Only applicable for on-attrs.
+ * @option `attributeFilter`   An array of attribute names to observe. If not provided, all attributes will be observed. Only applicable for on-attrs.
+ * 
+ * @option `characterDataOldValue` If true, the observer will record the previous value of the character data. Default is true. Only applicable for on-text.
  */
 let hydrateMutationType = (mutationType: MutationRecordType, mutationOptions: ObjectType, mutationFilter: FunctionType) => (bnode: BNode, attrName: string, attrValue: string) => {
 

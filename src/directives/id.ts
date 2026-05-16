@@ -29,7 +29,7 @@ let hydrateId = async (bnode: BNode, attrName: string, attrValue: string) => {
             ids[id] = true;
 
             // Add the unique ID to the context
-            setProp(acc, idName, id, 'wc');
+            setProp(acc, idName, id, 'e');
 
             return acc;
         }, {});

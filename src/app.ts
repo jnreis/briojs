@@ -2,10 +2,10 @@ import { newInsert } from "./methods/dom";
 import { http } from "./methods/http";
 import { computed, effect, persist, session, state, storageEvent, watch } from "./reactivity";
 import { has, logError, uid } from "./tools";
-import { arrayAdd, each, filter, find, join, map, some } from "./tools/array";
+import { arrayAdd, each, find, join, map, some } from "./tools/array";
 import { TEXT, TEXT_CONTENT, ATTR, DELETE, INNER_HTML, PARENT, $PROPS, NULL, B_DATA, SCRIPT, $DATA, STYLE, B_, TEMPLATE, UNDEFINED, OPTIONS, NEW_LINE, BRIO, STORAGE, STATE, DIRECTIVES, DATA, B_SAVE, OUTER_HTML, $STORE, SKIP, NODES, B_IF, MESSAGE, CLONE, $REF, $SLOT, B_TEMPLATE, B_REF, $, $DEHYDRATE, $HYDRATE, $INSERT, B_SCRIPT, B_SLOT, B_FOR, $FOR, DEHYDRATE_CHILDREN, VALIDATE } from "./tools/constants";
 import { walk, getAttr, delAttr, getParent, getTagName, getNodeContent, removeNode, eachAttribute, query, emit, listen, setAttr, hasAttr } from "./tools/dom";
-import { expToFn, getTemplateExpressions, newFn, setTemplateExpressions } from "./tools/evaluation";
+import { destructuringObject, expToFn, getTemplateExpressions, newFn, setTemplateExpressions } from "./tools/evaluation";
 import { countKeys, hasProp, getProp, newMap, setProp, setObjectKeys, W, S, sync, clone, delProp, getKeys, L } from "./tools/object";
 import { replace, replaceAll, split, startsWith, test, trim, wrapInBackticks } from "./tools/string";
 import { isTextNode, isElementNode, isNull, isRegExp, isString, isNode, isFunction, isArray, getType, isNumber } from "./tools/typeCheck";
@@ -81,7 +81,7 @@ export let newApp = (): AppObject => {
             // Set the local context
             for (let key in localContextFns) {
                 let v = localContextFns[key](bnode, parent);
-                if (v) setProp(bnode.ctx, key, v, 'c');
+                if (v) setProp(bnode.ctx, key, v, 'we');
             }
 
             // Save the bnode
@@ -355,7 +355,7 @@ export let newApp = (): AppObject => {
             cacheKey = uid();
 
             // Cache the function
-            cache[cacheKey] = newFn(genContextArgs(bnode, exp), exp);
+            cache[cacheKey] = newFn(destructuringObject(bnode.ctx, exp), exp);
 
             // Save the cache key
             cached[exp] = cacheKey;
@@ -391,10 +391,10 @@ export let newApp = (): AppObject => {
 
     /** Defines how the local context should be set up for each element */
     let localContextFns: LocalContextFns = {
-        // The $data context
+        // The $data context. Equivalent to creating a component.
         [$DATA]: newContext($DATA, B_DATA),
 
-        // Reactive properties defined in the element or inherited from the parent context
+        // The $props context. Non-reactive properties passed to the element and its children as defined in the b-props directive schema.
         [$PROPS]: (_: BNode, parent?: BNode) => parent?.ctx[$PROPS] || {},
 
         // The $for context
@@ -482,17 +482,26 @@ export let newApp = (): AppObject => {
     gc[$INSERT] = newInsert(app);
 
     // Prevent the items in these objects from being changed or deleted
-    each([$set, http, gc, app], obj => setObjectKeys(obj, 'wc'));
+    each([$set, http, gc, app], obj => setObjectKeys(obj, 'e'));
 
     return app;
 }
 
-let go = (routePath: string | number) => {
-    if (isNumber(routePath)) {
-        history.go(routePath as number);
+/**
+ * Navigate to a different route or go back/forward in history.
+ * @param to - A URL or path string, or a number representing the steps to go back (negative) or forward (positive) in history.
+ * Examples:
+ * - `$go('http://example.com')` navigates to 'http://example.com'.
+ * - `$go('/about')` navigates to the '/about' page.
+ * - `$go(-1)` goes back one step in history.
+ * - `$go(2)` goes forward two steps in history.
+ */
+let go = (to: string | number) => {
+    if (isNumber(to)) {
+        history.go(to as number);
     }
     else {
-        L.href = routePath as string;
+        L.href = to as string;
     }
 }
 
@@ -570,7 +579,7 @@ let evalAttr = (bnode: BNode, attrName: string, defaultAttrValue: any = {}) => {
 
     if (attrValue && trim(attrValue)) {
         attrValue = sanitizeAttrValue(attrValue);
-        fn = bnode.exec(bnode, attrValue, genContextArgs(bnode, attrValue));
+        fn = bnode.exec(bnode, attrValue, destructuringObject(bnode.ctx, attrValue));
     }
 
     // Evaluate and return
@@ -646,10 +655,10 @@ export let setup = (brioWindow: ObjectType = {}) => {
     if (!(BRIO in W)) {
 
         // Ensure the items in the 'brioWindow' object cannot be changed or deleted
-        setObjectKeys(brioWindow, 'wc');
+        setObjectKeys(brioWindow, 'e');
 
         // Set the unchangeable 'brio' object in the 'window' object
-        setProp(W, BRIO, brioWindow, 'wc');
+        setProp(W, BRIO, brioWindow, 'e');
 
         // Listen to storage events
         listen(W as any, STORAGE, storageEvent as any);
@@ -740,9 +749,6 @@ let getElementsByDirective = async (node: Node, directiveName: 'b-save' | 'b-slo
     return nodes;
 }
 
-export let genContextArgs = (bnode: BNode, exp: string): string =>
-    '{' + join(filter(getKeys(bnode.ctx), ctxName => has(exp, ctxName)), ',') + '}';
-
 /** Auto-fill the context name if missing and found in one of the data related contexts */
 let autoFillContextName = (bnode: BNode, propName: string): string => {
     for (let ctxName of [$FOR, $DATA, $PROPS, $STORE]) {
@@ -757,7 +763,7 @@ let autoFillContextName = (bnode: BNode, propName: string): string => {
 
 let varNameInExpRegex = /(?<![.`'"][\w\s$]*)[a-z_$][\w$]*(?![\w\s$]*[:`'"{])/gi;
 
-let autoFillContext = (bnode: BNode, exp: string): string => 
+let autoFillContext = (bnode: BNode, exp: string): string =>
     replace(exp, varNameInExpRegex, (propName: string) => autoFillContextName(bnode, propName));
 
 let autoFillTemplateExpressions = (bnode: BNode, text: string): string => {
@@ -823,8 +829,12 @@ export let getSavedAssets = (bnode: BNode, assetObject: ObjectType, assetName: s
         else {
             assetName = bnode.exec(bnode, assetName)();
 
+            // If the evaluated assetName is a single reference, get the actual value
+            if (assetName in assetObject) {
+                arrayAdd(assets, assetObject[assetName]);
+            }
             // If the evaluated assetName is an array of references, get the actual values
-            if (isArray(assetName)) {
+            else if (isArray(assetName)) {
                 each(assetName, name => {
                     if (name in assetObject)
                         arrayAdd(assets, assetObject[name]);

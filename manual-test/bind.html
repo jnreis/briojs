@@ -50,6 +50,7 @@
             });
 
             $data.name = 'Brio.js is awesome!';
+            $data.age = 3;
             console.log('Brio is the best!', $data);
 
             $data.style = {
@@ -85,7 +86,7 @@
         }
     </script>
 
-    <h1>Bind Directive</h1>
+    <h1>Bind Directive {{ name + 'abc' + ` {{ '}' + age + 1 }}!` }}</h1>
 
     <div bind-style>
         bind style

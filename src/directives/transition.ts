@@ -20,7 +20,7 @@ let hydrateTransition = (bnode: BNode, attrName: string, attrValue: string) => {
     // Evaluate the animation expression
     let styles = bnode.exec(bnode, attrValue)();
 
-    // Just an object for both in and out styles
+    // Just one object for both in and out styles
     if (!isArray(styles)) styles = [styles];
 
     // Get in and out styles
@@ -223,7 +223,7 @@ let newTransition = (el: HTMLElement, inStyles: StyleProps, outStyles: StyleProp
     }
 
     // Attach the cleanup function to the play function
-    setProp(play, REMOVE, cleanup);
+    setProp(play, REMOVE, cleanup, 'wce');
 
     return play;
 }

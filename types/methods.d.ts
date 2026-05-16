@@ -63,8 +63,8 @@ interface HttpOptions extends RequestInit {
 // Validation types
 type RuleValue = any;
 type RuleMessage = string;
-type SchemaObject = { [key: string]: [RuleValue, RuleMessage?] };
-type RulesObject = Record<string, RuleFn>;
-type MessageObject = Record<string, MessageFn>;
+type SchemaObject = { [dataKey: string]: [RuleValue, RuleMessage?] };
+type RulesObject = { [ruleName: string]: RuleFn };
+type MessageObject = { [ruleName: string]: MessageFn };
 type RuleFn = (value: any, ruleValue?: any, data?: any) => boolean;
 type MessageFn = (propName: string, ruleValue?: any, data?: any) => string;

@@ -7,6 +7,8 @@ let hydrateEffect = async (bnode: BNode, _attrName: string, attrValue: string) =
         // Get value
         let value = ctxFn();
 
+        console.warn('Effect value:', value);
+
         // If the returned value is a function, call it
         if (isFunction(value)) value();
     });

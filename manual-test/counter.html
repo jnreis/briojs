@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brio.js Counter Example</title>
+</head>
+
+<body>
+    <h1>Hello, Brio.js!</h1>
+
+    <!-- Counter -->
+    <div b-data="{ count: 0 }">
+        <button on-click="count++">Increment</button>
+        <button on-click="count--">Decrement</button>
+        <p>Count: <span>{{ count }}</span></p>
+    </div>
+
+    <!-- Include Brio.js -->
+    <script type="module" b-ignore src="/src/briojs.min.ts"></script>
+
+    <!-- Initialize Brio.js -->
+    <script>
+        window.addEventListener('brio', () => {
+            let app = brio.newApp();
+            let { $hydrate } = app.gc;
+            $hydrate('body');
+        });
+    </script>
+</body>
+
+</html>

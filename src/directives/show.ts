@@ -9,7 +9,7 @@ import { transitions } from './transition';
 let hiddenNodes: Map<Node, BNode> = newMap();
 
 /**
- * b-show is the same as b-if but the element is not removed from the DOM
+ * b-show is the same as b-if but the element is not dehydrated when the condition is false.
  * 
  * Must reference a prop, method, or be an expression that returns a value that can be converted to a boolean
  */

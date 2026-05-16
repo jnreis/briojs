@@ -68,7 +68,7 @@ export let state: State = (target: any, parent?: any) => {
              * The one-liner below ensures that the property is set in the target object when it does not exist in the context.
              * This fixes the issue of traversing the prototype chain and ensures that listeners are triggered correctly.
              */
-            if (!(prop in target)) setProp(target, prop);
+            if (!(prop in target)) setProp(target, prop, UNDEFINED, 'wce');
 
             // Get the old value (a.k.a. the current value)
             let oldValue = proxied[prop];
@@ -89,7 +89,7 @@ export let state: State = (target: any, parent?: any) => {
 
             // Lock the context to prevent it from being modified
             // Except for `newValue` and `operation`, which will be set later
-            setObjectKeys(context, 'wc');
+            setObjectKeys(context, 'e');
 
             // Call the property initialization function, if present
             if (initPropFns.has(newValue)) {
@@ -166,7 +166,7 @@ export let state: State = (target: any, parent?: any) => {
     }
 
     // Create a proxy for the object/array
-    const proxied = new Proxy(isState(parent) && isObject(parent) ? createContext(parent, target) : target, handler);
+    const proxied = new Proxy(isState(parent) ? createContext(parent, target) : target, handler);
 
     /**
      * Skip specific keys/indexes from being automatically observed.

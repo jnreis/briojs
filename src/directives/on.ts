@@ -1,8 +1,8 @@
 import { saveCleanup, sliceAttrName } from '../app';
 import { has, debounce, throttle, wait } from '../tools';
 import { each, every } from '../tools/array';
-import { DELETE, PREVENT_DEFAULT, TARGET, EVENT, DOCUMENT, DEBOUNCE, OPTIONS, THROTTLE, PREVENT, $, DETAIL, SUPER } from '../tools/constants';
-import { emit, isElementVisible, listen } from '../tools/dom';
+import { DELETE, PREVENT_DEFAULT, TARGET, EVENT, DOCUMENT, DEBOUNCE, OPTIONS, THROTTLE, PREVENT, $, SUPER } from '../tools/constants';
+import { isElementVisible, listen } from '../tools/dom';
 import { D, delProp, deleteKeys, getKeys, W, countKeys, getProp } from '../tools/object';
 import { lower, split } from '../tools/string';
 import { isFunction } from '../tools/typeCheck';
@@ -14,13 +14,14 @@ let WINDOW = 'window';
 let CONTROL = 'control';
 let META = 'meta';
 let ARROW = 'arrow';
+let REPEAT = 'repeat';
 
-let singleActionKeys = [
+// Modifier keys for key events
+let modifierKeys = [
     META,
     CONTROL,
     'shift',
     'alt',
-    'fn',
 ];
 
 let keysMap: ObjectType = {
@@ -43,23 +44,23 @@ let keysMap: ObjectType = {
  * @option `capture`    If true, the event will be dispatched to the registered listener before being dispatched to any EventTarget beneath it in the DOM tree.
  * @option `once`       If true, the observer will only execute the callback once.
  * @option `passive`    If true, the listener will never call preventDefault().
- * @option `signal`     The AbortSignal to use to cancel the event listener.
- * 
- * @option `debounce`   The time in milliseconds to wait before executing the callback.
- * @option `throttle`   The time in milliseconds to wait before executing the callback.
- * 
  * @option `prevent`    If true, the event's default action will be prevented.
  * @option `stop`       If true, the event's propagation will be stopped.
  * @option `self`       If true, the event will only be dispatched if the target is the same as the currentTarget.
  * @option `outside`    If true, the event will only be dispatched if the target is outside the element.
  * @option `document`   If true, the event will only be dispatched if the target is the document.
  * @option `window`     If true, the event will only be dispatched if the target is the window.
+ * @option `repeat`     If false, the event will not be dispatched if the event is a key event and the key is being held down (i.e. the event is being repeated).
+ * 
+ * @option `signal`     The AbortSignal to use to cancel the event listener.
+ * @option `debounce`   The time in milliseconds to wait before executing the callback.
+ * @option `throttle`   The time in milliseconds to wait before executing the callback.
  */
 let hydrateOn = (bnode: BNode, attrName: string, attrValue: string) => {
 
     let _attrName = sliceAttrName(attrName); // 5: b-on-, 3: on-
 
-    let [event, ...booleanOptions] = split(_attrName, '-');
+    let [eventName, ...booleanOptions] = split(_attrName, '-');
 
     let $el = bnode.el;
 
@@ -100,76 +101,14 @@ let hydrateOn = (bnode: BNode, attrName: string, attrValue: string) => {
     let keys: ObjectType = {};
 
     // Get the keys to watch for when the event is `keydown` or `keyup`
-    if (has([KEYDOWN,KEYUP], event))
+    if (has([KEYDOWN,KEYUP], eventName))
         each(getProp(options, 'keys', []), (key: string) => {
-            keys[keysMap[key] || key] = true;
+            keys[lower(keysMap[key] || key)] = true;
         });
-
-    // Keep track of the pressed keys
-    let s = countKeys(keys);
-    let eventName = event;
-    if (has([KEYDOWN,KEYUP], event) && s) {
-        let pressedKeys: ObjectType = {};
-
-        // Watch the pressed keys
-        event = attrName;
-
-        /**
-         * IMPORTANT NOTE:
-         * The debounce is only applied to the `keyup` event when there are more than one key to watch and the meta key is one of them.
-         * This is because the `keyup` event is not triggered on alphanumeric keys when the meta key is pressed.
-         */
-        let debounceEmit = debounce((detail: any) => {
-            emit(target, event, detail);
-        }, 600);
-
-        // Add keys
-        saveCleanup(bnode, listen(target, KEYDOWN, (e: any) => {
-            let key = lower(e.key);
-            if (!pressedKeys[key]) pressedKeys[key] = true;
-
-            /**
-             * IMPORTANT NOTE:
-             * Auto-remove non-single action key if the meta key is pressed.
-             * This is because the `keyup` event is not triggered on alphanumeric keys when the meta key is pressed.
-             */
-            wait(() => {
-                if (pressedKeys.meta && !has(singleActionKeys, key))
-                    delKey(e, pressedKeys);
-            });
-
-            let detail = getKeys(pressedKeys);
-
-            // If there are more than one key to watch and the meta key is one of them and a non-single action key is pressed, debounce the emit
-            if (s > 1 && KEYUP == eventName && pressedKeys.meta && !has(singleActionKeys, key))
-                debounceEmit(detail);
-
-            // Otherwise, emit the event immediately
-            else if (KEYDOWN == eventName)
-                emit(target, event, detail);
-        }));
-
-        // Remove keys
-        saveCleanup(bnode, listen(target, KEYUP, (e: any) => {
-
-            // On keydown, remove the key before emitting the event
-            if (KEYDOWN == eventName) delKey(e, pressedKeys);
-
-            // Emit the event
-            emit(target, event, getKeys(pressedKeys));
-
-            // On keyup, remove the key after emitting the event
-            if (KEYUP == eventName) delKey(e, pressedKeys);
-        }));
-
-        // Remove all keys when the target loses focus
-        saveCleanup(bnode, listen(target, 'focus', () => {
-            deleteKeys(pressedKeys);
-        }));
-    }
 
     // Wrap the function to handle options
     let listenFn = (e: any) => {
+
         // https://developer.mozilla.org/en-US/docs/Web/API/Event/preventDefault
         if (options[PREVENT]) e[PREVENT_DEFAULT]();
 
@@ -187,8 +126,7 @@ let hydrateOn = (bnode: BNode, attrName: string, attrValue: string) => {
         // Check if all the keys are pressed
         // WARNING: `keypress` has been deprecated, use `keydown` instead
         if (has([KEYDOWN,KEYUP], eventName)) {
-            let pkeys = e[DETAIL];
-            if (!(countKeys(keys) == countKeys(pkeys) && every(getKeys(keys), k => has(pkeys, k))))
+            if (!(countKeys(keys) == countKeys(pressedKeys) && every(getKeys(keys), k => pressedKeys[k])))
                 return;
         }
 
@@ -196,10 +134,64 @@ let hydrateOn = (bnode: BNode, attrName: string, attrValue: string) => {
         fn(e);
     }
 
-    // Create listener and save the cleanup function
-    saveCleanup(bnode, listen(target, event, listenFn, options));
+    // Keep track of the pressed keys for key events
+    let pressedKeys: ObjectType = {};
+    let s = countKeys(keys);
+
+    // Key events
+    if (has([KEYDOWN,KEYUP], eventName) && s) {
+
+        // Listen to keydown and track pressed keys
+        saveCleanup(bnode, listen(target, KEYDOWN, (e: any) => {
+
+            if (options[REPEAT] === false && e[REPEAT]) return;
+
+            let key = lower(e.key);
+
+            // On keydown, add the key before emitting the event
+            pressedKeys[key] = true;
+
+            // Emit the event
+            if (KEYDOWN == eventName) {
+                listenFn(e);
+            }
+
+            /**
+             * IMPORTANT NOTE:
+             * Auto-remove non-modifier key if the meta key is pressed.
+             * This is because the `keyup` event is not triggered on alphanumeric keys when the meta key is pressed.
+             */
+            if (pressedKeys.meta && !has(modifierKeys, key)) {
+                deletePressedKey(e, pressedKeys);
+            }
+        }));
+
+        // Listen to keyup and track released keys
+        saveCleanup(bnode, listen(target, KEYUP, (e: any) => {
+
+            // On keydown, remove the key before emitting the event
+            if (KEYDOWN == eventName) deletePressedKey(e, pressedKeys);
+
+            // Emit the event
+            if (KEYUP == eventName) {
+                listenFn(e);
+
+                wait(() => deletePressedKey(e, pressedKeys));
+            }
+        }));
+
+        // Remove all keys when the target loses focus
+        saveCleanup(bnode, listen(target, 'focus', () => {
+            deleteKeys(pressedKeys);
+        }));
+    }
+    else {
+        // Create listener and save the cleanup function
+        saveCleanup(bnode, listen(target, eventName, listenFn, options));
+    }
+
 }
 
-let delKey = (e: any, pressedKeys: ObjectType) => delProp(pressedKeys, lower(e.key));
+let deletePressedKey = (e: any, pressedKeys: ObjectType) => delProp(pressedKeys, lower(e.key));
 
 export let onDirective: Directive = [/^(b-on|on)-([\w-$]+)$/, hydrateOn]; // on-click="action" on-click-prevent

@@ -98,9 +98,9 @@
         <input
             type="text"
             b-model="state"
-            b-mask="$mask.money()"
+            b-mask="['#', char(/[0-9a-fA-F]/, 6)]"
             b-effect="console.warn('MASK EFFECT:', state)"
-            on-mask="console.warn('ON MASK:', $event.detail.value, $event.detail.output)"
+            on-mask="console.warn('ON MASK:', $event.detail.output)"
         >
     </div>
 
@@ -143,7 +143,7 @@
     <!-- Tel input -->
     <div b-data="main">
         <h4>Tel input: {{state}} ({{$getType(state)}})</h4>
-        <input type="tel" b-model="state" b-mask="['(', $mask.number(3), ') ', $mask.number(3), '-', $mask.number(4)]">
+        <input type="tel" b-model="state" b-mask="['(', number(3), ') ', number(3), '-', number(4)]">
     </div>
 
     <!-- Password input -->

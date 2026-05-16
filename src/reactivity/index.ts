@@ -81,8 +81,8 @@ export let addPropertyListener = (proxied: any, prop: string | number, fn: Liste
     }
 }
 
-setProp(state, 'init', initProp, 'wc');
-setProp(state, SKIP, skipProp, 'wc');
+setProp(state, 'init', initProp, 'e');
+setProp(state, SKIP, skipProp, 'e');
 
 // * API
 

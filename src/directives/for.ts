@@ -106,11 +106,11 @@ let hydrateFor = (bnode: BNode, attrName: string, attrValue: string) => {
         let _for: ObjectType = state({}, _bnode.ctx[$FOR]);
 
         // Set the properties of the $for context
-        setProp(_for, item, v, 'c');
-        setProp(_for, index, i, 'c');
+        setProp(_for, item, v, 'we');
+        setProp(_for, index, i, 'we');
 
         // Save the $for context
-        setProp(_bnode.ctx, $FOR, _for, 'c');
+        setProp(_bnode.ctx, $FOR, _for, 'we');
 
         saveCleanup(_bnode, () => {
             delState(_for);

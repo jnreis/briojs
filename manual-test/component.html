@@ -80,6 +80,8 @@
                     </template>
     -->
 
+    <h5 b-save="h5" b-props="{count: {type: 'number', required: true}, name: 'string'}">{{$props.name}}</h5>
+
     <template b-template b-save="counter" b-ref="counter" b-props="{
         name: {
             type: 'string',
@@ -88,12 +90,13 @@
         tags: 'array',
         isActive: ['boolean', 'number', 'undefined'],
         data: {
-            type: ['boolean', 'number'],
+            type: ['boolean', 'number', 'object'],
             required: true,
-            default: true,
+            default: 'default value',
             warn: (value) => value !== false && value !== 0 ? 'data must be false or 0.' : null,
             isText: false, // if true, the value will be wrapped in backticks
-        }
+        },
+        fun: 'function',
     }">
         <script b-script>
             try {
@@ -110,6 +113,9 @@
             <p>Tags prop: {{ tags }}</p>
             <p>isActive prop: {{ isActive }}</p>
             <p>Data prop: {{ JSON.stringify(data) }}</p>
+            <p>Fun prop: {{ fun }}</p>
+
+            <template b-template="h5" count="$data.count" name="$props.name"></template>
         </div>
 
         {{ count }} Blah
@@ -168,7 +174,7 @@
 
         <hr>
 
-        <template b-template="counter" name="John has tags: ${[1,2,3].join(', ')}" tags="[1,2,3]" isActive data></template>
+        <template id="counter-1" b-template="counter" name="John has tags: ${[1,2,3].join(', ')}" tags="[1,2,3]" isActive data="false" fun="() => $data"></template>
 
         <hr>
 
@@ -241,7 +247,7 @@
             }));
             $hydrate('body');
 
-            console.log('component.html', app);
+            console.log('app component.html:', app);
 
             // let ctx = $state({
             //     items: [

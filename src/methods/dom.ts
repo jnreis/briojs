@@ -1,11 +1,10 @@
 import { updateDataLevelContext } from "../app";
 import { has, logError, logWarn, size, slice } from "../tools";
-import { arrayAdd, each, every, join, some } from "../tools/array";
+import { arrayAdd, each, every, join, map, some } from "../tools/array";
 import { BODY, ELEMENT, HTML, HYDRATE, INNER_HTML, NOT_FOUND, TEXT, TEXT_CONTENT, HEAD, SCRIPT, REPLACE_WITH, $INSERT, TEMPLATE, $HYDRATE, $DEHYDRATE, B_SCRIPT, B_IGNORE, B_SAVE, B_SLOT, CONTENT, PREPEND, APPEND, REPLACE_CHILDREN, MUST_BE, OF_TYPE, NODE__$CAP, TARGET, STRING, SELECTOR, BEFORE, AFTER, HTML__$UPPER, B_, PROPS, FUNCTION, BUT_GOT_INSTEAD, $PROPS, DEFAULT, REQUIRED, INVALID__$CAP } from "../tools/constants";
 import { childNodes, createElement, delAttr, eachAttribute, forcePropertyAssignment, getAttr, getTagName, hasAttr, insertNodes, query, queryAll, setAttr } from "../tools/dom";
-import { newFn } from "../tools/evaluation";
 import { countKeys, getProp } from "../tools/object";
-import { space, trim, upper, wrapInBackticks } from "../tools/string";
+import { isStringFunction, lower, space, trim, upper, wrapInBackticks } from "../tools/string";
 import { getType, isArray, isElementNode, isFunction, isNode, isNull, isObject, isString, isUndefined } from "../tools/typeCheck";
 
 let onlySupportInsertions = (placement: string[]) => `only supports ${join(slice(placement, 0, -1) as string[], ', ')}, and ${placement[size(placement) - 1]} insertions`;
@@ -69,11 +68,13 @@ export let newInsert = (app: AppObject) => async (target: HTMLElement | string, 
     let isText = place == TEXT_CONTENT;
     let parsedContent = content;
     let parsed = false;
+    let propsNode: HTMLElement | undefined;
 
     // Parse the content if it is a string
     if (!isText && isString(content)) {
         parsedContent = createElement('div');
         parsedContent[INNER_HTML] = trim(content);
+        propsNode = parsedContent.children[0] as HTMLElement;
         parsed = true;
     }
 
@@ -91,95 +92,125 @@ export let newInsert = (app: AppObject) => async (target: HTMLElement | string, 
         // Log an error if the selector did not find a valid Node
         if (!isNode(parsedContent))
             return logError($INSERT_, ELEMENT, NOT_FOUND);
+
+        if (getAttr(parsedContent, B_+PROPS)) propsNode = parsedContent;
     }
 
     let {n: newBNode, g: getBNode} = app.bnode;
 
+    let bnode = getBNode(el) as BNode;
+
     // ! VALIDATE PROPS
-    let propsValues: ObjectType = {};
 
     // Get props schema from b-props attribute
-    if (!isText) {
-        // Get props schema
-        let propsSchema: ObjectType = {};
-        let propsAttr = getAttr(parsedContent.children[0], B_+PROPS);
-        if (propsAttr) {
-            propsSchema = newFn('', propsAttr)() || {};
-        }
+    if (bnode && propsNode && !isText) {
 
-        // Process each prop
-        let propsWarns: string[] = [];
+        let validProps = true;
+        let $props: ObjectType = {};
+        let propsSchema: ObjectType = {};
+
+        // Get props schema
+        let propsAttr = getAttr(propsNode, B_+PROPS);
+        if (propsAttr) propsSchema = bnode.exec(bnode, propsAttr)() || {};
+
+        // Process each prop defined in the schema
         for (let propName in propsSchema) {
+
+            /**
+             * Prop schema can be defined as:
+             * - string: string, number, boolean, object, array, function, date, null, undefined, set, map, etc.
+             * - array of strings: any of the above types
+             * - object: {
+             *      type: string or array of strings (see above)}
+             *      required: boolean (optional, default: false)
+             *      isText: boolean (optional, default: false)
+             *      warn: function (optional)
+             *      default: any (optional)
+             *   }
+             */
             let schema = propsSchema[propName];
 
+            // Type. String or array of strings
             let type: any = schema;
+            // Required. Defaults to false. If true, a warning is logged if the prop is not provided.
             let required = false;
+            // IsText. If true, the prop value is treated as a string even if it looks like another type
             let isText = false;
+            // Default value. A fallback value used when the prop value is of an invalid type or not provided.
+            let defaultValue;
+            // Custom warning function. A function that takes the prop value and prop name as arguments and may return a custom warning message.
             let warn;
 
             if (isObject(schema)) {
                 type = schema.type;
                 required = !!schema[REQUIRED];
                 isText = !!schema.isText;
+                defaultValue = schema[DEFAULT];
                 warn = schema.warn;
             }
 
             // Ensure type is an array
-            if (!isArray(type)) type = [type];
+            if (type && isString(type)) type = [type];
+
+            // Log an error if the type is invalid
+            if (!(isArray(type) && size(type) && every(type, t => isString(t)))) {
+                logWarn(space(INVALID__$CAP, 'type for prop', propName + ':', MUST_BE, OF_TYPE, STRING, 'or an array of strings.'), el);
+                continue;
+            }
+
+            // Normalize the type to lowercase
+            type = map(type, lower);
 
             // Get the prop value
             let value: any = getAttr(el, propName);
+
+            // Check required
+            if (isNull(value)) {
+                if (required) {
+                    logError('Missing required prop: ' + propName + '.', el);
+                    validProps = false;
+                }
+                continue;
+            }
 
             // Delete the attribute after getting its value
             delAttr(el, propName);
 
             // If the value is text, wrap it in backticks to be evaluated as a string
-            if (isText && value) value = wrapInBackticks(value);
+            if (isText) value = wrapInBackticks(value);
+
+            if (isStringFunction(value)) value = '()=>' + value;
 
             // Evaluate the prop value
             // Note: if the attribute is present but empty, the value will default to true
-            if (isString(value)) value = newFn('', value || 'true')();
+            if (isString(value)) value = bnode.exec(bnode, value || 'true')();
 
-            let isNullOrUndefined = isNull(value) || isUndefined(value);
+            // If the value is of an invalid type and a default value is provided, use the default value
+            if (!has(type, getType(value)) && !isUndefined(defaultValue)) {
+                // If the default value is a function and the type does not include function, call the function to get the default value.
+                // Otherwise, use the default value as is.
+                value = isFunction(defaultValue) && !has(type, FUNCTION) ? defaultValue() : defaultValue;
+            }
 
-            // Invalid type
+            // Log a warning if the value is of an invalid type
             if (!has(type, getType(value))) {
-
-                // Check required
-                // The prop is required if specified in the schema and the value is null or undefined
-                if (required && isNullOrUndefined) {
-                    arrayAdd(propsWarns, 'Missing required prop: ' + propName + '.');
-                }
-                // Type warning message
-                else {
-                    arrayAdd(propsWarns, space(INVALID__$CAP, 'prop type for', propName + ':', MUST_BE, OF_TYPE, join(type, ' or ') + ',', BUT_GOT_INSTEAD(getType(value))));
-                }
+                logWarn(space(INVALID__$CAP, 'prop type for', propName + ':', MUST_BE, OF_TYPE, join(type, ' or ') + ',', BUT_GOT_INSTEAD(getType(value))), el);
             }
 
             // The `warn` function perform a custom validation and may return a warning message
             if (isFunction(warn)) {
                 let message = warn(value, propName);
-                if (message) arrayAdd(propsWarns, message);
-            }
-
-            // Use the default value if no value is provided
-            if (isNullOrUndefined && DEFAULT in schema) {
-                let defaultValue = schema[DEFAULT];
-                value = isFunction(defaultValue) && !has(type, FUNCTION) ? defaultValue() : defaultValue;
+                if (message) logWarn(message, el);
             }
 
             // Set the prop value
-            propsValues[propName] = value;
+            $props[propName] = value;
         }
-        // Log all prop warnings
-        each(propsWarns, message => logWarn(message, el));
+
+        // Set the props values in the bnode context
+        if (validProps && countKeys($props)) bnode.ctx[$PROPS] = $props;
     }
 
-    // Set the props values in the bnode context
-    if (countKeys(propsValues)) {
-        let bnode = getBNode(el) as BNode;
-        bnode.ctx[$PROPS] = propsValues;
-    }
 
     // ! CLEANUP THE DOM
 

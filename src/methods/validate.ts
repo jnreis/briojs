@@ -1,11 +1,12 @@
 import { entries, has, logWarn, size } from "../tools";
 import { arrayAdd, join } from "../tools/array";
-import { A_VALID, EMAIL, MUST_BE, OF_TYPE, REQUIRED } from "../tools/constants";
+import { EMAIL, MESSAGE, MUST_BE, OF_TYPE, REQUIRED, VALID, VALUE } from "../tools/constants";
 import { countKeys, newRegExp } from "../tools/object";
-import { replaceAll, space, test } from "../tools/string";
+import { capitalize, replaceAll, space, test } from "../tools/string";
 import { getType, isArray, isNumber, isString } from "../tools/typeCheck";
 
 let MATCHES: 'matches' = 'matches';
+let CHARACTERS_LONG: ' characters long.' = ' characters long.';
 let regexLetters = '\\p{L}';
 let regexNumbers = '\\p{Nd}';
 let regexEmail = newRegExp(replaceAll(replaceAll('^(?!.*\\.{2})[w._%+-]+@(?:[w](?:[w-]*[w])?\\.)+[l]{2,}$', /w/, regexLetters + regexNumbers), /l/, regexLetters), 'u');
@@ -43,21 +44,29 @@ export let validate = (data: ObjectType, schema: SchemaObject, customRules?: Rul
     };
 
     let messages: MessageObject = {
-        [REQUIRED]: (propName: string) => space(propName, 'is', REQUIRED + '.'),
+        // E.g. "Username is required.", "Age is required."
+        [REQUIRED]: (propName: string) => space(capitalize(propName), 'is', REQUIRED + '.'),
 
-        min: (propName: string, ruleValue: any) => space(propName, MUST_BE, 'at least', ruleValue + '.'),
+        // E.g. "Username must be at least 3 characters long.", "Age must be at least 18."
+        min: (propName: string, ruleValue: any, data: any) => space(capitalize(propName), MUST_BE, 'at least', ruleValue + (isString(data[propName]) ? CHARACTERS_LONG : '.')),
 
-        max: (propName: string, ruleValue: any) => space(propName, MUST_BE, 'at most', ruleValue + '.'),
+        // E.g. "Username must be at most 20 characters long.", "Age must be at most 65."
+        max: (propName: string, ruleValue: any, data: any) => space(capitalize(propName), MUST_BE, 'at most', ruleValue + (isString(data[propName]) ? CHARACTERS_LONG : '.')),
 
-        [EMAIL]: (propName: string) => space(propName, MUST_BE, A_VALID, EMAIL + '.'),
+        // E.g. "Email must be valid."
+        [EMAIL]: () => space(capitalize(EMAIL), MUST_BE, VALID + '.'),
 
-        same: (propName: string, ruleValue: any) => space(propName, 'must match', ruleValue + '.'),
+        // E.g. "ConfirmPassword must be the same as the password."
+        same: (propName: string, ruleValue: any) => space(capitalize(propName), MUST_BE, 'the same as the', capitalize(ruleValue) + '.'),
 
-        in: (propName: string, ruleValue: any) => space(propName, MUST_BE, 'equal to', join(ruleValue, ' or ') + '.'),
+        // E.g. "Status must be equal to active or pending."
+        in: (propName: string, ruleValue: any) => space(capitalize(propName), MUST_BE, 'equal to', join(ruleValue, ' or ') + '.'),
 
-        [MATCHES]: (propName: string) => propName + ' has an invalid format.',
+        // E.g. "Username is invalid."
+        [MATCHES]: (propName: string) => capitalize(propName) + ' is invalid.',
 
-        type: (propName: string, ruleValue: any) => space(propName, MUST_BE, OF_TYPE, (isArray(ruleValue) ? join(ruleValue, ' or ') : ruleValue) + '.'),
+        // E.g. "Username must be of type string.", "Age must be of type number or string."
+        type: (propName: string, ruleValue: any) => space(capitalize(propName), MUST_BE, OF_TYPE, (isArray(ruleValue) ? join(ruleValue, ' or ') : ruleValue) + '.'),
 
         // Note that custom messages can override default messages
         ...customMessages || {}
@@ -66,7 +75,7 @@ export let validate = (data: ObjectType, schema: SchemaObject, customRules?: Rul
     for (let [propName, propRules] of entries(schema || {})) {
         let value = data[propName];
 
-        for (let [ruleName, [ruleValue, ruleMessage]] of entries(propRules)) {
+        for (let {name: ruleName, [VALUE]: ruleValue, [MESSAGE]: ruleMessage} of propRules) {
 
             let ruleFn = rules[ruleName];
 

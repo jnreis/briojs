@@ -1,9 +1,10 @@
-import { genContextArgs, saveCleanup, updateDataLevelContext } from '../app';
+import { saveCleanup, updateDataLevelContext } from '../app';
 import { logError, wait } from '../tools';
 import { getDescriptor, setProp } from '../tools/object';
 import { getType, isFunction, isObject } from '../tools/typeCheck';
 import { DIRECTIVE, OBJECT, SKIP, REQUIRES_ACTION_TYPE, B_DATA, PARENT, $DATA } from '../tools/constants';
 import { delState } from '../reactivity';
+import { destructuringObject } from '../tools/evaluation';
 
 let hydrateData = async (bnode: BNode, attrName: string, attrValue: string) => {
 
@@ -12,7 +13,7 @@ let hydrateData = async (bnode: BNode, attrName: string, attrValue: string) => {
 
     // Not an asset function. Execute the expression to get the context function, if any
     if (!isFunction(assetFn) && attrValue) {
-        assetFn = bnode.exec(bnode, attrValue, genContextArgs(bnode, attrValue) + ',$'+PARENT);
+        assetFn = bnode.exec(bnode, attrValue, destructuringObject(bnode.ctx, attrValue) + ',$'+PARENT);
     }
 
     // Get the new context object

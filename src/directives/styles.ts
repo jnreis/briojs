@@ -50,9 +50,12 @@ let hydrateStyle = (bnode: BNode, _attrName: string, attrValue: string) => {
         style[TEXT_CONTENT] = replace(styleContent, cssSelectorRegex, (selector: string) => {
             let newSelector = trim(selector);
 
+            // & is used as a placeholder for the prefix
             if (has(selector, '&')) {
                 newSelector = replace(newSelector, /&/g, prefix);
-            } else {
+            }
+            // Prefix each selector if there are multiple selectors separated by commas
+            else {
                 newSelector = join(map(split(newSelector, ','), s => prefix + ' ' + trim(s)), ',' + NEW_LINE);
             }
 

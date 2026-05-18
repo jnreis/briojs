@@ -5,12 +5,14 @@ import { has, logError, uid } from "./tools";
 import { arrayAdd, each, find, join, map, some } from "./tools/array";
 import { TEXT, TEXT_CONTENT, ATTR, DELETE, INNER_HTML, PARENT, $PROPS, NULL, B_DATA, SCRIPT, $DATA, STYLE, B_, TEMPLATE, UNDEFINED, OPTIONS, NEW_LINE, BRIO, STORAGE, STATE, DIRECTIVES, DATA, B_SAVE, OUTER_HTML, $STORE, SKIP, NODES, B_IF, MESSAGE, CLONE, $REF, $SLOT, B_TEMPLATE, B_REF, $, $DEHYDRATE, $HYDRATE, $INSERT, B_SCRIPT, B_SLOT, B_FOR, $FOR, DEHYDRATE_CHILDREN, VALIDATE } from "./tools/constants";
 import { walk, getAttr, delAttr, getParent, getTagName, getNodeContent, removeNode, eachAttribute, query, emit, listen, setAttr, hasAttr } from "./tools/dom";
-import { destructuringObject, expToFn, getTemplateExpressions, newFn, setTemplateExpressions } from "./tools/evaluation";
+import { autoFillContextProp, destructuringObject, expToFn, newFn } from "./tools/evaluation";
 import { countKeys, hasProp, getProp, newMap, setProp, setObjectKeys, W, S, sync, clone, delProp, getKeys, L } from "./tools/object";
 import { replace, replaceAll, split, startsWith, test, trim, wrapInBackticks } from "./tools/string";
 import { isTextNode, isElementNode, isNull, isRegExp, isString, isNode, isFunction, isArray, getType, isNumber } from "./tools/typeCheck";
 import { validate } from "./methods/validate";
 import { getAccessedProp } from "./reactivity/track";
+import { autoFillTemplateExpressions } from "./tools/references";
+import { newStepEngine } from "./methods/step";
 
 export let symbol = S(BRIO);
 
@@ -344,7 +346,7 @@ export let newApp = (): AppObject => {
          * This allows the use of "{{ $data.propName }}" to be written as "{{ propName }}".
          * The default context list and order is: $for, $data, $props, $store.
          */
-        exp = expToFn(autoFill ? autoFillContext(bnode, exp) : exp, args, returns);
+        exp = expToFn(autoFill ? autoFillContextProp(bnode, exp) : exp, args, returns);
 
         // Check if the expression is already cached
         if (exp in cached) {
@@ -374,7 +376,11 @@ export let newApp = (): AppObject => {
             fn = cache[cacheKey](bnode.ctx);
         }
         catch (error: any) {
-            logError(error[MESSAGE]);
+            logError(
+                error[MESSAGE],
+                // '\nExpression:', exp, 
+                // '\nElement:', bnode.el
+            );
 
             fn = () => symbol;
         }
@@ -429,6 +435,10 @@ export let newApp = (): AppObject => {
         [$DEHYDRATE]: dehydrate,
     };
 
+    let steps: Record<string, StepObject> = {};
+    let activeSteps: string[] = state([]);
+    let [isStepActive, nextStep, backStep, originStep] = newStepEngine(steps, activeSteps);
+
     /** Unprefixed global context */
     let _gc: ObjectType = {
         http,
@@ -440,6 +450,13 @@ export let newApp = (): AppObject => {
         persist,
         session,
 
+        activeSteps,
+        isStepActive,
+        steps,
+        nextStep,
+        backStep,
+        originStep,
+        
         go,
         emit,
         listen,
@@ -747,34 +764,6 @@ let getElementsByDirective = async (node: Node, directiveName: 'b-save' | 'b-slo
     }, isNotRef);
 
     return nodes;
-}
-
-/** Auto-fill the context name if missing and found in one of the data related contexts */
-let autoFillContextName = (bnode: BNode, propName: string): string => {
-    for (let ctxName of [$FOR, $DATA, $PROPS, $STORE]) {
-        let ctx = bnode.ctx[ctxName as '$data'];
-        if (ctx && propName in ctx) {
-            propName = ctxName + '.' + propName;
-            break;
-        }
-    }
-    return propName;
-}
-
-let varNameInExpRegex = /(?<![.`'"][\w\s$]*)[a-z_$][\w$]*(?![\w\s$]*[:`'"{])/gi;
-
-let autoFillContext = (bnode: BNode, exp: string): string =>
-    replace(exp, varNameInExpRegex, (propName: string) => autoFillContextName(bnode, propName));
-
-let autoFillTemplateExpressions = (bnode: BNode, text: string): string => {
-    let [tempText, expressions] = getTemplateExpressions(text);
-
-    for (let entry of expressions) {
-        entry[1] = autoFillContext(bnode, entry[1]);
-    }
-
-    // Rebuild the text with the updated expressions
-    return setTemplateExpressions(tempText, expressions);
 }
 
 /** Evaluate the attribute as an effect */

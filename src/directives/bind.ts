@@ -2,7 +2,7 @@ import { evalEffect, sliceAttrName } from '../app';
 import { logWarn } from '../tools';
 import { BUT_GOT_INSTEAD, CLASS, NEW_LINE, OPTIONS, REQUIRES_REACTIVE_VALUE, STYLE } from '../tools/constants';
 import { setAttr, delAttr, getAttr, forcePropertyAssignment, sanitizeAttrName, setStyleProps, setClass, delClass } from '../tools/dom';
-import { expToFn } from '../tools/evaluation';
+import { autoFillContextProp, expToFn } from '../tools/evaluation';
 import { camelCase } from '../tools/string';
 import { isObject } from '../tools/typeCheck';
 
@@ -36,7 +36,7 @@ let hydrateBind = (bnode: BNode, dirName: string, dirValue: string) => {
      * - all other cases, including underscores, are used as is. Examples: firstname and first_name will be used as is.
      * - for any other cases, use the regular bind syntax (e.g., `b-bind-first-name="FirstName"`).
      */
-    let stateProp = expToFn(dirValue || camelCase(attrName), '$initial');
+    let stateProp = expToFn(autoFillContextProp(bnode, dirValue || camelCase(attrName)), '$initial');
 
     // Sanitize the attribute name to ensure it is a valid HTML attribute name
     // This is necessary because some attributes may contain special characters that are not valid in HTML.

@@ -1,11 +1,11 @@
 // build.js
-import { existsSync, rmdirSync, readFileSync, readdirSync, lstatSync } from 'fs';
+import { existsSync, rmSync, readFileSync, readdirSync, lstatSync } from 'fs';
 import { build } from 'vite';
 import dts from 'vite-plugin-dts';
 
 // Delete dist folder
 if (existsSync('dist')) {
-    rmdirSync('dist', { recursive: true });
+    rmSync('dist', { recursive: true, force: true });
 }
 
 const packageJsonPath = process.cwd() + '/package.json';

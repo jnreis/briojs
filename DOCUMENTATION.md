@@ -462,7 +462,7 @@ Creates a two-way typecasted data binding on input, textarea, and select element
 <input b-model="myValue">
 
 <!-- Using modifiers -->
-<input b-model="myValue" b-options="{ b-model: { raw: true, trim: true, lazy: true } }">
+<input b-model="myValue" b-options="{ 'b-model': { raw: true, trim: true, lazy: true } }">
 ```
 
 ### `b-mask`
@@ -1005,7 +1005,7 @@ Parameters:
 The function returns `true` or an object with error messages for each property that failed validation.
 ```js
 const userData = {
-  email: 'john_doe@example.com', 
+  email: 'john@doe.com', 
   password: '123qw23a', 
   confirmPassword: '123qw23a',
   createdAt: '2026-01-01'

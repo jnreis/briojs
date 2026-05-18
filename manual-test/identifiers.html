@@ -5,7 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hook</title>
 </head>
-<body>
+<body b-data="{
+    name: 'John', 
+    age: 35, 
+    email: 'john@doe.com',
+}">
+
+    <h1>
+        Hi, {{ name }}! You are {{ age }} years old and your email is {{ email }}.
+    </h1>
+
+    <script b-script>
+        (ctx) => {
+            console.log('Hello from the script tag!', ctx);
+        }
+    </script>
 
     <script type="module" src="/src/briojs.min.ts"></script>
 

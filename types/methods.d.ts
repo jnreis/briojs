@@ -68,3 +68,31 @@ type RulesObject = { [ruleName: string]: RuleFn };
 type MessageObject = { [ruleName: string]: MessageFn };
 type RuleFn = (value: any, ruleValue?: any, data?: any) => boolean;
 type MessageFn = (propName: string, ruleValue?: any, data?: any) => string;
+
+
+
+type StepObject = {
+    /**
+     * The unique name of the step. 
+     * It will be used when navigating to the next step and for checking if the step is active.
+     */
+    name: string;
+    /**
+     * The name of the next step, if any.
+     */
+    next?: string;
+    /**
+     * The name of the backward step, if any.
+     */
+    back?: string;
+    /**
+     * The name of the step from which the current step originated.
+     * It will be set automatically when navigating between steps.
+     */
+    origin?: string;
+    /**
+     * Whether to keep the current step active when going to the next step.
+     * By default, it will hide the current step when going to the next step.
+     */
+    keep?: boolean;
+}

@@ -14,6 +14,7 @@ export let AFTER: 'after' = 'after';
 export let ANIMATION: 'animation' = 'animation';
 export let APPEND: 'append' = 'append';
 export let ARRAY: 'array' = 'array';
+export let ASYNC: 'async' = 'async';
 export let ATTR: 'attr' = 'attr';
 export let ATTRIBUTE__$CAP: 'Attribute' = 'Attribute';
 
@@ -135,6 +136,7 @@ export let SCRIPT: 'script' = 'script';
 export let SIBLING__$CAP: 'Sibling' = 'Sibling';
 export let SKIP: 'skip' = 'skip';
 export let SELECT: 'select' = 'select';
+export let SET: 'set' = 'set';
 export let STATE: 'state' = 'state';
 export let START: 'start' = 'start';
 export let STORAGE: 'storage' = 'storage';
@@ -243,8 +245,8 @@ export let ROUTE_RULE = ROUTE + 'Rule' as 'routeRule';
 
 export let SELECTION_START = SELECT + 'ionStart' as 'selectionStart';
 export let SELECTOR = SELECT + 'or' as 'selector';
-export let SET_ATTRIBUTE = 'set' + ATTRIBUTE__$CAP as 'setAttribute';
-export let SET_PROPERTY = 'set' + PROPERTY__$CAP as 'setProperty';
+export let SET_ATTRIBUTE = SET + ATTRIBUTE__$CAP as 'setAttribute';
+export let SET_PROPERTY = SET + PROPERTY__$CAP as 'setProperty';
 export let STARTS_WITH = START + 's' + WITH__$CAP as 'startsWith';
 export let STORAGE_AREA = STORAGE + 'Area' as 'storageArea';
 
@@ -259,7 +261,7 @@ export let VALIDATE = VALID + 'ate' as 'validate';
  * INDIRECT DEPENDENCIES
  */
 
-export let ASYNC_FUNCTION = 'async' + FUNCTION as 'asyncfunction';
+export let ASYNC_FUNCTION = ASYNC + FUNCTION as 'asyncfunction';
 
 export let GET_OWN_PROPERTY_DESCRIPTOR = GET + OWN_PROPERTY + 'Descriptor' as 'getOwnPropertyDescriptor';
 export let GET_OWN_PROPERTY_DESCRIPTORS = GET_OWN_PROPERTY_DESCRIPTOR + 's' as 'getOwnPropertyDescriptors';

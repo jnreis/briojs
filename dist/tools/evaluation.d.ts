@@ -1,6 +1,7 @@
 export declare let newFn: (args: string, exp: string, returns?: boolean) => FunctionType;
 /** Ensure an expression is a function */
 export declare let expToFn: (exp: string, args?: string, returns?: boolean) => string;
+export declare let autoFillContextProp: (bnode: BNode, exp: string) => string;
 /**
  * Find a missing character in a string among all Unicode characters (~1.1 million characters).
  *
@@ -14,3 +15,4 @@ export declare let expToFn: (exp: string, args?: string, returns?: boolean) => s
 export declare let missingChar: (str: string, exclude?: Set<string>) => string | undefined;
 export declare let getTemplateExpressions: (template: string) => [string, [string, string][]];
 export declare let setTemplateExpressions: (template: string, expressions: [string, string][]) => string;
+export declare let destructuringObject: (obj: ObjectType, exp: string) => string;

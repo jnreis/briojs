@@ -1,8 +1,9 @@
-import { isStringFunction, replace, test } from "./string";
+import { isStringFunction, match, replace, test } from "./string";
 import { sanitizeAttrValue, templateRegex } from "../app";
 import { getKeys, newSet } from "./object";
 import { arrayAdd, filter, join } from "./array";
 import { has, size } from ".";
+import { $DATA, $FOR, $STORE } from "./constants";
 
 export let newFn = (args: string, exp: string, returns: boolean = true) =>
     new Function(args, returns ? `return(${exp})` : exp) as FunctionType;
@@ -16,6 +17,24 @@ export let expToFn = (exp: string, args: string = '', returns: boolean = true) =
 
         // Make sure the expression is a function
         exp = `(${args})=>` + (returns ? `(${exp})` : `{${exp}}`);
+    }
+
+    return exp;
+}
+
+export let autoFillContextProp = (bnode: BNode, exp: string): string => {
+
+    let propName = match(exp, /^\s*([a-z_$][\w$]*)/i);
+
+    if (!propName) return exp;
+
+    for (let ctxName of [$FOR, $DATA, $STORE]) {
+        let ctx = bnode.ctx[ctxName];
+        if (ctx && propName[1] in ctx) {
+            // If found, replace the identifier with the context-prefixed version
+            exp = ctxName + '.' + exp;
+            break;
+        }
     }
 
     return exp;

@@ -54,7 +54,7 @@
             console.log(target, targetHobbies === target.hobbies); // The target is now identical to the source but retains the same reference.
 
             // Test $validate(data: ObjectType, schema: SchemaObject, customRules?: RulesObject, customMessages?: MessageObject)
-            const userData = { username: 'john_doe', email: 'john_doe@example.com', age: 25, password: '123qw23a', confirmPassword: '123qw23a', createdAt: '2026-01-01' };
+            const userData = { username: 'john_doe', email: 'john@doe.com', age: 25, password: '123qw23a', confirmPassword: '123qw23a', createdAt: '2026-01-01' };
             const userSchema = {
                 username: [
                     { name: 'required' },

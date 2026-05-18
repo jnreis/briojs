@@ -27,7 +27,6 @@ export declare let setup: (brioWindow?: ObjectType) => void;
 /** Slice the attribute name to get the part after the directive prefix */
 export declare let sliceAttrName: (attrName: string) => string;
 export declare let updateDataLevelContext: (bnode: BNode) => Promise<void>;
-export declare let genContextArgs: (bnode: BNode, exp: string) => string;
 /** Evaluate the attribute as an effect */
 export declare let evalEffect: (bnode: BNode, exp: string, callback: DirectiveCallback) => void;
 export declare let evalContextProp: (bnode: BNode, propName: string) => FunctionType | undefined;

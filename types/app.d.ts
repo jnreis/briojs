@@ -167,6 +167,7 @@ type LocalContext = {
     $id: ObjectType,
     $props: ObjectType,
     $data: ObjectType,
+    $step: StepObject,
     $ref: ObjectType,
     $slot: ObjectType,
     $for?: ObjectType,

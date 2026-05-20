@@ -1,17 +1,33 @@
-import { has, logWarn } from "../tools";
-import { arrayAdd, indexOf } from "../tools/array";
+import { logWarn } from "../tools";
+import { isObject } from "../tools/typeCheck";
 
 /**
  * A simple step engine for managing multi-step processes, such as views, forms, tutorials, etc.
  * @param activeSteps a reactive array of strings
- * @returns 
+ * @returns an array of functions: [setStep, isStepActive, nextStep, backStep, originStep]
  */
-export let newStepEngine = (steps: Record<string, StepObject>, activeSteps: string[]) => {
+export let newStepEngine = (steps: Record<string, StepObject>) => {
+
+    let setStep = (stepName: string, stepObject: StepObject) => {
+        let success = false;
+
+        if (stepName) {
+            // Set the step object in the steps record
+            steps[stepName] = isObject(stepObject) ? stepObject : {};
+
+            // Indicate that the step was successfully set
+            success = true;
+        }
+        else logWarn('Step name is required.');
+
+        return success;
+    }
 
     // Check if a step is currently active
-    let isStepActive = (stepName: string) => has(activeSteps, stepName);
+    let isStepActive = (stepName: string) => steps[stepName] && steps[stepName].active;
 
     let toStep = (currStepName: string, stepKey: 'next' | 'back' | 'origin') => {
+        let success = false;
         if (isStepActive(currStepName)) {
             let currStep = steps[currStepName];
 
@@ -20,25 +36,27 @@ export let newStepEngine = (steps: Record<string, StepObject>, activeSteps: stri
 
             // Check if the step name exists and is valid
             if (toStepName && steps[toStepName]) {
+
                 // Set the step as active
                 if (!isStepActive(toStepName)) {
-                    arrayAdd(activeSteps, toStepName);
+                    steps[toStepName].active = true;
                 }
 
                 // Keep track of the step origin for going back
                 steps[toStepName].origin = currStepName;
-            } else {
-                logWarn(`Step "${currStepName}" does not have a valid "${stepKey}" step to go to.`);
-            }
 
-            // Keep current step active if specified, otherwise remove it from active steps
-            if (!currStep.keep) {
-                let activeStepIndex = indexOf(activeSteps, currStepName);
-                if (activeStepIndex >= 0) {
-                    activeSteps.splice(activeStepIndex, 1);
+                // Indicate that the step was successfully changed
+                success = true;
+
+                // Keep current step active if specified, otherwise remove it from active steps
+                if (!currStep.keep) {
+                    currStep.active = false;
                 }
             }
+            else logWarn(`Step "${currStepName}" does not have a valid ${stepKey} step to go to.`);
         }
+
+        return success;
     }
 
     // Go to the next step
@@ -50,5 +68,5 @@ export let newStepEngine = (steps: Record<string, StepObject>, activeSteps: stri
     // Go to the step which the current step originated from
     let originStep = (currStepName: string) => toStep(currStepName, 'origin');
 
-    return [isStepActive, nextStep, backStep, originStep];
+    return [setStep, isStepActive, nextStep, backStep, originStep];
 }

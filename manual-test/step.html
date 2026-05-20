@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Brio.js Step Example</title>
+</head>
+<body>
+  <h1>Hello, Brio.js!</h1>
+
+  <script b-script>
+    () => {
+        $setStep('step1', { next: 'step2', active: true});
+        $setStep('step2', { next: 'step3', back: 'step1'});
+        $setStep('step3', { next: 'step1', back: 'step2'});
+    }
+  </script>
+
+  <template b-template b-if="$isStepActive('step1')">
+    <h2>Step 1</h2>
+    <p>This is the first step of the tutorial.</p>
+    <button on-click="$originStep('step1')">Origin</button>
+    <button on-click="$backStep('step1')">Back</button>
+    <button on-click="$nextStep('step1')">Next</button>
+  </template>
+
+  <template b-template b-if="$isStepActive('step2')">
+    <h2>Step 2</h2>
+    <p>This is the second step of the tutorial.</p>
+    <button on-click="$originStep('step2')">Origin</button>
+    <button on-click="$backStep('step2')">Back</button>
+    <button on-click="$nextStep('step2')">Next</button>
+  </template>
+
+  <template b-template b-if="$isStepActive('step3')">
+    <h2>Step 3</h2>
+    <p>This is the third step of the tutorial.</p>
+    <button on-click="$originStep('step3')">Origin</button>
+    <button on-click="$backStep('step3')">Back</button>
+    <button on-click="$nextStep('step3')">Next</button>
+  </template>
+
+  <hr>
+
+  <section b-template b-data="{items: [1,2,3]}">
+    <script b-script>
+        () => {
+            console.error('Items data:', $data.items);
+        }
+    </script>
+    <h2>Items ${ $data.items.join(', ') }</h2>
+    <ul>
+      <li b-for="item in $data.items">${ $for.item }</li>
+    </ul>
+
+    <button on-click="$data.items.push($data.items.length + 1)">Add Item</button>
+    <button on-click="$data.items.pop()">Remove Item</button>
+  </section>
+  
+
+  <!-- Include Brio.js -->
+  <script type="module" src="/src/briojs.min.ts"></script>
+
+  <!-- Initialize Brio.js -->
+  <script>
+    window.addEventListener('brio', () => {
+      let app = brio.newApp();
+      let {$hydrate} = app.gc;
+      $hydrate('body');
+      console.log('Brio.js app initialized', app);
+    });
+  </script>
+</body>
+</html>

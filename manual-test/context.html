@@ -65,7 +65,7 @@
         <button class="button" on-click="level1 = !level1">Toggle Level 1 (b-if)</button>
 
         <!-- <div b-if="level1" class="b-for" b-data="{dshow: true, items: [4, 5] }" b-for="n in items">
-            {{n}}
+            ${n}
         </div> -->
 
         <style>
@@ -106,19 +106,19 @@
         <style b-save="bg-light-gray" b-data="{pd: '1rem'}">
             & {
                 background-color: lightcyan;
-                padding: {{pd}};
+                padding: ${pd};
             }
         </style>
 
         <template b-template="my-template-2"></template>
 
         <div b-save="my-template-2" b-props="{name: {required: true, type: 'string', default: 'John', isText: true} }" b-data="{field1: 'field from level 1', pd: '0.5rem', level1: level1}" b-id="['field1']">
-            <strong>Inside template - level1: {{level1}}</strong>
+            <strong>Inside template - level1: ${level1}</strong>
             <br>
-            <p>field1: {{field1}}</p>
+            <p>field1: ${field1}</p>
             <input type="text" b-model="field1" class="mb-1">
             <p>
-                Name prop: {{ $props.name }}
+                Name prop: ${ $props.name }
             </p>
         </div>
         <br>

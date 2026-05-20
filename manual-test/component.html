@@ -19,7 +19,8 @@
     <div b-data="d1" b-effect="console.log('$data', $data)">
         <button on-click="add">Increment</button>
         <button on-click="subtract">Decrement</button>
-        <p>Count 1: <span>{{ count + ` {{ count2 + ` {{ count3 }}` }}` }}</span></p>
+        <p>Count 1: <span>${ count + ` ${ count2 + ` ${ count3 }` }` }</span></p>
+        <p>Count 1: <span>${ count + ` ${ count2 + ` ${ count3 }` }` }</span></p>
     </div>
     <button on-click="$go('/test/ignore.html')">Go to Context</button>
     <hr b-script="my-script">
@@ -80,7 +81,7 @@
                     </template>
     -->
 
-    <h5 b-save="h5" b-props="{count: {type: 'number', required: true}, name: 'string'}">{{$props.name}}</h5>
+    <h5 b-save="h5" b-props="{count: {type: 'number', required: true}, name: 'string'}">${$props.name}</h5>
 
     <template b-template b-save="counter" b-ref="counter" b-props="{
         name: {
@@ -105,25 +106,25 @@
         </script>
         <div b-style="bg-light-gray">
             <h1>Counter</h1>
-            <p>Count: {{ count }}</p>
+            <p>Count: ${ count }</p>
             <button on-click="count--">Decrement</button>
             <button on-click="count++">Increment</button>
 
-            <p>Name prop: {{ name }}</p>
-            <p>Tags prop: {{ tags }}</p>
-            <p>isActive prop: {{ isActive }}</p>
-            <p>Data prop: {{ JSON.stringify(data) }}</p>
-            <p>Fun prop: {{ fun }}</p>
+            <p>Name prop: ${ name }</p>
+            <p>Tags prop: ${ tags }</p>
+            <p>isActive prop: ${ isActive }</p>
+            <p>Data prop: ${ JSON.stringify(data) }</p>
+            <p>Fun prop: ${ fun }</p>
 
             <template b-template="h5" count="$data.count" name="$props.name"></template>
         </div>
 
-        {{ count }} Blah
+        ${ count } Blah
 
         <template b-save="second" b-ref="second" b-slot="second">
             <h2>Heading Second</h2>
             <div b-save="third" b-ref="third" b-slot="third">
-                <h3>Heading 3 {{ count }}</h3>
+                <h3>Heading 3 ${ count }</h3>
             </div>
         </template>
 
@@ -153,9 +154,9 @@
         <!-- <div b-data="{count:0}" b-html="counter"></div> -->
         <script b-script>
             try {
-                html1 = `<h3>HTML 1 {{ count }}</h3>
+                html1 = `<h3>HTML 1 ${ count }</h3>
         <button on-click="html = html2">Show HTML 2</button>`;
-                html2 = `<h3>HTML 2 {{ count }}</h3>
+                html2 = `<h3>HTML 2 ${ count }</h3>
         <button on-click="html = html1">Show HTML 1</button>`;
 
                 html = html1;

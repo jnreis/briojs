@@ -62,7 +62,7 @@
     <button on-click="$data.hook.pop()">Remove Last</button>
 
     <div b-ref="each" b-for="n in $data.hook">
-        Number is {{ $for.n }}
+        Number is ${ $for.n }
         <input type="text" b-model="$for.n">
     </div>
 
@@ -123,7 +123,7 @@
 <div b-data="{ count: 0, handleEffect() { console.log('The count is now', $data.count); } }" b-effect="handleEffect">
   <button on-click="count++">Increment</button>
   <button on-click="count--">Decrement</button>
-  <p>Count: {{ count }}</p>
+  <p>Count: ${ count }</p>
 </div>
 
 <input type="text" on-keyup="console.log('Shift + Enter key pressed', $event)" b-options="{'on-keyup': {keys: ['shift', 'enter']} }">

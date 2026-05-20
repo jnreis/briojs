@@ -31,13 +31,13 @@
 
     <div>
         <div b-for="stateName, stateId in states">
-            <h2 style="display: inline-block;">{{ stateName }}</h2>
+            <h2 style="display: inline-block;">${ stateName }</h2>
             <span b-for="countyName, countyId in $data.counties[$for.stateId]">
-                {{ countyName }},
+                ${ countyName },
             </span>
             <div>
                 Selected counties:
-                <pre>{{ JSON.stringify($data.selected[$for.stateId]) }}</pre>
+                <pre>${ JSON.stringify($data.selected[$for.stateId]) }</pre>
             </div>
         </div>
     </div>
@@ -46,7 +46,7 @@
 
     <script>
         window.addEventListener('brio', () => {
-            let {gc: {$hydrate}} = brio.newApp();
+            let {gc: {$hydrate} = brio.newApp();
             $hydrate('body');
         });
     </script>

@@ -76,7 +76,7 @@ type StepObject = {
      * The unique name of the step. 
      * It will be used when navigating to the next step and for checking if the step is active.
      */
-    name: string;
+    name?: string;
     /**
      * The name of the next step, if any.
      */
@@ -90,6 +90,10 @@ type StepObject = {
      * It will be set automatically when navigating between steps.
      */
     origin?: string;
+    /**
+     * Whether the step is currently active. It can be used to conditionally show/hide the step content.
+     */
+    active?: boolean;
     /**
      * Whether to keep the current step active when going to the next step.
      * By default, it will hide the current step when going to the next step.

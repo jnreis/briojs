@@ -28,8 +28,8 @@
                 }
             };
 
-            // $data.htmlTemplate = `<h4>This is <strong>HTML </strong> content with name: {{name}}</h4>`;
-            $set.template('htmlTemplate2', `<h2>This is <strong>HTML</strong> content with name: {{name}}</h2>`);
+            // $data.htmlTemplate = `<h4>This is <strong>HTML </strong> content with name: ${name}</h4>`;
+            $set.template('htmlTemplate2', `<h2>This is <strong>HTML</strong> content with name: ${name}</h2>`);
 
             $data.items = 2;
 
@@ -63,7 +63,7 @@
     </style>
 
     <!-- Text Binding -->
-    <h1 b-show="name" b-for="item, index in items">Item: {{ item }} - Index: {{ index }}</h1>
+    <h1 b-show="name" b-for="item, index in items">Item: ${ item } - Index: ${ index }</h1>
 
     <!-- Bind Directive -->
     <input type="text" bind-name bind-fn="$data.bindFn2" b-model="items" b-ref="inputName">
@@ -76,8 +76,8 @@
 
     <!-- ID Directive -->
     <div b-id="['hello', 'world']">
-        hello: {{ $id.hello }} <br>
-        world: {{ $id.world }}
+        hello: ${ $id.hello } <br>
+        world: ${ $id.world }
     </div>
 
     <!-- Teleport Directive -->

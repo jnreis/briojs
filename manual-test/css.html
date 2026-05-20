@@ -11,7 +11,7 @@
         <h2>Heading 2</h2>
         <button on-click="$data.show = !$data.show">
             Toggle 
-            {{$data.show}}
+            ${$data.show}
         </button>
     </div>
 
@@ -22,12 +22,12 @@
         b-script="['props']"
     >
         <h1>Heading 1</h1>
-        <h2>Heading {{ $data.name }}</h2>
-        <button on-click="$data.show = !$data.show">Toggle {{$data.show}}</button>
+        <h2>Heading ${ $data.name }</h2>
+        <button on-click="$data.show = !$data.show">Toggle ${$data.show}</button>
 
         <style b-css="showTrue2">
             h2 {
-                color: {{ $data.show ? 'green' : 'purple' }};
+                color: ${ $data.show ? 'green' : 'purple' };
             }
         </style>
     </div>
@@ -38,7 +38,7 @@
         window.addEventListener('brio', () => {
 
             // Create a new app
-            let {gc: {$set, $hydrate}} = brio.newApp();
+            let {gc: {$set, $hydrate} = brio.newApp();
 
             console.log('set', $set);
 
@@ -50,7 +50,7 @@
                     padding: 10px;
                 }
                 h1 {
-                    color: {{ $data.show ? 'blue' : 'red' }};
+                    color: ${ $data.show ? 'blue' : 'red' };
                 }`
             );
 

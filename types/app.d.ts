@@ -55,6 +55,13 @@ type GlobalContext = {
     $persist: InitStorage,
     $session: InitStorage,
 
+    $steps: Record<string, StepObject>,
+    $setStep: (stepName: string, stepObject: StepObject) => boolean,
+    $isStepActive: (stepName: string) => boolean,
+    $nextStep: (currStepName: string) => boolean,
+    $backStep: (currStepName: string) => boolean,
+    $originStep: (currStepName: string) => boolean,
+
     $go: (routePath: string | number) => void,
 
     $uid: (length?: number) => string,
@@ -96,7 +103,7 @@ type SetCache = (value: any, key?: string, type?: keyof CacheObject) => string;
 type CacheExp = (bnode: BNode, exp: string, args?: string, returns?: boolean | "text") => string;
 type EvalFn = (exp: string, args?: string, returns?: boolean | "text") => FunctionType;
 
-/** The global $dom object */
+/** The global object for DOM operations */
 type DomObject = {
     $hydrate: (node: Node, ctxNode?: Node) => Promise<void>,
     $dehydrate: (node: Node, _removeNode?: boolean, _removeBNode?: boolean) => Promise<void>,
@@ -167,7 +174,6 @@ type LocalContext = {
     $id: ObjectType,
     $props: ObjectType,
     $data: ObjectType,
-    $step: StepObject,
     $ref: ObjectType,
     $slot: ObjectType,
     $for?: ObjectType,

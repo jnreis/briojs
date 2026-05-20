@@ -23,25 +23,25 @@
 
     <div b-effect="console.log('c1 value', c1)"></div>
 
-        <pre>{{ JSON.stringify($props) }}</pre>
-        <pre>{{ c1 }}</pre>
+        <pre>${ JSON.stringify($props) }</pre>
+        <pre>${ c1 }</pre>
         <!-- <div class="cards">
             <div class="card" b-for="person, index in count" b-props="{isActive: false}">
-                <p>{{index}} - {{ person }}</p>
-                <p>isActive: {{ isActive }}</p>
+                <p>${index} - ${ person }</p>
+                <p>isActive: ${ isActive }</p>
                 <button on-click="isActive = !isActive">
-                    {{ isActive ? 'Deactivate' : 'Activate' }}
+                    ${ isActive ? 'Deactivate' : 'Activate' }
                 </button>
             </div>
         </div> -->
         <div class="cards">
             <div class="card" b-for="item in data">
-                <p>{{item.id}} - {{ item.label }}</p>
+                <p>${item.id} - ${ item.label }</p>
             </div>
         </div>
         <!-- Count -->
         <!-- <div class="card">
-            <p>Items count: {{ count }}</p>
+            <p>Items count: ${ count }</p>
             <input type="number" placeholder="Enter name" b-model="count" />
         </div> -->
         <!-- Add person -->
@@ -56,7 +56,7 @@
             <button on-click="sync(people, ['Alice', 'Bob', 'Charlie']);">Reassign</button>
         </div> -->
         <!-- <div class="card mt-3">
-            <p>The "person" prop is different from the "person" variable in the b-for loop: {{ person }}</p>
+            <p>The "person" prop is different from the "person" variable in the b-for loop: ${ person }</p>
             <button on-click="person = 'Jack'">Make it Jack</button>
         </div> -->
     </div>

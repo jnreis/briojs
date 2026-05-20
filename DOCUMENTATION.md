@@ -37,32 +37,48 @@ Welcome to the official documentation for Brio.js, a powerful JavaScript framewo
     - [`on-resize`](#on-resize)
     - [`b-effect`](#b-effect)
   - [Methods](#methods)
-    - [`$state(objectOrArray, parent?)`](#stateobjectorarray-parent)
-    - [`$effect(listenerFn, dependenciesFn?)`](#effectlistenerfn-dependenciesfn)
-    - [`$watch(stateObjectOrArray, propName, listenerFn)`](#watchstateobjectorarray-propname-listenerfn)
-    - [`$computed(fn)`](#computedfn)
-    - [`$persist(value, alias?)`, `$session(value, alias?)`](#persistvalue-alias-sessionvalue-alias)
-    - [`$insert(target, placement, content, options?)`](#inserttarget-placement-content-options)
-    - [`$hydrate(node|selector, contextNode?)`](#hydratenodeselector-contextnode)
-    - [`$dehydrate(node, removeNode?, removeBNode?)`](#dehydratenode-removenode-removebnode)
-    - [`$cleanup(fn)`](#cleanupfn)
-    - [`$context(node|selector)`](#contextnodeselector)
-    - [`$set.data(name, fn)`](#setdataname-fn)
-    - [`$set.script(name, fnOrCode)`](#setscriptname-fnorcode)
-    - [`$set.style(name, styleContent)`](#setstylename-stylecontent)
-    - [`$set.template(name, templateContent)`](#settemplatename-templatecontent)
-    - [`$http.methodName(endpoint, body?, options?)`](#httpmethodnameendpoint-body-options)
-    - [`$validate(data, schema, customRules?, customMessages?)`](#validatedata-schema-customrules-custommessages)
-    - [`$go(to)`](#goto)
-    - [`$listen(node|selector, eventName, callback, options?)`](#listennodeselector-eventname-callback-options)
-    - [`$emit(node|selector, eventName, eventData?)`](#emitnodeselector-eventname-eventdata)
-    - [`$clone(value)`](#clonevalue)
-    - [`$sync(target, source)`](#synctarget-source)
-    - [`$uid(length?)`](#uidlength)
-    - [`$hasProp(object, propName)`](#haspropobject-propname)
-    - [`$getProp(object, propName, defaultValue?)`](#getpropobject-propname-defaultvalue)
-    - [`$setProp(object, propName, value?, descriptor?)`](#setpropobject-propname-value-descriptor)
-    - [`$getType(value)`](#gettypevalue)
+    - [Reactivity API](#reactivity-api)
+      - [`$state(objectOrArray, parent?)`](#stateobjectorarray-parent)
+      - [`$effect(listenerFn, dependenciesFn?)`](#effectlistenerfn-dependenciesfn)
+      - [`$watch(stateObjectOrArray, propName, listenerFn)`](#watchstateobjectorarray-propname-listenerfn)
+      - [`$computed(fn)`](#computedfn)
+      - [`$persist(value, alias?)`, `$session(value, alias?)`](#persistvalue-alias-sessionvalue-alias)
+    - [Steps API](#steps-api)
+      - [`$setStep(stepName, stepObject)`](#setstepstepname-stepobject)
+      - [`$isStepActive(stepName)`](#isstepactivestepname)
+      - [`$nextStep(currentStepName)`](#nextstepcurrentstepname)
+      - [`$backStep(currentStepName)`](#backstepcurrentstepname)
+      - [`$originStep(currentStepName)`](#originstepcurrentstepname)
+    - [Assets Methods](#assets-methods)
+      - [`$set.data(name, fn)`](#setdataname-fn)
+      - [`$set.script(name, fnOrCode)`](#setscriptname-fnorcode)
+      - [`$set.style(name, styleContent)`](#setstylename-stylecontent)
+      - [`$set.template(name, templateContent)`](#settemplatename-templatecontent)
+    - [Hydration and DOM Methods](#hydration-and-dom-methods)
+      - [`$insert(target, placement, content, options?)`](#inserttarget-placement-content-options)
+      - [`$hydrate(node|selector, contextNode?)`](#hydratenodeselector-contextnode)
+      - [`$dehydrate(node, removeNode?, removeBNode?)`](#dehydratenode-removenode-removebnode)
+      - [`$cleanup(fn)`](#cleanupfn)
+      - [`$context(node|selector)`](#contextnodeselector)
+      - [`$listen(node|selector, eventName, callback, options?)`](#listennodeselector-eventname-callback-options)
+      - [`$emit(node|selector, eventName, eventData?)`](#emitnodeselector-eventname-eventdata)
+    - [HTTP Methods](#http-methods)
+      - [`$http.get(endpoint, body?, options?)`](#httpgetendpoint-body-options)
+      - [`$http.post(endpoint, body?, options?)`](#httppostendpoint-body-options)
+      - [`$http.put(endpoint, body?, options?)`](#httpputendpoint-body-options)
+      - [`$http.patch(endpoint, body?, options?)`](#httppatchendpoint-body-options)
+      - [`$http.delete(endpoint, body?, options?)`](#httpdeleteendpoint-body-options)
+    - [Helper Methods](#helper-methods)
+      - [`$validate(data, schema, customRules?, customMessages?)`](#validatedata-schema-customrules-custommessages)
+      - [`$sync(target, source)`](#synctarget-source)
+      - [`$clone(value)`](#clonevalue)
+      - [`$uid(length?)`](#uidlength)
+      - [`$go(to)`](#goto)
+      - [`$getType(value)`](#gettypevalue)
+      - [`$hasProp(object, propName)`](#haspropobject-propname)
+      - [`$getProp(object, propName, defaultValue?)`](#getpropobject-propname-defaultvalue)
+      - [`$setProp(object, propName, value?, descriptor?)`](#setpropobject-propname-value-descriptor)
+
 
 ## Introduction
 
@@ -80,8 +96,8 @@ You can install Brio.js by including the script directly in your HTML file.
 <script>
   window.addEventListener('brio', () => {
     const app = brio.newApp();
-    const {$dom} = app.gc;
-    $dom.hydrate('body');
+    const {$hydrate} = app.gc;
+    $hydrate('body');
   });
 </script>
 ```
@@ -103,9 +119,9 @@ To get started with Brio.js, create a new HTML file and include the Brio.js scri
 
   <!-- Counter -->
   <div b-data="{ count: 0 }">
-    <button on-click="count++">Increment</button>
-    <button on-click="count--">Decrement</button>
-    <p>Count: <span>{{ count }}</span></p>
+    <button on-click="$data.count++">Increment</button>
+    <button on-click="$data.count--">Decrement</button>
+    <p>Count: ${ $data.count }</p>
   </div>
 
   <!-- Include Brio.js -->
@@ -115,8 +131,8 @@ To get started with Brio.js, create a new HTML file and include the Brio.js scri
   <script>
     window.addEventListener('brio', () => {
       let app = brio.newApp();
-      let {$dom} = app.gc;
-      $dom.hydrate('body');
+      let {$hydrate} = app.gc;
+      $hydrate('body');
     });
   </script>
 </body>
@@ -126,6 +142,8 @@ To get started with Brio.js, create a new HTML file and include the Brio.js scri
 ## Directives
 
 Brio.js provides a variety of directives that you can use to add functionality to your HTML elements. Below is a list of the available directives along with examples of how to use them.
+
+---
 
 ### `b-options`
 Provides a way to pass options to directives on the same element. The options must be an object where the keys are the exact directive names and the values are an object with the options for that directive.
@@ -150,6 +168,8 @@ These are the directives that currently support options:
           When using b-options, always use the full directive name, even if it contains boolean modifiers. -->
 </div>
 ```
+
+---
 
 ### `b-save`
 
@@ -176,6 +196,8 @@ Saves template, script, and style assets straight out of the DOM to be reused gl
 </style>
 ```
 
+---
+
 ### `b-ignore`
 
 Prevents Brio.js from processing the element and its children.
@@ -183,9 +205,11 @@ Prevents Brio.js from processing the element and its children.
 <!-- Ignoring an element and its children -->
 <div b-ignore b-effect="console.log('This will not run')">
   <p>This will not be processed by Brio.js</p>
-  <p>The name "{{ name }}" will not be interpolated.</p>
+  <p>The name "${ $data.name }" will not be interpolated.</p>
 </div>
 ```
+
+---
 
 ### `b-if`
 
@@ -197,6 +221,8 @@ Hydrates or dehydrates the element based on an expression.
   <p>The element and its children will be removed from the DOM when isVisible is false, and re-hydrated and re-inserted when isVisible is true again. Every time the element is re-inserted it will be treated as a new element, so any state not stored outside the element will be lost.</p>
 </div>
 ```
+
+---
 
 ### `b-props`
 
@@ -218,24 +244,28 @@ Defines the expected properties for a component, including their types, whether 
 </div>
 ```
 
+---
+
 ### `b-data`
 
 Creates a new $data context object for the element and its children not under another $data context. An object can be passed as initial data, but it's optional. This is equivalent to creating a component.
 ```html
 <!-- Creating a inline data context -->
 <div b-data="{ count: 0 }">
-  <button on-click="count++">Increment</button>
-  <button on-click="count--">Decrement</button>
-  <p>Count: {{ count }}</p>
+  <button on-click="$data.count++">Increment</button>
+  <button on-click="$data.count--">Decrement</button>
+  <p>Count: ${ $data.count }</p>
 </div>
 
 <!-- Using a saved data function -->
 <div b-data="myDataFunction">
-  <button on-click="count++">Increment</button>
-  <button on-click="count--">Decrement</button>
-  <p>Count: {{ count }}</p>
+  <button on-click="$data.count++">Increment</button>
+  <button on-click="$data.count--">Decrement</button>
+  <p>Count: ${ $data.count }</p>
 </div>
 ```
+
+---
 
 ### `b-slot`
 
@@ -266,6 +296,8 @@ Saves the outer HTML of the element and places it in the $slot context object un
 </div>
 ```
 
+---
+
 ### `b-ref`
 
 Saves a reference to the element in the $ref context object under the required ref name. The $ref context lives under a b-data context. It cannot be used alongside b-if, b-for, and b-template.
@@ -277,25 +309,29 @@ Saves a reference to the element in the $ref context object under the required r
 <button on-click="console.log($ref.myRef)">Log the element reference</button>
 ```
 
+---
+
 ### `b-for`
 
 Renders the element for each item in an array, object, or number.
 ```html
 <!-- Rendering a list of items -->
 <ul>
-  <li b-for="item in items">{{ item }}</li>
+  <li b-for="item in $data.items">${ $for.item }</li>
 </ul>
 
 <!-- Rendering a list of items with index -->
 <ul>
-  <li b-for="item, myIndex in items">{{ myIndex }}: {{ item }}</li>
+  <li b-for="item, myIndex in $data.items">${ $for.myIndex }: ${ $for.item }</li>
 </ul>
 
-<!-- Explicitly using the $for context object. Note that the index is called `index` when not provided as an argument. -->
+<!-- Note that the index is called `index` when not provided as an argument. -->
 <ul>
-  <li b-for="item in items">{{ $for.index }}: {{ $for.item }}</li>
+  <li b-for="item in $data.items">${ $for.index }: ${ $for.item }</li>
 </ul>
 ```
+
+---
 
 ### `b-id`
 
@@ -303,17 +339,19 @@ Creates a new $id context for the element and its children not under another $id
 ```html
 <!-- Creating a new $id context with two unique identifiers: userId and postId. The value of each identifier is a unique string that can be used to bind attributes or for any other purpose. -->
 <div b-id="['userId', 'postId']">
-  <p>User ID: {{ $id.userId }}</p>
-  <p>Post ID: {{ $id.postId }}</p>
+  <p>User ID: ${ $id.userId }</p>
+  <p>Post ID: ${ $id.postId }</p>
 </div>
 
 <!-- Using b-id with b-for to generate unique identifiers for each item in a list. This is useful for binding attributes like id and name in form elements. -->
-<div b-for="option in options" b-id="['checkbox']">
-    <input type="checkbox" bind-id="$id.checkbox" bind-name="$id.checkbox" bind-value="option">
-    <label bind-for="$id.checkbox">{{ option }}</label>
+<div b-for="option in $data.options" b-id="['checkbox']">
+    <input type="checkbox" bind-id="$id.checkbox" bind-name="$id.checkbox" bind-value="$for.option">
+    <label bind-for="$id.checkbox">${ $for.option }</label>
     <br>
 </div>
 ```
+
+---
 
 ### `b-template`
 
@@ -331,19 +369,24 @@ Hydrates the element and its children, but does not render the element in the DO
 </template>
 ```
 
+---
+
 ### `b-show`
 
 Shows or hides the element based on an expression.
 ```html
 <!-- Conditional visibility -->
-<div b-show="isVisible">
+<div b-show="$data.isVisible">
   <p>This will be visible if isVisible is true, and hidden if isVisible is false. The element is replaced with a comment node placeholder when hidden, and the element is re-inserted in the same place when shown again. Any state on the element will be preserved when toggling visibility.</p>
 </div>
 ```
 
+---
+
 ### `b-teleport`
 
-Moves the element to another place in the DOM, specified by a $ref name or an Node. Alternatively, an array can be passed, where the first item is the target and the second item is where to insert the element: "before", "after", "prepend", or "append". The default is "after". The expression can be a rective value.
+Moves the element to another place in the DOM, specified by a $ref name or a Node. Alternatively, an array can be passed, where the first item is the target and the second item specifies where to insert the element: "before", "after", "prepend", or "append". The default is "after". The expression can be a reactive value.
+
 ```html
 <!-- Teleporting an element to a specified $ref -->
 <div b-teleport="myTargetRef">
@@ -360,6 +403,8 @@ Moves the element to another place in the DOM, specified by a $ref name or an No
   <p>This element will be teleported to the target element and inserted as the first child.</p>
 </div>
 ```
+
+---
 
 ### `b-script`
 
@@ -382,21 +427,32 @@ Runs one or more scripts on the element. The scripts can be defined via b-save o
 <script b-script src="path/to/script.js"></script>
 ```
 
+---
+
 ### `b-html`
 
-Sets the innerHTML of the element based on a saved template or an expression. The expression can be a rective value.
+Sets the innerHTML of the element based on a saved template or an expression. The expression can be a reactive value.
+
 ```html
 <!-- b-html and b-text can be reactive when using an expression. e.g. b-html="isValid ? 'success-template' : 'error-template'" -->
 <div b-html="myTemplate"></div>
 ```
 
+---
+
 ### `b-text`
 
-Sets the textContent of the element based on a saved template or an expression. The expression can be a rective value.
+Sets the textContent of the element based on a saved template or expression. The expression can be a reactive value.
+
 ```html
-<!-- b-text will render the template as text, even if the template contains HTML. -->
+<!-- Common use of b-text -->
+<span b-text="$data.myValue"></span>
+
+<!-- b-text can also render the template as text, even if the template contains HTML. -->
 <div b-text="myTemplate"></div>
 ```
+
+---
 
 ### `b-style`
 
@@ -417,7 +473,7 @@ Scopes CSS styles to the element based on a saved style or an expression. The ex
 
   /* Since the style element holds a Text Node the interpolation works like with any other Text Node, but it must evaluate to valid CSS. */
   .title {
-    font-size: {{ titleSize }}px; /* dynamic value in style */
+    font-size: ${ titleSize }px; /* dynamic value in style */
   }
 </style>
 
@@ -431,39 +487,46 @@ Scopes CSS styles to the element based on a saved style or an expression. The ex
 <div b-style="['myStyle', 'anotherStyle']"></div>
 ```
 
+---
+
 ### `b-bind-* or bind-*`
 
-Binds any attribute to the element based on an expression. The expression can be a rective value.
+Binds any attribute to the element based on an expression. The expression can be a reactive value.
+
 ```html
 <!-- Simple attribute binding with full syntax -->
-<div b-bind-id="myId"></div>
+<div b-bind-id="$data.myId"></div>
 
 <!-- Shorthand syntax for attribute binding -->
-<div bind-id="myId"></div>
+<div bind-id="$data.myId"></div>
 
 <!-- Special inline style binding takes an object where the keys are the CSS properties in kebab-case and the values are the CSS values. The values can include the !important flag. -->
-<div bind-style="myReactiveStyleObject">
+<div bind-style="$data.myReactiveStyleObject">
   myReactiveStyleObject example:
   { color: 'red', 'background-color': 'blue !important' }
 </div>
 
 <!-- Special class binding takes an object where the keys are the class names and the values are booleans indicating whether the class should be applied or not. -->
-<div bind-class="myReactiveClassObject">
+<div bind-class="$data.myReactiveClassObject">
   myReactiveClassObject example:
   { 'my-class': true, 'another-class': false }
 </div>
 ```
+
+---
 
 ### `b-model`
 
 Creates a two-way typecasted data binding on input, textarea, and select elements. The expression must be a reactive value. The raw modifier disables typecasting. The trim modifier removes whitespace from the beginning and end of the input. The lazy modifier updates the model on change instead of input.
 ```html
 <!-- Basic usage -->
-<input b-model="myValue">
+<input b-model="$data.myValue">
 
 <!-- Using modifiers -->
-<input b-model="myValue" b-options="{ 'b-model': { raw: true, trim: true, lazy: true } }">
+<input b-model="$data.myValue" b-options="{ 'b-model': { raw: true, trim: true, lazy: true } }">
 ```
+
+---
 
 ### `b-mask`
 
@@ -473,22 +536,22 @@ Here are some examples of using b-mask with patterns:
 ```html
 <!-- Phone number mask example.
      This would take an input like "7773334444" and format it as "(777) 333-4444" -->
-<input type="tel" b-model="phone" b-mask="['(', number(3), ') ', number(3), '-', number(4)]">
+<input type="tel" b-model="$data.phone" b-mask="['(', number(3), ') ', number(3), '-', number(4)]">
 
 <!-- Date mask example.
      This would take an input like "01012023" and format it as "01/01/2023" -->
-<input type="text" b-model="date" b-mask="[number(2), '/', number(2), '/', number(4)]">
+<input type="text" b-model="$data.date" b-mask="[number(2), '/', number(2), '/', number(4)]">
 
 <!-- Credit card mask example.
      This would take an input like "4111111111111111" and format it as "4111 1111 1111 1111" -->
-<input type="text" b-model="creditCard" b-mask="[number(4), ' ', number(4), ' ', number(4), ' ', number(4)]">
+<input type="text" b-model="$data.creditCard" b-mask="[number(4), ' ', number(4), ' ', number(4), ' ', number(4)]">
 
 <!-- HEX color mask example.
      This would take an input like "ff&g#0000" and format it as "#ff0000" -->
-<input type="text" b-model="color" b-mask="['#', char(/[0-9a-fA-F]/, 6)]">
+<input type="text" b-model="$data.color" b-mask="['#', char(/[0-9a-fA-F]/, 6)]">
 ```
 
-The number(3) function above is a helper function that creates an pattern for matching 3 digits.
+The number(3) function above is a helper function that creates a pattern for matching 3 digits.
 A pattern is an array with 3 items:
 - A function that should match one character and return a boolean indicating whether the character is valid or not.
 - A minimum number of characters that should match the pattern. At least one character is required.
@@ -496,7 +559,7 @@ A pattern is an array with 3 items:
 
 The phone number mask above would look like this without using the helper function:
 ```html
-<input type="tel" b-model="phone" b-mask="['(', [c => /\d/.test(c), 3, 3], ') ', [c => /\d/.test(c), 3, 3], '-', [c => /\d/.test(c), 4, 4]]">
+<input type="tel" b-model="$data.phone" b-mask="['(', [c => /\d/.test(c), 3, 3], ') ', [c => /\d/.test(c), 3, 3], '-', [c => /\d/.test(c), 4, 4]]">
 ```
 
 Writing patterns would be cumbersome, so Brio.js provides some helper functions to create common patterns.
@@ -514,10 +577,10 @@ The `money()` function is a more complex helper function that creates a mask for
 - precision: the number of decimal places to allow. Default is `2`
 ```html
 <!-- Basic money mask example -->
-<input type="text" b-model="amount" b-mask="money()">
+<input type="text" b-model="$data.amount" b-mask="money()">
 
 <!-- Money mask with custom configuration -->
-<input type="text" b-model="amount" b-mask="money({ thousands: '.', decimal: ',', precision: 3 })">
+<input type="text" b-model="$data.amount" b-mask="money({ thousands: '.', decimal: ',', precision: 3 })">
 ```
 
 You can also **create your own custom helper functions** for handling complex patterns like the money mask above. Such helper functions are called every time the input changes and receive a $mask object with the following properties:
@@ -532,15 +595,18 @@ Your function must return the $mask object with the updated output and cursor pr
 The b-mask also emits a custom "mask" event on the element every time the input changes, with the $mask object in the event detail. This allows you to perform additional actions or updates based on the masked value.
 ```html
 <!-- Listening to the mask event -->
-<input type="text" b-model="amount" b-mask="money()" on-mask="console.log('Masked value:', $event.detail.output)">
+<input type="text" b-model="$data.amount" b-mask="money()" on-mask="console.log('Masked value:', $event.detail.output)">
 ```
+
+---
 
 ### `b-transition`
 
-Applies a transition effect to the element with b-if or b-show directives. It requires an inOutStyles object, or an array with an inStyles and an outStyles objects. The styles must have a CSS transition.
+Applies a transition effect to an element with the b-if or b-show directive. It requires either an inOutStyles object or an array containing inStyles and outStyles objects. The styles must include a CSS transition.
+
 ```html
 <!-- Using the same styles object for in and out -->
-<div b-show="isVisible" b-transition="{
+<div b-show="$data.isVisible" b-transition="{
   opacity: 0, 
   transform: 'scale(0.9)', 
   transition: 'opacity 1s, transform 1s'
@@ -549,13 +615,15 @@ Applies a transition effect to the element with b-if or b-show directives. It re
 </div>
 
 <!-- Using separate inStyles and outStyles -->
-<div b-show="isVisible" b-transition="[
+<div b-show="$data.isVisible" b-transition="[
   { opacity: 0, transform: 'scale(0.9)', transition: 'opacity 1s, transform 1s' }, // inStyles
   { opacity: 0, transform: 'scale(1.1)', transition: 'opacity 0.5s, transform 0.5s' } // outStyles
 ]">
   This element will fade and scale in when showing, and fade and scale out with a different effect when hiding.
 </div>
 ```
+
+---
 
 ### `b-on-* or on-*`
 
@@ -607,9 +675,10 @@ For convenience, all the boolean options above can also be defined after the eve
 </div>
 ```
 
-Note that in the second example above, we are passing the function reference `handleClick` to the `on-click` directive without invoking it. However, you can also invoke the function directly. Also note that we did not need to reference the $data context object when using the function name, but we could if we wanted to. Here are some variations of how to use the function in the `on-*` directive:
+Note that in the second example above, we pass the function reference `handleClick` to the `on-click` directive without invoking it. However, you can also invoke the function directly. Also note that we do not need to reference the $data context object when using the function name, though we can if desired. Here are some variations of how to use the function with the `on-*` directive:
+
 ```html
-<!-- Just the function name in one the the following context objects:  -->
+<!-- Just the function name in one of the following context objects: $for, $data, $store  -->
 <button on-click="handleClick">Click me</button>
 
 <!-- Explicitly referencing the context object -->
@@ -620,10 +689,15 @@ Note that in the second example above, we are passing the function reference `ha
 <!-- Using the function with a custom argument -->
 <button on-click="$data.handleClick('custom argument')">Click me</button>
 ```
-Note that Brio.js will look for the function in the following context objects in this order: $for, $data, $props, $store. This means that if there are functions with the same name in different context objects, the closest one will be used. Being able to omit the context object is a convenient feature, but writing the context object explicitly can be useful for readability and to avoid confusion when there are multiple functions with the same name in different contexts.
+Note that Brio.js will look for the function in the following context objects in this order: $for, $data, $store. This means that if there are functions with the same name in different context objects, the closest one will be used. Being able to omit the context object is a convenient feature, but writing the context object explicitly can be useful for readability and to avoid confusion when there are multiple functions with the same name in different contexts.
+
+---
 
 ### KEYBOARD EVENTS
+
 Brio.js makes it easy to work with keyboard events by providing a special syntax for listening to multiple keys.
+
+---
 
 Here's an example of how to listen to the "Enter" key on an input element:
 ```html
@@ -639,7 +713,7 @@ You can also listen to multiple keys at the same time. For example, to listen to
        b-options="{ 'on-keyup': { keys: ['shift', 'enter'] } }">
 ```
 
-Aliases for common keys are also supported, so you can use "ctrl" instead of "control", "esc" instead of "escape", etc. Here is a list of the supported key aliases and their corresponding key names in `event.key`:
+Aliases for common keys are also supported, so you can use "ctrl" instead of "control", "esc" instead of "escape", etc. Here's a list of the supported key aliases and their corresponding key names in `event.key`:
 | Key Alias | Key Name in event.key |
 |-----------|-----------------------|
 | ctrl      | Control               |
@@ -652,6 +726,7 @@ Aliases for common keys are also supported, so you can use "ctrl" instead of "co
 | left     | ArrowLeft             |
 | right    | ArrowRight            |
 
+---
 
 ### `on-enter`, `on-exit`
 
@@ -677,6 +752,8 @@ The following options can be set for these directives via b-options:
   This element will log messages when it enters and exits the viewport.
 </div>
 ```
+
+---
 
 ### `on-added-nodes`, `on-removed-nodes`, `on-attrs`, `on-text`
 
@@ -714,6 +791,8 @@ The following options can be set for these directives via b-options:
 </div>
 ```
 
+---
+
 ### `on-resize`
 
 Adds an event listener for when the element is resized. It is a wrapper for the [Resize Observer API](https://developer.mozilla.org/en-US/docs/Web/API/Resize_Observer_API). It receives an array containing `[inlineSize, blockSize]` every time the event is triggered.
@@ -738,16 +817,17 @@ The following options can be set for this directive via b-options:
 </div>
 ```
 
+---
 
 ### `b-effect`
 
 Runs a side effect function whenever the reactive values used inside the function change.
 ```html
 <!-- Using b-effect to run a side effect whenever a reactive value changes -->
-<div b-data="{ count: 0 }" b-effect="console.log('The count is now', count)">
-  <button on-click="count++">Increment</button>
-  <button on-click="count--">Decrement</button>
-  <p>Count: {{ count }}</p>
+<div b-data="{ count: 0 }" b-effect="console.log('The count is now', $data.count)">
+  <button on-click="$data.count++">Increment</button>
+  <button on-click="$data.count--">Decrement</button>
+  <p>Count: ${ $data.count }</p>
 </div>
 
 <!-- You can also use a function stored in the context -->
@@ -758,7 +838,17 @@ Note that if the function does not use any reactive values, it will only run onc
 
 ## Methods
 
-Brio.js provides several methods to interact with the framework programmatically:
+Brio.js provides a set of methods that can be used in scripts and directives. These methods are available in the context of the element they are called on, so you can access them directly.
+
+They cover a wide range of use cases and were carefully designed to be simple and intuitive, while also providing powerful and helpful functionality for building reactive applications.
+
+---
+
+### Reactivity API
+
+These methods are used to create and manage reactive state in your application. They allow you to create reactive objects and arrays, define computed properties, watch for changes, and persist state across page reloads.
+
+---
 
 ### `$state(objectOrArray, parent?)`
 
@@ -778,13 +868,14 @@ $data.addresses = $state([
 console.log($data.addresses.name); // "Jhonathan" (inherited from parent state)
 ```
 
+---
 
 ### `$effect(listenerFn, dependenciesFn?)`
 
 Creates a reactive effect that runs the listener function whenever the dependencies change.
 
 Parameters:
-- `listenerFn`: The function to run whenever the dependencies change. It receives the the ListenerFunctionContext object as an argument.
+- `listenerFn`: The function to run whenever the dependencies change. It receives the ListenerFunctionContext object as an argument.
 - `dependenciesFn`: An optional function that returns an array of reactive values to track as dependencies. If not provided, the effect will automatically track any reactive value accessed during the first run of the listener function.
 
 ```js
@@ -813,6 +904,7 @@ $effect(() => {
 });
 ```
 
+---
 
 ### `$watch(stateObjectOrArray, propName, listenerFn)`
 
@@ -838,6 +930,7 @@ $watch($data.john, 'name', ({ newValue, oldValue }) => {
 });
 ```
 
+---
 
 ### `$computed(fn)`
 
@@ -846,6 +939,7 @@ Creates a computed property in a state object/array that automatically updates w
 $data.fullName = $computed(() => `${$data.firstName} ${$data.lastName}`);
 ```
 
+---
 
 ### `$persist(value, alias?)`, `$session(value, alias?)`
 
@@ -858,6 +952,164 @@ $data.username = $persist('JohnDoe'); // localStorage key: "_b_username"
 $data.username = $session('JohnDoe', 'customKey'); // sessionStorage key: "customKey"
 ```
 
+---
+
+### Steps API
+
+The Steps API allows you to define and manage unique steps in your application, which can be useful for creating tutorials, onboarding flows, multi-step forms, or any other scenario where you want to guide the user through a series of steps.
+
+It is composed of the `$steps` object and the following methods to manage the steps:
+
+---
+
+### `$setStep(stepName, stepObject)`
+
+The `$setStep` method defines a unique step in the global `$steps` object. It takes a unique `stepName` and a `stepObject` as parameters. The `stepName` is a string that identifies the step and must be unique across the entire application. The `stepObject` can have the following optional properties:
+
+- `next`: The name of the next step to go to when calling `$nextStep(currentStepName)`.
+- `back`: The name of the back step to go to when calling `$backStep(currentStepName)`.
+- `origin`: The name of the step from which the current step originated. This is automatically set when navigating between steps. It is useful for handling cases where the user can navigate to the same step from different paths, and you want to be able to go back to the correct previous step based on the origin. Call `$originStep(currentStepName)` to go back to the origin step.
+- `active`: Whether the step is currently active. This will be automatically set when navigating between steps. It can be used to conditionally show/hide, enable/disable, highlight, or perform any other action on elements based on the current step. It can be checked by calling `$isStepActive(stepName)`.
+- `keep`: Whether to keep the current step active when going to the next step. The default behavior is to deactivate the current step when navigating between steps, but if `keep` is set to true, the current step will remain active when navigating away from it. This can be useful for cases where you want to allow multiple steps to be active at the same time, or when you want to create a non-linear navigation flow between steps.
+
+---
+
+### `$isStepActive(stepName)`
+
+The `$isStepActive` method checks if a step is currently active. It takes a `stepName` as a parameter and returns a boolean indicating whether the step is active or not.
+
+---
+
+### `$nextStep(currentStepName)`
+
+The `$nextStep` method navigates to the next step defined in the current step's `next` property. It takes the `currentStepName` as a parameter, looks up the next step in the `$steps` object, and activates it while deactivating the current step (unless `keep` is set to true).
+
+---
+
+### `$backStep(currentStepName)`
+
+The `$backStep` method navigates to the previous step defined in the current step's `back` property. It takes the `currentStepName` as a parameter, looks up the previous step in the `$steps` object, and activates it while deactivating the current step (unless `keep` is set to true).
+
+---
+
+### `$originStep(currentStepName)`
+
+The `$originStep` method navigates back to the origin step defined in the current step's `origin` property. It takes the `currentStepName` as a parameter, looks up the origin step in the `$steps` object, and activates it while deactivating the current step (unless `keep` is set to true).
+
+---
+
+Here's an example of how to use the Steps API to create a simple three-step tutorial:
+```html
+<script b-script>
+  () => {
+    // Defining steps in a tutorial
+    $setStep('step1', { next: 'step2', active: true});
+    $setStep('step2', { next: 'step3', back: 'step1'});
+    $setStep('step3', { next: 'step1', back: 'step2'});
+  }
+</script>
+
+<!-- Step 1 -->
+<template b-template b-if="$isStepActive('step1')">
+  <h2>Step 1</h2>
+  <p>Get Brio.js up and running!</p>
+  <button on-click="$originStep('step1')">Origin</button>
+  <button on-click="$backStep('step1')">Back</button>
+  <button on-click="$nextStep('step1')">Next</button>
+</template>
+
+<!-- Step 2 -->
+<template b-template b-if="$isStepActive('step2')">
+  <h2>Step 2</h2>
+  <p>Explore the documentation and learn about the core concepts and features of Brio.js.</p>
+  <button on-click="$originStep('step2')">Origin</button>
+  <button on-click="$backStep('step2')">Back</button>
+  <button on-click="$nextStep('step2')">Next</button>
+</template>
+
+<!-- Step 3 -->
+<template b-template b-if="$isStepActive('step3')">
+  <h2>Step 3</h2>
+  <p>Build something amazing and share it with the community!</p>
+  <button on-click="$originStep('step3')">Origin</button>
+  <button on-click="$backStep('step3')">Back</button>
+  <button on-click="$nextStep('step3')">Next</button>
+</template>
+```
+
+---
+
+### Assets Methods
+
+These methods allow you to save and manage reusable assets such as data functions, scripts, styles, and templates that can be used across your application. They provide a convenient way to define and organize your assets in a central location, making it easier to maintain and reuse them throughout your application.
+
+---
+
+### `$set.data(name, fn)`
+
+Saves a data function globally that can be used in any b-data directive by passing the name as a string. The function takes the parent context, if any, and must return an object.
+```js
+// Example of a data function that uses the parent context
+$set.data('myData', (context, parentContext) => {
+  return {
+    message: 'Hello from myData!',
+    parentMessage: parentContext ? parentContext.message : 'No parent context'
+  };
+});
+```
+
+---
+
+### `$set.script(name, fnOrCode)`
+
+Saves a script globally that can be used in any b-script directive by passing the name as a string. The script can be a function or a string of code.
+```js
+// Example of a script function
+$set.script('myScript', ({ $props, $data }) => {
+  console.log('This is myScript function', $props, $data);
+});
+
+// Example of a script string
+$set.script('myScript', `console.log('This is myScript code', $props, $data)`);
+```
+
+---
+
+### `$set.style(name, styleContent)`
+
+Saves a style globally that can be used in any b-style directive by passing the name as a string. The styleContent may include interpolation values but must evaluate to valid CSS.
+```js
+// Example of styleContent with interpolation values
+$set.style('myStyle', `
+.title {
+  font-size: \${ titleSize }px;
+}`);
+```
+
+---
+
+### `$set.template(name, templateContent)`
+
+Saves a template globally that can be used in any b-template, b-html, or b-text directive by passing the name as a string. The templateContent may be a string of HTML or any string which may include interpolation values.
+```js
+// HTML template example
+$set.template('myTemplate', `
+<div class="card">
+  <h2>\${ title }</h2>
+  <p>\${ description }</p>
+</div>`);
+
+// String template example
+$set.template('myStringTemplate', `Hello, \${ name }!`);
+```
+
+---
+
+### Hydration and DOM Methods
+
+These methods allow you to interact with the DOM, insert content, and manage the hydration state of your application. They provide a convenient way to manipulate the DOM while maintaining the reactive and declarative nature of Brio.js.
+
+---
 
 ### `$insert(target, placement, content, options?)`
 
@@ -883,17 +1135,27 @@ Parameters:
 $insert(targetNode, 'append', 'myTemplate');
 
 // Insert a paragraph from an HTML string as the first child of the target element and hydrate it
-$insert(targetNode, 'prepend', '<div b-text="message"><p id="myParagraph">Hello there!</p></div>', { selector: '#myParagraph' });
+$insert(targetNode, 'prepend', '<div><p id="myParagraph">Hello there!</p></div>', { selector: '#myParagraph' });
 
 // Insert a Node after the target element without hydrating it
 $insert(targetNode, 'after', document.querySelector('#someElement'), { hydrate: false });
 ```
 
+---
 
 ### `$hydrate(node|selector, contextNode?)`
 
 Hydrates the specified node and its children, processing all Brio.js directives and initializing the necessary data, effects, and event listeners. An optional context node can be provided to inherit context from.
 
+```js
+// Hydrate an element with the id "myElement"
+$hydrate('#myElement');
+
+// Hydrate an element with the id "myElement" and inherit context from the body element
+$hydrate('#myElement', document.body);
+```
+
+---
 
 ### `$dehydrate(node, removeNode?, removeBNode?)`
 
@@ -902,95 +1164,138 @@ Dehydrates the specified node and its children, cleaning up all associated data,
 Parameters:
 - `node`: The node to dehydrate.
 - `removeNode`: If true, the node will be removed from the DOM after dehydration. Default is true.
-- `removeBNode`: If true, the corresponding BNode will be removed from the internal. Default is true.
+- `removeBNode`: If true, the corresponding BNode will be removed from the internal BNode tree after dehydration. Default is true.
 
+```js
+// Dehydrate an element and remove it from the DOM
+$dehydrate(document.querySelector('#myElement'));
+
+// Dehydrate an element but keep it in the DOM and the BNode
+$dehydrate(document.querySelector('#myElement'), false, false);
+```
+
+---
 
 ### `$cleanup(fn)`
 
 Registers a cleanup function to be called when the element is being dehydrated and removed from the DOM.
 
+```js
+// Registering a cleanup function
+$cleanup(() => {
+  console.log('Cleaning up resources...');
+  // Perform any necessary cleanup here, such as removing custom event listeners, canceling timers, etc.
+});
+```
+
+---
 
 ### `$context(node|selector)`
 
 Retrieves the context object for the specified node.
 
-
-### `$set.data(name, fn)`
-
-Saves a data function globally that can be used in any b-data directive by passing the name as a string. The function takes the parent context, if any, and must return an object.
 ```js
-// Example of a data function that uses the parent context
-$set.data('myData', (context, parentContext) => {
-  return {
-    message: 'Hello from myData!',
-    parentMessage: parentContext ? parentContext.message : 'No parent context'
-  };
-});
+// Get the context object for an element
+const myElementContext = $context('#myElement');
+console.log('Context for #myElement:', myElementContext);
 ```
 
+---
 
-### `$set.script(name, fnOrCode)`
+### `$listen(node|selector, eventName, callback, options?)`
 
-Saves a script globally that can be used in any b-script directive by passing the name as a string. The script can be a function or a string of code.
+Adds an event listener to the specified node for the given event name. The callback function will be called whenever the event is triggered. The options parameter can include standard event listener options such as `capture`, `once`, `passive`, etc. It returns a function to remove the event listener.
 ```js
-// Example of a script function
-$set.script('myScript', ({ $props, $data }) => {
-  console.log('This is myScript function', $props, $data);
+// Listen to a click event on a button
+const removeListener = $listen('#myButton', 'click', (event) => {
+  console.log('Button clicked', event);
 });
 
-// Example of a script string
-$set.script('myScript', `console.log('This is myScript code', $props, $data)`);
+// To remove the event listener later
+removeListener();
+
+// Or remove when the element is dehydrated using $cleanup(fn)
+$cleanup(removeListener);
 ```
 
+---
 
-### `$set.style(name, styleContent)`
+### `$emit(node|selector, eventName, eventData?)`
 
-Saves a style globally that can be used in any b-style directive by passing the name as a string. The styleContent may include interpolation values but must evaluate to valid CSS.
+Emits a custom event with the specified name and data on the given node. The event will bubble up through the DOM tree, allowing parent elements to listen for it.
 ```js
-// Example of styleContent with interpolation values
-$set.style('myStyle', `
-.title {
-  font-size: {{ titleSize }}px;
-}`
+// Emit a custom event with some data
+$emit('#myElement', 'hello', { message: 'Hello, world!' });
 ```
 
+---
 
-### `$set.template(name, templateContent)`
+### HTTP Methods
 
-Saves a template globally that can be used in any b-template, b-html, or b-text directive by passing the name as a string. The templateContent may be a string of HTML or any string which may include interpolation values.
+Sends an HTTP request to the specified endpoint with optional `body` and `options`. 
+
+If the `body` is an object or array, it will be automatically be encoded to URLSearchParams for GET and DELETE requests or if the Content-Type is not specified. If the Content-Type is application/json it will be stringified to JSON, or FormData if the Content-Type is multipart/form-data. 
+
+The response will be automatically parsed to JSON whenever possible. A `parser` can be specified in the options to override the default behavior, options are: arrayBuffer, blob, formData, json, and text. Default is "text".
+
+#### Options example:
 ```js
-// HTML template example
-$set.template('myTemplate', `
-<div class="card">
-  <h2>{{ title }}</h2>
-  <p>{{ description }}</p>
-</div>`);
-
-// String template example
-$set.template('myStringTemplate', `Hello, {{ name }}!`);
+const options = {
+  headers: {
+    'Content-Type': 'multipart/form-data',
+  },
+  // parser: 'text', // Default is "text". When not set, after getting the response as text, it will attempt to parse it as JSON, and if it fails, it will return the text. You can set the parser to "json" to always parse the response as JSON, or to any of the other options to get the response in that format directly.
+};
 ```
 
+---
 
-### `$http.methodName(endpoint, body?, options?)`
-
-Sends an HTTP request to the specified endpoint with an optional body and options. Supports GET, POST, PUT, PATCH, and DELETE methods. If the body is an object or array, it will be automatically be encoded to URLSearchParams for GET and DELETE requests or if the Content-Type is not specified, it will be stringified to JSON if the Content-Type is application/json, or FormData if the Content-Type is multipart/form-data. The response will be automatically parsed whenever possible. A `parser` can be specified in the options to override the default behavior, options are: arrayBuffer, blob, formData, json, and text.
+### `$http.get(endpoint, body?, options?)`
 ```js
 // GET request example
 const response = await $http.get('/api/data');
+```
 
+---
+
+### `$http.post(endpoint, body?, options?)`
+```js
 // POST request example with JSON body
 const response = await $http.post('/api/data', { name: 'John', age: 30 });
+```
 
+---
+
+### `$http.put(endpoint, body?, options?)`
+```js
 // PUT request example with custom options
 const response = await $http.put('/api/data/1', { name: 'Jane' }, { headers: { 'Content-Type': 'application/json' } });
+```
 
+---
+
+### `$http.patch(endpoint, body?, options?)`
+```js
 // PATCH request example with automatic form encoding
 const response = await $http.patch('/api/data/1', { name: 'Jane' }, { headers: { 'Content-Type': 'multipart/form-data' } });
+```
 
+---
+
+### `$http.delete(endpoint, body?, options?)`
+```js
 // DELETE request example with `parser` option
 const response = await $http.delete('/api/data/1', null, { parser: 'blob' }); // Default is "text".
 ```
 
+---
+
+
+### Helper Methods
+
+These methods provide various helper functions for validating data, synchronizing objects, cloning values, generating unique identifiers, navigating routes, and more. They are designed to bring convenience and efficiency to common tasks in your application.
+
+---
 
 ### `$validate(data, schema, customRules?, customMessages?)`
 
@@ -1003,6 +1308,22 @@ Parameters:
 - `customMessages`: An object where the keys are custom rule names and the values are functions that return a message when the rule is not satisfied.
 
 The function returns `true` or an object with error messages for each property that failed validation.
+
+#### Built-in rules:
+
+| Rule Name | Description | Default Message |
+|-----------|-------------|----------------|
+| required  | The property must be present and not empty. | {propName} is required. |
+| min       | The property must be greater than or equal to a specified minimum value (for numbers) or length (for strings and arrays). | {propName} must be at least {ruleValue}. For strings it says: {propName} must be at least {ruleValue} characters long. |
+| max       | The property must be less than or equal to a specified maximum value (for numbers) or length (for strings and arrays). | {propName} must be at most {ruleValue}. For strings it says: {propName} must be at most {ruleValue} characters long. |
+| email     | The property must be a valid email address. | Email must be valid. |
+| same      | The property must have the same value as another specified property. | {propName} must be the same as the {ruleValue}. |
+| in        | The property must be one of the specified values. | {propName} must be equal to {ruleValue}. |
+| matches   | The property must match a specified regular expression. | {propName} is invalid. |
+| type      | The property must be of a specified type (e.g. string, number, boolean, array, object). Multiple types can be specified as an array (e.g. ['string', 'number']). | {propName} must be of type {ruleValue}. |
+---
+
+#### Example usage:
 ```js
 const userData = {
   email: 'john@doe.com', 
@@ -1047,10 +1368,49 @@ const validationResult = $validate(userData, userSchema, customRules, customMess
 console.log('Validation result:', validationResult); // true
 ```
 
+---
+
+### `$sync(target, source)`
+
+Performs an in-place deep sync from `source` to `target`, making the target match the source exactly without losing the target reference. Supports objects, arrays, sets, and maps.
+
+```js
+const target = { name: 'Jack', hobbies: ['reading', 'gaming'], age: 30 };
+const source = { name: 'John', hobbies: ['traveling'], city: 'New York' };
+$sync(target, source);
+console.log(target); // The target is now identical to the source but retains the same reference, including the hobbies array reference.
+```
+
+---
+
+### `$clone(value)`
+
+Clones a value. Cloning is done deeply for objects, arrays, sets, and maps. Primitive values are returned as-is.
+
+```js
+const original = { name: 'John', hobbies: ['reading', 'gaming'], age: 30 };
+const cloned = $clone(original);
+console.log(cloned); // A deep clone of the original object
+console.log(cloned === original); // false (different reference)
+console.log(cloned.hobbies === original.hobbies); // false (different reference for the hobbies array)
+```
+
+---
+
+### `$uid(length?)`
+
+Generates a unique identifier string of the specified length. If no length is provided, a default length of 8 characters is used.
+```js
+const id1 = $uid(); // e.g. "b1f2w7d4"
+const id2 = $uid(12); // e.g. "b8c3e9f1b6g4"
+```
+
+---
 
 ### `$go(to)`
 
 Navigates to a different route or goes back/forward in history. The `to` parameter can be a string representing the path to navigate to, or a number representing how many steps to go back (negative) or forward (positive) in the history stack.
+
 ```js
 // Go back one step in history
 $go(-1);
@@ -1065,62 +1425,36 @@ $go('/about');
 $go('https://www.example.com');
 ```
 
+---
 
-### `$listen(node|selector, eventName, callback, options?)`
+### `$getType(value)`
 
-Adds an event listener to the specified node for the given event name. The callback function will be called whenever the event is triggered. The options parameter can include standard event listener options such as `capture`, `once`, `passive`, etc. It returns a function to remove the event listener.
+Returns a string representing the type of the value. e.g. "string", "number", "array", "object", "set", "map", etc.
 ```js
-// Listen to a click event on a button
-const removeListener = $listen('#myButton', 'click', (event) => {
-  console.log('Button clicked', event);
-});
+console.log($getType('Hello')); // "string"
+console.log($getType(123)); // "number"
+console.log($getType([1, 2, 3])); // "array"
+console.log($getType({ name: 'John' })); // "object"
+console.log($getType(new Set([1, 2, 3]))); // "set"
+console.log($getType(new Map([['key', 'value']]))); // "map"
 
-// To remove the event listener later
-removeListener();
-
-// Or remove when the element is dehydrated using $cleanup(fn)
-$cleanup(removeListener);
+// Any type
+console.log($getType(document.querySelector('body'))); // "htmlbodyelement"
 ```
 
-
-### `$emit(node|selector, eventName, eventData?)`
-
-Emits a custom event with the specified name and data on the given node. The event will bubble up through the DOM tree, allowing parent elements to listen for it.
-```js
-// Emit a custom event with some data
-$emit('#myElement', 'hello', { message: 'Hello, world!' });
-```
-
-
-### `$clone(value)`
-
-Clones a value. Cloning is done deeply for objects, arrays, sets, and maps. Primitive values are returned as-is.
-
-
-### `$sync(target, source)`
-
-Performs a in-place deep sync from `source` to `target`, making the target match the source exactly without losing the target reference. Supports objects, arrays, sets, and maps.
-```js
-const target = { name: 'Jack', hobbies: ['reading', 'gaming'], age: 30 };
-const source = { name: 'John', hobbies: ['traveling'], city: 'New York' };
-$sync(target, source);
-console.log(target); // The target is now identical to the source but retains the same reference, including the hobbies array reference.
-```
-
-
-### `$uid(length?)`
-
-Generates a unique identifier string of the specified length. If no length is provided, a default length of 8 characters is used.
-```js
-const id1 = $uid(); // e.g. "b1f2w7d4"
-const id2 = $uid(12); // e.g. "b8c3e9f1b6g4"
-```
-
+---
 
 ### `$hasProp(object, propName)`
 
 Checks if the specified property exists on the given object.
 
+```js
+const user = { name: 'John' };
+console.log($hasProp(user, 'name')); // true
+console.log($hasProp(user, 'age')); // false
+```
+
+---
 
 ### `$getProp(object, propName, defaultValue?)`
 
@@ -1132,6 +1466,7 @@ const logName = (user) => {
 }
 ```
 
+---
 
 ### `$setProp(object, propName, value?, descriptor?)`
 
@@ -1153,24 +1488,8 @@ You can also use the descriptor shorthand string to set the boolean attributes. 
 $setProp(myObject, 'myProp', 'myValue'); // the property will be writable, enumerable, and configurable
 
 // Usage with a custom descriptor
-$setProp(myObject, 'myProp', 'myValue', 'wc'); // the property will be enumerable but not writable or configurable
+$setProp(myObject, 'myProp', 'myValue', 'wc'); // the property will be writable and configurable, but not enumerable
 
 // Usage with regular descriptor object. The value must be included in the descriptor when using this syntax, otherwise it will be set to undefined.
 $setProp(myObject, 'myProp', null, { writable: false, configurable: false, enumerable: true, value: 'myValue' });
-```
-
-
-### `$getType(value)`
-
-Returns a string representing the type of the value. e.g. "string", "number", "array", "object", "set", "map", etc.
-```js
-console.log($getType('Hello')); // "string"
-console.log($getType(123)); // "number"
-console.log($getType([1, 2, 3])); // "array"
-console.log($getType({ name: 'John' })); // "object"
-console.log($getType(new Set([1, 2, 3]))); // "set"
-console.log($getType(new Map([['key', 'value']]))); // "map"
-
-// Any type
-console.log($getType(document.querySelector('body'))); // "htmlbodyelement"
 ```

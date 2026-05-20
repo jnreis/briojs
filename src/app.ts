@@ -7,11 +7,10 @@ import { TEXT, TEXT_CONTENT, ATTR, DELETE, INNER_HTML, PARENT, $PROPS, NULL, B_D
 import { walk, getAttr, delAttr, getParent, getTagName, getNodeContent, removeNode, eachAttribute, query, emit, listen, setAttr, hasAttr } from "./tools/dom";
 import { autoFillContextProp, destructuringObject, expToFn, newFn } from "./tools/evaluation";
 import { countKeys, hasProp, getProp, newMap, setProp, setObjectKeys, W, S, sync, clone, delProp, getKeys, L } from "./tools/object";
-import { replace, replaceAll, split, startsWith, test, trim, wrapInBackticks } from "./tools/string";
+import { replace, split, startsWith, test, trim, wrapInBackticks } from "./tools/string";
 import { isTextNode, isElementNode, isNull, isRegExp, isString, isNode, isFunction, isArray, getType, isNumber } from "./tools/typeCheck";
 import { validate } from "./methods/validate";
 import { getAccessedProp } from "./reactivity/track";
-import { autoFillTemplateExpressions } from "./tools/references";
 import { newStepEngine } from "./methods/step";
 
 export let symbol = S(BRIO);
@@ -198,17 +197,17 @@ export let newApp = (): AppObject => {
      */
     let hydrateTextNode = (node: Text, ctxNode?: Node) => {
 
-        let text = node[TEXT_CONTENT] as string;
-        let sanitizedText = replaceMustache(text || '');
+        let text = node[TEXT_CONTENT] || '';
 
-        if (sanitizedText && test(sanitizedText, templateRegex)) {
+        if (text && test(text, templateExpressionRegex)) {
 
             let bnode = newBNode(node as any, ctxNode);
 
-            sanitizedText = autoFillTemplateExpressions(bnode, wrapInBackticks(sanitizedText));
+            // Wrap the text in backticks
+            text = wrapInBackticks(text);
 
             // Evaluate the expression
-            let value = exec(bnode, sanitizedText, '', true, false);
+            let value = exec(bnode, text, '', true, false);
 
             // Save the cleanup function
             saveCleanup(bnode, effect(() => node[TEXT_CONTENT] = value(bnode.ctx)));
@@ -294,7 +293,7 @@ export let newApp = (): AppObject => {
 
         // Remove the bnode if no attributes were hydrated and no context node was provided
         // Note: The bnode is not removed if it has a context node because it may be used by its children
-        if (!countKeys(bnode[ATTR]))
+        if (!countKeys(bnode[ATTR]) && !ctxNode)
             bnodes[DELETE](node);
 
         // Hydrate the children, if not skipped
@@ -342,9 +341,9 @@ export let newApp = (): AppObject => {
         let cacheKey: string;
 
         /**
-         * Make sure the expression is a function and auto-fill the references to props in the context objects.
-         * This allows the use of "{{ $data.propName }}" to be written as "{{ propName }}".
-         * The default context list and order is: $for, $data, $props, $store.
+         * Make sure the expression is a function and auto-fill the property context 
+         * when the expression starts with an identifier that matches a property in 
+         * one of the context objects ($for, $data, $store).
          */
         exp = expToFn(autoFill ? autoFillContextProp(bnode, exp) : exp, args, returns);
 
@@ -435,9 +434,8 @@ export let newApp = (): AppObject => {
         [$DEHYDRATE]: dehydrate,
     };
 
-    let steps: Record<string, StepObject> = {};
-    let activeSteps: string[] = state([]);
-    let [isStepActive, nextStep, backStep, originStep] = newStepEngine(steps, activeSteps);
+    let steps: Record<string, StepObject> = state({});
+    let [setStep, isStepActive, nextStep, backStep, originStep] = newStepEngine(steps);
 
     /** Unprefixed global context */
     let _gc: ObjectType = {
@@ -450,9 +448,9 @@ export let newApp = (): AppObject => {
         persist,
         session,
 
-        activeSteps,
-        isStepActive,
         steps,
+        setStep,
+        isStepActive,
         nextStep,
         backStep,
         originStep,
@@ -619,16 +617,8 @@ let saveAttr = (bnode: BNode, attrName: string, attrValue: string) => {
 export let sanitizeAttrValue = (text: string) => 
     replace(join(map(split(text, NEW_LINE), line => startsWith(trim(line), '//') ? '' : line), NEW_LINE), /;\s*$/, '');
 
-/** Match template literal ${} */
-export let templateRegex = /\${((?!.*\${).*?)}/;
-
-/** Match mustache syntax {{}} */
-let mustacheRegex: RegExp = /{{((?!.*{{).*?)}}/;
-
-/** Sanitize string and replace mustache syntax with template literals */
-let replaceMustache = (text: string, replacement: any = '${$1}') => 
-    replaceAll(text, mustacheRegex, replacement);
-
+/** Match template literal expression ${} */
+let templateExpressionRegex = /\${((?!.*\${).*?)}/;
 
 /** Create a new context */
 let newContext = (contextName: string, directiveName: string, inherit?: boolean) => (bnode: BNode, parent: BNode|undefined) => {
@@ -636,7 +626,7 @@ let newContext = (contextName: string, directiveName: string, inherit?: boolean)
     let el = bnode.el;
 
     // Get the parent context, if any
-    let parentContext = parent ? parent.ctx[contextName as '$data' | '$props'] : NULL;
+    let parentContext = parent ? parent.ctx[contextName as '$data'] : NULL;
 
     let isElement = isElementNode(el);
     let hasDirective = isElement && hasAttr(el, directiveName);

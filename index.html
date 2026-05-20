@@ -135,8 +135,8 @@
       <div class="items-wrapper">
         <h3>b-for with object</h3>
         <div class="items" b-for="v, i in $props.obj">
-            {{$for.v}}
-          <p>{{ $for.i }}: {{ $for.v }}</p>
+            ${$for.v}
+          <p>${ $for.i }: ${ $for.v }</p>
           <input type="text" b-model="$for.v">
           <button on-click="delete $props.obj[$for.i]">Remove</button>
           <button on-click="console.log($props.obj, $props)">Log obj</button>
@@ -159,7 +159,7 @@
       <!-- <div class="items-wrapper">
         <h3>b-for with array</h3>
         <div class="items" b-for="v, i in $props.items" b-props-hydrated="console.log('context', $context($el))">
-          <p>{{ $for.i }}: {{ $for.v }}</p>
+          <p>${ $for.i }: ${ $for.v }</p>
           <input type="text" b-model="$for.v">
           <button on-click="$props.items.splice($for.i, 1)">Remove</button>
           <button on-click="console.log($props.items, $props)">Log items</button>

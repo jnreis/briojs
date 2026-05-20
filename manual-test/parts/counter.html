@@ -9,9 +9,9 @@
     b-effect="console.log('b-for index:', $for.index, '; item:', $for.item)"
 >
 
-    <div>Count: {{ $props.count }}</div>
-    <div>Item: {{ $for.item }}</div>
-    <div>Index: {{ $for.index }}</div>
+    <div>Count: ${ $props.count }</div>
+    <div>Item: ${ $for.item }</div>
+    <div>Index: ${ $for.index }</div>
 
     <button on-click="$for.item--">Decrement</button>
     <button on-click="$for.item++">Increment</button>

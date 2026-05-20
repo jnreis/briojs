@@ -23,10 +23,10 @@
         },
     }"
     hidden bind-hidden="false">
-    <h1 on-attrs="onTextChange($mutations)" b-options="options" bind-style="{color: h1Color}">Color is <div><span bind-style="{color: h1Color}" b-if="h1Color == 'red'">{{ h1Color }}</span></div></h1>
+    <h1 on-attrs="onTextChange($mutations)" b-options="options" bind-style="{color: h1Color}">Color is <div><span bind-style="{color: h1Color}" b-if="h1Color == 'red'">${ h1Color }</span></div></h1>
 
     <button on-click="h1Color = isRed ? 'green' : 'red'">
-        Change color to {{ isRed ? 'green' : 'red' }}
+        Change color to ${ isRed ? 'green' : 'red' }
     </button>
 
     <hr>
@@ -61,8 +61,8 @@
         </script>
 
         <div b-style="['count']">
-            <!-- A counter {{$data.count}} -->
-            My count is {{ $data.count }}
+            <!-- A counter ${$data.count} -->
+            My count is ${ $data.count }
             <button on-click="$data.count--">-</button>
             <button on-click="$data.count++">+</button>
         </div>

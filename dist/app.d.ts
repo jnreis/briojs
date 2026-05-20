@@ -20,8 +20,6 @@ export declare let removeInsertedNodes: (bnode: BNode) => void;
  * Without this, the evaluate function may throw an error for some expressions.
  */
 export declare let sanitizeAttrValue: (text: string) => string;
-/** Match template literal ${} */
-export declare let templateRegex: RegExp;
 /** Handle route changes on popstate */
 export declare let setup: (brioWindow?: ObjectType) => void;
 /** Slice the attribute name to get the part after the directive prefix */

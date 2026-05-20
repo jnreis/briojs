@@ -19,7 +19,7 @@
         }"
     >
         <h1 class="text-4xl mb-2">b-html</h1>
-        <h3 class="mb-6">The current template is: {{ $props.templateName }}</h3>
+        <h3 class="mb-6">The current template is: ${ $props.templateName }</h3>
         <div class="mb-6" b-html="$props.templateName"></div>
 
         <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" on-click="$props.toggleTemplate">Change template</button>
@@ -29,7 +29,7 @@
 
     <template b-template="c1">
         <div class="p-2 bg-red" b-props="{name: 'red'}">
-            <p class="text-white">Template: {{ $props.name }}</p>
+            <p class="text-white">Template: ${ $props.name }</p>
             <input type="text" b-model="$props.name">
         </div>
     </template>

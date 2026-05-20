@@ -1,18 +1,13 @@
 export declare let newFn: (args: string, exp: string, returns?: boolean) => FunctionType;
 /** Ensure an expression is a function */
 export declare let expToFn: (exp: string, args?: string, returns?: boolean) => string;
-export declare let autoFillContextProp: (bnode: BNode, exp: string) => string;
 /**
- * Find a missing character in a string among all Unicode characters (~1.1 million characters).
+ * Auto-fill the property context when the expression starts with an identifier that
+ * matches a property in one of the context objects ($for, $data, $store).
  *
- * Useful for finding a unique placeholder character that does not exist in a given string.
- *
- * Note it does not include surrogate halves (D800–DFFF) as they are invalid standalone codepoints.
- *
- * @param str - The string to check
- * @returns A character that is not present in the string
+ * @param bnode The BNode instance containing the context.
+ * @param exp The expression to be evaluated.
+ * @returns The expression with the context-prefixed identifier if a match is found.
  */
-export declare let missingChar: (str: string, exclude?: Set<string>) => string | undefined;
-export declare let getTemplateExpressions: (template: string) => [string, [string, string][]];
-export declare let setTemplateExpressions: (template: string, expressions: [string, string][]) => string;
+export declare let autoFillContextProp: (bnode: BNode, exp: string) => string;
 export declare let destructuringObject: (obj: ObjectType, exp: string) => string;

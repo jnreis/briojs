@@ -9,13 +9,16 @@
     name: 'John', 
     age: 35, 
     email: 'john@doe.com',
+    m1() {
+        console.warn('Hello from m1!');
+    }
 }">
 
     <h1>
-        Hi, {{ name }}! You are {{ age }} years old and your email is {{ email }}.
+        Hi, ${ $data.name.toUpperCase() }! You are ${ $data.age + $data.age } years old and your email is ${ $data.email.toLowerCase() }.
     </h1>
 
-    <script b-script>
+    <script b-script b-effect="m1">
         (ctx) => {
             console.log('Hello from the script tag!', ctx);
         }

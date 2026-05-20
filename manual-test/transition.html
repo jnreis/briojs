@@ -17,7 +17,7 @@
     <script type="module" src="/src/briojs.min.ts"></script>
     <script>
         window.addEventListener('brio', () => {
-            let {gc: {$hydrate, $set}} = brio.newApp();
+            let {gc: {$hydrate, $set} = brio.newApp();
             $set.props('main', () => ({
                 show: true
             }));

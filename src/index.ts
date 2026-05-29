@@ -1,4 +1,11 @@
-// TODO
+/**
+ * TODO:
+ * - Compare tools.reactivity.ts to the current implementation of the reactivity system.
+ *   The only advantage may be that the new implementation re-evaluates the dependencies of an effect when it is triggered, 
+ *   which allows for dynamic dependencies.
+ *   However, I could do this by re-evaluating the dependencies when assigning an object/array with a new object/array, 
+ *   which would be more efficient than re-evaluating the dependencies every time an effect is triggered.
+ */
 
 /**
  * Before each release:

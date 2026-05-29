@@ -221,7 +221,8 @@ export let sync = (target: any, source: any): any => {
             }
         }
     }
-    // If target is not an object, Map, Set, or Array, just return the source
+    // If target is not an object, Map, Set, or Array, just return the source.
+    // Including other Reference Types like Function, Date, RegExp, DOM nodes, etc.
     else {
         return source;
     }

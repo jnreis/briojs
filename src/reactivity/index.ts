@@ -9,7 +9,7 @@ import { state } from './state';
  * The state object that holds a reference to all observed states, their parent observed state (if any), listeners, and other settings.
  */
 export let stateObjects: Map<any, StateObject> = newMap();
-// console.log('stateObjects:', stateObjects);
+console.log('stateObjects:', stateObjects);
 
 /**
  * Holds temporary functions that are called when a state is set to initialize the property.
@@ -67,12 +67,12 @@ export let addPropertyListener = (proxied: any, prop: string | number, fn: Liste
     // This will notify the listener when the property is set/deleted
     propsObject[prop].set(fn, priority);
 
-    // If the property value is an observed state, add the listener to the state as well
-    let propValue = proxied[prop];
+    // // If the property value is an observed state, add the listener to the state as well
+    // let propValue = proxied[prop];
     let stateDisposer: FunctionType | undefined;
-    if (isState(propValue)) {
-        stateDisposer = addStateListener(propValue, fn, priority) as FunctionType;
-    }
+    // if (isState(propValue)) {
+    //     stateDisposer = addStateListener(propValue, fn, priority) as FunctionType;
+    // }
 
     // Return the disposer function to remove the listener from the property
     return () => {

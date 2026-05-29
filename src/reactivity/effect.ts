@@ -1,5 +1,8 @@
-import { addPropertyListener } from '.';
+import { addPropertyListener, getStateObject } from '.';
 import { arrayAdd, each } from '../tools/array';
+import { TARGET } from '../tools/constants';
+import { newSet } from '../tools/object';
+import { isArray } from '../tools/typeCheck';
 import { getAccessedProps } from './track';
 
 /**
@@ -15,12 +18,27 @@ export let effect = (listener: ListenerFunction, dependencies?: ListenerFunction
     // Hold the cleanup functions for each accessed property
     let listeners: FunctionType[] = [];
 
-    // Run the function to track accessed properties
+    // Run the `dependencies` function or `listener` function to track accessed properties
     let accessedProps = getAccessedProps(dependencies || listener);
+
+    // Hold accessed arrays
+    let accessedArrays = newSet();
+
+    // Find accessed arrays to prevent adding the `listener` to each item of the array
+    // When the listener is something like `() => state.names.includes(name)`, the accessed property will be `names`, but all items of the array will also be accessed, and we don't want to add the listener to each item, but only to the array itself.
+    each(accessedProps, ([state, prop]) => {
+        let target = getStateObject(state)[TARGET];
+        if (isArray(target[prop]))
+            accessedArrays.add(target[prop]);
+    });
 
     // Add the listener to each accessed property
     each(accessedProps, ([proxied, prop]: [any, string]) => {
-        arrayAdd(listeners, addPropertyListener(proxied, prop, listener, priority));
+        // Prevent adding the same listener to each item of an accessed array
+        // This is necessary because when an array is accessed, all its items are also accessed, and we don't want to add the listener to each item, but only to the array itself.
+        if (!accessedArrays.has(proxied)) {
+            arrayAdd(listeners, addPropertyListener(proxied, prop, listener, priority));
+        }
     });
 
     // Make sure `listener` is called once

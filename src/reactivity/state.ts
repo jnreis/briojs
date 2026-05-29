@@ -1,6 +1,6 @@
-import { getStateObject, isState, stateObjects, initPropFns } from '.';
+import { isState, stateObjects, initPropFns } from '.';
 import { trackProps, accessedProps } from './track';
-import { arrayAdd, arrayFrom, each, sort, sortPriority } from '../tools/array';
+import { arrayAdd, arrayFrom, each, some, sort, sortPriority } from '../tools/array';
 import { R, createContext, hasProp, newMap, newSet, setObjectKeys, setProp, sync } from '../tools/object';
 import { isArray, isObject, isUndefined } from '../tools/typeCheck';
 import { CREATE, DEFINE_PROPERTY, DELETE, DELETE_PROPERTY, PROPS, STATE, VALUE, UNDEFINED, UPDATE, NEW_VALUE, OLD_VALUE, OPERATION, TARGET } from '../tools/constants';
@@ -38,7 +38,12 @@ export let state: State = (target: any, parent?: any) => {
                s2.b; // prop 'b' is in s2, so it will be tracked for s2.
                s2.c; // prop 'c' is not in s2 or s1, so it will be tracked for s2. 'c' is an undefined property at this point, but it may be set later and it should be tracked so it can notify listeners.
              */
-            if (trackProps && (hasProp(target, prop) || !(prop in target))) arrayAdd(accessedProps, [proxied, prop]);
+            if (trackProps && (hasProp(target, prop) || !(prop in target))) {
+                // Ensure the accessed property is added to the accessedProps array only once per getAccessedProps execution
+                if (!some(accessedProps, ([proxied2, prop2]) => proxied2 === proxied && prop2 === prop)) {
+                    arrayAdd(accessedProps, [proxied, prop]);
+                }
+            }
 
             return R.get(target, prop, proxied);
         },
@@ -75,8 +80,6 @@ export let state: State = (target: any, parent?: any) => {
 
             // Do not set the new value if it is equal to the old value
             if (oldValue === newValue) return true;
-
-            let stateObject = getStateObject(proxied);
 
             let context: any = {
                 [TARGET]: target,
@@ -137,7 +140,7 @@ export let state: State = (target: any, parent?: any) => {
             let result = R[DELETE_PROPERTY](target, prop);
 
             // Notify listeners about the property deletion
-            notifyListeners(getStateObject(proxied), {
+            notifyListeners(stateObject, {
                 [TARGET]: target,
                 [STATE]: proxied,
                 prop,
@@ -178,7 +181,7 @@ export let state: State = (target: any, parent?: any) => {
     // Create the state object
     let stateObject: StateObject = {
         // [PARENT]: parent,
-        // [TARGET]: target,
+        [TARGET]: target,
         // proxied,
         [STATE]: newMap(),
         [PROPS]: {},

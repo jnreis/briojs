@@ -8,7 +8,7 @@
 <body>
   <h1>Hello, Brio.js!</h1>
 
-  <script b-script>
+  <!-- <script b-script>
     () => {
         $setStep('step1', { next: 'step2', active: true});
         $setStep('step2', { next: 'step3', back: 'step1'});
@@ -40,21 +40,27 @@
     <button on-click="$nextStep('step3')">Next</button>
   </template>
 
-  <hr>
+  <hr> -->
 
-  <section b-template b-data="{items: [1,2,3]}">
+  <section b-template b-data="{items: [{name: 'John'}, {name: 'Jane'}, {name: 'Jack'}]}">
     <script b-script>
         () => {
-            console.error('Items data:', $data.items);
+          $effect(({prop}) => {
+            console.warn('Items changed:', $data.items, prop);
+          });
+
+          $data.items.push({name: 'Jill'});
         }
     </script>
-    <h2>Items ${ $data.items.join(', ') }</h2>
+    <!-- <h2>Items ${ $data.items.map(item => item.name).join(', ') }</h2>
     <ul>
-      <li b-for="item in $data.items">${ $for.item }</li>
+      <li b-for="item in $data.items">${ $for.item.name }</li>
     </ul>
 
-    <button on-click="$data.items.push($data.items.length + 1)">Add Item</button>
+    <button on-click="$data.items.push({name: 'Jeff'})">Add Item</button>
     <button on-click="$data.items.pop()">Remove Item</button>
+
+    <button on-click="$data.items = [{name: 'Jeff'}, {name: 'Jane'}]">Add Item to Start</button> -->
   </section>
   
 

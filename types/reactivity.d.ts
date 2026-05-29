@@ -23,6 +23,9 @@ type PropertyReference = [any, Prop];
 
 type StateObject = {
 
+    /** The original target object */
+    target: any,
+
     /** The listeners to be called when a property in the state is set */
     state: ListenerFunctions,
 

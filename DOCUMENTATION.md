@@ -45,14 +45,16 @@ app.mount('#counter');
 
 ```html
 <section id="counter">
-  <button b-on-click="count++">
-    Count: <span b-text="count"></span>
+  <button b-on-click="$data.count++">
+    Count: <span b-text="$data.count"></span>
   </button>
-  <p b-text="`Twice: ${count * 2}`"></p>
+  <p b-text="`Twice: ${$data.count * 2}`"></p>
 </section>
 ```
 
-Expressions see the nearest `b-data` scope, component setup values, and app state, in that order. Missing names can resolve to JavaScript globals. Event expressions also receive `$event`.
+Expressions run in strict mode without `with` or implicit state-name resolution. Use `$data` for the nearest state object (app state, component setup state, or `b-data`), `$parent.$data` for parent state, and `$for` for loop values. Bare state names such as `count` are not supported and unresolved identifiers throw `ReferenceError`. JavaScript globals such as `Math`, `JSON`, and `setTimeout` resolve normally.
+
+The context is also available as `ctx`. Named bindings include `$data`, `$parent`, `$el`, `$id`, `$for`, `$props`, `$emit`, and `trustedHTML`. Event handlers receive `$event`; observers supply `$mutations`, `$size`, or `$entry`. The mask directive supplies `money`, and contextual scripts supply `onCleanup`. Helpers not supplied in that context are `undefined`. Bindings are read-only references; mutate their properties (`$data.count++`), not the binding itself (`$data = {}`). Event statements can declare ordinary local variables.
 
 ## HTML directives
 
@@ -62,8 +64,8 @@ Directive arguments use hyphens (`b-on-click`, `b-bind-href`); options use chain
 | --- | --- |
 | `b-data` | Create a nested state scope from an object expression. |
 | `b-text` | Reactively set an element's text content. |
-| `b-bind-name` | Reactively bind an attribute or DOM property, e.g. `b-bind-href="url"`. |
-| `b-on-event` | Listen for a DOM event, e.g. `b-on-submit="save($event)"`. |
+| `b-bind-name` | Reactively bind an attribute or DOM property, e.g. `b-bind-href="$data.url"`. |
+| `b-on-event` | Listen for a DOM event, e.g. `b-on-submit="$data.save($event)"`. |
 | `b-model` | Two-way bind a text-like input, checkbox, radio, or select. |
 | `b-if`, `b-else-if`, `b-else` | Mount one conditional branch; dispose its state scope, effects, and listeners when it becomes false. |
 | `b-show` | Detach the element without dehydrating it; `.display` uses CSS display instead. |
@@ -80,19 +82,19 @@ Directive arguments use hyphens (`b-on-click`, `b-bind-href`); options use chain
 <div b-data="{ query: '', visible: true, results: ['Brio', 'HTML'] }">
   <label>
     Search
-    <input b-model="query">
+    <input b-model="$data.query">
   </label>
 
-  <button b-on-click="visible = !visible">Toggle results</button>
-  <ul b-if="visible">
-    <li b-for="result, index in results" b-key="result">
-      <span b-text="`${index + 1}. ${result}`"></span>
+  <button b-on-click="$data.visible = !$data.visible">Toggle results</button>
+  <ul b-if="$data.visible">
+    <li b-for="result, index in $data.results" b-key="$for.result">
+      <span b-text="`${$for.index + 1}. ${$for.result}`"></span>
     </li>
   </ul>
 </div>
 ```
 
-`b-for` uses `item in items` or `item, index in items`. Without `b-key`, the index is the key; provide a stable key when items can be inserted, removed, or reordered. Duplicate keys are errors.
+`b-for` uses `item in $data.items` or `item, index in $data.items`. These names declare properties of `$for`, so row expressions use `$for.item` and `$for.index`. Without `b-key`, the index is the key; provide a stable key when items can be inserted, removed, or reordered. Duplicate keys are errors.
 
 `b-bind-*` binds a DOM property when one exists; otherwise it sets or removes the corresponding attribute. `false`, `null`, and `undefined` remove attributes. `class` accepts a string, array, or object of class names and booleans. `style` accepts a style object.
 
@@ -137,11 +139,15 @@ Brio constructs a function factory with an explicit context parameter, then invo
 
 Options default to `thousands: ','`, `decimal: '.'`, `precision: 2`. Precision is an integer from 0 to 100. Digits are interpreted as fixed-precision minor units: `123456` becomes `1.234,56` in the first example. Options may reference reactive state and are forwarded to the formatter. `b-mask.money` without an expression and `b-mask="'money'"` use defaults. Pattern masks use expressions such as `b-mask="'(###) ###-####'"`.
 
+Masks preserve the focused input's caret and selection when formatting changes its value. Pattern deletions snap to the preceding editable character rather than a separator; money masks anchor the caret to the digits to its right so grouping and zero padding do not send it to the end.
+
 ### CSS transitions
 
 `b-transition="'fade'"` uses `fade-enter`, `fade-enter-active`, `fade-enter-to`, and the corresponding `fade-leave*` classes. The default name is `brio`. Define CSS `transition` properties on the active classes and starting/ending styles on the other classes.
 
 Brio tracks the element's own `transitionrun`, `transitionend`, and `transitioncancel` events for every running property, ignoring descendant events. Removal waits for all properties, including delays. A fallback uses computed CSS duration plus delay, not a fixed timeout. No-duration/reduced-motion styles complete without waiting for an event; unmount cancels pending frames, listeners, and timers. This directive handles CSS transitions, not keyframe animations.
+
+Reversing a running `b-show` transition retargets its CSS properties from their current interpolated values, without replaying the opposite starting pose. A new `b-if` instance still enters from its starting pose because the previous branch has already been dehydrated.
 
 ## Components
 
@@ -154,16 +160,16 @@ const app = createApp({ state: () => ({ label: 'Clicks' }) });
 
 app.component('click-counter', {
   template: `
-    <button b-on-click="count.value++">
-      <span b-text="props.label"></span>:
-      <span b-text="count.value"></span>
+    <button b-on-click="$data.count.value++">
+      <span b-text="$props.label"></span>:
+      <span b-text="$data.count.value"></span>
       <slot></slot>
     </button>
   `,
-  setup({ props, emit }) {
+  setup({ $props, $emit }) {
     return {
       count: { value: 0 },
-      notify() { emit('change', props.label); },
+      notify() { $emit('change', $props.label); },
     };
   },
 });
@@ -173,13 +179,13 @@ app.mount('#widgets');
 
 ```html
 <main id="widgets">
-  <click-counter b-bind-label="label" b-on-change="console.log($event.detail)">
+  <click-counter b-bind-label="$data.label" b-on-change="console.log($event.detail)">
     Tap to increment
   </click-counter>
 </main>
 ```
 
-Static host attributes become string props; `b-bind-name` supplies a reactive prop. Setup also receives the host element as `el`. Component events are bubbling `CustomEvent`s emitted with `emit(name, detail)`. Named slots use `slot="name"` on projected content and `<slot name="name">` in the template. Component setup runs in an owned scope; effects, persistence, and listeners registered during setup are disposed when the component is removed.
+Static host attributes become string props; `b-bind-name` supplies a reactive prop through `$props`. Setup receives `$props`, `$emit`, the host element as `el`, and `app`. Templates and contextual scripts also access `$props` and `$emit`. Component events are bubbling `CustomEvent`s emitted with `$emit(name, detail)`. The previous `props` and `emit` names are not aliases. Named slots use `slot="name"` on projected content and `<slot name="name">` in the template. Component setup runs in an owned scope; effects, persistence, and listeners registered during setup are disposed when the component is removed.
 
 ## Three ways to use Brio
 
@@ -217,7 +223,7 @@ const router = createRouter([
 createApp({ router })
   .component('home-page', { template: '<h1>Home</h1>' })
   .component('item-page', {
-    template: '<h1>Item <span b-text="route.value.params.id"></span></h1>',
+    template: '<h1>Item <span b-text="$data.route.value.params.id"></span></h1>',
     setup({ app }) {
       return { route: app.router.current };
     },
@@ -282,7 +288,7 @@ createApp().component('preferences-panel', {
   template: `
     <label>
       Theme
-      <select b-model="preferences.theme">
+      <select b-model="$data.preferences.theme">
         <option>light</option>
         <option>dark</option>
       </select>
@@ -300,7 +306,7 @@ Objects and arrays are reactive directly. Primitive values are returned as signa
 
 ## Trusted HTML and expression security
 
-Directive expressions are ordinary JavaScript compiled and cached at runtime with `new Function`. They are authored application code, **not a sandbox**; the approach is incompatible with a strict CSP that disallows `unsafe-eval`. Never render untrusted content as a Brio template or directive expression.
+Directive expressions are ordinary strict-mode JavaScript compiled and cached at runtime with `new Function`, without `with`. They are authored application code, **not a sandbox**; the approach is incompatible with a strict CSP that disallows `unsafe-eval`. Never render untrusted content as a Brio template or directive expression.
 
 `b-text` writes text, not HTML. `b-html` accepts only an explicit trusted value:
 
@@ -311,7 +317,7 @@ createApp({ state: () => ({ content: '<em>Trusted</em>' }) }).mount('#content');
 ```
 
 ```html
-<div id="content" b-html="trustedHTML(content)"></div>
+<div id="content" b-html="trustedHTML($data.content)"></div>
 ```
 
 Only call `trustedHTML()` with content your application has sanitized or authored.
@@ -352,7 +358,7 @@ Framework SSR and hydration are not part of this release. Brio enhances existing
 
 ## Package and migration
 
-Version 4 is not API-compatible with version 3. Replace `newApp()` with `createApp()`, `$state` with app state or the `state()` import, `$effect` with `effect()`, and the previous directives with the table above. Router, persistence, and devtools are first-party package subpaths. Review all templates: directives now require hyphen-only names, expressions are explicitly trusted JavaScript, and HTML insertion requires `trustedHTML()`.
+Version 4 is not API-compatible with version 3. Replace `newApp()` with `createApp()`, `$state` with app state or the `state()` import, `$effect` with `effect()`, and the previous directives with the table above. Router, persistence, and devtools are first-party package subpaths. Review all templates: state access requires `$data` or `$parent.$data`, loop values require `$for`, arguments use hyphens and modifiers use dots, expressions are explicitly trusted strict-mode JavaScript, and HTML insertion requires `trustedHTML()`.
 
 The package exports:
 

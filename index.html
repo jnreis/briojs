@@ -14,16 +14,16 @@
   <h1>Brio.js vNext</h1>
   <section id="widget">
     <h2>Embeddable widget</h2>
-    <label>Message <input b-model="message"></label>
-    <p data-testid="message" b-text="message"></p>
-    <button data-testid="increment" b-on-click="count++">Increment</button>
-    <span data-testid="count" b-text="count"></span>
-    <button data-testid="toggle" b-on-click="visible = !visible">Toggle details</button>
-    <p data-testid="details" b-if="visible">Conditional content is mounted and disposed.</p>
+    <label>Message <input b-model="$data.message"></label>
+    <p data-testid="message" b-text="$data.message"></p>
+    <button data-testid="increment" b-on-click="$data.count++">Increment</button>
+    <span data-testid="count" b-text="$data.count"></span>
+    <button data-testid="toggle" b-on-click="$data.visible = !$data.visible">Toggle details</button>
+    <p data-testid="details" b-if="$data.visible">Conditional content is mounted and disposed.</p>
     <ul>
-      <li b-for="item in items" b-key="item.id" b-text="item.label"></li>
+      <li b-for="item in $data.items" b-key="$for.item.id" b-text="$for.item.label"></li>
     </ul>
-    <button data-testid="add-item" b-on-click="items.push({ id: items.length + 1, label: 'A new row' })">Add row</button>
+    <button data-testid="add-item" b-on-click="$data.items.push({ id: $data.items.length + 1, label: 'A new row' })">Add row</button>
     <click-counter label="Component"></click-counter>
   </section>
   <section id="spa">

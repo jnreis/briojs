@@ -30,11 +30,11 @@ export function handleShow(
         if (visible === previous) return;
         const initial = previous === undefined;
         previous = visible;
-        cancelTransition(element);
         const name = getTransitionName(element);
+        if (initial || !name) cancelTransition(element);
         if (visible) {
             if (useDisplay) el.style.display = originalDisplay;
-            else placeholder.parentNode?.insertBefore(element, placeholder.nextSibling);
+            else if (!element.parentNode) placeholder.parentNode?.insertBefore(element, placeholder.nextSibling);
             if (!initial && name) enterTransition(element, name);
         } else {
             const hide = () => {

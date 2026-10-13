@@ -10,14 +10,15 @@ const valueExpressions = /* @__PURE__ */ new Map();
 const statementExpressions = /* @__PURE__ */ new Map();
 const assignmentExpressions = /* @__PURE__ */ new Map();
 const functionExpressions = /* @__PURE__ */ new Map();
+const contextBindings = `
+"use strict";
+const { $data, $parent, $el, $event, $id, $for, $mutations, $size, $entry, $props, $emit, trustedHTML, onCleanup, money } = ctx;
+`;
 function evaluateFunction(source, context) {
   const fn = compile(
     functionExpressions,
     source,
-    (expression) => new Function("ctx", `
-            const { $data, $parent, $el, $event, $id, $for, props, emit, trustedHTML, onCleanup } = ctx;
-            return (${expression.replace(/;\s*$/, "")});
-        `)
+    (expression) => new Function("ctx", `${contextBindings} return (${expression.replace(/;\s*$/, "")});`)
   );
   const result = fn(context);
   if (typeof result !== "function")
@@ -25,29 +26,7 @@ function evaluateFunction(source, context) {
   return result;
 }
 function createExpressionScope(...sources) {
-  const globals = globalThis;
-  return new Proxy(/* @__PURE__ */ Object.create(null), {
-    has(_target, key) {
-      return key !== Symbol.unscopables;
-    },
-    get(_target, key) {
-      if (key === Symbol.unscopables) return void 0;
-      for (const source of sources) {
-        if (Reflect.has(source, key)) return Reflect.get(source, key);
-      }
-      return Reflect.has(globals, key) ? Reflect.get(globals, key) : void 0;
-    },
-    set(_target, key, value) {
-      for (const source of sources) {
-        if (Reflect.has(source, key)) {
-          Reflect.set(source, key, value);
-          return true;
-        }
-      }
-      if (sources.length) Reflect.set(sources[0], key, value);
-      return true;
-    }
-  });
+  return Object.assign(/* @__PURE__ */ Object.create(null), ...sources.reverse());
 }
 const compile = (cache, source, make) => {
   let fn = cache.get(source);
@@ -67,7 +46,7 @@ function evaluate(source, scope) {
   const fn = compile(
     valueExpressions,
     source,
-    (expression) => new Function("$scope", `with ($scope) { return (${expression}); }`)
+    (expression) => new Function("ctx", `${contextBindings} return (${expression});`)
   );
   try {
     return fn(scope);
@@ -79,10 +58,10 @@ function execute(source, scope, event) {
   const fn = compile(
     statementExpressions,
     source,
-    (expression) => new Function("$scope", "$event", `with ($scope) { ${expression} }`)
+    (expression) => new Function("ctx", `${contextBindings} ${expression}`)
   );
   try {
-    fn(createExpressionScope({ $event: event }, scope), event);
+    fn(event === void 0 ? scope : createExpressionScope({ $event: event }, scope));
   } catch (error) {
     throw causedError(`Brio event expression failed: "${source}"`, error);
   }
@@ -91,10 +70,10 @@ function assign(source, scope, value) {
   const fn = compile(
     assignmentExpressions,
     source,
-    (expression) => new Function("$scope", "$value", `with ($scope) { return (${expression} = $value); }`)
+    (expression) => new Function("ctx", "$value", `${contextBindings} return (${expression} = $value);`)
   );
   try {
-    fn(createExpressionScope({ $value: value }, scope), value);
+    fn(scope, value);
   } catch (error) {
     throw causedError(`Brio model expression failed: "${source}"`, error);
   }
@@ -189,10 +168,10 @@ function mountComponent(element, definition, context, runtime, hydrateNodeFn) {
       expression: attribute.value
     };
   });
-  const props = state(propsObject);
+  const $props = state(propsObject);
   const componentScope = createScope();
   onCleanup(() => componentScope.dispose());
-  const emit = (name, detail) => {
+  const $emit = (name, detail) => {
     if (!/^[a-z][a-z0-9-]*$/.test(name))
       throw new TypeError(`Invalid component event name "${name}".`);
     element.dispatchEvent(new CustomEvent(name, { detail, bubbles: true }));
@@ -221,13 +200,16 @@ function mountComponent(element, definition, context, runtime, hydrateNodeFn) {
       }
     }
     for (const binding of propBindings)
-      props[binding.name] = evaluate(binding.expression, context);
-    const setupResult = ((_a = definition.setup) == null ? void 0 : _a.call(definition, { el: element, props, emit, app: runtime.app })) ?? {};
-    const local = state({ ...setupResult, $el: element, props, emit });
-    const componentContext = createExpressionScope(local, context);
+      $props[binding.name] = evaluate(binding.expression, context);
+    const setupResult = ((_a = definition.setup) == null ? void 0 : _a.call(definition, { el: element, $props, $emit, app: runtime.app })) ?? {};
+    const local = state(setupResult);
+    const componentContext = createExpressionScope(
+      { $data: local, $parent: context, $el: element, $props, $emit },
+      context
+    );
     for (const binding of propBindings) {
       effect(() => {
-        props[binding.name] = evaluate(binding.expression, context);
+        $props[binding.name] = evaluate(binding.expression, context);
       });
     }
     const template = document.createElement("template");
@@ -271,6 +253,7 @@ function transitionTimeout(element) {
   ));
 }
 function runTransition(element, name, phase, onDone) {
+  const interrupted = running.has(element);
   cancelTransition(element);
   const view = element.ownerDocument.defaultView;
   const classes = [`${name}-${phase}`, `${name}-${phase}-active`, `${name}-${phase}-to`];
@@ -320,17 +303,22 @@ function runTransition(element, name, phase, onDone) {
   element.addEventListener("transitionrun", onRun);
   element.addEventListener("transitionend", onEnd);
   element.addEventListener("transitioncancel", onEnd);
-  element.classList.add(classes[0], classes[1]);
-  frame = view.requestAnimationFrame(() => {
+  const activate = () => {
     activated = true;
+    element.classList.remove(classes[0]);
+    element.classList.add(classes[1], classes[2]);
+    const timeout = transitionTimeout(element);
+    if (timeout > 0) timer = setTimeout(finish, timeout + 50);
+    else finish();
+  };
+  if (interrupted) {
+    activate();
+  } else {
+    element.classList.add(classes[0], classes[1]);
     frame = view.requestAnimationFrame(() => {
-      element.classList.remove(classes[0]);
-      element.classList.add(classes[2]);
-      const timeout = transitionTimeout(element);
-      if (timeout > 0) timer = setTimeout(finish, timeout + 50);
-      else finish();
+      frame = view.requestAnimationFrame(activate);
     });
-  });
+  }
 }
 function enterTransition(element, name = "brio") {
   runTransition(element, name, "enter");
@@ -614,7 +602,7 @@ function handleFor(element, expression, _modifiers, context, runtime, hydrateNod
   const parent = element.parentNode;
   if (!parent) throw new Error("b-for requires an element with a parent node.");
   const parsed = /^\s*([A-Za-z_$][\w$]*)(?:\s*,\s*([A-Za-z_$][\w$]*))?\s+in\s+([\s\S]+)$/.exec(expression);
-  if (!parsed) throw new SyntaxError(`Invalid b-for expression "${expression}". Use "item in items".`);
+  if (!parsed) throw new SyntaxError(`Invalid b-for expression "${expression}". Use "item in $data.items".`);
   const [, itemName, indexName = "$index", collectionExpression] = parsed;
   const keyExpression = element.getAttribute("b-key");
   const placeholder = document.createComment("brio:for");
@@ -645,8 +633,8 @@ function handleFor(element, expression, _modifiers, context, runtime, hydrateNod
     let cursor = placeholder;
     for (const [index, item] of entries) {
       const loopData = { [itemName]: item, [indexName]: index };
-      const rowState = state({ ...loopData, $for: loopData });
-      const rowContext = createExpressionScope(rowState, context);
+      const rowState = state(loopData);
+      const rowContext = createExpressionScope({ $for: rowState }, context);
       const evaluatedKey = keyExpression ? evaluate(keyExpression, rowContext) : index;
       if (typeof evaluatedKey !== "string" && typeof evaluatedKey !== "number")
         throw new TypeError("b-key must evaluate to a string or number.");
@@ -663,8 +651,6 @@ function handleFor(element, expression, _modifiers, context, runtime, hydrateNod
       } else {
         row.values[itemName] = item;
         row.values[indexName] = index;
-        row.values.$for[itemName] = item;
-        row.values.$for[indexName] = index;
       }
       if (row.element.previousSibling !== cursor)
         (_a = placeholder.parentNode) == null ? void 0 : _a.insertBefore(row.element, cursor.nextSibling);
@@ -702,11 +688,11 @@ function handleShow(element, expression, modifiers, context) {
     if (visible === previous) return;
     const initial = previous === void 0;
     previous = visible;
-    cancelTransition(element);
     const name = getTransitionName(element);
+    if (initial || !name) cancelTransition(element);
     if (visible) {
       if (useDisplay) el.style.display = originalDisplay;
-      else (_a = placeholder.parentNode) == null ? void 0 : _a.insertBefore(element, placeholder.nextSibling);
+      else if (!element.parentNode) (_a = placeholder.parentNode) == null ? void 0 : _a.insertBefore(element, placeholder.nextSibling);
       if (!initial && name) enterTransition(element, name);
     } else {
       const hide = () => {
@@ -761,7 +747,6 @@ function handleData(element, expression, _modifiers, parentContext) {
     $el: element
   };
   return createExpressionScope(
-    reactiveData,
     scopeObj,
     parentContext
   );
@@ -822,7 +807,7 @@ function formatMoney(value, options = {}) {
   const result = decimalStr ? `${formattedInteger}${decimal}${decimalStr}` : formattedInteger;
   return isNegative ? `-${result}` : result;
 }
-function formatMask(value, pattern) {
+function formatPattern(value, pattern, positions) {
   let result = "";
   let valIndex = 0;
   for (let i = 0; i < pattern.length && valIndex < value.length; i++) {
@@ -830,11 +815,13 @@ function formatMask(value, pattern) {
     if (patternChar === "9" || patternChar === "#") {
       while (valIndex < value.length && !/\d/.test(value[valIndex])) valIndex++;
       if (valIndex < value.length) {
+        positions == null ? void 0 : positions.push({ input: valIndex, output: result.length + 1 });
         result += value[valIndex++];
       }
     } else if (patternChar === "a" || patternChar === "A") {
       while (valIndex < value.length && !/[a-zA-Z]/.test(value[valIndex])) valIndex++;
       if (valIndex < value.length) {
+        positions == null ? void 0 : positions.push({ input: valIndex, output: result.length + 1 });
         result += value[valIndex++];
       }
     } else {
@@ -845,6 +832,9 @@ function formatMask(value, pattern) {
     }
   }
   return result;
+}
+function formatMask(value, pattern) {
+  return formatPattern(value, pattern);
 }
 function handleMask(element, expression, modifiers, context) {
   if (!(element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement)) {
@@ -857,17 +847,40 @@ function handleMask(element, expression, modifiers, context) {
   };
   const maskContext = createExpressionScope({ money }, context);
   let configuration = "";
-  const applyMask = () => {
+  const applyMask = (event) => {
+    if (event instanceof InputEvent && event.isComposing) return;
     const current = element.value;
-    const formatted = typeof configuration === "string" ? formatMask(current, configuration) : formatMoney(current, configuration.options);
+    const start = element.selectionStart;
+    const end = element.selectionEnd;
+    const direction = element.selectionDirection;
+    const positions = [];
+    const formatted = typeof configuration === "string" ? formatPattern(current, configuration, positions) : formatMoney(current, configuration.options);
+    const deleting = event instanceof InputEvent && event.inputType.startsWith("delete");
+    const mapPosition = (position) => {
+      var _a;
+      if (typeof configuration === "string") {
+        if (!deleting) return formatMask(current.slice(0, position), configuration).length;
+        return ((_a = positions.filter((entry) => entry.input < position).at(-1)) == null ? void 0 : _a.output) ?? 0;
+      }
+      const rightDigits = current.slice(position).replace(/\D/g, "").length;
+      const digits = [...formatted.matchAll(/\d/g)];
+      const leftDigits = digits.length - rightDigits;
+      if (position === 0) return 0;
+      return leftDigits > 0 ? digits[leftDigits - 1].index + 1 : formatted.startsWith("-") ? 1 : 0;
+    };
+    const preserveSelection = element.ownerDocument.activeElement === element && start !== null && end !== null;
+    const mappedStart = preserveSelection ? mapPosition(start) : null;
+    const mappedEnd = preserveSelection ? mapPosition(end) : null;
     if (element.value !== formatted) {
       element.value = formatted;
       element.dispatchEvent(new Event("input", { bubbles: true }));
     }
+    if (mappedStart !== null && mappedEnd !== null && (current !== formatted || deleting))
+      element.setSelectionRange(mappedStart, mappedEnd, direction ?? "none");
   };
-  element.addEventListener("input", applyMask);
+  element.addEventListener("input", applyMask, true);
   onCleanup(() => {
-    element.removeEventListener("input", applyMask);
+    element.removeEventListener("input", applyMask, true);
   });
   effect(() => {
     const value = trimmed ? evaluate(trimmed, maskContext) : void 0;
@@ -1295,7 +1308,6 @@ function createApp(options = {}) {
       activeMountRoots.add(root);
       notifyRootMounted(app, root);
       const context = createExpressionScope(
-        appState,
         { $data: appState, trustedHTML }
       );
       try {

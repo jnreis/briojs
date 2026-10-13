@@ -14,7 +14,7 @@ createApp({ state: () => ({ count: 0 }) }).mount('#counter');
 
 ```html
 <div id="counter">
-  <button b-on-click="count++">Count: <span b-text="count"></span></button>
+  <button b-on-click="$data.count++">Count: <span b-text="$data.count"></span></button>
 </div>
 ```
 

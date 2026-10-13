@@ -28,6 +28,7 @@ function transitionTimeout(element: Element): number {
 }
 
 function runTransition(element: Element, name: string, phase: 'enter' | 'leave', onDone?: () => void): void {
+    const interrupted = running.has(element);
     cancelTransition(element);
     const view = element.ownerDocument.defaultView!;
     const classes = [`${name}-${phase}`, `${name}-${phase}-active`, `${name}-${phase}-to`];
@@ -79,19 +80,23 @@ function runTransition(element: Element, name: string, phase: 'enter' | 'leave',
     element.addEventListener('transitionrun', onRun);
     element.addEventListener('transitionend', onEnd);
     element.addEventListener('transitioncancel', onEnd);
-    element.classList.add(classes[0], classes[1]);
-
-    // Separate the starting and ending styles by a rendered frame.
-    frame = view.requestAnimationFrame(() => {
+    const activate = () => {
         activated = true;
+        element.classList.remove(classes[0]);
+        element.classList.add(classes[1], classes[2]);
+        const timeout = transitionTimeout(element);
+        if (timeout > 0) timer = setTimeout(finish, timeout + 50);
+        else finish();
+    };
+    if (interrupted) {
+        // Retarget the existing CSS transition without rendering the opposite starting pose.
+        activate();
+    } else {
+        element.classList.add(classes[0], classes[1]);
         frame = view.requestAnimationFrame(() => {
-            element.classList.remove(classes[0]);
-            element.classList.add(classes[2]);
-            const timeout = transitionTimeout(element);
-            if (timeout > 0) timer = setTimeout(finish, timeout + 50);
-            else finish();
+            frame = view.requestAnimationFrame(activate);
         });
-    });
+    }
 }
 
 export function enterTransition(element: Element, name: string = 'brio'): void {

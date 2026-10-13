@@ -19,7 +19,6 @@ export function handleData(
         $el: element,
     };
     return createExpressionScope(
-        reactiveData,
         scopeObj,
         parentContext,
     );

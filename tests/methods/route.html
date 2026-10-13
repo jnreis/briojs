@@ -21,10 +21,10 @@
 
     <div class="card" id="app-root">
         <nav>
-            <button b-on-click="goTo('/')">Home</button>
-            <button b-on-click="goTo('/users/ada')">User: Ada</button>
-            <button b-on-click="goTo('/users/grace')">User: Grace</button>
-            <button b-on-click="goTo('/about')">About</button>
+            <button b-on-click="$data.goTo('/')">Home</button>
+            <button b-on-click="$data.goTo('/users/ada')">User: Ada</button>
+            <button b-on-click="$data.goTo('/users/grace')">User: Grace</button>
+            <button b-on-click="$data.goTo('/about')">About</button>
         </nav>
 
         <div class="router-view">
@@ -64,8 +64,8 @@
             template: `
                 <div style="color: #0369a1;">
                     <h2>👤 User Profile</h2>
-                    <p>Current Route Path: <strong b-text="currentRoute"></strong></p>
-                    <p>Matched Username Parameter: <strong b-text="username"></strong></p>
+                    <p>Current Route Path: <strong b-text="$data.currentRoute"></strong></p>
+                    <p>Matched Username Parameter: <strong b-text="$data.username"></strong></p>
                 </div>
             `,
             setup(ctx) {

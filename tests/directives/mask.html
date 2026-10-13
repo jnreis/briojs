@@ -37,6 +37,7 @@
         <div class="field">
             <label>Type date value:</label>
             <input type="text" b-mask="'##/##/####'" placeholder="MM/DD/YYYY">
+            <p>Enter 12/25/1987. Put the caret just after the second slash and press Delete: expect 12/25/987 with the caret after 5, not at the end. Also try Backspace on a slash and replacing a selection.</p>
         </div>
     </div>
 
@@ -46,6 +47,7 @@
             <label>Type currency amount:</label>
             <input type="text" b-mask.money placeholder="$0.00" b-model="$data.moneyVal">
             <p>Model: ${$data.moneyVal}. Type 123456: expect 1,234.56.</p>
+            <p>Delete or insert a digit in the middle, or delete a separator: the caret stays next to the edited digits. Repeat with a selected range and the custom separators below.</p>
         </div>
     </div>
 

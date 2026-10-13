@@ -113,6 +113,66 @@ test('orphan and nonadjacent else directives fail explicitly', t => {
     }
 });
 
+test('explicit loop values update keyed rows and nested loop contexts without losing reactivity', t => {
+    const { app, root, window } = environment(t, `
+        <section b-for="item, index in $data.items" b-key="$for.item.id">
+            <span b-text="$for.index + ':' + $for.item.name"></span>
+            <button on-click="const suffix = '!'; $for.item.name += suffix;"></button>
+            <div b-data="{ local: 0 }">
+                <em b-text="$for.item.name + ':' + $parent.$data.label"></em>
+            </div>
+            <i b-for="child in $for.item.children" b-text="$for.child"></i>
+        </section>`, {
+        label: 'parent',
+        items: [
+            { id: 1, name: 'first', children: ['a'] },
+            { id: 2, name: 'second', children: ['b'] },
+        ],
+    });
+    app.mount(root);
+    const first = root.querySelector('section');
+    first.querySelector('button').click();
+    assert.equal(app.state.items[0].name, 'first!');
+    assert.equal(first.querySelector('em').textContent, 'first!:parent');
+    app.state.items.reverse();
+    assert.equal(root.querySelectorAll('section')[1], first);
+    assert.equal(first.querySelector('span').textContent, '1:first!');
+    app.state.items[1] = window.JSON.parse('{"id":1,"name":"replacement","children":["c"]}');
+    assert.equal(root.querySelectorAll('section')[1], first);
+    assert.equal(first.querySelector('span').textContent, '1:replacement');
+    assert.equal(first.querySelector('i').textContent, 'c');
+});
+
+test('component setup exposes $data, $props and $emit while slots and events keep parent context', t => {
+    const { window, app, root } = environment(t, `
+        <count-widget b-bind-label="$data.label" on-change="$data.last = $event.detail">
+            <span class="projected" b-text="$data.label"></span>
+        </count-widget>`, { label: 'parent', last: 0 });
+    app.component('count-widget', {
+        template: `<button on-click="$data.count++; $emit('change', $data.count)">
+            <span class="count" b-text="$data.count"></span>
+            <em b-text="$props.label"></em>
+        </button><button class="notify" on-click="$data.notify()"></button>
+        <slot></slot><p b-text="$parent.$data.label"></p>`,
+        setup({ $props, $emit }) {
+            assert.equal($props.label, 'parent');
+            const local = window.JSON.parse('{"count":0}');
+            local.notify = () => $emit('change', $props.label);
+            return local;
+        },
+    });
+    app.mount(root);
+    root.querySelector('button').click();
+    assert.equal(root.querySelector('.count').textContent, '1');
+    assert.equal(app.state.last, 1);
+    app.state.label = 'updated';
+    assert.equal(root.querySelector('em').textContent, 'updated');
+    assert.equal(root.querySelector('p').textContent, 'updated');
+    assert.equal(root.querySelector('.projected').textContent, 'updated');
+    root.querySelector('.notify').click();
+    assert.equal(app.state.last, 'updated');
+});
+
 test('b-show preserves the same state and reactive node in detach and display modes', t => {
     for (const modifier of ['', '.display']) {
         const { app, root } = environment(t, `
@@ -169,6 +229,70 @@ test('money defaults, zero precision, and invalid options', t => {
     }
     const { app, root } = environment(t, `<input b-mask="money({ precision: -1 })">`);
     assert.throws(() => app.mount(root), error => /precision must be an integer/.test(error.cause?.message));
+});
+
+test('pattern deletions restore the caret after the preceding editable character', t => {
+    const { app, root, window } = environment(t, `<input b-mask="'##/##/####'">`);
+    app.mount(root);
+    const input = root.querySelector('input');
+    input.focus();
+    for (const [raw, caret, type, expected, position] of [
+        ['12/25/987', 6, 'deleteContentForward', '12/25/987', 5],
+        ['12/251987', 5, 'deleteContentBackward', '12/25/1987', 5],
+        ['1225/1987', 2, 'deleteContentForward', '12/25/1987', 2],
+        ['12/29/1987', 5, 'insertText', '12/29/1987', 5],
+    ]) {
+        input.value = raw;
+        input.setSelectionRange(caret, caret);
+        input.dispatchEvent(new window.InputEvent('input', { bubbles: true, inputType: type }));
+        assert.equal(input.value, expected);
+        assert.equal(input.selectionStart, position);
+        assert.equal(input.selectionEnd, position);
+    }
+});
+
+test('money edits preserve caret and selection in either model attribute order', t => {
+    for (const attributes of [
+        `b-mask.money b-model="$data.amount"`,
+        `b-model="$data.amount" b-mask.money`,
+    ]) {
+        const { app, root, window } = environment(t, `<input ${attributes}>`, { amount: '' });
+        app.mount(root);
+        const input = root.querySelector('input');
+        input.focus();
+        for (const [raw, caret, type, expected, position] of [
+            ['1,24.56', 3, 'deleteContentForward', '124.56', 2],
+            ['1234.56', 1, 'deleteContentBackward', '1,234.56', 1],
+            ['1,23456', 5, 'deleteContentForward', '1,234.56', 5],
+            ['1,2934.56', 4, 'insertText', '12,934.56', 4],
+            ['1', 1, 'insertText', '0.01', 4],
+        ]) {
+            input.value = raw;
+            input.setSelectionRange(caret, caret);
+            input.dispatchEvent(new window.InputEvent('input', { bubbles: true, inputType: type }));
+            assert.equal(input.value, expected);
+            assert.equal(app.state.amount, expected);
+            assert.equal(input.selectionStart, position);
+        }
+        input.value = '1234.56';
+        input.setSelectionRange(1, 3, 'backward');
+        input.dispatchEvent(new window.InputEvent('input', { bubbles: true, inputType: 'insertFromPaste' }));
+        assert.equal(input.selectionStart, 1);
+        assert.equal(input.selectionEnd, 4);
+        assert.equal(input.selectionDirection, 'backward');
+    }
+});
+
+test('money caret mapping handles custom separators, negative values and zero precision', t => {
+    const { app, root, window } = environment(t, `<input b-mask.money="{ thousands: ' ', decimal: ',', precision: 0 }">`);
+    app.mount(root);
+    const input = root.querySelector('input');
+    input.focus();
+    input.value = '-123456';
+    input.setSelectionRange(4, 4);
+    input.dispatchEvent(new window.InputEvent('input', { bubbles: true, inputType: 'deleteContentForward' }));
+    assert.equal(input.value, '-123 456');
+    assert.equal(input.selectionStart, 4);
 });
 
 test('b-script receives ctx, lexical helpers, destructuring, async closures, and the script element', async t => {
@@ -274,12 +398,15 @@ test('show transitions reverse safely and re-enter in both modes and attribute o
             clock.advanceFrames();
             const staleTimer = [...clock.timers.values()][0].callback;
             app.state.visible = true;
+            assert.equal(section.classList.contains('fade-enter'), false);
+            assert.equal(section.classList.contains('fade-enter-to'), true);
             clock.advanceFrames();
             staleTimer();
             assert.equal(section.isConnected, true);
             assert.equal(section.style.display, '');
             assert.equal(section.classList.contains('fade-enter-to'), true);
             app.state.visible = false;
+            assert.equal(section.classList.contains('fade-leave'), false);
             clock.advanceFrames();
             transitionEvent(window, section, 'transitionrun', 'opacity');
             transitionEvent(window, section, 'transitioncancel', 'opacity');

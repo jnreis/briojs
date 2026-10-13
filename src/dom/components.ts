@@ -57,11 +57,11 @@ export function mountComponent(
             };
         });
 
-    const props = state(propsObject);
+    const $props = state(propsObject);
     const componentScope = createScope();
     onCleanup(() => componentScope.dispose());
 
-    const emit = (name: string, detail?: unknown) => {
+    const $emit = (name: string, detail?: unknown) => {
         if (!/^[a-z][a-z0-9-]*$/.test(name))
             throw new TypeError(`Invalid component event name "${name}".`);
         element.dispatchEvent(new CustomEvent(name, { detail, bubbles: true }));
@@ -94,14 +94,17 @@ export function mountComponent(
         }
 
         for (const binding of propBindings)
-            props[binding.name] = evaluate(binding.expression, context);
-        const setupResult = definition.setup?.({ el: element, props, emit, app: runtime.app }) ?? {};
-        const local = state({ ...setupResult, $el: element, props, emit });
-        const componentContext = createExpressionScope(local, context);
+            $props[binding.name] = evaluate(binding.expression, context);
+        const setupResult = definition.setup?.({ el: element, $props, $emit, app: runtime.app }) ?? {};
+        const local = state(setupResult);
+        const componentContext = createExpressionScope(
+            { $data: local, $parent: context, $el: element, $props, $emit },
+            context,
+        );
 
         for (const binding of propBindings) {
             effect(() => {
-                props[binding.name] = evaluate(binding.expression, context);
+                $props[binding.name] = evaluate(binding.expression, context);
             });
         }
 

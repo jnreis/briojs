@@ -56,7 +56,7 @@ export function formatMoney(value: string, options: MoneyMaskOptions = {}): stri
     return isNegative ? `-${result}` : result;
 }
 
-export function formatMask(value: string, pattern: string): string {
+function formatPattern(value: string, pattern: string, positions?: { input: number; output: number }[]): string {
     let result = '';
     let valIndex = 0;
     for (let i = 0; i < pattern.length && valIndex < value.length; i++) {
@@ -64,11 +64,13 @@ export function formatMask(value: string, pattern: string): string {
         if (patternChar === '9' || patternChar === '#') {
             while (valIndex < value.length && !/\d/.test(value[valIndex])) valIndex++;
             if (valIndex < value.length) {
+                positions?.push({ input: valIndex, output: result.length + 1 });
                 result += value[valIndex++];
             }
         } else if (patternChar === 'a' || patternChar === 'A') {
             while (valIndex < value.length && !/[a-zA-Z]/.test(value[valIndex])) valIndex++;
             if (valIndex < value.length) {
+                positions?.push({ input: valIndex, output: result.length + 1 });
                 result += value[valIndex++];
             }
         } else {
@@ -79,6 +81,10 @@ export function formatMask(value: string, pattern: string): string {
         }
     }
     return result;
+}
+
+export function formatMask(value: string, pattern: string): string {
+    return formatPattern(value, pattern);
 }
 
 export function handleMask(
@@ -98,21 +104,44 @@ export function handleMask(
     };
     const maskContext = createExpressionScope({ money }, context);
     let configuration: string | ReturnType<typeof money> = '';
-    const applyMask = () => {
+    const applyMask = (event?: Event) => {
+        if (event instanceof InputEvent && event.isComposing) return;
         const current = element.value;
+        const start = element.selectionStart;
+        const end = element.selectionEnd;
+        const direction = element.selectionDirection;
+        const positions: { input: number; output: number }[] = [];
         const formatted = typeof configuration === 'string'
-            ? formatMask(current, configuration)
+            ? formatPattern(current, configuration, positions)
             : formatMoney(current, configuration.options);
+        const deleting = event instanceof InputEvent && event.inputType.startsWith('delete');
+        const mapPosition = (position: number): number => {
+            if (typeof configuration === 'string') {
+                if (!deleting) return formatMask(current.slice(0, position), configuration).length;
+                return positions.filter(entry => entry.input < position).at(-1)?.output ?? 0;
+            }
+            // Anchor to the digits on the right: padding and grouping may change the left side.
+            const rightDigits = current.slice(position).replace(/\D/g, '').length;
+            const digits = [...formatted.matchAll(/\d/g)];
+            const leftDigits = digits.length - rightDigits;
+            if (position === 0) return 0;
+            return leftDigits > 0 ? digits[leftDigits - 1].index! + 1 : (formatted.startsWith('-') ? 1 : 0);
+        };
+        const preserveSelection = element.ownerDocument.activeElement === element && start !== null && end !== null;
+        const mappedStart = preserveSelection ? mapPosition(start) : null;
+        const mappedEnd = preserveSelection ? mapPosition(end) : null;
 
         if (element.value !== formatted) {
             element.value = formatted;
             element.dispatchEvent(new Event('input', { bubbles: true }));
         }
+        if (mappedStart !== null && mappedEnd !== null && (current !== formatted || deleting))
+            element.setSelectionRange(mappedStart, mappedEnd, direction ?? 'none');
     };
 
-    element.addEventListener('input', applyMask);
+    element.addEventListener('input', applyMask, true);
     onCleanup(() => {
-        element.removeEventListener('input', applyMask);
+        element.removeEventListener('input', applyMask, true);
     });
     effect(() => {
         const value = trimmed ? evaluate(trimmed, maskContext) : undefined;

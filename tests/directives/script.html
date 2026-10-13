@@ -61,12 +61,13 @@
     <div class="card" b-data="{ status: 'Waiting' }">
         <h3>3. Async Arrow and Destructured Context</h3>
         <script b-script>
-            async ({ $data, $parent, $el }) => {
+            async (ctx) => {
                 $data.status = 'Started';
                 $data.parentUser = $parent.$data.user;
                 $data.scriptTag = $el.tagName;
                 await new Promise(resolve => setTimeout(resolve, 250));
                 $data.status = 'Async function completed';
+                console.warn('Async script started', ctx);
             }
         </script>
         <p>${$data.status}. Parent user: ${$data.parentUser}. Element: ${$data.scriptTag}.</p>

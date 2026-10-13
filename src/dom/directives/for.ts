@@ -34,7 +34,7 @@ export function handleFor(
     const parent = element.parentNode;
     if (!parent) throw new Error('b-for requires an element with a parent node.');
     const parsed = /^\s*([A-Za-z_$][\w$]*)(?:\s*,\s*([A-Za-z_$][\w$]*))?\s+in\s+([\s\S]+)$/.exec(expression);
-    if (!parsed) throw new SyntaxError(`Invalid b-for expression "${expression}". Use "item in items".`);
+    if (!parsed) throw new SyntaxError(`Invalid b-for expression "${expression}". Use "item in $data.items".`);
     const [, itemName, indexName = '$index', collectionExpression] = parsed;
     const keyExpression = element.getAttribute('b-key');
     const placeholder = document.createComment('brio:for');
@@ -67,8 +67,8 @@ export function handleFor(
         let cursor: Node = placeholder;
         for (const [index, item] of entries) {
             const loopData = { [itemName]: item, [indexName]: index };
-            const rowState = state<Record<string, unknown>>({ ...loopData, $for: loopData });
-            const rowContext = createExpressionScope(rowState, context);
+            const rowState = state<Record<string, unknown>>(loopData);
+            const rowContext = createExpressionScope({ $for: rowState }, context);
             const evaluatedKey = keyExpression ? evaluate(keyExpression, rowContext) : index;
             if (typeof evaluatedKey !== 'string' && typeof evaluatedKey !== 'number')
                 throw new TypeError('b-key must evaluate to a string or number.');
@@ -86,8 +86,6 @@ export function handleFor(
             } else {
                 row.values[itemName] = item;
                 row.values[indexName] = index;
-                (row.values.$for as Record<string, unknown>)[itemName] = item;
-                (row.values.$for as Record<string, unknown>)[indexName] = index;
             }
             if (row.element.previousSibling !== cursor)
                 placeholder.parentNode?.insertBefore(row.element, cursor.nextSibling);

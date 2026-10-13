@@ -1,7 +1,7 @@
 export type ComponentContext = {
     el: Element;
-    props: Record<string, unknown>;
-    emit(name: string, detail?: unknown): void;
+    $props: Record<string, unknown>;
+    $emit(name: string, detail?: unknown): void;
     app: unknown;
 };
 export type ComponentDefinition = {

@@ -24,7 +24,14 @@
     ],
     newTodoText: '',
     repeatCount: 4,
-    userMap: { name: 'Ada Lovelace', role: 'Engineer', country: 'UK' }
+    userMap: { name: 'Ada Lovelace', role: 'Engineer', country: 'UK' },
+    toggleCountryKey() {
+        if ('country' in this.userMap) {
+            delete this.userMap.country;
+        } else {
+            this.userMap.country = 'UK';
+        }
+    }
 }">
 
     <h1>b-for Directive Manual Tests</h1>
@@ -56,6 +63,18 @@
         <div style="display: flex; gap: 8px; margin-top: 10px;">
             <div b-for="num in $data.repeatCount" style="padding: 12px 18px; background: #6366f1; color: white; border-radius: 6px; font-weight: bold;">
                 Tile ${$for.num}
+
+                <!-- Nested loop -->
+                <ul>
+                    <li b-data="{}" b-for="subNum in $for.num">
+                        Sub-tile ${$for.subNum}
+                        <script b-script>
+                            (ctx) => {
+                                console.log('Nested b-for context', ctx, $parent);
+                            }
+                        </script>
+                    </li>
+                </ul>
             </div>
         </div>
     </div>
@@ -64,8 +83,9 @@
     <div class="card">
         <h3>3. Object Properties Iteration</h3>
         <button on-click="$data.userMap.role = $data.userMap.role === 'Engineer' ? 'Principal Architect' : 'Engineer'">Toggle Role</button>
+        <button on-click="$data.toggleCountryKey()">Toggle Key</button>
         <ul>
-            <li b-for="key, val in $data.userMap">
+            <li b-for="val, key in $data.userMap">
                 <strong>${$for.key}:</strong> <span>${$for.val}</span>
             </li>
         </ul>

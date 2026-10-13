@@ -52,7 +52,7 @@
         <h3>4. Multiple Properties, Delays, and Duration Over One Second</h3>
         <button on-click="$data.showSlow = !$data.showSlow">Toggle long transition</button>
         <div b-show="$data.showSlow" b-transition="'slow'" class="box">Inspect me while hiding.</div>
-        <p>Opacity ends at 0.2s, but transform ends at 1.8s including its delay. The element must stay attached until both have finished, not disappear at the first transitionend or a fixed 1s timeout.</p>
+        <p>Opacity takes 1.2s and transform takes 1.6s. Toggle again halfway through either direction: the box should reverse from its current location without jumping to the starting pose. It must stay attached until both properties finish.</p>
     </div>
 
     <!-- Test 2: Fade and Slide transition with b-show -->

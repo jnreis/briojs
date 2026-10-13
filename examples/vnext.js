@@ -21,9 +21,9 @@ const app = createApp({
 
 app.component('click-counter', {
     template: `
-      <button data-testid="component-count" b-on-click="count.value++">
-        <span b-text="props.label"></span>:
-        <span b-text="count.value"></span>
+      <button data-testid="component-count" b-on-click="$data.count.value++">
+        <span b-text="$props.label"></span>:
+        <span b-text="$data.count.value"></span>
       </button>
     `,
     setup() {

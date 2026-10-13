@@ -21,9 +21,9 @@
 
     <div class="card" id="counter-app">
         <h3>Sample Counter App</h3>
-        <p>Count: <strong b-text="count"></strong></p>
-        <button b-on-click="count++">Increment Count</button>
-        <button b-on-click="count--">Decrement Count</button>
+        <p>Count: <strong b-text="$data.count"></strong></p>
+        <button b-on-click="$data.count++">Increment Count</button>
+        <button b-on-click="$data.count--">Decrement Count</button>
     </div>
 
     <div class="card">

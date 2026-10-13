@@ -117,8 +117,8 @@ export function createApp<T extends Record<string, unknown> = Record<string, unk
             notifyRootMounted(app, root);
 
             const context = createExpressionScope(
-                { ...appState, $data: appState },
-                { trustedHTML },
+                appState,
+                { $data: appState, trustedHTML },
             );
             try {
                 scope.run(() => {

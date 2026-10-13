@@ -13,8 +13,13 @@ export function handleData(
     if (data === null || typeof data !== 'object')
         throw new TypeError('b-data must evaluate to an object.');
     const reactiveData = state(data);
+    const scopeObj = {
+        $data: reactiveData,
+        $parent: parentContext,
+    };
     return createExpressionScope(
-        { ...reactiveData, $data: reactiveData, $parent: parentContext },
+        reactiveData,
+        scopeObj,
         parentContext,
     );
 }

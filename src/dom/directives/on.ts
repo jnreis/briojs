@@ -15,7 +15,8 @@ export function handleOn(
     if (!rawTarget) throw new SyntaxError(`Brio event directive "${attrName}" has no event name.`);
 
     let target: EventTarget = element;
-    if (modifiers.window) target = window;
+    if (modifiers.outside) target = document;
+    else if (modifiers.window) target = window;
     else if (modifiers.document) target = document;
 
     let debounceTimer: any;

@@ -18,19 +18,30 @@
     </style>
 </head>
 <body b-data="{
-    showBox: true
+    showBox: true,
+    showBoxShow: true
 }">
 
     <h1>b-transition Directive Manual Tests</h1>
     <p>Tests animated enter and exit transitions tied to <code>b-if</code> or <code>b-show</code>.</p>
 
-    <!-- Test 1: Fade and Slide transition -->
+    <!-- Test 1: Fade and Slide transition with b-if -->
     <div class="card">
         <h3>1. Fade & Slide Transition with b-if</h3>
         <button on-click="$data.showBox = !$data.showBox">Toggle Box (${$data.showBox ? 'Hide' : 'Show'})</button>
 
         <div b-if="$data.showBox" b-transition="'fade'" class="box">
-            ✨ Smooth Animated Transition!
+            ✨ Smooth Animated Transition (b-if)!
+        </div>
+    </div>
+
+    <!-- Test 2: Fade and Slide transition with b-show -->
+    <div class="card">
+        <h3>2. Fade & Slide Transition with b-show</h3>
+        <button on-click="$data.showBoxShow = !$data.showBoxShow">Toggle Box (${$data.showBoxShow ? 'Hide' : 'Show'})</button>
+
+        <div b-show="$data.showBoxShow" b-transition="'fade'" class="box" style="background: #a7f3d0; color: #065f46;">
+            🌿 Smooth Animated Transition (b-show)!
         </div>
     </div>
 

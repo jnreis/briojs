@@ -44,10 +44,10 @@
         <button on-click="$data.score -= 10">-10</button>
 
         <div b-if="$data.score >= 80" class="box success">
-            🌟 Grade: Excellent (${$data.score} >= 80)
+            🌟 Grade: Excellent (${$data.score} &gt;= 80)
         </div>
         <div b-if="$data.score < 80" class="box alert">
-            ⚠️ Needs Improvement (${$data.score} < 80)
+            ⚠️ Needs Improvement (${$data.score} &lt; 80)
         </div>
     </div>
 

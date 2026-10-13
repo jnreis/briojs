@@ -23,18 +23,29 @@
     <h1>b-show Directive Manual Tests</h1>
     <p>Tests visibility toggling (preserving DOM nodes while toggling display / comment placeholder without re-evaluating initial DOM).</p>
 
-    <!-- Test 1: Simple Visibility Toggle -->
+    <!-- Test 1: Simple Visibility Toggle (Default: Placeholder Detachment) -->
     <div class="card">
-        <h3>1. Toggle Visibility</h3>
+        <h3>1. Toggle Visibility (Default: DOM Detachment via Comment Placeholder)</h3>
+        <p>Inspect DOM in DevTools: when false, the element is removed from DOM and replaced with a placeholder comment, preserving reactive state.</p>
         <button on-click="$data.open = !$data.open">Toggle Box (${$data.open ? 'Hide' : 'Show'})</button>
         <div b-show="$data.open" class="box">
-            🔔 <strong>Notice:</strong> This box stays mounted in state and toggles visibility via <code>b-show</code>.
+            🔔 <strong>Notice:</strong> This box stays mounted in state and toggles visibility via default <code>b-show</code> placeholder.
         </div>
     </div>
 
-    <!-- Test 2: Tab Switching -->
+    <!-- Test 2: CSS Display Modifier (.display) -->
     <div class="card">
-        <h3>2. Tabbed Panels</h3>
+        <h3>2. Toggle Visibility via CSS Display Modifier: <code>b-show.display</code></h3>
+        <p>Inspect DOM in DevTools: when false, the element stays in the DOM tree with <code>style="display: none;"</code>.</p>
+        <button on-click="$data.open = !$data.open">Toggle Display Box (${$data.open ? 'Hide' : 'Show'})</button>
+        <div b-show.display="$data.open" class="box" style="display: block; background: #ecfdf5; border-color: #10b981; color: #065f46;">
+            👁️ <strong>CSS Display:</strong> This element always remains in the DOM and toggles <code>display: none</code>!
+        </div>
+    </div>
+
+    <!-- Test 3: Tab Switching -->
+    <div class="card">
+        <h3>3. Tabbed Panels</h3>
         <button on-click="$data.tab = 1" style="background: ${$data.tab === 1 ? '#1d4ed8' : '#64748b'}">Tab 1</button>
         <button on-click="$data.tab = 2" style="background: ${$data.tab === 2 ? '#1d4ed8' : '#64748b'}">Tab 2</button>
         <button on-click="$data.tab = 3" style="background: ${$data.tab === 3 ? '#1d4ed8' : '#64748b'}">Tab 3</button>

@@ -37,17 +37,22 @@
         <button on-click="$data.counter++">Increment</button>
     </div>
 
-    <!-- Test 2: b-script on nested scope -->
+    <!-- Test 2: b-script using ctx parameter and async/setTimeout -->
     <div class="card" b-data="{ count2: 5 }">
-        <h3>2. Nested Component Scope Script</h3>
+        <h3>2. Using <code>ctx</code> Parameter & Asynchronous Setup (setTimeout)</h3>
         <script b-script>
-            () => {
-                $data.title = 'Apollo 11 Lead Flight Software Designer';
-                $data.count2 = 42;
+            (ctx) => {
+                ctx.$data.title = 'Apollo 11 Lead Flight Software Designer';
+                ctx.$data.asyncStatus = 'Waiting 1s for timer...';
+                setTimeout(() => {
+                    ctx.$data.asyncStatus = 'Timer fired successfully!';
+                    ctx.$data.count2 = 42;
+                }, 1000);
             }
         </script>
 
         <p>Role: <strong>${$data.title}</strong></p>
+        <p>Timer Status: <strong>${$data.asyncStatus}</strong></p>
         <p>Value: <strong>${$data.count2}</strong></p>
         <button on-click="$data.count2++">+1 Value</button>
     </div>

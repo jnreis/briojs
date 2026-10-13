@@ -3,6 +3,7 @@ import { effect } from '../../reactivity/effect';
 import { createScope, onCleanup } from '../../core/scope';
 import type { Scope } from '../../core/scope';
 import type { DomRuntime } from '../types';
+import { leaveTransition } from './transition';
 
 export function handleIf(
     element: Element,
@@ -20,6 +21,7 @@ export function handleIf(
     parent.replaceChild(placeholder, element);
     let instance: Element | undefined;
     let instanceScope: Scope | undefined;
+    let isLeaving = false;
 
     onCleanup(() => {
         try {
@@ -32,18 +34,35 @@ export function handleIf(
 
     effect(() => {
         if (evaluate(expression, context)) {
+            isLeaving = false;
             if (instance) return;
             instance = template.cloneNode(true) as Element;
             instanceScope = createScope();
             placeholder.parentNode?.insertBefore(instance, placeholder.nextSibling);
             instanceScope.run(() => hydrateNodeFn(instance!, context, runtime));
-        } else if (instance) {
-            try {
-                instanceScope?.dispose();
-            } finally {
-                instance?.remove();
-                instance = undefined;
-                instanceScope = undefined;
+        } else if (instance && !isLeaving) {
+            const currentInstance = instance;
+            const currentScope = instanceScope;
+            instance = undefined;
+            instanceScope = undefined;
+
+            const transitionAttr = currentInstance.getAttribute('b-transition');
+            if (transitionAttr !== null) {
+                isLeaving = true;
+                const transitionName = transitionAttr.trim().replace(/^['"]|['"]$/g, '') || 'brio';
+                leaveTransition(currentInstance, transitionName, () => {
+                    try {
+                        currentScope?.dispose();
+                    } finally {
+                        currentInstance.remove();
+                    }
+                });
+            } else {
+                try {
+                    currentScope?.dispose();
+                } finally {
+                    currentInstance.remove();
+                }
             }
         }
     });

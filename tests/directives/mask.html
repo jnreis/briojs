@@ -38,6 +38,14 @@
         </div>
     </div>
 
+    <div class="card">
+        <h3>3. Currency / Money Mask: b-mask.money / b-mask="'money'"</h3>
+        <div class="field">
+            <label>Type currency amount:</label>
+            <input type="text" b-mask.money placeholder="$0.00" b-model="$data.moneyVal">
+        </div>
+    </div>
+
     <script src="/dist/brio.min.js"></script>
     <script>
         window.addEventListener('DOMContentLoaded', () => {

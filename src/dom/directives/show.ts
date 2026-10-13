@@ -1,6 +1,7 @@
 import { evaluate } from '../../core/expression';
 import { effect } from '../../reactivity/effect';
 import { onCleanup } from '../../core/scope';
+import { leaveTransition } from './transition';
 
 export function handleShow(
     element: Element,
@@ -9,12 +10,23 @@ export function handleShow(
     context: Record<PropertyKey, any>,
 ): void {
     const useDisplay = Boolean(modifiers.display);
+    const el = element as HTMLElement;
 
     if (useDisplay) {
-        const originalDisplay = (element as HTMLElement).style.display === 'none' ? '' : (element as HTMLElement).style.display;
+        const originalDisplay = el.style.display === 'none' ? '' : el.style.display;
         effect(() => {
             const value = evaluate(expression, context);
-            (element as HTMLElement).style.display = value ? originalDisplay : 'none';
+            const transitionAttr = el.getAttribute('b-transition');
+            if (value) {
+                el.style.display = originalDisplay;
+            } else if (transitionAttr !== null && el.style.display !== 'none') {
+                const name = transitionAttr.trim().replace(/^['"]|['"]$/g, '') || 'brio';
+                leaveTransition(el, name, () => {
+                    el.style.display = 'none';
+                });
+            } else {
+                el.style.display = 'none';
+            }
         });
         return;
     }
@@ -24,6 +36,7 @@ export function handleShow(
     if (!parent) throw new Error('b-show requires an element with a parent node.');
     const placeholder = document.createComment('brio:show');
     let isAttached = true;
+    let isLeaving = false;
 
     onCleanup(() => {
         placeholder.remove();
@@ -32,16 +45,35 @@ export function handleShow(
 
     effect(() => {
         const visible = Boolean(evaluate(expression, context));
-        if (visible && !isAttached) {
-            placeholder.parentNode?.insertBefore(element, placeholder.nextSibling);
-            isAttached = true;
-        } else if (!visible && isAttached) {
-            if (!placeholder.parentNode) {
-                element.parentNode?.replaceChild(placeholder, element);
-            } else {
-                element.remove();
+        if (visible) {
+            isLeaving = false;
+            if (!isAttached) {
+                placeholder.parentNode?.insertBefore(element, placeholder.nextSibling);
+                isAttached = true;
             }
-            isAttached = false;
+        } else if (isAttached && !isLeaving) {
+            const transitionAttr = element.getAttribute('b-transition');
+            if (transitionAttr !== null) {
+                isLeaving = true;
+                const name = transitionAttr.trim().replace(/^['"]|['"]$/g, '') || 'brio';
+                leaveTransition(element, name, () => {
+                    if (!isAttached) return;
+                    if (!placeholder.parentNode) {
+                        element.parentNode?.replaceChild(placeholder, element);
+                    } else {
+                        element.remove();
+                    }
+                    isAttached = false;
+                    isLeaving = false;
+                });
+            } else {
+                if (!placeholder.parentNode) {
+                    element.parentNode?.replaceChild(placeholder, element);
+                } else {
+                    element.remove();
+                }
+                isAttached = false;
+            }
         }
     });
 }

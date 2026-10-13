@@ -304,7 +304,8 @@ function handleOn(element, attrName, expression, modifiers, context) {
   const rawTarget = attrName.startsWith("b-on-") ? attrName.slice("b-on-".length) : attrName.slice("on-".length);
   if (!rawTarget) throw new SyntaxError(`Brio event directive "${attrName}" has no event name.`);
   let target = element;
-  if (modifiers.window) target = window;
+  if (modifiers.outside) target = document;
+  else if (modifiers.window) target = window;
   else if (modifiers.document) target = document;
   let debounceTimer;
   let throttleTimer;
@@ -406,6 +407,41 @@ function handleModel(element, expression, modifiers, context) {
     onCleanup(() => observer.disconnect());
   }
 }
+function enterTransition(element, name = "brio") {
+  const el = element;
+  el.classList.add(`${name}-enter`, `${name}-enter-active`);
+  requestAnimationFrame(() => {
+    el.classList.remove(`${name}-enter`);
+    el.classList.add(`${name}-enter-to`);
+    const onEnd = () => {
+      el.classList.remove(`${name}-enter-active`, `${name}-enter-to`);
+      el.removeEventListener("transitionend", onEnd);
+    };
+    el.addEventListener("transitionend", onEnd);
+  });
+}
+function leaveTransition(element, name = "brio", onDone) {
+  const el = element;
+  el.classList.add(`${name}-leave`, `${name}-leave-active`);
+  let done = false;
+  const finish = () => {
+    if (done) return;
+    done = true;
+    el.classList.remove(`${name}-leave-active`, `${name}-leave-to`);
+    el.removeEventListener("transitionend", finish);
+    onDone();
+  };
+  requestAnimationFrame(() => {
+    el.classList.remove(`${name}-leave`);
+    el.classList.add(`${name}-leave-to`);
+    el.addEventListener("transitionend", finish);
+    setTimeout(finish, 1e3);
+  });
+}
+function handleTransition(element, expression, _modifiers, _context) {
+  const name = expression.trim().replace(/^['"]|['"]$/g, "") || "brio";
+  enterTransition(element, name);
+}
 function handleIf(element, expression, _modifiers, context, runtime, hydrateNodeFn) {
   const parent = element.parentNode;
   if (!parent) throw new Error("b-if requires an element with a parent node.");
@@ -415,6 +451,7 @@ function handleIf(element, expression, _modifiers, context, runtime, hydrateNode
   parent.replaceChild(placeholder, element);
   let instance;
   let instanceScope;
+  let isLeaving = false;
   onCleanup(() => {
     try {
       instanceScope == null ? void 0 : instanceScope.dispose();
@@ -426,18 +463,34 @@ function handleIf(element, expression, _modifiers, context, runtime, hydrateNode
   effect(() => {
     var _a;
     if (evaluate(expression, context)) {
+      isLeaving = false;
       if (instance) return;
       instance = template.cloneNode(true);
       instanceScope = createScope();
       (_a = placeholder.parentNode) == null ? void 0 : _a.insertBefore(instance, placeholder.nextSibling);
       instanceScope.run(() => hydrateNodeFn(instance, context, runtime));
-    } else if (instance) {
-      try {
-        instanceScope == null ? void 0 : instanceScope.dispose();
-      } finally {
-        instance == null ? void 0 : instance.remove();
-        instance = void 0;
-        instanceScope = void 0;
+    } else if (instance && !isLeaving) {
+      const currentInstance = instance;
+      const currentScope = instanceScope;
+      instance = void 0;
+      instanceScope = void 0;
+      const transitionAttr = currentInstance.getAttribute("b-transition");
+      if (transitionAttr !== null) {
+        isLeaving = true;
+        const transitionName = transitionAttr.trim().replace(/^['"]|['"]$/g, "") || "brio";
+        leaveTransition(currentInstance, transitionName, () => {
+          try {
+            currentScope == null ? void 0 : currentScope.dispose();
+          } finally {
+            currentInstance.remove();
+          }
+        });
+      } else {
+        try {
+          currentScope == null ? void 0 : currentScope.dispose();
+        } finally {
+          currentInstance.remove();
+        }
       }
     }
   });
@@ -524,11 +577,22 @@ function handleFor(element, expression, _modifiers, context, runtime, hydrateNod
 }
 function handleShow(element, expression, modifiers, context) {
   const useDisplay = Boolean(modifiers.display);
+  const el = element;
   if (useDisplay) {
-    const originalDisplay = element.style.display === "none" ? "" : element.style.display;
+    const originalDisplay = el.style.display === "none" ? "" : el.style.display;
     effect(() => {
       const value = evaluate(expression, context);
-      element.style.display = value ? originalDisplay : "none";
+      const transitionAttr = el.getAttribute("b-transition");
+      if (value) {
+        el.style.display = originalDisplay;
+      } else if (transitionAttr !== null && el.style.display !== "none") {
+        const name = transitionAttr.trim().replace(/^['"]|['"]$/g, "") || "brio";
+        leaveTransition(el, name, () => {
+          el.style.display = "none";
+        });
+      } else {
+        el.style.display = "none";
+      }
     });
     return;
   }
@@ -536,6 +600,7 @@ function handleShow(element, expression, modifiers, context) {
   if (!parent) throw new Error("b-show requires an element with a parent node.");
   const placeholder = document.createComment("brio:show");
   let isAttached = true;
+  let isLeaving = false;
   onCleanup(() => {
     placeholder.remove();
     if (element.parentNode) element.remove();
@@ -543,16 +608,36 @@ function handleShow(element, expression, modifiers, context) {
   effect(() => {
     var _a, _b;
     const visible = Boolean(evaluate(expression, context));
-    if (visible && !isAttached) {
-      (_a = placeholder.parentNode) == null ? void 0 : _a.insertBefore(element, placeholder.nextSibling);
-      isAttached = true;
-    } else if (!visible && isAttached) {
-      if (!placeholder.parentNode) {
-        (_b = element.parentNode) == null ? void 0 : _b.replaceChild(placeholder, element);
-      } else {
-        element.remove();
+    if (visible) {
+      isLeaving = false;
+      if (!isAttached) {
+        (_a = placeholder.parentNode) == null ? void 0 : _a.insertBefore(element, placeholder.nextSibling);
+        isAttached = true;
       }
-      isAttached = false;
+    } else if (isAttached && !isLeaving) {
+      const transitionAttr = element.getAttribute("b-transition");
+      if (transitionAttr !== null) {
+        isLeaving = true;
+        const name = transitionAttr.trim().replace(/^['"]|['"]$/g, "") || "brio";
+        leaveTransition(element, name, () => {
+          var _a2;
+          if (!isAttached) return;
+          if (!placeholder.parentNode) {
+            (_a2 = element.parentNode) == null ? void 0 : _a2.replaceChild(placeholder, element);
+          } else {
+            element.remove();
+          }
+          isAttached = false;
+          isLeaving = false;
+        });
+      } else {
+        if (!placeholder.parentNode) {
+          (_b = element.parentNode) == null ? void 0 : _b.replaceChild(placeholder, element);
+        } else {
+          element.remove();
+        }
+        isAttached = false;
+      }
     }
   });
 }
@@ -593,8 +678,13 @@ function handleData(element, expression, _modifiers, parentContext) {
   if (data === null || typeof data !== "object")
     throw new TypeError("b-data must evaluate to an object.");
   const reactiveData = state(data);
+  const scopeObj = {
+    $data: reactiveData,
+    $parent: parentContext
+  };
   return createExpressionScope(
-    { ...reactiveData, $data: reactiveData, $parent: parentContext },
+    reactiveData,
+    scopeObj,
     parentContext
   );
 }
@@ -615,6 +705,31 @@ function handleId(_element, expression, _modifiers, context) {
     }
   });
   return createExpressionScope({ $id: idMap }, context);
+}
+function formatMoney(value, options = {}) {
+  const thousands = options.thousands ?? ",";
+  const decimal = options.decimal ?? ".";
+  const precision = options.precision ?? 2;
+  const isNegative = value.trim().startsWith("-");
+  const digitsOnly = value.replace(/[^\d]/g, "");
+  if (!digitsOnly) return "";
+  let integerStr;
+  let decimalStr;
+  if (precision > 0) {
+    if (digitsOnly.length <= precision) {
+      integerStr = "0";
+      decimalStr = digitsOnly.padStart(precision, "0");
+    } else {
+      integerStr = digitsOnly.slice(0, digitsOnly.length - precision).replace(/^0+/, "") || "0";
+      decimalStr = digitsOnly.slice(digitsOnly.length - precision);
+    }
+  } else {
+    integerStr = digitsOnly.replace(/^0+/, "") || "0";
+    decimalStr = "";
+  }
+  const formattedInteger = integerStr.replace(/\B(?=(\d{3})+(?!\d))/g, thousands);
+  const result = decimalStr ? `${formattedInteger}${decimal}${decimalStr}` : formattedInteger;
+  return isNegative ? `-${result}` : result;
 }
 function formatMask(value, pattern) {
   let result = "";
@@ -640,14 +755,21 @@ function formatMask(value, pattern) {
   }
   return result;
 }
-function handleMask(element, expression, _modifiers, _context) {
+function handleMask(element, expression, modifiers, _context) {
   if (!(element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement)) {
     throw new TypeError("b-mask can only be used on input and textarea elements.");
   }
-  const pattern = expression.replace(/^['"]|['"]$/g, "");
+  const trimmed = expression.trim();
+  const isMoney = Boolean(modifiers.money) || trimmed.startsWith("money") || trimmed === "'money'";
   const applyMask = () => {
     const current = element.value;
-    const formatted = formatMask(current, pattern);
+    let formatted = "";
+    if (isMoney) {
+      formatted = formatMoney(current);
+    } else {
+      const pattern = trimmed.replace(/^['"]|['"]$/g, "");
+      formatted = formatMask(current, pattern);
+    }
     if (element.value !== formatted) {
       element.value = formatted;
       element.dispatchEvent(new Event("input", { bubbles: true }));
@@ -696,32 +818,6 @@ function handleTemplate(element, _expression, _modifiers, context, runtime, hydr
   for (const node of insertedNodes) {
     hydrateNodeFn(node, context, runtime);
   }
-}
-function handleTransition(element, expression, _modifiers, _context) {
-  const el = element;
-  const name = expression.trim().replace(/^['"]|['"]$/g, "") || "brio";
-  el.classList.add(`${name}-enter`, `${name}-enter-active`);
-  requestAnimationFrame(() => {
-    el.classList.remove(`${name}-enter`);
-    el.classList.add(`${name}-enter-to`);
-    const onEnd = () => {
-      el.classList.remove(`${name}-enter-active`, `${name}-enter-to`);
-      el.removeEventListener("transitionend", onEnd);
-    };
-    el.addEventListener("transitionend", onEnd);
-  });
-  onCleanup(() => {
-    el.classList.add(`${name}-leave`, `${name}-leave-active`);
-    requestAnimationFrame(() => {
-      el.classList.remove(`${name}-leave`);
-      el.classList.add(`${name}-leave-to`);
-      const onEnd = () => {
-        el.classList.remove(`${name}-leave-active`, `${name}-leave-to`);
-        el.removeEventListener("transitionend", onEnd);
-      };
-      el.addEventListener("transitionend", onEnd);
-    });
-  });
 }
 function handleIntersection(element, attrName, expression, modifiers, context) {
   const isExit = attrName.includes("exit");
@@ -827,10 +923,23 @@ function handleScript(element, _expression, _modifiers, context) {
   if (element.tagName.toLowerCase() !== "script") return;
   const raw = (element.textContent || "").trim();
   if (!raw) return;
-  const arrowMatch = raw.match(/^\s*(?:\([^)]*\)|[a-zA-Z_$][\w$]*)\s*=>\s*\{([\s\S]*)\}\s*;?\s*$/);
-  if (arrowMatch) {
-    execute(arrowMatch[1], context);
+  const arrowRegex = /^\s*\(?\s*(?:(?:\(([^)]*)\)|([a-zA-Z_$][\w$]*))\s*=>\s*\{([\s\S]*)\})\s*;?\s*$/;
+  const match = raw.match(arrowRegex);
+  const scriptScope = createExpressionScope({ ctx: context, $ctx: context }, context);
+  if (match) {
+    try {
+      const fn = evaluate(`(${raw.replace(/;\s*$/, "")})`, scriptScope);
+      if (typeof fn === "function") {
+        fn(scriptScope, context.$data);
+        return;
+      }
+    } catch {
+      const body = match[3];
+      execute(body, scriptScope);
+      return;
+    }
   }
+  execute(raw, scriptScope);
 }
 function extractModifiers(attrName) {
   const parts = attrName.split(".");
@@ -970,7 +1079,7 @@ function hydrateNode(node, parentContext, runtime) {
       element.removeAttribute(attrName);
       hasHtml = true;
     } else if (baseName === "b-mask" || baseName === "mask") {
-      handleMask(element, attrValue);
+      handleMask(element, attrValue, modifiers);
       element.removeAttribute(attrName);
     } else if (baseName === "b-teleport" || baseName === "teleport") {
       handleTeleport(element, attrValue);
@@ -1089,8 +1198,8 @@ function createApp(options = {}) {
       activeMountRoots.add(root);
       notifyRootMounted(app, root);
       const context = createExpressionScope(
-        { ...appState, $data: appState },
-        { trustedHTML }
+        appState,
+        { $data: appState, trustedHTML }
       );
       try {
         scope.run(() => {

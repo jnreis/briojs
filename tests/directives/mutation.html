@@ -18,14 +18,17 @@
 </head>
 <body b-data="{
     mutationLogs: [],
-    childItems: ['Item 1', 'Item 2']
+    childItems: ['Item 1', 'Item 2'],
+    targetTheme: 'light',
+    editableText: 'Edit me directly in the browser...'
 }">
 
     <h1>b-mutation Directive Manual Tests</h1>
-    <p>Tests reactive MutationObserver monitoring child DOM additions and removals using <code>on-addednodes</code> and <code>on-removednodes</code>.</p>
+    <p>Tests reactive MutationObserver monitoring DOM changes: additions/removals (<code>on-addednodes</code>, <code>on-removednodes</code>), attribute changes (<code>on-attrs</code>), and text/characterData changes (<code>on-text</code>).</p>
 
+    <!-- Test 1: DOM Node Additions & Removals -->
     <div class="card">
-        <h3>1. DOM Mutation Observer</h3>
+        <h3>1. DOM Mutation Observer: on-addednodes & on-removednodes</h3>
         <button on-click="$data.childItems.push('Item ' + ($data.childItems.length + 1))">Add Child Element</button>
         <button on-click="$data.childItems.pop()">Remove Child Element</button>
 
@@ -37,8 +40,37 @@
                 ${$for.item}
             </div>
         </div>
+    </div>
 
-        <h4>Mutation Logs:</h4>
+    <!-- Test 2: Attribute Changes -->
+    <div class="card">
+        <h3>2. Attribute Mutation Observer: on-attrs</h3>
+        <button on-click="$data.targetTheme = ($data.targetTheme === 'light' ? 'dark' : 'light')">
+            Toggle Theme Attribute (Current: ${$data.targetTheme})
+        </button>
+
+        <div class="observed-box"
+             b-bind-data-theme="$data.targetTheme"
+             on-attrs="$data.mutationLogs.push('Attribute modified: ' + $mutations.map(m => m.attributeName).join(', ') + ' at ' + new Date().toLocaleTimeString())">
+            Observed attribute element: <code>data-theme="${$data.targetTheme}"</code>
+        </div>
+    </div>
+
+    <!-- Test 3: Text / CharacterData Changes -->
+    <div class="card">
+        <h3>3. Text Mutation Observer: on-text</h3>
+        <p>Type directly into the contenteditable element below to trigger characterData mutations:</p>
+        <div class="observed-box"
+             contenteditable="true"
+             on-text="$data.mutationLogs.push('Text content mutated at ' + new Date().toLocaleTimeString())">
+            Edit this text content directly to trigger on-text observer!
+        </div>
+    </div>
+
+    <!-- Logs Section -->
+    <div class="card">
+        <h3>Mutation Event Logs:</h3>
+        <button on-click="$data.mutationLogs = []">Clear Logs</button>
         <ul>
             <li b-for="log in $data.mutationLogs">${$for.log}</li>
         </ul>

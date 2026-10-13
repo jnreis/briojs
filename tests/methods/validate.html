@@ -48,38 +48,45 @@
             <div b-if="$data.formErrors.age" class="error-msg">${$data.formErrors.age}</div>
         </div>
 
-        <button id="validate-btn">Validate Form</button>
+        <button id="validate-btn" on-click="$data.validateForm()">Validate Form</button>
 
         <div b-if="$data.isValid" class="success-box">
             ✅ Form is completely valid!
         </div>
     </div>
 
-    <script type="module" b-ignore src="/src/briojs.min.ts"></script>
+    <script src="/dist/brio.min.js"></script>
     <script>
-        window.addEventListener('brio', () => {
-            const app = brio.newApp();
-            app.gc.$hydrate('body');
-
-            const validate = brio.validate;
-
+        window.addEventListener('DOMContentLoaded', () => {
             const schema = {
-                username: { required: true, min: 3 },
-                email: { required: true, email: true },
-                age: { required: true, min: 18, max: 100 }
+                username: [{ name: 'required', message: 'Username is required' }, { name: 'min', value: 3, message: 'Username must be at least 3 characters' }],
+                email: [{ name: 'required', message: 'Email is required' }, { name: 'email', message: 'Invalid email address' }],
+                age: [{ name: 'required', message: 'Age is required' }, { name: 'min', value: 18, message: 'Must be at least 18' }, { name: 'max', value: 100, message: 'Must be 100 or younger' }]
             };
 
-            document.getElementById('validate-btn').addEventListener('click', () => {
-                const bnode = app.gc.$getBNode(document.querySelector('.card'));
-                const data = bnode.ctx.$data.formData;
-                
-                const errors = validate(data, schema);
-                const hasErrors = Object.keys(errors).length > 0;
-
-                bnode.ctx.$data.formErrors = errors;
-                bnode.ctx.$data.isValid = !hasErrors;
+            const app = brio.createApp({
+                state: () => ({
+                    formData: { username: '', email: '', age: '' },
+                    formErrors: {},
+                    isValid: false,
+                    validateForm() {
+                        const result = brio.validate(this.formData, schema);
+                        if (result === true) {
+                            this.formErrors = {};
+                            this.isValid = true;
+                        } else {
+                            const errMap = {};
+                            for (const [k, v] of Object.entries(result)) {
+                                errMap[k] = v[0];
+                            }
+                            this.formErrors = errMap;
+                            this.isValid = false;
+                        }
+                    }
+                })
             });
 
+            app.mount('body');
             console.log('validate.html hydrated successfully');
         });
     </script>

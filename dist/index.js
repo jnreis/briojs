@@ -1,7 +1,7 @@
 import { c as causedError, a as createScope, o as onCleanup, e as effect, b as batch, d as combinedError, n as notifyAppCreated, f as notifyRootUnmounted, h as notifyRootMounted, i as notifyAppDisposed } from "./effect-DZvu7u5S.js";
 import { k, j, s } from "./effect-DZvu7u5S.js";
-import { s as state } from "./state-v4-UFBFm952.js";
-import { a } from "./state-v4-UFBFm952.js";
+import { s as state } from "./state-UFBFm952.js";
+import { a } from "./state-UFBFm952.js";
 import { computed, resource } from "./reactivity.js";
 import { createRouter } from "./router-entry.js";
 import { persist } from "./persistence-entry.js";
@@ -485,7 +485,8 @@ function handleFor(element, expression, _modifiers, context, runtime, hydrateNod
     const nextKeys = /* @__PURE__ */ new Set();
     let cursor = placeholder;
     for (const [index, item] of entries) {
-      const rowState = state({ [itemName]: item, [indexName]: index });
+      const loopData = { [itemName]: item, [indexName]: index };
+      const rowState = state({ ...loopData, $for: loopData });
       const rowContext = createExpressionScope(rowState, context);
       const evaluatedKey = keyExpression ? evaluate(keyExpression, rowContext) : index;
       if (typeof evaluatedKey !== "string" && typeof evaluatedKey !== "number")
@@ -503,6 +504,8 @@ function handleFor(element, expression, _modifiers, context, runtime, hydrateNod
       } else {
         row.values[itemName] = item;
         row.values[indexName] = index;
+        row.values.$for[itemName] = item;
+        row.values.$for[indexName] = index;
       }
       if (row.element.previousSibling !== cursor)
         (_a = placeholder.parentNode) == null ? void 0 : _a.insertBefore(row.element, cursor.nextSibling);
@@ -568,12 +571,11 @@ function handleHtml(element, expression, _modifiers, context, runtime, hydrateCh
   onCleanup(() => contentScope == null ? void 0 : contentScope.dispose());
   effect(() => {
     const html = evaluate(expression, context);
-    if (!isTrustedHTML(html))
-      throw new TypeError("b-html requires a value created by trustedHTML().");
+    const htmlStr = isTrustedHTML(html) ? getTrustedHTMLString(html) : String(html ?? "");
     contentScope == null ? void 0 : contentScope.dispose();
     contentScope = createScope();
     const template = document.createElement("template");
-    template.innerHTML = getTrustedHTMLString(html);
+    template.innerHTML = htmlStr;
     element.replaceChildren(template.content);
     contentScope.run(() => hydrateChildrenFn(element, context, runtime));
   });
@@ -590,7 +592,11 @@ function handleData(element, expression, _modifiers, parentContext) {
   const data = evaluate(expression, context);
   if (data === null || typeof data !== "object")
     throw new TypeError("b-data must evaluate to an object.");
-  return createExpressionScope(state(data), parentContext);
+  const reactiveData = state(data);
+  return createExpressionScope(
+    { ...reactiveData, $data: reactiveData, $parent: parentContext },
+    parentContext
+  );
 }
 let idSeq = 0;
 const activeIds = /* @__PURE__ */ new Set();
@@ -812,6 +818,20 @@ function handleResize(element, _attrName, expression, modifiers, context) {
     observer.disconnect();
   });
 }
+function handleEffect(_element, expression, _modifiers, context) {
+  effect(() => {
+    evaluate(expression, context);
+  });
+}
+function handleScript(element, _expression, _modifiers, context) {
+  if (element.tagName.toLowerCase() !== "script") return;
+  const raw = (element.textContent || "").trim();
+  if (!raw) return;
+  const arrowMatch = raw.match(/^\s*(?:\([^)]*\)|[a-zA-Z_$][\w$]*)\s*=>\s*\{([\s\S]*)\}\s*;?\s*$/);
+  if (arrowMatch) {
+    execute(arrowMatch[1], context);
+  }
+}
 function extractModifiers(attrName) {
   const parts = attrName.split(".");
   const baseName = parts[0];
@@ -858,7 +878,23 @@ function hydrateChildren(element, context, runtime) {
     hydrateNode(child, context, runtime);
   }
 }
+const interpolationRegex = /\$\{([^}]+)\}/g;
+function hydrateTextNode(node, context) {
+  const raw = node.nodeValue ?? "";
+  if (!raw.includes("${")) return;
+  effect(() => {
+    const text = raw.replace(interpolationRegex, (_, expr) => {
+      const val = evaluate(expr, context);
+      return val === null || val === void 0 ? "" : String(val);
+    });
+    node.nodeValue = text;
+  });
+}
 function hydrateNode(node, parentContext, runtime) {
+  if (node.nodeType === Node.TEXT_NODE) {
+    hydrateTextNode(node, parentContext);
+    return;
+  }
   if (node.nodeType !== Node.ELEMENT_NODE) return;
   const element = node;
   if (element.hasAttribute("b-ignore") || element.hasAttribute("ignore")) {
@@ -941,6 +977,12 @@ function hydrateNode(node, parentContext, runtime) {
       element.removeAttribute(attrName);
     } else if (baseName === "b-transition" || baseName === "transition") {
       handleTransition(element, attrValue);
+      element.removeAttribute(attrName);
+    } else if (baseName === "b-effect" || baseName === "effect") {
+      handleEffect(element, attrValue, modifiers, context);
+      element.removeAttribute(attrName);
+    } else if (baseName === "b-script" || baseName === "script") {
+      handleScript(element, attrValue, modifiers, context);
       element.removeAttribute(attrName);
     } else if (baseName === "b-router-outlet") {
       mountRouterOutlet(element, context, runtime, hydrateNode);
@@ -1046,7 +1088,10 @@ function createApp(options = {}) {
       roots.add(handle);
       activeMountRoots.add(root);
       notifyRootMounted(app, root);
-      const context = createExpressionScope(appState, { trustedHTML });
+      const context = createExpressionScope(
+        { ...appState, $data: appState },
+        { trustedHTML }
+      );
       try {
         scope.run(() => {
           if (options.router) {

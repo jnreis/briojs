@@ -1,7 +1,7 @@
 import { createExpressionScope, evaluate } from '../../core/expression';
 import { effect } from '../../reactivity/effect';
 import { createScope, onCleanup } from '../../core/scope';
-import { state } from '../../reactivity/state-v4';
+import { state } from '../../reactivity/state';
 import type { Scope } from '../../core/scope';
 import type { DomRuntime } from '../types';
 
@@ -66,7 +66,8 @@ export function handleFor(
         const nextKeys = new Set<string | number>();
         let cursor: Node = placeholder;
         for (const [index, item] of entries) {
-            const rowState = state<Record<string, unknown>>({ [itemName]: item, [indexName]: index });
+            const loopData = { [itemName]: item, [indexName]: index };
+            const rowState = state<Record<string, unknown>>({ ...loopData, $for: loopData });
             const rowContext = createExpressionScope(rowState, context);
             const evaluatedKey = keyExpression ? evaluate(keyExpression, rowContext) : index;
             if (typeof evaluatedKey !== 'string' && typeof evaluatedKey !== 'number')
@@ -85,6 +86,8 @@ export function handleFor(
             } else {
                 row.values[itemName] = item;
                 row.values[indexName] = index;
+                (row.values.$for as Record<string, unknown>)[itemName] = item;
+                (row.values.$for as Record<string, unknown>)[indexName] = index;
             }
             if (row.element.previousSibling !== cursor)
                 placeholder.parentNode?.insertBefore(row.element, cursor.nextSibling);

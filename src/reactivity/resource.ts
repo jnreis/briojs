@@ -8,7 +8,7 @@ export type Resource<T> = {
     refetch(): Promise<void>;
 };
 
-import { signal } from './state-v4';
+import { signal } from './state';
 
 export function resource<T>(fetcher: () => Promise<T>): Resource<T> {
     const data = signal<T | undefined>(undefined);

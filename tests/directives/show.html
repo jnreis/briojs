@@ -50,11 +50,11 @@
         </div>
     </div>
 
-    <script type="module" b-ignore src="/src/briojs.min.ts"></script>
+    <script src="/dist/brio.min.js"></script>
     <script>
-        window.addEventListener('brio', () => {
-            const app = brio.newApp();
-            app.gc.$hydrate('body');
+        window.addEventListener('DOMContentLoaded', () => {
+            const app = brio.createApp();
+            app.mount('body');
             console.log('show.html hydrated successfully');
         });
     </script>

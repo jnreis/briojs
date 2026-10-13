@@ -1,4 +1,4 @@
-import { signal } from '../reactivity/state-v4';
+import { signal } from '../reactivity/state';
 import type { Signal } from '../reactivity/types';
 
 export type RouteDefinition = {

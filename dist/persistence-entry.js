@@ -1,5 +1,5 @@
 import { k as getCurrentScope, e as effect, o as onCleanup, c as causedError, b as batch } from "./effect-DZvu7u5S.js";
-import { s as state, a as signal } from "./state-v4-UFBFm952.js";
+import { s as state, a as signal } from "./state-UFBFm952.js";
 const isPlainContainer = (value) => {
   if (value === null || typeof value !== "object") return false;
   if (Array.isArray(value)) return true;

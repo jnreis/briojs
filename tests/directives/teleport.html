@@ -29,16 +29,16 @@
     <div class="card">
         <h3>2. Component with Teleported Element</h3>
         <p>The element below is written inside this card, but teleported into <code>#modal-root</code>:</p>
-        <div b-teleport="['#modal-root', 'append']" class="teleported-content">
+        <div b-teleport="'#modal-root'" class="teleported-content">
             🚀 <span>${$data.message}</span>
         </div>
     </div>
 
-    <script type="module" b-ignore src="/src/briojs.min.ts"></script>
+    <script src="/dist/brio.min.js"></script>
     <script>
-        window.addEventListener('brio', () => {
-            const app = brio.newApp();
-            app.gc.$hydrate('body');
+        window.addEventListener('DOMContentLoaded', () => {
+            const app = brio.createApp();
+            app.mount('body');
             console.log('teleport.html hydrated successfully');
         });
     </script>

@@ -3,7 +3,7 @@ import { hydrateRoot } from '../dom/mount';
 import { trustedHTML } from '../dom/types';
 import type { ComponentDefinition, DomRuntime } from '../dom/types';
 import { createScope, onCleanup } from './scope';
-import { state } from '../reactivity/state-v4';
+import { state } from '../reactivity/state';
 import { combinedError } from './errors';
 import type {
     AppOptions,
@@ -116,7 +116,10 @@ export function createApp<T extends Record<string, unknown> = Record<string, unk
             activeMountRoots.add(root);
             notifyRootMounted(app, root);
 
-            const context = createExpressionScope(appState, { trustedHTML });
+            const context = createExpressionScope(
+                { ...appState, $data: appState },
+                { trustedHTML },
+            );
             try {
                 scope.run(() => {
                     if (options.router) {

@@ -1,7 +1,7 @@
 import { e as effect } from "./effect-DZvu7u5S.js";
 import { b, a, k, o, j } from "./effect-DZvu7u5S.js";
-import { t as trigger, b as track, a as signal } from "./state-v4-UFBFm952.js";
-import { s } from "./state-v4-UFBFm952.js";
+import { t as trigger, b as track, a as signal } from "./state-UFBFm952.js";
+import { s } from "./state-UFBFm952.js";
 import { persist } from "./persistence-entry.js";
 function computed(getter) {
   let dirty = true;

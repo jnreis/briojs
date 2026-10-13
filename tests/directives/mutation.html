@@ -30,8 +30,8 @@
         <button on-click="$data.childItems.pop()">Remove Child Element</button>
 
         <div class="observed-box"
-             on-addednodes="(mutations) => $data.mutationLogs.push('Added ' + mutations.length + ' node(s) at ' + new Date().toLocaleTimeString())"
-             on-removednodes="(mutations) => $data.mutationLogs.push('Removed node(s) at ' + new Date().toLocaleTimeString())">
+             on-addednodes="$data.mutationLogs.push('Added ' + $mutations.length + ' node(s) at ' + new Date().toLocaleTimeString())"
+             on-removednodes="$data.mutationLogs.push('Removed node(s) at ' + new Date().toLocaleTimeString())">
             <h4>Observed Node Container</h4>
             <div b-for="item in $data.childItems" class="tag">
                 ${$for.item}
@@ -44,11 +44,11 @@
         </ul>
     </div>
 
-    <script type="module" b-ignore src="/src/briojs.min.ts"></script>
+    <script src="/dist/brio.min.js"></script>
     <script>
-        window.addEventListener('brio', () => {
-            const app = brio.newApp();
-            app.gc.$hydrate('body');
+        window.addEventListener('DOMContentLoaded', () => {
+            const app = brio.createApp();
+            app.mount('body');
             console.log('mutation.html hydrated successfully');
         });
     </script>

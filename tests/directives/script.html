@@ -18,8 +18,10 @@
     <h1>b-script Directive Manual Tests</h1>
     <p>Tests executing inline contextual initialization scripts right after element context setup.</p>
 
-    <!-- Test 1: b-script initialization -->
+    <!-- Test 1: b-script initialization using arrow function pattern -->
     <div class="card">
+        <h3>1. Inline Context Script Execution: <code>(ctx) => { ... }</code></h3>
+        <p>The browser treats the unassigned arrow expression as a no-op expression statement during initial HTML parse (avoiding premature execution or reference errors), while Brio extracts and executes the body on hydration.</p>
         <script b-script>
             (ctx) => {
                 $data.initializedAt = new Date().toLocaleTimeString();
@@ -29,18 +31,32 @@
             }
         </script>
 
-        <h3>1. Inline Context Script Execution</h3>
         <p>Initialized at: <code>${$data.initializedAt}</code></p>
         <p>User in context: <strong>${$data.user}</strong></p>
         <p>Counter: <strong>${$data.counter}</strong> (Doubled via method: <strong>${$data.doubleCount()}</strong>)</p>
         <button on-click="$data.counter++">Increment</button>
     </div>
 
-    <script type="module" b-ignore src="/src/briojs.min.ts"></script>
+    <!-- Test 2: b-script on nested scope -->
+    <div class="card" b-data="{ count2: 5 }">
+        <h3>2. Nested Component Scope Script</h3>
+        <script b-script>
+            () => {
+                $data.title = 'Apollo 11 Lead Flight Software Designer';
+                $data.count2 = 42;
+            }
+        </script>
+
+        <p>Role: <strong>${$data.title}</strong></p>
+        <p>Value: <strong>${$data.count2}</strong></p>
+        <button on-click="$data.count2++">+1 Value</button>
+    </div>
+
+    <script src="/dist/brio.min.js"></script>
     <script>
-        window.addEventListener('brio', () => {
-            const app = brio.newApp();
-            app.gc.$hydrate('body');
+        window.addEventListener('DOMContentLoaded', () => {
+            const app = brio.createApp();
+            app.mount('body');
             console.log('script.html hydrated successfully');
         });
     </script>

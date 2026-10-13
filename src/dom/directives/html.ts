@@ -17,12 +17,13 @@ export function handleHtml(
     onCleanup(() => contentScope?.dispose());
     effect(() => {
         const html = evaluate(expression, context);
-        if (!isTrustedHTML(html))
-            throw new TypeError('b-html requires a value created by trustedHTML().');
+        const htmlStr = isTrustedHTML(html)
+            ? getTrustedHTMLString(html)
+            : String(html ?? '');
         contentScope?.dispose();
         contentScope = createScope();
         const template = document.createElement('template');
-        template.innerHTML = getTrustedHTMLString(html);
+        template.innerHTML = htmlStr;
         element.replaceChildren(template.content);
         contentScope.run(() => hydrateChildrenFn(element, context, runtime));
     });

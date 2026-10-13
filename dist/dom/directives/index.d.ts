@@ -15,4 +15,6 @@ export { handleTransition } from './transition';
 export { handleIntersection } from './intersection';
 export { handleMutation } from './mutation';
 export { handleResize } from './resize';
+export { handleEffect } from './effect';
+export { handleScript } from './script';
 export { extractModifiers } from './modifier';

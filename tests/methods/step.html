@@ -38,76 +38,55 @@
         <div b-if="$data.currentStep === 'intro'" class="step-container">
             <h4>Step 1: Welcome</h4>
             <p>Welcome to the wizard. Click Next to continue.</p>
-            <button id="step1-next">Next Step &rarr;</button>
+            <button on-click="$data.next('intro')">Next Step &rarr;</button>
         </div>
 
         <div b-if="$data.currentStep === 'details'" class="step-container">
             <h4>Step 2: Enter Information</h4>
             <p>Here you configure your setup options.</p>
-            <button id="step2-back" class="secondary">&larr; Back</button>
-            <button id="step2-next">Next Step &rarr;</button>
+            <button on-click="$data.back('details')" class="secondary">&larr; Back</button>
+            <button on-click="$data.next('details')">Next Step &rarr;</button>
         </div>
 
         <div b-if="$data.currentStep === 'review'" class="step-container">
             <h4>Step 3: Review & Finish</h4>
             <p>Everything looks good! Ready to submit.</p>
-            <button id="step3-back" class="secondary">&larr; Back</button>
-            <button id="step3-restart">Start Over</button>
+            <button on-click="$data.back('review')" class="secondary">&larr; Back</button>
+            <button on-click="$data.restart()">Start Over</button>
         </div>
     </div>
 
-    <script type="module" b-ignore src="/src/briojs.min.ts"></script>
+    <script src="/dist/brio.min.js"></script>
     <script>
-        window.addEventListener('brio', () => {
-            const app = brio.newApp();
-            app.gc.$hydrate('body');
-
-            const newStepEngine = brio.newStepEngine;
+        window.addEventListener('DOMContentLoaded', () => {
             const stepsRecord = {
                 intro: { active: true, next: 'details' },
                 details: { active: false, next: 'review', back: 'intro' },
                 review: { active: false, back: 'details' }
             };
 
-            const [setStep, isStepActive, nextStep, backStep] = newStepEngine(stepsRecord);
+            const engine = brio.createStepEngine(stepsRecord);
 
-            const card = document.querySelector('.card');
-            const syncUI = () => {
-                const bnode = app.gc.$getBNode(card);
-                for (let key in stepsRecord) {
-                    if (stepsRecord[key].active) {
-                        bnode.ctx.$data.currentStep = key;
-                        break;
+            const app = brio.createApp({
+                state: () => ({
+                    currentStep: 'intro',
+                    next(curr) {
+                        engine.nextStep(curr);
+                        this.currentStep = engine.getActiveStep() || 'intro';
+                    },
+                    back(curr) {
+                        engine.backStep(curr);
+                        this.currentStep = engine.getActiveStep() || 'intro';
+                    },
+                    restart() {
+                        stepsRecord.review.active = false;
+                        stepsRecord.intro.active = true;
+                        this.currentStep = 'intro';
                     }
-                }
-            };
-
-            document.getElementById('step1-next').addEventListener('click', () => {
-                nextStep('intro');
-                syncUI();
+                })
             });
 
-            document.getElementById('step2-back').addEventListener('click', () => {
-                backStep('details');
-                syncUI();
-            });
-
-            document.getElementById('step2-next').addEventListener('click', () => {
-                nextStep('details');
-                syncUI();
-            });
-
-            document.getElementById('step3-back').addEventListener('click', () => {
-                backStep('review');
-                syncUI();
-            });
-
-            document.getElementById('step3-restart').addEventListener('click', () => {
-                stepsRecord.review.active = false;
-                stepsRecord.intro.active = true;
-                syncUI();
-            });
-
+            app.mount('body');
             console.log('step.html hydrated successfully');
         });
     </script>

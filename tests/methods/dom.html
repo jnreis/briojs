@@ -17,8 +17,8 @@
 </head>
 <body b-data>
 
-    <h1>DOM Manipulation Methods ($insert) Manual Tests</h1>
-    <p>Tests <code>app.gc.$insert</code> with different placements: <code>prepend</code>, <code>append</code>, <code>before</code>, <code>after</code>, and <code>replaceChildren</code>, ensuring inserted markup is hydrated.</p>
+    <h1>DOM Hydration & Dynamic Mounting Manual Tests</h1>
+    <p>Tests dynamically inserting markup into the DOM and hydrating it with Brio v4 <code>hydrateRoot</code> / <code>hydrateNode</code>.</p>
 
     <div class="card">
         <h3>1. Placements on Container</h3>
@@ -31,25 +31,42 @@
         </div>
     </div>
 
-    <script type="module" b-ignore src="/src/briojs.min.ts"></script>
+    <script src="/dist/brio.min.js"></script>
     <script>
-        window.addEventListener('brio', () => {
-            const app = brio.newApp();
-            app.gc.$hydrate('body');
-
+        window.addEventListener('DOMContentLoaded', () => {
             let counter = 1;
-            const $insert = app.gc.$insert;
+
+            function insertAndHydrate(targetSelector, position, html) {
+                const target = document.querySelector(targetSelector);
+                const template = document.createElement('template');
+                template.innerHTML = html.trim();
+                const content = template.content.firstElementChild;
+
+                if (position === 'prepend') {
+                    target.prepend(content);
+                } else if (position === 'append') {
+                    target.append(content);
+                } else if (position === 'replaceChildren') {
+                    target.replaceChildren(content);
+                }
+
+                // Hydrate the inserted node with Brio runtime
+                brio.hydrateRoot(content, { count: counter }, {
+                    state: {},
+                    components: new Map()
+                });
+            }
 
             document.getElementById('btn-prepend').addEventListener('click', () => {
-                $insert('#target-container', 'prepend', `<div class="item" b-data="{ count: ${counter++} }">Prepended reactive count: \${$data.count}</div>`);
+                insertAndHydrate('#target-container', 'prepend', `<div class="item" b-data="{ count: ${counter++} }">Prepended reactive count: \${$data.count} <button on-click="$data.count++">+</button></div>`);
             });
 
             document.getElementById('btn-append').addEventListener('click', () => {
-                $insert('#target-container', 'append', `<div class="item" b-data="{ count: ${counter++} }">Appended reactive count: \${$data.count}</div>`);
+                insertAndHydrate('#target-container', 'append', `<div class="item" b-data="{ count: ${counter++} }">Appended reactive count: \${$data.count} <button on-click="$data.count++">+</button></div>`);
             });
 
             document.getElementById('btn-replace').addEventListener('click', () => {
-                $insert('#target-container', 'replaceChildren', `<div class="item" style="background: #4ade80; color: #166534;">Replaced all content at ${new Date().toLocaleTimeString()}</div>`);
+                insertAndHydrate('#target-container', 'replaceChildren', `<div class="item" style="background: #4ade80; color: #166534;">Replaced all content at ${new Date().toLocaleTimeString()}</div>`);
             });
 
             console.log('dom.html hydrated successfully');

@@ -1,5 +1,5 @@
 import { effect } from './effect';
-import { track, trigger } from './state-v4';
+import { track, trigger } from './state';
 
 export function computed<T>(getter: () => T) {
     let dirty = true;

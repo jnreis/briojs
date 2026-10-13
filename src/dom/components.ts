@@ -1,5 +1,5 @@
 import { evaluate, execute, createExpressionScope } from '../core/expression';
-import { state } from '../reactivity/state-v4';
+import { state } from '../reactivity/state';
 import { effect, batch } from '../reactivity/effect';
 import { createScope, onCleanup } from '../core/scope';
 import { generateScopeId, injectScopedStyles } from './scoped-style';

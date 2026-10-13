@@ -1,4 +1,4 @@
-import { createExpressionScope } from '../core/expression';
+import { createExpressionScope, evaluate } from '../core/expression';
 import { createScope, onCleanup } from '../core/scope';
 import type { Scope } from '../core/scope';
 import { effect } from '../reactivity/effect';
@@ -63,6 +63,8 @@ import {
     handleIntersection,
     handleMutation,
     handleResize,
+    handleEffect,
+    handleScript,
     extractModifiers,
 } from './directives';
 
@@ -76,11 +78,33 @@ export function hydrateChildren(
     }
 }
 
+const interpolationRegex = /\$\{([^}]+)\}/g;
+
+export function hydrateTextNode(
+    node: Text,
+    context: Record<PropertyKey, any>,
+): void {
+    const raw = node.nodeValue ?? '';
+    if (!raw.includes('${')) return;
+
+    effect(() => {
+        const text = raw.replace(interpolationRegex, (_, expr) => {
+            const val = evaluate(expr, context);
+            return val === null || val === undefined ? '' : String(val);
+        });
+        node.nodeValue = text;
+    });
+}
+
 export function hydrateNode(
     node: Node,
     parentContext: Record<PropertyKey, any>,
     runtime: DomRuntime,
 ): void {
+    if (node.nodeType === Node.TEXT_NODE) {
+        hydrateTextNode(node as Text, parentContext);
+        return;
+    }
     if (node.nodeType !== Node.ELEMENT_NODE) return;
     const element = node as Element;
 
@@ -185,6 +209,12 @@ export function hydrateNode(
             element.removeAttribute(attrName);
         } else if (baseName === 'b-transition' || baseName === 'transition') {
             handleTransition(element, attrValue, modifiers, context);
+            element.removeAttribute(attrName);
+        } else if (baseName === 'b-effect' || baseName === 'effect') {
+            handleEffect(element, attrValue, modifiers, context);
+            element.removeAttribute(attrName);
+        } else if (baseName === 'b-script' || baseName === 'script') {
+            handleScript(element, attrValue, modifiers, context);
             element.removeAttribute(attrName);
         } else if (baseName === 'b-router-outlet') {
             mountRouterOutlet(element, context, runtime, hydrateNode);

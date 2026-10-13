@@ -25,16 +25,16 @@
         <h3>1. Resizable Box (Drag the bottom-right corner)</h3>
         <p>Current measured dimensions: <code>Width: ${$data.boxWidth}px</code> x <code>Height: ${$data.boxHeight}px</code></p>
 
-        <div class="resizable" on-resize="([w, h]) => { $data.boxWidth = Math.round(w); $data.boxHeight = Math.round(h); }">
+        <div class="resizable" on-resize="$data.boxWidth = Math.round($size.width); $data.boxHeight = Math.round($size.height)">
             Drag the bottom-right corner of this box to resize it!
         </div>
     </div>
 
-    <script type="module" b-ignore src="/src/briojs.min.ts"></script>
+    <script src="/dist/brio.min.js"></script>
     <script>
-        window.addEventListener('brio', () => {
-            const app = brio.newApp();
-            app.gc.$hydrate('body');
+        window.addEventListener('DOMContentLoaded', () => {
+            const app = brio.createApp();
+            app.mount('body');
             console.log('resize.html hydrated successfully');
         });
     </script>

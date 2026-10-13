@@ -15,41 +15,34 @@
     theme: 'customTheme'
 }">
 
-    <!-- Define saved CSS assets -->
-    <style b-save="customTheme">
-        & {
-            background-color: #f0fdf4;
-            border: 2px dashed #16a34a;
-            padding: 16px;
-            border-radius: 8px;
-        }
-        & h4 {
-            color: #15803d;
-            margin: 0 0 8px 0;
-        }
-        & p {
-            color: #166534;
-            margin: 0;
-        }
-    </style>
-
-    <h1>b-style Directive Manual Tests</h1>
-    <p>Tests scoped style injection and selector prefixing via <code>b-style</code> and <code>b-save</code>.</p>
+    <h1>Component Scoped Styles Manual Tests</h1>
+    <p>Tests component scoped style isolation with automated CSS scoping and rewriting (<code>style</code> property on component definitions).</p>
 
     <!-- Test 1: Scoped style application -->
     <div class="card">
-        <h3>1. Scoped CSS Asset Applied to Container</h3>
-        <div b-style="customTheme">
-            <h4>Scoped Green Theme</h4>
-            <p>Styles defined with <code>&</code> are dynamically scoped specifically to this element without leaking to global styles.</p>
-        </div>
+        <h3>1. Scoped CSS in Custom Component</h3>
+        <styled-card></styled-card>
+        <p style="margin-top: 14px;">This paragraph outside <code>styled-card</code> is completely untouched by the component's internal styles.</p>
     </div>
 
-    <script type="module" b-ignore src="/src/briojs.min.ts"></script>
+    <script src="/dist/brio.min.js"></script>
     <script>
-        window.addEventListener('brio', () => {
-            const app = brio.newApp();
-            app.gc.$hydrate('body');
+        window.addEventListener('DOMContentLoaded', () => {
+            const app = brio.createApp();
+            app.component('styled-card', {
+                style: `
+                    h4 { color: #15803d; margin: 0 0 8px 0; }
+                    p { color: #166534; margin: 0; }
+                    .box { background-color: #f0fdf4; border: 2px dashed #16a34a; padding: 16px; border-radius: 8px; }
+                `,
+                template: `
+                    <div class="box">
+                        <h4>Scoped Green Component</h4>
+                        <p>Styles defined in the component are automatically rewritten and scoped!</p>
+                    </div>
+                `
+            });
+            app.mount('body');
             console.log('styles.html hydrated successfully');
         });
     </script>

@@ -1,5 +1,5 @@
 import { evaluate, createExpressionScope } from '../../core/expression';
-import { state } from '../../reactivity/state-v4';
+import { state } from '../../reactivity/state';
 
 export function handleData(
     element: Element,
@@ -12,5 +12,9 @@ export function handleData(
     const data = evaluate(expression, context);
     if (data === null || typeof data !== 'object')
         throw new TypeError('b-data must evaluate to an object.');
-    return createExpressionScope(state(data), parentContext);
+    const reactiveData = state(data);
+    return createExpressionScope(
+        { ...reactiveData, $data: reactiveData, $parent: parentContext },
+        parentContext,
+    );
 }

@@ -1,6 +1,6 @@
 import { getCurrentScope, onCleanup } from '../core/scope';
 import { batch, effect } from '../reactivity/effect';
-import { signal, state } from '../reactivity/state-v4';
+import { signal, state } from '../reactivity/state';
 import type { Signal } from '../reactivity/types';
 import { causedError } from '../core/errors';
 

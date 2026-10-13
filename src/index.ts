@@ -6,8 +6,8 @@ export * from './core/errors';
 export * from './core/types';
 
 export { effect, batch } from './reactivity/effect';
-export { state, signal } from './reactivity/state-v4';
-export { computed } from './reactivity/computed-v4';
+export { state, signal } from './reactivity/state';
+export { computed } from './reactivity/computed';
 export { resource } from './reactivity/resource';
 export type { Signal, Stop, EffectOptions, Resource } from './reactivity/types';
 

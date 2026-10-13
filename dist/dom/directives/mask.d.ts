@@ -5,4 +5,4 @@ export interface MoneyMaskOptions {
 }
 export declare function formatMoney(value: string, options?: MoneyMaskOptions): string;
 export declare function formatMask(value: string, pattern: string): string;
-export declare function handleMask(element: Element, expression: string, modifiers: Record<string, boolean>, _context: Record<PropertyKey, any>): void;
+export declare function handleMask(element: Element, expression: string, modifiers: Record<string, boolean>, context: Record<PropertyKey, any>): void;

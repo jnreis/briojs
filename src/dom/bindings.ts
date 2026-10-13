@@ -4,6 +4,7 @@ import type { Scope } from '../core/scope';
 import { effect } from '../reactivity/effect';
 import type { DomRuntime } from './types';
 import { mountComponent } from './components';
+import { prepareTransition } from './directives/transition';
 
 export function mountRouterOutlet(
     element: Element,
@@ -74,7 +75,7 @@ export function hydrateChildren(
     runtime: DomRuntime,
 ): void {
     for (const child of Array.from(element.childNodes)) {
-        hydrateNode(child, context, runtime);
+        if (child.parentNode === element) hydrateNode(child, context, runtime);
     }
 }
 
@@ -114,6 +115,14 @@ export function hydrateNode(
         return;
     }
 
+    const ifAttr = element.getAttribute('b-if');
+    if (ifAttr !== null) {
+        handleIf(element, ifAttr, {}, parentContext, runtime, hydrateNode);
+        return;
+    }
+    if (element.hasAttribute('b-else-if') || element.hasAttribute('b-else'))
+        throw new SyntaxError('b-else-if and b-else require an adjacent preceding b-if branch.');
+
     let context = createExpressionScope({ $el: element }, parentContext);
 
     // 2. b-data
@@ -128,14 +137,6 @@ export function hydrateNode(
     if (idAttr !== null) {
         context = handleId(element, idAttr, {}, context);
         element.removeAttribute('b-id');
-    }
-
-    // 4. b-if
-    const ifAttr = element.getAttribute('b-if');
-    if (ifAttr !== null) {
-        const { modifiers } = extractModifiers('b-if');
-        handleIf(element, ifAttr, modifiers, context, runtime, hydrateNode);
-        return;
     }
 
     // 5. b-for
@@ -166,6 +167,9 @@ export function hydrateNode(
     // 8. Directives & Event Bindings
     let hasText = false;
     let hasHtml = false;
+    const transitionAttr = Array.from(element.attributes)
+        .find(attribute => ['b-transition', 'transition'].includes(extractModifiers(attribute.name).baseName));
+    if (transitionAttr) prepareTransition(element, transitionAttr.value);
 
     // Scan element attributes
     for (const attribute of Array.from(element.attributes)) {
@@ -213,7 +217,7 @@ export function hydrateNode(
         } else if (baseName === 'b-effect' || baseName === 'effect') {
             handleEffect(element, attrValue, modifiers, context);
             element.removeAttribute(attrName);
-        } else if (baseName === 'b-script' || baseName === 'script') {
+        } else if (baseName === 'b-script') {
             handleScript(element, attrValue, modifiers, context);
             element.removeAttribute(attrName);
         } else if (baseName === 'b-router-outlet') {
@@ -223,7 +227,7 @@ export function hydrateNode(
         }
     }
 
-    if (!hasText && !hasHtml) {
+    if (!hasText && !hasHtml && tagName !== 'script') {
         hydrateChildren(element, context, runtime);
     }
 }

@@ -15,11 +15,16 @@
         .fade-enter-active, .fade-leave-active { transition: opacity 0.3s ease, transform 0.3s ease; }
         .fade-enter, .fade-leave-to { opacity: 0; transform: translateY(-10px); }
         .fade-enter-to, .fade-leave { opacity: 1; transform: translateY(0); }
+        .slow-enter-active, .slow-leave-active { transition: opacity 1.2s ease, transform 1.6s ease; }
+        .slow-enter, .slow-leave-to { opacity: 0; transform: translateX(100px); }
+        .slow-enter-to, .slow-leave { opacity: 1; transform: translateX(0); }
     </style>
 </head>
 <body b-data="{
     showBox: true,
-    showBoxShow: true
+    showBoxShow: true,
+    showDisplay: true,
+    showSlow: true
 }">
 
     <h1>b-transition Directive Manual Tests</h1>
@@ -30,9 +35,24 @@
         <h3>1. Fade & Slide Transition with b-if</h3>
         <button on-click="$data.showBox = !$data.showBox">Toggle Box (${$data.showBox ? 'Hide' : 'Show'})</button>
 
-        <div b-if="$data.showBox" b-transition="'fade'" class="box">
+        <div b-if="$data.showBox" b-transition="'fade'" b-data="{ count: 0 }" class="box">
             ✨ Smooth Animated Transition (b-if)!
+            <button on-click="$data.count++">Local counter: ${$data.count}</button>
         </div>
+        <p>Increment, hide, show: the counter resets. Click rapidly: old exiting nodes must not remove a new instance.</p>
+    </div>
+
+    <div class="card">
+        <h3>3. CSS Display Mode and Reversed Leave</h3>
+        <button on-click="$data.showDisplay = !$data.showDisplay">Toggle display box</button>
+        <div b-transition="'fade'" b-show.display="$data.showDisplay" class="box">I remain in the DOM.</div>
+        <p>Hide: display becomes none only after the fade. Hide then immediately show: no late callback should hide the visible box. The transition attribute comes first to test attribute-order independence.</p>
+    </div>
+    <div class="card">
+        <h3>4. Multiple Properties, Delays, and Duration Over One Second</h3>
+        <button on-click="$data.showSlow = !$data.showSlow">Toggle long transition</button>
+        <div b-show="$data.showSlow" b-transition="'slow'" class="box">Inspect me while hiding.</div>
+        <p>Opacity ends at 0.2s, but transform ends at 1.8s including its delay. The element must stay attached until both have finished, not disappear at the first transitionend or a fixed 1s timeout.</p>
     </div>
 
     <!-- Test 2: Fade and Slide transition with b-show -->

@@ -1,38 +1,105 @@
-export function enterTransition(element: Element, name: string = 'brio'): void {
-    const el = element as HTMLElement;
-    el.classList.add(`${name}-enter`, `${name}-enter-active`);
-    requestAnimationFrame(() => {
-        el.classList.remove(`${name}-enter`);
-        el.classList.add(`${name}-enter-to`);
-        const onEnd = () => {
-            el.classList.remove(`${name}-enter-active`, `${name}-enter-to`);
-            el.removeEventListener('transitionend', onEnd);
-        };
-        el.addEventListener('transitionend', onEnd);
+import { onCleanup } from '../../core/scope';
+
+const names = new WeakMap<Element, string>();
+const running = new WeakMap<Element, () => void>();
+
+export function prepareTransition(element: Element, expression: string): void {
+    names.set(element, expression.trim().replace(/^['"]|['"]$/g, '') || 'brio');
+}
+
+export function getTransitionName(element: Element): string | undefined {
+    return names.get(element);
+}
+
+export function cancelTransition(element: Element): void {
+    running.get(element)?.();
+}
+
+function transitionTimeout(element: Element): number {
+    const style = element.ownerDocument.defaultView!.getComputedStyle(element);
+    const milliseconds = (value: string) =>
+        parseFloat(value) * (value.trim().endsWith('ms') ? 1 : 1000);
+    const durations = style.transitionDuration.split(',').map(milliseconds);
+    const delays = style.transitionDelay.split(',').map(milliseconds);
+    return Math.max(0, ...style.transitionProperty.split(',').map((property, index) =>
+        property.trim() === 'none' ? 0 :
+            durations[index % durations.length] + delays[index % delays.length]
+    ));
+}
+
+function runTransition(element: Element, name: string, phase: 'enter' | 'leave', onDone?: () => void): void {
+    cancelTransition(element);
+    const view = element.ownerDocument.defaultView!;
+    const classes = [`${name}-${phase}`, `${name}-${phase}-active`, `${name}-${phase}-to`];
+    const pending = new Set<string>();
+    let started = false;
+    let activated = false;
+    let settled = false;
+    let frame = 0;
+    let completionFrame = 0;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+
+    const cleanup = () => {
+        if (settled) return;
+        settled = true;
+        view.cancelAnimationFrame(frame);
+        view.cancelAnimationFrame(completionFrame);
+        clearTimeout(timer);
+        element.removeEventListener('transitionrun', onRun);
+        element.removeEventListener('transitionend', onEnd);
+        element.removeEventListener('transitioncancel', onEnd);
+        element.classList.remove(...classes);
+        if (running.get(element) === cleanup) running.delete(element);
+    };
+    const finish = () => {
+        if (settled) return;
+        cleanup();
+        onDone?.();
+    };
+    const isOwnEvent = (event: TransitionEvent) => event.target === element && !event.pseudoElement;
+    const onRun = (event: Event) => {
+        const transition = event as TransitionEvent;
+        if (!activated || !isOwnEvent(transition)) return;
+        started = true;
+        pending.add(transition.propertyName);
+    };
+    const onEnd = (event: Event) => {
+        const transition = event as TransitionEvent;
+        if (!activated || !isOwnEvent(transition)) return;
+        pending.delete(transition.propertyName);
+        if (started && pending.size === 0) {
+            view.cancelAnimationFrame(completionFrame);
+            completionFrame = view.requestAnimationFrame(() => {
+                if (pending.size === 0) finish();
+            });
+        }
+    };
+
+    running.set(element, cleanup);
+    element.addEventListener('transitionrun', onRun);
+    element.addEventListener('transitionend', onEnd);
+    element.addEventListener('transitioncancel', onEnd);
+    element.classList.add(classes[0], classes[1]);
+
+    // Separate the starting and ending styles by a rendered frame.
+    frame = view.requestAnimationFrame(() => {
+        activated = true;
+        frame = view.requestAnimationFrame(() => {
+            element.classList.remove(classes[0]);
+            element.classList.add(classes[2]);
+            const timeout = transitionTimeout(element);
+            if (timeout > 0) timer = setTimeout(finish, timeout + 50);
+            else finish();
+        });
     });
 }
 
+export function enterTransition(element: Element, name: string = 'brio'): void {
+    runTransition(element, name, 'enter');
+}
+
 export function leaveTransition(element: Element, name: string = 'brio', onDone: () => void): void {
-    const el = element as HTMLElement;
-    el.classList.add(`${name}-leave`, `${name}-leave-active`);
-
-    let done = false;
-    const finish = () => {
-        if (done) return;
-        done = true;
-        el.classList.remove(`${name}-leave-active`, `${name}-leave-to`);
-        el.removeEventListener('transitionend', finish);
-        onDone();
-    };
-
-    requestAnimationFrame(() => {
-        el.classList.remove(`${name}-leave`);
-        el.classList.add(`${name}-leave-to`);
-        el.addEventListener('transitionend', finish);
-
-        // Fallback safety timeout in case no transition properties exist on element
-        setTimeout(finish, 1000);
-    });
+    runTransition(element, name, 'leave', onDone);
 }
 
 export function handleTransition(
@@ -41,7 +108,11 @@ export function handleTransition(
     _modifiers: Record<string, boolean>,
     _context: Record<PropertyKey, any>,
 ): void {
-    const name = expression.trim().replace(/^['"]|['"]$/g, '') || 'brio';
-    enterTransition(element, name);
+    prepareTransition(element, expression);
+    onCleanup(() => {
+        cancelTransition(element);
+        names.delete(element);
+    });
+    if (element.isConnected && (element as HTMLElement).style.display !== 'none')
+        enterTransition(element, getTransitionName(element));
 }
-

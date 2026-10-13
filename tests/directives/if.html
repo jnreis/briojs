@@ -20,7 +20,7 @@
     isVisible: true,
     score: 85,
     userLoggedIn: false,
-    childCount: 0
+    showDashboard: true
 }">
 
     <h1>b-if Directive Manual Tests</h1>
@@ -46,9 +46,13 @@
         <div b-if="$data.score >= 80" class="box success">
             🌟 Grade: Excellent (${$data.score} &gt;= 80)
         </div>
-        <div b-if="$data.score < 80" class="box alert">
-            ⚠️ Needs Improvement (${$data.score} &lt; 80)
+        <div b-else-if="$data.score >= 50" class="box alert">
+            ⚠️ Needs Improvement (50 &lt;= ${$data.score} &lt; 80)
         </div>
+        <div b-else class="box alert">
+            Try again (${$data.score} &lt; 50)
+        </div>
+        <p>Exactly one grade branch should exist at a time.</p>
     </div>
 
     <!-- Test 3: Nested Scope and Lifecycle Cleanups -->
@@ -56,12 +60,22 @@
         <h3>3. Nested State Inside b-if</h3>
         <button on-click="$data.userLoggedIn = !$data.userLoggedIn">Toggle Login (${$data.userLoggedIn ? 'Logout' : 'Login'})</button>
 
-        <div b-if="$data.userLoggedIn" class="box" style="background: #f1f5f9; border: 1px solid #cbd5e1;">
+        <div b-if="$data.userLoggedIn" b-data="{ childCount: 0 }" class="box" style="background: #f1f5f9; border: 1px solid #cbd5e1;">
             <h4>User Dashboard</h4>
             <p>Child counter: <strong>${$data.childCount}</strong></p>
             <button on-click="$data.childCount++">Increment Dashboard Counter</button>
-            <p>When logging out, this whole section and its internal bindings are cleaned up cleanly.</p>
+            <p>Increment, log out, then log in: this local counter must reset to zero.</p>
         </div>
+    </div>
+
+    <div class="card">
+        <h3>4. Compare b-show: State Is Preserved</h3>
+        <button on-click="$data.showDashboard = !$data.showDashboard">Toggle preserved dashboard</button>
+        <div b-show="$parent.$data.showDashboard" b-data="{ childCount: 0 }" class="box success">
+            <p>Preserved counter: <strong>${$data.childCount}</strong></p>
+            <button on-click="$data.childCount++">Increment Preserved Counter</button>
+        </div>
+        <p>Increment, hide, then show: the counter must keep its value. State owned by a parent also survives b-if; only branch-local state is recreated.</p>
     </div>
 
     <script src="/dist/brio.min.js"></script>

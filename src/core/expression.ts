@@ -5,6 +5,20 @@ export type ExpressionScope = Record<PropertyKey, any>;
 const valueExpressions = new Map<string, Function>();
 const statementExpressions = new Map<string, Function>();
 const assignmentExpressions = new Map<string, Function>();
+const functionExpressions = new Map<string, Function>();
+
+export function evaluateFunction(source: string, context: ExpressionScope): (ctx: ExpressionScope) => unknown {
+    const fn = compile(functionExpressions, source, expression =>
+        new Function('ctx', `
+            const { $data, $parent, $el, $event, $id, $for, props, emit, trustedHTML, onCleanup } = ctx;
+            return (${expression.replace(/;\s*$/, '')});
+        `)
+    );
+    const result = fn(context);
+    if (typeof result !== 'function')
+        throw new TypeError('b-script must contain a function expression, such as (ctx) => { ... }.');
+    return result;
+}
 
 export function createExpressionScope(...sources: ExpressionScope[]): ExpressionScope {
     const globals = globalThis as ExpressionScope;

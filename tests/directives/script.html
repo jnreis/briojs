@@ -21,7 +21,7 @@
     <!-- Test 1: b-script initialization using arrow function pattern -->
     <div class="card">
         <h3>1. Inline Context Script Execution: <code>(ctx) => { ... }</code></h3>
-        <p>The browser treats the unassigned arrow expression as a no-op expression statement during initial HTML parse (avoiding premature execution or reference errors), while Brio extracts and executes the body on hydration.</p>
+        <p>The browser does not invoke this unassigned arrow. Brio compiles the function expression with an explicit context and calls it on hydration; no <code>with</code> or body extraction is used.</p>
         <script b-script>
             (ctx) => {
                 $data.initializedAt = new Date().toLocaleTimeString();
@@ -44,10 +44,11 @@
             (ctx) => {
                 ctx.$data.title = 'Apollo 11 Lead Flight Software Designer';
                 ctx.$data.asyncStatus = 'Waiting 1s for timer...';
-                setTimeout(() => {
+                const timer = setTimeout(() => {
                     ctx.$data.asyncStatus = 'Timer fired successfully!';
                     ctx.$data.count2 = 42;
                 }, 1000);
+                ctx.onCleanup(() => clearTimeout(timer));
             }
         </script>
 
@@ -55,6 +56,20 @@
         <p>Timer Status: <strong>${$data.asyncStatus}</strong></p>
         <p>Value: <strong>${$data.count2}</strong></p>
         <button on-click="$data.count2++">+1 Value</button>
+    </div>
+
+    <div class="card" b-data="{ status: 'Waiting' }">
+        <h3>3. Async Arrow and Destructured Context</h3>
+        <script b-script>
+            async ({ $data, $parent, $el }) => {
+                $data.status = 'Started';
+                $data.parentUser = $parent.$data.user;
+                $data.scriptTag = $el.tagName;
+                await new Promise(resolve => setTimeout(resolve, 250));
+                $data.status = 'Async function completed';
+            }
+        </script>
+        <p>${$data.status}. Parent user: ${$data.parentUser}. Element: ${$data.scriptTag}.</p>
     </div>
 
     <script src="/dist/brio.min.js"></script>

@@ -1,7 +1,7 @@
 import { evaluate } from '../../core/expression';
 import { effect } from '../../reactivity/effect';
 import { onCleanup } from '../../core/scope';
-import { leaveTransition } from './transition';
+import { cancelTransition, enterTransition, getTransitionName, leaveTransition } from './transition';
 
 export function handleShow(
     element: Element,
@@ -11,69 +11,38 @@ export function handleShow(
 ): void {
     const useDisplay = Boolean(modifiers.display);
     const el = element as HTMLElement;
-
-    if (useDisplay) {
-        const originalDisplay = el.style.display === 'none' ? '' : el.style.display;
-        effect(() => {
-            const value = evaluate(expression, context);
-            const transitionAttr = el.getAttribute('b-transition');
-            if (value) {
-                el.style.display = originalDisplay;
-            } else if (transitionAttr !== null && el.style.display !== 'none') {
-                const name = transitionAttr.trim().replace(/^['"]|['"]$/g, '') || 'brio';
-                leaveTransition(el, name, () => {
-                    el.style.display = 'none';
-                });
-            } else {
-                el.style.display = 'none';
-            }
-        });
-        return;
-    }
-
-    // Default mode: remove element from DOM preserving its state/subscribers via placeholder comment
-    const parent = element.parentNode;
-    if (!parent) throw new Error('b-show requires an element with a parent node.');
+    const originalDisplay = el.style.display === 'none' ? '' : el.style.display;
     const placeholder = document.createComment('brio:show');
-    let isAttached = true;
-    let isLeaving = false;
+    if (!useDisplay) {
+        if (!element.parentNode) throw new Error('b-show requires an element with a parent node.');
+        element.before(placeholder);
+    }
+    let previous: boolean | undefined;
 
     onCleanup(() => {
+        cancelTransition(element);
         placeholder.remove();
-        if (element.parentNode) element.remove();
+        if (!useDisplay) element.remove();
     });
 
     effect(() => {
         const visible = Boolean(evaluate(expression, context));
+        if (visible === previous) return;
+        const initial = previous === undefined;
+        previous = visible;
+        cancelTransition(element);
+        const name = getTransitionName(element);
         if (visible) {
-            isLeaving = false;
-            if (!isAttached) {
-                placeholder.parentNode?.insertBefore(element, placeholder.nextSibling);
-                isAttached = true;
-            }
-        } else if (isAttached && !isLeaving) {
-            const transitionAttr = element.getAttribute('b-transition');
-            if (transitionAttr !== null) {
-                isLeaving = true;
-                const name = transitionAttr.trim().replace(/^['"]|['"]$/g, '') || 'brio';
-                leaveTransition(element, name, () => {
-                    if (!isAttached) return;
-                    if (!placeholder.parentNode) {
-                        element.parentNode?.replaceChild(placeholder, element);
-                    } else {
-                        element.remove();
-                    }
-                    isAttached = false;
-                    isLeaving = false;
-                });
-            } else {
-                if (!placeholder.parentNode) {
-                    element.parentNode?.replaceChild(placeholder, element);
-                } else {
-                    element.remove();
-                }
-                isAttached = false;
-            }
+            if (useDisplay) el.style.display = originalDisplay;
+            else placeholder.parentNode?.insertBefore(element, placeholder.nextSibling);
+            if (!initial && name) enterTransition(element, name);
+        } else {
+            const hide = () => {
+                if (useDisplay) el.style.display = 'none';
+                else element.remove();
+            };
+            if (!initial && name) leaveTransition(element, name, hide);
+            else hide();
         }
     });
 }

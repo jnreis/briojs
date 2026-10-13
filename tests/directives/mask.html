@@ -16,7 +16,9 @@
 </head>
 <body b-data="{
     phone: '',
-    moneyVal: ''
+    moneyVal: '',
+    euroVal: '',
+    options: { thousands: '.', decimal: ',', precision: 2 }
 }">
 
     <h1>b-mask Directive Manual Tests</h1>
@@ -43,7 +45,22 @@
         <div class="field">
             <label>Type currency amount:</label>
             <input type="text" b-mask.money placeholder="$0.00" b-model="$data.moneyVal">
+            <p>Model: ${$data.moneyVal}. Type 123456: expect 1,234.56.</p>
         </div>
+    </div>
+
+    <div class="card">
+        <h3>4. Money Options via the v3 money(options) Helper</h3>
+        <input b-model="$data.euroVal" b-mask="money($data.options)" placeholder="1.234,56">
+        <p>Model: ${$data.euroVal}. Type 123456: expect 1.234,56. This input also checks b-model before b-mask.</p>
+        <button on-click="$data.options.thousands = $data.options.thousands === '.' ? ' ' : '.'">Toggle thousands separator</button>
+    </div>
+    <div class="card">
+        <h3>5. Options on b-mask.money</h3>
+        <input b-mask.money="{ thousands: ' ', decimal: ',', precision: 3 }" placeholder="123,456">
+        <p>Type 1234567: expect 1 234,567.</p>
+        <input b-mask.money="{ thousands: ',', precision: 0 }" placeholder="1,234">
+        <p>Type 1234: expect 1,234 (no fractional digits).</p>
     </div>
 
     <script src="/dist/brio.min.js"></script>

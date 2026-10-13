@@ -16,6 +16,7 @@ export function handleData(
     const scopeObj = {
         $data: reactiveData,
         $parent: parentContext,
+        $el: element,
     };
     return createExpressionScope(
         reactiveData,

@@ -9,6 +9,21 @@ import { devtools } from "./devtools-entry.js";
 const valueExpressions = /* @__PURE__ */ new Map();
 const statementExpressions = /* @__PURE__ */ new Map();
 const assignmentExpressions = /* @__PURE__ */ new Map();
+const functionExpressions = /* @__PURE__ */ new Map();
+function evaluateFunction(source, context) {
+  const fn = compile(
+    functionExpressions,
+    source,
+    (expression) => new Function("ctx", `
+            const { $data, $parent, $el, $event, $id, $for, props, emit, trustedHTML, onCleanup } = ctx;
+            return (${expression.replace(/;\s*$/, "")});
+        `)
+  );
+  const result = fn(context);
+  if (typeof result !== "function")
+    throw new TypeError("b-script must contain a function expression, such as (ctx) => { ... }.");
+  return result;
+}
 function createExpressionScope(...sources) {
   const globals = globalThis;
   return new Proxy(/* @__PURE__ */ Object.create(null), {
@@ -234,6 +249,104 @@ function mountComponent(element, definition, context, runtime, hydrateNodeFn) {
     }
   });
 }
+const names = /* @__PURE__ */ new WeakMap();
+const running = /* @__PURE__ */ new WeakMap();
+function prepareTransition(element, expression) {
+  names.set(element, expression.trim().replace(/^['"]|['"]$/g, "") || "brio");
+}
+function getTransitionName(element) {
+  return names.get(element);
+}
+function cancelTransition(element) {
+  var _a;
+  (_a = running.get(element)) == null ? void 0 : _a();
+}
+function transitionTimeout(element) {
+  const style = element.ownerDocument.defaultView.getComputedStyle(element);
+  const milliseconds = (value) => parseFloat(value) * (value.trim().endsWith("ms") ? 1 : 1e3);
+  const durations = style.transitionDuration.split(",").map(milliseconds);
+  const delays = style.transitionDelay.split(",").map(milliseconds);
+  return Math.max(0, ...style.transitionProperty.split(",").map(
+    (property, index) => property.trim() === "none" ? 0 : durations[index % durations.length] + delays[index % delays.length]
+  ));
+}
+function runTransition(element, name, phase, onDone) {
+  cancelTransition(element);
+  const view = element.ownerDocument.defaultView;
+  const classes = [`${name}-${phase}`, `${name}-${phase}-active`, `${name}-${phase}-to`];
+  const pending = /* @__PURE__ */ new Set();
+  let started = false;
+  let activated = false;
+  let settled = false;
+  let frame = 0;
+  let completionFrame = 0;
+  let timer;
+  const cleanup = () => {
+    if (settled) return;
+    settled = true;
+    view.cancelAnimationFrame(frame);
+    view.cancelAnimationFrame(completionFrame);
+    clearTimeout(timer);
+    element.removeEventListener("transitionrun", onRun);
+    element.removeEventListener("transitionend", onEnd);
+    element.removeEventListener("transitioncancel", onEnd);
+    element.classList.remove(...classes);
+    if (running.get(element) === cleanup) running.delete(element);
+  };
+  const finish = () => {
+    if (settled) return;
+    cleanup();
+    onDone == null ? void 0 : onDone();
+  };
+  const isOwnEvent = (event) => event.target === element && !event.pseudoElement;
+  const onRun = (event) => {
+    const transition = event;
+    if (!activated || !isOwnEvent(transition)) return;
+    started = true;
+    pending.add(transition.propertyName);
+  };
+  const onEnd = (event) => {
+    const transition = event;
+    if (!activated || !isOwnEvent(transition)) return;
+    pending.delete(transition.propertyName);
+    if (started && pending.size === 0) {
+      view.cancelAnimationFrame(completionFrame);
+      completionFrame = view.requestAnimationFrame(() => {
+        if (pending.size === 0) finish();
+      });
+    }
+  };
+  running.set(element, cleanup);
+  element.addEventListener("transitionrun", onRun);
+  element.addEventListener("transitionend", onEnd);
+  element.addEventListener("transitioncancel", onEnd);
+  element.classList.add(classes[0], classes[1]);
+  frame = view.requestAnimationFrame(() => {
+    activated = true;
+    frame = view.requestAnimationFrame(() => {
+      element.classList.remove(classes[0]);
+      element.classList.add(classes[2]);
+      const timeout = transitionTimeout(element);
+      if (timeout > 0) timer = setTimeout(finish, timeout + 50);
+      else finish();
+    });
+  });
+}
+function enterTransition(element, name = "brio") {
+  runTransition(element, name, "enter");
+}
+function leaveTransition(element, name = "brio", onDone) {
+  runTransition(element, name, "leave", onDone);
+}
+function handleTransition(element, expression, _modifiers, _context) {
+  prepareTransition(element, expression);
+  onCleanup(() => {
+    cancelTransition(element);
+    names.delete(element);
+  });
+  if (element.isConnected && element.style.display !== "none")
+    enterTransition(element, getTransitionName(element));
+}
 const staticClasses = /* @__PURE__ */ new WeakMap();
 const dynamicStyles = /* @__PURE__ */ new WeakMap();
 const setBoundValue = (element, name, value, forceProp = false) => {
@@ -407,92 +520,85 @@ function handleModel(element, expression, modifiers, context) {
     onCleanup(() => observer.disconnect());
   }
 }
-function enterTransition(element, name = "brio") {
-  const el = element;
-  el.classList.add(`${name}-enter`, `${name}-enter-active`);
-  requestAnimationFrame(() => {
-    el.classList.remove(`${name}-enter`);
-    el.classList.add(`${name}-enter-to`);
-    const onEnd = () => {
-      el.classList.remove(`${name}-enter-active`, `${name}-enter-to`);
-      el.removeEventListener("transitionend", onEnd);
-    };
-    el.addEventListener("transitionend", onEnd);
-  });
-}
-function leaveTransition(element, name = "brio", onDone) {
-  const el = element;
-  el.classList.add(`${name}-leave`, `${name}-leave-active`);
-  let done = false;
-  const finish = () => {
-    if (done) return;
-    done = true;
-    el.classList.remove(`${name}-leave-active`, `${name}-leave-to`);
-    el.removeEventListener("transitionend", finish);
-    onDone();
-  };
-  requestAnimationFrame(() => {
-    el.classList.remove(`${name}-leave`);
-    el.classList.add(`${name}-leave-to`);
-    el.addEventListener("transitionend", finish);
-    setTimeout(finish, 1e3);
-  });
-}
-function handleTransition(element, expression, _modifiers, _context) {
-  const name = expression.trim().replace(/^['"]|['"]$/g, "") || "brio";
-  enterTransition(element, name);
-}
 function handleIf(element, expression, _modifiers, context, runtime, hydrateNodeFn) {
   const parent = element.parentNode;
   if (!parent) throw new Error("b-if requires an element with a parent node.");
+  const branches = [
+    { template: element.cloneNode(true), expression }
+  ];
+  branches[0].template.removeAttribute("b-if");
+  const nextBranch = (node) => {
+    var _a;
+    let next = node.nextSibling;
+    while (next && (next.nodeType === Node.COMMENT_NODE || next.nodeType === Node.TEXT_NODE && !((_a = next.textContent) == null ? void 0 : _a.trim()))) next = next.nextSibling;
+    return (next == null ? void 0 : next.nodeType) === Node.ELEMENT_NODE ? next : null;
+  };
+  let sibling = nextBranch(element);
+  let ended = false;
+  while (sibling && (sibling.hasAttribute("b-else-if") || sibling.hasAttribute("b-else"))) {
+    if (ended || sibling.hasAttribute("b-else-if") && sibling.hasAttribute("b-else"))
+      throw new SyntaxError("b-else must be the last branch of a b-if chain.");
+    const template = sibling.cloneNode(true);
+    const condition = sibling.getAttribute("b-else-if");
+    ended = condition === null;
+    template.removeAttribute("b-else-if");
+    template.removeAttribute("b-else");
+    branches.push({ template, expression: condition ?? void 0 });
+    const next = nextBranch(sibling);
+    sibling.remove();
+    sibling = next;
+  }
   const placeholder = document.createComment("brio:if");
-  const template = element.cloneNode(true);
-  template.removeAttribute("b-if");
   parent.replaceChild(placeholder, element);
+  const leaving = /* @__PURE__ */ new Set();
   let instance;
   let instanceScope;
-  let isLeaving = false;
+  let activeBranch = -1;
+  const removeCurrent = (animate) => {
+    const current = instance;
+    const scope = instanceScope;
+    instance = void 0;
+    instanceScope = void 0;
+    activeBranch = -1;
+    if (!current) return;
+    const name = animate ? getTransitionName(current) : void 0;
+    try {
+      scope == null ? void 0 : scope.dispose();
+    } catch (error) {
+      current.remove();
+      throw error;
+    }
+    if (name && current.isConnected) {
+      leaving.add(current);
+      leaveTransition(current, name, () => {
+        leaving.delete(current);
+        current.remove();
+      });
+    } else current.remove();
+  };
   onCleanup(() => {
     try {
-      instanceScope == null ? void 0 : instanceScope.dispose();
+      removeCurrent(false);
     } finally {
-      instance == null ? void 0 : instance.remove();
+      for (const node of leaving) {
+        cancelTransition(node);
+        node.remove();
+      }
+      leaving.clear();
       placeholder.remove();
     }
   });
   effect(() => {
     var _a;
-    if (evaluate(expression, context)) {
-      isLeaving = false;
-      if (instance) return;
-      instance = template.cloneNode(true);
-      instanceScope = createScope();
-      (_a = placeholder.parentNode) == null ? void 0 : _a.insertBefore(instance, placeholder.nextSibling);
-      instanceScope.run(() => hydrateNodeFn(instance, context, runtime));
-    } else if (instance && !isLeaving) {
-      const currentInstance = instance;
-      const currentScope = instanceScope;
-      instance = void 0;
-      instanceScope = void 0;
-      const transitionAttr = currentInstance.getAttribute("b-transition");
-      if (transitionAttr !== null) {
-        isLeaving = true;
-        const transitionName = transitionAttr.trim().replace(/^['"]|['"]$/g, "") || "brio";
-        leaveTransition(currentInstance, transitionName, () => {
-          try {
-            currentScope == null ? void 0 : currentScope.dispose();
-          } finally {
-            currentInstance.remove();
-          }
-        });
-      } else {
-        try {
-          currentScope == null ? void 0 : currentScope.dispose();
-        } finally {
-          currentInstance.remove();
-        }
-      }
-    }
+    const branch = branches.findIndex((candidate) => candidate.expression === void 0 || Boolean(evaluate(candidate.expression, context)));
+    if (branch === activeBranch) return;
+    removeCurrent(true);
+    if (branch < 0) return;
+    instance = branches[branch].template.cloneNode(true);
+    instanceScope = createScope();
+    activeBranch = branch;
+    (_a = placeholder.parentNode) == null ? void 0 : _a.insertBefore(instance, placeholder.nextSibling);
+    instanceScope.run(() => hydrateNodeFn(instance, context, runtime));
   });
 }
 const enumerate = (value) => {
@@ -578,66 +684,37 @@ function handleFor(element, expression, _modifiers, context, runtime, hydrateNod
 function handleShow(element, expression, modifiers, context) {
   const useDisplay = Boolean(modifiers.display);
   const el = element;
-  if (useDisplay) {
-    const originalDisplay = el.style.display === "none" ? "" : el.style.display;
-    effect(() => {
-      const value = evaluate(expression, context);
-      const transitionAttr = el.getAttribute("b-transition");
-      if (value) {
-        el.style.display = originalDisplay;
-      } else if (transitionAttr !== null && el.style.display !== "none") {
-        const name = transitionAttr.trim().replace(/^['"]|['"]$/g, "") || "brio";
-        leaveTransition(el, name, () => {
-          el.style.display = "none";
-        });
-      } else {
-        el.style.display = "none";
-      }
-    });
-    return;
-  }
-  const parent = element.parentNode;
-  if (!parent) throw new Error("b-show requires an element with a parent node.");
+  const originalDisplay = el.style.display === "none" ? "" : el.style.display;
   const placeholder = document.createComment("brio:show");
-  let isAttached = true;
-  let isLeaving = false;
+  if (!useDisplay) {
+    if (!element.parentNode) throw new Error("b-show requires an element with a parent node.");
+    element.before(placeholder);
+  }
+  let previous;
   onCleanup(() => {
+    cancelTransition(element);
     placeholder.remove();
-    if (element.parentNode) element.remove();
+    if (!useDisplay) element.remove();
   });
   effect(() => {
-    var _a, _b;
+    var _a;
     const visible = Boolean(evaluate(expression, context));
+    if (visible === previous) return;
+    const initial = previous === void 0;
+    previous = visible;
+    cancelTransition(element);
+    const name = getTransitionName(element);
     if (visible) {
-      isLeaving = false;
-      if (!isAttached) {
-        (_a = placeholder.parentNode) == null ? void 0 : _a.insertBefore(element, placeholder.nextSibling);
-        isAttached = true;
-      }
-    } else if (isAttached && !isLeaving) {
-      const transitionAttr = element.getAttribute("b-transition");
-      if (transitionAttr !== null) {
-        isLeaving = true;
-        const name = transitionAttr.trim().replace(/^['"]|['"]$/g, "") || "brio";
-        leaveTransition(element, name, () => {
-          var _a2;
-          if (!isAttached) return;
-          if (!placeholder.parentNode) {
-            (_a2 = element.parentNode) == null ? void 0 : _a2.replaceChild(placeholder, element);
-          } else {
-            element.remove();
-          }
-          isAttached = false;
-          isLeaving = false;
-        });
-      } else {
-        if (!placeholder.parentNode) {
-          (_b = element.parentNode) == null ? void 0 : _b.replaceChild(placeholder, element);
-        } else {
-          element.remove();
-        }
-        isAttached = false;
-      }
+      if (useDisplay) el.style.display = originalDisplay;
+      else (_a = placeholder.parentNode) == null ? void 0 : _a.insertBefore(element, placeholder.nextSibling);
+      if (!initial && name) enterTransition(element, name);
+    } else {
+      const hide = () => {
+        if (useDisplay) el.style.display = "none";
+        else element.remove();
+      };
+      if (!initial && name) leaveTransition(element, name, hide);
+      else hide();
     }
   });
 }
@@ -680,7 +757,8 @@ function handleData(element, expression, _modifiers, parentContext) {
   const reactiveData = state(data);
   const scopeObj = {
     $data: reactiveData,
-    $parent: parentContext
+    $parent: parentContext,
+    $el: element
   };
   return createExpressionScope(
     reactiveData,
@@ -706,7 +784,20 @@ function handleId(_element, expression, _modifiers, context) {
   });
   return createExpressionScope({ $id: idMap }, context);
 }
+function validateMoneyOptions(options) {
+  if (options === null || typeof options !== "object" || Array.isArray(options))
+    throw new TypeError("Money mask options must be an object.");
+  if (options.thousands !== void 0 && typeof options.thousands !== "string")
+    throw new TypeError("Money mask thousands must be a string.");
+  if (options.decimal !== void 0 && (typeof options.decimal !== "string" || !options.decimal))
+    throw new TypeError("Money mask decimal must be a non-empty string.");
+  if (options.precision !== void 0 && (!Number.isInteger(options.precision) || options.precision < 0 || options.precision > 100))
+    throw new RangeError("Money mask precision must be an integer between 0 and 100.");
+  if ((options.thousands ?? ",") === (options.decimal ?? "."))
+    throw new TypeError("Money mask thousands and decimal separators must differ.");
+}
 function formatMoney(value, options = {}) {
+  validateMoneyOptions(options);
   const thousands = options.thousands ?? ",";
   const decimal = options.decimal ?? ".";
   const precision = options.precision ?? 2;
@@ -727,7 +818,7 @@ function formatMoney(value, options = {}) {
     integerStr = digitsOnly.replace(/^0+/, "") || "0";
     decimalStr = "";
   }
-  const formattedInteger = integerStr.replace(/\B(?=(\d{3})+(?!\d))/g, thousands);
+  const formattedInteger = integerStr.replace(/\B(?=(\d{3})+(?!\d))/g, () => thousands);
   const result = decimalStr ? `${formattedInteger}${decimal}${decimalStr}` : formattedInteger;
   return isNegative ? `-${result}` : result;
 }
@@ -755,21 +846,20 @@ function formatMask(value, pattern) {
   }
   return result;
 }
-function handleMask(element, expression, modifiers, _context) {
+function handleMask(element, expression, modifiers, context) {
   if (!(element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement)) {
     throw new TypeError("b-mask can only be used on input and textarea elements.");
   }
   const trimmed = expression.trim();
-  const isMoney = Boolean(modifiers.money) || trimmed.startsWith("money") || trimmed === "'money'";
+  const money = (options = {}) => {
+    validateMoneyOptions(options);
+    return { kind: "money", options };
+  };
+  const maskContext = createExpressionScope({ money }, context);
+  let configuration = "";
   const applyMask = () => {
     const current = element.value;
-    let formatted = "";
-    if (isMoney) {
-      formatted = formatMoney(current);
-    } else {
-      const pattern = trimmed.replace(/^['"]|['"]$/g, "");
-      formatted = formatMask(current, pattern);
-    }
+    const formatted = typeof configuration === "string" ? formatMask(current, configuration) : formatMoney(current, configuration.options);
     if (element.value !== formatted) {
       element.value = formatted;
       element.dispatchEvent(new Event("input", { bubbles: true }));
@@ -778,6 +868,15 @@ function handleMask(element, expression, modifiers, _context) {
   element.addEventListener("input", applyMask);
   onCleanup(() => {
     element.removeEventListener("input", applyMask);
+  });
+  effect(() => {
+    const value = trimmed ? evaluate(trimmed, maskContext) : void 0;
+    if (modifiers.money) configuration = money(value);
+    else if (value === "money" || value === money) configuration = money();
+    else if (typeof value === "string") configuration = value;
+    else if (value && typeof value === "object" && value.kind === "money") configuration = money(value.options);
+    else throw new TypeError("b-mask must evaluate to a pattern string or money(options).");
+    applyMask();
   });
 }
 function handleTeleport(element, expression, _modifiers, _context) {
@@ -920,26 +1019,21 @@ function handleEffect(_element, expression, _modifiers, context) {
   });
 }
 function handleScript(element, _expression, _modifiers, context) {
-  if (element.tagName.toLowerCase() !== "script") return;
+  if (element.tagName.toLowerCase() !== "script")
+    throw new TypeError("b-script can only be used on script elements.");
   const raw = (element.textContent || "").trim();
-  if (!raw) return;
-  const arrowRegex = /^\s*\(?\s*(?:(?:\(([^)]*)\)|([a-zA-Z_$][\w$]*))\s*=>\s*\{([\s\S]*)\})\s*;?\s*$/;
-  const match = raw.match(arrowRegex);
-  const scriptScope = createExpressionScope({ ctx: context, $ctx: context }, context);
-  if (match) {
-    try {
-      const fn = evaluate(`(${raw.replace(/;\s*$/, "")})`, scriptScope);
-      if (typeof fn === "function") {
-        fn(scriptScope, context.$data);
-        return;
-      }
-    } catch {
-      const body = match[3];
-      execute(body, scriptScope);
-      return;
-    }
+  if (!raw) throw new SyntaxError("b-script requires a function expression.");
+  const ctx = createExpressionScope({ onCleanup }, context);
+  try {
+    const result = evaluateFunction(raw, ctx)(ctx);
+    if (result instanceof Promise)
+      return result.then(() => {
+      }, (error) => {
+        throw causedError("Brio b-script execution failed.", error);
+      });
+  } catch (error) {
+    throw causedError("Brio b-script execution failed.", error);
   }
-  execute(raw, scriptScope);
 }
 function extractModifiers(attrName) {
   const parts = attrName.split(".");
@@ -984,7 +1078,7 @@ function mountRouterOutlet(element, context, runtime, hydrateNodeFn) {
 const componentNamePattern$1 = /^[a-z][a-z0-9]*-[a-z0-9-]+$/;
 function hydrateChildren(element, context, runtime) {
   for (const child of Array.from(element.childNodes)) {
-    hydrateNode(child, context, runtime);
+    if (child.parentNode === element) hydrateNode(child, context, runtime);
   }
 }
 const interpolationRegex = /\$\{([^}]+)\}/g;
@@ -1009,6 +1103,13 @@ function hydrateNode(node, parentContext, runtime) {
   if (element.hasAttribute("b-ignore") || element.hasAttribute("ignore")) {
     return;
   }
+  const ifAttr = element.getAttribute("b-if");
+  if (ifAttr !== null) {
+    handleIf(element, ifAttr, {}, parentContext, runtime, hydrateNode);
+    return;
+  }
+  if (element.hasAttribute("b-else-if") || element.hasAttribute("b-else"))
+    throw new SyntaxError("b-else-if and b-else require an adjacent preceding b-if branch.");
   let context = createExpressionScope({ $el: element }, parentContext);
   const dataAttr = element.getAttribute("b-data");
   if (dataAttr !== null) {
@@ -1019,12 +1120,6 @@ function hydrateNode(node, parentContext, runtime) {
   if (idAttr !== null) {
     context = handleId(element, idAttr, {}, context);
     element.removeAttribute("b-id");
-  }
-  const ifAttr = element.getAttribute("b-if");
-  if (ifAttr !== null) {
-    const { modifiers } = extractModifiers("b-if");
-    handleIf(element, ifAttr, modifiers, context, runtime, hydrateNode);
-    return;
   }
   const forAttr = element.getAttribute("b-for");
   if (forAttr !== null) {
@@ -1046,6 +1141,8 @@ function hydrateNode(node, parentContext, runtime) {
   }
   let hasText = false;
   let hasHtml = false;
+  const transitionAttr = Array.from(element.attributes).find((attribute) => ["b-transition", "transition"].includes(extractModifiers(attribute.name).baseName));
+  if (transitionAttr) prepareTransition(element, transitionAttr.value);
   for (const attribute of Array.from(element.attributes)) {
     const attrName = attribute.name;
     const attrValue = attribute.value;
@@ -1079,7 +1176,7 @@ function hydrateNode(node, parentContext, runtime) {
       element.removeAttribute(attrName);
       hasHtml = true;
     } else if (baseName === "b-mask" || baseName === "mask") {
-      handleMask(element, attrValue, modifiers);
+      handleMask(element, attrValue, modifiers, context);
       element.removeAttribute(attrName);
     } else if (baseName === "b-teleport" || baseName === "teleport") {
       handleTeleport(element, attrValue);
@@ -1090,7 +1187,7 @@ function hydrateNode(node, parentContext, runtime) {
     } else if (baseName === "b-effect" || baseName === "effect") {
       handleEffect(element, attrValue, modifiers, context);
       element.removeAttribute(attrName);
-    } else if (baseName === "b-script" || baseName === "script") {
+    } else if (baseName === "b-script") {
       handleScript(element, attrValue, modifiers, context);
       element.removeAttribute(attrName);
     } else if (baseName === "b-router-outlet") {
@@ -1099,7 +1196,7 @@ function hydrateNode(node, parentContext, runtime) {
       return;
     }
   }
-  if (!hasText && !hasHtml) {
+  if (!hasText && !hasHtml && tagName !== "script") {
     hydrateChildren(element, context, runtime);
   }
 }
@@ -1453,6 +1550,7 @@ export {
   devtools,
   effect,
   evaluate,
+  evaluateFunction,
   execute,
   k as getCurrentScope,
   http,

@@ -56,7 +56,7 @@ Expressions see the nearest `b-data` scope, component setup values, and app stat
 
 ## HTML directives
 
-Directive names use **letters and hyphens only**. There is no colon/modifier syntax. Arguments are part of the directive name: `b-on-click`, `b-bind-href`. Unknown directives and malformed expressions throw errors with the expression or element context.
+Directive arguments use hyphens (`b-on-click`, `b-bind-href`); options use chained dot modifiers (`on-click.prevent.stop`, `b-show.display`, `b-mask.money`).
 
 | Directive | Purpose |
 | --- | --- |
@@ -65,8 +65,11 @@ Directive names use **letters and hyphens only**. There is no colon/modifier syn
 | `b-bind-name` | Reactively bind an attribute or DOM property, e.g. `b-bind-href="url"`. |
 | `b-on-event` | Listen for a DOM event, e.g. `b-on-submit="save($event)"`. |
 | `b-model` | Two-way bind a text-like input, checkbox, radio, or select. |
-| `b-if` | Insert or remove an element and its owned effects. |
-| `b-show` | Toggle visibility while keeping the element mounted. |
+| `b-if`, `b-else-if`, `b-else` | Mount one conditional branch; dispose its state scope, effects, and listeners when it becomes false. |
+| `b-show` | Detach the element without dehydrating it; `.display` uses CSS display instead. |
+| `b-script` | Execute a contextual function expression inside a marked script element. |
+| `b-mask` | Format an input with a pattern string or `money(options)`. |
+| `b-transition` | Animate enter/leave with named CSS transition classes. |
 | `b-for` | Render an array, iterable, object, or integer. |
 | `b-key` | Give a repeated item a stable string or number identity. Used with `b-for`. |
 | `b-html` | Insert explicitly trusted HTML created by `trustedHTML()`. |
@@ -92,6 +95,53 @@ Directive names use **letters and hyphens only**. There is no colon/modifier syn
 `b-for` uses `item in items` or `item, index in items`. Without `b-key`, the index is the key; provide a stable key when items can be inserted, removed, or reordered. Duplicate keys are errors.
 
 `b-bind-*` binds a DOM property when one exists; otherwise it sets or removes the corresponding attribute. `false`, `null`, and `undefined` remove attributes. `class` accepts a string, array, or object of class names and booleans. `style` accepts a style object.
+
+### Conditional lifecycle
+
+`b-else-if` and `b-else` follow an adjacent `b-if` branch (whitespace and comments are allowed between branches). The first true branch is mounted; `b-else` is the final fallback. Conditions run in the parent scope.
+
+```html
+<section b-if="$data.loggedIn" b-data="{ clicks: 0 }">
+  <button on-click="$data.clicks++">${$data.clicks}</button>
+</section>
+<p b-else-if="$data.loading">Loading...</p>
+<p b-else>Please log in.</p>
+```
+
+When a branch becomes false, its bindings and listeners are disposed immediately. Its next mount recreates branch-local `b-data` and component state. Parent/app state is not reset. With a transition, the exiting DOM is an inert visual snapshot until the animation finishes.
+
+`b-show` preserves the same node, bindings, and local state when detached. `b-show.display` preserves it in the DOM using `display: none`. Both modes animate on subsequent show/hide changes, and a reversed toggle cancels pending removal.
+
+### Contextual scripts
+
+Only `<script b-script>` is processed. Write an unassigned arrow expression so the browser does not execute its body:
+
+```html
+<script b-script>
+  (ctx) => {
+    ctx.$data.ready = true;
+    const timer = setTimeout(() => { ctx.$data.message = 'Ready'; }, 250);
+    ctx.onCleanup(() => clearTimeout(timer));
+  }
+</script>
+```
+
+Brio constructs a function factory with an explicit context parameter, then invokes the returned function with that context; scripts do not use `with`. Context includes `$data`, `$parent`, `$el`, `$id`, `$for`, and `$event` when supplied by the caller. `$el` is the script element. The same helpers are available as lexical bindings, so `() => { $data.ready = true; }` also works. Async arrows and destructured parameters are supported; errors are surfaced without retrying the script. Async initialization does not block mounting; initialize values used by the template before the first `await`. Register timer/listener cleanup synchronously through `ctx.onCleanup`.
+
+### Money masks
+
+```html
+<input b-mask="money({ thousands: '.', decimal: ',', precision: 2 })">
+<input b-mask.money="{ thousands: ' ', decimal: ',', precision: 3 }">
+```
+
+Options default to `thousands: ','`, `decimal: '.'`, `precision: 2`. Precision is an integer from 0 to 100. Digits are interpreted as fixed-precision minor units: `123456` becomes `1.234,56` in the first example. Options may reference reactive state and are forwarded to the formatter. `b-mask.money` without an expression and `b-mask="'money'"` use defaults. Pattern masks use expressions such as `b-mask="'(###) ###-####'"`.
+
+### CSS transitions
+
+`b-transition="'fade'"` uses `fade-enter`, `fade-enter-active`, `fade-enter-to`, and the corresponding `fade-leave*` classes. The default name is `brio`. Define CSS `transition` properties on the active classes and starting/ending styles on the other classes.
+
+Brio tracks the element's own `transitionrun`, `transitionend`, and `transitioncancel` events for every running property, ignoring descendant events. Removal waits for all properties, including delays. A fallback uses computed CSS duration plus delay, not a fixed timeout. No-duration/reduced-motion styles complete without waiting for an event; unmount cancels pending frames, listeners, and timers. This directive handles CSS transitions, not keyframe animations.
 
 ## Components
 

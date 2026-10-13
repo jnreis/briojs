@@ -1,44 +1,25 @@
-import { evaluate, execute, createExpressionScope } from '../../core/expression';
+import { evaluateFunction, createExpressionScope } from '../../core/expression';
+import { causedError } from '../../core/errors';
+import { onCleanup } from '../../core/scope';
 
-/**
- * Handles b-script directive execution.
- *
- * Only processes <script> elements that have the b-script directive.
- * Expects the textContent of the script to be an unassigned arrow function:
- * (ctx) => { ... } or () => { ... }
- */
 export function handleScript(
     element: Element,
     _expression: string,
     _modifiers: Record<string, boolean>,
     context: Record<PropertyKey, any>,
-): void {
-    if (element.tagName.toLowerCase() !== 'script') return;
-
+): void | Promise<void> {
+    if (element.tagName.toLowerCase() !== 'script')
+        throw new TypeError('b-script can only be used on script elements.');
     const raw = (element.textContent || '').trim();
-    if (!raw) return;
-
-    // Check if wrapped in an arrow function (with or without enclosing parentheses)
-    const arrowRegex = /^\s*\(?\s*(?:(?:\(([^)]*)\)|([a-zA-Z_$][\w$]*))\s*=>\s*\{([\s\S]*)\})\s*;?\s*$/;
-    const match = raw.match(arrowRegex);
-
-    const scriptScope = createExpressionScope({ ctx: context, $ctx: context }, context);
-
-    if (match) {
-        // Compile the arrow function as a callable function to preserve parameter bindings and lexical closure
-        try {
-            const fn = evaluate(`(${raw.replace(/;\s*$/, '')})`, scriptScope);
-            if (typeof fn === 'function') {
-                fn(scriptScope, context.$data);
-                return;
-            }
-        } catch {
-            // Fallback to statement execution of the body if evaluating as an expression fails
-            const body = match[3];
-            execute(body, scriptScope);
-            return;
-        }
+    if (!raw) throw new SyntaxError('b-script requires a function expression.');
+    const ctx = createExpressionScope({ onCleanup }, context);
+    try {
+        const result = evaluateFunction(raw, ctx)(ctx);
+        if (result instanceof Promise)
+            return result.then(() => {}, error => {
+                throw causedError('Brio b-script execution failed.', error);
+            });
+    } catch (error) {
+        throw causedError('Brio b-script execution failed.', error);
     }
-
-    execute(raw, scriptScope);
 }

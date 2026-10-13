@@ -3,8 +3,8 @@ import { onCleanup } from '../../core/scope';
 export function handleTransition(
     element: Element,
     expression: string,
-    modifiers: Record<string, boolean>,
-    context: Record<PropertyKey, any>,
+    _modifiers: Record<string, boolean>,
+    _context: Record<PropertyKey, any>,
 ): void {
     const el = element as HTMLElement;
     const name = expression.trim().replace(/^['"]|['"]$/g, '') || 'brio';

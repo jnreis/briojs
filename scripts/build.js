@@ -25,15 +25,6 @@ await build({
         dts({
             entryRoot: 'src',
             include: ['src/core', 'src/dom', 'src/plugins', 'src/reactivity', 'src/*.ts'],
-            exclude: [
-                'src/vnext/**',
-                'src/directives/**',
-                'src/methods/**',
-                'src/tools/**',
-                'src/app.ts',
-                'src/briojs.core.min.ts',
-                'src/briojs.min.ts',
-            ],
             rollupTypes: false,
         }),
     ],

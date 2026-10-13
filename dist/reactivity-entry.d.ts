@@ -1,4 +1,2 @@
-export { batch, computed, createScope, effect, getCurrentScope, onCleanup, signal, state, } from './reactivity';
-export type { EffectOptions, Scope, Signal, Stop } from './reactivity';
-export { persist } from './persistence';
-export type { PersistOptions, StorageAdapter } from './persistence';
+export { effect, batch, state, signal, computed, resource, createScope, onCleanup, onDispose, getCurrentScope, persist, } from './index';
+export type { Signal, Stop, EffectOptions, Resource, Scope, PersistOptions, StorageAdapter, } from './index';

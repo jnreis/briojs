@@ -5,9 +5,9 @@ let idSeq = 0;
 const activeIds = new Set<string>();
 
 export function handleId(
-    element: Element,
+    _element: Element,
     expression: string,
-    modifiers: Record<string, boolean>,
+    _modifiers: Record<string, boolean>,
     context: Record<PropertyKey, any>,
 ): Record<PropertyKey, any> {
     const evaluated = expression ? evaluate(expression, context) : ['id'];

@@ -1,11 +1,10 @@
-import { evaluate } from '../../core/expression';
 import { onCleanup } from '../../core/scope';
 
 export function handleTeleport(
     element: Element,
     expression: string,
-    modifiers: Record<string, boolean>,
-    context: Record<PropertyKey, any>,
+    _modifiers: Record<string, boolean>,
+    _context: Record<PropertyKey, any>,
 ): void {
     const targetSelector = expression.trim().replace(/^['"]|['"]$/g, '');
     const target = document.querySelector(targetSelector);

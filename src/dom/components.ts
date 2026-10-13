@@ -2,7 +2,6 @@ import { evaluate, execute, createExpressionScope } from '../core/expression';
 import { state } from '../reactivity/state-v4';
 import { effect, batch } from '../reactivity/effect';
 import { createScope, onCleanup } from '../core/scope';
-import type { Scope } from '../core/scope';
 import { generateScopeId, injectScopedStyles } from './scoped-style';
 import type { ComponentDefinition, DomRuntime } from './types';
 

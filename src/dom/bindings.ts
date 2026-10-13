@@ -1,4 +1,4 @@
-import { createExpressionScope, evaluate } from '../core/expression';
+import { createExpressionScope } from '../core/expression';
 import { createScope, onCleanup } from '../core/scope';
 import type { Scope } from '../core/scope';
 import { effect } from '../reactivity/effect';
@@ -34,10 +34,11 @@ export function mountRouterOutlet(
         if (!route) return;
         const definition = runtime.components.get(route.component);
         if (!definition) throw new Error(`No component registered for route "${route.component}".`);
-        childElement = document.createElement(route.component);
+        const el = document.createElement(route.component);
+        childElement = el;
         childScope = createScope();
-        element.append(childElement);
-        childScope.run(() => mountComponent(childElement!, definition, context, runtime, hydrateNodeFn));
+        element.append(el);
+        childScope.run(() => mountComponent(el, definition, context, runtime, hydrateNodeFn));
     });
 }
 

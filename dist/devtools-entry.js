@@ -1,4 +1,4 @@
-import { i as installDevtoolsBridge, e as effect, c as causedError } from "./reactivity-bRcZEPpQ.js";
+import { l as installDevtoolsBridge, e as effect, c as causedError } from "./effect-DZvu7u5S.js";
 let effectsCreated = 0;
 let activeEffects = 0;
 const apps = /* @__PURE__ */ new Map();
@@ -41,19 +41,20 @@ installDevtoolsBridge({
   },
   appDisposed(app) {
     const record = apps.get(app);
-    if (!record) return;
-    record.snapshot();
+    record == null ? void 0 : record.snapshot();
     apps.delete(app);
     notifySubscribers();
   },
   rootMounted(app, root) {
-    var _a;
-    (_a = apps.get(app)) == null ? void 0 : _a.roots.add(root);
+    const record = apps.get(app);
+    if (!record) return;
+    record.roots.add(root);
     notifySubscribers();
   },
   rootUnmounted(app, root) {
-    var _a;
-    (_a = apps.get(app)) == null ? void 0 : _a.roots.delete(root);
+    const record = apps.get(app);
+    if (!record) return;
+    record.roots.delete(root);
     notifySubscribers();
   },
   effectCreated() {
@@ -66,6 +67,20 @@ installDevtoolsBridge({
     notifySubscribers();
   }
 });
+const devtools = {
+  subscribe(callback) {
+    subscribers.add(callback);
+    callback();
+    return () => subscribers.delete(callback);
+  },
+  getSnapshot,
+  reset() {
+    effectsCreated = 0;
+    activeEffects = 0;
+    apps.clear();
+    subscribers.clear();
+  }
+};
 function inspectDevtools() {
   return getSnapshot();
 }
@@ -91,6 +106,7 @@ ${JSON.stringify(appState, null, 2)}`)
   };
 }
 export {
+  devtools,
   devtoolsPanel,
   inspectDevtools
 };

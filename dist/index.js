@@ -1,7 +1,11 @@
-import { c as causedError, e as effect, o as onCleanup, a as createScope, s as state, b as batch, d as combinedError, n as notifyAppCreated, f as notifyRootUnmounted, g as notifyRootMounted, h as notifyAppDisposed } from "./reactivity-bRcZEPpQ.js";
-import { j, k } from "./reactivity-bRcZEPpQ.js";
-import { persist } from "./reactivity.js";
+import { c as causedError, a as createScope, o as onCleanup, e as effect, b as batch, d as combinedError, n as notifyAppCreated, f as notifyRootUnmounted, h as notifyRootMounted, i as notifyAppDisposed } from "./effect-DZvu7u5S.js";
+import { k, j, s } from "./effect-DZvu7u5S.js";
+import { s as state } from "./state-v4-UFBFm952.js";
+import { a } from "./state-v4-UFBFm952.js";
+import { computed, resource } from "./reactivity.js";
 import { createRouter } from "./router-entry.js";
+import { persist } from "./persistence-entry.js";
+import { devtools } from "./devtools-entry.js";
 const valueExpressions = /* @__PURE__ */ new Map();
 const statementExpressions = /* @__PURE__ */ new Map();
 const assignmentExpressions = /* @__PURE__ */ new Map();
@@ -80,31 +84,159 @@ function assign(source, scope, value) {
     throw causedError(`Brio model expression failed: "${source}"`, error);
   }
 }
-const trustedMarkup = Symbol("brio.trustedMarkup");
+let idCounter = 0;
+function generateScopeId() {
+  return `b-${++idCounter}`;
+}
+function scopeCss(content, scopeAttr) {
+  const attrSelector = `[${scopeAttr}]`;
+  if (typeof CSSStyleSheet !== "undefined" && "replaceSync" in CSSStyleSheet.prototype) {
+    try {
+      const sheet = new CSSStyleSheet();
+      sheet.replaceSync(content);
+      const scopeRules = (rules) => {
+        let result = "";
+        for (const rule of Array.from(rules)) {
+          if (rule instanceof CSSStyleRule) {
+            const scopedSelectors = rule.selectorText.split(",").map((sel) => {
+              const trimmed = sel.trim();
+              if (trimmed.includes("&")) {
+                return trimmed.replace(/&/g, attrSelector);
+              }
+              return `${trimmed}${attrSelector}, ${attrSelector} ${trimmed}`;
+            }).join(", ");
+            result += `${scopedSelectors} { ${rule.style.cssText} }
+`;
+          } else if (rule instanceof CSSGroupingRule) {
+            const condition = rule.conditionText ?? "";
+            result += `@${rule.name || "media"} ${condition} {
+${scopeRules(rule.cssRules)}
+}
+`;
+          } else {
+            result += `${rule.cssText}
+`;
+          }
+        }
+        return result;
+      };
+      return scopeRules(sheet.cssRules);
+    } catch {
+    }
+  }
+  return content.replace(/([^{};]+)({)/g, (match, selector, brace) => {
+    const trimmed = selector.trim();
+    if (trimmed.startsWith("@")) return match;
+    const scoped = trimmed.split(",").map((s2) => `${s2.trim()}${attrSelector}`).join(", ");
+    return `${scoped} ${brace}`;
+  });
+}
+function injectScopedStyles(styleContent, scopeAttr) {
+  const styleEl = document.createElement("style");
+  styleEl.setAttribute("data-brio-scoped", scopeAttr);
+  styleEl.textContent = scopeCss(styleContent, scopeAttr);
+  document.head.appendChild(styleEl);
+  return styleEl;
+}
 const projectedContexts = /* @__PURE__ */ new WeakMap();
+function fillSlots(host, template, context) {
+  var _a;
+  const slots = /* @__PURE__ */ new Map();
+  for (const child of Array.from(host.childNodes)) {
+    const name = child instanceof Element ? child.getAttribute("slot") ?? "" : "";
+    const content = slots.get(name) ?? [];
+    content.push(child);
+    slots.set(name, content);
+  }
+  for (const outlet of Array.from(template.querySelectorAll("slot"))) {
+    const name = outlet.getAttribute("name") ?? "";
+    const content = slots.get(name);
+    if (!(content == null ? void 0 : content.length)) {
+      outlet.replaceWith(...Array.from(outlet.childNodes));
+      continue;
+    }
+    for (const node of content) projectedContexts.set(node, context);
+    outlet.replaceWith(...content);
+    slots.delete(name);
+  }
+  for (const remaining of slots.values())
+    for (const node of remaining) (_a = node.parentNode) == null ? void 0 : _a.removeChild(node);
+}
+function mountComponent(element, definition, context, runtime, hydrateNodeFn) {
+  const propsObject = {};
+  for (const attribute of Array.from(element.attributes)) {
+    if (!attribute.name.startsWith("b-")) propsObject[attribute.name] = attribute.value;
+  }
+  const propBindings = Array.from(element.attributes).filter((attribute) => attribute.name.startsWith("b-bind-") || attribute.name.startsWith("bind-")).map((attribute) => {
+    const raw = attribute.name.startsWith("b-bind-") ? attribute.name.slice("b-bind-".length) : attribute.name.slice("bind-".length);
+    return {
+      name: raw.split(".")[0],
+      expression: attribute.value
+    };
+  });
+  const props = state(propsObject);
+  const componentScope = createScope();
+  onCleanup(() => componentScope.dispose());
+  const emit = (name, detail) => {
+    if (!/^[a-z][a-z0-9-]*$/.test(name))
+      throw new TypeError(`Invalid component event name "${name}".`);
+    element.dispatchEvent(new CustomEvent(name, { detail, bubbles: true }));
+  };
+  componentScope.run(() => {
+    var _a;
+    let scopeAttr;
+    if (definition.style) {
+      scopeAttr = generateScopeId();
+      element.setAttribute(scopeAttr, "");
+      const styleEl = injectScopedStyles(definition.style, scopeAttr);
+      onCleanup(() => styleEl.remove());
+    }
+    for (const attribute of Array.from(element.attributes)) {
+      if (attribute.name.startsWith("b-on-") || attribute.name.startsWith("on-")) {
+        const prefix = attribute.name.startsWith("b-on-") ? "b-on-" : "on-";
+        const eventPart = attribute.name.slice(prefix.length).split(".")[0];
+        if (!/^[a-z-]+$/.test(eventPart))
+          throw new SyntaxError(`Invalid component event directive "${attribute.name}".`);
+        const expression = attribute.value;
+        const handler = (event) => batch(() => execute(expression, createExpressionScope({ $event: event }, context), event));
+        element.addEventListener(eventPart, handler);
+        onCleanup(() => element.removeEventListener(eventPart, handler));
+      } else if (attribute.name.startsWith("b-") && !attribute.name.startsWith("b-bind-")) {
+        throw new Error(`Directive "${attribute.name}" is not supported on component hosts.`);
+      }
+    }
+    for (const binding of propBindings)
+      props[binding.name] = evaluate(binding.expression, context);
+    const setupResult = ((_a = definition.setup) == null ? void 0 : _a.call(definition, { el: element, props, emit, app: runtime.app })) ?? {};
+    const local = state({ ...setupResult, $el: element, props, emit });
+    const componentContext = createExpressionScope(local, context);
+    for (const binding of propBindings) {
+      effect(() => {
+        props[binding.name] = evaluate(binding.expression, context);
+      });
+    }
+    const template = document.createElement("template");
+    template.innerHTML = definition.template;
+    if (scopeAttr) {
+      for (const el of Array.from(template.content.querySelectorAll("*"))) {
+        el.setAttribute(scopeAttr, "");
+      }
+    }
+    fillSlots(element, template.content, context);
+    element.replaceChildren(template.content);
+    for (const child of Array.from(element.childNodes)) {
+      const childContext = projectedContexts.get(child) ?? componentContext;
+      projectedContexts.delete(child);
+      hydrateNodeFn(child, childContext, runtime);
+    }
+    for (const attribute of Array.from(element.attributes)) {
+      if (attribute.name.startsWith("b-")) element.removeAttribute(attribute.name);
+    }
+  });
+}
 const staticClasses = /* @__PURE__ */ new WeakMap();
 const dynamicStyles = /* @__PURE__ */ new WeakMap();
-const componentNamePattern$1 = /^[a-z][a-z0-9]*-[a-z0-9-]+$/;
-const directiveNamePattern = /^b-[a-z-]+$/;
-function trustedHTML(markup) {
-  return { [trustedMarkup]: markup };
-}
-const getExpression = (expression, context) => evaluate(expression, context);
-const registerEventBindings = (element, context) => {
-  for (const attribute of Array.from(element.attributes)) {
-    if (!attribute.name.startsWith("b-on-")) continue;
-    if (!directiveNamePattern.test(attribute.name))
-      throw new SyntaxError(`Invalid Brio directive name "${attribute.name}".`);
-    const eventName = attribute.name.slice("b-on-".length);
-    if (!eventName) throw new SyntaxError(`Brio event directive "${attribute.name}" has no event name.`);
-    const source = attribute.value;
-    const handler = (event) => batch(() => execute(source, createExpressionScope({ $event: event }, context), event));
-    element.addEventListener(eventName, handler);
-    onCleanup(() => element.removeEventListener(eventName, handler));
-    element.removeAttribute(attribute.name);
-  }
-};
-const setBoundValue = (element, name, value) => {
+const setBoundValue = (element, name, value, forceProp = false) => {
   if (name === "class") {
     let staticNames = staticClasses.get(element);
     if (!staticNames) {
@@ -148,52 +280,110 @@ const setBoundValue = (element, name, value) => {
     dynamicStyles.set(element, currentProperties);
     return;
   }
-  if (name in element && !name.startsWith("aria-") && !name.startsWith("data-")) {
+  if (forceProp || name in element && !name.startsWith("aria-") && !name.startsWith("data-")) {
     try {
       element[name] = value;
       return;
     } catch (error) {
-      throw causedError(`Unable to bind "${name}" on <${element.tagName.toLowerCase()}>.`, error);
+      if (forceProp) throw causedError(`Unable to bind property "${name}" on <${element.tagName.toLowerCase()}>.`, error);
     }
   }
   if (value === null || value === void 0 || value === false) element.removeAttribute(name);
   else element.setAttribute(name, value === true ? "" : String(value));
 };
-const registerBindings = (element, context) => {
-  for (const attribute of Array.from(element.attributes)) {
-    if (!attribute.name.startsWith("b-bind-")) continue;
-    if (!directiveNamePattern.test(attribute.name))
-      throw new SyntaxError(`Invalid Brio directive name "${attribute.name}".`);
-    const property = attribute.name.slice("b-bind-".length);
-    if (!property) throw new SyntaxError(`Brio binding directive "${attribute.name}" has no target.`);
-    const expression = attribute.value;
-    effect(() => setBoundValue(element, property, getExpression(expression, context)));
-    element.removeAttribute(attribute.name);
-  }
-};
-const registerModel = (element, expression, context) => {
+function handleBind(element, attrName, expression, modifiers, context) {
+  const rawTarget = attrName.startsWith("b-bind-") ? attrName.slice("b-bind-".length) : attrName.slice("bind-".length);
+  if (!rawTarget) throw new SyntaxError(`Brio binding directive "${attrName}" has no target.`);
+  const forceProp = Boolean(modifiers.prop);
+  effect(() => {
+    const value = evaluate(expression, context);
+    setBoundValue(element, rawTarget, value, forceProp);
+  });
+}
+function handleOn(element, attrName, expression, modifiers, context) {
+  const rawTarget = attrName.startsWith("b-on-") ? attrName.slice("b-on-".length) : attrName.slice("on-".length);
+  if (!rawTarget) throw new SyntaxError(`Brio event directive "${attrName}" has no event name.`);
+  let target = element;
+  if (modifiers.window) target = window;
+  else if (modifiers.document) target = document;
+  let debounceTimer;
+  let throttleTimer;
+  const handler = (event) => {
+    if (modifiers.prevent) event.preventDefault();
+    if (modifiers.stop) event.stopPropagation();
+    if (modifiers.self && event.target !== element) return;
+    if (modifiers.outside && (element.contains(event.target) || !element.isConnected)) return;
+    const invoke = () => batch(() => {
+      execute(expression, createExpressionScope({ $event: event }, context), event);
+    });
+    if (modifiers.debounce) {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(invoke, 150);
+      return;
+    }
+    if (modifiers.throttle) {
+      if (throttleTimer) return;
+      throttleTimer = setTimeout(() => {
+        throttleTimer = null;
+      }, 150);
+      invoke();
+      return;
+    }
+    invoke();
+  };
+  const options = {
+    capture: Boolean(modifiers.capture),
+    passive: Boolean(modifiers.passive),
+    once: Boolean(modifiers.once)
+  };
+  target.addEventListener(rawTarget, handler, options);
+  onCleanup(() => {
+    clearTimeout(debounceTimer);
+    clearTimeout(throttleTimer);
+    target.removeEventListener(rawTarget, handler, options);
+  });
+}
+function handleModel(element, expression, modifiers, context) {
   if (!(element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement || element instanceof HTMLSelectElement))
     throw new TypeError("b-model can only be used on input, textarea, and select elements.");
+  const isLazy = Boolean(modifiers.lazy);
+  const isTrim = Boolean(modifiers.trim);
+  const isNumber = Boolean(modifiers.number);
+  const formatValue = (val) => {
+    let res = isTrim ? val.trim() : val;
+    if (isNumber) {
+      const parsed = parseFloat(res);
+      return isNaN(parsed) ? res : parsed;
+    }
+    return res;
+  };
   const updateState = () => {
     const input = element;
-    const current = getExpression(expression, context);
+    const current = evaluate(expression, context);
     if (element instanceof HTMLSelectElement && element.multiple) {
-      assign(expression, context, Array.from(element.selectedOptions, (option) => option.value));
+      assign(expression, context, Array.from(element.selectedOptions, (option) => formatValue(option.value)));
     } else if (input.type === "checkbox" && Array.isArray(current)) {
       const values = current.slice();
-      const index = values.indexOf(input.value);
-      if (input.checked && index < 0) values.push(input.value);
+      const formattedVal = formatValue(input.value);
+      const index = values.indexOf(formattedVal);
+      if (input.checked && index < 0) values.push(formattedVal);
       else if (!input.checked && index >= 0) values.splice(index, 1);
       assign(expression, context, values);
-    } else if (input.type === "checkbox") assign(expression, context, input.checked);
-    else if (input.type === "radio") {
-      if (input.checked) assign(expression, context, input.value);
-    } else assign(expression, context, element.value);
+    } else if (input.type === "checkbox") {
+      assign(expression, context, input.checked);
+    } else if (input.type === "radio") {
+      if (input.checked) assign(expression, context, formatValue(input.value));
+    } else {
+      assign(expression, context, formatValue(element.value));
+    }
   };
-  element.addEventListener("input", updateState);
-  element.addEventListener("change", updateState);
+  const eventName = isLazy ? "change" : "input";
+  element.addEventListener(eventName, updateState);
+  if (!isLazy && (element instanceof HTMLInputElement && (element.type === "checkbox" || element.type === "radio") || element instanceof HTMLSelectElement)) {
+    element.addEventListener("change", updateState);
+  }
   onCleanup(() => {
-    element.removeEventListener("input", updateState);
+    element.removeEventListener(eventName, updateState);
     element.removeEventListener("change", updateState);
   });
   const updateElement = (value) => {
@@ -201,21 +391,22 @@ const registerModel = (element, expression, context) => {
     if (element instanceof HTMLSelectElement && element.multiple && Array.isArray(value)) {
       const selected = new Set(value.map(String));
       for (const option of Array.from(element.options)) option.selected = selected.has(option.value);
-    } else if (input.type === "checkbox")
+    } else if (input.type === "checkbox") {
       input.checked = Array.isArray(value) ? value.includes(input.value) : Boolean(value);
-    else if (input.type === "radio") input.checked = Object.is(value, input.value);
-    else if (element.value !== String(value ?? "")) element.value = String(value ?? "");
+    } else if (input.type === "radio") {
+      input.checked = Object.is(value, input.value);
+    } else if (element.value !== String(value ?? "")) {
+      element.value = String(value ?? "");
+    }
   };
-  effect(() => updateElement(getExpression(expression, context)));
+  effect(() => updateElement(evaluate(expression, context)));
   if (element instanceof HTMLSelectElement) {
-    const observer = new MutationObserver(() => updateElement(getExpression(expression, context)));
+    const observer = new MutationObserver(() => updateElement(evaluate(expression, context)));
     observer.observe(element, { childList: true, subtree: true });
     onCleanup(() => observer.disconnect());
   }
-  element.removeAttribute("b-model");
-};
-const makeChildContext = (parent, data) => createExpressionScope(state(data), parent);
-const mountConditional = (element, expression, context, runtime) => {
+}
+function handleIf(element, expression, _modifiers, context, runtime, hydrateNodeFn) {
   const parent = element.parentNode;
   if (!parent) throw new Error("b-if requires an element with a parent node.");
   const placeholder = document.createComment("brio:if");
@@ -234,12 +425,12 @@ const mountConditional = (element, expression, context, runtime) => {
   });
   effect(() => {
     var _a;
-    if (getExpression(expression, context)) {
+    if (evaluate(expression, context)) {
       if (instance) return;
       instance = template.cloneNode(true);
       instanceScope = createScope();
       (_a = placeholder.parentNode) == null ? void 0 : _a.insertBefore(instance, placeholder.nextSibling);
-      instanceScope.run(() => hydrateNode(instance, context, runtime));
+      instanceScope.run(() => hydrateNodeFn(instance, context, runtime));
     } else if (instance) {
       try {
         instanceScope == null ? void 0 : instanceScope.dispose();
@@ -250,7 +441,7 @@ const mountConditional = (element, expression, context, runtime) => {
       }
     }
   });
-};
+}
 const enumerate = (value) => {
   if (value === null || value === void 0) return [];
   if (Array.isArray(value) || typeof value === "object" && Symbol.iterator in value)
@@ -260,7 +451,7 @@ const enumerate = (value) => {
     return Array.from({ length: value }, (_, index) => [index, index + 1]);
   throw new TypeError("b-for expects an array, iterable, object, or non-negative integer.");
 };
-const mountLoop = (element, expression, context, runtime) => {
+function handleFor(element, expression, _modifiers, context, runtime, hydrateNodeFn) {
   const parent = element.parentNode;
   if (!parent) throw new Error("b-for requires an element with a parent node.");
   const parsed = /^\s*([A-Za-z_$][\w$]*)(?:\s*,\s*([A-Za-z_$][\w$]*))?\s+in\s+([\s\S]+)$/.exec(expression);
@@ -290,13 +481,13 @@ const mountLoop = (element, expression, context, runtime) => {
   });
   effect(() => {
     var _a;
-    const entries = enumerate(getExpression(collectionExpression, context));
+    const entries = enumerate(evaluate(collectionExpression, context));
     const nextKeys = /* @__PURE__ */ new Set();
     let cursor = placeholder;
     for (const [index, item] of entries) {
       const rowState = state({ [itemName]: item, [indexName]: index });
       const rowContext = createExpressionScope(rowState, context);
-      const evaluatedKey = keyExpression ? getExpression(keyExpression, rowContext) : index;
+      const evaluatedKey = keyExpression ? evaluate(keyExpression, rowContext) : index;
       if (typeof evaluatedKey !== "string" && typeof evaluatedKey !== "number")
         throw new TypeError("b-key must evaluate to a string or number.");
       if (nextKeys.has(evaluatedKey))
@@ -308,7 +499,7 @@ const mountLoop = (element, expression, context, runtime) => {
         const rowScope = createScope();
         row = { element: rowElement, context: rowContext, values: rowState, scope: rowScope, key: evaluatedKey };
         rows.set(evaluatedKey, row);
-        rowScope.run(() => hydrateNode(rowElement, rowContext, runtime));
+        rowScope.run(() => hydrateNodeFn(rowElement, rowContext, runtime));
       } else {
         row.values[itemName] = item;
         row.values[indexName] = index;
@@ -327,87 +518,310 @@ const mountLoop = (element, expression, context, runtime) => {
       }
     }
   });
-};
-const fillSlots = (host, template, context) => {
-  var _a;
-  const slots = /* @__PURE__ */ new Map();
-  for (const child of Array.from(host.childNodes)) {
-    const name = child instanceof Element ? child.getAttribute("slot") ?? "" : "";
-    const content = slots.get(name) ?? [];
-    content.push(child);
-    slots.set(name, content);
+}
+function handleShow(element, expression, modifiers, context) {
+  const useDisplay = Boolean(modifiers.display);
+  if (useDisplay) {
+    const originalDisplay = element.style.display === "none" ? "" : element.style.display;
+    effect(() => {
+      const value = evaluate(expression, context);
+      element.style.display = value ? originalDisplay : "none";
+    });
+    return;
   }
-  for (const outlet of Array.from(template.querySelectorAll("slot"))) {
-    const name = outlet.getAttribute("name") ?? "";
-    const content = slots.get(name);
-    if (!(content == null ? void 0 : content.length)) {
-      outlet.replaceWith(...Array.from(outlet.childNodes));
-      continue;
-    }
-    for (const node of content) projectedContexts.set(node, context);
-    outlet.replaceWith(...content);
-    slots.delete(name);
-  }
-  for (const remaining of slots.values())
-    for (const node of remaining) (_a = node.parentNode) == null ? void 0 : _a.removeChild(node);
-};
-const mountComponent = (element, definition, context, runtime) => {
-  const propsObject = {};
-  for (const attribute of Array.from(element.attributes)) {
-    if (!attribute.name.startsWith("b-")) propsObject[attribute.name] = attribute.value;
-  }
-  const propBindings = Array.from(element.attributes).filter((attribute) => attribute.name.startsWith("b-bind-")).map((attribute) => ({
-    name: attribute.name.slice("b-bind-".length),
-    expression: attribute.value
-  }));
-  const props = state(propsObject);
-  const componentScope = createScope();
-  onCleanup(() => componentScope.dispose());
-  const emit = (name, detail) => {
-    if (!/^[a-z][a-z0-9-]*$/.test(name))
-      throw new TypeError(`Invalid component event name "${name}".`);
-    element.dispatchEvent(new CustomEvent(name, { detail, bubbles: true }));
-  };
-  componentScope.run(() => {
-    var _a;
-    for (const attribute of Array.from(element.attributes)) {
-      if (attribute.name.startsWith("b-on-")) {
-        const eventName = attribute.name.slice("b-on-".length);
-        if (!/^[a-z-]+$/.test(eventName))
-          throw new SyntaxError(`Invalid component event directive "${attribute.name}".`);
-        const expression = attribute.value;
-        const handler = (event) => batch(() => execute(expression, createExpressionScope({ $event: event }, context), event));
-        element.addEventListener(eventName, handler);
-        onCleanup(() => element.removeEventListener(eventName, handler));
-      } else if (attribute.name.startsWith("b-") && !attribute.name.startsWith("b-bind-")) {
-        throw new Error(`Directive "${attribute.name}" is not supported on component hosts.`);
+  const parent = element.parentNode;
+  if (!parent) throw new Error("b-show requires an element with a parent node.");
+  const placeholder = document.createComment("brio:show");
+  let isAttached = true;
+  onCleanup(() => {
+    placeholder.remove();
+    if (element.parentNode) element.remove();
+  });
+  effect(() => {
+    var _a, _b;
+    const visible = Boolean(evaluate(expression, context));
+    if (visible && !isAttached) {
+      (_a = placeholder.parentNode) == null ? void 0 : _a.insertBefore(element, placeholder.nextSibling);
+      isAttached = true;
+    } else if (!visible && isAttached) {
+      if (!placeholder.parentNode) {
+        (_b = element.parentNode) == null ? void 0 : _b.replaceChild(placeholder, element);
+      } else {
+        element.remove();
       }
-    }
-    for (const binding of propBindings)
-      props[binding.name] = getExpression(binding.expression, context);
-    const setupResult = ((_a = definition.setup) == null ? void 0 : _a.call(definition, { el: element, props, emit, app: runtime.app })) ?? {};
-    const local = state({ ...setupResult, $el: element, props, emit });
-    const componentContext = createExpressionScope(local, context);
-    for (const binding of propBindings) {
-      effect(() => {
-        props[binding.name] = getExpression(binding.expression, context);
-      });
-    }
-    const template = document.createElement("template");
-    template.innerHTML = definition.template;
-    fillSlots(element, template.content, context);
-    element.replaceChildren(template.content);
-    for (const child of Array.from(element.childNodes)) {
-      const childContext = projectedContexts.get(child) ?? componentContext;
-      projectedContexts.delete(child);
-      hydrateNode(child, childContext, runtime);
-    }
-    for (const attribute of Array.from(element.attributes)) {
-      if (attribute.name.startsWith("b-")) element.removeAttribute(attribute.name);
+      isAttached = false;
     }
   });
-};
-const mountRouterOutlet = (element, context, runtime) => {
+}
+const trustedMarkup = Symbol("brio.trustedMarkup");
+function trustedHTML(markup) {
+  return { [trustedMarkup]: markup };
+}
+function isTrustedHTML(value) {
+  return value !== null && typeof value === "object" && trustedMarkup in value;
+}
+function getTrustedHTMLString(value) {
+  return value[trustedMarkup];
+}
+function handleHtml(element, expression, _modifiers, context, runtime, hydrateChildrenFn) {
+  let contentScope;
+  onCleanup(() => contentScope == null ? void 0 : contentScope.dispose());
+  effect(() => {
+    const html = evaluate(expression, context);
+    if (!isTrustedHTML(html))
+      throw new TypeError("b-html requires a value created by trustedHTML().");
+    contentScope == null ? void 0 : contentScope.dispose();
+    contentScope = createScope();
+    const template = document.createElement("template");
+    template.innerHTML = getTrustedHTMLString(html);
+    element.replaceChildren(template.content);
+    contentScope.run(() => hydrateChildrenFn(element, context, runtime));
+  });
+}
+function handleText(element, expression, _modifiers, context) {
+  effect(() => {
+    const value = evaluate(expression, context);
+    element.textContent = value === null || value === void 0 ? "" : String(value);
+  });
+}
+function handleData(element, expression, _modifiers, parentContext) {
+  const context = createExpressionScope({ $el: element }, parentContext);
+  if (!expression.trim()) return context;
+  const data = evaluate(expression, context);
+  if (data === null || typeof data !== "object")
+    throw new TypeError("b-data must evaluate to an object.");
+  return createExpressionScope(state(data), parentContext);
+}
+let idSeq = 0;
+const activeIds = /* @__PURE__ */ new Set();
+function handleId(_element, expression, _modifiers, context) {
+  const evaluated = expression ? evaluate(expression, context) : ["id"];
+  const idList = Array.isArray(evaluated) ? evaluated : [String(evaluated)];
+  const idMap = {};
+  for (const name of idList) {
+    const generated = `brio-${++idSeq}`;
+    activeIds.add(generated);
+    idMap[name] = generated;
+  }
+  onCleanup(() => {
+    for (const val of Object.values(idMap)) {
+      activeIds.delete(val);
+    }
+  });
+  return createExpressionScope({ $id: idMap }, context);
+}
+function formatMask(value, pattern) {
+  let result = "";
+  let valIndex = 0;
+  for (let i = 0; i < pattern.length && valIndex < value.length; i++) {
+    const patternChar = pattern[i];
+    if (patternChar === "9" || patternChar === "#") {
+      while (valIndex < value.length && !/\d/.test(value[valIndex])) valIndex++;
+      if (valIndex < value.length) {
+        result += value[valIndex++];
+      }
+    } else if (patternChar === "a" || patternChar === "A") {
+      while (valIndex < value.length && !/[a-zA-Z]/.test(value[valIndex])) valIndex++;
+      if (valIndex < value.length) {
+        result += value[valIndex++];
+      }
+    } else {
+      result += patternChar;
+      if (value[valIndex] === patternChar) {
+        valIndex++;
+      }
+    }
+  }
+  return result;
+}
+function handleMask(element, expression, _modifiers, _context) {
+  if (!(element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement)) {
+    throw new TypeError("b-mask can only be used on input and textarea elements.");
+  }
+  const pattern = expression.replace(/^['"]|['"]$/g, "");
+  const applyMask = () => {
+    const current = element.value;
+    const formatted = formatMask(current, pattern);
+    if (element.value !== formatted) {
+      element.value = formatted;
+      element.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+  };
+  element.addEventListener("input", applyMask);
+  onCleanup(() => {
+    element.removeEventListener("input", applyMask);
+  });
+}
+function handleTeleport(element, expression, _modifiers, _context) {
+  var _a;
+  const targetSelector = expression.trim().replace(/^['"]|['"]$/g, "");
+  const target = document.querySelector(targetSelector);
+  if (!target) {
+    console.warn(`b-teleport target "${targetSelector}" not found.`);
+    return;
+  }
+  const placeholder = document.createComment("brio:teleport");
+  (_a = element.parentNode) == null ? void 0 : _a.replaceChild(placeholder, element);
+  target.appendChild(element);
+  onCleanup(() => {
+    if (placeholder.parentNode) {
+      placeholder.parentNode.replaceChild(element, placeholder);
+    } else {
+      element.remove();
+    }
+    placeholder.remove();
+  });
+}
+function handleTemplate(element, _expression, _modifiers, context, runtime, hydrateNodeFn) {
+  var _a;
+  const isTemplateTag = element.tagName.toLowerCase() === "template";
+  const fragment = isTemplateTag ? element.content.cloneNode(true) : document.createDocumentFragment();
+  if (!isTemplateTag) {
+    while (element.firstChild) {
+      fragment.appendChild(element.firstChild);
+    }
+  }
+  const parent = element.parentNode;
+  if (!parent) throw new Error("b-template requires an element with a parent node.");
+  const placeholder = document.createComment("brio:template");
+  parent.replaceChild(placeholder, element);
+  const insertedNodes = Array.from(fragment.childNodes);
+  (_a = placeholder.parentNode) == null ? void 0 : _a.insertBefore(fragment, placeholder.nextSibling);
+  for (const node of insertedNodes) {
+    hydrateNodeFn(node, context, runtime);
+  }
+}
+function handleTransition(element, expression, _modifiers, _context) {
+  const el = element;
+  const name = expression.trim().replace(/^['"]|['"]$/g, "") || "brio";
+  el.classList.add(`${name}-enter`, `${name}-enter-active`);
+  requestAnimationFrame(() => {
+    el.classList.remove(`${name}-enter`);
+    el.classList.add(`${name}-enter-to`);
+    const onEnd = () => {
+      el.classList.remove(`${name}-enter-active`, `${name}-enter-to`);
+      el.removeEventListener("transitionend", onEnd);
+    };
+    el.addEventListener("transitionend", onEnd);
+  });
+  onCleanup(() => {
+    el.classList.add(`${name}-leave`, `${name}-leave-active`);
+    requestAnimationFrame(() => {
+      el.classList.remove(`${name}-leave`);
+      el.classList.add(`${name}-leave-to`);
+      const onEnd = () => {
+        el.classList.remove(`${name}-leave-active`, `${name}-leave-to`);
+        el.removeEventListener("transitionend", onEnd);
+      };
+      el.addEventListener("transitionend", onEnd);
+    });
+  });
+}
+function handleIntersection(element, attrName, expression, modifiers, context) {
+  const isExit = attrName.includes("exit");
+  const isOnce = Boolean(modifiers.once);
+  let debounceTimer;
+  const observer = new IntersectionObserver((entries) => {
+    for (const entry of entries) {
+      const matches = isExit ? !entry.isIntersecting : entry.isIntersecting;
+      if (matches) {
+        const invoke = () => {
+          execute(expression, createExpressionScope({ $entry: entry }, context));
+          if (isOnce) observer.disconnect();
+        };
+        if (modifiers.debounce) {
+          clearTimeout(debounceTimer);
+          debounceTimer = setTimeout(invoke, 100);
+        } else {
+          invoke();
+        }
+      }
+    }
+  });
+  observer.observe(element);
+  onCleanup(() => {
+    clearTimeout(debounceTimer);
+    observer.disconnect();
+  });
+}
+function handleMutation(element, attrName, expression, modifiers, context) {
+  const isAdded = attrName.includes("addednodes");
+  const isRemoved = attrName.includes("removednodes");
+  const isAttrs = attrName.includes("attrs");
+  const isText = attrName.includes("text");
+  const options = {
+    childList: isAdded || isRemoved || !isAttrs && !isText,
+    attributes: isAttrs,
+    characterData: isText,
+    subtree: true
+  };
+  let debounceTimer;
+  const observer = new MutationObserver((mutations) => {
+    let matching = [];
+    if (isAdded) {
+      matching = mutations.filter((m) => m.addedNodes.length > 0);
+    } else if (isRemoved) {
+      matching = mutations.filter((m) => m.removedNodes.length > 0);
+    } else if (isAttrs) {
+      matching = mutations.filter((m) => m.type === "attributes");
+    } else if (isText) {
+      matching = mutations.filter((m) => m.type === "characterData");
+    } else {
+      matching = mutations;
+    }
+    if (matching.length) {
+      const invoke = () => {
+        execute(expression, createExpressionScope({ $mutations: matching }, context));
+      };
+      if (modifiers.debounce) {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(invoke, 100);
+      } else {
+        invoke();
+      }
+    }
+  });
+  observer.observe(element, options);
+  onCleanup(() => {
+    clearTimeout(debounceTimer);
+    observer.disconnect();
+  });
+}
+function handleResize(element, _attrName, expression, modifiers, context) {
+  let debounceTimer;
+  const observer = new ResizeObserver((entries) => {
+    const entry = entries[0];
+    if (!entry) return;
+    const invoke = () => {
+      const size = {
+        width: entry.contentRect.width,
+        height: entry.contentRect.height
+      };
+      execute(expression, createExpressionScope({ $size: size, $entry: entry }, context));
+    };
+    if (modifiers.debounce) {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(invoke, 100);
+    } else {
+      invoke();
+    }
+  });
+  observer.observe(element);
+  onCleanup(() => {
+    clearTimeout(debounceTimer);
+    observer.disconnect();
+  });
+}
+function extractModifiers(attrName) {
+  const parts = attrName.split(".");
+  const baseName = parts[0];
+  const modifiers = {};
+  for (let i = 1; i < parts.length; i++) {
+    modifiers[parts[i]] = true;
+  }
+  return { baseName, modifiers };
+}
+function mountRouterOutlet(element, context, runtime, hydrateNodeFn) {
   if (!runtime.router) throw new Error("b-router-outlet requires a router on the Brio app.");
   const router = runtime.router;
   let childScope;
@@ -431,102 +845,112 @@ const mountRouterOutlet = (element, context, runtime) => {
     if (!route) return;
     const definition = runtime.components.get(route.component);
     if (!definition) throw new Error(`No component registered for route "${route.component}".`);
-    childElement = document.createElement(route.component);
+    const el = document.createElement(route.component);
+    childElement = el;
     childScope = createScope();
-    element.append(childElement);
-    childScope.run(() => mountComponent(childElement, definition, context, runtime));
+    element.append(el);
+    childScope.run(() => mountComponent(el, definition, context, runtime, hydrateNodeFn));
   });
-};
-const hydrateChildren = (element, context, runtime) => {
+}
+const componentNamePattern$1 = /^[a-z][a-z0-9]*-[a-z0-9-]+$/;
+function hydrateChildren(element, context, runtime) {
   for (const child of Array.from(element.childNodes)) {
-    const projectedContext = projectedContexts.get(child);
-    if (projectedContext) projectedContexts.delete(child);
-    hydrateNode(child, projectedContext ?? context, runtime);
+    hydrateNode(child, context, runtime);
   }
-};
+}
 function hydrateNode(node, parentContext, runtime) {
   if (node.nodeType !== Node.ELEMENT_NODE) return;
   const element = node;
-  if (element.hasAttribute("b-ignore")) return;
-  let context = createExpressionScope({ $el: element }, parentContext);
-  const dataExpression = element.getAttribute("b-data");
-  if (dataExpression !== null) {
-    const data = getExpression(dataExpression, context);
-    if (data === null || typeof data !== "object")
-      throw new TypeError("b-data must evaluate to an object.");
-    context = makeChildContext(parentContext, data);
-    element.removeAttribute("b-data");
-  }
-  for (const attribute of Array.from(element.attributes)) {
-    if (attribute.name.startsWith("b-") && !directiveNamePattern.test(attribute.name))
-      throw new SyntaxError(`Invalid Brio directive name "${attribute.name}". Directive names use letters and hyphens only.`);
-  }
-  const ifExpression = element.getAttribute("b-if");
-  if (ifExpression !== null) {
-    mountConditional(element, ifExpression, context, runtime);
+  if (element.hasAttribute("b-ignore") || element.hasAttribute("ignore")) {
     return;
   }
-  const forExpression = element.getAttribute("b-for");
-  if (forExpression !== null) {
-    mountLoop(element, forExpression, context, runtime);
+  let context = createExpressionScope({ $el: element }, parentContext);
+  const dataAttr = element.getAttribute("b-data");
+  if (dataAttr !== null) {
+    context = handleData(element, dataAttr, {}, parentContext);
+    element.removeAttribute("b-data");
+  }
+  const idAttr = element.getAttribute("b-id");
+  if (idAttr !== null) {
+    context = handleId(element, idAttr, {}, context);
+    element.removeAttribute("b-id");
+  }
+  const ifAttr = element.getAttribute("b-if");
+  if (ifAttr !== null) {
+    const { modifiers } = extractModifiers("b-if");
+    handleIf(element, ifAttr, modifiers, context, runtime, hydrateNode);
+    return;
+  }
+  const forAttr = element.getAttribute("b-for");
+  if (forAttr !== null) {
+    const { modifiers } = extractModifiers("b-for");
+    handleFor(element, forAttr, modifiers, context, runtime, hydrateNode);
+    return;
+  }
+  const templateAttr = element.getAttribute("b-template");
+  if (templateAttr !== null) {
+    handleTemplate(element, templateAttr, {}, context, runtime, hydrateNode);
     return;
   }
   const tagName = element.tagName.toLowerCase();
-  const definition = componentNamePattern$1.test(tagName) ? runtime.components.get(tagName) : void 0;
-  if (!definition) {
-    registerEventBindings(element, context);
-    registerBindings(element, context);
-  }
+  const isComponent = componentNamePattern$1.test(tagName);
+  const definition = isComponent ? runtime.components.get(tagName) : void 0;
   if (definition) {
-    mountComponent(element, definition, context, runtime);
+    mountComponent(element, definition, context, runtime, hydrateNode);
     return;
   }
-  const textExpression = element.getAttribute("b-text");
-  if (textExpression !== null) {
-    effect(() => {
-      const value = getExpression(textExpression, context);
-      element.textContent = value === null || value === void 0 ? "" : String(value);
-    });
-    element.removeAttribute("b-text");
-  }
-  const showExpression = element.getAttribute("b-show");
-  if (showExpression !== null) {
-    const display = element.style.display;
-    effect(() => {
-      element.style.display = getExpression(showExpression, context) ? display : "none";
-    });
-    element.removeAttribute("b-show");
-  }
-  const modelExpression = element.getAttribute("b-model");
-  if (modelExpression !== null) registerModel(element, modelExpression, context);
-  if (element.hasAttribute("b-html")) {
-    const expression = element.getAttribute("b-html");
-    let contentScope;
-    onCleanup(() => contentScope == null ? void 0 : contentScope.dispose());
-    effect(() => {
-      const html = getExpression(expression, context);
-      if (!html || typeof html !== "object" || !(trustedMarkup in html))
-        throw new TypeError("b-html requires a value created by trustedHTML().");
-      contentScope == null ? void 0 : contentScope.dispose();
-      contentScope = createScope();
-      const template = document.createElement("template");
-      template.innerHTML = html[trustedMarkup];
-      element.replaceChildren(template.content);
-      contentScope.run(() => hydrateChildren(element, context, runtime));
-    });
-    element.removeAttribute("b-html");
-    return;
-  }
-  if (element.hasAttribute("b-router-outlet")) {
-    mountRouterOutlet(element, context, runtime);
-    element.removeAttribute("b-router-outlet");
-    return;
-  }
+  let hasText = false;
+  let hasHtml = false;
   for (const attribute of Array.from(element.attributes)) {
-    if (attribute.name.startsWith("b-"))
-      throw new Error(`Unknown Brio directive "${attribute.name}".`);
+    const attrName = attribute.name;
+    const attrValue = attribute.value;
+    const { baseName, modifiers } = extractModifiers(attrName);
+    if (baseName.startsWith("b-on-") || baseName.startsWith("on-")) {
+      if (baseName.includes("-enter") || baseName.includes("-exit")) {
+        handleIntersection(element, baseName, attrValue, modifiers, context);
+      } else if (baseName.includes("-addednodes") || baseName.includes("-removednodes") || baseName.includes("-attrs") || baseName.includes("-text")) {
+        handleMutation(element, baseName, attrValue, modifiers, context);
+      } else if (baseName.includes("-resize")) {
+        handleResize(element, baseName, attrValue, modifiers, context);
+      } else {
+        handleOn(element, baseName, attrValue, modifiers, context);
+      }
+      element.removeAttribute(attrName);
+    } else if (baseName.startsWith("b-bind-") || baseName.startsWith("bind-")) {
+      handleBind(element, baseName, attrValue, modifiers, context);
+      element.removeAttribute(attrName);
+    } else if (baseName === "b-model" || baseName === "model") {
+      handleModel(element, attrValue, modifiers, context);
+      element.removeAttribute(attrName);
+    } else if (baseName === "b-show" || baseName === "show") {
+      handleShow(element, attrValue, modifiers, context);
+      element.removeAttribute(attrName);
+    } else if (baseName === "b-text" || baseName === "text") {
+      handleText(element, attrValue, modifiers, context);
+      element.removeAttribute(attrName);
+      hasText = true;
+    } else if (baseName === "b-html" || baseName === "html") {
+      handleHtml(element, attrValue, modifiers, context, runtime, hydrateChildren);
+      element.removeAttribute(attrName);
+      hasHtml = true;
+    } else if (baseName === "b-mask" || baseName === "mask") {
+      handleMask(element, attrValue);
+      element.removeAttribute(attrName);
+    } else if (baseName === "b-teleport" || baseName === "teleport") {
+      handleTeleport(element, attrValue);
+      element.removeAttribute(attrName);
+    } else if (baseName === "b-transition" || baseName === "transition") {
+      handleTransition(element, attrValue);
+      element.removeAttribute(attrName);
+    } else if (baseName === "b-router-outlet") {
+      mountRouterOutlet(element, context, runtime, hydrateNode);
+      element.removeAttribute(attrName);
+      return;
+    }
   }
-  if (textExpression === null) hydrateChildren(element, context, runtime);
+  if (!hasText && !hasHtml) {
+    hydrateChildren(element, context, runtime);
+  }
 }
 function hydrateRoot(root, context, runtime) {
   hydrateNode(root, context, runtime);
@@ -687,17 +1111,209 @@ function createApp(options = {}) {
   appScope.run(() => notifyAppCreated(app, appState));
   return app;
 }
+let scheduledQueue = [];
+let isFlushing = false;
+function queueTask(task) {
+  scheduledQueue.push(task);
+  if (!isFlushing) {
+    isFlushing = true;
+    queueMicrotask(flushQueue);
+  }
+}
+function flushQueue() {
+  try {
+    const queue = scheduledQueue;
+    scheduledQueue = [];
+    for (let i = 0; i < queue.length; i++) {
+      queue[i]();
+    }
+  } finally {
+    isFlushing = false;
+    if (scheduledQueue.length) {
+      queueMicrotask(flushQueue);
+    }
+  }
+}
+function newStepEngine(steps) {
+  const engine = createStepEngine(steps);
+  return [
+    (name, def) => engine.setStep(name, def),
+    (name) => engine.isStepActive(name),
+    (name) => engine.nextStep(name),
+    (name) => engine.backStep(name),
+    (name) => engine.originStep(name)
+  ];
+}
+function createStepEngine(steps) {
+  const setStep = (stepName, stepObject) => {
+    if (!stepName) {
+      console.warn("Step name is required.");
+      return false;
+    }
+    steps[stepName] = stepObject && typeof stepObject === "object" ? stepObject : {};
+    return true;
+  };
+  const isStepActive = (stepName) => {
+    var _a;
+    return Boolean((_a = steps[stepName]) == null ? void 0 : _a.active);
+  };
+  const toStep = (currStepName, stepKey) => {
+    if (!isStepActive(currStepName)) return false;
+    const currStep = steps[currStepName];
+    const toStepName = currStep[stepKey];
+    if (toStepName && steps[toStepName]) {
+      if (!isStepActive(toStepName)) {
+        steps[toStepName].active = true;
+      }
+      steps[toStepName].origin = currStepName;
+      if (!currStep.keep) {
+        currStep.active = false;
+      }
+      return true;
+    } else {
+      console.warn(`Step "${currStepName}" does not have a valid ${stepKey} step to go to.`);
+      return false;
+    }
+  };
+  const nextStep = (currStepName) => toStep(currStepName, "next");
+  const backStep = (currStepName) => toStep(currStepName, "back");
+  const originStep = (currStepName) => toStep(currStepName, "origin");
+  const getActiveStep = () => {
+    for (const [key, val] of Object.entries(steps)) {
+      if (val.active) return key;
+    }
+    return void 0;
+  };
+  return {
+    setStep,
+    isStepActive,
+    nextStep,
+    backStep,
+    originStep,
+    getActiveStep
+  };
+}
+const defaultRules = {
+  required: (val) => {
+    if (val === null || val === void 0 || val === false || val === "") return false;
+    if (typeof val === "string") return val.trim().length > 0;
+    if (Array.isArray(val)) return val.length > 0;
+    if (typeof val === "object") return Object.keys(val).length > 0;
+    return true;
+  },
+  min: (val, min) => {
+    if (typeof val === "string" || Array.isArray(val)) return val.length >= Number(min);
+    if (typeof val === "number") return val >= Number(min);
+    return false;
+  },
+  max: (val, max) => {
+    if (typeof val === "string" || Array.isArray(val)) return val.length <= Number(max);
+    if (typeof val === "number") return val <= Number(max);
+    return false;
+  },
+  email: (val) => {
+    if (typeof val !== "string") return false;
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val);
+  },
+  same: (val, targetProp, allData) => val === allData[String(targetProp)],
+  in: (val, list) => Array.isArray(list) && list.includes(val)
+};
+function validate(data, schema, customRules = {}) {
+  const rules = { ...defaultRules, ...customRules };
+  const errors = {};
+  for (const [prop, propRules] of Object.entries(schema)) {
+    const val = data[prop];
+    for (const rule of propRules) {
+      const ruleFn = rules[rule.name];
+      if (ruleFn) {
+        const passed = ruleFn(val, rule.value, data);
+        if (!passed) {
+          if (!errors[prop]) errors[prop] = [];
+          errors[prop].push(rule.message || `${prop} failed ${rule.name} validation`);
+        }
+      } else {
+        console.warn(`Unknown validation rule: ${rule.name}`);
+      }
+    }
+  }
+  return Object.keys(errors).length === 0 ? true : errors;
+}
+const request = (method) => async (url, body, options = {}) => {
+  const headers = new Headers(options.headers);
+  let finalBody = void 0;
+  if (body !== void 0 && method !== "GET" && method !== "DELETE") {
+    if (body instanceof FormData || body instanceof URLSearchParams || typeof body === "string") {
+      finalBody = body;
+    } else {
+      headers.set("Content-Type", "application/json");
+      finalBody = JSON.stringify(body);
+    }
+  } else if (body !== void 0 && (method === "GET" || method === "DELETE")) {
+    const u = new URL(url, typeof location !== "undefined" ? location.href : "http://localhost");
+    if (typeof body === "object") {
+      for (const [k2, v] of Object.entries(body)) {
+        u.searchParams.append(k2, String(v));
+      }
+    }
+    url = u.href;
+  }
+  const response = await fetch(url, {
+    ...options,
+    method,
+    headers,
+    body: finalBody
+  });
+  if (!response.ok) {
+    const error = new Error(`HTTP ${response.status}: ${response.statusText}`);
+    error.response = response;
+    throw error;
+  }
+  const parser = options.parser;
+  if (parser) {
+    return response[parser]();
+  }
+  const contentType = response.headers.get("content-type") || "";
+  if (contentType.includes("application/json")) {
+    return response.json();
+  }
+  return response.text();
+};
+const http = {
+  get: request("GET"),
+  post: request("POST"),
+  put: request("PUT"),
+  patch: request("PATCH"),
+  delete: request("DELETE")
+};
 export {
+  assign,
   batch,
-  j as computed,
+  causedError,
+  combinedError,
+  computed,
   createApp,
+  createExpressionScope,
   createRouter,
   createScope,
+  createStepEngine,
+  devtools,
   effect,
+  evaluate,
+  execute,
+  k as getCurrentScope,
+  http,
+  hydrateNode,
+  hydrateRoot,
+  newStepEngine,
   onCleanup,
+  j as onDispose,
   persist,
-  k as signal,
+  queueTask,
+  resource,
+  s as setActiveScope,
+  a as signal,
   state,
-  trustedHTML
+  trustedHTML,
+  validate
 };
 //# sourceMappingURL=index.js.map

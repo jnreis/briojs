@@ -28,8 +28,8 @@ export function formatMask(value: string, pattern: string): string {
 export function handleMask(
     element: Element,
     expression: string,
-    modifiers: Record<string, boolean>,
-    context: Record<PropertyKey, any>,
+    _modifiers: Record<string, boolean>,
+    _context: Record<PropertyKey, any>,
 ): void {
     if (!(element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement)) {
         throw new TypeError('b-mask can only be used on input and textarea elements.');

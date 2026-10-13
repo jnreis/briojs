@@ -3,12 +3,12 @@ import { effect } from '../../reactivity/effect';
 import { createScope, onCleanup } from '../../core/scope';
 import type { Scope } from '../../core/scope';
 import { isTrustedHTML, getTrustedHTMLString } from '../types';
-import type { DomRuntime, TrustedMarkup } from '../types';
+import type { DomRuntime } from '../types';
 
 export function handleHtml(
     element: Element,
     expression: string,
-    modifiers: Record<string, boolean>,
+    _modifiers: Record<string, boolean>,
     context: Record<PropertyKey, any>,
     runtime: DomRuntime,
     hydrateChildrenFn: (element: Element, context: Record<PropertyKey, any>, runtime: DomRuntime) => void,
@@ -31,7 +31,7 @@ export function handleHtml(
 export function handleText(
     element: Element,
     expression: string,
-    modifiers: Record<string, boolean>,
+    _modifiers: Record<string, boolean>,
     context: Record<PropertyKey, any>,
 ): void {
     effect(() => {

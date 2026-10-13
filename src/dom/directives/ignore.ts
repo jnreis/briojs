@@ -1,5 +1,5 @@
 export function handleIgnore(
-    element: Element,
+    _element: Element,
 ): boolean {
     return true; // stops further hydration of element and descendants
 }

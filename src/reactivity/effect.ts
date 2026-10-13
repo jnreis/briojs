@@ -1,50 +1,121 @@
-import { addPropertyListener } from '.';
-import { each } from '../tools/array';
-import { getAccessedProps } from './track';
+import { combinedError } from '../core/errors';
+import { notifyEffectCreated, notifyEffectDisposed } from '../plugins/devtools-bridge';
+import type { EffectOptions, Scope, Stop } from './types';
+import { getCurrentScope, onDispose } from '../core/scope';
 
-/**
- * Watches for changes on all reactive properties accessed during a function execution.
- * When those reactive properties are mutated, the `listener` function is called to reflect the changes.
- * @param listener The function to execute when any of the reactive properties change.
- * @param dependencies Used to track specific reactive properties. If not provided, `listener` is used.
- * @param priority The priority of the listener. Listeners with higher priority are called first. Default is 0.
- * @returns The cleanup function to remove the effect.
- */
-export let effect = (listener: ListenerFunction, dependencies?: ListenerFunction, priority: number = 0) => {
-    let listeners: FunctionType[] = [];
-    let disposed = false;
-    let running = false;
+export type ReactiveEffect = {
+    fn: () => unknown;
+    scheduler?: () => void;
+    scope?: Scope;
+    deps: Set<ReactiveEffect>[];
+    active: boolean;
+    running: boolean;
+    devtoolsTracked: boolean;
+};
 
-    let run = (context: ListenerFunctionContext) => {
-        if (disposed || running) return;
-        running = true;
-        try {
-            let accessedProps = getAccessedProps(
-                dependencies ? () => dependencies(context) : () => listener(context)
-            );
+let activeEffect: ReactiveEffect | undefined;
+let batchDepth = 0;
+const queuedEffects = new Set<ReactiveEffect>();
 
-            each(listeners, dispose => dispose());
-            listeners = [];
+export const getActiveEffect = (): ReactiveEffect | undefined => activeEffect;
 
-            for (let [proxied, prop] of accessedProps)
-                listeners.push(addPropertyListener(proxied, prop as string | number, run, priority));
+export const cleanupEffect = (eff: ReactiveEffect) => {
+    for (const dep of eff.deps) dep.delete(eff);
+    eff.deps.length = 0;
+};
 
-            if (dependencies) listener(context);
-        } finally {
-            running = false;
+export const runEffect = (eff: ReactiveEffect): unknown => {
+    if (!eff.active) return;
+    if (eff.running) return;
+    cleanupEffect(eff);
+    const previous = activeEffect;
+    activeEffect = eff;
+    eff.running = true;
+    try {
+        if (eff.scope) {
+            return eff.scope.run(() => eff.fn());
+        }
+        return eff.fn();
+    } finally {
+        eff.running = false;
+        activeEffect = previous;
+    }
+};
+
+export const queueEffect = (eff: ReactiveEffect) => {
+    queuedEffects.add(eff);
+    if (!batchDepth) flushEffects();
+};
+
+export const flushEffects = () => {
+    const errors: unknown[] = [];
+    while (queuedEffects.size) {
+        const current = [...queuedEffects];
+        queuedEffects.clear();
+        for (const eff of current) {
+            try {
+                if (eff.active) eff.scheduler ? eff.scheduler() : runEffect(eff);
+            } catch (error) {
+                errors.push(error);
+            }
         }
     }
+    if (errors.length) throw combinedError('One or more reactive effects failed.', errors);
+};
 
-    run({} as ListenerFunctionContext);
-
-    /**
-     * A cleanup function to remove the effect.
-     * It removes `listener` from all states and properties listeners it was added to.
-     */
-    return () => {
-        if (disposed) return;
-        disposed = true;
-        each(listeners, dispose => dispose());
-        listeners = [];
+export function effect<T>(fn: () => T, options: EffectOptions = {}): Stop {
+    const reactiveEffect: ReactiveEffect = {
+        fn,
+        scheduler: options.scheduler,
+        scope: getCurrentScope(),
+        deps: [],
+        active: true,
+        running: false,
+        devtoolsTracked: false,
     };
+    const stop = (() => {
+        if (!reactiveEffect.active) return;
+        reactiveEffect.active = false;
+        cleanupEffect(reactiveEffect);
+        notifyEffectDisposed(reactiveEffect.devtoolsTracked);
+    }) as Stop;
+    Object.defineProperty(stop, 'active', { get: () => reactiveEffect.active });
+    stop.run = () => runEffect(reactiveEffect);
+    const currentScope = getCurrentScope();
+    if (currentScope) onDispose(currentScope, stop);
+    reactiveEffect.devtoolsTracked = notifyEffectCreated();
+    if (!options.lazy) {
+        try {
+            runEffect(reactiveEffect);
+        } catch (error) {
+            stop();
+            throw error;
+        }
+    }
+    return stop;
+}
+
+export function batch<T>(fn: () => T): T {
+    batchDepth++;
+    let result!: T;
+    let failure: unknown;
+    let failed = false;
+    try {
+        result = fn();
+    } catch (error) {
+        failure = error;
+        failed = true;
+    }
+    batchDepth--;
+    if (!batchDepth) {
+        try {
+            flushEffects();
+        } catch (error) {
+            if (failed)
+                throw combinedError('A Brio batch operation and its reactive effects failed.', [failure, error]);
+            throw error;
+        }
+    }
+    if (failed) throw failure;
+    return result;
 }

@@ -1,2 +1,2 @@
-export { devtoolsPanel, inspectDevtools } from './devtools';
-export type { DevtoolsSnapshot } from './devtools';
+export { devtools, inspectDevtools, devtoolsPanel } from './plugins/devtools';
+export type { DevtoolsSnapshot } from './plugins/devtools';

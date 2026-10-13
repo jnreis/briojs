@@ -4,7 +4,7 @@ import { state } from '../../reactivity/state-v4';
 export function handleData(
     element: Element,
     expression: string,
-    modifiers: Record<string, boolean>,
+    _modifiers: Record<string, boolean>,
     parentContext: Record<PropertyKey, any>,
 ): Record<PropertyKey, any> {
     const context = createExpressionScope({ $el: element }, parentContext);

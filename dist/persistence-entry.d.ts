@@ -1,2 +1,2 @@
-export { persist } from './persistence';
-export type { PersistOptions, StorageAdapter } from './persistence';
+export { persist } from './plugins/persistence';
+export type { PersistOptions, StorageAdapter } from './plugins/persistence';

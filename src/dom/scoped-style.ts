@@ -28,7 +28,8 @@ export function scopeCss(content: string, scopeAttr: string): string {
                             .join(', ');
                         result += `${scopedSelectors} { ${rule.style.cssText} }\n`;
                     } else if (rule instanceof CSSGroupingRule) {
-                        result += `@${(rule as any).name || 'media'} ${rule.conditionText} {\n${scopeRules(rule.cssRules)}\n}\n`;
+                        const condition = (rule as any).conditionText ?? '';
+                        result += `@${(rule as any).name || 'media'} ${condition} {\n${scopeRules(rule.cssRules)}\n}\n`;
                     } else {
                         result += `${rule.cssText}\n`;
                     }

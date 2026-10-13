@@ -1,2 +1,2 @@
-export { createRouter } from './router';
-export type { RouteDefinition, RouteMatch, Router } from './router';
+export { createRouter } from './plugins/router';
+export type { Router, RouteDefinition, RouteMatch } from './plugins/router';

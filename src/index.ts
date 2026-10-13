@@ -13,7 +13,8 @@ export type { Signal, Stop, EffectOptions, Resource } from './reactivity/types';
 
 export { trustedHTML } from './dom/types';
 export type { ComponentDefinition, ComponentContext, DomRuntime, TrustedMarkup } from './dom/types';
-export { hydrateRoot, hydrateNode } from './dom/bindings';
+export { hydrateRoot } from './dom/mount';
+export { hydrateNode } from './dom/bindings';
 
 export { createRouter } from './plugins/router';
 export type { Router, RouteDefinition, RouteMatch } from './plugins/router';

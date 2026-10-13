@@ -1,4 +1,4 @@
-import { k as signal } from "./reactivity-bRcZEPpQ.js";
+import { a as signal } from "./state-v4-UFBFm952.js";
 const parsePath = (path) => path.split("/").filter(Boolean).map((part) => {
   if (part.startsWith(":")) {
     const value = part.slice(1);

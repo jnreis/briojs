@@ -3,7 +3,7 @@ import { onCleanup } from '../../core/scope';
 
 export function handleResize(
     element: Element,
-    attrName: string,
+    _attrName: string,
     expression: string,
     modifiers: Record<string, boolean>,
     context: Record<PropertyKey, any>,

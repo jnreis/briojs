@@ -2,8 +2,8 @@ import type { DomRuntime } from '../types';
 
 export function handleTemplate(
     element: Element,
-    expression: string,
-    modifiers: Record<string, boolean>,
+    _expression: string,
+    _modifiers: Record<string, boolean>,
     context: Record<PropertyKey, any>,
     runtime: DomRuntime,
     hydrateNodeFn: (node: Node, context: Record<PropertyKey, any>, runtime: DomRuntime) => void,

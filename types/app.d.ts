@@ -70,7 +70,7 @@ type GlobalContext = {
 type BrioTools = {
     $hasProp: (object: any, key: string) => boolean;
     $getProp: (object: any, key: string, defaultValue?: any) => any;
-    $setProp: (object: any, key: string, descriptor?: PropertyDescriptorShorthand) => void;
+    $setProp: (object: any, key: string, value?: any, descriptor?: PropertyDescriptorShorthand | PropertyDescriptor) => void;
 
     /** Performs a in-place deep sync between `target` and `source` values */
     $sync: (target: any, source: any) => any;
@@ -107,7 +107,7 @@ type EvalFn = (exp: string, args?: string, returns?: boolean | "text") => Functi
 type DomObject = {
     $hydrate: (node: Node, ctxNode?: Node) => Promise<void>,
     $dehydrate: (node: Node, _removeNode?: boolean, _removeBNode?: boolean) => Promise<void>,
-    $insert: (content: any, where: 'before'|'after'|'prepend'|'append'|'replaceWith'|'replaceChildren'|'text', target: HTMLElement | string, options?: InsertOptions) => Promise<any>,
+    $insert: (target: HTMLElement | string, placement: 'before'|'after'|'prepend'|'append'|'replaceWith'|'replaceChildren'|'text', content: any, options?: InsertOptions) => Promise<any>,
     $emit: (target: HTMLElement | string, eventName: string, eventData?: any) => boolean,
     $listen: (target: HTMLElement | string, eventName: string, callback: (event: Event) => void, options?: boolean | AddEventListenerOptions) => () => void,
     $context: (target: HTMLElement | string) => ObjectType | undefined,

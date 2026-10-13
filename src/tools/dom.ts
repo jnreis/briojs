@@ -173,8 +173,28 @@ export let delClass = (node: HTMLElement, ...className: string[]) =>
 export let hasClass = (node: HTMLElement, className: string) =>
     node[CLASS_LIST].contains(className);
 
-let rAF = requestAnimationFrame;
-export let nextFrame = (callback: FunctionType) => rAF(() => rAF(callback));
+let rAF = (callback: FrameRequestCallback) =>
+    typeof requestAnimationFrame === 'function'
+        ? requestAnimationFrame(callback)
+        : setTimeout(() => callback(Date.now()), 16) as unknown as number;
+let cancelFrame = (frame: number) => {
+    if (typeof cancelAnimationFrame === 'function') cancelAnimationFrame(frame);
+    else clearTimeout(frame);
+}
+export let nextFrame = (callback: FunctionType) => {
+    let cancelled = false;
+    let secondFrame = 0;
+    let firstFrame = rAF(() => {
+        if (!cancelled) secondFrame = rAF(() => {
+            if (!cancelled) callback();
+        });
+    });
+    return () => {
+        cancelled = true;
+        cancelFrame(firstFrame);
+        if (secondFrame) cancelFrame(secondFrame);
+    };
+}
 
 export let createElement = (tagName: string, options?: ElementCreationOptions) =>
     D[CREATE_ELEMENT](tagName, options);
@@ -200,12 +220,13 @@ export let listen = (target: HTMLElement|string, eventName: string, callback: (e
     (target  as HTMLElement)[ADD_EVENT_LISTENER](eventName, callback, options);
 
     // Return a clean up function
-    return () => (target as HTMLElement)[REMOVE_EVENT_LISTENER](eventName, callback)
+    let capture = typeof options === 'boolean' ? options : !!options?.capture;
+    return () => (target as HTMLElement)[REMOVE_EVENT_LISTENER](eventName, callback, capture)
 }
 
 // Emit an event on a node
 export let emit = (target: HTMLElement|string, eventName: string, eventData?: any) =>
-    query(target)!.dispatchEvent(new CustomEvent(lower(replace(eventName, /[^a-z\d]/gi, '')), {
+    query(target)!.dispatchEvent(new CustomEvent(eventName, {
         bubbles: true, 
         cancelable: true, 
         [DETAIL]: eventData
@@ -251,7 +272,7 @@ export let href = (_url: string = '', part: 'href'|'origin'|'pathname'|'search' 
     new URL(_url, L[HREF])[part];
 
 /** Check if a route path is on the same origin */
-export let sameOrigin = (routePath: string) => startsWith(href(routePath), L.origin);
+export let sameOrigin = (routePath: string) => new URL(routePath, L.href).origin === L.origin;
 
 /**
  * Check if a property assignment should be forced.

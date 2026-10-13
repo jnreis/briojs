@@ -15,10 +15,18 @@ let hydrateResize = (bnode: BNode, attrName: string, attrValue: string) => {
 
     let _attrName = sliceAttrName(attrName); // 5: b-on-, 3: on-
 
-    let [_directiveName] = split(_attrName, '-');
+    let [eventPart, ...dotModifiers] = split(_attrName, '.');
+    let [_directiveName] = split(eventPart, '-');
 
     // Options
-    let options = bnode[OPTIONS][attrName] || {};
+    let baseAttrName = attrName.split('.')[0];
+    let options: ObjectType = {
+        ...(bnode[OPTIONS][baseAttrName] || {}),
+        ...(bnode[OPTIONS][attrName] || {})
+    };
+    for (let mod of dotModifiers) {
+        options[mod] = true;
+    }
 
     // Get the target element
     let target = options[DOCUMENT] ? query(HTML) as HTMLElement : bnode.el;
@@ -27,27 +35,38 @@ let hydrateResize = (bnode: BNode, attrName: string, attrValue: string) => {
     let expFn = bnode.exec(bnode, attrValue, '$size', false);
 
     // Set the directive hook
-    let cb = debounce(expFn, options[DEBOUNCE] || 100);
+    let cb = debounce(expFn, options[DEBOUNCE] ?? 100);
 
     let observer = new ResizeObserver(entries => {
-
-        let box = entries[0].borderBoxSize[0];
+        let entry = entries[0];
+        if (!entry) return;
+        let boxSizes = options.box === 'content-box'
+            ? entry.contentBoxSize
+            : options.box === 'device-pixel-content-box'
+                ? entry.devicePixelContentBoxSize
+                : entry.borderBoxSize;
+        let box = Array.isArray(boxSizes) ? boxSizes[0] : boxSizes;
+        let size = box
+            ? [box.inlineSize, box.blockSize]
+            : [entry.contentRect.width, entry.contentRect.height];
 
         /**
          * Execute the expression
          * The expression will receive the width and height of the element
          */
-        cb([ box.inlineSize, box.blockSize ]);
+        cb(size);
     });
 
     // Observe the element
     observer[OBSERVE](target, options);
 
     // Save the cleanup function
-    saveCleanup(bnode, () => observer[DISCONNECT]());
+    saveCleanup(bnode, () => {
+        observer[DISCONNECT]();
+        cb.cancel();
+    });
 }
 
 export let resizeDirectives: Directive[] = [
-    [ON_RESIZE, hydrateResize],
-    [B_+ON_RESIZE, hydrateResize],
+    [/^(b-on-resize|on-resize)(\.[\w-]+)*$/, hydrateResize],
 ];

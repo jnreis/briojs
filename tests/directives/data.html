@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual Test: data directive</title>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; margin: 20px; background: #f8fafc; color: #1e293b; }
+        .card { background: white; border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; }
+        h1 { font-size: 1.5rem; }
+        h3 { margin-top: 0; color: #0f172a; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; }
+        .nested { border-left: 4px solid #3b82f6; padding-left: 12px; margin-top: 8px; background: #f8fafc; }
+        button { background: #3b82f6; color: white; border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 0.9rem; margin-right: 6px; margin-top: 6px; }
+    </style>
+</head>
+<body b-data="{
+    appName: 'Brio Application',
+    rootCount: 1
+}">
+
+    <h1>b-data Directive Manual Tests</h1>
+    <p>Tests scoping, inheritance of parent contexts, state isolation, and nested data scopes.</p>
+
+    <!-- Test 1: Root data scope -->
+    <div class="card">
+        <h3>1. Root Scope</h3>
+        <p>App Name: <strong>${$data.appName}</strong> | Root Count: <strong>${$data.rootCount}</strong></p>
+        <button on-click="$data.rootCount++">Increment Root Count</button>
+
+        <!-- Test 2: Nested child data scope -->
+        <div class="nested" b-data="{ childCount: 100, childTitle: 'Nested Widget' }">
+            <h4>2. Nested Child Scope</h4>
+            <p>Accessing parent rootCount: <strong>${$parent.rootCount}</strong></p>
+            <p>Child Title: <strong>${$data.childTitle}</strong> | Child Count: <strong>${$data.childCount}</strong></p>
+            <button on-click="$data.childCount++">Increment Child Count</button>
+            <button on-click="$parent.rootCount++">Increment Parent Count From Child</button>
+        </div>
+    </div>
+
+    <script type="module" b-ignore src="/src/briojs.min.ts"></script>
+    <script>
+        window.addEventListener('brio', () => {
+            const app = brio.newApp();
+            app.gc.$hydrate('body');
+            console.log('data.html hydrated successfully');
+        });
+    </script>
+</body>
+</html>

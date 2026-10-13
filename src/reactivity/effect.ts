@@ -1,8 +1,5 @@
-import { addPropertyListener, getStateObject } from '.';
-import { arrayAdd, each } from '../tools/array';
-import { TARGET } from '../tools/constants';
-import { newSet } from '../tools/object';
-import { isArray } from '../tools/typeCheck';
+import { addPropertyListener } from '.';
+import { each } from '../tools/array';
 import { getAccessedProps } from './track';
 
 /**
@@ -14,39 +11,40 @@ import { getAccessedProps } from './track';
  * @returns The cleanup function to remove the effect.
  */
 export let effect = (listener: ListenerFunction, dependencies?: ListenerFunction, priority: number = 0) => {
-
-    // Hold the cleanup functions for each accessed property
     let listeners: FunctionType[] = [];
+    let disposed = false;
+    let running = false;
 
-    // Run the `dependencies` function or `listener` function to track accessed properties
-    let accessedProps = getAccessedProps(dependencies || listener);
+    let run = (context: ListenerFunctionContext) => {
+        if (disposed || running) return;
+        running = true;
+        try {
+            let accessedProps = getAccessedProps(
+                dependencies ? () => dependencies(context) : () => listener(context)
+            );
 
-    // Hold accessed arrays
-    let accessedArrays = newSet();
+            each(listeners, dispose => dispose());
+            listeners = [];
 
-    // Find accessed arrays to prevent adding the `listener` to each item of the array
-    // When the listener is something like `() => state.names.includes(name)`, the accessed property will be `names`, but all items of the array will also be accessed, and we don't want to add the listener to each item, but only to the array itself.
-    each(accessedProps, ([state, prop]) => {
-        let target = getStateObject(state)[TARGET];
-        if (isArray(target[prop]))
-            accessedArrays.add(target[prop]);
-    });
+            for (let [proxied, prop] of accessedProps)
+                listeners.push(addPropertyListener(proxied, prop as string | number, run, priority));
 
-    // Add the listener to each accessed property
-    each(accessedProps, ([proxied, prop]: [any, string]) => {
-        // Prevent adding the same listener to each item of an accessed array
-        // This is necessary because when an array is accessed, all its items are also accessed, and we don't want to add the listener to each item, but only to the array itself.
-        if (!accessedArrays.has(proxied)) {
-            arrayAdd(listeners, addPropertyListener(proxied, prop, listener, priority));
+            if (dependencies) listener(context);
+        } finally {
+            running = false;
         }
-    });
+    }
 
-    // Make sure `listener` is called once
-    if (dependencies) listener({} as any);
+    run({} as ListenerFunctionContext);
 
     /**
      * A cleanup function to remove the effect.
      * It removes `listener` from all states and properties listeners it was added to.
      */
-    return () => each(listeners, listener => listener());
+    return () => {
+        if (disposed) return;
+        disposed = true;
+        each(listeners, dispose => dispose());
+        listeners = [];
+    };
 }

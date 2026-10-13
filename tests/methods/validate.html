@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual Test: Schema Validation</title>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; margin: 20px; background: #f8fafc; color: #1e293b; }
+        .card { background: white; border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; }
+        h1 { font-size: 1.5rem; }
+        h3 { margin-top: 0; color: #0f172a; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; }
+        input { padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.95rem; width: 260px; margin-right: 8px; }
+        button { background: #3b82f6; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 0.95rem; }
+        button:hover { background: #2563eb; }
+        .error-msg { color: #dc2626; font-size: 0.85rem; margin-top: 4px; font-weight: 500; }
+        .success-box { background: #dcfce7; border: 1px solid #86efac; color: #166534; padding: 12px; border-radius: 6px; margin-top: 12px; }
+        .field { margin-bottom: 12px; }
+        label { display: block; font-weight: 500; margin-bottom: 4px; }
+    </style>
+</head>
+<body b-data="{
+    formData: { username: '', email: '', age: '' },
+    formErrors: {},
+    isValid: false
+}">
+
+    <h1>Validation Method (validate) Manual Tests</h1>
+    <p>Tests form validation rules: <code>required</code>, <code>email</code>, <code>min</code>, <code>max</code>, and custom error reporting.</p>
+
+    <div class="card">
+        <h3>1. Interactive User Registration Form</h3>
+
+        <div class="field">
+            <label>Username (required, min 3 chars):</label>
+            <input type="text" b-model="$data.formData.username">
+            <div b-if="$data.formErrors.username" class="error-msg">${$data.formErrors.username}</div>
+        </div>
+
+        <div class="field">
+            <label>Email (required, valid email):</label>
+            <input type="email" b-model="$data.formData.email">
+            <div b-if="$data.formErrors.email" class="error-msg">${$data.formErrors.email}</div>
+        </div>
+
+        <div class="field">
+            <label>Age (numeric, min 18, max 100):</label>
+            <input type="number" b-model="$data.formData.age">
+            <div b-if="$data.formErrors.age" class="error-msg">${$data.formErrors.age}</div>
+        </div>
+
+        <button id="validate-btn">Validate Form</button>
+
+        <div b-if="$data.isValid" class="success-box">
+            ✅ Form is completely valid!
+        </div>
+    </div>
+
+    <script type="module" b-ignore src="/src/briojs.min.ts"></script>
+    <script>
+        window.addEventListener('brio', () => {
+            const app = brio.newApp();
+            app.gc.$hydrate('body');
+
+            const validate = brio.validate;
+
+            const schema = {
+                username: { required: true, min: 3 },
+                email: { required: true, email: true },
+                age: { required: true, min: 18, max: 100 }
+            };
+
+            document.getElementById('validate-btn').addEventListener('click', () => {
+                const bnode = app.gc.$getBNode(document.querySelector('.card'));
+                const data = bnode.ctx.$data.formData;
+                
+                const errors = validate(data, schema);
+                const hasErrors = Object.keys(errors).length > 0;
+
+                bnode.ctx.$data.formErrors = errors;
+                bnode.ctx.$data.isValid = !hasErrors;
+            });
+
+            console.log('validate.html hydrated successfully');
+        });
+    </script>
+</body>
+</html>

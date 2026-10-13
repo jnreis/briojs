@@ -145,5 +145,8 @@ export let allDirectives: [string | RegExp, HydrateDirective][] = [
 ];
 
 export let setAllDirectives = (app: AppObject) => {
-    each(allDirectives, directive => arrayAdd(app[DIRECTIVES], directive));
+    each(allDirectives, directive => {
+        if (!app[DIRECTIVES].includes(directive))
+            arrayAdd(app[DIRECTIVES], directive);
+    });
 }

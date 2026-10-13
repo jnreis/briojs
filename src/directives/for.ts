@@ -4,14 +4,14 @@ import { arrayFill, map } from '../tools/array';
 import { ARRAY, OBJECT, DIRECTIVE, REQUIRES, CREATE, UPDATE, DELETE, SKIP, NUMBER, NEW_VALUE, INDEX, OPERATION, UNDEFINED, BEFORE, REPLACE_WITH, B_IF, ATTR, A_VALID, $DEHYDRATE, $HYDRATE, B_FOR, $FOR } from '../tools/constants';
 import { cloneNode, createComment, insertNodes } from '../tools/dom';
 import { saveCleanup, saveToParent, updateDataLevelContext } from '../app';
-import { delProp, hasProp, setProp, sync } from '../tools/object';
+import { hasProp, setProp, sync } from '../tools/object';
 import { space, split, test, trim } from '../tools/string';
 import { isArray, isNumber, isObject } from '../tools/typeCheck';
 import { getAccessedProp } from '../reactivity/track';
 
 let variableNameRegex = /^[a-z_$][\w$]*$/i;
 
-let hydrateFor = (bnode: BNode, attrName: string, attrValue: string) => {
+let hydrateFor = async (bnode: BNode, attrName: string, attrValue: string) => {
 
     let el = bnode.el;
     let {n: newBNode, g: getBNode} = bnode.bnode;
@@ -56,12 +56,12 @@ let hydrateFor = (bnode: BNode, attrName: string, attrValue: string) => {
 
         // Keep the array length in sync with the number
         if (_state) {
-            effect(() => {
+            saveCleanup(bnode, effect(() => {
                 let n = _state[_prop] || 0;
                 if (isNumber(n)) {
                     sync(value, arrayFill(n, 1));
                 }
-            }, () => _state[_prop]);
+            }, () => _state[_prop]));
         }
     }
 
@@ -71,13 +71,13 @@ let hydrateFor = (bnode: BNode, attrName: string, attrValue: string) => {
 
     // Hold the node's location with a placeholder
     bnode.ph = createComment(attrName);
-    insertNodes(el, REPLACE_WITH, bnode.ph);
+    insertNodes(el, REPLACE_WITH, bnode.ph as Comment);
 
     // Ensure the element will go through the cleanup process
     saveToParent(bnode, el);
 
     // Keep track of the mounted items
-    let mountedItems: ObjectType = {};
+    let mountedItems = new Map<number | string, [HTMLElement, number | string]>();
 
     type ForContext = [number|string, any];
 
@@ -118,7 +118,7 @@ let hydrateFor = (bnode: BNode, attrName: string, attrValue: string) => {
 
         // Make sure the `index` never changes
         saveCleanup(_bnode, watch(_for, index, ({[NEW_VALUE]:newValue}) => {
-            let currentIndex = mountedItems[i][1];
+            let currentIndex = mountedItems.get(i)?.[1];
             if (newValue !== currentIndex)
                 _for[index] = currentIndex;
         }));
@@ -131,7 +131,7 @@ let hydrateFor = (bnode: BNode, attrName: string, attrValue: string) => {
         }
 
         // Add the node to the mountedItems map
-        mountedItems[i] = [_el, i];
+        mountedItems.set(i, [_el, i]);
 
         // Update the $slot and $ref objects
         await updateDataLevelContext(_bnode);
@@ -144,9 +144,10 @@ let hydrateFor = (bnode: BNode, attrName: string, attrValue: string) => {
     let _update = ([i, v]: ForContext) => {
 
         // Get the existing node
-        let mountedItem = mountedItems[i];
+        let mountedItem = mountedItems.get(i);
+        if (!mountedItem) return;
 
-        let _bnode = getBNode(mountedItem && mountedItem[0]);
+        let _bnode = getBNode(mountedItem[0]);
 
         // Update the context
         if (_bnode) {
@@ -158,17 +159,19 @@ let hydrateFor = (bnode: BNode, attrName: string, attrValue: string) => {
     };
 
     // Unmount an existing item
-    let _delete = ([i, _]: ForContext) => {
+    let _delete = async ([i, _]: ForContext) => {
 
         // Get the existing node
-        let [_el] = mountedItems[i];
+        let mountedItem = mountedItems.get(i);
+        if (!mountedItem) return;
+        let [_el] = mountedItem;
 
         // Dehydrate the node.
         // This will completely revert the node to its original state before hydration by removing all the effects and the context.
-        bnode.gc[$DEHYDRATE](_el);
+        await bnode.gc[$DEHYDRATE](_el);
 
         // Remove the node from the mountedItems set
-        delProp(mountedItems, i);
+        mountedItems.delete(i);
     };
 
     let operations: ObjectType = {
@@ -180,7 +183,7 @@ let hydrateFor = (bnode: BNode, attrName: string, attrValue: string) => {
     // Initialize all the items
     for (let entry of entries(value)) {
         // Create a new node for each item
-        _create(entry);
+        await _create(entry);
     }
 
     // Watch the prop for changes (if it's an observed state)
@@ -188,15 +191,16 @@ let hydrateFor = (bnode: BNode, attrName: string, attrValue: string) => {
         // Cleanup watcher
         saveCleanup(bnode, watch(value, UNDEFINED, ({[OPERATION]: operation, prop, [NEW_VALUE]: newValue}) => {
             // Perform the operation
-            operations[operation]([prop, newValue]);
+            let operationFn = operations[operation];
+            if (operationFn) {
+                Promise.resolve(operationFn([prop, newValue])).catch(logError);
+            }
         }));
     }
 
     // Unmount all items on cleanup
-    saveCleanup(bnode, () => {
-        for (let i in mountedItems) {
-            _delete([Number(i), null]);
-        }
+    saveCleanup(bnode, async () => {
+        for (let i of mountedItems.keys()) await _delete([i, null]);
         // Delete the state created for the number, if any
         if (stateCreated) {
             delState(value);

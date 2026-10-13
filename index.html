@@ -1,277 +1,36 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Brio.js</title>
-
-    <style>
-      body {
-        font-family: Arial, sans-serif;
-        margin: 0;
-        padding: 0;
-        justify-content: center;
-        align-items: center;
-        height: 100vh;
-        color: #fff;
-        background-color: #181818;
-      }
-
-      button {
-        padding: 10px 20px;
-        background-color: rgba(255, 255, 255, 0.3);
-        box-shadow: 0 0 5px 0 rgba(0, 0, 0, 0.2);
-        color: #fff;
-        border: none;
-        cursor: pointer;
-      }
-
-      button:hover {
-        background-color: rgba(255, 255, 255, 0.4);
-      }
-
-      button:active {
-        background-color: rgba(255, 255, 255, 0.5);
-      }
-
-      input {
-        padding: 10px;
-        box-shadow: 0 0 5px 0 rgba(0, 0, 0, 0.2);
-        border: none;
-      }
-
-      .items-wrapper {
-        display: grid;
-        width: 400px;
-        gap: 10px;
-        background: #7e7ab2;
-        padding: 10px;
-      }
-
-      .items {
-        padding: 10px;
-        background-color: rgba(0, 0, 0, 0.2);
-      }
-
-      .items p {
-        margin-top: 0;
-      }
-
-    </style>
-  </head>
-  <body hidden bind-hidden="false">
-
-    <h1 b-effect="async () => console.log('b-effect', await $http.get('https://dummyjson.com/test'))">Brio.js</h1>
-    <button on-click="console.log('on-click', $event)">Outside a props</button>
-
-    <div b-props="{a: 'template'}">
-      Fall back content for input
-    </div>
-
-    <button b-props="{ ranCount: 0 }">Add $hook "From a parent scope"</button>
-
-    <div b-props="{
-      count: $state.persist(110, 'theCount'), 
-      search: $state.session(''),
-      search2: null,
-      first: 'John', 
-      last: 'Doe', 
-      value: 'abc', 
-      vehicle: ['Bike', 'Boat'], 
-      get double() {
-        return this.count * 2;
-      },
-      set double(value) {
-        this.count = value / 2;
-      },
-      item: 'abc',
-      items: ['Apple','Banana','Cherry'],
-      obj: { a: 1, b: 2, c: 3 },
-    }">
-
-      <button on-click="console.log($event.detail)">Test event</button>
-
-      <p>
-        Count is: ${$props.count}. The double is: ${$props.double}
-        <strong>Global Count: ${$store.count}</strong>
-      </p>
-
-      <p>${ $props.first }, ${$props.search2}</p>
-
-      <input type="text" b-mask="money" b-model="$props.search" on-keyup-enter="console.warn('on-keyup-enter')">
-
-      <button on-click="$props.search = ''">Clear search</button>
-
-      <div b-props="{ open: true }">
-        <button on-click="$props.open = ! $props.open">Toggle</button>
-     
-        <div style="background-color: bisque;" b-show="$props.open" on-click-outside="$props.open = false">
-            Contents...
-        </div>
-      </div>
-
-
-
-      <label for="search">Nested reference: ${$props.item}</label>
-      <input id="search" type="text" b-model="$props.item">
-
-
-      <!-- Just the value -->
-      <!-- <div class="items-wrapper">
-        <div class="items" b-for="item in items">
-          <p>${ item }</p>
-        </div>
-      </div> -->
-
-      <!-- Index and value -->
-      <!-- <div class="items-wrapper">
-        <div class="items" b-for="itemx, index in items">
-          <p>${index}. ${ itemx }</p>
-        </div>
-      </div> -->
-
-      <!-- b-for with object -->
-      <div class="items-wrapper">
-        <h3>b-for with object</h3>
-        <div class="items" b-for="v, i in $props.obj">
-            ${$for.v}
-          <p>${ $for.i }: ${ $for.v }</p>
-          <input type="text" b-model="$for.v">
-          <button on-click="delete $props.obj[$for.i]">Remove</button>
-          <button on-click="console.log($props.obj, $props)">Log obj</button>
-          <div>
-            <div><div><div b-hydrated="console.log('$data', $data)">
-              <button on-click="console.log('Nested $data', $data)">Log obj</button>
-            </div></div></div>
-          </div>
-        </div>
-        <form 
-          on-submit-prevent="$props.obj[$props.item] = $props.item; $props.item = ''"
-          style="display: flex; margin-top: 10px; gap: 10px;"
-        >
-          <input type="text" b-model="$props.item" style="width: 100%;">
-          <button type="submit">Add</button>
-        </form>
-      </div>
-
-      <!-- b-for with array -->
-      <!-- <div class="items-wrapper">
-        <h3>b-for with array</h3>
-        <div class="items" b-for="v, i in $props.items" b-props-hydrated="console.log('context', $context($el))">
-          <p>${ $for.i }: ${ $for.v }</p>
-          <input type="text" b-model="$for.v">
-          <button on-click="$props.items.splice($for.i, 1)">Remove</button>
-          <button on-click="console.log($props.items, $props)">Log items</button>
-        </div>
-        <form 
-          on-submit-prevent="$props.items.push($props.item); $props.item = ''"
-          style="display: flex; margin-top: 10px; gap: 10px;"
-        >
-          <input type="text" b-model="$props.item" style="width: 100%;">
-          <button type="submit">Add</button>
-        </form>
-      </div> -->
-
-      <p>${$props.count}</p>
-
-      <input type="text" b-model-trim="$props.first" b-placeholder="$props.first">
-
-      <input type="text" b-model="$props.last">
-
-      <input type="number" value="10" b-model-number="$props.count">
-
-      <button on-click="$props.count++">Increment</button>
-
-      <div b-show="$props.count % 2 == 0">
-        <h2>Show condition</h2>
-        <div if="$props.count % 3 == 0">
-          <h2>If condition</h2>
-        </div>
-      </div>
-
-      <button on-click="$props.vehicle = ['Car','Boat']">Reassign</button>
-      <button on-click="console.log($props.vehicle)">Log Props</button>
-    </div>
-
-    <hr>
-
-    <!-- <div 
-      props="{ number: 5, show: false }" 
-      style="margin: 40px;"
-      enter="show = true" enter-options="{threshold: 1, rootMargin: '-100px 0px'}"
-      transition="show" opacity
-    >
-        <div ref="button" props="{
-          count: 2,
-          person: 'John',
-        }">
-            <button init="count = number" effect="number = count" on-click="count++">Increment</button>
-            <p>Count: ${count}, ${JSON.stringify(person)}</p>
-        </div>
-   
-      Number: <span text="number"></span>
-    </div> -->
-
-    <hr>
-
-    <div b-data="{p1: true}" b-ref="prop1">
-      <div b-class="$props.p1">
-        <button on-click="console.log($props, $ref, $el, $root($el), $id, $data.p1)">Log Magic attributes</button>
-        <button id="button1" b-ref="button1" on-click="console.log($ref, $s2)">From a parent scope</button>
-      </div>
-      <div b-data="{ref: 123}" b-ref="prop2">
-        <div b-ref="prop2div">
-          <button b-ref="button1" on-click="console.log($ref, $props)" b-teleport="document.querySelector('body')" style="background-color: red;">Inside Ref</button>
-        </div>
-        <button b-ref="button1" on-click="console.log($ref)">Outside Ref</button>
-      </div>
-      <button b-ref="button3" on-click="console.log($ref)">From a parent scope</button>
-    </div>
-
-    <hr>
-
-    <div b-props="{count: 0, increment() {this.count++} }">
-      <h2>Counter 1: ${$props.count}</h2>
-      <button on-mousedown="$props.increment">Increment</button>
-      <div b-props="{
-        count: 0,
-        increment() {
-          this.count++;
-        }
-      }">
-        <h2>Counter 2 (nested): ${$props.count}</h2>
-        <button on-click="$props.count++">Increment using `button` tag</button>
-        <a on-mousedown="$props.count++">Increment using `a` tag</a>
-      </div>
-    </div>
-
-    <!-- <div x-data="{count: 0}">
-      <h2>Counter 2: <span x-text="count"></span></h2>
-      <button @click="count++">Increment</button>
-    </div> -->
-
-    <script type="module" src="/src/briojs.min.ts"></script>
-
-    <script b-script>
-        () => {
-            let obj = { a: 1, b: 2 };
-            let arr = [10, 20];
-            const { a: newA, b: newB } = obj;
-            const [x, y] = arr;
-        }
-    </script>
-
-    <script>
-      window.addEventListener('brio', () => {
-
-        let app = brio.newApp();
-        let {$hydrate} = app.gc;
-
-        console.log('app', app);
-
-        $hydrate('body');
-      });
-    </script>
-  </body>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Brio.js vNext playground</title>
+  <style>
+    body { font: 16px/1.5 system-ui, sans-serif; margin: 2rem auto; max-width: 48rem; padding: 0 1rem; }
+    section { border: 1px solid #ddd; border-radius: .75rem; margin: 1rem 0; padding: 1rem; }
+    nav { display: flex; gap: 1rem; }
+  </style>
+</head>
+<body>
+  <h1>Brio.js vNext</h1>
+  <section id="widget">
+    <h2>Embeddable widget</h2>
+    <label>Message <input b-model="message"></label>
+    <p data-testid="message" b-text="message"></p>
+    <button data-testid="increment" b-on-click="count++">Increment</button>
+    <span data-testid="count" b-text="count"></span>
+    <button data-testid="toggle" b-on-click="visible = !visible">Toggle details</button>
+    <p data-testid="details" b-if="visible">Conditional content is mounted and disposed.</p>
+    <ul>
+      <li b-for="item in items" b-key="item.id" b-text="item.label"></li>
+    </ul>
+    <button data-testid="add-item" b-on-click="items.push({ id: items.length + 1, label: 'A new row' })">Add row</button>
+    <click-counter label="Component"></click-counter>
+  </section>
+  <section id="spa">
+    <h2>Optional single-page routing</h2>
+    <nav><a href="/">Home route</a><a href="/about">About route</a></nav>
+    <div b-router-outlet></div>
+  </section>
+  <script type="module" src="/examples/vnext.js"></script>
+</body>
 </html>

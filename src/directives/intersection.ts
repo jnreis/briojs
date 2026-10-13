@@ -17,16 +17,24 @@ let hydrateIntersection = (bnode: BNode, attrName: string, attrValue: string) =>
 
     let _attrName = sliceAttrName(attrName); // 5: b-on-, 3: on-
 
-    let [directiveName] = split(_attrName, '-');
+    let [eventPart, ...dotModifiers] = split(_attrName, '.');
+    let [directiveName] = split(eventPart, '-');
 
     // Options
-    let options = bnode[OPTIONS][attrName] || {};
+    let baseAttrName = attrName.split('.')[0];
+    let options: ObjectType = {
+        ...(bnode[OPTIONS][baseAttrName] || {}),
+        ...(bnode[OPTIONS][attrName] || {})
+    };
+    for (let mod of dotModifiers) {
+        options[mod] = true;
+    }
 
     // Evaluate the expression
     let expFn = bnode.exec(bnode, attrValue, '$entry', false);
 
     // Debounce the expression function
-    let debouncedExpFn = debounce(expFn, options[DEBOUNCE] || 100);
+    let debouncedExpFn = debounce(expFn, options[DEBOUNCE] ?? 100);
 
     let observer = new IntersectionObserver(entries => {
         each(entries, (entry: IntersectionObserverEntry) => {
@@ -45,13 +53,13 @@ let hydrateIntersection = (bnode: BNode, attrName: string, attrValue: string) =>
     observer[OBSERVE](bnode.el);
 
     // Save the cleanup function
-    saveCleanup(bnode, () => observer[DISCONNECT]());
+    saveCleanup(bnode, () => {
+        observer[DISCONNECT]();
+        debouncedExpFn.cancel();
+    });
 }
 
 export let intersectionDirectives: Directive[] = [
-    [ON_ENTER, hydrateIntersection],
-    [B_+ON_ENTER, hydrateIntersection],
-
-    [ON_EXIT, hydrateIntersection],
-    [B_+ON_EXIT, hydrateIntersection],
+    [/^(b-on-enter|on-enter)(\.[\w-]+)*$/, hydrateIntersection],
+    [/^(b-on-exit|on-exit)(\.[\w-]+)*$/, hydrateIntersection],
 ];

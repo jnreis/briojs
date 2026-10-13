@@ -1,4 +1,4 @@
-import { evalEffect, saveToParent, updateDataLevelContext } from "../app";
+import { evalEffect, saveCleanup, saveToParent, updateDataLevelContext } from "../app";
 import { $DEHYDRATE, $HYDRATE, AFTER, ATTR, B_IF, REPLACE_WITH, SKIP, UNDEFINED } from "../tools/constants";
 import { cloneNode, createComment, insertNodes, nextFrame } from "../tools/dom";
 import { transitions } from "./transition";
@@ -14,7 +14,7 @@ let hydrateIf = (bnode: BNode, attrName: string, attrValue: string) => {
     bnode.ph = createComment(attrName);
 
     // Hold the node's location with a placeholder
-    insertNodes(el, REPLACE_WITH, bnode.ph);
+    insertNodes(el, REPLACE_WITH, bnode.ph as Comment);
 
     // Interrupt the hydration process for the remaining directives and child nodes
     bnode[SKIP] = 3;
@@ -29,11 +29,21 @@ let hydrateIf = (bnode: BNode, attrName: string, attrValue: string) => {
 
     // Transition function, if any
     let transition: FunctionType | undefined;
+    let disposed = false;
+    let revision = 0;
+    let frameCleanup: FunctionType | undefined;
+
+    saveCleanup(bnode, () => {
+        disposed = true;
+        revision++;
+        frameCleanup?.();
+    });
 
     // Dehydrate the element
     let dehydrate = () => {
         // Dehydrates and removes the element
-        bnode.gc[$DEHYDRATE](hydratedBnode!.el as HTMLElement);
+        if (hydratedBnode)
+            bnode.gc[$DEHYDRATE](hydratedBnode.el as HTMLElement);
 
         // Clear the reference
         hydratedBnode = UNDEFINED;
@@ -43,10 +53,14 @@ let hydrateIf = (bnode: BNode, attrName: string, attrValue: string) => {
     evalEffect(bnode, attrValue, (ctxFn) => {
         // Get the value
         let value = ctxFn();
+        let currentRevision = ++revision;
 
         // Wait for the next frame
         // * This is necessary for some directives to work properly (e.g. `on-click-outside`, `b-transition`, etc.)
-        nextFrame(async () => {
+        frameCleanup?.();
+        frameCleanup = nextFrame(async () => {
+            frameCleanup = undefined;
+            if (disposed || currentRevision !== revision) return;
             // Add
             if (value) {
                 if (!hydratedBnode) {
@@ -58,18 +72,24 @@ let hydrateIf = (bnode: BNode, attrName: string, attrValue: string) => {
 
                     // Create a new bnode
                     hydratedBnode = newBNode(elCopy, el);
+                    saveToParent(bnode, elCopy);
 
                     // Mark the hydratedBnode as a b-if copy
                     hydratedBnode[ATTR][B_IF] = '';
 
                     // Update the $slot and $ref objects
                     await updateDataLevelContext(hydratedBnode);
+                    if (disposed || currentRevision !== revision) {
+                        dehydrate();
+                        return;
+                    }
 
                     // Hydrate the element
                     await bnode.gc[$HYDRATE](elCopy, el);
-
-                    // Ensure the element copy will go through the cleanup process
-                    saveToParent(bnode, elCopy);
+                    if (disposed || currentRevision !== revision) {
+                        dehydrate();
+                        return;
+                    }
                 }
 
                 // If there's a transition, play it

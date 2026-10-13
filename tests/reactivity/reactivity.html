@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual Test: Signals & Reactivity Core</title>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; margin: 20px; background: #f8fafc; color: #1e293b; }
+        .card { background: white; border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; }
+        h1 { font-size: 1.5rem; }
+        h3 { margin-top: 0; color: #0f172a; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; }
+        button { background: #3b82f6; color: white; border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 0.9rem; margin-right: 6px; margin-bottom: 6px; }
+        button:hover { background: #2563eb; }
+        button.danger { background: #ef4444; }
+        button.danger:hover { background: #dc2626; }
+        code { background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-family: monospace; }
+        .log-list { background: #0f172a; color: #38bdf8; padding: 10px; border-radius: 6px; font-family: monospace; font-size: 0.85rem; max-height: 180px; overflow-y: auto; }
+    </style>
+</head>
+<body>
+
+    <h1>Reactivity Core Manual Tests</h1>
+    <p>Tests fine-grained signals (<code>signal</code>, <code>state</code>), <code>computed</code>, batched updates (<code>batch</code>), and reactive scopes (<code>createScope</code>, <code>onCleanup</code>).</p>
+
+    <!-- Test 1: Primitive Signal & Computed -->
+    <div class="card">
+        <h3>1. Primitive Signal & Computed</h3>
+        <p>Signal Value: <strong id="sig-val">0</strong> | Doubled (Computed): <strong id="comp-val">0</strong></p>
+        <button id="btn-inc-sig">+1 Signal</button>
+        <button id="btn-dec-sig">-1 Signal</button>
+    </div>
+
+    <!-- Test 2: Deep Reactive Proxy State -->
+    <div class="card">
+        <h3>2. Deep Reactive State (state)</h3>
+        <p>User: <strong id="user-name">Ada</strong> | Age: <strong id="user-age">36</strong> | Hobbies: <span id="user-hobbies"></span></p>
+        <button id="btn-update-name">Change Name</button>
+        <button id="btn-inc-age">Birthday (+1 Age)</button>
+        <button id="btn-add-hobby">Add Hobby</button>
+    </div>
+
+    <!-- Test 3: Batching updates -->
+    <div class="card">
+        <h3>3. Batched Flush (batch)</h3>
+        <p>Batch ensures multiple synchronous reactive writes trigger effects exactly once.</p>
+        <button id="btn-run-batch">Run 3 State Mutations Inside batch()</button>
+        <h4>Effect Execution Count: <span id="batch-runs">0</span></h4>
+    </div>
+
+    <!-- Test 4: Scope Disposals & Cleanups -->
+    <div class="card">
+        <h3>4. Scopes & Cleanups (createScope, onCleanup)</h3>
+        <p>Active effects can be cleanly disposed with scope teardown.</p>
+        <button id="btn-start-scope">Start New Child Scope</button>
+        <button id="btn-dispose-scope" class="danger">Dispose Scope</button>
+        <div class="log-list" id="scope-logs">Scope logs appear here...</div>
+    </div>
+
+    <script type="module">
+        import { signal, computed, effect, state, batch, createScope, onCleanup } from '/dist/reactivity.js';
+
+        // 1. Signal & Computed
+        const count = signal(0);
+        const doubled = computed(() => count.value * 2);
+
+        effect(() => {
+            document.getElementById('sig-val').textContent = count.value;
+            document.getElementById('comp-val').textContent = doubled.value;
+        });
+
+        document.getElementById('btn-inc-sig').onclick = () => count.value++;
+        document.getElementById('btn-dec-sig').onclick = () => count.value--;
+
+        // 2. Reactive State
+        const user = state({
+            name: 'Ada',
+            age: 36,
+            hobbies: ['Math', 'Computing']
+        });
+
+        effect(() => {
+            document.getElementById('user-name').textContent = user.name;
+            document.getElementById('user-age').textContent = user.age;
+            document.getElementById('user-hobbies').textContent = user.hobbies.join(', ');
+        });
+
+        document.getElementById('btn-update-name').onclick = () => {
+            user.name = user.name === 'Ada' ? 'Grace Hopper' : 'Ada';
+        };
+        document.getElementById('btn-inc-age').onclick = () => user.age++;
+        document.getElementById('btn-add-hobby').onclick = () => {
+            user.hobbies.push('Hobby ' + (user.hobbies.length + 1));
+        };
+
+        // 3. Batched updates
+        const a = signal(0);
+        const b = signal(0);
+        let batchRuns = 0;
+
+        effect(() => {
+            const sum = a.value + b.value;
+            batchRuns++;
+            document.getElementById('batch-runs').textContent = batchRuns;
+        });
+
+        document.getElementById('btn-run-batch').onclick = () => {
+            batch(() => {
+                a.value++;
+                b.value++;
+                a.value += 2;
+            });
+        };
+
+        // 4. Scopes
+        let childScope;
+        const scopeLogs = document.getElementById('scope-logs');
+        const log = (msg) => {
+            const div = document.createElement('div');
+            div.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+            scopeLogs.prepend(div);
+        };
+
+        document.getElementById('btn-start-scope').onclick = () => {
+            if (childScope) childScope.dispose();
+            childScope = createScope();
+            childScope.run(() => {
+                log('Created active child scope.');
+                effect(() => {
+                    log(`Tracked count inside scope: ${count.value}`);
+                });
+                onCleanup(() => {
+                    log('Cleaned up resources for child scope.');
+                });
+            });
+        };
+
+        document.getElementById('btn-dispose-scope').onclick = () => {
+            if (childScope) {
+                childScope.dispose();
+                childScope = null;
+                log('Scope explicitly disposed.');
+            } else {
+                log('No active scope to dispose.');
+            }
+        };
+    </script>
+</body>
+</html>

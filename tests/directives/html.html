@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual Test: html & text directives</title>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; margin: 20px; background: #f8fafc; color: #1e293b; }
+        .card { background: white; border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; }
+        h1 { font-size: 1.5rem; }
+        h3 { margin-top: 0; color: #0f172a; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; }
+        button { background: #3b82f6; color: white; border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 0.9rem; margin-right: 6px; }
+        button:hover { background: #2563eb; }
+        .box { padding: 12px; background: #f1f5f9; border-radius: 6px; margin-top: 10px; }
+    </style>
+</head>
+<body b-data="{
+    rawMarkup: '<strong>Rendered as bold HTML</strong> with a <em>colored emphasis</em>.',
+    escapedText: '<strong>This will NOT be parsed as HTML</strong>',
+    counter: 1
+}">
+
+    <h1>b-html & b-text Directive Manual Tests</h1>
+    <p>Tests dynamic insertion of text vs raw HTML markup and safe hydration.</p>
+
+    <!-- Test 1: b-html -->
+    <div class="card">
+        <h3>1. b-html Directive</h3>
+        <button on-click="$data.rawMarkup = '<em>Updated at ' + new Date().toLocaleTimeString() + '</em> with <mark>highlight</mark>'">Update HTML</button>
+        <div b-html="$data.rawMarkup" class="box"></div>
+    </div>
+
+    <!-- Test 2: b-text -->
+    <div class="card">
+        <h3>2. b-text Directive</h3>
+        <p>Text directive guarantees tags are safely escaped:</p>
+        <div b-text="$data.escapedText" class="box"></div>
+        <p>Dynamic string expression:</p>
+        <div b-text="'Current count: ' + $data.counter" class="box"></div>
+        <button on-click="$data.counter++">+1</button>
+    </div>
+
+    <script type="module" b-ignore src="/src/briojs.min.ts"></script>
+    <script>
+        window.addEventListener('brio', () => {
+            const app = brio.newApp();
+            app.gc.$hydrate('body');
+            console.log('html.html hydrated successfully');
+        });
+    </script>
+</body>
+</html>

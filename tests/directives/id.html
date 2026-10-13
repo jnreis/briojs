@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual Test: id directive</title>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; margin: 20px; background: #f8fafc; color: #1e293b; }
+        .card { background: white; border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; }
+        h1 { font-size: 1.5rem; }
+        h3 { margin-top: 0; color: #0f172a; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; }
+        code { background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-family: monospace; }
+        input { padding: 6px; border: 1px solid #cbd5e1; border-radius: 4px; }
+        label { font-weight: bold; margin-right: 8px; }
+    </style>
+</head>
+<body b-data>
+
+    <h1>b-id Directive Manual Tests</h1>
+    <p>Tests unique identifier generation and accessible input-label association.</p>
+
+    <!-- Test 1: Generate unique id and bind for/id -->
+    <div class="card" b-id="['usernameField', 'emailField']">
+        <h3>1. Accessible Form Fields with b-id</h3>
+        <p>Generated IDs in context: <code>$id.usernameField = "${$id.usernameField}"</code> and <code>$id.emailField = "${$id.emailField}"</code></p>
+
+        <div style="margin-bottom: 10px;">
+            <label bind-for="$id.usernameField">Username (click label to focus):</label>
+            <input bind-id="$id.usernameField" type="text" placeholder="Username">
+        </div>
+
+        <div>
+            <label bind-for="$id.emailField">Email (click label to focus):</label>
+            <input bind-id="$id.emailField" type="email" placeholder="Email">
+        </div>
+    </div>
+
+    <!-- Test 2: Separate scope generates distinct IDs -->
+    <div class="card" b-id="['usernameField']">
+        <h3>2. Independent Sub-scope with b-id</h3>
+        <p>This independent card generated another unique ID: <code>${$id.usernameField}</code></p>
+    </div>
+
+    <script type="module" b-ignore src="/src/briojs.min.ts"></script>
+    <script>
+        window.addEventListener('brio', () => {
+            const app = brio.newApp();
+            app.gc.$hydrate('body');
+            console.log('id.html hydrated successfully');
+        });
+    </script>
+</body>
+</html>

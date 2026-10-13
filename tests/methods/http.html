@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual Test: HTTP Client</title>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; margin: 20px; background: #f8fafc; color: #1e293b; }
+        .card { background: white; border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; }
+        h1 { font-size: 1.5rem; }
+        h3 { margin-top: 0; color: #0f172a; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; }
+        button { background: #3b82f6; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 0.9rem; margin-right: 8px; }
+        button:hover { background: #2563eb; }
+        pre { background: #0f172a; color: #38bdf8; padding: 12px; border-radius: 6px; overflow-x: auto; font-size: 0.85rem; max-height: 250px; }
+    </style>
+</head>
+<body b-data="{
+    httpResult: 'No request initiated yet',
+    isLoading: false
+}">
+
+    <h1>HTTP Client (http) Manual Tests</h1>
+    <p>Tests <code>http.get</code>, <code>http.post</code>, parameter encoding, and automatic response parsing.</p>
+
+    <div class="card">
+        <h3>1. Fetch API Request Test</h3>
+        <button id="btn-fetch-users">GET /api (Fetch Mock Users)</button>
+        <button id="btn-post-user">POST /api (Simulate Post)</button>
+
+        <p b-if="$data.isLoading"><em>Loading data from network...</em></p>
+        <h4>Response Output:</h4>
+        <pre>${typeof $data.httpResult === 'object' ? JSON.stringify($data.httpResult, null, 2) : $data.httpResult}</pre>
+    </div>
+
+    <script type="module" b-ignore src="/src/briojs.min.ts"></script>
+    <script>
+        window.addEventListener('brio', () => {
+            const app = brio.newApp();
+            app.gc.$hydrate('body');
+
+            const http = brio.http;
+            const card = document.querySelector('.card');
+
+            document.getElementById('btn-fetch-users').addEventListener('click', async () => {
+                const bnode = app.gc.$getBNode(card);
+                bnode.ctx.$data.isLoading = true;
+                try {
+                    // Using public JSON API
+                    const data = await http.get('https://jsonplaceholder.typicode.com/todos/1');
+                    bnode.ctx.$data.httpResult = data;
+                } catch (err) {
+                    bnode.ctx.$data.httpResult = 'Error: ' + err.message;
+                } finally {
+                    bnode.ctx.$data.isLoading = false;
+                }
+            });
+
+            document.getElementById('btn-post-user').addEventListener('click', async () => {
+                const bnode = app.gc.$getBNode(card);
+                bnode.ctx.$data.isLoading = true;
+                try {
+                    const data = await http.post('https://jsonplaceholder.typicode.com/posts', {
+                        title: 'Brio Framework Post',
+                        body: 'Testing http.post from Brio.js',
+                        userId: 1
+                    });
+                    bnode.ctx.$data.httpResult = data;
+                } catch (err) {
+                    bnode.ctx.$data.httpResult = 'Error: ' + err.message;
+                } finally {
+                    bnode.ctx.$data.isLoading = false;
+                }
+            });
+
+            console.log('http.html hydrated successfully');
+        });
+    </script>
+</body>
+</html>

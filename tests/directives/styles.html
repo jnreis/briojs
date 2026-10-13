@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual Test: styles directive</title>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; margin: 20px; background: #f8fafc; color: #1e293b; }
+        .card { background: white; border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; }
+        h1 { font-size: 1.5rem; }
+        h3 { margin-top: 0; color: #0f172a; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; }
+    </style>
+</head>
+<body b-data="{
+    theme: 'customTheme'
+}">
+
+    <!-- Define saved CSS assets -->
+    <style b-save="customTheme">
+        & {
+            background-color: #f0fdf4;
+            border: 2px dashed #16a34a;
+            padding: 16px;
+            border-radius: 8px;
+        }
+        & h4 {
+            color: #15803d;
+            margin: 0 0 8px 0;
+        }
+        & p {
+            color: #166534;
+            margin: 0;
+        }
+    </style>
+
+    <h1>b-style Directive Manual Tests</h1>
+    <p>Tests scoped style injection and selector prefixing via <code>b-style</code> and <code>b-save</code>.</p>
+
+    <!-- Test 1: Scoped style application -->
+    <div class="card">
+        <h3>1. Scoped CSS Asset Applied to Container</h3>
+        <div b-style="customTheme">
+            <h4>Scoped Green Theme</h4>
+            <p>Styles defined with <code>&</code> are dynamically scoped specifically to this element without leaking to global styles.</p>
+        </div>
+    </div>
+
+    <script type="module" b-ignore src="/src/briojs.min.ts"></script>
+    <script>
+        window.addEventListener('brio', () => {
+            const app = brio.newApp();
+            app.gc.$hydrate('body');
+            console.log('styles.html hydrated successfully');
+        });
+    </script>
+</body>
+</html>

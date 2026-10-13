@@ -2,6 +2,7 @@ import { saveCleanup } from "../app";
 import { debounce, size } from "../tools";
 import { filter } from "../tools/array";
 import { DISCONNECT, OBSERVE, OPTIONS, DEBOUNCE, ON_, B_, TARGET, NODES, UNDEFINED } from "../tools/constants";
+import { getProp } from "../tools/object";
 
 
 /**
@@ -18,24 +19,35 @@ import { DISCONNECT, OBSERVE, OPTIONS, DEBOUNCE, ON_, B_, TARGET, NODES, UNDEFIN
  */
 let hydrateMutationType = (mutationType: MutationRecordType, mutationOptions: ObjectType, mutationFilter: FunctionType) => (bnode: BNode, attrName: string, attrValue: string) => {
 
-    let options = bnode[OPTIONS][attrName] || {};
+    let baseAttrName = attrName.split('.')[0];
+    let dotModifiers = attrName.includes('.') ? attrName.split('.').slice(1) : [];
+    let options: ObjectType = {
+        ...(bnode[OPTIONS][baseAttrName] || {}),
+        ...(bnode[OPTIONS][attrName] || {})
+    };
+    for (let mod of dotModifiers) {
+        options[mod] = true;
+    }
 
     // Set up observer options
     let observerOptions: ObjectType = {
         [mutationType]: true
     };
 
-    mutationOptions.subtree = false;
-    
     // Get the mutation options related to the specific mutation type: childList, attributes, or characterData
     for (let key in mutationOptions) {
-        observerOptions[key] = options[key] || mutationOptions[key];
+        observerOptions[key] = key in options ? options[key] : mutationOptions[key];
     }
 
     // Evaluate the expression
     let expFn = bnode.exec(bnode, attrValue, "$mutations", false);
 
-    let debouncedExpFn = debounce(expFn, options[DEBOUNCE] || 100);
+    let pendingMutations: MutationRecord[] = [];
+    let debouncedExpFn = debounce(() => {
+        let batch = pendingMutations;
+        pendingMutations = [];
+        expFn(batch);
+    }, getProp(options, DEBOUNCE, 100));
 
     let observer = new MutationObserver(mutations => {
 
@@ -43,14 +55,21 @@ let hydrateMutationType = (mutationType: MutationRecordType, mutationOptions: Ob
         mutations = filterMutations(mutationType, mutationFilter, mutations);
 
         // Execute the expression
-        if (size(mutations)) debouncedExpFn(mutations);
+        if (size(mutations)) {
+            pendingMutations.push(...mutations);
+            debouncedExpFn();
+        }
     });
 
     // Observe the element
     observer[OBSERVE](options[TARGET] || bnode.el, observerOptions);
 
     // Save the cleanup function
-    saveCleanup(bnode, () => observer[DISCONNECT]());
+    saveCleanup(bnode, () => {
+        observer[DISCONNECT]();
+        debouncedExpFn.cancel();
+        pendingMutations = [];
+    });
 };
 
 // Helper to filter mutation records by type
@@ -91,15 +110,8 @@ let ON_ATTRS = ON_+"attrs";
 let ON_TEXT = ON_+"text";
 
 export let mutationDirectives: Directive[] = [
-    [ON_ADDED_NODES, hydrateMutationAdd],
-    [B_+ON_ADDED_NODES, hydrateMutationAdd],
-
-    [ON_REMOVED_NODES, hydrateMutationRemove],
-    [B_+ON_REMOVED_NODES, hydrateMutationRemove],
-
-    [ON_ATTRS, hydrateMutationAttrs],
-    [B_+ON_ATTRS, hydrateMutationAttrs],
-
-    [ON_TEXT, hydrateMutationText],
-    [B_+ON_TEXT, hydrateMutationText],
+    [/^(b-on-addednodes|on-addednodes)(\.[\w-]+)*$/, hydrateMutationAdd],
+    [/^(b-on-removednodes|on-removednodes)(\.[\w-]+)*$/, hydrateMutationRemove],
+    [/^(b-on-attrs|on-attrs)(\.[\w-]+)*$/, hydrateMutationAttrs],
+    [/^(b-on-text|on-text)(\.[\w-]+)*$/, hydrateMutationText],
 ];

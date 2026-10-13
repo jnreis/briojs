@@ -60,7 +60,9 @@ let hydrateOn = (bnode: BNode, attrName: string, attrValue: string) => {
 
     let _attrName = sliceAttrName(attrName); // 5: b-on-, 3: on-
 
-    let [eventName, ...booleanOptions] = split(_attrName, '-');
+    let [eventPart, ...dotModifiers] = split(_attrName, '.');
+    let [eventName, ...dashOptions] = split(eventPart, '-');
+    let booleanOptions = [...dashOptions, ...dotModifiers];
 
     let $el = bnode.el;
 
@@ -80,7 +82,11 @@ let hydrateOn = (bnode: BNode, attrName: string, attrValue: string) => {
 
     // Options
     // https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener#options
-    let options: ObjectType = bnode[OPTIONS][attrName] || {};
+    let baseAttrName = attrName.split('.')[0];
+    let options: ObjectType = {
+        ...(bnode[OPTIONS][baseAttrName] || {}),
+        ...(bnode[OPTIONS][attrName] || {})
+    };
 
     // Merge quick boolean options
     each(booleanOptions, option => {
@@ -88,10 +94,27 @@ let hydrateOn = (bnode: BNode, attrName: string, attrValue: string) => {
     });
 
     // Wrap the function with debounce
-    if (DEBOUNCE in options) fn = debounce(fn, options[DEBOUNCE]);
+    let debounceFn = DEBOUNCE in options
+        ? debounce(fn, options[DEBOUNCE])
+        : undefined;
+    if (debounceFn) fn = debounceFn;
 
     // Wrap the function with throttle
     if (THROTTLE in options) fn = throttle(fn, options[THROTTLE]);
+    let listeners: FunctionType[] = [];
+    let disposed = false;
+    let listenerOptions = {...options, once: false};
+
+    let removeListeners = () => {
+        if (disposed) return;
+        disposed = true;
+        for (let remove of listeners) remove();
+        listeners = [];
+    };
+    let cleanup = () => {
+        removeListeners();
+        debounceFn?.cancel();
+    };
 
     // The target element
     if (options[OUTSIDE] || options[DOCUMENT]) target = D as any;
@@ -132,6 +155,7 @@ let hydrateOn = (bnode: BNode, attrName: string, attrValue: string) => {
 
         // Run the function
         fn(e);
+        if (options.once) removeListeners();
     }
 
     // Keep track of the pressed keys for key events
@@ -142,7 +166,7 @@ let hydrateOn = (bnode: BNode, attrName: string, attrValue: string) => {
     if (has([KEYDOWN,KEYUP], eventName) && s) {
 
         // Listen to keydown and track pressed keys
-        saveCleanup(bnode, listen(target, KEYDOWN, (e: any) => {
+        listeners.push(listen(target, KEYDOWN, (e: any) => {
 
             if (options[REPEAT] === false && e[REPEAT]) return;
 
@@ -164,10 +188,10 @@ let hydrateOn = (bnode: BNode, attrName: string, attrValue: string) => {
             if (pressedKeys.meta && !has(modifierKeys, key)) {
                 deletePressedKey(e, pressedKeys);
             }
-        }));
+        }, listenerOptions));
 
         // Listen to keyup and track released keys
-        saveCleanup(bnode, listen(target, KEYUP, (e: any) => {
+        listeners.push(listen(target, KEYUP, (e: any) => {
 
             // On keydown, remove the key before emitting the event
             if (KEYDOWN == eventName) deletePressedKey(e, pressedKeys);
@@ -178,20 +202,20 @@ let hydrateOn = (bnode: BNode, attrName: string, attrValue: string) => {
 
                 wait(() => deletePressedKey(e, pressedKeys));
             }
-        }));
+        }, listenerOptions));
 
         // Remove all keys when the target loses focus
-        saveCleanup(bnode, listen(target, 'focus', () => {
+        listeners.push(listen(target, 'focus', () => {
             deleteKeys(pressedKeys);
-        }));
+        }, listenerOptions));
     }
     else {
-        // Create listener and save the cleanup function
-        saveCleanup(bnode, listen(target, eventName, listenFn, options));
+        listeners.push(listen(target, eventName, listenFn, listenerOptions));
     }
 
+    saveCleanup(bnode, cleanup);
 }
 
 let deletePressedKey = (e: any, pressedKeys: ObjectType) => delProp(pressedKeys, lower(e.key));
 
-export let onDirective: Directive = [/^(b-on|on)-([\w-$]+)$/, hydrateOn]; // on-click="action" on-click-prevent
+export let onDirective: Directive = [/^(b-on|on)-([\w-$.]+)$/, hydrateOn]; // on-click="action" on-click-prevent on-click.prevent

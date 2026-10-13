@@ -79,7 +79,7 @@ let hydrateMask = (bnode: BNode, attrName: string, attrValue: string) => {
     };
 
     // Initial mask application
-    nextFrame(_mask);
+    saveCleanup(bnode, nextFrame(_mask));
 
     // Save cleanup function
     // This listener will `capture` and process the input value before any other listeners.
@@ -103,12 +103,13 @@ let applyMask = ($mask: MaskContext) => {
     let strIndex = 0;
     let strLength = size(str);
 
-    // Split static mask into individual characters
-    each([...maskItems as MaskItem[]], (maskItem, index) => {
-        if (isString(maskItem) && size(maskItem) > 1) {
-            (maskItems as MaskItem[]).splice(index, 1, ...split(maskItem as string, ''));
-        }
+    let normalizedMaskItems: MaskItem[] = [];
+    each(maskItems as MaskItem[], maskItem => {
+        if (isString(maskItem) && size(maskItem) > 1)
+            normalizedMaskItems.push(...split(maskItem, ''));
+        else normalizedMaskItems.push(maskItem);
     });
+    maskItems = normalizedMaskItems;
 
     // Iterate over the mask items
     for (let [maskIndex, maskItem] of entries(maskItems) as [number, MaskItem][]) {
@@ -337,9 +338,13 @@ let char = (_char: string[] | RegExp, min?: number, max?: number): MaskCharacter
         return logError('Invalid mask character definition. Expected an array of characters or a regular expression.');
     }
 
-    let testChar = isArray(_char) 
+    let testChar = isArray(_char)
         ? (char: string) => has(_char as string[], char)
-        : (char: string) => test(char, _char as RegExp);
+        : (char: string) => {
+            let regex = _char as RegExp;
+            regex.lastIndex = 0;
+            return test(char, regex);
+        };
 
     return [testChar, ...minMax(min, max)];
 }

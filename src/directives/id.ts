@@ -2,7 +2,7 @@ import { saveCleanup } from '../app';
 import { logError, uid } from '../tools';
 import { every } from '../tools/array';
 import { ARRAY, DIRECTIVE, MUST_BE, STRING } from '../tools/constants';
-import { delProp, setProp } from '../tools/object';
+import { delProp, hasProp, setProp } from '../tools/object';
 import { isArray, isString } from '../tools/typeCheck';
 
 let ids: ObjectType = {};
@@ -22,6 +22,7 @@ let hydrateId = async (bnode: BNode, attrName: string, attrValue: string) => {
 
         // Convert the unique IDs to an object and save them in the context
         bnode.id = newUid.reduce((acc: any, idName: string) => {
+            if (hasProp(acc, idName)) return acc;
 
             let id = uid(5);
 

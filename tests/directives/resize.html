@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual Test: resize directive</title>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; margin: 20px; background: #f8fafc; color: #1e293b; }
+        .card { background: white; border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; }
+        h1 { font-size: 1.5rem; }
+        h3 { margin-top: 0; color: #0f172a; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; }
+        .resizable { width: 300px; height: 150px; resize: both; overflow: auto; background: #f1f5f9; border: 2px dashed #94a3b8; border-radius: 8px; padding: 16px; box-sizing: border-box; }
+        code { background: #e2e8f0; padding: 2px 6px; border-radius: 4px; font-family: monospace; }
+    </style>
+</head>
+<body b-data="{
+    boxWidth: 0,
+    boxHeight: 0
+}">
+
+    <h1>b-resize / on-resize Directive Manual Tests</h1>
+    <p>Tests reactive ResizeObserver monitoring of DOM element dimensions with <code>on-resize</code>.</p>
+
+    <div class="card">
+        <h3>1. Resizable Box (Drag the bottom-right corner)</h3>
+        <p>Current measured dimensions: <code>Width: ${$data.boxWidth}px</code> x <code>Height: ${$data.boxHeight}px</code></p>
+
+        <div class="resizable" on-resize="([w, h]) => { $data.boxWidth = Math.round(w); $data.boxHeight = Math.round(h); }">
+            Drag the bottom-right corner of this box to resize it!
+        </div>
+    </div>
+
+    <script type="module" b-ignore src="/src/briojs.min.ts"></script>
+    <script>
+        window.addEventListener('brio', () => {
+            const app = brio.newApp();
+            app.gc.$hydrate('body');
+            console.log('resize.html hydrated successfully');
+        });
+    </script>
+</body>
+</html>

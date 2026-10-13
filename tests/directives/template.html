@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual Test: template directive</title>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; margin: 20px; background: #f8fafc; color: #1e293b; }
+        .card { background: white; border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; }
+        h1 { font-size: 1.5rem; }
+        h3 { margin-top: 0; color: #0f172a; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; }
+        .box { padding: 14px; background: #f0fdf4; border: 1px solid #86efac; border-radius: 6px; }
+    </style>
+</head>
+<body b-data="{
+    message: 'Hello from parent context!',
+    author: 'Grace Hopper'
+}">
+
+    <h1>b-template Directive Manual Tests</h1>
+    <p>Tests replacing wrapper template elements with their evaluated inner HTML contents while preserving context and hydration.</p>
+
+    <!-- Test 1: In-place template extraction -->
+    <div class="card">
+        <h3>1. Template Replacement</h3>
+        <p>The div below has <code>b-template</code>; it will be replaced in-place by its contents:</p>
+        <div b-template class="box">
+            <h4>Template Content Unwrapped</h4>
+            <p>Message: <strong>${$data.message}</strong></p>
+            <p>Author: <em>${$data.author}</em></p>
+        </div>
+    </div>
+
+    <script type="module" b-ignore src="/src/briojs.min.ts"></script>
+    <script>
+        window.addEventListener('brio', () => {
+            const app = brio.newApp();
+            app.gc.$hydrate('body');
+            console.log('template.html hydrated successfully');
+        });
+    </script>
+</body>
+</html>

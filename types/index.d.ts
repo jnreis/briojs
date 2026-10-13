@@ -1,28 +1,34 @@
-declare module "briojs" {
-    export let settings: ObjectType;
-    export let setup: (brioWindow?: ObjectType) => void;
-    export let newApp: () => AppObject;
+/// <reference path="./app.d.ts" />
+/// <reference path="./directives.d.ts" />
+/// <reference path="./methods.d.ts" />
+/// <reference path="./reactivity.d.ts" />
+/// <reference path="./tools.d.ts" />
 
-    export let setAllDirectives: (app: AppObject) => void;
-    export let ignoreDirective: Directive;
-    export let forDirective: Directive;
-    export let propsDirective: Directive;
-    export let dataDirective: Directive;
-    export let uidDirective: Directive;
-    export let htmlDirective: Directive;
-    export let templateDirective: Directive;
-    export let scriptDirective: Directive;
-    export let styleDirective: Directive;
-    export let teleportDirective: Directive;
-    export let ifDirective: Directive;
-    export let showDirective: Directive;
-    export let transitionDirective: Directive;
-    export let intersectionDirectives: [string, Directive][];
-    export let resizeDirectives: [string, Directive][];
-    export let onDirective: Directive;
-    export let bindDirective: Directive;
-    export let modelDirective: Directive;
-    export let maskDirective: Directive;
-    export let moneyMask: ($mask: MaskContext) => void
-    export let setDefaultMaskTokens: (maskTokens: MaskTokensObject) => void;
-}
+export {
+    newApp,
+    setup,
+    setAllDirectives,
+    ignoreDirective,
+    ifDirective,
+    dataDirective,
+    forDirective,
+    idDirective,
+    scriptDirective,
+    templateDirective,
+    showDirective,
+    transitionDirective,
+    teleportDirective,
+    htmlDirective,
+    textDirective,
+    styleDirective,
+    bindDirective,
+    modelDirective,
+    maskDirective,
+    intersectionDirectives,
+    mutationDirectives,
+    resizeDirectives,
+    onDirective,
+    effectDirective,
+    newRouter,
+    go,
+} from '../src/index';

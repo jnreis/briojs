@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual Test: for directive</title>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; margin: 20px; background: #f8fafc; color: #1e293b; }
+        .card { background: white; border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; }
+        h1 { font-size: 1.5rem; }
+        h3 { margin-top: 0; color: #0f172a; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; }
+        button { background: #3b82f6; color: white; border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 0.9rem; margin-right: 6px; margin-bottom: 6px; }
+        button:hover { background: #2563eb; }
+        ul { padding-left: 20px; }
+        li { margin-bottom: 6px; }
+        .badge { background: #e0f2fe; color: #0369a1; padding: 2px 8px; border-radius: 12px; font-size: 0.8em; margin-left: 8px; }
+    </style>
+</head>
+<body b-data="{
+    todos: [
+        { id: 1, text: 'Audit framework directives', done: true },
+        { id: 2, text: 'Implement vNext reactivity', done: true },
+        { id: 3, text: 'Test dot notation modifiers', done: false }
+    ],
+    newTodoText: '',
+    repeatCount: 4,
+    userMap: { name: 'Ada Lovelace', role: 'Engineer', country: 'UK' }
+}">
+
+    <h1>b-for Directive Manual Tests</h1>
+    <p>Tests reactive list rendering, array mutations, integer loop ranges, object key-value loops, and child contexts.</p>
+
+    <!-- Test 1: Array of Objects with Index -->
+    <div class="card">
+        <h3>1. Array Iteration (item, index in items)</h3>
+        <input type="text" b-model="$data.newTodoText" placeholder="New todo item..." style="padding: 6px; width: 220px;">
+        <button on-click="if($data.newTodoText.trim()) { $data.todos.push({ id: Date.now(), text: $data.newTodoText.trim(), done: false }); $data.newTodoText = ''; }">Add Item</button>
+        <button on-click="$data.todos.pop()">Remove Last</button>
+        <button on-click="$data.todos.reverse()">Reverse Order</button>
+
+        <ul>
+            <li b-for="todo, idx in $data.todos">
+                <span>#${$for.idx + 1}: ${$for.todo.text}</span>
+                <span class="badge">${$for.todo.done ? 'Done' : 'Pending'}</span>
+                <button style="padding: 2px 8px; font-size: 0.75rem; margin-left: 8px;" on-click="$for.todo.done = !$for.todo.done">Toggle Done</button>
+            </li>
+        </ul>
+        <p>Total items: <strong>${$data.todos.length}</strong></p>
+    </div>
+
+    <!-- Test 2: Integer Range Rendering -->
+    <div class="card">
+        <h3>2. Numeric Range Loop (n in count)</h3>
+        <button on-click="$data.repeatCount++">+1 Repeat</button>
+        <button on-click="if($data.repeatCount > 0) $data.repeatCount--">-1 Repeat</button>
+        <div style="display: flex; gap: 8px; margin-top: 10px;">
+            <div b-for="num in $data.repeatCount" style="padding: 12px 18px; background: #6366f1; color: white; border-radius: 6px; font-weight: bold;">
+                Tile ${$for.num}
+            </div>
+        </div>
+    </div>
+
+    <!-- Test 3: Object Key-Value Loop -->
+    <div class="card">
+        <h3>3. Object Properties Iteration</h3>
+        <button on-click="$data.userMap.role = $data.userMap.role === 'Engineer' ? 'Principal Architect' : 'Engineer'">Toggle Role</button>
+        <ul>
+            <li b-for="key, val in $data.userMap">
+                <strong>${$for.key}:</strong> <span>${$for.val}</span>
+            </li>
+        </ul>
+    </div>
+
+    <script type="module" b-ignore src="/src/briojs.min.ts"></script>
+    <script>
+        window.addEventListener('brio', () => {
+            const app = brio.newApp();
+            app.gc.$hydrate('body');
+            console.log('for.html hydrated successfully');
+        });
+    </script>
+</body>
+</html>

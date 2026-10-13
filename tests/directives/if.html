@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual Test: if directive</title>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; margin: 20px; background: #f8fafc; color: #1e293b; }
+        .card { background: white; border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; }
+        h1 { font-size: 1.5rem; }
+        h3 { margin-top: 0; color: #0f172a; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; }
+        button { background: #3b82f6; color: white; border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 0.9rem; margin-right: 6px; }
+        button:hover { background: #2563eb; }
+        .box { padding: 12px; border-radius: 6px; margin-top: 10px; font-weight: 500; }
+        .alert { background: #fee2e2; border: 1px solid #f87171; color: #991b1b; }
+        .success { background: #dcfce7; border: 1px solid #4ade80; color: #166534; }
+    </style>
+</head>
+<body b-data="{
+    isVisible: true,
+    score: 85,
+    userLoggedIn: false,
+    childCount: 0
+}">
+
+    <h1>b-if Directive Manual Tests</h1>
+    <p>Tests conditional DOM mounting, unmounting, DOM placeholder comments, and cleanup of nested effects when removed.</p>
+
+    <!-- Test 1: Simple Toggle -->
+    <div class="card">
+        <h3>1. Conditional Mounting & Unmounting</h3>
+        <button on-click="$data.isVisible = !$data.isVisible">Toggle Visibility (${$data.isVisible ? 'Hide' : 'Show'})</button>
+        <div b-if="$data.isVisible" class="box success">
+            🎉 This element is mounted in the DOM only when <code>isVisible</code> is true!
+        </div>
+        <p>When false, inspect elements in DevTools: this node is replaced by a comment placeholder.</p>
+    </div>
+
+    <!-- Test 2: Expressions and Comparisons -->
+    <div class="card">
+        <h3>2. Numeric Condition Evaluation</h3>
+        <p>Current score: <strong>${$data.score}</strong></p>
+        <button on-click="$data.score += 10">+10</button>
+        <button on-click="$data.score -= 10">-10</button>
+
+        <div b-if="$data.score >= 80" class="box success">
+            🌟 Grade: Excellent (${$data.score} >= 80)
+        </div>
+        <div b-if="$data.score < 80" class="box alert">
+            ⚠️ Needs Improvement (${$data.score} < 80)
+        </div>
+    </div>
+
+    <!-- Test 3: Nested Scope and Lifecycle Cleanups -->
+    <div class="card">
+        <h3>3. Nested State Inside b-if</h3>
+        <button on-click="$data.userLoggedIn = !$data.userLoggedIn">Toggle Login (${$data.userLoggedIn ? 'Logout' : 'Login'})</button>
+
+        <div b-if="$data.userLoggedIn" class="box" style="background: #f1f5f9; border: 1px solid #cbd5e1;">
+            <h4>User Dashboard</h4>
+            <p>Child counter: <strong>${$data.childCount}</strong></p>
+            <button on-click="$data.childCount++">Increment Dashboard Counter</button>
+            <p>When logging out, this whole section and its internal bindings are cleaned up cleanly.</p>
+        </div>
+    </div>
+
+    <script type="module" b-ignore src="/src/briojs.min.ts"></script>
+    <script>
+        window.addEventListener('brio', () => {
+            const app = brio.newApp();
+            app.gc.$hydrate('body');
+            console.log('if.html hydrated successfully');
+        });
+    </script>
+</body>
+</html>

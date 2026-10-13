@@ -63,11 +63,12 @@ export let newInsert = (app: AppObject) => async (target: HTMLElement | string, 
     let templates = app[TEMPLATE];
 
     // The content is a template
-    if (content in templates) content = templates[content];
+    if (isString(content) && content in templates) content = templates[content];
 
     let isText = place == TEXT_CONTENT;
     let parsedContent = content;
     let parsed = false;
+    let selectedNode = false;
     let propsNode: HTMLElement | undefined;
 
     // Parse the content if it is a string
@@ -88,6 +89,7 @@ export let newInsert = (app: AppObject) => async (target: HTMLElement | string, 
 
         // Query the selector from the parsed content
         parsedContent = query(selector, parsedContent) as HTMLElement;
+        selectedNode = true;
 
         // Log an error if the selector did not find a valid Node
         if (!isNode(parsedContent))
@@ -228,7 +230,7 @@ export let newInsert = (app: AppObject) => async (target: HTMLElement | string, 
     // ! INSERT THE NODES
 
     /** The inserted nodes */
-    let insertedNodes: Node[] = parsed ? childNodes(parsedContent) : [parsedContent];
+    let insertedNodes: Node[] = parsed && !selectedNode ? childNodes(parsedContent) : [parsedContent];
 
     // Insert the nodes into the DOM at the specified placement
     insertNodes(el, isText ? REPLACE_CHILDREN : place as 'before'|'after'|'prepend'|'append'|'replaceWith'|'replaceChildren', ...insertedNodes);

@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual Test: teleport directive</title>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; margin: 20px; background: #f8fafc; color: #1e293b; }
+        .card { background: white; border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; }
+        h1 { font-size: 1.5rem; }
+        h3 { margin-top: 0; color: #0f172a; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; }
+        #modal-root { border: 2px dashed #6366f1; padding: 16px; background: #e0e7ff; border-radius: 8px; margin-top: 10px; min-height: 40px; }
+        .teleported-content { background: #4f46e5; color: white; padding: 10px 14px; border-radius: 6px; font-weight: bold; }
+    </style>
+</head>
+<body b-data="{
+    message: 'Teleported notification banner!'
+}">
+
+    <h1>b-teleport Directive Manual Tests</h1>
+    <p>Tests moving elements dynamically to different positions in the DOM tree while retaining reactivity.</p>
+
+    <div class="card">
+        <h3>1. Teleport Target Container (#modal-root)</h3>
+        <p>This container lives outside the component origin:</p>
+        <div id="modal-root"></div>
+    </div>
+
+    <div class="card">
+        <h3>2. Component with Teleported Element</h3>
+        <p>The element below is written inside this card, but teleported into <code>#modal-root</code>:</p>
+        <div b-teleport="['#modal-root', 'append']" class="teleported-content">
+            🚀 <span>${$data.message}</span>
+        </div>
+    </div>
+
+    <script type="module" b-ignore src="/src/briojs.min.ts"></script>
+    <script>
+        window.addEventListener('brio', () => {
+            const app = brio.newApp();
+            app.gc.$hydrate('body');
+            console.log('teleport.html hydrated successfully');
+        });
+    </script>
+</body>
+</html>

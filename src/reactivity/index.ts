@@ -8,8 +8,7 @@ import { state } from './state';
 /**
  * The state object that holds a reference to all observed states, their parent observed state (if any), listeners, and other settings.
  */
-export let stateObjects: Map<any, StateObject> = newMap();
-console.log('stateObjects:', stateObjects);
+export let stateObjects: WeakMap<object, StateObject> = new WeakMap();
 
 /**
  * Holds temporary functions that are called when a state is set to initialize the property.
@@ -33,7 +32,26 @@ export let isState = (proxied: any) => stateObjects.has(proxied);
 export let getStateObject = (proxied: any) =>
     stateObjects.get(proxied) as StateObject;
 
-export let delState = (proxied: any) => stateObjects[DELETE](proxied);
+export let delState = (proxied: any) => {
+    let stateObject = stateObjects.get(proxied);
+    if (!stateObject) return false;
+    for (let cleanup of stateObject.cleanup || []) cleanup();
+    stateObject[STATE].clear();
+    for (let prop in stateObject[PROPS]) {
+        stateObject[PROPS][prop].clear();
+        delete stateObject[PROPS][prop];
+    }
+    return stateObjects.delete(proxied);
+}
+
+export let addStateCleanup = (proxied: any, cleanup: FunctionType) => {
+    let stateObject = getStateObject(proxied);
+    (stateObject.cleanup ||= newSet()).add(cleanup);
+    return () => {
+        stateObject.cleanup?.delete(cleanup);
+        cleanup();
+    };
+}
 
 /**
  * Add a listener to an observed state
@@ -69,15 +87,10 @@ export let addPropertyListener = (proxied: any, prop: string | number, fn: Liste
 
     // // If the property value is an observed state, add the listener to the state as well
     // let propValue = proxied[prop];
-    let stateDisposer: FunctionType | undefined;
-    // if (isState(propValue)) {
-    //     stateDisposer = addStateListener(propValue, fn, priority) as FunctionType;
-    // }
-
     // Return the disposer function to remove the listener from the property
     return () => {
-        if (stateDisposer) stateDisposer();
         propsObject[prop][DELETE](fn);
+        if (!propsObject[prop].size) delete propsObject[prop];
     }
 }
 

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual Test: effect directive</title>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; margin: 20px; background: #f8fafc; color: #1e293b; }
+        .card { background: white; border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; }
+        h1 { font-size: 1.5rem; }
+        h3 { margin-top: 0; color: #0f172a; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; }
+        button { background: #3b82f6; color: white; border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 0.9rem; margin-right: 6px; }
+        code { background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-family: monospace; }
+    </style>
+</head>
+<body b-data="{
+    a: 5,
+    b: 10,
+    historyLogs: []
+}">
+
+    <h1>b-effect Directive Manual Tests</h1>
+    <p>Tests reactive side effects executed in markup whenever their referenced reactive dependencies change.</p>
+
+    <!-- Test 1: b-effect tracking -->
+    <div class="card" b-effect="$data.historyLogs.push('Sum is ' + ($data.a + $data.b) + ' at ' + new Date().toLocaleTimeString())">
+        <h3>1. Element-Level Reactive Effect</h3>
+        <p>A: <strong>${$data.a}</strong> | B: <strong>${$data.b}</strong></p>
+        <button on-click="$data.a++">Increment A</button>
+        <button on-click="$data.b++">Increment B</button>
+
+        <h4>Effect Execution Logs:</h4>
+        <ul>
+            <li b-for="log in $data.historyLogs"><code>${$for.log}</code></li>
+        </ul>
+    </div>
+
+    <script type="module" b-ignore src="/src/briojs.min.ts"></script>
+    <script>
+        window.addEventListener('brio', () => {
+            const app = brio.newApp();
+            app.gc.$hydrate('body');
+            console.log('effect.html hydrated successfully');
+        });
+    </script>
+</body>
+</html>

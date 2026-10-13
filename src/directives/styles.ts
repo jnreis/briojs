@@ -3,9 +3,60 @@ import { has, uid } from "../tools";
 import { join, map } from "../tools/array";
 import { $DEHYDRATE, $HYDRATE, AFTER, B_, NEW_LINE, STYLE, TEXT_CONTENT } from "../tools/constants";
 import { createElement, getTagName, insertNodes, setClass } from "../tools/dom";
-import { replace, split, trim } from "../tools/string";
+import { replace, trim } from "../tools/string";
 
-let cssSelectorRegex = /(?<=(?:^|})\s*)\S(?:.\s*?)*?(?=\s*{)/g;
+let scopeCss = (content: string, prefix: string) => {
+    let dynamicValues: string[] = [];
+    let placeholderPrefix = `__brio_${uid()}_`;
+    content = replace(content, /\$\{[\s\S]*?\}/g, (expression: string) => {
+        let placeholder = placeholderPrefix + dynamicValues.length + '__';
+        dynamicValues.push(expression);
+        return placeholder;
+    });
+
+    let sheet = new CSSStyleSheet();
+    sheet.replaceSync(content);
+
+    let splitSelectors = (selectors: string) => {
+        let result: string[] = [];
+        let start = 0;
+        let depth = 0;
+        let quote = '';
+        for (let index = 0; index < selectors.length; index++) {
+            let character = selectors[index];
+            if (quote) {
+                if (character === quote && selectors[index - 1] !== '\\') quote = '';
+            } else if (character === '"' || character === "'") quote = character;
+            else if (character === '(' || character === '[') depth++;
+            else if (character === ')' || character === ']') depth--;
+            else if (character === ',' && depth === 0) {
+                result.push(trim(selectors.slice(start, index)));
+                start = index + 1;
+            }
+        }
+        result.push(trim(selectors.slice(start)));
+        return result;
+    };
+
+    let scopeRules = (rules: CSSRuleList) => {
+        for (let rule of Array.from(rules)) {
+            if (rule instanceof CSSStyleRule) {
+                rule.selectorText = join(map(splitSelectors(rule.selectorText), selector =>
+                    has(selector, '&') ? replace(selector, /&/g, prefix) : prefix + ' ' + selector
+                ), ', ');
+            } else if (rule instanceof CSSGroupingRule) {
+                scopeRules(rule.cssRules);
+            }
+        }
+    };
+
+    scopeRules(sheet.cssRules);
+    let scopedCss = join(map(Array.from(sheet.cssRules), rule => rule.cssText), NEW_LINE);
+    dynamicValues.forEach((expression, index) => {
+        scopedCss = replace(scopedCss, placeholderPrefix + index + '__', expression);
+    });
+    return scopedCss;
+}
 
 /**
  * Hydrate the style directive.
@@ -38,29 +89,7 @@ let hydrateStyle = (bnode: BNode, _attrName: string, attrValue: string) => {
 
         let styleContent = join(styles, NEW_LINE);
 
-        // FORMAT STYLE CONTENT
-
-        // Indentation inside the braces
-        styleContent = replace(styleContent, /([{;])\s*/g, '$1' + NEW_LINE + '    ');
-
-        // Spacing around closing braces
-        styleContent = replace(styleContent, /\s*}\s*/g, NEW_LINE+ '}' +NEW_LINE);
-
-        // Set the style content with prefixed selectors
-        style[TEXT_CONTENT] = replace(styleContent, cssSelectorRegex, (selector: string) => {
-            let newSelector = trim(selector);
-
-            // & is used as a placeholder for the prefix
-            if (has(selector, '&')) {
-                newSelector = replace(newSelector, /&/g, prefix);
-            }
-            // Prefix each selector if there are multiple selectors separated by commas
-            else {
-                newSelector = join(map(split(newSelector, ','), s => prefix + ' ' + trim(s)), ',' + NEW_LINE);
-            }
-
-            return newSelector;
-        });
+        style[TEXT_CONTENT] = scopeCss(styleContent, prefix);
 
         // Hydrate the style element
         bnode.gc[$HYDRATE](style, el);
@@ -70,6 +99,7 @@ let hydrateStyle = (bnode: BNode, _attrName: string, attrValue: string) => {
             bnode.gc[$DEHYDRATE](style);
         });
     }
+
 }
 
 export let styleDirective: Directive = [B_+STYLE, hydrateStyle];

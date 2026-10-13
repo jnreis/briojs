@@ -1,4 +1,4 @@
-import { effect, initProp } from ".";
+import { addStateCleanup, effect, initProp } from ".";
 import { STATE } from "../tools/constants";
 
 /**
@@ -10,7 +10,8 @@ import { STATE } from "../tools/constants";
 export let computed = (fn: FunctionType) => initProp(({ [STATE]: state, prop }: ListenerFunctionContext) => {
 
     // Create a reactive effect that updates the property whenever the computed value changes
-    effect(() => state[prop] = fn(), fn);
+    let cleanup = effect(() => state[prop] = fn(), fn);
+    addStateCleanup(state, cleanup);
 
     return fn();
 });

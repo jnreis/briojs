@@ -1,7 +1,7 @@
-import { watch, initProp } from ".";
-import { logError, wait } from "../tools";
+import { addStateCleanup, watch, initProp } from ".";
+import { logError } from "../tools";
 import { INVALID__$CAP, OBJECT, STATE, STORAGE, STORAGE_AREA } from "../tools/constants";
-import { getProto, hasProp, newMap } from "../tools/object";
+import { newMap } from "../tools/object";
 import { parse, stringify } from "../tools/string";
 
 let GET_ITEM = 'getItem';
@@ -10,15 +10,13 @@ let SET_ITEM = 'setItem';
 /**
  * The storage stack is used to track the observed state, property, and storage object for each monitored property.
  */
-let _storageStack = newMap();
+let _storageStack = new WeakMap<object, Map<string, [any, Prop, any]>>();
 
 /**
  * Check if an object has the getItem and setItem methods.
  */
 let isStorage = (obj: any) => {
-    let proto = getProto(obj);
-    // Check if obj has the getItem and setItem methods
-    return proto && hasProp(proto, GET_ITEM) && hasProp(proto, SET_ITEM);
+    return obj && typeof obj[GET_ITEM] === 'function' && typeof obj[SET_ITEM] === 'function';
 }
 
 /**
@@ -57,8 +55,9 @@ export let storage = (_storage: any, value: any, alias?: string) => {
         // Prefix the alias with Brio's prefix
         alias = keyPrefix(alias);
         // Get the value from the storage, if it exists
-        if (hasProp(_storage, alias)) {
-            value = getItem(_storage, alias);
+        let storedValue = _storage[GET_ITEM](alias);
+        if (storedValue !== null) {
+            value = parse(storedValue);
         }
     }
 
@@ -66,25 +65,30 @@ export let storage = (_storage: any, value: any, alias?: string) => {
     // This will be called when the state object is created or set
     let initFn = ({ [STATE]: state, prop }: ListenerFunctionContext) => {
 
-        // Add the observed state, property, and storage to the storage stack
-        _storageStack.set(alias, [state, prop, _storage]);
-
         // Get the final alias. This will be the key used to store the value in the storage
-        alias = alias || keyPrefix(prop);
+        alias = alias || keyPrefix(String(prop));
 
         // Set the initial value if it doesn't exist in the storage
-        if (!hasProp(_storage, alias)) {
+        let storedValue = _storage[GET_ITEM](alias);
+        if (storedValue === null) {
             setItem(_storage, alias, value);
         } else {
-            value = getItem(_storage, alias);
+            value = parse(storedValue);
         }
 
-        // Watch for changes to the property (property assignment and reference key changes)
-        wait(() => watch(state, prop, () => {
+        let storageEntries = _storageStack.get(_storage) || newMap();
+        _storageStack.set(_storage, storageEntries);
+        storageEntries.set(alias, [state, prop, _storage]);
+
+        let cleanup = watch(state, prop, () => {
             // Update the storage when the property changes
             // or one of its direct keys/indexes is changed, if it is a state object/array
             setItem(_storage, alias as string, state[prop]);
-        }));
+        });
+        addStateCleanup(state, () => {
+            cleanup();
+            storageEntries.delete(alias as string);
+        });
 
         return value;
     }
@@ -98,15 +102,9 @@ export let persist = (value: any, alias?: string) => storage(localStorage, value
 export let session = (value: any, alias?: string) => storage(sessionStorage, value, alias);
 
 export let storageEvent = (event: StorageEvent) => {
-    // If the key is being observed
-    if (_storageStack.has(event.key)) {
-        // Get the observed state, property, and storage
-        let [state, prop, _storage] = _storageStack.get(event.key);
-
-        // If the _storage is the same as the event storage
-        if (_storage === event[STORAGE_AREA]) {
-            // Update the observed state
-            state[prop] = getItem(_storage, event.key as string);
-        }
-    }
+    let storageArea = event[STORAGE_AREA];
+    if (event.key === null || !storageArea) return;
+    let entry = _storageStack.get(storageArea)?.get(event.key);
+    if (entry)
+        entry[0][entry[1]] = getItem(storageArea, event.key);
 }

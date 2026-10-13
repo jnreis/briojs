@@ -65,7 +65,7 @@ let toBase = (el: HTMLElement, oldStyles: StyleProps, fromStyles: StyleProps, di
     // Place the element at the starting position without transition
     setStyleProps(el, fromPosition, disableTransition ? {[TRANSITION]: 'none'} : {});
     // Move the element to the base position with transition, on the next frame
-    nextFrame(() => {
+    return nextFrame(() => {
         setStyleProps(el, fromTransition);
         delStyleProps(el, fromPosition);
     });
@@ -135,33 +135,33 @@ let newTransition = (el: HTMLElement, inStyles: StyleProps, outStyles: StyleProp
 
     // On complete callback
     let _onEnd: FunctionType | undefined;
+    let playVersion = 0;
 
-    // Reset the state on transition end
+    let finishTransition = () => {
+        if (status == PLAYING) status = PLAYED;
+        else if (status == REVERSING) status = READY;
+
+        delStyleProps(el, inStyles, outStyles);
+        setStyleProps(el, initialStyles);
+
+        let onEnd = _onEnd;
+        _onEnd = undefined;
+        if (onEnd) onEnd();
+    }
+
     let cleanTransitionEnd = listen(el, TRANSITION+END, (e: Event) => {
-
-        // Make sure the event is for this element
-        if (e[TARGET] === el) {
-
-            if (status == PLAYING) {
-                status = PLAYED;
-            }
-            else if (status == REVERSING) {
-                status = READY;
-            }
-
-            delStyleProps(el, inStyles, outStyles);
-
-            // Restore initial inline styles
-            setStyleProps(el, initialStyles);
-
-            // Call the _onEnd callback if provided
-            if (_onEnd) _onEnd();
-        }
+        if (e[TARGET] === el) finishTransition();
     });
+    let cleanTransitionCancel = listen(el, TRANSITION+'cancel', (e: Event) => {
+        if (e[TARGET] === el && status == PLAYING) finishTransition();
+    });
+    let frameCleanup: FunctionType | undefined;
 
     let cleanup = () => {
+        frameCleanup?.();
         cleanTransitionRun();
         cleanTransitionEnd();
+        cleanTransitionCancel();
     }
 
     // Play the transition based on the current state
@@ -171,6 +171,7 @@ let newTransition = (el: HTMLElement, inStyles: StyleProps, outStyles: StyleProp
         _onEnd = onEnd;
 
         let playAt = now();
+        let currentPlay = ++playVersion;
 
         // Do nothing if already in the desired state
         // Played In or Played Out
@@ -181,12 +182,14 @@ let newTransition = (el: HTMLElement, inStyles: StyleProps, outStyles: StyleProp
             // Reverse the Out transition
             if (isIn === false && status == PLAYING) {
                 status = REVERSING;
-                toBase(el, inStyles, outStyles);
+                frameCleanup?.();
+                frameCleanup = toBase(el, inStyles, outStyles);
             }
 
             // Play in
             else {
-                toBase(el, outStyles, inStyles, status == READY);
+                frameCleanup?.();
+                frameCleanup = toBase(el, outStyles, inStyles, status == READY);
                 isIn = true;
                 status = PLAYING;
             }
@@ -197,7 +200,9 @@ let newTransition = (el: HTMLElement, inStyles: StyleProps, outStyles: StyleProp
             if (isIn === null) {
                 isIn = false;
                 status = PLAYED;
-                _onEnd && _onEnd();
+                let onEnd = _onEnd;
+                _onEnd = undefined;
+                if (onEnd) onEnd();
             }
 
             // Reverse the In transition
@@ -216,9 +221,8 @@ let newTransition = (el: HTMLElement, inStyles: StyleProps, outStyles: StyleProp
 
         // If the transition didn't start, call the onEnd callback
         wait(() => {
-            if (ranAt < playAt && _onEnd) {
-                _onEnd();
-            }
+            if (playVersion === currentPlay && ranAt < playAt && _onEnd)
+                finishTransition();
         }, 50)
     }
 

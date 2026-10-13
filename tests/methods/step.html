@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual Test: Step Engine</title>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; margin: 20px; background: #f8fafc; color: #1e293b; }
+        .card { background: white; border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; }
+        h1 { font-size: 1.5rem; }
+        h3 { margin-top: 0; color: #0f172a; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; }
+        .step-container { padding: 20px; border: 2px solid #cbd5e1; border-radius: 8px; margin: 16px 0; background: #f8fafc; }
+        button { background: #3b82f6; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 0.9rem; margin-right: 8px; }
+        button:hover { background: #2563eb; }
+        button.secondary { background: #64748b; }
+        button.secondary:hover { background: #475569; }
+        .step-indicator { display: flex; gap: 8px; margin-bottom: 16px; }
+        .step-pill { padding: 6px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: bold; background: #e2e8f0; color: #64748b; }
+        .step-pill.active { background: #3b82f6; color: white; }
+    </style>
+</head>
+<body b-data="{
+    currentStep: 'intro'
+}">
+
+    <h1>Step Engine (newStepEngine) Manual Tests</h1>
+    <p>Tests multi-step wizard state management, transitions (<code>next</code>, <code>back</code>), and step histories.</p>
+
+    <div class="card">
+        <h3>1. Multi-Step Wizard</h3>
+
+        <div class="step-indicator">
+            <span class="step-pill" bind-class="{ active: $data.currentStep === 'intro' }">1. Intro</span>
+            <span class="step-pill" bind-class="{ active: $data.currentStep === 'details' }">2. Details</span>
+            <span class="step-pill" bind-class="{ active: $data.currentStep === 'review' }">3. Review</span>
+        </div>
+
+        <div b-if="$data.currentStep === 'intro'" class="step-container">
+            <h4>Step 1: Welcome</h4>
+            <p>Welcome to the wizard. Click Next to continue.</p>
+            <button id="step1-next">Next Step &rarr;</button>
+        </div>
+
+        <div b-if="$data.currentStep === 'details'" class="step-container">
+            <h4>Step 2: Enter Information</h4>
+            <p>Here you configure your setup options.</p>
+            <button id="step2-back" class="secondary">&larr; Back</button>
+            <button id="step2-next">Next Step &rarr;</button>
+        </div>
+
+        <div b-if="$data.currentStep === 'review'" class="step-container">
+            <h4>Step 3: Review & Finish</h4>
+            <p>Everything looks good! Ready to submit.</p>
+            <button id="step3-back" class="secondary">&larr; Back</button>
+            <button id="step3-restart">Start Over</button>
+        </div>
+    </div>
+
+    <script type="module" b-ignore src="/src/briojs.min.ts"></script>
+    <script>
+        window.addEventListener('brio', () => {
+            const app = brio.newApp();
+            app.gc.$hydrate('body');
+
+            const newStepEngine = brio.newStepEngine;
+            const stepsRecord = {
+                intro: { active: true, next: 'details' },
+                details: { active: false, next: 'review', back: 'intro' },
+                review: { active: false, back: 'details' }
+            };
+
+            const [setStep, isStepActive, nextStep, backStep] = newStepEngine(stepsRecord);
+
+            const card = document.querySelector('.card');
+            const syncUI = () => {
+                const bnode = app.gc.$getBNode(card);
+                for (let key in stepsRecord) {
+                    if (stepsRecord[key].active) {
+                        bnode.ctx.$data.currentStep = key;
+                        break;
+                    }
+                }
+            };
+
+            document.getElementById('step1-next').addEventListener('click', () => {
+                nextStep('intro');
+                syncUI();
+            });
+
+            document.getElementById('step2-back').addEventListener('click', () => {
+                backStep('details');
+                syncUI();
+            });
+
+            document.getElementById('step2-next').addEventListener('click', () => {
+                nextStep('details');
+                syncUI();
+            });
+
+            document.getElementById('step3-back').addEventListener('click', () => {
+                backStep('review');
+                syncUI();
+            });
+
+            document.getElementById('step3-restart').addEventListener('click', () => {
+                stepsRecord.review.active = false;
+                stepsRecord.intro.active = true;
+                syncUI();
+            });
+
+            console.log('step.html hydrated successfully');
+        });
+    </script>
+</body>
+</html>

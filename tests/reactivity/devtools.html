@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual Test: Devtools Panel</title>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; margin: 20px; background: #f8fafc; color: #1e293b; }
+        .card { background: white; border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; }
+        h1 { font-size: 1.5rem; }
+        h3 { margin-top: 0; color: #0f172a; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; }
+        button { background: #3b82f6; color: white; border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 0.9rem; margin-right: 6px; }
+        button:hover { background: #2563eb; }
+        #devtools-container pre { background: #0f172a; color: #38bdf8; padding: 16px; border-radius: 8px; font-family: monospace; font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+
+    <h1>Devtools Panel Manual Tests</h1>
+    <p>Tests the development inspector bridge, live app tracking, effect counting, and app state snapshots.</p>
+
+    <div class="card" id="counter-app">
+        <h3>Sample Counter App</h3>
+        <p>Count: <strong b-text="count"></strong></p>
+        <button b-on-click="count++">Increment Count</button>
+        <button b-on-click="count--">Decrement Count</button>
+    </div>
+
+    <div class="card">
+        <h3>Live Brio Devtools Panel</h3>
+        <div id="devtools-container"></div>
+    </div>
+
+    <script type="module">
+        import { devtoolsPanel } from '/dist/devtools-entry.js';
+        import { createApp } from '/dist/index.js';
+
+        // 1. Mount Devtools Inspector Panel
+        devtoolsPanel(document.getElementById('devtools-container'));
+
+        // 2. Mount App
+        const app = createApp({
+            state: () => ({ count: 5 })
+        });
+        app.mount('#counter-app');
+    </script>
+</body>
+</html>

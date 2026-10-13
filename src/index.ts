@@ -1,39 +1,26 @@
-/**
- * TODO:
- * - Compare tools.reactivity.ts to the current implementation of the reactivity system.
- *   The only advantage may be that the new implementation re-evaluates the dependencies of an effect when it is triggered, 
- *   which allows for dynamic dependencies.
- *   However, I could do this by re-evaluating the dependencies when assigning an object/array with a new object/array, 
- *   which would be more efficient than re-evaluating the dependencies every time an effect is triggered.
- */
+export * from './core/app';
+export * from './core/scope';
+export * from './core/expression';
+export * from './core/scheduler';
+export * from './core/errors';
+export * from './core/types';
 
-/**
- * Before each release:
- * - Test each feature to make sure it works as expected.
- * - Write documentation for each feature.
- * - Publish to GitHub and npm.
- * - Promote on social media (X, LinkedIn, etc.), forums, and other platforms (Reddit, Hacker News).
- */
+export { effect, batch } from './reactivity/effect';
+export { state, signal } from './reactivity/state-v4';
+export { computed } from './reactivity/computed-v4';
+export { resource } from './reactivity/resource';
+export type { Signal, Stop, EffectOptions, Resource } from './reactivity/types';
 
-export { newApp, setup } from "./app";
-export { setAllDirectives } from "./directives";
-export { ignoreDirective } from "./directives/ignore";
-export { ifDirective } from "./directives/if";
-export { dataDirective } from "./directives/data";
-export { forDirective } from "./directives/for";
-export { idDirective } from "./directives/id";
-export { scriptDirective } from "./directives/script";
-export { templateDirective } from "./directives/template";
-export { showDirective } from "./directives/show";
-export { transitionDirective } from "./directives/transition";
-export { teleportDirective } from "./directives/teleport";
-export { htmlDirective, textDirective } from "./directives/html";
-export { styleDirective } from "./directives/styles";
-export { bindDirective } from "./directives/bind";
-export { modelDirective } from "./directives/model";
-export { maskDirective } from "./directives/mask";
-export { intersectionDirectives } from "./directives/intersection";
-export { mutationDirectives } from "./directives/mutation";
-export { resizeDirectives } from "./directives/resize";
-export { onDirective } from "./directives/on";
-export { effectDirective } from "./directives/effect";
+export { trustedHTML } from './dom/types';
+export type { ComponentDefinition, ComponentContext, DomRuntime, TrustedMarkup } from './dom/types';
+export { hydrateRoot, hydrateNode } from './dom/bindings';
+
+export { createRouter } from './plugins/router';
+export type { Router, RouteDefinition, RouteMatch } from './plugins/router';
+export { persist } from './plugins/persistence';
+export type { PersistOptions, StorageAdapter } from './plugins/persistence';
+export { devtools } from './plugins/devtools';
+export { newStepEngine, createStepEngine } from './plugins/step';
+export type { StepEngine, StepDefinition, StepRecord } from './plugins/step';
+export { validate } from './plugins/forms';
+export { http } from './plugins/http';

@@ -3,7 +3,7 @@ import { http } from "./methods/http";
 import { computed, effect, persist, session, state, storageEvent, watch } from "./reactivity";
 import { has, logError, uid } from "./tools";
 import { arrayAdd, each, find, join, map, some } from "./tools/array";
-import { TEXT, TEXT_CONTENT, ATTR, DELETE, INNER_HTML, PARENT, $PROPS, NULL, B_DATA, SCRIPT, $DATA, STYLE, B_, TEMPLATE, UNDEFINED, OPTIONS, NEW_LINE, BRIO, STORAGE, STATE, DIRECTIVES, DATA, B_SAVE, OUTER_HTML, $STORE, SKIP, NODES, B_IF, MESSAGE, CLONE, $REF, $SLOT, B_TEMPLATE, B_REF, $, $DEHYDRATE, $HYDRATE, $INSERT, B_SCRIPT, B_SLOT, B_FOR, $FOR, DEHYDRATE_CHILDREN, VALIDATE } from "./tools/constants";
+import { TEXT, TEXT_CONTENT, ATTR, DELETE, INNER_HTML, PARENT, $PROPS, NULL, B_DATA, SCRIPT, $DATA, STYLE, B_, TEMPLATE, UNDEFINED, OPTIONS, NEW_LINE, BRIO, STORAGE, STATE, DIRECTIVES, DATA, B_SAVE, B_IGNORE, OUTER_HTML, $STORE, SKIP, NODES, B_IF, MESSAGE, CLONE, $REF, $SLOT, B_TEMPLATE, B_REF, $, $DEHYDRATE, $HYDRATE, $INSERT, B_SCRIPT, B_SLOT, B_FOR, $FOR, DEHYDRATE_CHILDREN, VALIDATE } from "./tools/constants";
 import { walk, getAttr, delAttr, getParent, getTagName, getNodeContent, removeNode, eachAttribute, query, emit, listen, setAttr, hasAttr } from "./tools/dom";
 import { autoFillContextProp, destructuringObject, expToFn, newFn } from "./tools/evaluation";
 import { countKeys, hasProp, getProp, newMap, setProp, setObjectKeys, W, S, sync, clone, delProp, getKeys, L } from "./tools/object";
@@ -79,6 +79,9 @@ export let newApp = (): AppObject => {
                 ...app,
             };
 
+            if (isElementNode(el) && hasAttr(el, B_IGNORE))
+                bnode[SKIP] = 3;
+
             // Set the local context
             for (let key in localContextFns) {
                 let v = localContextFns[key](bnode, parent);
@@ -88,7 +91,7 @@ export let newApp = (): AppObject => {
             // Save the bnode
             bnodes.set(el, bnode);
 
-            bnode[OPTIONS] = evalAttr(bnode, B_+OPTIONS)(bnode.ctx);
+            bnode[OPTIONS] = isSkip(bnode, 3) ? {} : evalAttr(bnode, B_+OPTIONS)(bnode.ctx);
         }
 
         // Create a new bnode
@@ -177,7 +180,18 @@ export let newApp = (): AppObject => {
                 if (bnode.ph) removeNode(bnode.ph as any);
 
                 // Call the cleanup functions
-                each(bnode.cFns, cleanupFn => cleanupFn());
+                let cleanupErrors: unknown[] = [];
+                for (let cleanupFn of bnode.cFns) {
+                    try {
+                        await cleanupFn();
+                    } catch (error) {
+                        cleanupErrors.push(error);
+                    }
+                }
+                if (cleanupErrors.length) {
+                    each(cleanupErrors, error => logError(error));
+                    throw new Error(`Failed to run ${cleanupErrors.length} hydration cleanup function(s).`);
+                }
 
                 // Remove the bnode
                 if (_removeBNode) bnodes[DELETE](n);
@@ -229,7 +243,7 @@ export let newApp = (): AppObject => {
         let bnode = newBNode(node, ctxNode);
 
         // Skip hydrated elements
-        if (isSkip(bnode, 3)) return true;
+        if (isSkip(bnode, 3)) return false;
 
         /**
          * Check the attributes against the directives.
@@ -308,7 +322,7 @@ export let newApp = (): AppObject => {
      * Note: elements with the b-save attribute are removed from the DOM.
      */
     let saveAssets = async (node: Node) => {
-        let assets = await getElementsByDirective(node, B_SAVE, []);
+        let assets = await getElementsByDirective(node, B_SAVE, [B_IGNORE]);
 
         // Get the HTML content of the saved nodes
         each(assets, ([assetName, el]) => {
@@ -389,10 +403,10 @@ export let newApp = (): AppObject => {
 
     let bnodes: Map<Node, BNode> = newMap();
     let directives: Directive[] = [];
-    let template: TemplateObject = {};
+    let template: TemplateObject = Object.create(null);
 
-    let cache: CacheObject = {};
-    let cached: ObjectType = {};
+    let cache: CacheObject = Object.create(null);
+    let cached: ObjectType = Object.create(null);
 
     /** Defines how the local context should be set up for each element */
     let localContextFns: LocalContextFns = {
@@ -479,9 +493,9 @@ export let newApp = (): AppObject => {
     let app: AppObject = {
 
         [TEMPLATE]: template,
-        [STYLE]: {},
-        [SCRIPT]: {},
-        data: {},
+        [STYLE]: Object.create(null),
+        [SCRIPT]: Object.create(null),
+        data: Object.create(null),
 
         // ! HYDRATION
         [DIRECTIVES]: directives,
@@ -629,6 +643,8 @@ let newContext = (contextName: string, directiveName: string, inherit?: boolean)
     let parentContext = parent ? parent.ctx[contextName as '$data'] : NULL;
 
     let isElement = isElementNode(el);
+    if (isSkip(bnode, 3))
+        return parent ? parent.ctx[contextName as '$data'] : {};
     let hasDirective = isElement && hasAttr(el, directiveName);
 
     // Elements with b-if stop the hydration flow before b-data or b-props can be processed
@@ -680,7 +696,7 @@ export let setup = (brioWindow: ObjectType = {}) => {
 
 /** Slice the attribute name to get the part after the directive prefix */
 export let sliceAttrName = (attrName: string) => {
-    let match = attrName.match(/^(b-\w+|bind|on)(-([\w-$]+))?$/) || [];
+    let match = attrName.match(/^(b-\w+|bind|on)(-([\w-$.]+))?$/) || [];
     return match[3] || '';
 }
 
@@ -734,7 +750,7 @@ let getElementsByDirective = async (node: Node, directiveName: 'b-save' | 'b-slo
         if (isElementNode(n)) {
 
             // Skip elements that have any of the skipDirectives
-            if (some(skipDirectives, d => hasAttr(n as HTMLElement, d))) return false;
+            if (hasAttr(n as HTMLElement, B_IGNORE) || some(skipDirectives, d => hasAttr(n as HTMLElement, d))) return false;
 
             // Get the asset name
             let assetName = getAttr(n as HTMLElement, directiveName);
@@ -764,7 +780,9 @@ export let evalEffect = (bnode: BNode, exp: string, callback: DirectiveCallback)
 
     // Create a new effect, and save the cleanup function
     // This sets up the reactivity
-    saveCleanup(bnode, effect(() => callback(ctxFn)));
+    saveCleanup(bnode, effect(() => {
+        Promise.resolve(callback(ctxFn)).catch(error => logError(error));
+    }));
 }
 
 // ! NOT CURRENTLY USED

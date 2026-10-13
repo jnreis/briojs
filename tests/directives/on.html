@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual Test: on directive</title>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; margin: 20px; background: #f8fafc; color: #1e293b; }
+        .card { background: white; border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; }
+        h1 { font-size: 1.5rem; }
+        h3 { margin-top: 0; color: #0f172a; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; }
+        button { background: #3b82f6; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 0.9rem; margin-right: 8px; margin-bottom: 8px; }
+        button:hover { background: #2563eb; }
+        .log-box { background: #0f172a; color: #38bdf8; padding: 10px; border-radius: 6px; font-family: monospace; font-size: 0.85em; min-height: 40px; margin-top: 8px; }
+        .box { padding: 20px; background: #e2e8f0; border-radius: 6px; margin-top: 10px; }
+        .inner-box { padding: 15px; background: #cbd5e1; border-radius: 4px; display: inline-block; }
+    </style>
+</head>
+<body b-data="{
+    clicks: 0,
+    preventedMessage: '',
+    onceCount: 0,
+    stopParent: 0,
+    stopChild: 0,
+    outsideStatus: 'Inside or untouched',
+    lastKeyPressed: 'None',
+    windowClicks: 0
+}">
+
+    <h1>b-on / on-* Directive Manual Tests</h1>
+    <p>Tests event listeners, dot-notation modifiers (<code>.prevent</code>, <code>.stop</code>, <code>.once</code>, <code>.self</code>, <code>.window</code>, <code>.outside</code>), debouncing and keyboard events.</p>
+
+    <!-- Test 1: Basic Event & Expression -->
+    <div class="card">
+        <h3>1. Basic on-click & $event</h3>
+        <button on-click="$data.clicks++">Click to count: ${$data.clicks}</button>
+        <button on-click="$data.clicks = 0">Reset</button>
+    </div>
+
+    <!-- Test 2: on-click.prevent -->
+    <div class="card">
+        <h3>2. Dot Modifier: .prevent</h3>
+        <p>Clicking link shouldn't navigate because of <code>on-click.prevent</code>:</p>
+        <a href="https://example.com" on-click.prevent="$data.preventedMessage = 'Form / link submission prevented at ' + new Date().toLocaleTimeString()">
+            Click me (Link with .prevent)
+        </a>
+        <p>Result: <strong>${$data.preventedMessage}</strong></p>
+    </div>
+
+    <!-- Test 3: on-click.once -->
+    <div class="card">
+        <h3>3. Dot Modifier: .once</h3>
+        <button on-click.once="$data.onceCount++">
+            Click me (Runs once only): ${$data.onceCount}
+        </button>
+        <p>The count above will never exceed 1 even when repeatedly clicked.</p>
+    </div>
+
+    <!-- Test 4: on-click.stop propagation -->
+    <div class="card">
+        <h3>4. Dot Modifier: .stop (Propagation)</h3>
+        <div class="box" on-click="$data.stopParent++">
+            Outer container (Parent clicks: ${$data.stopParent})
+            <br><br>
+            <button on-click.stop="$data.stopChild++">
+                Child Button with .stop (Child clicks: ${$data.stopChild})
+            </button>
+            <p>Clicking the button increments child clicks without triggering parent clicks.</p>
+        </div>
+    </div>
+
+    <!-- Test 5: on-click.outside -->
+    <div class="card">
+        <h3>5. Dot Modifier: .outside</h3>
+        <div class="inner-box" on-click.outside="$data.outsideStatus = 'Clicked outside at ' + new Date().toLocaleTimeString()">
+            Click outside of this gray box to trigger outside event!
+        </div>
+        <p>Status: <strong>${$data.outsideStatus}</strong></p>
+    </div>
+
+    <!-- Test 6: Keyboard events -->
+    <div class="card">
+        <h3>6. Keydown and Modifiers</h3>
+        <p>Focus input and press keys (Enter, Escape, etc.):</p>
+        <input type="text" placeholder="Type here..." on-keydown="$data.lastKeyPressed = $event.key" style="padding: 8px; width: 250px;">
+        <p>Last key pressed: <code>${$data.lastKeyPressed}</code></p>
+    </div>
+
+    <!-- Test 7: on-click.window -->
+    <div class="card">
+        <h3>7. Global Window Listener: on-click.window</h3>
+        <div on-click.window="$data.windowClicks++">
+            Listening to window clicks anywhere on page!
+        </div>
+        <p>Total clicks on window: <code>${$data.windowClicks}</code></p>
+    </div>
+
+    <script type="module" b-ignore src="/src/briojs.min.ts"></script>
+    <script>
+        window.addEventListener('brio', () => {
+            const app = brio.newApp();
+            app.gc.$hydrate('body');
+            console.log('on.html hydrated successfully');
+        });
+    </script>
+</body>
+</html>

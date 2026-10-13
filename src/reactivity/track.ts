@@ -1,8 +1,5 @@
 // * TYPES
 
-import { size } from "../tools";
-
-
 // * VARIABLES
 
 // Enable tracking of accessed properties
@@ -18,22 +15,17 @@ export let accessedProps: AccessedProp[] = [];
  * @param trigger - The function to run to track the accessed properties
  */
 export let getAccessedProps = (trigger: FunctionType): AccessedProp[] => {
-
-    // Clear the accessed properties array
+    let previousTrackProps = trackProps;
+    let previousAccessedProps = accessedProps;
     accessedProps = [];
-
-    // Start tracking
     trackProps = true;
-
-    // Run the trigger
-    trigger({});
-
-    // Stop tracking
-    trackProps = false;
-
-    // Return a copy of the accessed properties
-    // ? This is necessary because the accessedProps array is cleared each time the getAccessedProps function is called.
-    return [...accessedProps];
+    try {
+        trigger({});
+        return [...accessedProps];
+    } finally {
+        trackProps = previousTrackProps;
+        accessedProps = previousAccessedProps;
+    }
 }
 
 /**
@@ -44,9 +36,7 @@ export let getAccessedProp = (trigger: FunctionType): [any?, Prop?] => {
     // Get the accessed properties
     let accessedProps = getAccessedProps(trigger);
 
-    let accessedPropsSize = size(accessedProps);
-
-    let [state, prop] = accessedProps[accessedPropsSize - 1] || [];
+    let [state, prop] = accessedProps[accessedProps.length - 1] || [];
 
     /**
      * If a new value is not defined, return the value of the property.

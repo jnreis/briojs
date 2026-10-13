@@ -8,7 +8,15 @@ import { isString } from "../tools/typeCheck";
 let hydrateTemplate = async (bnode: BNode, attrName: string, attrValue: string) => {
     
     // Options: {hydrate: boolean, selector: string}
-    let options = bnode[OPTIONS][attrName] || {};
+    let baseAttrName = attrName.split('.')[0];
+    let dotModifiers = attrName.includes('.') ? attrName.split('.').slice(1) : [];
+    let options: Record<string, any> = {
+        ...(bnode[OPTIONS][baseAttrName] || {}),
+        ...(bnode[OPTIONS][attrName] || {})
+    };
+    for (let mod of dotModifiers) {
+        options[mod] = true;
+    }
 
     let el = bnode.el;
 
@@ -33,4 +41,4 @@ let hydrateTemplate = async (bnode: BNode, attrName: string, attrValue: string) 
     else logWarn(attrName + ':', INVALID__$CAP, VALUE, NEW_LINE, template);
 }
 
-export let templateDirective: Directive = [B_TEMPLATE, hydrateTemplate];
+export let templateDirective: Directive = [/^(b-template|template)(\.[\w-]+)*$/, hydrateTemplate];

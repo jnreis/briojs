@@ -1,12 +1,12 @@
 import { entries, has, size } from ".";
-import { arrayFrom, each, map } from "./array";
+import { each } from "./array";
 import { CREATE, DEFINE_PROPERTIES, DEFINE_PROPERTY, DOCUMENT, GET_OWN_PROPERTY_DESCRIPTOR, GET_OWN_PROPERTY_DESCRIPTORS, GET_OWN_PROPERTY_NAMES, HAS_OWN_PROPERTY, NULL, PROTOTYPE, UNDEFINED, VALUE } from "./constants";
 import { isArray, isMap, isObject, isSet, isString } from "./typeCheck";
 
-export let W = window;
+export let W: any = globalThis;
 export let O = Object;
 export let R = Reflect;
-export let L = location;
+export let L = W.location;
 export let D = W[DOCUMENT];
 export let S = Symbol;
 
@@ -16,13 +16,8 @@ export let hasProp = (object: any, key: Prop) =>
     O[PROTOTYPE][HAS_OWN_PROPERTY].call(object, key);
 
 /** Gets the value of a key in an object or returns a default value */
-export let getProp = (object: any, key: string, defaultValue?: any) => {
-    let value = defaultValue;
-    try {
-        value = key in object ? object[key] : defaultValue;
-    } catch {}
-    return value;
-}
+export let getProp = (object: any, key: string, defaultValue?: any) =>
+    object != null && key in object ? object[key] : defaultValue;
 
 export let renameProp = (object: ObjectType, oldName: string, newName: string, newValue?: any) => {
     if (oldName in object) {
@@ -59,7 +54,7 @@ let descriptorShorthand = [
  * @example
  * setProp(obj, 'key', 'value', 'wce');
  */
-export let setProp = (object: any, key: string, value: any = UNDEFINED, descriptor: any = '') => {
+export let setProp = (object: any, key: string, value: any = UNDEFINED, descriptor: any = 'wce') => {
 
     if (isString(descriptor)) {
         let shorthand = descriptor;
@@ -162,10 +157,15 @@ export let newRegExp = (pattern: RegExp | string, flags?: string) => new Regex(p
  * 
  * Note: this mutates the target.
  */
-export let sync = (target: any, source: any): any => {
+export let sync = (target: any, source: any, seen = new WeakMap<object, object>()): any => {
 
     // Target and source are the same, no need to update
     if (target === source) return target;
+    if ((isObject(source) || isArray(source) || isMap(source) || isSet(source)) && seen.has(source))
+        return seen.get(source);
+    if ((isObject(source) || isArray(source) || isMap(source) || isSet(source)) &&
+        (isObject(target) || isArray(target) || isMap(target) || isSet(target)))
+        seen.set(source, target);
 
     // Update target Array in-place
     if (isArray(target) && isArray(source)) {
@@ -176,9 +176,9 @@ export let sync = (target: any, source: any): any => {
         // Update existing elements or add new ones
         for (let i = 0; i < size(source); i++) {
             if (i < size(target)) {
-                target[i] = sync(target[i], source[i]);
+                target[i] = sync(target[i], source[i], seen);
             } else {
-                target.push(clone(source[i]));
+                target.push(clone(source[i], seen));
             }
         }
     }
@@ -192,7 +192,7 @@ export let sync = (target: any, source: any): any => {
 
         // Update existing keys or add new ones
         for (let [key, val] of entries(source)) {
-            target.set(key, targetCopy.has(key) ? sync(targetCopy.get(key), val) : clone(val));
+            target.set(key, targetCopy.has(key) ? sync(targetCopy.get(key), val, seen) : clone(val, seen));
         }
     }
     // Update target Set in-place
@@ -203,7 +203,7 @@ export let sync = (target: any, source: any): any => {
 
         // Add elements from source
         for (let val of source) {
-            target.add(val);
+            target.add(clone(val, seen));
         }
     }
     // Update target Object in-place
@@ -217,7 +217,7 @@ export let sync = (target: any, source: any): any => {
         // Update existing keys or add new ones
         for (let key in source) {
             if (hasProp(source, key)) {
-                target[key] = hasProp(targetCopy, key) ? sync(targetCopy[key], source[key]) : clone(source[key]);
+                target[key] = hasProp(targetCopy, key) ? sync(targetCopy[key], source[key], seen) : clone(source[key], seen);
             }
         }
     }
@@ -231,26 +231,35 @@ export let sync = (target: any, source: any): any => {
 }
 
 /** Clones a value deeply */
-export let clone = (value: any) => {
+export let clone = (value: any, seen = new WeakMap<object, any>()): any => {
+    if (value === null || typeof value !== 'object') return value;
+    if (seen.has(value)) return seen.get(value);
 
-    let cloneValue = value;
-
-    if (isObject(value)) {
-        let res: ObjectType = {};
-        for (let key in value) {
-            if (hasProp(value, key)) res[key] = clone(value[key]);
-        }
-        cloneValue = res;
+    if (isArray(value)) {
+        let result: any[] = [];
+        seen.set(value, result);
+        for (let item of value) result.push(clone(item, seen));
+        return result;
     }
-
-    if (isArray(value)) 
-        cloneValue = map(value, clone);
-
-    if (isMap(value)) 
-        cloneValue = newMap(map(arrayFrom(entries(value)), ([k, v]: [any, any]) => [k, clone(v)]));
-
-    if (isSet(value)) 
-        cloneValue = newSet(map(arrayFrom(value), clone));
-
-    return cloneValue;
+    if (isMap(value)) {
+        let result = newMap();
+        seen.set(value, result);
+        for (let [key, item] of entries(value))
+            result.set(clone(key, seen), clone(item, seen));
+        return result;
+    }
+    if (isSet(value)) {
+        let result = newSet();
+        seen.set(value, result);
+        for (let item of value) result.add(clone(item, seen));
+        return result;
+    }
+    if (isObject(value)) {
+        let result = Object.create(Object.getPrototypeOf(value));
+        seen.set(value, result);
+        for (let key of O.keys(value))
+            result[key] = clone(value[key], seen);
+        return result;
+    }
+    return value;
 }

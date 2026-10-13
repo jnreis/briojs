@@ -1,7 +1,7 @@
 import { entries } from '../tools';
-import { each, find } from '../tools/array';
-import { TEXT, GET, DELETE, PUT, POST, PATCH, UNDEFINED, METHOD, HEADERS, CONTENT__$CAP, APPEND, DATA, CONTENT } from '../tools/constants';
-import { getProp, getKeys, delProp } from '../tools/object';
+import { each } from '../tools/array';
+import { TEXT, GET, DELETE, PUT, POST, PATCH, METHOD, HEADERS, CONTENT__$CAP, APPEND, DATA, CONTENT } from '../tools/constants';
+import { getProp } from '../tools/object';
 import { endsWith, lower, parse, stringify } from '../tools/string';
 import { isArray, isObject } from '../tools/typeCheck';
 
@@ -52,72 +52,56 @@ let _http = (method: 'get' | 'delete' | 'post' | 'put' | 'patch') =>
      */
     let parser: ResponseParser = getProp(options, 'parser');
 
-    // Stringify the body if it is an object
-    if (isObject(body)) {
-
-        // Get the headers
-        let headers: ObjectType = options[HEADERS] || {};
-
-        // Get the content type key, if it exists
-        let contentTypeKey = find(getKeys(headers), key => lower(key) == lower(CONTENT_TYPE));
-        let contentTypeValue = lower(headers[contentTypeKey] || '');
-
-        // Let the browser set the content type, if not JSON
-        delProp(headers, contentTypeKey);
+    if (isObject(body) || isArray(body)) {
+        let headers = new Headers(options[HEADERS]);
+        let contentTypeValue = lower(headers.get(CONTENT_TYPE) || '');
 
         // Append the body to the endpoint as query parameters
         // REASON: GET and DELETE requests should not have a body
         if (method == GET || method == DELETE) {
-            endpoint += encodeParams(body);
-            body = UNDEFINED;
+            let params = encodeParams(body) as URLSearchParams;
+            let url = new URL(endpoint, location.href);
+            params.forEach((value, key) => url.searchParams.append(key, value));
+            endpoint = url.href;
+            body = undefined;
         }
         // Stringify the body as JSON
         else if (endsWith(contentTypeValue, 'json')) {
             body = stringify(body);
-            // Manually set the content type
-            headers[CONTENT_TYPE] = 'application/json';
+            headers.set(CONTENT_TYPE, 'application/json');
         }
         // Use FormData if the content type ends with 'form-data'
         else if (endsWith(contentTypeValue, 'form-data')) {
             body = encodeParams(body, DATA);
+            headers.delete(CONTENT_TYPE);
         }
         // Stringify the body as x-www-form-urlencoded
         else {
             body = encodeParams(body);
+            headers.set(CONTENT_TYPE, 'application/x-www-form-urlencoded;charset=UTF-8');
         }
 
-        // Save the updated headers
-        options[HEADERS] = headers;
+        options = {...options, [HEADERS]: headers};
     }
 
-    try {
-        let response = await fetch(endpoint, {...options, [METHOD]: method, body});
+    let response = await fetch(endpoint, {...options, [METHOD]: method, body});
 
-        // Get the response content
-        let content = await response[parser || TEXT]();
+    // Get the response content
+    let content = await response[parser || TEXT]();
 
-        // If the parser is not provided
-        if (!parser) {
-            // Attempt to parse the response as JSON
-            try {
-                content = parse(content);
-            }
-            catch {}
-        }
-
-        // If the response is not ok, throw an error
-        if (!response.ok) {
-            let error = new Error(`HTTP ${response[TEXT_STATUS]}! Status text: ` + response.statusText) as any;
-            error.response = response;
-            error[CONTENT] = content;
-            throw error;
-        }
-
-        return content;
+    // If the parser is not provided, attempt to parse the response as JSON.
+    if (!parser) {
+        content = parse(content);
     }
-    catch (error) {
+
+    if (!response.ok) {
+        let error = new Error(`HTTP ${response[TEXT_STATUS]}! Status text: ` + response.statusText) as any;
+        error.response = response;
+        error[CONTENT] = content;
         throw error;
     }
+
+    return content;
 }
 
 export let http = {

@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual Test: model directive</title>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; margin: 20px; background: #f8fafc; color: #1e293b; }
+        .card { background: white; border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; }
+        h1 { font-size: 1.5rem; }
+        h3 { margin-top: 0; color: #0f172a; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; }
+        input[type="text"], textarea, select { padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.95rem; }
+        .field { margin-bottom: 12px; }
+        label { display: block; font-weight: 500; margin-bottom: 4px; }
+        code { background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 0.9em; }
+    </style>
+</head>
+<body b-data="{
+    textInput: 'Hello Brio',
+    trimmedInput: '   spaces trimmed   ',
+    lazyInput: 'Update on change/blur',
+    rawNumber: '42',
+    isSubscribed: true,
+    hobbies: ['coding'],
+    favoriteColor: 'blue',
+    selectedFruit: 'banana',
+    multiFruits: ['apple', 'orange']
+}">
+
+    <h1>b-model Directive Manual Tests</h1>
+    <p>Tests 2-way data binding across inputs, textareas, checkboxes, radios, selects, and modifiers (<code>.trim</code>, <code>.lazy</code>, <code>.raw</code>).</p>
+
+    <!-- Test 1: Standard Text Input -->
+    <div class="card">
+        <h3>1. Standard Text Input & Textarea</h3>
+        <div class="field">
+            <label>Text:</label>
+            <input type="text" b-model="$data.textInput" style="width: 300px;">
+        </div>
+        <div class="field">
+            <label>Textarea:</label>
+            <textarea b-model="$data.textInput" rows="3" style="width: 300px;"></textarea>
+        </div>
+        <p>Live State value: <code>"${$data.textInput}"</code></p>
+    </div>
+
+    <!-- Test 2: Modifiers (.trim, .lazy) -->
+    <div class="card">
+        <h3>2. Modifiers: <code>b-model.trim</code> and <code>b-model.lazy</code></h3>
+        <div class="field">
+            <label>b-model.trim (trims leading & trailing whitespace):</label>
+            <input type="text" b-model.trim="$data.trimmedInput" style="width: 300px;">
+            <p>Value in state: <code>"${$data.trimmedInput}"</code> (length: ${$data.trimmedInput.length})</p>
+        </div>
+        <div class="field">
+            <label>b-model.lazy (listens for change instead of input, updates on blur/Enter):</label>
+            <input type="text" b-model.lazy="$data.lazyInput" style="width: 300px;">
+            <p>Value in state: <code>"${$data.lazyInput}"</code></p>
+        </div>
+    </div>
+
+    <!-- Test 3: Single Checkbox & Checkbox Group -->
+    <div class="card">
+        <h3>3. Checkboxes (Boolean & Array Group)</h3>
+        <div class="field">
+            <label>
+                <input type="checkbox" b-model="$data.isSubscribed"> Subscribe to newsletter (Single Boolean)
+            </label>
+            <p>Subscribed: <code>${$data.isSubscribed}</code></p>
+        </div>
+        <div class="field">
+            <label>Hobbies (Array Group):</label>
+            <label><input type="checkbox" name="hobbies" value="coding" b-model="$data.hobbies"> Coding</label>
+            <label><input type="checkbox" name="hobbies" value="music" b-model="$data.hobbies"> Music</label>
+            <label><input type="checkbox" name="hobbies" value="gaming" b-model="$data.hobbies"> Gaming</label>
+            <p>Selected hobbies: <code>${JSON.stringify($data.hobbies)}</code></p>
+        </div>
+    </div>
+
+    <!-- Test 4: Radio Buttons -->
+    <div class="card">
+        <h3>4. Radio Buttons</h3>
+        <label><input type="radio" name="favColor" value="red" b-model="$data.favoriteColor"> Red</label>
+        <label><input type="radio" name="favColor" value="green" b-model="$data.favoriteColor"> Green</label>
+        <label><input type="radio" name="favColor" value="blue" b-model="$data.favoriteColor"> Blue</label>
+        <p>Selected color: <code>${$data.favoriteColor}</code></p>
+    </div>
+
+    <!-- Test 5: Single & Multiple Select -->
+    <div class="card">
+        <h3>5. Select dropdowns</h3>
+        <div class="field">
+            <label>Single select:</label>
+            <select b-model="$data.selectedFruit">
+                <option value="apple">Apple</option>
+                <option value="banana">Banana</option>
+                <option value="orange">Orange</option>
+            </select>
+            <span>Selected: <code>${$data.selectedFruit}</code></span>
+        </div>
+        <div class="field">
+            <label>Multiple select (hold Cmd/Ctrl to select multiple):</label>
+            <select b-model="$data.multiFruits" multiple size="3" style="width: 200px;">
+                <option value="apple">Apple</option>
+                <option value="banana">Banana</option>
+                <option value="orange">Orange</option>
+                <option value="grape">Grape</option>
+            </select>
+            <p>Selected fruits: <code>${JSON.stringify($data.multiFruits)}</code></p>
+        </div>
+    </div>
+
+    <script type="module" b-ignore src="/src/briojs.min.ts"></script>
+    <script>
+        window.addEventListener('brio', () => {
+            const app = brio.newApp();
+            app.gc.$hydrate('body');
+            console.log('model.html hydrated successfully');
+        });
+    </script>
+</body>
+</html>

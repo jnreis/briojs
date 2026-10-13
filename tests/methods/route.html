@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual Test: Router</title>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; margin: 20px; background: #f8fafc; color: #1e293b; }
+        .card { background: white; border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; }
+        h1 { font-size: 1.5rem; }
+        h3 { margin-top: 0; color: #0f172a; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; }
+        nav button { background: #3b82f6; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 0.95rem; margin-right: 8px; }
+        nav button:hover { background: #2563eb; }
+        .router-view { min-height: 120px; border: 2px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-top: 16px; background: white; }
+    </style>
+</head>
+<body>
+
+    <h1>Router Manual Tests (SPA Routing)</h1>
+    <p>Tests client-side routing, route matching with parameters, pushState navigation, and <code>b-router-outlet</code>.</p>
+
+    <div class="card" id="app-root">
+        <nav>
+            <button b-on-click="goTo('/')">Home</button>
+            <button b-on-click="goTo('/users/ada')">User: Ada</button>
+            <button b-on-click="goTo('/users/grace')">User: Grace</button>
+            <button b-on-click="goTo('/about')">About</button>
+        </nav>
+
+        <div class="router-view">
+            <div b-router-outlet></div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { createApp } from '/dist/index.js';
+        import { createRouter } from '/dist/router-entry.js';
+
+        const router = createRouter([
+            { path: '/', component: 'home-page' },
+            { path: '/users/:username', component: 'user-page' },
+            { path: '/about', component: 'about-page' },
+        ]);
+
+        const app = createApp({
+            router,
+            state: () => ({
+                goTo(path) {
+                    router.navigate(path);
+                }
+            })
+        });
+
+        app.component('home-page', {
+            template: `
+                <div style="color: #1e293b;">
+                    <h2>🏠 Home Dashboard</h2>
+                    <p>Welcome to the SPA Home Route! Click the navigation buttons above to transition views without full page reload.</p>
+                </div>
+            `
+        });
+
+        app.component('user-page', {
+            template: `
+                <div style="color: #0369a1;">
+                    <h2>👤 User Profile</h2>
+                    <p>Current Route Path: <strong b-text="currentRoute"></strong></p>
+                    <p>Matched Username Parameter: <strong b-text="username"></strong></p>
+                </div>
+            `,
+            setup(ctx) {
+                const match = router.current.value;
+                return {
+                    currentRoute: match ? match.path : '',
+                    username: match ? match.params.username : ''
+                };
+            }
+        });
+
+        app.component('about-page', {
+            template: `
+                <div style="color: #166534;">
+                    <h2>ℹ️ About Brio</h2>
+                    <p>Brio.js is a petite, HTML-first frontend framework designed for fine-grained reactivity and minimal overhead.</p>
+                </div>
+            `
+        });
+
+        app.mount('#app-root');
+        router.navigate('/');
+        console.log('router.html mounted successfully');
+    </script>
+</body>
+</html>

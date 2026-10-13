@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual Test: mask directive</title>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; margin: 20px; background: #f8fafc; color: #1e293b; }
+        .card { background: white; border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; }
+        h1 { font-size: 1.5rem; }
+        h3 { margin-top: 0; color: #0f172a; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; }
+        input { padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 1rem; width: 250px; }
+        .field { margin-bottom: 12px; }
+        label { display: block; font-weight: 500; margin-bottom: 4px; }
+    </style>
+</head>
+<body b-data="{
+    phone: '',
+    moneyVal: ''
+}">
+
+    <h1>b-mask Directive Manual Tests</h1>
+    <p>Tests input masking, phone patterns, and currency formatting helpers.</p>
+
+    <div class="card">
+        <h3>1. Phone Number Mask: (###) ###-####</h3>
+        <div class="field">
+            <label>Type numbers to test mask:</label>
+            <input type="text" b-mask="['(', number(3), ') ', number(3), '-', number(4)]" placeholder="(555) 000-0000">
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>2. Currency Mask: money()</h3>
+        <div class="field">
+            <label>Type currency value:</label>
+            <input type="text" b-mask="money({ precision: 2, thousands: ',', decimal: '.' })" placeholder="$0.00">
+        </div>
+    </div>
+
+    <script type="module" b-ignore src="/src/briojs.min.ts"></script>
+    <script>
+        window.addEventListener('brio', () => {
+            const app = brio.newApp();
+            app.gc.$hydrate('body');
+            console.log('mask.html hydrated successfully');
+        });
+    </script>
+</body>
+</html>

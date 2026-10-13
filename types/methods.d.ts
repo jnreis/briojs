@@ -1,6 +1,6 @@
 type InsertOptions = {
     /** A selector to query an element from the content */
-    select?: string,
+    selector?: string,
     /** Whether to hydrate the inserted nodes (default: true) */
     hydrate?: boolean,
 }
@@ -63,7 +63,8 @@ interface HttpOptions extends RequestInit {
 // Validation types
 type RuleValue = any;
 type RuleMessage = string;
-type SchemaObject = { [dataKey: string]: [RuleValue, RuleMessage?] };
+type ValidationRule = { name: string; value?: RuleValue; message?: RuleMessage };
+type SchemaObject = { [dataKey: string]: ValidationRule[] };
 type RulesObject = { [ruleName: string]: RuleFn };
 type MessageObject = { [ruleName: string]: MessageFn };
 type RuleFn = (value: any, ruleValue?: any, data?: any) => boolean;

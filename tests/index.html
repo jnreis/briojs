@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brio.js Manual Test Suite Index</title>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; margin: 30px; background: #f8fafc; color: #1e293b; max-width: 900px; }
+        h1 { font-size: 2rem; color: #0f172a; margin-bottom: 8px; }
+        p.subtitle { color: #64748b; font-size: 1.1rem; margin-top: 0; margin-bottom: 24px; }
+        .section { background: white; border-radius: 8px; padding: 20px; margin-bottom: 24px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        h2 { margin-top: 0; font-size: 1.3rem; color: #1e293b; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; margin-top: 14px; }
+        a.test-link { display: block; padding: 12px 16px; background: #f1f5f9; border-radius: 6px; text-decoration: none; color: #2563eb; font-weight: 500; transition: all 0.2s; border: 1px solid #cbd5e1; }
+        a.test-link:hover { background: #3b82f6; color: white; border-color: #2563eb; transform: translateY(-1px); }
+        .desc { display: block; font-size: 0.8rem; color: #64748b; margin-top: 4px; font-weight: normal; }
+        a.test-link:hover .desc { color: #e0f2fe; }
+    </style>
+</head>
+<body>
+
+    <h1>🧪 Brio.js Manual Test Suite</h1>
+    <p class="subtitle">Interactive, manual verification pages for all directives, utility methods, reactivity features, routing, and devtools.</p>
+
+    <!-- Directives Section -->
+    <div class="section">
+        <h2>Directives (tests/directives/)</h2>
+        <div class="grid">
+            <a class="test-link" href="/tests/directives/bind.html">
+                bind.html
+                <span class="desc">Property & attribute binding, .prop modifier, class & style objects</span>
+            </a>
+            <a class="test-link" href="/tests/directives/on.html">
+                on.html
+                <span class="desc">Event handling, .prevent, .stop, .once, .outside, .window</span>
+            </a>
+            <a class="test-link" href="/tests/directives/model.html">
+                model.html
+                <span class="desc">Two-way binding, .trim, .lazy, .raw, inputs, selects, radios</span>
+            </a>
+            <a class="test-link" href="/tests/directives/if.html">
+                if.html
+                <span class="desc">Conditional DOM mounting, unmounting, comment placeholders</span>
+            </a>
+            <a class="test-link" href="/tests/directives/for.html">
+                for.html
+                <span class="desc">List iteration, array mutations, number ranges, object keys</span>
+            </a>
+            <a class="test-link" href="/tests/directives/show.html">
+                show.html
+                <span class="desc">Conditional visibility toggling preserving DOM instances</span>
+            </a>
+            <a class="test-link" href="/tests/directives/html.html">
+                html.html
+                <span class="desc">b-html markup insertion and safe b-text escaping</span>
+            </a>
+            <a class="test-link" href="/tests/directives/template.html">
+                template.html
+                <span class="desc">In-place template content unwrapping and hydration</span>
+            </a>
+            <a class="test-link" href="/tests/directives/ignore.html">
+                ignore.html
+                <span class="desc">Skip hydration for subtrees with b-ignore</span>
+            </a>
+            <a class="test-link" href="/tests/directives/styles.html">
+                styles.html
+                <span class="desc">Scoped style assets and selector prefixing</span>
+            </a>
+            <a class="test-link" href="/tests/directives/teleport.html">
+                teleport.html
+                <span class="desc">Dynamic element teleportation to remote containers</span>
+            </a>
+            <a class="test-link" href="/tests/directives/transition.html">
+                transition.html
+                <span class="desc">Animated enter/exit transitions with b-if/b-show</span>
+            </a>
+            <a class="test-link" href="/tests/directives/mask.html">
+                mask.html
+                <span class="desc">Input formatting masks (phone, currency)</span>
+            </a>
+            <a class="test-link" href="/tests/directives/resize.html">
+                resize.html
+                <span class="desc">ResizeObserver tracking element box sizes</span>
+            </a>
+            <a class="test-link" href="/tests/directives/intersection.html">
+                intersection.html
+                <span class="desc">IntersectionObserver triggers on-enter and on-exit</span>
+            </a>
+            <a class="test-link" href="/tests/directives/mutation.html">
+                mutation.html
+                <span class="desc">MutationObserver triggers on-addednodes & on-removednodes</span>
+            </a>
+            <a class="test-link" href="/tests/directives/id.html">
+                id.html
+                <span class="desc">Unique ID generation and form field associations</span>
+            </a>
+            <a class="test-link" href="/tests/directives/script.html">
+                script.html
+                <span class="desc">Inline contextual initialization scripts</span>
+            </a>
+            <a class="test-link" href="/tests/directives/effect.html">
+                effect.html
+                <span class="desc">Element-level side effects tracking reactive dependencies</span>
+            </a>
+            <a class="test-link" href="/tests/directives/data.html">
+                data.html
+                <span class="desc">Nested data scopes and context inheritance</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Methods Section -->
+    <div class="section">
+        <h2>Methods (tests/methods/)</h2>
+        <div class="grid">
+            <a class="test-link" href="/tests/methods/dom.html">
+                dom.html
+                <span class="desc">DOM insertions: prepend, append, before, after, replace</span>
+            </a>
+            <a class="test-link" href="/tests/methods/route.html">
+                route.html
+                <span class="desc">SPA router navigation, parameter matching, b-router-outlet</span>
+            </a>
+            <a class="test-link" href="/tests/methods/validate.html">
+                validate.html
+                <span class="desc">Schema validation rules, errors, and messages</span>
+            </a>
+            <a class="test-link" href="/tests/methods/step.html">
+                step.html
+                <span class="desc">Multi-step wizard engine and step transitions</span>
+            </a>
+            <a class="test-link" href="/tests/methods/http.html">
+                http.html
+                <span class="desc">HTTP fetch client, get/post requests, and auto-parsing</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Reactivity Section -->
+    <div class="section">
+        <h2>Reactivity, Persistence & Devtools (tests/reactivity/)</h2>
+        <div class="grid">
+            <a class="test-link" href="/tests/reactivity/reactivity.html">
+                reactivity.html
+                <span class="desc">Signals, computed values, effects, batch, and scope cleanups</span>
+            </a>
+            <a class="test-link" href="/tests/reactivity/persistence.html">
+                persistence.html
+                <span class="desc">State persistence with localStorage and reload restoration</span>
+            </a>
+            <a class="test-link" href="/tests/reactivity/devtools.html">
+                devtools.html
+                <span class="desc">Live Devtools inspector panel, app tracking, and state snapshots</span>
+            </a>
+        </div>
+    </div>
+
+</body>
+</html>

@@ -32,11 +32,19 @@ export let size = (value: any): number => value[LENGTH];
 
 export let wait = (callback: FunctionType, ms = 0) => setTimeout(callback, ms);
 
-export let clearWait = (id: number) => {
+export let clearWait = (id: number | ReturnType<typeof setTimeout> | undefined) => {
+    if (id === undefined) return;
     clearTimeout(id);
 }
 
-export let waitAsync = (callback: FunctionType, ms = 0) => new Promise(resolve => wait(() => resolve(callback()), ms));
+export let waitAsync = (callback: FunctionType, ms = 0) =>
+    new Promise((resolve, reject) => wait(() => {
+        try {
+            resolve(callback());
+        } catch (error) {
+            reject(error);
+        }
+    }, ms));
 
 /**
  * Debounce: the callback function will only be called after the delay has passed since the last call.
@@ -45,11 +53,15 @@ export let waitAsync = (callback: FunctionType, ms = 0) => new Promise(resolve =
  * @returns A debounced function
  */
 export let debounce = (callback: Function, delay?: number) => {
-    let timeout: any;
-    return (...args: any[]) => {
+    let timeout: ReturnType<typeof wait> | undefined;
+    return Object.assign((...args: any[]) => {
         clearWait(timeout);
         timeout = wait(() => callback(...args), delay);
-    }
+    }, {
+        cancel: () => {
+            if (timeout !== undefined) clearWait(timeout);
+        }
+    });
 }
 
 /**

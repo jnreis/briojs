@@ -1,7 +1,7 @@
 {
   "name": "briojs",
-  "version": "3.0.0",
-  "description": "A simple, fast, and lightweight JavaScript framework for building dynamic web applications.",
+  "version": "4.0.0",
+  "description": "A petite, HTML-first framework for reactive widgets and web apps.",
   "author": {
     "name": "Jhonathan Reis",
     "email": "jr@briojs.com",
@@ -22,28 +22,49 @@
   ],
   "files": [
     "dist",
-    "src",
-    "types"
+    "README.md",
+    "DOCUMENTATION.md"
   ],
   "type": "module",
-  "types": "./types/index.d.ts",
-  "main": "./dist/briojs.js",
-  "module": "./dist/briojs.js",
+  "types": "./dist/index.d.ts",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
   "license": "MIT",
   "exports": {
     ".": {
-      "default": "./dist/briojs.js",
-      "module": "./dist/briojs.js",
-      "types": "./types/index.d.ts"
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./reactivity": {
+      "types": "./dist/reactivity-entry.d.ts",
+      "import": "./dist/reactivity.js"
+    },
+    "./persistence": {
+      "types": "./dist/persistence-entry.d.ts",
+      "import": "./dist/persistence-entry.js"
+    },
+    "./router": {
+      "types": "./dist/router-entry.d.ts",
+      "import": "./dist/router-entry.js"
+    },
+    "./devtools": {
+      "types": "./dist/devtools-entry.d.ts",
+      "import": "./dist/devtools-entry.js"
     },
     "./package.json": "./package.json"
   },
+  "sideEffects": [
+    "./dist/devtools-entry.js"
+  ],
   "scripts": {
     "dev": "vite",
-    "build": "node scripts/build.js"
+    "build": "node scripts/build.js",
+    "test": "npm run build && node --test",
+    "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
     "@types/node": "^22.10.10",
+    "typescript": "^5.7.3",
     "vite": "^5.0.8",
     "vite-plugin-dts": "^3.8.1"
   }

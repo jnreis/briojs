@@ -2,7 +2,7 @@ import { effect } from '../reactivity';
 import { entries, has, logError, logWarn, size } from '../tools';
 import { arrayAdd, arrayFrom, each, join } from '../tools/array';
 import { SELECT, INPUT, TEXTAREA, CHECKBOX, RADIO, VALUE, ARRAY, DIRECTIVE, COMPOSING, ELEMENT, CAN_ONLY_BE_USED_ON, BOOLEAN, STRING, NUMBER, CHECKED, BUT_GOT_INSTEAD, TEXT, OF_TYPE, OPTIONS, COMPOSITION_START, COMPOSITION_END, EMAIL, REQUIRES_REACTIVE_VALUE } from '../tools/constants';
-import { listen, onCompositionStart, onCompositionEnd, queryAll, getTagName, nextFrame, hasAttr } from '../tools/dom';
+import { listen, onCompositionStart, onCompositionEnd, getTagName, nextFrame, hasAttr } from '../tools/dom';
 import { saveCleanup } from '../app';
 import { D, newMap } from '../tools/object';
 import { parse, space, trim } from '../tools/string';
@@ -70,7 +70,7 @@ import { getAccessedProp } from '../reactivity/track';
  * - This is used to apply the modifiers to the value of the checkbox or select option that don't have direct access to the modifiers.
  * - Without this, the value of these elements would not be properly modified.
  */
-let nodeModifiers: Map<Node, string[]> = newMap();
+let nodeModifiers: Map<Node, ObjectType> = newMap();
 
 /**
  * 
@@ -109,7 +109,15 @@ let hydrateModel = (bnode: BNode, attrName: string, attrValue: string) => {
     let getArrayNodes = () => arrayFrom(tag == SELECT ? node[OPTIONS] : getCheckboxGroup()) as Node[];
 
     // The modifiers
-    let modifiers = bnode[OPTIONS][attrName] || {};
+    let baseAttrName = attrName.split('.')[0];
+    let dotModifiers = attrName.includes('.') ? attrName.split('.').slice(1) : [];
+    let modifiers: ObjectType = {
+        ...(bnode[OPTIONS][baseAttrName] || {}),
+        ...(bnode[OPTIONS][attrName] || {})
+    };
+    for (let mod of dotModifiers) {
+        modifiers[mod] = true;
+    }
 
     /**
      * Get the node value and apply the modifiers `trim` and `raw`, if present.
@@ -145,7 +153,12 @@ let hydrateModel = (bnode: BNode, attrName: string, attrValue: string) => {
     let isInput = (_type: string|string[]) => tag == INPUT && has(_type, type);
     let isCheckboxOrRadio = isInput([CHECKBOX,RADIO]);
 
-    let getCheckboxGroup = () => queryAll(INPUT+`[type="${CHECKBOX}"][name="${node.name}"]`);
+    let getCheckboxGroup = () => {
+        if (!node.name) return [node];
+        let root = node.form || node.getRootNode() as ParentNode;
+        return arrayFrom(root.querySelectorAll(INPUT+`[type="${CHECKBOX}"]`))
+            .filter((candidate: any) => candidate.name === node.name);
+    };
     let isCheckboxGroup = () => isInput(CHECKBOX) && size(getCheckboxGroup()) > 1;
 
     /** Special validation to warn when the reactive value is not the expected type */
@@ -179,7 +192,7 @@ let hydrateModel = (bnode: BNode, attrName: string, attrValue: string) => {
 
     // Wait for the node to be fully hydrated before running the special validation
     // Note: this is necessary because the reactive state may be used by multiple elements scattered throughout the template (e.g. multiple checkboxes in a group).
-    nextFrame(() => {
+    saveCleanup(bnode, nextFrame(() => {
         validate();
 
         // Save modifiers
@@ -188,7 +201,7 @@ let hydrateModel = (bnode: BNode, attrName: string, attrValue: string) => {
 
         else if (isInput(CHECKBOX))
             nodeModifiers.set(node, modifiers);
-    });
+    }));
 
 
     // UPDATES THE DOM
@@ -244,7 +257,7 @@ let hydrateModel = (bnode: BNode, attrName: string, attrValue: string) => {
 
     // Save the effect
     // Note: wait to save the effect until the node is fully hydrated because the model directive may depend on the bind directive to bind the value attribute.
-    nextFrame(() => saveCleanup(bnode, effect(watchFn))); // 1ms is enough, but give it a little extra time to be safe
+    saveCleanup(bnode, nextFrame(() => saveCleanup(bnode, effect(watchFn))));
 
 
     // UPDATES THE PROP
@@ -254,7 +267,8 @@ let hydrateModel = (bnode: BNode, attrName: string, attrValue: string) => {
         value = _state[_prop];
 
         // Handle multiple select options and checkboxes
-        if ((tag == SELECT && node.multiple) || isCheckboxGroup()) {
+        if ((tag == SELECT && node.multiple) || isCheckboxGroup() ||
+            (isInput(CHECKBOX) && isArray(value))) {
 
             // The new reactive value
             let newValue: any[] = [];
@@ -298,6 +312,10 @@ let hydrateModel = (bnode: BNode, attrName: string, attrValue: string) => {
     for (let [eventName, fn] of entries(events)) {
         saveCleanup(bnode, listen(node, eventName as string, fn));
     }
+
+    saveCleanup(bnode, () => {
+        for (let groupNode of getArrayNodes()) nodeModifiers.delete(groupNode);
+    });
 }
 
-export let modelDirective: Directive = ['b-model', hydrateModel];
+export let modelDirective: Directive = [/^(b-model|model)(\.[\w-]+)*$/, hydrateModel];

@@ -1,7 +1,7 @@
 import { evalEffect, sliceAttrName } from '../app';
 import { logWarn } from '../tools';
 import { BUT_GOT_INSTEAD, CLASS, NEW_LINE, OPTIONS, REQUIRES_REACTIVE_VALUE, STYLE } from '../tools/constants';
-import { setAttr, delAttr, getAttr, forcePropertyAssignment, sanitizeAttrName, setStyleProps, setClass, delClass } from '../tools/dom';
+import { setAttr, delAttr, getAttr, forcePropertyAssignment, sanitizeAttrName, setStyleProps, setClass, delClass, delStyleProp } from '../tools/dom';
 import { autoFillContextProp, expToFn } from '../tools/evaluation';
 import { camelCase } from '../tools/string';
 import { isObject } from '../tools/typeCheck';
@@ -19,7 +19,9 @@ let hydrateBind = (bnode: BNode, dirName: string, dirValue: string) => {
 
     let el = bnode.el;
 
-    let attrName = sliceAttrName(dirName);
+    let rawAttrName = sliceAttrName(dirName);
+    let [targetAttrName, ...dotModifiers] = rawAttrName.split('.');
+    let attrName = targetAttrName;
 
     /**
      * Make sure the attribute value is a function that takes the attribute's initial value as an argument.
@@ -44,9 +46,18 @@ let hydrateBind = (bnode: BNode, dirName: string, dirValue: string) => {
 
     // Get the attribute's initial value
     let initialAttrValue = getAttr(el, attrName);
+    let boundStyleProps = new Set<string>();
+    let boundClassNames = new Set<string>();
 
     // Options
-    let options = bnode[OPTIONS][dirName] || {};
+    let baseDirName = dirName.split('.')[0];
+    let options: Record<string, any> = {
+        ...(bnode[OPTIONS][baseDirName] || {}),
+        ...(bnode[OPTIONS][dirName] || {})
+    };
+    for (let modifier of dotModifiers) {
+        options[modifier] = true;
+    }
 
     // Evaluate the attribute value as an effect
     evalEffect(bnode, stateProp, (ctxFn) => {
@@ -62,29 +73,43 @@ let hydrateBind = (bnode: BNode, dirName: string, dirValue: string) => {
          * - Updating the "src" property normalizes the path and ensures the new resource is loaded
          * - The properties "value", "checked", and "selected" reflect the current state of the element
          */
-        let forceBind = options.prop || forcePropertyAssignment(attrName) && attrName;
+        let forceBind = options.prop === true
+            ? attrName
+            : options.prop || forcePropertyAssignment(attrName) && attrName;
 
-        // Set attribute
-        if (value || forceBind) {
-            // Special handling for style attribute with object value
-            if (attrName == STYLE && isObject(value)) {
+        if (attrName == STYLE) {
+            if (isObject(value)) {
+                for (let prop of boundStyleProps)
+                    if (!(prop in value)) delStyleProp(el, prop);
                 setStyleProps(el, value as StyleProps);
+                boundStyleProps = new Set(Object.keys(value));
             }
-            // Special handling for class attribute with object value
-            else if (attrName == CLASS && isObject(value)) {
-                for (let className in value) {
-                    if (value[className]) setClass(el, className);
-                    else delClass(el, className);
-                }
-            }
-            // Everything else
             else {
-                setAttr(el, attrName, !forceBind && value === true ? '' : value, forceBind);
+                for (let prop of boundStyleProps) delStyleProp(el, prop);
+                boundStyleProps.clear();
+                if (value === null || value === undefined || value === false)
+                    delAttr(el, attrName);
+                else setAttr(el, attrName, value, forceBind);
+            }
+        } else if (attrName == CLASS && isObject(value)) {
+            for (let className of boundClassNames)
+                if (!(className in value)) delClass(el, className);
+            for (let className in value) {
+                if (value[className]) setClass(el, className);
+                else delClass(el, className);
+            }
+            boundClassNames = new Set(Object.keys(value));
+        } else {
+            for (let className of boundClassNames) delClass(el, className);
+            boundClassNames.clear();
+            if (value !== null && value !== undefined && value !== false || forceBind) {
+                // Set attribute
+                if (value === true && !forceBind) setAttr(el, attrName, '');
+                else setAttr(el, attrName, value, forceBind);
+            } else {
+                delAttr(el, attrName);
             }
         }
-
-        // Remove attribute
-        else delAttr(el, attrName);
     });
 
     // // Cleanup: restore the attribute's initial value
@@ -94,4 +119,4 @@ let hydrateBind = (bnode: BNode, dirName: string, dirValue: string) => {
     // })
 }
 
-export let bindDirective: Directive = [/^(b-bind|bind)-([\w-$]+)$/, hydrateBind];
+export let bindDirective: Directive = [/^(b-bind|bind)-([\w-$.]+)$/, hydrateBind];

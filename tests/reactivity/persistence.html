@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual Test: Persistence</title>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; margin: 20px; background: #f8fafc; color: #1e293b; }
+        .card { background: white; border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; }
+        h1 { font-size: 1.5rem; }
+        h3 { margin-top: 0; color: #0f172a; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; }
+        button { background: #3b82f6; color: white; border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 0.9rem; margin-right: 6px; }
+        button:hover { background: #2563eb; }
+        button.danger { background: #ef4444; }
+        button.danger:hover { background: #dc2626; }
+        input { padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 0.95rem; }
+        code { background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-family: monospace; }
+    </style>
+</head>
+<body>
+
+    <h1>State Persistence (persist) Manual Tests</h1>
+    <p>Tests syncing reactive primitives and objects to <code>localStorage</code> / <code>sessionStorage</code> with automatic serialization and reload restoration.</p>
+
+    <div class="card">
+        <h3>1. Persisted Primitive Counter (localStorage)</h3>
+        <p>Counter value in storage: <strong id="persisted-count">0</strong></p>
+        <button id="btn-inc-count">+1 Count</button>
+        <button id="btn-dec-count">-1 Count</button>
+        <p><em>(Reload this page; the counter value will remain intact!)</em></p>
+    </div>
+
+    <div class="card">
+        <h3>2. Persisted Profile Object (localStorage)</h3>
+        <p>Name: <strong id="persisted-name"></strong> | Role: <strong id="persisted-role"></strong></p>
+        <input type="text" id="input-name" placeholder="Type new name...">
+        <button id="btn-save-name">Update Name</button>
+        <button id="btn-toggle-role">Toggle Role</button>
+    </div>
+
+    <div class="card">
+        <h3>3. Clear Storage</h3>
+        <button id="btn-clear-storage" class="danger">Clear Local Storage Keys</button>
+    </div>
+
+    <script type="module">
+        import { createScope, effect } from '/dist/reactivity.js';
+        import { persist } from '/dist/persistence-entry.js';
+
+        const scope = createScope();
+
+        scope.run(() => {
+            const count = persist('brio_manual_test_count', 0, { storage: 'local' });
+            const profile = persist('brio_manual_test_profile', { name: 'Jhonathan', role: 'Architect' }, { storage: 'local' });
+
+            effect(() => {
+                document.getElementById('persisted-count').textContent = count.value;
+            });
+
+            effect(() => {
+                document.getElementById('persisted-name').textContent = profile.name;
+                document.getElementById('persisted-role').textContent = profile.role;
+            });
+
+            document.getElementById('btn-inc-count').onclick = () => count.value++;
+            document.getElementById('btn-dec-count').onclick = () => count.value--;
+
+            document.getElementById('btn-save-name').onclick = () => {
+                const val = document.getElementById('input-name').value;
+                if (val.trim()) {
+                    profile.name = val.trim();
+                    document.getElementById('input-name').value = '';
+                }
+            };
+
+            document.getElementById('btn-toggle-role').onclick = () => {
+                profile.role = profile.role === 'Architect' ? 'Core Contributor' : 'Architect';
+            };
+
+            document.getElementById('btn-clear-storage').onclick = () => {
+                localStorage.removeItem('brio_manual_test_count');
+                localStorage.removeItem('brio_manual_test_profile');
+                count.value = 0;
+                profile.name = 'Jhonathan';
+                profile.role = 'Architect';
+            };
+        });
+    </script>
+</body>
+</html>

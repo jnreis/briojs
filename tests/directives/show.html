@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual Test: show directive</title>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; margin: 20px; background: #f8fafc; color: #1e293b; }
+        .card { background: white; border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; }
+        h1 { font-size: 1.5rem; }
+        h3 { margin-top: 0; color: #0f172a; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; }
+        button { background: #3b82f6; color: white; border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 0.9rem; }
+        button:hover { background: #2563eb; }
+        .box { padding: 16px; background: #fef3c7; border: 1px solid #f59e0b; color: #92400e; border-radius: 6px; margin-top: 10px; }
+        code { background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-family: monospace; }
+    </style>
+</head>
+<body b-data="{
+    open: true,
+    tab: 1
+}">
+
+    <h1>b-show Directive Manual Tests</h1>
+    <p>Tests visibility toggling (preserving DOM nodes while toggling display / comment placeholder without re-evaluating initial DOM).</p>
+
+    <!-- Test 1: Simple Visibility Toggle -->
+    <div class="card">
+        <h3>1. Toggle Visibility</h3>
+        <button on-click="$data.open = !$data.open">Toggle Box (${$data.open ? 'Hide' : 'Show'})</button>
+        <div b-show="$data.open" class="box">
+            🔔 <strong>Notice:</strong> This box stays mounted in state and toggles visibility via <code>b-show</code>.
+        </div>
+    </div>
+
+    <!-- Test 2: Tab Switching -->
+    <div class="card">
+        <h3>2. Tabbed Panels</h3>
+        <button on-click="$data.tab = 1" style="background: ${$data.tab === 1 ? '#1d4ed8' : '#64748b'}">Tab 1</button>
+        <button on-click="$data.tab = 2" style="background: ${$data.tab === 2 ? '#1d4ed8' : '#64748b'}">Tab 2</button>
+        <button on-click="$data.tab = 3" style="background: ${$data.tab === 3 ? '#1d4ed8' : '#64748b'}">Tab 3</button>
+
+        <div b-show="$data.tab === 1" class="box" style="background: #e0f2fe; border-color: #38bdf8; color: #0369a1;">
+            📄 Content for Panel 1
+        </div>
+        <div b-show="$data.tab === 2" class="box" style="background: #fdf4ff; border-color: #f472b6; color: #86198f;">
+            📊 Content for Panel 2
+        </div>
+        <div b-show="$data.tab === 3" class="box" style="background: #f0fdf4; border-color: #4ade80; color: #166534;">
+            ⚙️ Content for Panel 3
+        </div>
+    </div>
+
+    <script type="module" b-ignore src="/src/briojs.min.ts"></script>
+    <script>
+        window.addEventListener('brio', () => {
+            const app = brio.newApp();
+            app.gc.$hydrate('body');
+            console.log('show.html hydrated successfully');
+        });
+    </script>
+</body>
+</html>

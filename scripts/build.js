@@ -1,78 +1,58 @@
-// build.js
-import { existsSync, rmSync, readFileSync, readdirSync, lstatSync } from 'fs';
 import { build } from 'vite';
 import dts from 'vite-plugin-dts';
 
-// Delete dist folder
-if (existsSync('dist')) {
-    rmSync('dist', { recursive: true, force: true });
-}
-
-const packageJsonPath = process.cwd() + '/package.json';
-const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf8'));
-
-const version = '.' + packageJson.version;
-const name = packageJson.name;
-
-let libs = [
-    {
-        entry: 'src/index.ts',
-        name: name + version,
-        formats: ['es']
-    }
-];
-
-const queueMinTs = (dirPath, name = '') => {
-    readdirSync(dirPath).forEach(moduleName => {
-
-        // Plugins end with .min.ts
-        if (moduleName.endsWith('.min.ts')) {
-            libs.push({
-                entry: dirPath + moduleName,
-                name: (name ? name + '.' : '') + moduleName.replace('.min.ts', version + '.min'),
-                formats: ['iife']
-            });
-        }
-
-        // Queue subdirectories recursively
-        else if (lstatSync(dirPath + moduleName).isDirectory()) {
-            queueMinTs(dirPath + moduleName + '/', (name ? name + '.' : '') + moduleName);
-        }
-    });
-}
-
-queueMinTs('src/');
-
-
-// Build with Vite
-const buildWithVite = async (lib) => {
-    await build({
-        publicDir: false,
-        // logLevel: 'info',
-        build: {
-            emptyOutDir: false,
-            copyPublicDir: false,
-            lib: {
-                ...lib,
-                fileName: () => lib.name + ".js",
+// 1. Build ES modules for npm distribution with TypeScript declarations
+await build({
+    publicDir: false,
+    build: {
+        emptyOutDir: true,
+        lib: {
+            entry: {
+                index: 'src/index.ts',
+                reactivity: 'src/reactivity-entry.ts',
+                'persistence-entry': 'src/persistence-entry.ts',
+                'router-entry': 'src/router-entry.ts',
+                'devtools-entry': 'src/devtools-entry.ts',
             },
-            minify: "esbuild",
-            reportCompressedSize: false,
-            sourcemap: true,
+            formats: ['es'],
+            fileName: (_format, entryName) => `${entryName}.js`,
         },
-        plugins: [
-          dts()
-        ]
-    });
-}
+        minify: false,
+        reportCompressedSize: false,
+        sourcemap: true,
+    },
+    plugins: [
+        dts({
+            entryRoot: 'src',
+            include: ['src/core', 'src/dom', 'src/plugins', 'src/reactivity', 'src/*.ts'],
+            exclude: [
+                'src/vnext/**',
+                'src/directives/**',
+                'src/methods/**',
+                'src/tools/**',
+                'src/app.ts',
+                'src/briojs.core.min.ts',
+                'src/briojs.min.ts',
+            ],
+            rollupTypes: false,
+        }),
+    ],
+});
 
-for (const lib of libs) {
-    try {
-        // Build with Vite
-        await buildWithVite(lib);
-    }
-    catch (error) {
-        console.error('Build failed:', error);
-        process.exit(1);
-    }
-}
+// 2. Build minified standalone bundle for browsers (dist/brio.min.js)
+await build({
+    publicDir: false,
+    build: {
+        emptyOutDir: false,
+        lib: {
+            entry: 'src/browser.ts',
+            name: 'brio',
+            formats: ['iife'],
+            fileName: () => 'brio.min.js',
+        },
+        minify: 'esbuild',
+        reportCompressedSize: true,
+        sourcemap: true,
+    },
+});
+

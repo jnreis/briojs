@@ -3,7 +3,7 @@ import { logError, size } from "../tools";
 import { arrayAdd, each, filter } from "../tools/array";
 import { NULL, PATHNAME, CANNOT__$CAP, FUNCTION, NEW_LINE, REMOVE, ROUTE } from "../tools/constants";
 import { href, sameOrigin } from "../tools/dom";
-import { delProp, getKeys, L } from "../tools/object";
+import { delProp, getKeys, hasProp, L } from "../tools/object";
 import { split, startsWith, trim } from "../tools/string";
 import { isArray, isFunction } from "../tools/typeCheck";
 
@@ -18,9 +18,14 @@ export let newRouter = (routes: RoutesObject, routeRules: ObjectType): [SetRoute
             let lastIndex = size(segments) - 1;
             let routesAt = routes;
 
+            if (!size(segments)) {
+                routesAt[symbol] = routeFunction;
+                return;
+            }
+
             each(segments, (segment: string, segmentIndex) => {
                 // Create the segment if it does not exist
-                if (!(segment in routesAt)) routesAt[segment] = {};
+                if (!hasProp(routesAt, segment)) routesAt[segment] = {};
 
                 // Navigate to the segment
                 routesAt = routesAt[segment];
@@ -51,7 +56,7 @@ export let newRouter = (routes: RoutesObject, routeRules: ObjectType): [SetRoute
         let routesAt = routes;
         let params: ObjectType = {};
 
-        let found = 0;
+        let found = segments.length === 0 && routesAt[symbol] ? 1 : 0;
 
         // let route = '';
 
@@ -83,7 +88,7 @@ export let newRouter = (routes: RoutesObject, routeRules: ObjectType): [SetRoute
                         let param = params[paramName];
 
                         // Add the parameter to the params object
-                        if (param) {
+                        if (param !== undefined) {
                             // If the parameter is an array, add the segment to the array
                             if (isArray(param)) arrayAdd(param, segment);
                             // Otherwise, convert the parameter to an array

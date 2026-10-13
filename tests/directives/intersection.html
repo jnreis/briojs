@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual Test: intersection directive</title>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; margin: 20px; background: #f8fafc; color: #1e293b; }
+        .card { background: white; border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; }
+        h1 { font-size: 1.5rem; }
+        h3 { margin-top: 0; color: #0f172a; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; }
+        .scroll-container { height: 250px; overflow-y: auto; border: 2px solid #cbd5e1; border-radius: 8px; padding: 16px; background: white; position: relative; }
+        .spacer { height: 400px; background: linear-gradient(180deg, #f1f5f9 0%, #cbd5e1 100%); border-radius: 6px; padding: 10px; color: #64748b; text-align: center; }
+        .target { padding: 20px; background: #10b981; color: white; border-radius: 6px; font-weight: bold; text-align: center; margin: 20px 0; }
+        .status-badge { position: sticky; top: 10px; background: #0f172a; color: #38bdf8; padding: 8px 12px; border-radius: 6px; display: inline-block; font-family: monospace; z-index: 10; }
+    </style>
+</head>
+<body b-data="{
+    intersectStatus: 'Not visible in viewport'
+}">
+
+    <h1>b-intersection (on-enter / on-exit) Directive Manual Tests</h1>
+    <p>Tests reactive IntersectionObserver triggers when elements enter or exit view.</p>
+
+    <div class="card">
+        <h3>1. Scroll container testing on-enter and on-exit</h3>
+        <p>Scroll down inside the box to reveal the green target element:</p>
+
+        <div class="scroll-container">
+            <div class="status-badge">Status: ${$data.intersectStatus}</div>
+            <div class="spacer">Scroll down...</div>
+
+            <div class="target"
+                 on-enter="$data.intersectStatus = 'Target entered viewport at ' + new Date().toLocaleTimeString()"
+                 on-exit="$data.intersectStatus = 'Target exited viewport at ' + new Date().toLocaleTimeString()">
+                🎯 I am in the viewport!
+            </div>
+
+            <div class="spacer">End of scroll container.</div>
+        </div>
+    </div>
+
+    <script type="module" b-ignore src="/src/briojs.min.ts"></script>
+    <script>
+        window.addEventListener('brio', () => {
+            const app = brio.newApp();
+            app.gc.$hydrate('body');
+            console.log('intersection.html hydrated successfully');
+        });
+    </script>
+</body>
+</html>

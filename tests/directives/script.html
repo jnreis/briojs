@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual Test: script directive</title>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; margin: 20px; background: #f8fafc; color: #1e293b; }
+        .card { background: white; border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; }
+        h1 { font-size: 1.5rem; }
+        h3 { margin-top: 0; color: #0f172a; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; }
+        code { background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-family: monospace; }
+        button { background: #3b82f6; color: white; border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 0.9rem; margin-right: 6px; }
+    </style>
+</head>
+<body b-data>
+
+    <h1>b-script Directive Manual Tests</h1>
+    <p>Tests executing inline contextual initialization scripts right after element context setup.</p>
+
+    <!-- Test 1: b-script initialization -->
+    <div class="card">
+        <script b-script>
+            (ctx) => {
+                $data.initializedAt = new Date().toLocaleTimeString();
+                $data.user = 'Margaret Hamilton';
+                $data.counter = 10;
+                $data.doubleCount = () => $data.counter * 2;
+            }
+        </script>
+
+        <h3>1. Inline Context Script Execution</h3>
+        <p>Initialized at: <code>${$data.initializedAt}</code></p>
+        <p>User in context: <strong>${$data.user}</strong></p>
+        <p>Counter: <strong>${$data.counter}</strong> (Doubled via method: <strong>${$data.doubleCount()}</strong>)</p>
+        <button on-click="$data.counter++">Increment</button>
+    </div>
+
+    <script type="module" b-ignore src="/src/briojs.min.ts"></script>
+    <script>
+        window.addEventListener('brio', () => {
+            const app = brio.newApp();
+            app.gc.$hydrate('body');
+            console.log('script.html hydrated successfully');
+        });
+    </script>
+</body>
+</html>

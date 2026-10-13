@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual Test: DOM Insertion Methods</title>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; margin: 20px; background: #f8fafc; color: #1e293b; }
+        .card { background: white; border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; }
+        h1 { font-size: 1.5rem; }
+        h3 { margin-top: 0; color: #0f172a; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; }
+        button { background: #3b82f6; color: white; border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 0.9rem; margin-right: 6px; margin-bottom: 6px; }
+        button:hover { background: #2563eb; }
+        .container-box { border: 2px dashed #94a3b8; padding: 16px; border-radius: 6px; background: #f1f5f9; min-height: 50px; }
+        .item { padding: 8px 12px; margin: 4px 0; background: #38bdf8; color: #0369a1; border-radius: 4px; font-weight: bold; }
+    </style>
+</head>
+<body b-data>
+
+    <h1>DOM Manipulation Methods ($insert) Manual Tests</h1>
+    <p>Tests <code>app.gc.$insert</code> with different placements: <code>prepend</code>, <code>append</code>, <code>before</code>, <code>after</code>, and <code>replaceChildren</code>, ensuring inserted markup is hydrated.</p>
+
+    <div class="card">
+        <h3>1. Placements on Container</h3>
+        <button id="btn-prepend">Prepend Item</button>
+        <button id="btn-append">Append Item</button>
+        <button id="btn-replace">Replace Children</button>
+
+        <div id="target-container" class="container-box">
+            <div class="item">Existing Static Child</div>
+        </div>
+    </div>
+
+    <script type="module" b-ignore src="/src/briojs.min.ts"></script>
+    <script>
+        window.addEventListener('brio', () => {
+            const app = brio.newApp();
+            app.gc.$hydrate('body');
+
+            let counter = 1;
+            const $insert = app.gc.$insert;
+
+            document.getElementById('btn-prepend').addEventListener('click', () => {
+                $insert('#target-container', 'prepend', `<div class="item" b-data="{ count: ${counter++} }">Prepended reactive count: \${$data.count}</div>`);
+            });
+
+            document.getElementById('btn-append').addEventListener('click', () => {
+                $insert('#target-container', 'append', `<div class="item" b-data="{ count: ${counter++} }">Appended reactive count: \${$data.count}</div>`);
+            });
+
+            document.getElementById('btn-replace').addEventListener('click', () => {
+                $insert('#target-container', 'replaceChildren', `<div class="item" style="background: #4ade80; color: #166534;">Replaced all content at ${new Date().toLocaleTimeString()}</div>`);
+            });
+
+            console.log('dom.html hydrated successfully');
+        });
+    </script>
+</body>
+</html>

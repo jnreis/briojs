@@ -3,7 +3,7 @@ type ListenerFunctionContext = {
     operation: 'create'|'update'|'delete',
     state: any,
     target: any,
-    prop: string,
+    prop: Prop,
     newValue: any,
     oldValue: any
 }
@@ -36,6 +36,7 @@ type StateObject = {
 
     /** Skip specific keys/indexes from being automatically observed */
     skip: Set<Prop>,
+    cleanup?: Set<FunctionType>,
 }
 
 type SetFunction = (proxied: any, prop: string | number | symbol, stateObject: StateObject) => any;
@@ -47,11 +48,9 @@ type StateOptions = {
 
 type State = {
     (target: any, parent?: any): any,
-    skip: (value: any) => any,
-    persist: (value: any, alias?: string) => any,
-    session: (value: any, alias?: string) => any,
+    skip: (value: any) => FunctionType,
 };
-type Watch = (proxied: any, prop: string | number | null, callback: ListenerFunction, priority?: number) => () => void;
+type Watch = (proxied: any, prop: Prop | null, callback: ListenerFunction, priority?: number) => () => void;
 type Effect = (listener: ListenerFunction, dependencies?: ListenerFunction, priority?: number) => () => any;
 type Computed = (value: FunctionType) => FunctionType;
 type InitStorage = (value: any, alias?: string | undefined) => any;

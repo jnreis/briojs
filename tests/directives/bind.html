@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual Test: bind directive</title>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; margin: 20px; background: #f8fafc; color: #1e293b; }
+        .card { background: white; border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; }
+        h1 { font-size: 1.5rem; margin-bottom: 4px; }
+        h3 { margin-top: 0; color: #0f172a; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; }
+        button { background: #3b82f6; color: white; border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 0.9rem; margin-right: 6px; }
+        button:hover { background: #2563eb; }
+        .active { outline: 3px solid #10b981; }
+        .highlight { background-color: #fef08a !important; color: #854d0e !important; }
+        .badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-weight: bold; }
+        .danger { background: #fee2e2; color: #991b1b; }
+        .success { background: #dcfce7; color: #166534; }
+        code { background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 0.85em; }
+    </style>
+</head>
+<body b-data="{
+    titleText: 'Initial Title Tooltip',
+    isDisabled: false,
+    themeClass: { highlight: false, active: true },
+    boxStyle: { backgroundColor: '#38bdf8', color: '#0369a1', padding: '12px', borderRadius: '6px' },
+    customValue: 'Input value bound reactively',
+    imgSrc: 'https://via.placeholder.com/150',
+    ariaLabel: 'Aria accessible label'
+}">
+
+    <h1>b-bind / bind-* Directive Manual Tests</h1>
+    <p>Tests reactive property & attribute binding, dot modifiers (<code>.prop</code>), class & style bindings, and boolean attributes.</p>
+
+    <!-- Test 1: Attribute & Property binding -->
+    <div class="card">
+        <h3>1. Attribute & Boolean Bindings</h3>
+        <p>Testing <code>bind-title</code>, <code>bind-disabled</code>, and <code>bind-aria-label</code>.</p>
+        <button on-click="$data.isDisabled = !$data.isDisabled">Toggle Disabled State</button>
+        <button on-click="$data.titleText = 'Updated at ' + new Date().toLocaleTimeString()">Update Title</button>
+        <br><br>
+        <input bind-title="$data.titleText" bind-disabled="$data.isDisabled" bind-aria-label="$data.ariaLabel" bind-value="$data.customValue" style="padding: 6px; width: 300px;">
+        <p>Disabled status: <code>${$data.isDisabled}</code> | Title: <code>${$data.titleText}</code></p>
+    </div>
+
+    <!-- Test 2: Class Object Binding -->
+    <div class="card">
+        <h3>2. Reactive Class Object</h3>
+        <p>Testing <code>bind-class="$data.themeClass"</code> with reactive object keys.</p>
+        <button on-click="$data.themeClass.highlight = !$data.themeClass.highlight">Toggle Highlight</button>
+        <button on-click="$data.themeClass.active = !$data.themeClass.active">Toggle Active Border</button>
+        <br><br>
+        <div bind-class="$data.themeClass" style="padding: 12px; border: 1px solid #cbd5e1; border-radius: 6px; display: inline-block;">
+            This box reacts to <code>themeClass.highlight</code> and <code>themeClass.active</code>.
+        </div>
+    </div>
+
+    <!-- Test 3: Style Object Binding -->
+    <div class="card">
+        <h3>3. Reactive Style Object</h3>
+        <p>Testing <code>bind-style="$data.boxStyle"</code> with camelCase and kebab-case style properties.</p>
+        <button on-click="$data.boxStyle.backgroundColor = $data.boxStyle.backgroundColor === '#38bdf8' ? '#f472b6' : '#38bdf8'">Toggle Color</button>
+        <button on-click="$data.boxStyle.padding = $data.boxStyle.padding === '12px' ? '24px' : '12px'">Toggle Padding</button>
+        <br><br>
+        <div bind-style="$data.boxStyle">
+            Dynamic styles applied reactively!
+        </div>
+    </div>
+
+    <!-- Test 4: Dot notation .prop modifier -->
+    <div class="card">
+        <h3>4. Dot-notation Modifier: <code>bind-title.prop</code></h3>
+        <p>Forces direct DOM property assignment instead of just element attribute.</p>
+        <div id="prop-target" bind-title.prop="$data.titleText">
+            Hover or inspect DOM property <code>.title</code> on this element.
+        </div>
+    </div>
+
+    <script type="module" b-ignore src="/src/briojs.min.ts"></script>
+    <script>
+        window.addEventListener('brio', () => {
+            const app = brio.newApp();
+            app.gc.$hydrate('body');
+            console.log('bind.html hydrated successfully');
+        });
+    </script>
+</body>
+</html>

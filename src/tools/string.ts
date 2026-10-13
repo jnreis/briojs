@@ -38,9 +38,12 @@ export let test = (str: string, regex: RegExp) => regex.test(str);
 export let replace = (str: string, search: string | RegExp, replacement: any) => str[REPLACE](search, replacement);
 
 export let replaceAll = (str: string, regex: RegExp, replacement: any) => {
-
-    while (test(str, regex))
+    while (true) {
+        regex.lastIndex = 0;
+        if (!test(str, regex)) break;
+        regex.lastIndex = 0;
         str = replace(str, regex, replacement);
+    }
 
     return str;
 }

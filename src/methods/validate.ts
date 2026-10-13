@@ -3,7 +3,7 @@ import { arrayAdd, join } from "../tools/array";
 import { EMAIL, MESSAGE, MUST_BE, OF_TYPE, REQUIRED, VALID, VALUE } from "../tools/constants";
 import { countKeys, newRegExp } from "../tools/object";
 import { capitalize, replaceAll, space, test } from "../tools/string";
-import { getType, isArray, isNumber, isString } from "../tools/typeCheck";
+import { getType, isArray, isNumber, isObject, isString } from "../tools/typeCheck";
 
 let MATCHES: 'matches' = 'matches';
 let CHARACTERS_LONG: ' characters long.' = ' characters long.';
@@ -23,7 +23,13 @@ export let validate = (data: ObjectType, schema: SchemaObject, customRules?: Rul
     }
 
     let rules: RulesObject = {
-        [REQUIRED]: (value: any) => !!value || value === 0,
+        [REQUIRED]: (value: any) => {
+            if (value === null || value === undefined || value === false || value === '') return false;
+            if (isString(value)) return !!value.trim();
+            if (isArray(value)) return size(value) > 0;
+            if (isObject(value)) return countKeys(value) > 0;
+            return true;
+        },
 
         min: (value: any, ruleValue: any) => minMax(value, ruleValue, true),
 
@@ -35,7 +41,11 @@ export let validate = (data: ObjectType, schema: SchemaObject, customRules?: Rul
     
         in: (value: any, ruleValue: any) => isArray(ruleValue) && has(ruleValue, value),
     
-        [MATCHES]: (value: any, ruleValue: any) => isString(value) && test(value, ruleValue),
+        [MATCHES]: (value: any, ruleValue: any) => {
+            if (!isString(value) || !(ruleValue instanceof RegExp)) return false;
+            ruleValue.lastIndex = 0;
+            return test(value, ruleValue);
+        },
 
         type: (value: any, ruleValue: any) => rules.in(getType(value), isArray(ruleValue) ? ruleValue : [ruleValue]),
 
@@ -96,7 +106,11 @@ export let validate = (data: ObjectType, schema: SchemaObject, customRules?: Rul
                     }
                 }
             }
-            else logWarn('Unknown rule: ' + ruleName);
+            else {
+                logWarn('Unknown rule: ' + ruleName);
+                if (!errors[propName]) errors[propName] = [];
+                arrayAdd(errors[propName], `Unknown validation rule: ${ruleName}.`);
+            }
         }
     }
 

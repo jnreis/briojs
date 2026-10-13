@@ -1,10 +1,9 @@
-// Example of a custom directive
+import { evalEffect } from "../../app";
 
-let hydrateUpperCase = (bnode: BNode, attrName: string, attrValue: string) => {
-    // // Evaluate the attribute value as an effect
-    // bnode.evalEffect(bnode, attrValue, (value) => {
-    //     node.textContent = value().toUpperCase();
-    // });
+let hydrateUpperCase = (bnode: BNode, _attrName: string, attrValue: string) => {
+    evalEffect(bnode, attrValue, ctxFn => {
+        bnode.el.textContent = String(ctxFn() ?? '').toUpperCase();
+    });
 }
 
-export let uidDirective: Directive = ['b-uppercase', hydrateUpperCase];
+export let uppercaseDirective: Directive = ['b-uppercase', hydrateUpperCase];

@@ -7,7 +7,7 @@ import { destructuringObject, newFn } from "../tools/evaluation";
 import { isStringFunction } from "../tools/string";
 import { isFunction, isString } from "../tools/typeCheck";
 
-let hydrateScript = async (bnode: BNode, attrName: string, attrValue: string) => {
+let hydrateScript = async (bnode: BNode, _attrName: string, attrValue: string) => {
 
     let el = bnode.el as HTMLScriptElement;
 

@@ -5,14 +5,14 @@ import { assign, createExpressionScope, evaluate, evaluateFunction, execute, sta
 test('contexts merge named references with nearest precedence without copying reactive state', () => {
     const parentData = state({ count: 1 });
     const parent = createExpressionScope({ $data: parentData });
-    const local = state({ count: 2 });
-    const scope = createExpressionScope({ $data: local, $parent: parent }, parent);
+    const local = state({ count: 2, $parent: parentData });
+    const scope = createExpressionScope({ $data: local }, parent);
     assert.equal(Object.getPrototypeOf(scope), null);
-    assert.deepEqual(Object.keys(scope).sort(), ['$data', '$parent']);
+    assert.deepEqual(Object.keys(scope), ['$data']);
     assert.equal(scope.$data, local);
-    assert.equal(scope.$parent.$data, parentData);
+    assert.equal(scope.$data.$parent, parentData);
     const values = [];
-    const stop = effect(() => values.push(evaluate('$data.count + $parent.$data.count', scope)));
+    const stop = effect(() => values.push(evaluate('$data.count + $data.$parent.count', scope)));
     parentData.count++;
     local.count++;
     stop();
@@ -26,6 +26,7 @@ test('strict expressions use explicit context, normal globals, and meaningful mi
     assert.equal(evaluate('(() => { const value = $data.count; return value * 2; })()', scope), 6);
     assert.equal(evaluate('(function () { return this; })()', scope), undefined);
     assert.throws(() => evaluate('count', scope), error => error.cause instanceof ReferenceError);
+    assert.throws(() => evaluate('$parent', scope), error => error.cause instanceof ReferenceError);
     assert.throws(() => execute('brioUndeclaredVariable = 1', scope), error => error.cause instanceof ReferenceError);
     assert.equal(globalThis.brioUndeclaredVariable, undefined);
     assert.throws(() => evaluate('(function () { with ({}) {} })()', scope), SyntaxError);
@@ -51,16 +52,15 @@ test('event statements retain local variables and explicit event references in c
 
 test('assign uses its value argument without shadowing and supports all explicit data containers', () => {
     const scope = createExpressionScope({
-        $data: { value: 1 },
-        $parent: { $data: { value: 2 } },
+        $data: { value: 1, $parent: { value: 2 } },
         $for: { item: { value: 3 } },
     });
     const value = { nested: true };
     assign('$data.value', scope, value);
-    assign('$parent.$data.value', scope, 4);
+    assign('$data.$parent.value', scope, 4);
     assign('$for.item.value', scope, 5);
     assert.equal(scope.$data.value, value);
-    assert.equal(scope.$parent.$data.value, 4);
+    assert.equal(scope.$data.$parent.value, 4);
     assert.equal(scope.$for.item.value, 5);
 });
 
@@ -86,8 +86,8 @@ test('observer and directive helpers are explicitly available without global fal
 });
 
 test('script factories use the same strict bindings and preserve ctx in async closures', async () => {
-    const scope = createExpressionScope({ $data: { count: 0 }, $parent: { $data: { count: 2 } } });
-    const fn = evaluateFunction('async (ctx) => { const delta = $parent.$data.count; await Promise.resolve(); ctx.$data.count += delta; return (function () { return this; })(); }', scope);
+    const scope = createExpressionScope({ $data: { count: 0, $parent: { count: 2 } } });
+    const fn = evaluateFunction('async (ctx) => { const delta = $data.$parent.count; await Promise.resolve(); ctx.$data.count += delta; return (function () { return this; })(); }', scope);
     assert.equal(await fn(scope), undefined);
     assert.equal(scope.$data.count, 2);
     assert.throws(() => evaluateFunction('() => { with ({}) {} }', scope), SyntaxError);

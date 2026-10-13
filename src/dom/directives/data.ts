@@ -1,5 +1,5 @@
 import { evaluate, createExpressionScope } from '../../core/expression';
-import { state } from '../../reactivity/state';
+import { createScopedState } from '../../core/scoped-state';
 
 export function handleData(
     element: Element,
@@ -12,10 +12,9 @@ export function handleData(
     const data = evaluate(expression, context);
     if (data === null || typeof data !== 'object')
         throw new TypeError('b-data must evaluate to an object.');
-    const reactiveData = state(data);
+    const reactiveData = createScopedState(data, parentContext.$data);
     const scopeObj = {
         $data: reactiveData,
-        $parent: parentContext,
         $el: element,
     };
     return createExpressionScope(

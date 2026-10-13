@@ -66,11 +66,11 @@
 
                 <!-- Nested loop -->
                 <ul>
-                    <li b-data="{}" b-for="subNum in $for.num">
-                        Sub-tile ${$for.subNum}
+                    <li b-for="subNum in $for.num">
+                        Sub-tile ${$for.subNum} of tile ${$for.$parent.num}
                         <script b-script>
                             (ctx) => {
-                                console.log('Nested b-for context', ctx, $parent);
+                                console.log('Nested b-for context', ctx, $for.$parent);
                             }
                         </script>
                     </li>

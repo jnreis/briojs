@@ -66,9 +66,9 @@ function transitionEvent(window, element, type, propertyName) {
 test('b-if recreates local b-data, disposes listeners/effects, and preserves parent state', t => {
     const { app, root } = environment(t, `
         <section b-if="$data.visible" b-data="{ count: 0 }">
-            <button on-click="$data.count++; $parent.$data.total++">Increment</button>
+            <button on-click="$data.count++; $data.$parent.total++">Increment</button>
             <span b-text="$data.count"></span>
-            <em b-text="$parent.$data.total"></em>
+            <em b-text="$data.$parent.total"></em>
         </section>`, { visible: true, total: 0 });
     app.mount(root);
     const old = root.querySelector('section');
@@ -113,13 +113,104 @@ test('orphan and nonadjacent else directives fail explicitly', t => {
     }
 });
 
+test('data ancestry is reactive, scope-specific, read-only and absent from serialized state', t => {
+    const { app, root, window } = environment(t, `
+        <div b-data="{ label: 'one' }"><section>
+            <div b-data="$data.$parent.shared">
+                <script b-script>(ctx) => { $data.$parent.$parent.capture(ctx.$data); }</script>
+                <button on-click="$data.increment(); $data.$parent.label = 'changed'"></button>
+                <span b-text="$data.value + ':' + $data.$parent.label + ':' + $data.$parent.$parent.count"></span>
+            </div>
+        </section></div>
+        <div b-data="{ label: 'two' }"><div b-data="$data.$parent.shared">
+            <script b-script>(ctx) => { $data.$parent.$parent.capture(ctx.$data); }</script>
+            <span b-text="$data.value + ':' + $data.$parent.label"></span>
+        </div></div>`, { shared: { value: 0 }, count: 1 });
+    const views = [];
+    app.state.capture = view => views.push(view);
+    app.state.shared.increment = function () { this.value++; };
+    app.mount(root);
+    root.querySelector('button').click();
+    app.state.count = 2;
+    assert.deepEqual([...root.querySelectorAll('span')].map(el => el.textContent), ['1:changed:2', '1:two']);
+    assert.notEqual(views[0], views[1]);
+    assert.notEqual(views[0].$parent, views[1].$parent);
+    assert.equal(app.state.shared.$parent, undefined);
+    assert.equal(views[0].$parent.label, 'changed');
+    assert.equal(views[1].$parent.label, 'two');
+    const contexts = [];
+    const other = environment(t, '<div b-data="{ value: 1 }"><script b-script>(ctx) => { $data.$parent.capture(ctx); }</script></div>');
+    other.app.state.capture = ctx => contexts.push(ctx);
+    other.app.mount(other.root);
+    const ctx = contexts[0];
+    assert.equal(ctx.$parent, undefined);
+    assert.equal(ctx.$data.$parent.$parent, undefined);
+    assert.deepEqual(Object.keys(ctx.$data), ['value']);
+    assert.deepEqual({ ...ctx.$data }, { value: 1 });
+    assert.equal(JSON.stringify(ctx.$data), '{"value":1}');
+    assert.throws(() => { ctx.$data.$parent = {}; }, /read-only/);
+    assert.throws(() => { delete ctx.$data.$parent; }, /read-only/);
+    assert.throws(() => window.Object.defineProperty(ctx.$data, '$parent', { value: {} }), /read-only/);
+});
+
+test('nested loop ancestry survives wrappers, data scopes, reused names and keyed row updates', t => {
+    const { app, root, window } = environment(t, `
+        <section b-for="item in $data.items" b-key="$for.item.id">
+            <div b-data="{ local: true }"><article>
+                <i b-for="item in $for.item.children">
+                    <span b-text="$for.item + ':' + $for.$parent.item.name"></span>
+                    <b b-for="n in 1" b-text="$for.n + ':' + $for.$parent.item + ':' + $for.$parent.$parent.item.name"></b>
+                    <button on-click="$for.$parent.item.name += '!'"></button>
+                </i>
+            </article></div>
+        </section>`, { items: [{ id: 1, name: 'first', children: ['child'] }, { id: 2, name: 'second', children: ['other'] }] });
+    app.mount(root);
+    const first = root.querySelector('section');
+    first.querySelector('button').click();
+    assert.equal(first.querySelector('b').textContent, '1:child:first!');
+    app.state.items.reverse();
+    assert.equal(root.querySelectorAll('section')[1], first);
+    app.state.items[1] = window.JSON.parse('{"id":1,"name":"updated","children":["replacement"]}');
+    assert.equal(first.querySelector('span').textContent, 'replacement:updated');
+    assert.equal(first.querySelector('b').textContent, '1:replacement:updated');
+});
+
+test('reserved ancestry fields and loop names fail explicitly', t => {
+    for (const markup of [
+        '<div b-data="{ $parent: {} }"></div>',
+        '<div b-for="$parent in 1"></div>',
+        '<div b-for="item, $parent in 1"></div>',
+    ]) {
+        const { app, root } = environment(t, markup);
+        assert.throws(() => app.mount(root), /reserved/);
+    }
+});
+
+test('loop ancestry metadata is read-only and standalone $parent is no longer supplied', t => {
+    const { app, root, window } = environment(t, `
+        <section b-for="n in 1"><div b-for="child in 1">
+            <script b-script>(ctx) => { $data.capture(ctx); }</script>
+        </div></section>`);
+    const contexts = [];
+    app.state.capture = ctx => contexts.push(ctx);
+    app.mount(root);
+    const ctx = contexts[0];
+    assert.equal(ctx.$parent, undefined);
+    assert.equal(ctx.$for.$parent.n, 1);
+    assert.equal(ctx.$for.$parent.$parent, undefined);
+    assert.equal(ctx.$data.$parent, undefined);
+    assert.equal(window.JSON.stringify(ctx.$for), '{"child":1,"$index":0}');
+    assert.throws(() => { ctx.$for.$parent = {}; }, /read-only/);
+    assert.throws(() => { delete ctx.$for.$parent; }, /read-only/);
+});
+
 test('explicit loop values update keyed rows and nested loop contexts without losing reactivity', t => {
     const { app, root, window } = environment(t, `
         <section b-for="item, index in $data.items" b-key="$for.item.id">
             <span b-text="$for.index + ':' + $for.item.name"></span>
             <button on-click="const suffix = '!'; $for.item.name += suffix;"></button>
             <div b-data="{ local: 0 }">
-                <em b-text="$for.item.name + ':' + $parent.$data.label"></em>
+                <em b-text="$for.item.name + ':' + $data.$parent.label"></em>
             </div>
             <i b-for="child in $for.item.children" b-text="$for.child"></i>
         </section>`, {
@@ -153,7 +244,7 @@ test('component setup exposes $data, $props and $emit while slots and events kee
             <span class="count" b-text="$data.count"></span>
             <em b-text="$props.label"></em>
         </button><button class="notify" on-click="$data.notify()"></button>
-        <slot></slot><p b-text="$parent.$data.label"></p>`,
+        <slot></slot><p b-text="$data.$parent.label"></p>`,
         setup({ $props, $emit }) {
             assert.equal($props.label, 'parent');
             const local = window.JSON.parse('{"count":0}');
@@ -176,9 +267,9 @@ test('component setup exposes $data, $props and $emit while slots and events kee
 test('b-show preserves the same state and reactive node in detach and display modes', t => {
     for (const modifier of ['', '.display']) {
         const { app, root } = environment(t, `
-            <section b-show${modifier}="$parent.$data.visible" b-data="{ count: 0 }">
+            <section b-show${modifier}="$data.$parent.visible" b-data="{ count: 0 }">
                 <button on-click="$data.count++"></button><span b-text="$data.count"></span>
-                <em b-text="$parent.$data.total"></em>
+                <em b-text="$data.$parent.total"></em>
             </section>`, { visible: true, total: 0 });
         app.mount(root);
         const section = root.querySelector('section');
@@ -299,9 +390,9 @@ test('b-script receives ctx, lexical helpers, destructuring, async closures, and
     const { app, root } = environment(t, `
         <div b-data="{ count: 0, status: '' }">
             <script b-script>
-                async ({ $data, $parent, $el }) => {
+                async ({ $data, $el }) => {
                     $data.count = 1;
-                    $parent.$data.parentCount++;
+                    $data.$parent.parentCount++;
                     $data.tag = $el.tagName;
                     await new Promise(resolve => setTimeout(resolve, 5));
                     $data.status = 'done';

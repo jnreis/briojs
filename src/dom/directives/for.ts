@@ -1,7 +1,7 @@
 import { createExpressionScope, evaluate } from '../../core/expression';
 import { effect } from '../../reactivity/effect';
 import { createScope, onCleanup } from '../../core/scope';
-import { state } from '../../reactivity/state';
+import { createScopedState } from '../../core/scoped-state';
 import type { Scope } from '../../core/scope';
 import type { DomRuntime } from '../types';
 
@@ -36,6 +36,8 @@ export function handleFor(
     const parsed = /^\s*([A-Za-z_$][\w$]*)(?:\s*,\s*([A-Za-z_$][\w$]*))?\s+in\s+([\s\S]+)$/.exec(expression);
     if (!parsed) throw new SyntaxError(`Invalid b-for expression "${expression}". Use "item in $data.items".`);
     const [, itemName, indexName = '$index', collectionExpression] = parsed;
+    if (itemName === '$parent' || indexName === '$parent')
+        throw new SyntaxError('$parent is reserved for Brio loop ancestry.');
     const keyExpression = element.getAttribute('b-key');
     const placeholder = document.createComment('brio:for');
     const template = element.cloneNode(true) as Element;
@@ -67,7 +69,7 @@ export function handleFor(
         let cursor: Node = placeholder;
         for (const [index, item] of entries) {
             const loopData = { [itemName]: item, [indexName]: index };
-            const rowState = state<Record<string, unknown>>(loopData);
+            const rowState = createScopedState(loopData, context.$for);
             const rowContext = createExpressionScope({ $for: rowState }, context);
             const evaluatedKey = keyExpression ? evaluate(keyExpression, rowContext) : index;
             if (typeof evaluatedKey !== 'string' && typeof evaluatedKey !== 'number')

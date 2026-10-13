@@ -71,7 +71,7 @@
     <div class="card">
         <h3>4. Compare b-show: State Is Preserved</h3>
         <button on-click="$data.showDashboard = !$data.showDashboard">Toggle preserved dashboard</button>
-        <div b-show="$parent.$data.showDashboard" b-data="{ childCount: 0 }" class="box success">
+        <div b-show="$data.$parent.showDashboard" b-data="{ childCount: 0 }" class="box success">
             <p>Preserved counter: <strong>${$data.childCount}</strong></p>
             <button on-click="$data.childCount++">Increment Preserved Counter</button>
         </div>

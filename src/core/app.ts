@@ -4,6 +4,7 @@ import { trustedHTML } from '../dom/types';
 import type { ComponentDefinition, DomRuntime } from '../dom/types';
 import { createScope, onCleanup } from './scope';
 import { state } from '../reactivity/state';
+import { createScopedState } from './scoped-state';
 import { combinedError } from './errors';
 import type {
     AppOptions,
@@ -117,7 +118,7 @@ export function createApp<T extends Record<string, unknown> = Record<string, unk
             notifyRootMounted(app, root);
 
             const context = createExpressionScope(
-                { $data: appState, trustedHTML },
+                { $data: createScopedState(appState), trustedHTML },
             );
             try {
                 scope.run(() => {

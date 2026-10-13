@@ -23,26 +23,26 @@
 
     <!-- Test 1: Root data scope -->
     <div class="card">
-        <h3>1. Root Scope</h3>
+        <h3 b-effect="console.log('Root context', ctx)">1. Root Scope</h3>
         <p>App Name: <strong>${$data.appName}</strong> | Root Count: <strong>${$data.rootCount}</strong></p>
         <button on-click="$data.rootCount++">Increment Root Count</button>
 
         <!-- Test 2: Nested child data scope -->
         <div class="nested" b-data="{ childCount: 100, childTitle: 'Nested Widget' }">
-            <h4>2. Nested Child Scope</h4>
-            <p>Accessing parent rootCount: <strong>${$parent.$data.rootCount}</strong></p>
+            <h4 b-effect="console.log('Child context', ctx)">2. Nested Child Scope</h4>
+            <p>Accessing parent rootCount: <strong>${$data.$parent.rootCount}</strong></p>
             <p>Child Title: <strong>${$data.childTitle}</strong> | Child Count: <strong>${$data.childCount}</strong></p>
             <button on-click="$data.childCount++">Increment Child Count</button>
-            <button on-click="$parent.$data.rootCount++">Increment Parent Count From Child</button>
+            <button on-click="$data.$parent.rootCount++">Increment Parent Count From Child</button>
 
             <!-- Test 3: Further nested child data scope -->
             <div class="nested" b-data="{ grandChildCount: 50, grandChildTitle: 'Further Nested Widget' }">
-                <h5 b-effect="console.log(ctx)">3. Further Nested Child Scope</h5>
-                <p>Accessing parent childCount: <strong>${$parent.$data.childCount}</strong></p>
+                <h5 b-effect="console.log('Grandchild context', ctx)">3. Further Nested Child Scope</h5>
+                <p>Accessing parent childCount: <strong>${$data.$parent.childCount}</strong></p>
                 <p>Grandchild Title: <strong>${$data.grandChildTitle}</strong> | Grandchild Count: <strong>${$data.grandChildCount}</strong></p>
                 <button on-click="$data.grandChildCount++">Increment Grandchild Count</button>
-                <button on-click="$parent.$data.childCount++">Increment Parent Child Count From Grandchild</button>
-                <button on-click="$parent.$parent.$data.rootCount++">Increment Root Count From Grandchild</button>
+                <button on-click="$data.$parent.childCount++">Increment Parent Child Count From Grandchild</button>
+                <button on-click="$data.$parent.$parent.rootCount++">Increment Root Count From Grandchild</button>
             </div>
         </div>
     </div>

@@ -1,5 +1,6 @@
 import { evaluate, execute, createExpressionScope } from '../core/expression';
 import { state } from '../reactivity/state';
+import { createScopedState } from '../core/scoped-state';
 import { effect, batch } from '../reactivity/effect';
 import { createScope, onCleanup } from '../core/scope';
 import { generateScopeId, injectScopedStyles } from './scoped-style';
@@ -96,9 +97,9 @@ export function mountComponent(
         for (const binding of propBindings)
             $props[binding.name] = evaluate(binding.expression, context);
         const setupResult = definition.setup?.({ el: element, $props, $emit, app: runtime.app }) ?? {};
-        const local = state(setupResult);
+        const local = createScopedState(setupResult, context.$data);
         const componentContext = createExpressionScope(
-            { $data: local, $parent: context, $el: element, $props, $emit },
+            { $data: local, $el: element, $props, $emit },
             context,
         );
 

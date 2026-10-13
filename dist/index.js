@@ -12,7 +12,7 @@ const assignmentExpressions = /* @__PURE__ */ new Map();
 const functionExpressions = /* @__PURE__ */ new Map();
 const contextBindings = `
 "use strict";
-const { $data, $parent, $el, $event, $id, $for, $mutations, $size, $entry, $props, $emit, trustedHTML, onCleanup, money } = ctx;
+const { $data, $el, $event, $id, $for, $mutations, $size, $entry, $props, $emit, trustedHTML, onCleanup, money } = ctx;
 `;
 function evaluateFunction(source, context) {
   const fn = compile(
@@ -25,8 +25,8 @@ function evaluateFunction(source, context) {
     throw new TypeError("b-script must contain a function expression, such as (ctx) => { ... }.");
   return result;
 }
-function createExpressionScope(...sources) {
-  return Object.assign(/* @__PURE__ */ Object.create(null), ...sources.reverse());
+function createExpressionScope(...sources2) {
+  return Object.assign(/* @__PURE__ */ Object.create(null), ...sources2.reverse());
 }
 const compile = (cache, source, make) => {
   let fn = cache.get(source);
@@ -77,6 +77,37 @@ function assign(source, scope, value) {
   } catch (error) {
     throw causedError(`Brio model expression failed: "${source}"`, error);
   }
+}
+const sources = /* @__PURE__ */ new WeakMap();
+function createScopedState(source, parent) {
+  const observed = state(sources.get(source) ?? source);
+  if (Reflect.has(observed, "$parent"))
+    throw new TypeError("$parent is reserved for Brio scope ancestry.");
+  const readOnly = () => {
+    throw new TypeError("Brio scope $parent is read-only.");
+  };
+  const view = new Proxy(observed, {
+    get(target, key, receiver) {
+      return key === "$parent" ? parent : Reflect.get(target, key, receiver);
+    },
+    has(target, key) {
+      return key === "$parent" || Reflect.has(target, key);
+    },
+    set(target, key, value, receiver) {
+      if (key === "$parent") return readOnly();
+      return Reflect.set(target, key, value, receiver);
+    },
+    deleteProperty(target, key) {
+      if (key === "$parent") return readOnly();
+      return Reflect.deleteProperty(target, key);
+    },
+    defineProperty(target, key, descriptor) {
+      if (key === "$parent") return readOnly();
+      return Reflect.defineProperty(target, key, descriptor);
+    }
+  });
+  sources.set(view, observed);
+  return view;
 }
 let idCounter = 0;
 function generateScopeId() {
@@ -202,9 +233,9 @@ function mountComponent(element, definition, context, runtime, hydrateNodeFn) {
     for (const binding of propBindings)
       $props[binding.name] = evaluate(binding.expression, context);
     const setupResult = ((_a = definition.setup) == null ? void 0 : _a.call(definition, { el: element, $props, $emit, app: runtime.app })) ?? {};
-    const local = state(setupResult);
+    const local = createScopedState(setupResult, context.$data);
     const componentContext = createExpressionScope(
-      { $data: local, $parent: context, $el: element, $props, $emit },
+      { $data: local, $el: element, $props, $emit },
       context
     );
     for (const binding of propBindings) {
@@ -604,6 +635,8 @@ function handleFor(element, expression, _modifiers, context, runtime, hydrateNod
   const parsed = /^\s*([A-Za-z_$][\w$]*)(?:\s*,\s*([A-Za-z_$][\w$]*))?\s+in\s+([\s\S]+)$/.exec(expression);
   if (!parsed) throw new SyntaxError(`Invalid b-for expression "${expression}". Use "item in $data.items".`);
   const [, itemName, indexName = "$index", collectionExpression] = parsed;
+  if (itemName === "$parent" || indexName === "$parent")
+    throw new SyntaxError("$parent is reserved for Brio loop ancestry.");
   const keyExpression = element.getAttribute("b-key");
   const placeholder = document.createComment("brio:for");
   const template = element.cloneNode(true);
@@ -633,7 +666,7 @@ function handleFor(element, expression, _modifiers, context, runtime, hydrateNod
     let cursor = placeholder;
     for (const [index, item] of entries) {
       const loopData = { [itemName]: item, [indexName]: index };
-      const rowState = state(loopData);
+      const rowState = createScopedState(loopData, context.$for);
       const rowContext = createExpressionScope({ $for: rowState }, context);
       const evaluatedKey = keyExpression ? evaluate(keyExpression, rowContext) : index;
       if (typeof evaluatedKey !== "string" && typeof evaluatedKey !== "number")
@@ -740,10 +773,9 @@ function handleData(element, expression, _modifiers, parentContext) {
   const data = evaluate(expression, context);
   if (data === null || typeof data !== "object")
     throw new TypeError("b-data must evaluate to an object.");
-  const reactiveData = state(data);
+  const reactiveData = createScopedState(data, parentContext.$data);
   const scopeObj = {
     $data: reactiveData,
-    $parent: parentContext,
     $el: element
   };
   return createExpressionScope(
@@ -1308,7 +1340,7 @@ function createApp(options = {}) {
       activeMountRoots.add(root);
       notifyRootMounted(app, root);
       const context = createExpressionScope(
-        { $data: appState, trustedHTML }
+        { $data: createScopedState(appState), trustedHTML }
       );
       try {
         scope.run(() => {

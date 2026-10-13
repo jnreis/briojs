@@ -63,7 +63,7 @@
         <script b-script>
             async (ctx) => {
                 $data.status = 'Started';
-                $data.parentUser = $parent.$data.user;
+                $data.parentUser = $data.$parent.user;
                 $data.scriptTag = $el.tagName;
                 await new Promise(resolve => setTimeout(resolve, 250));
                 $data.status = 'Async function completed';

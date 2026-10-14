@@ -65,6 +65,12 @@ copying the entire skill folder to a supported assistant location; npm
 installation does not activate it. These resources guide app development, not
 framework maintenance, and generated code still requires review and testing.
 
+Applications running 1.1.5 should use the separate
+[migration skill](./ai/brio-migrate-1-1-5/SKILL.md) and
+[migration guide](./ai/brio-migrate-1-1-5/references/migration.md). V4 is not a
+drop-in replacement; the kit documents legacy contracts, unsupported surfaces,
+behavioral decisions, and verification before production rollout.
+
 ## First app
 
 ```js

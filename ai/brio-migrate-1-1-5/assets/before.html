@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Brio 1.1.5 migration: legacy example</title>
+  <script src="/briojs.1.1.5.min.js"></script>
+</head>
+<body>
+  <p id="host">Host page outside the Brio root</p>
+  <main id="migration" b-data="demo">
+    <button id="increment" b-on-click="$data.increment()">Increment</button>
+    <output id="count" b-text="count"></output>
+    <label>Quantity <input id="quantity" b-model="quantity"></label>
+    <output id="quantity-type" b-text="typeof quantity"></output>
+    <label>Amount <input id="money" value="1234.56" b-mask="money"></label>
+    <button id="toggle" b-on-click="visible = !visible">Toggle</button>
+    <section id="conditional" b-if="visible" b-data="{ local: 0 }">
+      <button b-on-click="local++">Local</button>
+      <output b-text="local"></output>
+    </section>
+    <section id="preserved" b-show="visible">Preserved in DOM while hidden</section>
+    <ul>
+      <li b-each="item, index in items">
+        <span>{{ $each.index }}: {{ $each.item.name }}</span>
+      </li>
+    </ul>
+    <button id="insert" b-on-click="$data.add()">Insert</button>
+    <button id="remove" b-on-click="$data.remove()">Remove</button>
+    <div id="dynamic" b-bind-title="'Dynamic content'"></div>
+    <output id="pulses" b-text="pulses"></output>
+    <script b-script>
+      (ctx) => {
+        const pulse = () => { ctx.$data.pulses++; };
+        window.addEventListener('migration-pulse', pulse);
+        ctx.$cleanup(() => window.removeEventListener('migration-pulse', pulse));
+      }
+    </script>
+  </main>
+  <script data-brio-recipe>
+    const app = brio.newApp();
+    app.gc.$set.data('demo', (ctx) => ({
+      count: 0,
+      quantity: 2,
+      visible: true,
+      pulses: 0,
+      items: [{ id: 'a', name: 'Alpha' }, { id: 'b', name: 'Beta' }],
+      increment() { ctx.$data.count++; },
+      add() {
+        return ctx.$dom.insert(
+          '<button b-on-click="count++">Inserted: {{ count }}</button>',
+          'inner', '#dynamic');
+      },
+      remove() {
+        for (const node of [...document.querySelector('#dynamic').childNodes])
+          ctx.$dom.dehydrate(node);
+      },
+    }));
+    const ready = app.gc.$dom.hydrate(document.querySelector('#migration'));
+    window.addEventListener('pagehide', () => {
+      app.gc.$dom.dehydrate(document.querySelector('#migration'), false);
+    }, { once: true });
+  </script>
+</body>
+</html>

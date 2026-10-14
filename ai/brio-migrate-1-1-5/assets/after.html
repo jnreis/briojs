@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Brio 1.1.5 migration: v4 example</title>
+  <script src="/brio.min.js"></script>
+</head>
+<body>
+  <p id="host">Host page outside the Brio root</p>
+  <main id="migration">
+    <button id="increment" b-on-click="$data.increment()">Increment</button>
+    <output id="count" b-text="$data.count"></output>
+    <label>Quantity <input id="quantity" b-model.number="$data.quantity"></label>
+    <output id="quantity-type" b-text="typeof $data.quantity"></output>
+    <label>Amount <input id="money" value="1234.56" b-mask="money()"></label>
+    <button id="toggle" b-on-click="$data.visible = !$data.visible">Toggle</button>
+    <section id="conditional" b-if="$data.visible" b-data="{ local: 0 }">
+      <button b-on-click="$data.local++">Local</button>
+      <output b-text="$data.local"></output>
+    </section>
+    <section id="preserved" b-show.display="$data.visible">Preserved in DOM while hidden</section>
+    <ul>
+      <li b-for="item, index in $data.items" b-key="$for.item.id">
+        <span>${$for.index}: ${$for.item.name}</span>
+      </li>
+    </ul>
+    <button id="insert" b-on-click="$data.add($insert)">Insert</button>
+    <button id="remove" b-on-click="$data.insertion?.remove()">Remove</button>
+    <div id="dynamic" title="Dynamic content"></div>
+    <output id="pulses" b-text="$data.pulses"></output>
+    <script b-script>
+      (ctx) => {
+        const pulse = () => { ctx.$data.pulses++; };
+        window.addEventListener('migration-pulse', pulse);
+        ctx.onCleanup(() => window.removeEventListener('migration-pulse', pulse));
+      }
+    </script>
+  </main>
+  <script data-brio-recipe>
+    const app = brio.createApp({
+      state: () => ({
+        count: 0,
+        quantity: 2,
+        visible: true,
+        pulses: 0,
+        items: [{ id: 'a', name: 'Alpha' }, { id: 'b', name: 'Beta' }],
+        insertion: null,
+        increment() { this.count++; },
+        add(insert) {
+          this.insertion?.remove();
+          this.insertion = insert('#dynamic', 'append',
+            '<button b-on-click="$data.count++">Inserted: ${$data.count}</button>');
+        },
+      }),
+    });
+    app.mount('#migration');
+    window.addEventListener('pagehide', () => app.dispose(), { once: true });
+  </script>
+</body>
+</html>

@@ -51,7 +51,7 @@
 
         scope.run(() => {
             const count = persist('brio_manual_test_count', 0, { storage: 'local' });
-            const profile = persist('brio_manual_test_profile', { name: 'Jhonathan', role: 'Architect' }, { storage: 'local' });
+            const profile = persist('brio_manual_test_profile', { name: 'Jonathan', role: 'Architect' }, { storage: 'local' });
 
             effect(() => {
                 document.getElementById('persisted-count').textContent = count.value;
@@ -81,7 +81,7 @@
                 localStorage.removeItem('brio_manual_test_count');
                 localStorage.removeItem('brio_manual_test_profile');
                 count.value = 0;
-                profile.name = 'Jhonathan';
+                profile.name = 'Jonathan';
                 profile.role = 'Architect';
             };
         });

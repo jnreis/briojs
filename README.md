@@ -33,3 +33,8 @@ The package ships a [portable AI developer kit](./ai/README.md) with a
 skill, and tested widget, multi-page, and SPA recipes. Use the guide directly,
 or copy the complete skill folder into your assistant's supported discovery
 location. Installing Brio does not automatically activate the skill.
+
+For existing applications, the separate
+[1.1.5-to-v4 migration kit](./ai/brio-migrate-1-1-5/SKILL.md) inventories the
+actual legacy runtime, maps changed/removed APIs, and provides a staged
+migration workflow with a tested before/after example.

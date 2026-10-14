@@ -24,6 +24,8 @@ metadata on `main`, through commit `d868d43`.
 
 ### Added
 
+- Portable 1.1.5-to-v4 migration skill, legacy API inventory, semantic migration
+  guide, paired examples, and production verification checklist.
 - Portable AI app-development kit: a reusable skill, framework guide, recipes,
   and installation instructions in [ai/](./ai/README.md).
 - Runnable widget, multi-page enhancement, and SPA examples, with regression

@@ -23,7 +23,7 @@ They intentionally do not pretend to demonstrate every production integration.
 | `b-each` / `$each` | `b-for` / `$for`, stable key added intentionally |
 | Legacy display `b-show` | `.display` retains hidden element in the DOM |
 | Local conditional state | Removing/recreating branch resets the local count |
-| `$cleanup` | `ctx.onCleanup` in a scoped script |
+| `$cleanup` | `$context.onCleanup` in a scoped script |
 | Content-first `$dom.insert` | Destination-first `$insert`, with an owned removal handle |
 
 The old example gives its insertion destination a harmless title binding so it

@@ -120,11 +120,11 @@ app.mount('#counter');
 
 Expressions run in strict mode without `with` or implicit state-name resolution. Use `$data` for the nearest state object (app state, component setup state, or `b-data`), `$data.$parent` for parent state, and `$for` for loop values. Bare state names such as `count` are not supported and unresolved identifiers throw `ReferenceError`. JavaScript globals such as `Math`, `JSON`, and `setTimeout` resolve normally.
 
-The context is also available as `ctx`. Named bindings include `$data`, `$el`, `$id`, `$for`, `$props`, `$emit`, `$insert`, `$stores`, `$provided`, and `trustedHTML`. Event handlers receive `$event`; observers supply `$mutations`, `$size`, or `$entry`. The mask directive supplies `money`, and contextual scripts supply `onCleanup`. Helpers not supplied in that context are `undefined`. Bindings are read-only references; mutate their properties (`$data.count++`), not the binding itself (`$data = {}`). Event statements can declare ordinary local variables.
+The context is also available as `$context`. Named bindings include `$data`, `$el`, `$id`, `$for`, `$props`, `$emit`, `$insert`, `$stores`, `$provided`, and `trustedHTML`. Event handlers receive `$event`; observers supply `$mutations`, `$size`, or `$entry`. The mask directive supplies `money`, and contextual scripts supply `onCleanup`. Helpers not supplied in that context are `undefined`. Bindings are read-only references; mutate their properties (`$data.count++`), not the binding itself (`$data = {}`). Event statements can declare ordinary local variables.
 
 Data and loop ancestry are independent: `$data.$parent.$parent` accesses a grandparent data scope, while `$for.$parent.$parent` accesses a grandparent loop. Ordinary elements and loops do not add data ancestry levels; data scopes do not add loop ancestry levels. Component setup state creates a data scope. App state and outermost loops have `$parent === undefined`. An empty `b-data` attribute inherits data without adding a scope; `b-data="{}"` creates one.
 
-`$parent` is reserved, read-only metadata on scope-specific views, not a field added to user state. It is excluded from keys, spreads, and JSON serialization. The same underlying state object may have different parents in different scopes. Normal reads, writes, and methods remain reactive. Use `ctx` for other helpers; standalone `$parent` and `ctx.$parent` are no longer provided.
+`$parent` is reserved, read-only metadata on scope-specific views, not a field added to user state. It is excluded from keys, spreads, and JSON serialization. The same underlying state object may have different parents in different scopes. Normal reads, writes, and methods remain reactive. Use `$context` for other helpers; standalone `$parent` and `$context.$parent` are no longer provided.
 
 `trustedHTML` remains public for JavaScript-authored values, for example
 `app.state.markup = brio.trustedHTML('<em>Authored content</em>')` with
@@ -160,7 +160,7 @@ widget.mount('#cart-widget');
 </section>
 ```
 
-`$stores` is available in every app expression and as `ctx.$stores` in scripts.
+`$stores` is available in every app expression and as `$context.$stores` in scripts.
 Component setup receives `$stores` directly; plugins can use `app.stores`.
 Registration preserves the supplied values and identities and **does not make
 them reactive**. Explicitly use `state()` for reactive objects/arrays or
@@ -287,15 +287,15 @@ Only `<script b-script>` is processed. Write an unassigned arrow expression so t
 
 ```html
 <script b-script>
-  (ctx) => {
-    ctx.$data.ready = true;
-    const timer = setTimeout(() => { ctx.$data.message = 'Ready'; }, 250);
-    ctx.onCleanup(() => clearTimeout(timer));
+  ($context) => {
+    $context.$data.ready = true;
+    const timer = setTimeout(() => { $context.$data.message = 'Ready'; }, 250);
+    $context.onCleanup(() => clearTimeout(timer));
   }
 </script>
 ```
 
-Brio constructs a function factory with an explicit context parameter, then invokes the returned function with that context; scripts do not use `with`. Context includes `$data`, `$el`, `$id`, `$for`, and `$event` when supplied by the caller. Parent state is accessed with `$data.$parent`. `$el` is the script element. The same helpers are available as lexical bindings, so `() => { $data.ready = true; }` also works. Async arrows and destructured parameters are supported; errors are surfaced without retrying the script. Async initialization does not block mounting; initialize values used by the template before the first `await`. Register timer/listener cleanup synchronously through `ctx.onCleanup`.
+Brio constructs a function factory with an explicit context parameter, then invokes the returned function with that context; scripts do not use `with`. Context includes `$data`, `$el`, `$id`, `$for`, and `$event` when supplied by the caller. Parent state is accessed with `$data.$parent`. `$el` is the script element. The same helpers are available as lexical bindings, so `() => { $data.ready = true; }` also works. Async arrows and destructured parameters are supported; errors are surfaced without retrying the script. Async initialization does not block mounting; initialize values used by the template before the first `await`. Register timer/listener cleanup synchronously through `$context.onCleanup`.
 
 ### Money masks
 
@@ -475,7 +475,25 @@ Objects and arrays are reactive directly. Primitive values are returned as signa
 
 Directive expressions are ordinary strict-mode JavaScript compiled and cached at runtime with `new Function`, without `with`. They are authored application code, **not a sandbox**; the approach is incompatible with a strict CSP that disallows `unsafe-eval`. Never render untrusted content as a Brio template or directive expression.
 
-`b-text` writes text, not HTML. Use an explicit trusted value for `b-html` (the current implementation also accepts ordinary strings; the helper does not enforce sanitization):
+`b-text` writes text, not HTML, and expands Brio `${...}` interpolation in the
+evaluated text by default, including strings returned by state references.
+Both `b-text` and `b-html` hydrate their evaluated content once; interpolation
+results are not recursively compiled. Use `.raw` to skip content hydration:
+
+```html
+<p b-text="$data.authoredText"></p>
+<p b-text.raw="$data.userText"></p>
+<div b-html.raw="$data.staticMarkup"></div>
+```
+
+`.raw` does not disable evaluation or reactivity of the directive's value
+expression. `b-text.raw` keeps tags and `${...}` literal; `b-html.raw` parses
+HTML but does not hydrate directives, interpolation, or contextual scripts.
+Raw HTML is not sanitization: HTML attributes and other browser behavior can
+still be dangerous. Use **`b-text.raw` for untrusted/user-provided text**, since
+ordinary `b-text` now evaluates interpolation embedded in that text.
+
+Use an explicit trusted value for `b-html` (the current implementation also accepts ordinary strings; the helper does not enforce sanitization):
 
 ```js
 import { trustedHTML } from 'briojs';
@@ -522,7 +540,7 @@ and hydrated. Nodes and document fragments are cloned, leaving the originals
 untouched. Multiple top-level nodes and structural directives are supported.
 `textContent` inserts literal text without parsing HTML or evaluating interpolation.
 
-The app method is `insert` (without `$`); the matching `$insert` helper is available in directive expressions and `ctx.$insert`
+The app method is `insert` (without `$`); the matching `$insert` helper is available in directive expressions and `$context.$insert`
 in scripts. Its selectors are restricted to the originating mount root.
 App-level selectors must resolve within exactly one of that app's mounted roots;
 missing, ambiguous, cross-app, and disposed targets throw. Direct node references

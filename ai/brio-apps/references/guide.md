@@ -94,7 +94,7 @@ There is no `with`, implicit state-name resolution, or sandbox.
 | `onCleanup` | Script cleanup helper; use synchronously in the active scope. |
 | `money` | Mask-specific formatting descriptor helper. |
 
-The context is also accessible as `ctx`, especially in contextual scripts.
+The context is also accessible as `$context`, especially in contextual scripts.
 Helpers not supplied by the current context are undefined.
 Ordinary globals (`Math`, `JSON`, timers) and local variables resolve normally.
 Do not assume imported ESM names are visible inside compiled expressions: put
@@ -188,7 +188,7 @@ Escape HTML-significant characters in literal text/attribute values.
 
 | Directive | Contract |
 | --- | --- |
-| `b-text="expr"` | Sets text content; descendants are not hydrated. |
+| `b-text="expr"` | Sets text content with one-pass `${...}` interpolation in the evaluated result; tags remain literal. `.raw` skips interpolation. |
 | `b-provide="{ name: expression }"` | Supplies live read-only names through `$provided` on this element and its subtree. |
 | `b-bind-href="expr"` | Binds a DOM property when available, otherwise an attribute. `null`, `undefined`, and `false` remove attributes. |
 | `b-bind-class="expr"` | Accepts strings, arrays, or class-name/boolean objects. |
@@ -199,7 +199,7 @@ Escape HTML-significant characters in literal text/attribute values.
 | `b-show="$data.visible"` | Detaches without disposing local state or bindings. `.display` uses `display: none`. |
 | `b-for="item, index in $data.items"` | Arrays, iterables, objects, or nonnegative integers; values live in `$for`. |
 | `b-key="$for.item.id"` | Stable string/number identity; duplicate keys throw. Index is the default key. |
-| `b-html="trustedHTML($data.markup)"` | Replaces and hydrates children. Always treat the content as executable authored markup. |
+| `b-html="trustedHTML($data.markup)"` | Replaces and hydrates children; `.raw` only inserts parsed HTML without Brio hydration. Always treat hydrated content as executable authored markup. |
 | `b-ignore` | Skips hydration of the element and descendants. |
 | `b-script` | Only on a script element; see required writing style below. |
 | `b-effect="$data.observe($data.count)"` | Reactive expression, not a block of event-style statements. Avoid feedback writes. |
@@ -245,9 +245,9 @@ properties, ignores descendant events, and cancels pending work on disposal.
 
 ```html
 <script b-script>
-  (ctx) => {
-    const timer = setInterval(() => { ctx.$data.ticks++; }, 1000);
-    ctx.onCleanup(() => clearInterval(timer));
+  ($context) => {
+    const timer = setInterval(() => { $context.$data.ticks++; }, 1000);
+    $context.onCleanup(() => clearInterval(timer));
   }
 </script>
 ```
@@ -298,7 +298,7 @@ const handle = app.insert('#items', 'append',
 handle.remove();
 ```
 
-In expressions/scripts use `$insert(...)` or `ctx.$insert(...)`, not
+In expressions/scripts use `$insert(...)` or `$context.$insert(...)`, not
 `app.$insert`. Signature: `(target, placement, content, options?)`.
 Placements: `before`, `after`, `prepend`, `append`, `replaceWith`,
 `replaceChildren`, `textContent`. Targets are nodes/selectors.
@@ -363,7 +363,9 @@ Low-level `hydrateRoot`/`hydrateNode` remain ESM-only; do not call them on
 Templates, `b-html`, and HTML insertion execute authored expressions/scripts.
 `trustedHTML` is a trust assertion, not sanitization or a security boundary;
 current `b-html` also accepts ordinary strings. Never bind untrusted HTML as
-executable templates. Use `b-text` for user content. Strict CSP disallowing
+executable templates. Use `b-text.raw` for user content: default `b-text`
+evaluates `${...}` embedded in returned strings. Both raw modifiers keep the
+source expression reactive; raw HTML is not sanitized. Strict CSP disallowing
 `unsafe-eval` is incompatible with runtime expression compilation.
 
 Before shipping: test the actual rendered app and console errors, form value

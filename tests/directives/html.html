@@ -16,17 +16,20 @@
 </head>
 <body b-data="{
     rawMarkup: '<strong>Rendered as bold HTML</strong> with a <em>colored emphasis</em>.',
-    escapedText: '<strong>This will NOT be parsed as HTML</strong>',
+    escapedText: '<strong>Counter: ${$data.counter}</strong>',
     counter: 1
 }">
 
     <h1>b-html & b-text Directive Manual Tests</h1>
-    <p>Tests dynamic insertion of text vs raw HTML markup and safe hydration.</p>
+    <p>Both directives hydrate authored content by default. Text keeps tags literal; .raw skips content hydration.</p>
 
     <!-- Test 1: b-html -->
     <div class="card">
         <h3>1. b-html Directive</h3>
         <button on-click="$data.rawMarkup = '<em>Updated at ' + new Date().toLocaleTimeString() + '</em> with <mark>highlight</mark>'">Update HTML</button>
+        <div id="hydrated-html" b-html="$data.escapedText" class="box"></div>
+        <p>Raw HTML parses tags but leaves interpolation untouched:</p>
+        <div id="raw-html" b-html.raw="$data.escapedText" class="box"></div>
         <div b-html="$data.rawMarkup" class="box"></div>
     </div>
 
@@ -34,7 +37,9 @@
     <div class="card">
         <h3>2. b-text Directive</h3>
         <p>Text directive guarantees tags are safely escaped:</p>
-        <div b-text="$data.escapedText" class="box"></div>
+        <div id="hydrated-text" b-text="$data.escapedText" class="box"></div>
+        <p>Raw text leaves interpolation and tags literal:</p>
+        <div id="raw-text" b-text.raw="$data.escapedText" class="box"></div>
         <p>Dynamic string expression:</p>
         <div b-text="'Current count: ' + $data.counter" class="box"></div>
         <button on-click="$data.counter++">+1</button>

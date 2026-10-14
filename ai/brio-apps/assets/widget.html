@@ -33,10 +33,10 @@
     <div id="dynamic"></div>
     <output id="pulses" b-text="$data.pulses"></output>
     <script b-script>
-      (ctx) => {
-        const pulse = () => { ctx.$data.pulses++; };
+      ($context) => {
+        const pulse = () => { $context.$data.pulses++; };
         window.addEventListener('brio-recipe-pulse', pulse);
-        ctx.onCleanup(() => window.removeEventListener('brio-recipe-pulse', pulse));
+        $context.onCleanup(() => window.removeEventListener('brio-recipe-pulse', pulse));
       }
     </script>
   </section>

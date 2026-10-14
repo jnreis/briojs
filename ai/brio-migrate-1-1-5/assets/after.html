@@ -30,10 +30,10 @@
     <div id="dynamic" title="Dynamic content"></div>
     <output id="pulses" b-text="$data.pulses"></output>
     <script b-script>
-      (ctx) => {
-        const pulse = () => { ctx.$data.pulses++; };
+      ($context) => {
+        const pulse = () => { $context.$data.pulses++; };
         window.addEventListener('migration-pulse', pulse);
-        ctx.onCleanup(() => window.removeEventListener('migration-pulse', pulse));
+        $context.onCleanup(() => window.removeEventListener('migration-pulse', pulse));
       }
     </script>
   </main>

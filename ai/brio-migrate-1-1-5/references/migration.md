@@ -126,7 +126,7 @@ forbids runtime `new Function` remains a deployment blocker.
 | `b-if` | Keep name but condition runs before branch-local data. False disposes immediately; true creates fresh local data. Wrap root structural directives. |
 | `b-show` | To preserve legacy display toggling, use **`b-show.display`**. Plain v4 `b-show` detaches/reinserts the same live node. These differ for layout, queries, focus, observers, and form submission. |
 | `b-html` | Supply actual authored HTML, not a legacy template registry name. It replaces/hydrates children; prefer components for reusable behavior. |
-| `b-text` | Use an explicit value expression. It suppresses descendant hydration. Never depend on combined `b-html` / `b-text` precedence. |
+| `b-text` | Use an explicit value expression. Current builds hydrate `${...}` in its evaluated text without parsing tags; use `.raw` for literal/untrusted text. Never depend on combined `b-html` / `b-text` precedence. |
 | `b-bind-*`, `bind-*` | Prefer `b-bind-*`; give an explicit expression. No empty-value inference. `.prop` forces property assignment; property/attribute and falsy-value semantics require tests. |
 | `b-model` | Explicit assignable `$data.field`; type conversion and modifiers need special review below. |
 | `b-mask` | Pattern string or `money(options)`; legacy registries, token meanings, and callback masks are not drop-in compatible. |
@@ -240,10 +240,10 @@ inside the component template.
 
 ```html
 <script b-script>
-  (ctx) => {
-    const listener = () => { ctx.$data.ticks++; };
+  ($context) => {
+    const listener = () => { $context.$data.ticks++; };
     window.addEventListener('pulse', listener);
-    ctx.onCleanup(() => window.removeEventListener('pulse', listener));
+    $context.onCleanup(() => window.removeEventListener('pulse', listener));
   }
 </script>
 ```
@@ -268,7 +268,7 @@ const handle = app.insert('#items', 'append',
 handle.remove();
 ```
 
-In expressions/scripts use `$insert(...)` / `ctx.$insert(...)`, not app `$insert`.
+In expressions/scripts use `$insert(...)` / `$context.$insert(...)`, not app `$insert`.
 Targets must belong to a mounted app root. Child placements inherit the target;
 sibling placements inherit its parent. `options.data` supplies an explicit local
 data scope. Strings are trusted/hydrated internally; nodes/fragments are cloned.

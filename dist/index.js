@@ -10,19 +10,20 @@ const valueExpressions = /* @__PURE__ */ new Map();
 const statementExpressions = /* @__PURE__ */ new Map();
 const assignmentExpressions = /* @__PURE__ */ new Map();
 const functionExpressions = /* @__PURE__ */ new Map();
+const $CONTEXT = "$context";
 const contextBindings = `
 "use strict";
-const { $data, $el, $event, $id, $for, $mutations, $size, $entry, $props, $emit, $insert, $stores, $provided, trustedHTML, onCleanup, money } = ctx;
+const { $data, $el, $event, $id, $for, $mutations, $size, $entry, $props, $emit, $insert, $stores, $provided, trustedHTML, onCleanup, money } = ${$CONTEXT};
 `;
 function evaluateFunction(source, context) {
   const fn = compile(
     functionExpressions,
     source,
-    (expression) => new Function("ctx", `${contextBindings} return (${expression.replace(/;\s*$/, "")});`)
+    (expression) => new Function($CONTEXT, `${contextBindings} return (${expression.replace(/;\s*$/, "")});`)
   );
   const result = fn(context);
   if (typeof result !== "function")
-    throw new TypeError("b-script must contain a function expression, such as (ctx) => { ... }.");
+    throw new TypeError(`b-script must contain a function expression, such as (${$CONTEXT}) => { ... }.`);
   return result;
 }
 function createExpressionScope(...sources2) {
@@ -46,7 +47,7 @@ function evaluate(source, scope) {
   const fn = compile(
     valueExpressions,
     source,
-    (expression) => new Function("ctx", `${contextBindings} return (${expression});`)
+    (expression) => new Function($CONTEXT, `${contextBindings} return (${expression});`)
   );
   try {
     return fn(scope);
@@ -58,7 +59,7 @@ function execute(source, scope, event) {
   const fn = compile(
     statementExpressions,
     source,
-    (expression) => new Function("ctx", `${contextBindings} ${expression}`)
+    (expression) => new Function($CONTEXT, `${contextBindings} ${expression}`)
   );
   try {
     fn(event === void 0 ? scope : createExpressionScope({ $event: event }, scope));
@@ -70,7 +71,7 @@ function assign(source, scope, value) {
   const fn = compile(
     assignmentExpressions,
     source,
-    (expression) => new Function("ctx", "$value", `${contextBindings} return (${expression} = $value);`)
+    (expression) => new Function($CONTEXT, "$value", `${contextBindings} return (${expression} = $value);`)
   );
   try {
     fn(scope, value);
@@ -602,6 +603,13 @@ function createInsert(runtime) {
     return handle;
   };
 }
+const interpolationRegex = /\$\{([^}]+)\}/g;
+function interpolateText(text, context) {
+  return text.replace(interpolationRegex, (_, expression) => {
+    const value = evaluate(expression, context);
+    return value === null || value === void 0 ? "" : String(value);
+  });
+}
 const staticClasses = /* @__PURE__ */ new WeakMap();
 const dynamicStyles = /* @__PURE__ */ new WeakMap();
 const setBoundValue = (element, name, value, forceProp = false) => {
@@ -981,24 +989,28 @@ function handleShow(element, expression, modifiers, context) {
     }
   });
 }
-function handleHtml(element, expression, _modifiers, context, runtime, hydrateChildrenFn) {
+function handleHtml(element, expression, modifiers, context, runtime, hydrateChildrenFn) {
   let contentScope;
   onCleanup(() => contentScope == null ? void 0 : contentScope.dispose());
   effect(() => {
     const html = evaluate(expression, context);
     const htmlStr = isTrustedHTML(html) ? getTrustedHTMLString(html) : String(html ?? "");
     contentScope == null ? void 0 : contentScope.dispose();
-    contentScope = createScope();
+    contentScope = void 0;
     const template = document.createElement("template");
     template.innerHTML = htmlStr;
     element.replaceChildren(template.content);
-    contentScope.run(() => hydrateChildrenFn(element, context, runtime));
+    if (!modifiers.raw) {
+      contentScope = createScope();
+      contentScope.run(() => hydrateChildrenFn(element, context, runtime));
+    }
   });
 }
-function handleText(element, expression, _modifiers, context) {
+function handleText(element, expression, modifiers, context) {
   effect(() => {
     const value = evaluate(expression, context);
-    element.textContent = value === null || value === void 0 ? "" : String(value);
+    const text = value === null || value === void 0 ? "" : String(value);
+    element.textContent = modifiers.raw ? text : interpolateText(text, context);
   });
 }
 function handleData(element, expression, _modifiers, parentContext) {
@@ -1309,9 +1321,9 @@ function handleScript(element, _expression, _modifiers, context) {
     throw new TypeError("b-script can only be used on script elements.");
   const raw = (element.textContent || "").trim();
   if (!raw) throw new SyntaxError("b-script requires a function expression.");
-  const ctx = createExpressionScope({ onCleanup }, context);
+  const $context = createExpressionScope({ onCleanup }, context);
   try {
-    const result = evaluateFunction(raw, ctx)(ctx);
+    const result = evaluateFunction(raw, $context)($context);
     if (result instanceof Promise)
       return result.then(() => {
       }, (error) => {
@@ -1367,16 +1379,11 @@ function hydrateChildren(element, context, runtime) {
     if (child.parentNode === element && !getNodeOwner(child)) hydrateNode(child, context, runtime);
   }
 }
-const interpolationRegex = /\$\{([^}]+)\}/g;
 function hydrateTextNode(node, context) {
   const raw = node.nodeValue ?? "";
   if (!raw.includes("${")) return;
   effect(() => {
-    const text = raw.replace(interpolationRegex, (_, expr) => {
-      const val = evaluate(expr, context);
-      return val === null || val === void 0 ? "" : String(val);
-    });
-    node.nodeValue = text;
+    node.nodeValue = interpolateText(raw, context);
   });
 }
 function hydrateNode(node, parentContext, runtime) {

@@ -1,4 +1,4 @@
-import { createExpressionScope, evaluate } from '../core/expression';
+import { createExpressionScope } from '../core/expression';
 import { createScope, onCleanup } from '../core/scope';
 import type { Scope } from '../core/scope';
 import { effect } from '../reactivity/effect';
@@ -8,6 +8,7 @@ import { prepareTransition } from './directives/transition';
 import { createInsert } from './insert';
 import { getNodeOwner, ownNode } from './ownership';
 import { emptyContextValues } from '../core/context-values';
+import { interpolateText } from './interpolation';
 
 export function mountRouterOutlet(
     element: Element,
@@ -83,8 +84,6 @@ export function hydrateChildren(
     }
 }
 
-const interpolationRegex = /\$\{([^}]+)\}/g;
-
 export function hydrateTextNode(
     node: Text,
     context: Record<PropertyKey, any>,
@@ -93,11 +92,7 @@ export function hydrateTextNode(
     if (!raw.includes('${')) return;
 
     effect(() => {
-        const text = raw.replace(interpolationRegex, (_, expr) => {
-            const val = evaluate(expr, context);
-            return val === null || val === undefined ? '' : String(val);
-        });
-        node.nodeValue = text;
+        node.nodeValue = interpolateText(raw, context);
     });
 }
 

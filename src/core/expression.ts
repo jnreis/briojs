@@ -7,18 +7,20 @@ const statementExpressions = new Map<string, Function>();
 const assignmentExpressions = new Map<string, Function>();
 const functionExpressions = new Map<string, Function>();
 
+const $CONTEXT: '$context' = '$context';
+
 const contextBindings = `
 "use strict";
-const { $data, $el, $event, $id, $for, $mutations, $size, $entry, $props, $emit, $insert, $stores, $provided, trustedHTML, onCleanup, money } = ctx;
+const { $data, $el, $event, $id, $for, $mutations, $size, $entry, $props, $emit, $insert, $stores, $provided, trustedHTML, onCleanup, money } = ${$CONTEXT};
 `;
 
-export function evaluateFunction(source: string, context: ExpressionScope): (ctx: ExpressionScope) => unknown {
+export function evaluateFunction(source: string, context: ExpressionScope): ($context: ExpressionScope) => unknown {
     const fn = compile(functionExpressions, source, expression =>
-        new Function('ctx', `${contextBindings} return (${expression.replace(/;\s*$/, '')});`)
+        new Function($CONTEXT, `${contextBindings} return (${expression.replace(/;\s*$/, '')});`)
     );
     const result = fn(context);
     if (typeof result !== 'function')
-        throw new TypeError('b-script must contain a function expression, such as (ctx) => { ... }.');
+        throw new TypeError(`b-script must contain a function expression, such as (${$CONTEXT}) => { ... }.`);
     return result;
 }
 
@@ -43,7 +45,7 @@ const compile = (cache: Map<string, Function>, source: string, make: (source: st
 
 export function evaluate(source: string, scope: ExpressionScope): any {
     const fn = compile(valueExpressions, source, expression =>
-        new Function('ctx', `${contextBindings} return (${expression});`)
+        new Function($CONTEXT, `${contextBindings} return (${expression});`)
     );
     try {
         return fn(scope);
@@ -54,7 +56,7 @@ export function evaluate(source: string, scope: ExpressionScope): any {
 
 export function execute(source: string, scope: ExpressionScope, event?: Event): void {
     const fn = compile(statementExpressions, source, expression =>
-        new Function('ctx', `${contextBindings} ${expression}`)
+        new Function($CONTEXT, `${contextBindings} ${expression}`)
     );
     try {
         fn(event === undefined ? scope : createExpressionScope({ $event: event }, scope));
@@ -65,7 +67,7 @@ export function execute(source: string, scope: ExpressionScope, event?: Event): 
 
 export function assign(source: string, scope: ExpressionScope, value: unknown): void {
     const fn = compile(assignmentExpressions, source, expression =>
-        new Function('ctx', '$value', `${contextBindings} return (${expression} = $value);`)
+        new Function($CONTEXT, '$value', `${contextBindings} return (${expression} = $value);`)
     );
     try {
         fn(scope, value);

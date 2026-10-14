@@ -4,11 +4,12 @@ import { createScope, onCleanup } from '../../core/scope';
 import type { Scope } from '../../core/scope';
 import { isTrustedHTML, getTrustedHTMLString } from '../types';
 import type { DomRuntime } from '../types';
+import { interpolateText } from '../interpolation';
 
 export function handleHtml(
     element: Element,
     expression: string,
-    _modifiers: Record<string, boolean>,
+    modifiers: Record<string, boolean>,
     context: Record<PropertyKey, any>,
     runtime: DomRuntime,
     hydrateChildrenFn: (element: Element, context: Record<PropertyKey, any>, runtime: DomRuntime) => void,
@@ -21,22 +22,26 @@ export function handleHtml(
             ? getTrustedHTMLString(html)
             : String(html ?? '');
         contentScope?.dispose();
-        contentScope = createScope();
+        contentScope = undefined;
         const template = document.createElement('template');
         template.innerHTML = htmlStr;
         element.replaceChildren(template.content);
-        contentScope.run(() => hydrateChildrenFn(element, context, runtime));
+        if (!modifiers.raw) {
+            contentScope = createScope();
+            contentScope.run(() => hydrateChildrenFn(element, context, runtime));
+        }
     });
 }
 
 export function handleText(
     element: Element,
     expression: string,
-    _modifiers: Record<string, boolean>,
+    modifiers: Record<string, boolean>,
     context: Record<PropertyKey, any>,
 ): void {
     effect(() => {
         const value = evaluate(expression, context);
-        element.textContent = value === null || value === undefined ? '' : String(value);
+        const text = value === null || value === undefined ? '' : String(value);
+        element.textContent = modifiers.raw ? text : interpolateText(text, context);
     });
 }

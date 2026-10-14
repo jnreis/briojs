@@ -6,6 +6,88 @@ import { evaluateFunction, hydrateRoot, hydrateNode } from 'briojs';
 
 const bundle = readFileSync(new URL('../dist/brio.min.js', import.meta.url), 'utf8');
 
+test('b-text hydrates referenced text and authored strings without parsing HTML; raw skips interpolation', t => {
+    const { app, root } = environment(t, `
+        <p id="text" b-text="$data.text"></p>
+        <p id="raw" b-text.raw="$data.text"></p>
+        <p id="direct" b-text="'Count: \${$data.count}'"></p>
+        <p id="expression" b-text="'Count: ' + $data.count"></p>
+        <p id="raw-expression" b-text.raw="'Count: ' + $data.count"></p>`,
+    { text: '<b>Count: ${$data.count}</b>', count: 1 });
+    app.mount(root);
+    assert.equal(root.querySelector('#text').textContent, '<b>Count: 1</b>');
+    assert.equal(root.querySelector('#text').children.length, 0);
+    assert.equal(root.querySelector('#raw').textContent, '<b>Count: ${$data.count}</b>');
+    app.state.count = 2;
+    for (const id of ['direct', 'expression', 'raw-expression'])
+        assert.equal(root.querySelector(`#${id}`).textContent, 'Count: 2');
+    assert.equal(root.querySelector('#text').textContent, '<b>Count: 2</b>');
+    app.state.text = 'Other: ${$data.other}';
+    app.state.other = 7;
+    assert.equal(root.querySelector('#text').textContent, 'Other: 7');
+    app.state.text = '${$data.missing}';
+    assert.equal(root.querySelector('#text').textContent, '');
+    app.state.text = null;
+    assert.equal(root.querySelector('#raw').textContent, '');
+    app.state.text = '${$data.count}';
+    const oldText = root.querySelector('#text');
+    app.unmount();
+    app.state.count = 3;
+    assert.equal(oldText.textContent, '2');
+});
+
+test('b-html.raw parses HTML without directives/interpolation while its source remains reactive', t => {
+    const { app, root } = environment(t, `
+        <div id="html" b-html="$data.html"></div>
+        <div id="raw" b-html.raw="$data.html"></div>`,
+    { html: '<button b-on-click="$data.count++">Count: ${$data.count}</button>', count: 1 });
+    app.mount(root);
+    const hydrated = root.querySelector('#html button');
+    const raw = root.querySelector('#raw button');
+    assert.equal(hydrated.textContent, 'Count: 1');
+    assert.equal(raw.textContent, 'Count: ${$data.count}');
+    assert.equal(raw.hasAttribute('b-on-click'), true);
+    raw.click();
+    assert.equal(app.state.count, 1);
+    hydrated.click();
+    assert.equal(app.state.count, 2);
+    assert.equal(hydrated.textContent, 'Count: 2');
+    app.state.html = '<i>${$data.count}</i>';
+    assert.equal(root.querySelector('#html i').textContent, '2');
+    assert.equal(root.querySelector('#raw i').textContent, '${$data.count}');
+    hydrated.click();
+    assert.equal(app.state.count, 2);
+});
+
+test('b-text interpolation failures are explicit and hydration performs only one interpolation pass', t => {
+    const { app, root } = environment(t, '<p b-text="$data.text"></p>',
+        { text: '${$data.nested}', nested: '${notEvaluated}' });
+    app.mount(root);
+    assert.equal(root.querySelector('p').textContent, '${notEvaluated}');
+    assert.throws(() => { app.state.text = '${missingName}'; }, /reactive effects failed/);
+});
+
+test('manual HTML/text page demonstrates hydrated references and raw content', t => {
+    const markup = readFileSync(new URL('./directives/html.html', import.meta.url), 'utf8');
+    const dom = new JSDOM(markup, { runScripts: 'outside-only' });
+    const { window } = dom;
+    window.eval(bundle);
+    const app = window.brio.createApp();
+    t.after(() => {
+        try { app.dispose(); } finally { window.close(); }
+    });
+    app.mount('body');
+    const { document } = window;
+    assert.equal(document.querySelector('#hydrated-html strong').textContent, 'Counter: 1');
+    assert.equal(document.querySelector('#hydrated-text').textContent, '<strong>Counter: 1</strong>');
+    assert.equal(document.querySelector('#hydrated-text strong'), null);
+    assert.equal(document.querySelector('#raw-html strong').textContent, 'Counter: ${$data.counter}');
+    assert.equal(document.querySelector('#raw-text').textContent, '<strong>Counter: ${$data.counter}</strong>');
+    document.querySelectorAll('button')[1].click();
+    assert.equal(document.querySelector('#hydrated-html strong').textContent, 'Counter: 2');
+    assert.equal(document.querySelector('#hydrated-text').textContent, '<strong>Counter: 2</strong>');
+});
+
 function environment(t, markup, state = {}) {
     const dom = new JSDOM(`<main id="app">${markup}</main>`, {
         runScripts: 'outside-only',
@@ -130,7 +212,7 @@ test('contextual $insert is lexical, root-bound, and owned by the destination', 
     const { app, root, window } = environment(t, `
         <div class="target"></div>
         <button b-if="$data.visible" on-click="$insert('.target', 'append', '<span b-text=&quot;$data.count&quot;></span>')">insert</button>
-        <script b-script>() => { $data.insert = ctx.$insert; }</script>`, { visible: true, count: 0 });
+        <script b-script>() => { $data.insert = $context.$insert; }</script>`, { visible: true, count: 0 });
     const otherRoot = window.document.createElement('main');
     otherRoot.innerHTML = '<div class="target"></div>';
     window.document.body.append(otherRoot);
@@ -338,13 +420,13 @@ test('data ancestry is reactive, scope-specific, read-only and absent from seria
     const { app, root, window } = environment(t, `
         <div b-data="{ label: 'one' }"><section>
             <div b-data="$data.$parent.shared">
-                <script b-script>(ctx) => { $data.$parent.$parent.capture(ctx.$data); }</script>
+                <script b-script>($context) => { $data.$parent.$parent.capture($context.$data); }</script>
                 <button on-click="$data.increment(); $data.$parent.label = 'changed'"></button>
                 <span b-text="$data.value + ':' + $data.$parent.label + ':' + $data.$parent.$parent.count"></span>
             </div>
         </section></div>
         <div b-data="{ label: 'two' }"><div b-data="$data.$parent.shared">
-            <script b-script>(ctx) => { $data.$parent.$parent.capture(ctx.$data); }</script>
+            <script b-script>($context) => { $data.$parent.$parent.capture($context.$data); }</script>
             <span b-text="$data.value + ':' + $data.$parent.label"></span>
         </div></div>`, { shared: { value: 0 }, count: 1 });
     const views = [];
@@ -360,18 +442,18 @@ test('data ancestry is reactive, scope-specific, read-only and absent from seria
     assert.equal(views[0].$parent.label, 'changed');
     assert.equal(views[1].$parent.label, 'two');
     const contexts = [];
-    const other = environment(t, '<div b-data="{ value: 1 }"><script b-script>(ctx) => { $data.$parent.capture(ctx); }</script></div>');
-    other.app.state.capture = ctx => contexts.push(ctx);
+    const other = environment(t, '<div b-data="{ value: 1 }"><script b-script>($context) => { $data.$parent.capture($context); }</script></div>');
+    other.app.state.capture = $context => contexts.push($context);
     other.app.mount(other.root);
-    const ctx = contexts[0];
-    assert.equal(ctx.$parent, undefined);
-    assert.equal(ctx.$data.$parent.$parent, undefined);
-    assert.deepEqual(Object.keys(ctx.$data), ['value']);
-    assert.deepEqual({ ...ctx.$data }, { value: 1 });
-    assert.equal(JSON.stringify(ctx.$data), '{"value":1}');
-    assert.throws(() => { ctx.$data.$parent = {}; }, /read-only/);
-    assert.throws(() => { delete ctx.$data.$parent; }, /read-only/);
-    assert.throws(() => window.Object.defineProperty(ctx.$data, '$parent', { value: {} }), /read-only/);
+    const $context = contexts[0];
+    assert.equal($context.$parent, undefined);
+    assert.equal($context.$data.$parent.$parent, undefined);
+    assert.deepEqual(Object.keys($context.$data), ['value']);
+    assert.deepEqual({ ...$context.$data }, { value: 1 });
+    assert.equal(JSON.stringify($context.$data), '{"value":1}');
+    assert.throws(() => { $context.$data.$parent = {}; }, /read-only/);
+    assert.throws(() => { delete $context.$data.$parent; }, /read-only/);
+    assert.throws(() => window.Object.defineProperty($context.$data, '$parent', { value: {} }), /read-only/);
 });
 
 test('nested loop ancestry survives wrappers, data scopes, reused names and keyed row updates', t => {
@@ -410,19 +492,19 @@ test('reserved ancestry fields and loop names fail explicitly', t => {
 test('loop ancestry metadata is read-only and standalone $parent is no longer supplied', t => {
     const { app, root, window } = environment(t, `
         <section b-for="n in 1"><div b-for="child in 1">
-            <script b-script>(ctx) => { $data.capture(ctx); }</script>
+            <script b-script>($context) => { $data.capture($context); }</script>
         </div></section>`);
     const contexts = [];
-    app.state.capture = ctx => contexts.push(ctx);
+    app.state.capture = $context => contexts.push($context);
     app.mount(root);
-    const ctx = contexts[0];
-    assert.equal(ctx.$parent, undefined);
-    assert.equal(ctx.$for.$parent.n, 1);
-    assert.equal(ctx.$for.$parent.$parent, undefined);
-    assert.equal(ctx.$data.$parent, undefined);
-    assert.equal(window.JSON.stringify(ctx.$for), '{"child":1,"$index":0}');
-    assert.throws(() => { ctx.$for.$parent = {}; }, /read-only/);
-    assert.throws(() => { delete ctx.$for.$parent; }, /read-only/);
+    const $context = contexts[0];
+    assert.equal($context.$parent, undefined);
+    assert.equal($context.$for.$parent.n, 1);
+    assert.equal($context.$for.$parent.$parent, undefined);
+    assert.equal($context.$data.$parent, undefined);
+    assert.equal(window.JSON.stringify($context.$for), '{"child":1,"$index":0}');
+    assert.throws(() => { $context.$for.$parent = {}; }, /read-only/);
+    assert.throws(() => { delete $context.$for.$parent; }, /read-only/);
 });
 
 test('explicit loop values update keyed rows and nested loop contexts without losing reactivity', t => {
@@ -607,7 +689,7 @@ test('money caret mapping handles custom separators, negative values and zero pr
     assert.equal(input.selectionStart, 4);
 });
 
-test('b-script receives ctx, lexical helpers, destructuring, async closures, and the script element', async t => {
+test('b-script receives $context, lexical helpers, destructuring, async closures, and the script element', async t => {
     const { app, root } = environment(t, `
         <div b-data="{ count: 0, status: '' }">
             <script b-script>
@@ -622,9 +704,9 @@ test('b-script receives ctx, lexical helpers, destructuring, async closures, and
             <span b-text="$data.count"></span><em b-text="$data.status"></em>
         </div>
         <script b-script>
-            (ctx) => {
+            ($context) => {
                 $data.lexical = true;
-                ctx.$data.direct = true;
+                $context.$data.direct = true;
             };
         </script>`, { parentCount: 0 });
     app.mount(root);
@@ -637,18 +719,18 @@ test('b-script receives ctx, lexical helpers, destructuring, async closures, and
 });
 
 test('function factory accepts named, anonymous, arrow, and async functions without with', async () => {
-    const ctx = { $data: { count: 0 }, $event: { type: 'test' } };
+    const $context = { $data: { count: 0 }, $event: { type: 'test' } };
     for (const source of [
-        'function (ctx) { ctx.$data.count++; }',
-        'function named(ctx) { ctx.$data.count++; }',
-        '(ctx) => { ctx.$data.count++; }',
-        'async (ctx) => { await Promise.resolve(); ctx.$data.count++; }',
+        'function ($context) { $context.$data.count++; }',
+        'function named($context) { $context.$data.count++; }',
+        '($context) => { $context.$data.count++; }',
+        'async ($context) => { await Promise.resolve(); $context.$data.count++; }',
         'async function named({ $data }) { $data.count++; }',
         '() => { $data.count++; }',
-    ]) await evaluateFunction(source, ctx)(ctx);
-    assert.equal(ctx.$data.count, 6);
-    assert.equal(evaluateFunction('(ctx) => ctx.$event.type', ctx)(ctx), 'test');
-    assert.throws(() => evaluateFunction('42', ctx), /function expression/);
+    ]) await evaluateFunction(source, $context)($context);
+    assert.equal($context.$data.count, 6);
+    assert.equal(evaluateFunction('($context) => $context.$event.type', $context)($context), 'test');
+    assert.throws(() => evaluateFunction('42', $context), /function expression/);
 });
 
 test('script failures run once, do not fall back, and unmarked scripts are left untouched', t => {
@@ -658,7 +740,7 @@ test('script failures run once, do not fall back, and unmarked scripts are left 
     app.mount(root);
     assert.equal(app.state.ran, undefined);
     const failed = environment(t, `<script b-script>
-        (ctx) => { ctx.$data.calls++; throw new Error('failure'); }
+        ($context) => { $context.$data.calls++; throw new Error('failure'); }
     </script>`, { calls: 0 });
     assert.throws(() => failed.app.mount(failed.root), /b-script execution failed/);
     assert.equal(failed.app.state.calls, 1);

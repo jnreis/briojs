@@ -76,13 +76,13 @@ test('store registration preserves exact references, safe names, fixed registrat
 test('stores and providers work in every strict expression form without implicit names', () => {
     const $stores = Object.freeze({ cart: state({ count: 0 }) });
     const $provided = Object.freeze({ increment: 2 });
-    const ctx = { $stores, $provided };
-    assert.equal(evaluate('$stores.cart.count + $provided.increment', ctx), 2);
-    execute('$stores.cart.count += $provided.increment;', ctx);
-    assign('$stores.cart.count', ctx, 4);
-    evaluateFunction('() => { $stores.cart.count += ctx.$provided.increment; }', ctx)(ctx);
+    const $context = { $stores, $provided };
+    assert.equal(evaluate('$stores.cart.count + $provided.increment', $context), 2);
+    execute('$stores.cart.count += $provided.increment;', $context);
+    assign('$stores.cart.count', $context, 4);
+    evaluateFunction('() => { $stores.cart.count += $context.$provided.increment; }', $context)($context);
     assert.equal($stores.cart.count, 6);
-    assert.throws(() => evaluate('cart.count', ctx), error => error.cause instanceof ReferenceError);
+    assert.throws(() => evaluate('cart.count', $context), error => error.cause instanceof ReferenceError);
 });
 
 for (const [name, bundle] of bundles) test(`${name} shares reactive stores across apps without making plain stores reactive`, t => {
@@ -91,7 +91,7 @@ for (const [name, bundle] of bundles) test(`${name} shares reactive stores acros
         <span b-text="$stores.session.count"></span><em b-text="$provided.count"></em>
         <b b-text="$stores.plain.count"></b>
         <i b-for="n in 2" b-text="$stores.session.count"></i>
-        <script b-script>(ctx) => { ctx.$stores.session.count++; }</script></div>`,
+        <script b-script>($context) => { $context.$stores.session.count++; }</script></div>`,
     `({ stores: { session: brio.state({ count: 0 }), plain: { count: 0 } } })`, bundle);
     const sharedApp = window.brio.createApp(window.Object.assign(new window.Object(), { stores: app.stores }));
     t.after(() => sharedApp.dispose());
@@ -121,9 +121,9 @@ test('providers are live on their own element, preserve objects, and inherit ind
           <div b-data="{ local: 0 }">
             <output b-text="$provided.cart.count"></output>
             <button b-on-click="$provided.cart.count++"></button>
-            <script b-script>(ctx) => {
-              ctx.$stores.cart.view = ctx.$provided;
-              ctx.$stores.cart.reference = ctx.$provided.cart;
+            <script b-script>($context) => {
+              $context.$stores.cart.view = $context.$provided;
+              $context.$stores.cart.reference = $context.$provided.cart;
             }</script>
           </div>
         </section>`, `({ stores: { cart: brio.state({ count: 0 }) } })`);

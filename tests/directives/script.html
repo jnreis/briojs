@@ -20,10 +20,10 @@
 
     <!-- Test 1: b-script initialization using arrow function pattern -->
     <div class="card">
-        <h3>1. Inline Context Script Execution: <code>(ctx) => { ... }</code></h3>
+        <h3>1. Inline Context Script Execution: <code>($context) => { ... }</code></h3>
         <p>The browser does not invoke this unassigned arrow. Brio compiles the function expression with an explicit context and calls it on hydration; no <code>with</code> or body extraction is used.</p>
         <script b-script>
-            (ctx) => {
+            ($context) => {
                 $data.initializedAt = new Date().toLocaleTimeString();
                 $data.user = 'Margaret Hamilton';
                 $data.counter = 10;
@@ -37,18 +37,18 @@
         <button on-click="$data.counter++">Increment</button>
     </div>
 
-    <!-- Test 2: b-script using ctx parameter and async/setTimeout -->
+    <!-- Test 2: b-script using $context parameter and async/setTimeout -->
     <div class="card" b-data="{ count2: 5 }">
-        <h3>2. Using <code>ctx</code> Parameter & Asynchronous Setup (setTimeout)</h3>
+        <h3>2. Using <code>$context</code> Parameter & Asynchronous Setup (setTimeout)</h3>
         <script b-script>
-            (ctx) => {
-                ctx.$data.title = 'Apollo 11 Lead Flight Software Designer';
-                ctx.$data.asyncStatus = 'Waiting 1s for timer...';
+            ($context) => {
+                $context.$data.title = 'Apollo 11 Lead Flight Software Designer';
+                $context.$data.asyncStatus = 'Waiting 1s for timer...';
                 const timer = setTimeout(() => {
-                    ctx.$data.asyncStatus = 'Timer fired successfully!';
-                    ctx.$data.count2 = 42;
+                    $context.$data.asyncStatus = 'Timer fired successfully!';
+                    $context.$data.count2 = 42;
                 }, 1000);
-                ctx.onCleanup(() => clearTimeout(timer));
+                $context.onCleanup(() => clearTimeout(timer));
             }
         </script>
 
@@ -61,13 +61,13 @@
     <div class="card" b-data="{ status: 'Waiting' }">
         <h3>3. Async Arrow and Destructured Context</h3>
         <script b-script>
-            async (ctx) => {
+            async ($context) => {
                 $data.status = 'Started';
                 $data.parentUser = $data.$parent.user;
                 $data.scriptTag = $el.tagName;
                 await new Promise(resolve => setTimeout(resolve, 250));
                 $data.status = 'Async function completed';
-                console.warn('Async script started', ctx);
+                console.warn('Async script started', $context);
             }
         </script>
         <p>${$data.status}. Parent user: ${$data.parentUser}. Element: ${$data.scriptTag}.</p>

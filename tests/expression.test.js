@@ -22,10 +22,12 @@ test('contexts merge named references with nearest precedence without copying re
 test('strict expressions use explicit context, normal globals, and meaningful missing-name errors', () => {
     const scope = createExpressionScope({ $data: { count: 3 } });
     assert.equal(evaluate('Math.max($data.count, 5)', scope), 5);
-    assert.equal(evaluate('JSON.stringify(ctx.$data)', scope), '{"count":3}');
+    assert.equal(evaluate('JSON.stringify($context.$data)', scope), '{"count":3}');
     assert.equal(evaluate('(() => { const value = $data.count; return value * 2; })()', scope), 6);
     assert.equal(evaluate('(function () { return this; })()', scope), undefined);
     assert.throws(() => evaluate('count', scope), error => error.cause instanceof ReferenceError);
+    assert.equal(evaluate('$context.$data.count', scope), 3);
+    assert.throws(() => evaluate('ctx', scope), error => error.cause instanceof ReferenceError);
     assert.throws(() => evaluate('$parent', scope), error => error.cause instanceof ReferenceError);
     assert.throws(() => execute('brioUndeclaredVariable = 1', scope), error => error.cause instanceof ReferenceError);
     assert.equal(globalThis.brioUndeclaredVariable, undefined);
@@ -42,7 +44,7 @@ test('event statements retain local variables and explicit event references in c
     assert.equal(data.callback(), 5);
     assert.equal(data.event, original);
     const replacement = { type: 'replacement' };
-    execute('$data.event = $event; $data.type = ctx.$event.type;', scope, replacement);
+    execute('$data.event = $event; $data.type = $context.$event.type;', scope, replacement);
     assert.equal(data.event, replacement);
     assert.equal(data.type, 'replacement');
     assert.equal(scope.$event, original);
@@ -59,8 +61,9 @@ test('assign uses its value argument without shadowing and supports all explicit
     assign('$data.value', scope, value);
     assign('$data.$parent.value', scope, 4);
     assign('$for.item.value', scope, 5);
+    assign('$context.$data.$parent.value', scope, 6);
     assert.equal(scope.$data.value, value);
-    assert.equal(scope.$data.$parent.value, 4);
+    assert.equal(scope.$data.$parent.value, 6);
     assert.equal(scope.$for.item.value, 5);
 });
 
@@ -77,17 +80,17 @@ test('observer and directive helpers are explicitly available without global fal
     });
     execute('$data.result = [$mutations[0].type, $entry.isIntersecting, $size.width, $props.label, $emit("change"), trustedHTML("ok"), money({ precision: 3 }).precision];', scope);
     assert.deepEqual(scope.$data.result, ['attributes', true, 42, 'Label', 'change', 'ok', 3]);
-    assert.equal(evaluate('ctx.$props.label', scope), 'Label');
+    assert.equal(evaluate('$context.$props.label', scope), 'Label');
     assert.throws(() => evaluate('props.label', scope), error => error.cause instanceof ReferenceError);
     assert.throws(() => execute('emit("change")', scope), error => error.cause instanceof ReferenceError);
-    evaluateFunction('(ctx) => { $data.label = $props.label; ctx.$data.event = $emit("script"); }', scope)(scope);
+    evaluateFunction('($context) => { $data.label = $props.label; $context.$data.event = $emit("script"); }', scope)(scope);
     assert.equal(scope.$data.label, 'Label');
     assert.equal(scope.$data.event, 'script');
 });
 
-test('script factories use the same strict bindings and preserve ctx in async closures', async () => {
+test('script factories use the same strict bindings and preserve $context in async closures', async () => {
     const scope = createExpressionScope({ $data: { count: 0, $parent: { count: 2 } } });
-    const fn = evaluateFunction('async (ctx) => { const delta = $data.$parent.count; await Promise.resolve(); ctx.$data.count += delta; return (function () { return this; })(); }', scope);
+    const fn = evaluateFunction('async ($context) => { const delta = $data.$parent.count; await Promise.resolve(); $context.$data.count += delta; return (function () { return this; })(); }', scope);
     assert.equal(await fn(scope), undefined);
     assert.equal(scope.$data.count, 2);
     assert.throws(() => evaluateFunction('() => { with ({}) {} }', scope), SyntaxError);

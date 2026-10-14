@@ -22,6 +22,14 @@ metadata on `main`, through commit `d868d43`.
 
 ## Unreleased
 
+### Changed
+
+- `b-text` now hydrates interpolation in evaluated text, including state
+  references. Added `.raw` to `b-text` and `b-html` to skip content hydration
+  while retaining reactive source evaluation; use `b-text.raw` for user text.
+- Renamed the explicit compiled-expression context binding from `ctx` to
+  `$context`; updated contextual script examples and documentation.
+
 ### Added
 
 - Optional standalone router, persistence, and forms scripts sharing the

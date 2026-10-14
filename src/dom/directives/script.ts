@@ -12,9 +12,9 @@ export function handleScript(
         throw new TypeError('b-script can only be used on script elements.');
     const raw = (element.textContent || '').trim();
     if (!raw) throw new SyntaxError('b-script requires a function expression.');
-    const ctx = createExpressionScope({ onCleanup }, context);
+    const $context = createExpressionScope({ onCleanup }, context);
     try {
-        const result = evaluateFunction(raw, ctx)(ctx);
+        const result = evaluateFunction(raw, $context)($context);
         if (result instanceof Promise)
             return result.then(() => {}, error => {
                 throw causedError('Brio b-script execution failed.', error);

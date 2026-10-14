@@ -412,3 +412,107 @@ test('public declarations infer named stores and preserve existing state/compone
         'tests/types/stores-providers.ts',
     ], { cwd: root, encoding: 'utf8', stdio: 'pipe' });
 });
+
+function manualPage(t, path) {
+    const markup = readFileSync(new URL(path, import.meta.url), 'utf8');
+    const dom = new JSDOM(markup, { runScripts: 'outside-only', url: 'https://brio.test/' });
+    const { window } = dom;
+    const errors = [];
+    window.addEventListener('error', event => {
+        errors.push(event.error);
+        event.preventDefault();
+    });
+    t.after(() => {
+        try {
+            window.dispatchEvent(new window.Event('pagehide'));
+            assert.deepEqual(errors, []);
+        } finally {
+            window.close();
+        }
+    });
+    window.eval(bundles[0][1]);
+    window.eval(window.document.querySelector('script[data-brio-test]').textContent);
+    return {
+        window, document: window.document,
+        click: id => window.document.getElementById(id).click(),
+        text: id => window.document.getElementById(id)?.textContent,
+        input(id, value) {
+            const element = window.document.getElementById(id);
+            element.value = value;
+            element.dispatchEvent(new window.Event('input', { bubbles: true }));
+        },
+    };
+}
+
+test('manual provider page demonstrates live overrides, slots, rows, read-only names and branch lifetimes', t => {
+    const { document, click, text, input } = manualPage(t, './directives/provide.html');
+    assert.equal(text('outer-theme'), 'dark');
+    assert.equal(text('nested-theme'), 'light');
+    assert.equal(text('component-theme'), 'component');
+    assert.equal(text('slot-theme'), 'dark');
+    assert.equal(text('undefined-theme'), 'undefined');
+    assert.equal(text('missing-value'), 'not provided');
+    input('theme-input', 'blue');
+    assert.equal(text('outer-theme'), 'blue');
+    assert.equal(text('local-theme'), 'blue');
+    assert.equal(text('slot-theme'), 'blue');
+    assert.equal(document.querySelector('section').title, 'blue');
+    assert.equal(text('nested-theme'), 'light');
+    click('override-toggle');
+    assert.equal(text('nested-theme'), 'blue');
+    click('provided-increment');
+    assert.equal(text('provided-count'), '1');
+    assert.equal(text('nested-count'), '1');
+    click('read-only-check');
+    assert.match(text('read-only-result'), /read-only/);
+    click('branch-increment');
+    assert.equal(text('branch-count'), '1');
+    click('branch-toggle');
+    assert.equal(text('branch-count'), undefined);
+    input('theme-input', 'green');
+    click('branch-toggle');
+    assert.equal(text('branch-count'), '0');
+    assert.equal(text('branch-theme'), 'green');
+    const row = document.querySelector('li');
+    click('reverse');
+    assert.equal(document.querySelectorAll('li')[1], row);
+    assert.equal(row.textContent.trim(), 'Alpha: 1');
+});
+
+test('manual stores page demonstrates cross-app sharing, plain stores, signals and independent disposal', t => {
+    const { document, click, text, input } = manualPage(t, './reactivity/stores.html');
+    assert.equal(text('primary-count'), '0');
+    assert.equal(text('secondary-count'), '0');
+    click('primary-increment');
+    assert.equal(text('primary-count'), '1');
+    assert.equal(text('secondary-count'), '1');
+    click('secondary-increment');
+    assert.equal(text('primary-count'), '2');
+    input('user-input', 'Alice');
+    for (const id of ['nested-user', 'component-user', 'secondary-user'])
+        assert.equal(text(id), 'Alice');
+    click('plain-increment');
+    click('plain-read');
+    assert.equal(text('plain-count'), '0');
+    assert.equal(text('plain-actual'), '1');
+    click('signal-increment');
+    assert.equal(text('signal-count'), '1');
+    assert.equal(text('missing-store'), 'not registered');
+    click('registration-check');
+    assert.match(text('registration-result'), /^PASS/);
+    const oldSecondary = document.getElementById('secondary-count');
+    const oldButton = document.getElementById('secondary-increment');
+    click('dispose-secondary');
+    assert.match(text('secondary-status'), /^Disposed/);
+    click('primary-increment');
+    assert.equal(text('primary-count'), '3');
+    assert.equal(oldSecondary.textContent, '2');
+    oldButton.click();
+    assert.equal(text('primary-count'), '3');
+});
+
+test('manual stores and provider pages are discoverable from the test index', () => {
+    const index = readFileSync(new URL('./index.html', import.meta.url), 'utf8');
+    for (const path of ['directives/provide.html', 'reactivity/stores.html'])
+        assert.ok(index.includes(`href="/tests/${path}"`));
+});

@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual Test: app-wide $stores</title>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; margin: 20px; background: #f8fafc; color: #1e293b; }
+        .card { background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+        h1 { font-size: 1.5rem; }
+        h3 { margin-top: 0; }
+        button { background: #3b82f6; color: white; border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer; margin: 4px; }
+        output { font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>App-wide $stores Manual Tests</h1>
+    <p>Registered names are fixed. Reactivity is explicit: only the session and signal below are reactive.</p>
+    <main id="primary-app">
+        <section class="card">
+            <h3>1. Shared reactive store</h3>
+            <p>Primary count: <output id="primary-count" b-text="$stores.session.count"></output></p>
+            <button id="primary-increment" b-on-click="$stores.session.count++">Increment shared count</button>
+            <p>User: <input id="user-input" b-model="$stores.session.user"></p>
+            <div b-data="{ local: true }">
+                <p>Nested data still sees <output id="nested-user" b-text="$stores.session.user"></output>.</p>
+                <store-card></store-card>
+            </div>
+        </section>
+        <section class="card">
+            <h3>2. Plain stores are not automatically reactive</h3>
+            <p>Plain count: <output id="plain-count" b-text="$stores.plain.count"></output></p>
+            <button id="plain-increment" b-on-click="$stores.plain.count++">Mutate plain count</button>
+            <button id="plain-read" b-on-click="$data.plainActual = $stores.plain.count">Read actual plain value</button>
+            <p>Explicit read: <output id="plain-actual" b-text="$data.plainActual"></output></p>
+            <p>The first output stays at zero; the explicit read shows the changed value.</p>
+        </section>
+        <section class="card">
+            <h3>3. Signals and missing stores</h3>
+            <button id="signal-increment" b-on-click="$stores.ticks.value++">Increment signal</button>
+            <output id="signal-count" b-text="$stores.ticks.value"></output>
+            <p>Missing store: <output id="missing-store" b-text="$stores.missing ?? 'not registered'"></output></p>
+        </section>
+        <section class="card">
+            <h3>4. Registration and independent app lifetime</h3>
+            <button id="registration-check" b-on-click="$data.checkRegistration()">Try replacing a store</button>
+            <output id="registration-result" b-text="$data.registrationResult"></output>
+            <button id="dispose-secondary" b-on-click="$data.disposeSecondary()">Dispose secondary app</button>
+            <p>Status: <output id="secondary-status" b-text="$data.secondaryStatus"></output></p>
+            <p>After disposal, primary controls still update the shared store; secondary bindings stop.</p>
+        </section>
+    </main>
+    <aside id="secondary-app" class="card">
+        <h3>5. Separate app using the same store</h3>
+        <p>Secondary count: <output id="secondary-count" b-text="$stores.session.count"></output></p>
+        <p>User: <output id="secondary-user" b-text="$stores.session.user"></output></p>
+        <button id="secondary-increment" b-on-click="$stores.session.count++">Increment from secondary app</button>
+    </aside>
+    <script src="/dist/brio.min.js"></script>
+    <script data-brio-test>
+        "use strict";
+        const session = brio.state({ count: 0, user: 'Guest' });
+        const plain = { count: 0 };
+        const ticks = brio.signal(0);
+        const secondary = brio.createApp({ stores: { session } });
+        const app = brio.createApp({
+            stores: { session, plain, ticks },
+            state: () => ({
+                plainActual: 0, registrationResult: 'Not checked', secondaryStatus: 'Mounted',
+                checkRegistration() {
+                    try {
+                        app.stores.session = {};
+                        this.registrationResult = 'FAIL: replacement succeeded';
+                    } catch (error) {
+                        if (!(error instanceof TypeError)) throw error;
+                        this.registrationResult = 'PASS: store names are read-only';
+                    }
+                },
+                disposeSecondary() {
+                    secondary.dispose();
+                    this.secondaryStatus = 'Disposed; shared store remains active';
+                },
+            }),
+            components: {
+                'store-card': {
+                    template: '<p>Component user: <output id="component-user" b-text="$stores.session.user"></output></p>',
+                    setup({ $stores }) {
+                        if ($stores.session !== session) throw new Error('Store identity was not preserved.');
+                        return {};
+                    },
+                },
+            },
+        });
+        if (app.stores.session !== secondary.stores.session)
+            throw new Error('Apps did not receive the same store.');
+        app.mount('#primary-app');
+        secondary.mount('#secondary-app');
+        window.addEventListener('pagehide', () => {
+            secondary.dispose();
+            app.dispose();
+        }, { once: true });
+    </script>
+</body>
+</html>

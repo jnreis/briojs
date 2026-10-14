@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual Test: b-provide and $provided</title>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; margin: 20px; background: #f8fafc; color: #1e293b; }
+        .card { background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+        h1 { font-size: 1.5rem; }
+        h3 { margin-top: 0; }
+        .nested { border-left: 4px solid #3b82f6; padding: 12px; margin-top: 12px; }
+        button { background: #3b82f6; color: white; border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer; margin: 4px; }
+        output { font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>b-provide / $provided Manual Tests</h1>
+    <p>Provided names are read-only and live. Nested providers override names without changing data ancestry.</p>
+    <main id="provider-app">
+        <section class="card" b-provide="{ theme: $data.theme, counter: $stores.counter }"
+                 b-bind-title="$provided.theme">
+            <h3>1. Live values on the provider and its descendants</h3>
+            <p>The section title and theme should follow this input:
+                <input id="theme-input" b-model="$data.theme">
+            </p>
+            <p>Theme: <output id="outer-theme" b-text="$provided.theme"></output></p>
+            <div class="nested" b-data="{ local: 0 }">
+                <p>A local data boundary still sees <output id="local-theme" b-text="$provided.theme"></output>.</p>
+                <button id="provided-increment" b-on-click="$provided.counter.count++">Mutate provided counter object</button>
+                <p>Shared count: <output id="provided-count" b-text="$provided.counter.count"></output></p>
+            </div>
+            <div class="nested" b-provide="$data.override ? { theme: 'light' } : {}">
+                <h3>2. Override and fallback</h3>
+                <p>Starts at light. Removing the override reveals the current outer theme.</p>
+                <button id="override-toggle" b-on-click="$data.override = !$data.override">Toggle override</button>
+                <p>Nested theme: <output id="nested-theme" b-text="$provided.theme"></output></p>
+                <p>Inherited count: <output id="nested-count" b-text="$provided.counter.count"></output></p>
+            </div>
+            <div class="nested" b-provide="{ theme: undefined }">
+                <h3>3. Missing names and explicit undefined</h3>
+                <p>Undefined shadows the parent:
+                    <output id="undefined-theme" b-text="$provided.theme ?? 'undefined'"></output>.
+                    Missing name: <output id="missing-value" b-text="$provided.missing ?? 'not provided'"></output>.
+                </p>
+            </div>
+            <div class="nested">
+                <h3>4. Component setup and slot authoring context</h3>
+                <provider-card>
+                    <p>Caller-authored slot: <output id="slot-theme" b-text="$provided.theme"></output></p>
+                </provider-card>
+                <p>The component overrides its template theme; the slot keeps the outer theme.</p>
+            </div>
+            <div class="nested">
+                <h3>5. Conditional lifetime</h3>
+                <button id="branch-toggle" b-on-click="$data.visible = !$data.visible">Toggle branch</button>
+                <div b-if="$data.visible" b-data="{ local: 0 }"
+                     b-provide="{ theme: $data.$parent.theme }">
+                    <p>Branch theme: <output id="branch-theme" b-text="$provided.theme"></output></p>
+                    <button id="branch-increment" b-on-click="$data.local++">Increment local</button>
+                    <output id="branch-count" b-text="$data.local"></output>
+                </div>
+                <p>Hide and show: local count resets, theme uses the latest value.</p>
+            </div>
+            <div class="nested">
+                <h3>6. Per-row providers</h3>
+                <button id="reverse" b-on-click="$data.items.reverse()">Reverse rows</button>
+                <ul>
+                    <li b-for="item, index in $data.items" b-key="$for.item.id"
+                        b-provide="{ item: $for.item, index: $for.index }">
+                        <span b-text="$provided.item.name + ': ' + $provided.index"></span>
+                    </li>
+                </ul>
+            </div>
+        </section>
+        <section class="card">
+            <h3>7. Read-only names</h3>
+            <button id="read-only-check" b-on-click="$data.checkReadOnly()">Try replacing a provided name</button>
+            <output id="read-only-result" b-text="$data.readOnlyResult"></output>
+            <p>The intentional error is displayed here, not left as an uncaught console error.</p>
+        </section>
+    </main>
+    <script src="/dist/brio.min.js"></script>
+    <script data-brio-test>
+        "use strict";
+        const counter = brio.state({ count: 0 });
+        let providedView;
+        const app = brio.createApp({
+            stores: { counter },
+            state: () => ({
+                theme: 'dark', override: true, visible: true,
+                items: [{ id: 'a', name: 'Alpha' }, { id: 'b', name: 'Beta' }],
+                readOnlyResult: 'Not checked',
+                checkReadOnly() {
+                    try {
+                        providedView.theme = 'forbidden';
+                        this.readOnlyResult = 'FAIL: assignment succeeded';
+                    } catch (error) {
+                        if (!(error instanceof TypeError)) throw error;
+                        this.readOnlyResult = error.message;
+                    }
+                },
+            }),
+            components: {
+                'provider-card': {
+                    template: '<div b-provide="{ theme: \'component\' }"><p>Component: <output id="component-theme" b-text="$provided.theme"></output></p><slot></slot></div>',
+                    setup({ $provided, $stores }) {
+                        providedView = $provided;
+                        if ($provided.counter !== $stores.counter)
+                            throw new Error('Component did not receive the shared counter.');
+                        return {};
+                    },
+                },
+            },
+        });
+        app.mount('#provider-app');
+        window.addEventListener('pagehide', () => app.dispose(), { once: true });
+    </script>
+</body>
+</html>

@@ -19,7 +19,8 @@
     textInput: 'Hello Brio',
     trimmedInput: '   spaces trimmed   ',
     lazyInput: 'Update on change/blur',
-    rawNumber: '42',
+    defaultNumber: '42',
+    convertedNumber: 42,
     isSubscribed: true,
     hobbies: ['coding'],
     favoriteColor: 'blue',
@@ -28,7 +29,7 @@
 }">
 
     <h1>b-model Directive Manual Tests</h1>
-    <p>Tests 2-way data binding across inputs, textareas, checkboxes, radios, selects, and modifiers (<code>.trim</code>, <code>.lazy</code>, <code>.raw</code>).</p>
+    <p>Tests 2-way data binding across inputs, textareas, checkboxes, radios, selects, and modifiers (<code>.trim</code>, <code>.lazy</code>, <code>.number</code>).</p>
 
     <!-- Test 1: Standard Text Input -->
     <div class="card">
@@ -107,6 +108,26 @@
                 <option value="grape">Grape</option>
             </select>
             <p>Selected fruits: <code>${JSON.stringify($data.multiFruits)}</code></p>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>6. Default strings versus .number</h3>
+        <p>V4 text models keep strings by default.
+            Try 0042, true, null, surrounding spaces, or literal
+            <code b-text="'${$data.defaultNumber}'"></code> text.
+            The default field keeps exactly what you type. .number uses parseFloat when possible.</p>
+        <div class="field">
+            <label for="default-model">Default b-model:</label>
+            <input id="default-model" type="text" b-model="$data.defaultNumber">
+            <p>Value: <code id="default-model-value" b-text="JSON.stringify($data.defaultNumber)"></code>
+                Type: <code id="default-model-type" b-text="typeof $data.defaultNumber"></code></p>
+        </div>
+        <div class="field">
+            <label for="number-model">b-model.number:</label>
+            <input id="number-model" type="text" b-model.number="$data.convertedNumber">
+            <p>Value: <code id="number-model-value" b-text="JSON.stringify($data.convertedNumber)"></code>
+                Type: <code id="number-model-type" b-text="typeof $data.convertedNumber"></code></p>
         </div>
     </div>
 

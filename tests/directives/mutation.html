@@ -67,6 +67,24 @@
         </div>
     </div>
 
+    <div class="card">
+        <h3>4. External target, subtree false versus true, filters and old values</h3>
+        <p>Buttons change an external target. Direct attributes reach both observers; descendant attributes reach only
+            the subtree observer. Unfiltered data-other changes do not reach the filtered observer. See console logs.</p>
+        <button on-click="document.querySelector('#mutation-target').setAttribute('data-test', String(Date.now()))">Direct attribute</button>
+        <button on-click="document.querySelector('#mutation-target span').setAttribute('data-test', String(Date.now()))">Descendant attribute</button>
+        <button on-click="document.querySelector('#mutation-target').setAttribute('data-other', String(Date.now()))">Excluded attribute</button>
+        <button on-click="document.querySelector('#mutation-target span').firstChild.data = String(Date.now())">Character data</button>
+        <div id="mutation-target" b-ignore><span>Original text</span></div>
+        <div b-options="{ 'on-attrs': { target: '#mutation-target', subtree: false, attributeOldValue: true, attributeFilter: ['data-test'] } }"
+             on-attrs="console.log('Direct filtered attributes with old value', $mutations)"></div>
+        <div b-options="{ 'on-attrs': { target: $el.previousElementSibling.previousElementSibling, debounce: 150 }, 'on-text': { target: '#mutation-target', characterDataOldValue: true } }"
+             on-attrs.subtree="console.log('Subtree attributes, batched', $mutations)"
+             on-text.subtree.debounce="console.log('Subtree text with old value', $mutations)"></div>
+        <p>Existing scenarios exercise added/removed nodes and default subtree=true. Debounced mutation callbacks
+            accumulate all records, rather than dropping earlier deliveries.</p>
+    </div>
+
     <!-- Logs Section -->
     <div class="card">
         <h3>Mutation Event Logs:</h3>

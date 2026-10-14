@@ -206,11 +206,11 @@ function hydrateOwnedNode(
 
         if (baseName.startsWith('b-on-') || baseName.startsWith('on-')) {
             if (baseName.includes('-enter') || baseName.includes('-exit')) {
-                handleIntersection(element, baseName, attrValue, modifiers, context);
+                handleIntersection(element, attrName, attrValue, modifiers, context);
             } else if (baseName.includes('-addednodes') || baseName.includes('-removednodes') || baseName.includes('-attrs') || baseName.includes('-text')) {
-                handleMutation(element, baseName, attrValue, modifiers, context);
+                handleMutation(element, attrName, attrValue, modifiers, context);
             } else if (baseName.includes('-resize')) {
-                handleResize(element, baseName, attrValue, modifiers, context);
+                handleResize(element, attrName, attrValue, modifiers, context);
             } else {
                 handleOn(element, baseName, attrValue, modifiers, context);
             }

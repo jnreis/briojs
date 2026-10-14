@@ -141,11 +141,11 @@ forbids runtime `new Function` remains a deployment blocker.
 | `b-load-once` | No v4 script-loader equivalent; control asset loading through normal application boot/imports. |
 | `b-transition` | Rewrite the two-selector expression into named CSS classes. Historical comments mention play/reverse aliases, but they are not registered in this build. |
 | `b-on-*`, `on-*` | Prefer `b-on-*`, explicit calls, dot modifiers; translate old options deliberately. |
-| Intersection / resize | Keep event family names but update payloads to `$entry` / `$size`; unsupported options need a native observer. |
+| Intersection / resize | Keep event names; current builds accept keyed observer `b-options` for root/rootMargin/threshold, document, and box. Update payloads to `$entry` / `$size`. |
 | `b-effect` | Explicit expression such as `$data.observe($data.count)`; synchronous dependencies and feedback writes need review. |
 
-V4 has no general custom directive registration API or legacy `b-options`
-processor. Unrecognized legacy attributes can remain inert without an error.
+V4 has no general custom directive registration API or general legacy `b-options`
+processor; current `b-options` applies specifically to observer directives. Unrecognized legacy attributes can remain inert without an error.
 Search for leftovers as well as testing visible behavior.
 
 New v4 conditional chains use adjacent `b-else-if` and `b-else`, with
@@ -171,7 +171,10 @@ array, not merely the number of same-name controls.
   JSON parser and keeps nonnumeric text unchanged.
 - `.trim` trims text; `.lazy` uses change rather than input.
 - Legacy `b-options` model `raw: true` needs no v4 modifier: plain v4 text
-  already stays text. Legacy `b-model.raw` was not a registered directive.
+  already stays text. Remove that legacy option rather than replacing it with
+  `b-model.raw`, which is not supported in v4 (and was not a registered legacy
+  directive). The `.raw` modifiers on `b-text` and `b-html` concern content
+  hydration, not model value conversion.
 - Preserve existing defaults in state before mounting; do not rely on the input
   markup to populate them.
 - Test numeric radios/checkbox arrays separately: DOM values are strings, and
@@ -201,12 +204,13 @@ modifiers; use an explicitly owned native listener or application filter.
 Preserve the intended exact event names when removing hyphen options.
 
 Intersection handlers use `$entry`; resize handlers use `$size.width`,
-`$size.height`, and `$entry`. Observer debounce is fixed at 100ms. V4 does not
-forward old observer root/rootMargin/threshold/box options. If essential, own a
-native observer in component setup or a script and disconnect it on cleanup.
-Old observers debounce even without an option; v4 only debounces with
-`.debounce`. Old resize payloads are border-box `[width, height]` arrays; v4's
-object describes contentRect. Convert destructuring and measurements, not just
+`$size.height`, and `$entry`. Current observer `b-options` supports
+root/rootMargin/threshold, mutation target/subtree, resize document/box, and
+numeric debounce delays. Dot `.debounce` is 100ms and overrides configured
+delays. These additions require the current bundle, not the original v4 baseline.
+Old observers debounce even without an option; v4 debounce is opt-in.
+Old resize payloads are border-box `[width, height]` arrays; v4's
+object describes the selected box (content-box by default). Convert destructuring and measurements, not just
 the payload's name.
 
 ## 4. Factories, components, scripts, and styles

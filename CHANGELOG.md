@@ -32,6 +32,9 @@ metadata on `main`, through commit `d868d43`.
 
 ### Added
 
+- Observer-specific keyed `b-options`: intersection roots/margins/thresholds,
+  mutation targets/subtree/filter/old-value settings, resize document/box
+  selection, and numeric debounce delays. Debounced mutations retain all records.
 - Optional standalone router, persistence, and forms scripts sharing the
   browser core runtime; HTTP and step remain bundled.
 - Main npm entry exports for devtools, with explicit `enableDevtools()`

@@ -1,5 +1,6 @@
 import { createExpressionScope, execute } from '../../core/expression';
 import { onCleanup } from '../../core/scope';
+import { observerOptions, observerTarget, observerBoolean, observerDelay } from './observer-options';
 
 export function handleMutation(
     element: Element,
@@ -8,19 +9,35 @@ export function handleMutation(
     modifiers: Record<string, boolean>,
     context: Record<PropertyKey, any>,
 ): void {
-    const isAdded = attrName.includes('addednodes');
-    const isRemoved = attrName.includes('removednodes');
-    const isAttrs = attrName.includes('attrs');
-    const isText = attrName.includes('text');
+    const baseName = attrName.split('.')[0];
+    const isAdded = baseName.endsWith('-addednodes');
+    const isRemoved = baseName.endsWith('-removednodes');
+    const isAttrs = baseName.endsWith('-attrs');
+    const isText = baseName.endsWith('-text');
 
+    const configured = observerOptions(element, attrName, modifiers, context);
+    const target = configured.target === undefined ? element :
+        observerTarget(configured.target, element, 'Mutation target');
+    const delay = observerDelay(configured);
     const options: MutationObserverInit = {
         childList: isAdded || isRemoved || (!isAttrs && !isText),
         attributes: isAttrs,
         characterData: isText,
-        subtree: true,
+        subtree: observerBoolean(configured, 'subtree', true),
     };
+    if (isAttrs) {
+        options.attributeOldValue = observerBoolean(configured, 'attributeOldValue', false);
+        if (configured.attributeFilter !== undefined) {
+            if (!Array.isArray(configured.attributeFilter) ||
+                !configured.attributeFilter.every(value => typeof value === 'string'))
+                throw new TypeError('Mutation attributeFilter must be an array of strings.');
+            options.attributeFilter = configured.attributeFilter;
+        }
+    }
+    if (isText) options.characterDataOldValue = observerBoolean(configured, 'characterDataOldValue', false);
 
-    let debounceTimer: any;
+    let debounceTimer: ReturnType<typeof setTimeout> | undefined;
+    let pending: MutationRecord[] = [];
 
     const observer = new MutationObserver((mutations) => {
         let matching: MutationRecord[] = [];
@@ -38,21 +55,25 @@ export function handleMutation(
 
         if (matching.length) {
             const invoke = () => {
-                execute(expression, createExpressionScope({ $mutations: matching }, context));
+                const records = pending;
+                pending = [];
+                execute(expression, createExpressionScope({ $mutations: records }, context));
             };
+            pending.push(...matching);
 
-            if (modifiers.debounce) {
+            if (delay !== undefined) {
                 clearTimeout(debounceTimer);
-                debounceTimer = setTimeout(invoke, 100);
+                debounceTimer = setTimeout(invoke, delay);
             } else {
                 invoke();
             }
         }
     });
 
-    observer.observe(element, options);
     onCleanup(() => {
         clearTimeout(debounceTimer);
         observer.disconnect();
+        pending = [];
     });
+    observer.observe(target, options);
 }

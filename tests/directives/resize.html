@@ -28,6 +28,28 @@
         <div class="resizable" on-resize="$data.boxWidth = Math.round($size.width); $data.boxHeight = Math.round($size.height)">
             Drag the bottom-right corner of this box to resize it!
         </div>
+        <div class="card">
+            <h3>2. Content box versus border box</h3>
+            <p>Resize these padded boxes. Content measurements exclude padding/border; border measurements include them.
+                The selected box is also forwarded to observe(). Outputs are logged to the console.</p>
+            <div class="resizable" b-options="{ 'on-resize': { box: 'content-box' } }"
+                 on-resize="console.log('content-box', $size, $entry)">Content box</div>
+            <div class="resizable" b-options="{ 'on-resize': { box: 'border-box', debounce: 250 } }"
+                 on-resize="console.log('border-box, 250ms', $size, $entry)">Border box</div>
+        </div>
+        <div class="card">
+            <h3>3. Device pixels and document target</h3>
+            <p>Device-pixel measurements are physical pixels, not CSS pixels. Browser support is required:
+                unsupported requested measurements report an error rather than silently returning content size.</p>
+            <div class="resizable" b-options="{ 'on-resize': { box: 'device-pixel-content-box' } }"
+                 on-resize.debounce="console.log('device-pixel-content-box', $size)">Device-pixel content box</div>
+            <div b-options="{ 'on-resize': { box: 'border-box' } }"
+                 on-resize.document.debounce="console.log('documentElement resize', $size, $entry.target)"></div>
+            <div b-options="{ 'on-resize': { document: true, box: 'content-box' } }"
+                 on-resize="console.log('Configured document target, content box', $size)"></div>
+            <p>Resize the browser window to exercise .document. You can also set document: true in b-options.
+                Default observations use the element and content-box. All observers disconnect on unmount.</p>
+        </div>
     </div>
 
     <script src="/dist/brio.min.js"></script>

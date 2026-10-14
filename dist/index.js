@@ -1216,45 +1216,115 @@ function handleTemplate(element, _expression, _modifiers, context, runtime, hydr
     if (node.parentNode === parent) hydrateNodeFn(node, context, runtime);
   }
 }
+function observerOptions(element, attrName, modifiers, context) {
+  const expression = element.getAttribute("b-options");
+  const mapping = expression === null ? {} : evaluate(expression, context);
+  if (!mapping || typeof mapping !== "object" || Array.isArray(mapping))
+    throw new TypeError("b-options must evaluate to an object keyed by directive name.");
+  const base = attrName.split(".")[0];
+  const result = {};
+  for (const name of /* @__PURE__ */ new Set([base, attrName])) {
+    const options = Object.prototype.hasOwnProperty.call(mapping, name) ? Reflect.get(mapping, name) : void 0;
+    if (options === void 0) continue;
+    if (!options || typeof options !== "object" || Array.isArray(options))
+      throw new TypeError(`b-options["${name}"] must be an object.`);
+    Object.assign(result, options);
+  }
+  return Object.assign(result, modifiers);
+}
+function observerTarget(value, element, label) {
+  const target = typeof value === "string" ? element.ownerDocument.querySelector(value) : value;
+  const view = element.ownerDocument.defaultView;
+  if (!(target instanceof view.Element) && !(target instanceof view.Document) && !(target instanceof view.Text))
+    throw new TypeError(`${label} must resolve to an element, document, or text node.`);
+  return target;
+}
+function observerBoolean(options, name, fallback) {
+  const value = options[name];
+  if (value === void 0) return fallback;
+  if (typeof value !== "boolean") throw new TypeError(`Observer ${name} must be a boolean.`);
+  return value;
+}
+function observerDelay(options) {
+  const value = options.debounce;
+  if (value === void 0 || value === false) return;
+  if (value === true) return 100;
+  if (typeof value !== "number" || !Number.isFinite(value) || value < 0)
+    throw new TypeError("Observer debounce must be a boolean or non-negative finite milliseconds.");
+  return value;
+}
 function handleIntersection(element, attrName, expression, modifiers, context) {
-  const isExit = attrName.includes("exit");
-  const isOnce = Boolean(modifiers.once);
+  const isExit = attrName.split(".")[0].endsWith("-exit");
+  const options = observerOptions(element, attrName, modifiers, context);
+  const isOnce = observerBoolean(options, "once", false);
+  const delay = observerDelay(options);
+  const root = options.root === void 0 || options.root === null ? null : observerTarget(options.root, element, "Intersection root");
+  if ((root == null ? void 0 : root.nodeType) === 3) throw new TypeError("Intersection root cannot be a text node.");
+  if (options.rootMargin !== void 0 && typeof options.rootMargin !== "string")
+    throw new TypeError("Intersection rootMargin must be a string.");
+  const threshold = options.threshold;
+  if (threshold !== void 0 && !(typeof threshold === "number" ? Number.isFinite(threshold) && threshold >= 0 && threshold <= 1 : Array.isArray(threshold) && threshold.every((value) => typeof value === "number" && Number.isFinite(value) && value >= 0 && value <= 1)))
+    throw new TypeError("Intersection threshold must be a number or array of numbers between 0 and 1.");
   let debounceTimer;
+  let stopped = false;
   const observer = new IntersectionObserver((entries) => {
     for (const entry of entries) {
+      if (stopped) return;
       const matches = isExit ? !entry.isIntersecting : entry.isIntersecting;
       if (matches) {
         const invoke = () => {
+          if (isOnce) {
+            stopped = true;
+            observer.disconnect();
+          }
           execute(expression, createExpressionScope({ $entry: entry }, context));
-          if (isOnce) observer.disconnect();
         };
-        if (modifiers.debounce) {
+        if (delay !== void 0) {
           clearTimeout(debounceTimer);
-          debounceTimer = setTimeout(invoke, 100);
+          debounceTimer = setTimeout(invoke, delay);
         } else {
           invoke();
         }
       }
     }
+  }, {
+    root,
+    rootMargin: options.rootMargin,
+    threshold
   });
-  observer.observe(element);
   onCleanup(() => {
     clearTimeout(debounceTimer);
+    stopped = true;
     observer.disconnect();
   });
+  observer.observe(element);
 }
 function handleMutation(element, attrName, expression, modifiers, context) {
-  const isAdded = attrName.includes("addednodes");
-  const isRemoved = attrName.includes("removednodes");
-  const isAttrs = attrName.includes("attrs");
-  const isText = attrName.includes("text");
+  const baseName = attrName.split(".")[0];
+  const isAdded = baseName.endsWith("-addednodes");
+  const isRemoved = baseName.endsWith("-removednodes");
+  const isAttrs = baseName.endsWith("-attrs");
+  const isText = baseName.endsWith("-text");
+  const configured = observerOptions(element, attrName, modifiers, context);
+  const target = configured.target === void 0 ? element : observerTarget(configured.target, element, "Mutation target");
+  const delay = observerDelay(configured);
   const options = {
     childList: isAdded || isRemoved || !isAttrs && !isText,
     attributes: isAttrs,
     characterData: isText,
-    subtree: true
+    subtree: observerBoolean(configured, "subtree", true)
   };
+  if (isAttrs) {
+    options.attributeOldValue = observerBoolean(configured, "attributeOldValue", false);
+    if (configured.attributeFilter !== void 0) {
+      if (!Array.isArray(configured.attributeFilter) || !configured.attributeFilter.every((value) => typeof value === "string"))
+        throw new TypeError("Mutation attributeFilter must be an array of strings.");
+      options.attributeFilter = configured.attributeFilter;
+    }
+  }
+  if (isText) options.characterDataOldValue = observerBoolean(configured, "characterDataOldValue", false);
   let debounceTimer;
+  let pending = [];
   const observer = new MutationObserver((mutations) => {
     let matching = [];
     if (isAdded) {
@@ -1270,46 +1340,63 @@ function handleMutation(element, attrName, expression, modifiers, context) {
     }
     if (matching.length) {
       const invoke = () => {
-        execute(expression, createExpressionScope({ $mutations: matching }, context));
+        const records = pending;
+        pending = [];
+        execute(expression, createExpressionScope({ $mutations: records }, context));
       };
-      if (modifiers.debounce) {
+      pending.push(...matching);
+      if (delay !== void 0) {
         clearTimeout(debounceTimer);
-        debounceTimer = setTimeout(invoke, 100);
+        debounceTimer = setTimeout(invoke, delay);
       } else {
         invoke();
       }
     }
   });
-  observer.observe(element, options);
   onCleanup(() => {
     clearTimeout(debounceTimer);
     observer.disconnect();
+    pending = [];
   });
+  observer.observe(target, options);
 }
-function handleResize(element, _attrName, expression, modifiers, context) {
+function handleResize(element, attrName, expression, modifiers, context) {
+  const options = observerOptions(element, attrName, modifiers, context);
+  const target = observerBoolean(options, "document", false) ? element.ownerDocument.documentElement : element;
+  const box = options.box ?? "content-box";
+  if (box !== "content-box" && box !== "border-box" && box !== "device-pixel-content-box")
+    throw new TypeError("Resize box must be content-box, border-box, or device-pixel-content-box.");
+  const delay = observerDelay(options);
   let debounceTimer;
   const observer = new ResizeObserver((entries) => {
     const entry = entries[0];
     if (!entry) return;
     const invoke = () => {
+      const sizes = box === "border-box" ? entry.borderBoxSize : box === "device-pixel-content-box" ? entry.devicePixelContentBoxSize : entry.contentBoxSize;
+      const measured = sizes == null ? void 0 : sizes[0];
+      if (box !== "content-box" && !measured)
+        throw new Error(`ResizeObserver did not supply the requested ${box} measurement.`);
+      const vertical = /^(vertical|sideways)/.test(
+        element.ownerDocument.defaultView.getComputedStyle(entry.target).writingMode
+      );
       const size = {
-        width: entry.contentRect.width,
-        height: entry.contentRect.height
+        width: measured ? vertical ? measured.blockSize : measured.inlineSize : entry.contentRect.width,
+        height: measured ? vertical ? measured.inlineSize : measured.blockSize : entry.contentRect.height
       };
       execute(expression, createExpressionScope({ $size: size, $entry: entry }, context));
     };
-    if (modifiers.debounce) {
+    if (delay !== void 0) {
       clearTimeout(debounceTimer);
-      debounceTimer = setTimeout(invoke, 100);
+      debounceTimer = setTimeout(invoke, delay);
     } else {
       invoke();
     }
   });
-  observer.observe(element);
   onCleanup(() => {
     clearTimeout(debounceTimer);
     observer.disconnect();
   });
+  observer.observe(target, { box });
 }
 function handleEffect(_element, expression, _modifiers, context) {
   effect(() => {
@@ -1464,11 +1551,11 @@ function hydrateOwnedNode(node, parentContext, runtime) {
     const { baseName, modifiers } = extractModifiers(attrName);
     if (baseName.startsWith("b-on-") || baseName.startsWith("on-")) {
       if (baseName.includes("-enter") || baseName.includes("-exit")) {
-        handleIntersection(element, baseName, attrValue, modifiers, context);
+        handleIntersection(element, attrName, attrValue, modifiers, context);
       } else if (baseName.includes("-addednodes") || baseName.includes("-removednodes") || baseName.includes("-attrs") || baseName.includes("-text")) {
-        handleMutation(element, baseName, attrValue, modifiers, context);
+        handleMutation(element, attrName, attrValue, modifiers, context);
       } else if (baseName.includes("-resize")) {
-        handleResize(element, baseName, attrValue, modifiers, context);
+        handleResize(element, attrName, attrValue, modifiers, context);
       } else {
         handleOn(element, baseName, attrValue, modifiers, context);
       }

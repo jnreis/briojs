@@ -265,6 +265,13 @@ Directive arguments use hyphens (`b-on-click`, `b-bind-href`); options use chain
 
 `b-bind-*` binds a DOM property when one exists; otherwise it sets or removes the corresponding attribute. `false`, `null`, and `undefined` remove attributes. `class` accepts a string, array, or object of class names and booleans. `style` accepts a style object.
 
+`b-model` text inputs and textareas preserve strings by default, including
+whitespace and numeric-looking text. Supported model modifiers are `.lazy`
+(update on change instead of input), `.trim` (trim whitespace), and `.number`
+(`parseFloat`, keeping nonnumeric text unchanged). There is no `b-model.raw`
+modifier; `.raw` belongs to `b-text` and `b-html` and controls content hydration,
+not model value conversion.
+
 ### Conditional lifecycle
 
 `b-else-if` and `b-else` follow an adjacent `b-if` branch (whitespace and comments are allowed between branches). The first true branch is mounted; `b-else` is the final fallback. Conditions run in the parent scope.
@@ -315,6 +322,59 @@ Masks preserve the focused input's caret and selection when formatting changes i
 Brio tracks the element's own `transitionrun`, `transitionend`, and `transitioncancel` events for every running property, ignoring descendant events. Removal waits for all properties, including delays. A fallback uses computed CSS duration plus delay, not a fixed timeout. No-duration/reduced-motion styles complete without waiting for an event; unmount cancels pending frames, listeners, and timers. This directive handles CSS transitions, not keyframe animations.
 
 Reversing a running `b-show` transition retargets its CSS properties from their current interpolated values, without replaying the opposite starting pose. A new `b-if` instance still enters from its starting pose because the previous branch has already been dehydrated.
+
+## Observer options
+
+Observer directives support `b-options`, a synchronous object keyed by their
+attribute name. Base-name options apply first, then full-name options, then
+boolean dot modifiers. Options are read at hydration, not reactively retargeted.
+This is an observer-specific API, not a restoration of general legacy options
+for model/event/mask directives.
+
+```html
+<div b-options="{ 'b-on-enter': {
+       root: '#scroller', rootMargin: '20px', threshold: [0, 0.5, 1]
+     } }"
+     b-on-enter.once.debounce="console.log($entry)"></div>
+
+<div b-options="{ 'b-on-attrs': {
+       target: '#observed', subtree: false,
+       attributeFilter: ['data-theme'], attributeOldValue: true
+     } }"
+     b-on-attrs="console.log($mutations)"></div>
+
+<div b-options="{ 'b-on-resize': { box: 'border-box', debounce: 250 } }"
+     b-on-resize.document="console.log($size, $entry)"></div>
+```
+
+- **Intersection:** `root` accepts an Element/Document reference, selector, or
+  null (viewport, the default). `rootMargin` uses native CSS length/percentage
+  syntax; `threshold` accepts a number or array between 0 and 1. `.once` stops
+  after the first delivered matching callback. Enter/exit still follow
+  `isIntersecting`; thresholds control native notification boundaries, not an
+  additional percentage filter.
+- **Mutation:** `target` accepts an Element/Document/Text reference or selector;
+  default is the directive element. `subtree` defaults to true for existing v4
+  behavior; set false explicitly for direct-only observation. `.subtree` forces
+  true. Attribute observers also support `attributeFilter` / `attributeOldValue`;
+  text observers support `characterDataOldValue`. Old-value flags default false.
+  Added/removed observers filter childList records; text observes characterData,
+  not arbitrary `textContent` replacements.
+- **Resize:** `.document` or `document: true` observes the owner document's
+  documentElement. `box` is `content-box` (default), `border-box`, or
+  `device-pixel-content-box`, passed to `observe`. `$size.width/height` use the
+  selected measurement, accounting for vertical writing modes; `$entry` is the
+  native entry. Device-pixel units are physical pixels. Missing nondefault box
+  measurements report an error instead of silently supplying a different box.
+- **Debounce:** `.debounce` / true means 100ms; numeric `debounce` selects a
+  non-negative delay; false/absent runs immediately. A dot modifier overrides
+  numeric configuration. Mutation debounce accumulates every matching record;
+  intersection/resize use the latest matching entry. Disposal disconnects
+  observers and cancels pending callbacks.
+
+Selectors must resolve when hydrated. Invalid options throw explicitly.
+Intersection/ResizeObserver require native browser support or an application
+polyfill; native constructor validation governs CSS margins and platform support.
 
 ## Components
 

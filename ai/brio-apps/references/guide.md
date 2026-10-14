@@ -220,15 +220,36 @@ Events support `.prevent`, `.stop`, `.self`, `.outside`, `.window`, `.document`,
 Event debounce/throttle is fixed at 150ms; do not invent `.debounce.500`.
 Do not combine passive listeners with preventDefault.
 Model modifiers: `.lazy` (change), `.trim`, `.number` (parseFloat, retaining
-non-numeric text). Do not assume checkbox/radio value coercion beyond current
+non-numeric text). Text inputs and textareas preserve strings by default; do
+not use `b-model.raw`, which is not supported. The `.raw` modifiers on `b-text`
+and `b-html` control content hydration, not model value conversion.
+Do not assume checkbox/radio value coercion beyond current
 model behavior; test the form's exact value types.
 
 Observers: `b-on-enter`/`b-on-exit` receive `$entry`;
 `b-on-resize` receives `$size.width`, `$size.height`, and `$entry`;
 `b-on-addednodes`, `b-on-removednodes`, `b-on-attrs`, `b-on-text` receive
-`$mutations`. Observer `.debounce` is fixed at 100ms; intersection also supports
-`.once`. Resize/IntersectionObserver require browser support or app polyfills.
+`$mutations`. Observer `.debounce` is 100ms; `b-options` can specify a numeric
+delay. Intersection also supports `.once`. Resize/IntersectionObserver require browser support or app polyfills.
 Text observers watch characterData, not every replacement of child text nodes.
+
+Observer `b-options` is keyed by base/full directive names, with full-name
+options overriding base options and dot booleans overriding both:
+
+```html
+<div b-options="{ 'b-on-enter': { root: '#scroller', rootMargin: '20px', threshold: [0, 0.5, 1] } }"
+     b-on-enter.debounce="console.log($entry)"></div>
+```
+
+Intersection root may be an Element/Document, selector, or null viewport.
+Mutation supports target node/selector, subtree (default true; explicit false
+for direct-only), attributeFilter/attributeOldValue and characterDataOldValue.
+Resize supports document true / `.document` and box content-box (default),
+border-box, device-pixel-content-box. `$size` uses the selected box as physical
+width/height; device pixels are not CSS pixels. Missing requested nondefault
+measurements throw. Mutation debounce accumulates records. All options are
+read once at hydration, invalid settings throw, and cleanup cancels pending
+callbacks. This b-options API applies only to observer directives.
 
 Masks: `b-mask="'##/##/####'"`, or
 `b-mask="money({ thousands: ',', decimal: '.', precision: 2 })"`, or

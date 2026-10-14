@@ -6,6 +6,34 @@ import { evaluateFunction, hydrateRoot, hydrateNode } from 'briojs';
 
 const bundle = readFileSync(new URL('../dist/brio.min.js', import.meta.url), 'utf8');
 
+test('manual model page shows default strings versus explicit numeric conversion', t => {
+    const markup = readFileSync(new URL('./directives/model.html', import.meta.url), 'utf8');
+    const dom = new JSDOM(markup, { runScripts: 'outside-only' });
+    const { window } = dom;
+    window.eval(bundle);
+    const app = window.brio.createApp();
+    t.after(() => { try { app.dispose(); } finally { window.close(); } });
+    app.mount('body');
+    const { document } = window;
+    const enter = (id, value) => {
+        const input = document.getElementById(id);
+        input.value = value;
+        input.dispatchEvent(new window.Event('input', { bubbles: true }));
+    };
+    assert.equal(document.querySelector('[b-model\\.raw]'), null);
+    for (const value of ['0042', 'true', 'null', '  spaces  ', '${$data.defaultNumber}', '']) {
+        enter('default-model', value);
+        assert.equal(document.getElementById('default-model').value, value);
+        assert.equal(document.getElementById('default-model-value').textContent, JSON.stringify(value));
+        assert.equal(document.getElementById('default-model-type').textContent, 'string');
+    }
+    enter('number-model', '0042');
+    assert.equal(document.getElementById('number-model-value').textContent, '42');
+    assert.equal(document.getElementById('number-model-type').textContent, 'number');
+    enter('number-model', 'not numeric');
+    assert.equal(document.getElementById('number-model-type').textContent, 'string');
+});
+
 test('b-text hydrates referenced text and authored strings without parsing HTML; raw skips interpolation', t => {
     const { app, root } = environment(t, `
         <p id="text" b-text="$data.text"></p>

@@ -1,5 +1,7 @@
 import { createExpressionScope } from './expression';
 import { hydrateRoot } from '../dom/mount';
+import { createInsert } from '../dom/insert';
+import { getNodeOwner } from '../dom/ownership';
 import { trustedHTML } from '../dom/types';
 import type { ComponentDefinition, DomRuntime } from '../dom/types';
 import { createScope, onCleanup } from './scope';
@@ -75,6 +77,17 @@ export function createApp<T extends Record<string, unknown> = Record<string, unk
             }
             return app;
         },
+        insert(target, placement, content, insertOptions) {
+            if (disposed) throw new Error('Cannot insert into a disposed Brio app.');
+            const matches = [...roots].filter(handle => typeof target === 'string'
+                ? handle.root.matches(target) || Boolean(handle.root.querySelector(target))
+                : target instanceof Node && (handle.root.contains(target) || getNodeOwner(target)?.runtime.root === handle.root));
+            if (matches.length !== 1)
+                throw new Error('Brio insert target must belong to exactly one mounted root of this app.');
+            const owner = getNodeOwner(matches[0].root);
+            if (!owner) throw new Error('Brio insert requires an active mounted Brio root.');
+            return createInsert(owner.runtime)(target, placement, content, insertOptions);
+        },
         mount(target) {
             if (disposed) throw new Error('Cannot mount a disposed Brio app.');
             const root = typeof target === 'string' ? document.querySelector(target) : target;
@@ -126,7 +139,7 @@ export function createApp<T extends Record<string, unknown> = Record<string, unk
                         const stopRouter = options.router.start(root);
                         onCleanup(stopRouter);
                     }
-                    hydrateRoot(root, context, runtime);
+                    hydrateRoot(root, context, { ...runtime, root });
                 });
             } catch (error) {
                 try {

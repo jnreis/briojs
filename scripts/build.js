@@ -30,20 +30,22 @@ await build({
     ],
 });
 
-// 2. Build minified standalone bundle for browsers (dist/brio.min.js)
-await build({
-    publicDir: false,
-    build: {
-        emptyOutDir: false,
-        lib: {
-            entry: 'src/browser.ts',
-            name: 'brio',
-            formats: ['iife'],
-            fileName: () => 'brio.min.js',
+// 2. Build standalone production and development browser bundles.
+for (const development of [false, true]) {
+    await build({
+        publicDir: false,
+        define: { __BRIO_DEVTOOLS__: JSON.stringify(development) },
+        build: {
+            emptyOutDir: false,
+            lib: {
+                entry: development ? 'src/browser-dev.ts' : 'src/browser.ts',
+                name: 'brio',
+                formats: ['iife'],
+                fileName: () => development ? 'brio.dev.min.js' : 'brio.min.js',
+            },
+            minify: 'esbuild',
+            reportCompressedSize: true,
+            sourcemap: true,
         },
-        minify: 'esbuild',
-        reportCompressedSize: true,
-        sourcemap: true,
-    },
-});
-
+    });
+}

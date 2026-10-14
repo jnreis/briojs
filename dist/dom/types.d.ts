@@ -14,6 +14,7 @@ export type DomRuntime = {
     state: Record<string, unknown>;
     components: Map<string, ComponentDefinition>;
     router?: any;
+    root?: Element;
 };
 declare const trustedMarkup: unique symbol;
 export type TrustedMarkup = {

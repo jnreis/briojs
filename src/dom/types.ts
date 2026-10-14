@@ -16,6 +16,7 @@ export type DomRuntime = {
     state: Record<string, unknown>;
     components: Map<string, ComponentDefinition>;
     router?: any;
+    root?: Element;
 };
 
 const trustedMarkup = Symbol('brio.trustedMarkup');

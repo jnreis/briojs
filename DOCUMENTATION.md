@@ -31,6 +31,30 @@ import { devtoolsPanel } from 'briojs/devtools';
 
 Import that entry before creating apps to register apps and effects with the development inspector. Production applications that do not import `briojs/devtools` do not include the inspector UI or its instrumentation.
 
+### Browser bundles
+
+Load one of the standalone bundles, not both:
+
+```html
+<!-- Production: runtime without development tools or tracking hooks -->
+<script src="/dist/brio.min.js"></script>
+<!-- During development, use this instead: -->
+<!-- <script src="/dist/brio.dev.min.js"></script> -->
+```
+
+Both expose `window.brio` with `createApp`, `state`, `signal`, `computed`,
+`effect`, `batch`, `createScope`, `onCleanup`, `persist`, `createRouter`,
+`createStepEngine`, `validate`, `http`, and `trustedHTML`. Both dispatch the
+`brio` ready event after publishing the complete API.
+
+The development bundle additionally exposes `devtools`, `inspectDevtools`, and
+`devtoolsPanel`. The production bundle compiles out devtools tracking hooks and
+does not include the inspector or reactive state snapshotting.
+The browser global no longer exposes `hydrateRoot` or `hydrateNode`; those
+remain available through ESM. Use `app.insert()` for managed dynamic content.
+The legacy `newStepEngine` tuple API has been removed from all exports; use
+`createStepEngine()` and its named methods instead.
+
 ## First app
 
 ```js
@@ -54,7 +78,7 @@ app.mount('#counter');
 
 Expressions run in strict mode without `with` or implicit state-name resolution. Use `$data` for the nearest state object (app state, component setup state, or `b-data`), `$data.$parent` for parent state, and `$for` for loop values. Bare state names such as `count` are not supported and unresolved identifiers throw `ReferenceError`. JavaScript globals such as `Math`, `JSON`, and `setTimeout` resolve normally.
 
-The context is also available as `ctx`. Named bindings include `$data`, `$el`, `$id`, `$for`, `$props`, `$emit`, and `trustedHTML`. Event handlers receive `$event`; observers supply `$mutations`, `$size`, or `$entry`. The mask directive supplies `money`, and contextual scripts supply `onCleanup`. Helpers not supplied in that context are `undefined`. Bindings are read-only references; mutate their properties (`$data.count++`), not the binding itself (`$data = {}`). Event statements can declare ordinary local variables.
+The context is also available as `ctx`. Named bindings include `$data`, `$el`, `$id`, `$for`, `$props`, `$emit`, `$insert`, and `trustedHTML`. Event handlers receive `$event`; observers supply `$mutations`, `$size`, or `$entry`. The mask directive supplies `money`, and contextual scripts supply `onCleanup`. Helpers not supplied in that context are `undefined`. Bindings are read-only references; mutate their properties (`$data.count++`), not the binding itself (`$data = {}`). Event statements can declare ordinary local variables.
 
 Data and loop ancestry are independent: `$data.$parent.$parent` accesses a grandparent data scope, while `$for.$parent.$parent` accesses a grandparent loop. Ordinary elements and loops do not add data ancestry levels; data scopes do not add loop ancestry levels. Component setup state creates a data scope. App state and outermost loops have `$parent === undefined`. An empty `b-data` attribute inherits data without adding a scope; `b-data="{}"` creates one.
 
@@ -338,7 +362,57 @@ const stopInspector = devtoolsPanel(document.querySelector('#brio-tools'));
 
 The inspector tracks app state snapshots, mounted roots, and reactive effect counts. Call the returned function to remove the panel and its subscription. The devtools entry is not imported by the core package entry.
 
+With the development browser bundle, use
+`brio.devtoolsPanel(document.querySelector('#brio-tools'))` directly.
+
 ## App and lifecycle API
+
+### Managed dynamic insertion
+
+```js
+const handle = app.insert('#items', 'append',
+  '<button on-click="$data.count++">${$data.count}</button>',
+  { data: { count: 0 } });
+handle.remove();
+```
+
+`app.insert(target, placement, content, options?)` accepts a node or selector;
+placements are `before`, `after`, `prepend`, `append`, `replaceWith`,
+`replaceChildren`, and `textContent`. HTML strings are automatically trusted
+and hydrated. Nodes and document fragments are cloned, leaving the originals
+untouched. Multiple top-level nodes and structural directives are supported.
+`textContent` inserts literal text without parsing HTML or evaluating interpolation.
+
+The app method is `insert` (without `$`); the matching `$insert` helper is available in directive expressions and `ctx.$insert`
+in scripts. Its selectors are restricted to the originating mount root.
+App-level selectors must resolve within exactly one of that app's mounted roots;
+missing, ambiguous, cross-app, and disposed targets throw. Direct node references
+also work for child placements on managed detached `b-show` elements and teleported
+elements. A contextual helper expires when its mount is unmounted, even if the
+same root element is mounted again.
+
+Child placements inherit the target's context; sibling placements inherit its
+parent's context. `{ data }` creates local reactive state with inherited state
+accessible through `$data.$parent`; loop context remains available through `$for`.
+Inserted content is owned by the destination scope, not the calling button/script.
+The handle exposes current `nodes`, `removed`, and an idempotent `remove()`.
+Removal, replacement, enclosing scope disposal, and unmount clean up bindings,
+listeners, and nested insertions. Raw DOM removal does not trigger cleanup.
+
+Mount roots cannot be replaced or used for sibling placements. Containers owned
+by `b-ignore`, `b-text`, `b-html`, or router outlets reject child insertion rather
+than competing with those directives. Roots generated by `b-if` and `b-for`
+cannot be replaced directly, since those controllers retain their identities;
+replace the enclosing container's children instead. Replacement is destructive: old content
+is disposed first; a hydration failure removes the failed insertion and throws,
+but does not restore the old content.
+
+Use authored or sanitized markup only. Automatic `trustedHTML` is an ergonomic
+trust assertion, not sanitization; inserted expressions and scripts execute code.
+
+### Low-level dynamic hydration
+
+ESM imports expose `hydrateRoot(element, context, runtime)` and `hydrateNode(node, context, runtime)`; these are no longer on the browser global. These are low-level APIs: supply an explicit context (including `$data`), a runtime with `app`, `state`, and `components`, and invoke hydration inside `createScope().run(...)`. Dispose that scope before removing or replacing the hydrated content; raw DOM removal does not dispose bindings or listeners. Hydrate only new content, not an already hydrated subtree. Prefer `app.mount()` for independent roots, since it manages runtime and cleanup automatically.
 
 ```ts
 createApp({
@@ -362,7 +436,7 @@ Framework SSR and hydration are not part of this release. Brio enhances existing
 
 ## Package and migration
 
-Version 4 is not API-compatible with version 3. Replace `newApp()` with `createApp()`, `$state` with app state or the `state()` import, `$effect` with `effect()`, and the previous directives with the table above. Router, persistence, and devtools are first-party package subpaths. Review all templates: state access requires `$data` or `$data.$parent`, loop values require `$for` (outer loop values use `$for.$parent`), arguments use hyphens and modifiers use dots, expressions are explicitly trusted strict-mode JavaScript, and HTML insertion requires `trustedHTML()`. Migrate `$parent.$parent.$data` to `$data.$parent.$parent`.
+Version 4 is not API-compatible with version 3. Replace `newApp()` with `createApp()`, `$state` with app state or the `state()` import, `$effect` with `effect()`, and the previous directives with the table above. Router, persistence, and devtools are first-party package subpaths. Review all templates: state access requires `$data` or `$data.$parent`, loop values require `$for` (outer loop values use `$for.$parent`), arguments use hyphens and modifiers use dots, expressions are explicitly trusted strict-mode JavaScript, and `b-html` requires `trustedHTML()` (`$insert` trusts authored markup automatically). Migrate `$parent.$parent.$data` to `$data.$parent.$parent`.
 
 The package exports:
 

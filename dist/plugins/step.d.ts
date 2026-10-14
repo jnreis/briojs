@@ -15,11 +15,4 @@ export type StepEngine = {
     originStep(currentName: string): boolean;
     getActiveStep(): string | undefined;
 };
-export declare function newStepEngine(steps: StepRecord): [
-    setStep: (name: string, definition: StepDefinition) => boolean,
-    isStepActive: (name: string) => boolean,
-    nextStep: (currentName: string) => boolean,
-    backStep: (currentName: string) => boolean,
-    originStep: (currentName: string) => boolean
-];
 export declare function createStepEngine(steps: StepRecord): StepEngine;

@@ -2,6 +2,7 @@ import { evaluate } from '../../core/expression';
 import { effect } from '../../reactivity/effect';
 import { onCleanup } from '../../core/scope';
 import { cancelTransition, enterTransition, getTransitionName, leaveTransition } from './transition';
+import { getNodeOwner, ownNode } from '../ownership';
 
 export function handleShow(
     element: Element,
@@ -16,6 +17,8 @@ export function handleShow(
     if (!useDisplay) {
         if (!element.parentNode) throw new Error('b-show requires an element with a parent node.');
         element.before(placeholder);
+        const owner = getNodeOwner(element);
+        if (owner) ownNode(placeholder, context, owner.runtime);
     }
     let previous: boolean | undefined;
 

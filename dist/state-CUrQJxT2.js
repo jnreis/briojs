@@ -1,4 +1,4 @@
-import { b as batch, q as queueEffect, g as getActiveEffect } from "./effect-DZvu7u5S.js";
+import { b as batch, q as queueEffect, g as getActiveEffect } from "./effect-C-FJkXLS.js";
 const targetMap = /* @__PURE__ */ new WeakMap();
 const proxyCache = /* @__PURE__ */ new WeakMap();
 const rawCache = /* @__PURE__ */ new WeakMap();
@@ -153,4 +153,4 @@ export {
   state as s,
   trigger as t
 };
-//# sourceMappingURL=state-UFBFm952.js.map
+//# sourceMappingURL=state-CUrQJxT2.js.map

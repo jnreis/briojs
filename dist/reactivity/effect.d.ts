@@ -7,7 +7,7 @@ export type ReactiveEffect = {
     deps: Set<ReactiveEffect>[];
     active: boolean;
     running: boolean;
-    devtoolsTracked: boolean;
+    devtoolsTracked?: boolean;
 };
 export declare const getActiveEffect: () => ReactiveEffect | undefined;
 export declare const cleanupEffect: (eff: ReactiveEffect) => void;

@@ -5,6 +5,7 @@ import { effect, batch } from '../reactivity/effect';
 import { createScope, onCleanup } from '../core/scope';
 import { generateScopeId, injectScopedStyles } from './scoped-style';
 import type { ComponentDefinition, DomRuntime } from './types';
+import { getNodeOwner, ownNode } from './ownership';
 
 const projectedContexts = new WeakMap<Node, Record<PropertyKey, any>>();
 
@@ -102,6 +103,12 @@ export function mountComponent(
             { $data: local, $el: element, $props, $emit },
             context,
         );
+        const owner = getNodeOwner(element);
+        if (owner) {
+            owner.context = componentContext;
+        } else {
+            ownNode(element, componentContext, runtime);
+        }
 
         for (const binding of propBindings) {
             effect(() => {

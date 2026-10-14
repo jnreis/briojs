@@ -1,4 +1,5 @@
 import { onCleanup } from '../../core/scope';
+import { getNodeOwner, ownNode } from '../ownership';
 
 export function handleTeleport(
     element: Element,
@@ -14,6 +15,8 @@ export function handleTeleport(
     }
 
     const placeholder = document.createComment('brio:teleport');
+    const owner = getNodeOwner(element);
+    if (owner) ownNode(placeholder, owner.context, owner.runtime);
     element.parentNode?.replaceChild(placeholder, element);
     target.appendChild(element);
 

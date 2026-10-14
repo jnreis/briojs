@@ -1,4 +1,4 @@
-import { l as installDevtoolsBridge, e as effect, c as causedError } from "./effect-DZvu7u5S.js";
+import { i as installDevtoolsBridge, e as effect, c as causedError } from "./effect-C-FJkXLS.js";
 let effectsCreated = 0;
 let activeEffects = 0;
 const apps = /* @__PURE__ */ new Map();

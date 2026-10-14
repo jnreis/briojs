@@ -1,5 +1,5 @@
 import { combinedError } from '../core/errors';
-import { notifyEffectCreated, notifyEffectDisposed } from '../plugins/devtools-bridge';
+import { devtoolsEnabled, notifyEffectCreated, notifyEffectDisposed } from '../plugins/devtools-bridge';
 import type { EffectOptions, Scope, Stop } from './types';
 import { getCurrentScope, onDispose } from '../core/scope';
 
@@ -10,7 +10,7 @@ export type ReactiveEffect = {
     deps: Set<ReactiveEffect>[];
     active: boolean;
     running: boolean;
-    devtoolsTracked: boolean;
+    devtoolsTracked?: boolean;
 };
 
 let activeEffect: ReactiveEffect | undefined;
@@ -71,19 +71,18 @@ export function effect<T>(fn: () => T, options: EffectOptions = {}): Stop {
         deps: [],
         active: true,
         running: false,
-        devtoolsTracked: false,
     };
     const stop = (() => {
         if (!reactiveEffect.active) return;
         reactiveEffect.active = false;
         cleanupEffect(reactiveEffect);
-        notifyEffectDisposed(reactiveEffect.devtoolsTracked);
+        if (devtoolsEnabled) notifyEffectDisposed(Boolean(reactiveEffect.devtoolsTracked));
     }) as Stop;
     Object.defineProperty(stop, 'active', { get: () => reactiveEffect.active });
     stop.run = () => runEffect(reactiveEffect);
     const currentScope = getCurrentScope();
     if (currentScope) onDispose(currentScope, stop);
-    reactiveEffect.devtoolsTracked = notifyEffectCreated();
+    if (devtoolsEnabled) reactiveEffect.devtoolsTracked = notifyEffectCreated();
     if (!options.lazy) {
         try {
             runEffect(reactiveEffect);

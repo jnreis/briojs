@@ -18,23 +18,6 @@ export type StepEngine = {
     getActiveStep(): string | undefined;
 };
 
-export function newStepEngine(steps: StepRecord): [
-    setStep: (name: string, definition: StepDefinition) => boolean,
-    isStepActive: (name: string) => boolean,
-    nextStep: (currentName: string) => boolean,
-    backStep: (currentName: string) => boolean,
-    originStep: (currentName: string) => boolean,
-] {
-    const engine = createStepEngine(steps);
-    return [
-        (name, def) => engine.setStep(name, def),
-        (name) => engine.isStepActive(name),
-        (name) => engine.nextStep(name),
-        (name) => engine.backStep(name),
-        (name) => engine.originStep(name),
-    ];
-}
-
 export function createStepEngine(steps: StepRecord): StepEngine {
     const setStep = (stepName: string, stepObject: StepDefinition): boolean => {
         if (!stepName) {

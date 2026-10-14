@@ -1,4 +1,5 @@
 import type { DomRuntime } from '../types';
+import { ownNode } from '../ownership';
 
 export function handleTemplate(
     element: Element,
@@ -24,12 +25,13 @@ export function handleTemplate(
     if (!parent) throw new Error('b-template requires an element with a parent node.');
 
     const placeholder = document.createComment('brio:template');
+    ownNode(placeholder, context, runtime);
     parent.replaceChild(placeholder, element);
 
     const insertedNodes = Array.from(fragment.childNodes);
     placeholder.parentNode?.insertBefore(fragment, placeholder.nextSibling);
 
     for (const node of insertedNodes) {
-        hydrateNodeFn(node, context, runtime);
+        if (node.parentNode === parent) hydrateNodeFn(node, context, runtime);
     }
 }

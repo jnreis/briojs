@@ -81,21 +81,30 @@ function setActiveScope(scope) {
   activeScope = scope;
   return prev;
 }
+const devtoolsEnabled = typeof __BRIO_DEVTOOLS__ === "undefined" || __BRIO_DEVTOOLS__;
 let bridge;
 function installDevtoolsBridge(next) {
   bridge = next;
 }
-const notifyAppCreated = (app, state) => bridge == null ? void 0 : bridge.appCreated(app, state);
-const notifyAppDisposed = (app) => bridge == null ? void 0 : bridge.appDisposed(app);
-const notifyRootMounted = (app, root) => bridge == null ? void 0 : bridge.rootMounted(app, root);
-const notifyRootUnmounted = (app, root) => bridge == null ? void 0 : bridge.rootUnmounted(app, root);
+const notifyAppCreated = (app, state) => {
+  if (devtoolsEnabled) bridge == null ? void 0 : bridge.appCreated(app, state);
+};
+const notifyAppDisposed = (app) => {
+  if (devtoolsEnabled) bridge == null ? void 0 : bridge.appDisposed(app);
+};
+const notifyRootMounted = (app, root) => {
+  if (devtoolsEnabled) bridge == null ? void 0 : bridge.rootMounted(app, root);
+};
+const notifyRootUnmounted = (app, root) => {
+  if (devtoolsEnabled) bridge == null ? void 0 : bridge.rootUnmounted(app, root);
+};
 const notifyEffectCreated = () => {
-  if (!bridge) return false;
+  if (!devtoolsEnabled || !bridge) return false;
   bridge.effectCreated();
   return true;
 };
 const notifyEffectDisposed = (tracked) => {
-  if (tracked) bridge == null ? void 0 : bridge.effectDisposed();
+  if (devtoolsEnabled && tracked) bridge == null ? void 0 : bridge.effectDisposed();
 };
 let activeEffect;
 let batchDepth = 0;
@@ -148,20 +157,19 @@ function effect(fn, options = {}) {
     scope: getCurrentScope(),
     deps: [],
     active: true,
-    running: false,
-    devtoolsTracked: false
+    running: false
   };
   const stop = () => {
     if (!reactiveEffect.active) return;
     reactiveEffect.active = false;
     cleanupEffect(reactiveEffect);
-    notifyEffectDisposed(reactiveEffect.devtoolsTracked);
+    if (devtoolsEnabled) notifyEffectDisposed(Boolean(reactiveEffect.devtoolsTracked));
   };
   Object.defineProperty(stop, "active", { get: () => reactiveEffect.active });
   stop.run = () => runEffect(reactiveEffect);
   const currentScope = getCurrentScope();
   if (currentScope) onDispose(currentScope, stop);
-  reactiveEffect.devtoolsTracked = notifyEffectCreated();
+  if (devtoolsEnabled) reactiveEffect.devtoolsTracked = notifyEffectCreated();
   if (!options.lazy) {
     try {
       runEffect(reactiveEffect);
@@ -197,21 +205,21 @@ function batch(fn) {
   return result;
 }
 export {
-  createScope as a,
+  getCurrentScope as a,
   batch as b,
   causedError as c,
   combinedError as d,
   effect as e,
-  notifyRootUnmounted as f,
+  createScope as f,
   getActiveEffect as g,
-  notifyRootMounted as h,
-  notifyAppDisposed as i,
-  onDispose as j,
-  getCurrentScope as k,
-  installDevtoolsBridge as l,
+  onCleanup as h,
+  installDevtoolsBridge as i,
+  notifyRootUnmounted as j,
+  notifyRootMounted as k,
+  notifyAppDisposed as l,
   notifyAppCreated as n,
-  onCleanup as o,
+  onDispose as o,
   queueEffect as q,
   setActiveScope as s
 };
-//# sourceMappingURL=effect-DZvu7u5S.js.map
+//# sourceMappingURL=effect-C-FJkXLS.js.map

@@ -31,18 +31,21 @@
         <div id="devtools-container"></div>
     </div>
 
-    <script type="module">
-        import { devtoolsPanel } from '/dist/devtools-entry.js';
-        import { createApp } from '/dist/index.js';
+    <script src="/dist/brio.dev.min.js"></script>
+    <script>
 
         // 1. Mount Devtools Inspector Panel
-        devtoolsPanel(document.getElementById('devtools-container'));
+        const stopInspector = brio.devtoolsPanel(document.getElementById('devtools-container'));
 
         // 2. Mount App
-        const app = createApp({
+        const app = brio.createApp({
             state: () => ({ count: 5 })
         });
         app.mount('#counter-app');
+        window.addEventListener('pagehide', () => {
+            stopInspector();
+            app.dispose();
+        }, { once: true });
     </script>
 </body>
 </html>

@@ -4,6 +4,7 @@ import { createScope, onCleanup } from '../../core/scope';
 import { createScopedState } from '../../core/scoped-state';
 import type { Scope } from '../../core/scope';
 import type { DomRuntime } from '../types';
+import { getNodeOwner, ownNode } from '../ownership';
 
 type LoopRow = {
     element: Element;
@@ -40,6 +41,7 @@ export function handleFor(
         throw new SyntaxError('$parent is reserved for Brio loop ancestry.');
     const keyExpression = element.getAttribute('b-key');
     const placeholder = document.createComment('brio:for');
+    ownNode(placeholder, context, runtime);
     const template = element.cloneNode(true) as Element;
     template.removeAttribute('b-for');
     template.removeAttribute('b-key');
@@ -85,6 +87,8 @@ export function handleFor(
                 row = { element: rowElement, context: rowContext, values: rowState, scope: rowScope, key: evaluatedKey };
                 rows.set(evaluatedKey, row);
                 rowScope.run(() => hydrateNodeFn(rowElement, rowContext, runtime));
+                const owner = getNodeOwner(rowElement);
+                if (owner) owner.structuralRoot = true;
             } else {
                 row.values[itemName] = item;
                 row.values[indexName] = index;

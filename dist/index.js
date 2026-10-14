@@ -1,18 +1,17 @@
-import { c as causedError, a as createScope, o as onCleanup, e as effect, b as batch, d as combinedError, n as notifyAppCreated, f as notifyRootUnmounted, h as notifyRootMounted, i as notifyAppDisposed } from "./effect-DZvu7u5S.js";
-import { k, j, s } from "./effect-DZvu7u5S.js";
-import { s as state } from "./state-UFBFm952.js";
-import { a } from "./state-UFBFm952.js";
+import { c as causedError, o as onDispose, a as getCurrentScope, d as combinedError, f as createScope, h as onCleanup, e as effect, b as batch, n as notifyAppCreated, j as notifyRootUnmounted, k as notifyRootMounted, l as notifyAppDisposed } from "./effect-C-FJkXLS.js";
+import { s } from "./effect-C-FJkXLS.js";
+import { s as state } from "./state-CUrQJxT2.js";
+import { a } from "./state-CUrQJxT2.js";
 import { computed, resource } from "./reactivity.js";
 import { createRouter } from "./router-entry.js";
 import { persist } from "./persistence-entry.js";
-import { devtools } from "./devtools-entry.js";
 const valueExpressions = /* @__PURE__ */ new Map();
 const statementExpressions = /* @__PURE__ */ new Map();
 const assignmentExpressions = /* @__PURE__ */ new Map();
 const functionExpressions = /* @__PURE__ */ new Map();
 const contextBindings = `
 "use strict";
-const { $data, $el, $event, $id, $for, $mutations, $size, $entry, $props, $emit, trustedHTML, onCleanup, money } = ctx;
+const { $data, $el, $event, $id, $for, $mutations, $size, $entry, $props, $emit, $insert, trustedHTML, onCleanup, money } = ctx;
 `;
 function evaluateFunction(source, context) {
   const fn = compile(
@@ -163,6 +162,38 @@ function injectScopedStyles(styleContent, scopeAttr) {
   document.head.appendChild(styleEl);
   return styleEl;
 }
+const owners = /* @__PURE__ */ new WeakMap();
+function getNodeOwner(node) {
+  return owners.get(node);
+}
+function ownNode(node, context, runtime) {
+  const scope = getCurrentScope();
+  if (!scope) throw new Error("DOM hydration requires an active Brio scope.");
+  const owner = { context, runtime, scope };
+  owners.set(node, owner);
+  onDispose(scope, () => {
+    if (owners.get(node) === owner) owners.delete(node);
+  });
+  return owner;
+}
+function disposeNodes(nodes) {
+  const scopes = /* @__PURE__ */ new Set();
+  const visit = (node) => {
+    const owner = owners.get(node);
+    if (owner) scopes.add(owner.scope);
+    for (const child of Array.from(node.childNodes)) visit(child);
+  };
+  nodes.forEach(visit);
+  const errors = [];
+  for (const scope of scopes) {
+    try {
+      scope.dispose();
+    } catch (error) {
+      errors.push(error);
+    }
+  }
+  if (errors.length) throw combinedError("Brio DOM content cleanup failed.", errors);
+}
 const projectedContexts = /* @__PURE__ */ new WeakMap();
 function fillSlots(host, template, context) {
   var _a;
@@ -238,6 +269,12 @@ function mountComponent(element, definition, context, runtime, hydrateNodeFn) {
       { $data: local, $el: element, $props, $emit },
       context
     );
+    const owner = getNodeOwner(element);
+    if (owner) {
+      owner.context = componentContext;
+    } else {
+      ownNode(element, componentContext, runtime);
+    }
     for (const binding of propBindings) {
       effect(() => {
         $props[binding.name] = evaluate(binding.expression, context);
@@ -365,6 +402,140 @@ function handleTransition(element, expression, _modifiers, _context) {
   });
   if (element.isConnected && element.style.display !== "none")
     enterTransition(element, getTransitionName(element));
+}
+const trustedMarkup = Symbol("brio.trustedMarkup");
+function trustedHTML(markup) {
+  return { [trustedMarkup]: markup };
+}
+function isTrustedHTML(value) {
+  return value !== null && typeof value === "object" && trustedMarkup in value;
+}
+function getTrustedHTMLString(value) {
+  return value[trustedMarkup];
+}
+const placements = /* @__PURE__ */ new Set(["before", "after", "prepend", "append", "replaceWith", "replaceChildren", "textContent"]);
+function createInsert(runtime) {
+  return (target, placement, content, options = {}) => {
+    var _a, _b;
+    const root = runtime.root;
+    if (!root || ((_a = getNodeOwner(root)) == null ? void 0 : _a.runtime) !== runtime)
+      throw new Error("$insert requires an active mounted Brio root.");
+    const node = typeof target === "string" ? root.matches(target) ? root : root.querySelector(target) : target;
+    if (!(node instanceof Node) || !root.contains(node) && ((_b = getNodeOwner(node)) == null ? void 0 : _b.runtime.root) !== root)
+      throw new TypeError("$insert target must resolve to a node inside this app root.");
+    const targetOwner = getNodeOwner(node);
+    if (targetOwner && targetOwner.runtime.app !== runtime.app)
+      throw new Error("$insert cannot target content owned by another Brio app.");
+    if (!options || typeof options !== "object" || Array.isArray(options))
+      throw new TypeError("$insert options must be an object.");
+    if (!placements.has(placement))
+      throw new TypeError(`Invalid $insert placement "${placement}".`);
+    const siblingPlacement = placement === "before" || placement === "after" || placement === "replaceWith";
+    if (siblingPlacement && node === root)
+      throw new Error("$insert cannot insert beside or replace a mount root.");
+    if (placement === "replaceWith" && (targetOwner == null ? void 0 : targetOwner.structuralRoot))
+      throw new Error("$insert cannot replace a root managed by b-if or b-for; replace its enclosing container instead.");
+    const container = siblingPlacement ? node.parentNode : node;
+    if (!(container instanceof Element))
+      throw new TypeError("This $insert placement requires an element container.");
+    const containerOwner = getNodeOwner(container);
+    if (!containerOwner || containerOwner.runtime.app !== runtime.app || containerOwner.scope.disposed)
+      throw new Error("$insert destination has no active context owned by this app.");
+    if (containerOwner.controlsChildren)
+      throw new Error("$insert cannot modify a container whose content is controlled by a directive.");
+    if (typeof content !== "string" && !(content instanceof Node))
+      throw new TypeError("$insert content must be an HTML string or a node to clone.");
+    const document2 = container.ownerDocument;
+    const fragment = document2.createDocumentFragment();
+    if (placement === "textContent") {
+      fragment.append(document2.createTextNode(typeof content === "string" ? content : content.textContent ?? ""));
+    } else if (typeof content === "string") {
+      const template = document2.createElement("template");
+      template.innerHTML = getTrustedHTMLString(trustedHTML(content));
+      fragment.append(template.content);
+    } else {
+      const supportedTypes = [Node.ELEMENT_NODE, Node.TEXT_NODE, Node.COMMENT_NODE, Node.DOCUMENT_FRAGMENT_NODE];
+      if (!supportedTypes.includes(content.nodeType))
+        throw new TypeError("$insert can clone elements, text, comments, or document fragments.");
+      fragment.append(document2.importNode(content, true));
+    }
+    const context = options.data === void 0 ? containerOwner.context : createExpressionScope({
+      $data: createScopedState(options.data, containerOwner.context.$data)
+    }, containerOwner.context);
+    const previous = placement === "replaceWith" ? [node] : placement === "replaceChildren" || placement === "textContent" ? Array.from(container.childNodes) : [];
+    const reference = placement === "before" ? node : placement === "after" || placement === "replaceWith" ? node.nextSibling : placement === "prepend" ? container.firstChild : null;
+    disposeNodes(previous);
+    const start = document2.createComment("brio:insert");
+    const end = document2.createComment("/brio:insert");
+    const children = Array.from(fragment.childNodes);
+    fragment.prepend(start);
+    fragment.append(end);
+    const scope = createScope(containerOwner.scope);
+    const nodes = () => {
+      const result = [];
+      if (start.parentNode && start.parentNode === end.parentNode) {
+        let current = start.nextSibling;
+        while (current && current !== end) {
+          result.push(current);
+          current = current.nextSibling;
+        }
+      }
+      return result;
+    };
+    let removed = false;
+    const handle = {
+      get nodes() {
+        return nodes();
+      },
+      get removed() {
+        return removed;
+      },
+      remove() {
+        scope.dispose();
+      }
+    };
+    onDispose(scope, () => {
+      removed = true;
+      const current = nodes();
+      try {
+        disposeNodes(current);
+      } finally {
+        nodes().forEach((child) => {
+          var _a2;
+          return (_a2 = child.parentNode) == null ? void 0 : _a2.removeChild(child);
+        });
+        start.remove();
+        end.remove();
+      }
+    });
+    try {
+      if (placement === "replaceChildren" || placement === "textContent") {
+        container.replaceChildren(fragment);
+      } else {
+        container.insertBefore(fragment, (reference == null ? void 0 : reference.parentNode) === container ? reference : null);
+        previous.forEach((child) => {
+          var _a2;
+          return (_a2 = child.parentNode) == null ? void 0 : _a2.removeChild(child);
+        });
+      }
+      scope.run(() => {
+        ownNode(start, context, containerOwner.runtime);
+        ownNode(end, context, containerOwner.runtime);
+        if (placement !== "textContent") {
+          for (const child of children)
+            if (child.parentNode === container) hydrateNode(child, context, containerOwner.runtime);
+        }
+      });
+    } catch (error) {
+      try {
+        handle.remove();
+      } catch (cleanupError) {
+        throw combinedError("Brio insertion and cleanup both failed.", [error, cleanupError]);
+      }
+      throw error;
+    }
+    return handle;
+  };
 }
 const staticClasses = /* @__PURE__ */ new WeakMap();
 const dynamicStyles = /* @__PURE__ */ new WeakMap();
@@ -568,6 +739,7 @@ function handleIf(element, expression, _modifiers, context, runtime, hydrateNode
     sibling = next;
   }
   const placeholder = document.createComment("brio:if");
+  ownNode(placeholder, context, runtime);
   parent.replaceChild(placeholder, element);
   const leaving = /* @__PURE__ */ new Set();
   let instance;
@@ -618,6 +790,8 @@ function handleIf(element, expression, _modifiers, context, runtime, hydrateNode
     activeBranch = branch;
     (_a = placeholder.parentNode) == null ? void 0 : _a.insertBefore(instance, placeholder.nextSibling);
     instanceScope.run(() => hydrateNodeFn(instance, context, runtime));
+    const owner = getNodeOwner(instance);
+    if (owner) owner.structuralRoot = true;
   });
 }
 const enumerate = (value) => {
@@ -639,6 +813,7 @@ function handleFor(element, expression, _modifiers, context, runtime, hydrateNod
     throw new SyntaxError("$parent is reserved for Brio loop ancestry.");
   const keyExpression = element.getAttribute("b-key");
   const placeholder = document.createComment("brio:for");
+  ownNode(placeholder, context, runtime);
   const template = element.cloneNode(true);
   template.removeAttribute("b-for");
   template.removeAttribute("b-key");
@@ -681,6 +856,8 @@ function handleFor(element, expression, _modifiers, context, runtime, hydrateNod
         row = { element: rowElement, context: rowContext, values: rowState, scope: rowScope, key: evaluatedKey };
         rows.set(evaluatedKey, row);
         rowScope.run(() => hydrateNodeFn(rowElement, rowContext, runtime));
+        const owner = getNodeOwner(rowElement);
+        if (owner) owner.structuralRoot = true;
       } else {
         row.values[itemName] = item;
         row.values[indexName] = index;
@@ -708,6 +885,8 @@ function handleShow(element, expression, modifiers, context) {
   if (!useDisplay) {
     if (!element.parentNode) throw new Error("b-show requires an element with a parent node.");
     element.before(placeholder);
+    const owner = getNodeOwner(element);
+    if (owner) ownNode(placeholder, context, owner.runtime);
   }
   let previous;
   onCleanup(() => {
@@ -736,16 +915,6 @@ function handleShow(element, expression, modifiers, context) {
       else hide();
     }
   });
-}
-const trustedMarkup = Symbol("brio.trustedMarkup");
-function trustedHTML(markup) {
-  return { [trustedMarkup]: markup };
-}
-function isTrustedHTML(value) {
-  return value !== null && typeof value === "object" && trustedMarkup in value;
-}
-function getTrustedHTMLString(value) {
-  return value[trustedMarkup];
 }
 function handleHtml(element, expression, _modifiers, context, runtime, hydrateChildrenFn) {
   let contentScope;
@@ -933,6 +1102,8 @@ function handleTeleport(element, expression, _modifiers, _context) {
     return;
   }
   const placeholder = document.createComment("brio:teleport");
+  const owner = getNodeOwner(element);
+  if (owner) ownNode(placeholder, owner.context, owner.runtime);
   (_a = element.parentNode) == null ? void 0 : _a.replaceChild(placeholder, element);
   target.appendChild(element);
   onCleanup(() => {
@@ -956,11 +1127,12 @@ function handleTemplate(element, _expression, _modifiers, context, runtime, hydr
   const parent = element.parentNode;
   if (!parent) throw new Error("b-template requires an element with a parent node.");
   const placeholder = document.createComment("brio:template");
+  ownNode(placeholder, context, runtime);
   parent.replaceChild(placeholder, element);
   const insertedNodes = Array.from(fragment.childNodes);
   (_a = placeholder.parentNode) == null ? void 0 : _a.insertBefore(fragment, placeholder.nextSibling);
   for (const node of insertedNodes) {
-    hydrateNodeFn(node, context, runtime);
+    if (node.parentNode === parent) hydrateNodeFn(node, context, runtime);
   }
 }
 function handleIntersection(element, attrName, expression, modifiers, context) {
@@ -1123,7 +1295,7 @@ function mountRouterOutlet(element, context, runtime, hydrateNodeFn) {
 const componentNamePattern$1 = /^[a-z][a-z0-9]*-[a-z0-9-]+$/;
 function hydrateChildren(element, context, runtime) {
   for (const child of Array.from(element.childNodes)) {
-    if (child.parentNode === element) hydrateNode(child, context, runtime);
+    if (child.parentNode === element && !getNodeOwner(child)) hydrateNode(child, context, runtime);
   }
 }
 const interpolationRegex = /\$\{([^}]+)\}/g;
@@ -1139,6 +1311,14 @@ function hydrateTextNode(node, context) {
   });
 }
 function hydrateNode(node, parentContext, runtime) {
+  if (getNodeOwner(node)) throw new Error("Cannot hydrate an already hydrated Brio node.");
+  const scope = createScope();
+  scope.run(() => {
+    ownNode(node, parentContext, runtime);
+    hydrateOwnedNode(node, parentContext, runtime);
+  });
+}
+function hydrateOwnedNode(node, parentContext, runtime) {
   if (node.nodeType === Node.TEXT_NODE) {
     hydrateTextNode(node, parentContext);
     return;
@@ -1146,6 +1326,7 @@ function hydrateNode(node, parentContext, runtime) {
   if (node.nodeType !== Node.ELEMENT_NODE) return;
   const element = node;
   if (element.hasAttribute("b-ignore") || element.hasAttribute("ignore")) {
+    getNodeOwner(element).controlsChildren = true;
     return;
   }
   const ifAttr = element.getAttribute("b-if");
@@ -1155,10 +1336,13 @@ function hydrateNode(node, parentContext, runtime) {
   }
   if (element.hasAttribute("b-else-if") || element.hasAttribute("b-else"))
     throw new SyntaxError("b-else-if and b-else require an adjacent preceding b-if branch.");
-  let context = createExpressionScope({ $el: element }, parentContext);
+  let context = createExpressionScope({
+    $el: element,
+    ...runtime.root ? { $insert: createInsert(runtime) } : {}
+  }, parentContext);
   const dataAttr = element.getAttribute("b-data");
   if (dataAttr !== null) {
-    context = handleData(element, dataAttr, {}, parentContext);
+    context = handleData(element, dataAttr, {}, context);
     element.removeAttribute("b-data");
   }
   const idAttr = element.getAttribute("b-id");
@@ -1166,6 +1350,7 @@ function hydrateNode(node, parentContext, runtime) {
     context = handleId(element, idAttr, {}, context);
     element.removeAttribute("b-id");
   }
+  getNodeOwner(element).context = context;
   const forAttr = element.getAttribute("b-for");
   if (forAttr !== null) {
     const { modifiers } = extractModifiers("b-for");
@@ -1213,10 +1398,12 @@ function hydrateNode(node, parentContext, runtime) {
       handleShow(element, attrValue, modifiers, context);
       element.removeAttribute(attrName);
     } else if (baseName === "b-text" || baseName === "text") {
+      getNodeOwner(element).controlsChildren = true;
       handleText(element, attrValue, modifiers, context);
       element.removeAttribute(attrName);
       hasText = true;
     } else if (baseName === "b-html" || baseName === "html") {
+      getNodeOwner(element).controlsChildren = true;
       handleHtml(element, attrValue, modifiers, context, runtime, hydrateChildren);
       element.removeAttribute(attrName);
       hasHtml = true;
@@ -1236,6 +1423,7 @@ function hydrateNode(node, parentContext, runtime) {
       handleScript(element, attrValue, modifiers, context);
       element.removeAttribute(attrName);
     } else if (baseName === "b-router-outlet") {
+      getNodeOwner(element).controlsChildren = true;
       mountRouterOutlet(element, context, runtime, hydrateNode);
       element.removeAttribute(attrName);
       return;
@@ -1301,6 +1489,18 @@ function createApp(options = {}) {
       }
       return app;
     },
+    insert(target, placement, content, insertOptions) {
+      if (disposed) throw new Error("Cannot insert into a disposed Brio app.");
+      const matches = [...roots].filter((handle) => {
+        var _a2;
+        return typeof target === "string" ? handle.root.matches(target) || Boolean(handle.root.querySelector(target)) : target instanceof Node && (handle.root.contains(target) || ((_a2 = getNodeOwner(target)) == null ? void 0 : _a2.runtime.root) === handle.root);
+      });
+      if (matches.length !== 1)
+        throw new Error("Brio insert target must belong to exactly one mounted root of this app.");
+      const owner = getNodeOwner(matches[0].root);
+      if (!owner) throw new Error("Brio insert requires an active mounted Brio root.");
+      return createInsert(owner.runtime)(target, placement, content, insertOptions);
+    },
     mount(target) {
       if (disposed) throw new Error("Cannot mount a disposed Brio app.");
       const root = typeof target === "string" ? document.querySelector(target) : target;
@@ -1348,7 +1548,7 @@ function createApp(options = {}) {
             const stopRouter = options.router.start(root);
             onCleanup(stopRouter);
           }
-          hydrateRoot(root, context, runtime);
+          hydrateRoot(root, context, { ...runtime, root });
         });
       } catch (error) {
         try {
@@ -1428,16 +1628,6 @@ function flushQueue() {
       queueMicrotask(flushQueue);
     }
   }
-}
-function newStepEngine(steps) {
-  const engine = createStepEngine(steps);
-  return [
-    (name, def) => engine.setStep(name, def),
-    (name) => engine.isStepActive(name),
-    (name) => engine.nextStep(name),
-    (name) => engine.backStep(name),
-    (name) => engine.originStep(name)
-  ];
 }
 function createStepEngine(steps) {
   const setStep = (stepName, stepObject) => {
@@ -1546,8 +1736,8 @@ const request = (method) => async (url, body, options = {}) => {
   } else if (body !== void 0 && (method === "GET" || method === "DELETE")) {
     const u = new URL(url, typeof location !== "undefined" ? location.href : "http://localhost");
     if (typeof body === "object") {
-      for (const [k2, v] of Object.entries(body)) {
-        u.searchParams.append(k2, String(v));
+      for (const [k, v] of Object.entries(body)) {
+        u.searchParams.append(k, String(v));
       }
     }
     url = u.href;
@@ -1591,18 +1781,16 @@ export {
   createRouter,
   createScope,
   createStepEngine,
-  devtools,
   effect,
   evaluate,
   evaluateFunction,
   execute,
-  k as getCurrentScope,
+  getCurrentScope,
   http,
   hydrateNode,
   hydrateRoot,
-  newStepEngine,
   onCleanup,
-  j as onDispose,
+  onDispose,
   persist,
   queueTask,
   resource,

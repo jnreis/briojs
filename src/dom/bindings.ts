@@ -5,6 +5,8 @@ import { effect } from '../reactivity/effect';
 import type { DomRuntime } from './types';
 import { mountComponent } from './components';
 import { prepareTransition } from './directives/transition';
+import { createInsert } from './insert';
+import { getNodeOwner, ownNode } from './ownership';
 
 export function mountRouterOutlet(
     element: Element,
@@ -75,7 +77,7 @@ export function hydrateChildren(
     runtime: DomRuntime,
 ): void {
     for (const child of Array.from(element.childNodes)) {
-        if (child.parentNode === element) hydrateNode(child, context, runtime);
+        if (child.parentNode === element && !getNodeOwner(child)) hydrateNode(child, context, runtime);
     }
 }
 
@@ -102,6 +104,19 @@ export function hydrateNode(
     parentContext: Record<PropertyKey, any>,
     runtime: DomRuntime,
 ): void {
+    if (getNodeOwner(node)) throw new Error('Cannot hydrate an already hydrated Brio node.');
+    const scope = createScope();
+    scope.run(() => {
+        ownNode(node, parentContext, runtime);
+        hydrateOwnedNode(node, parentContext, runtime);
+    });
+}
+
+function hydrateOwnedNode(
+    node: Node,
+    parentContext: Record<PropertyKey, any>,
+    runtime: DomRuntime,
+): void {
     if (node.nodeType === Node.TEXT_NODE) {
         hydrateTextNode(node as Text, parentContext);
         return;
@@ -111,6 +126,7 @@ export function hydrateNode(
 
     // 1. b-ignore
     if (element.hasAttribute('b-ignore') || element.hasAttribute('ignore')) {
+        getNodeOwner(element)!.controlsChildren = true;
         handleIgnore(element);
         return;
     }
@@ -123,12 +139,15 @@ export function hydrateNode(
     if (element.hasAttribute('b-else-if') || element.hasAttribute('b-else'))
         throw new SyntaxError('b-else-if and b-else require an adjacent preceding b-if branch.');
 
-    let context = createExpressionScope({ $el: element }, parentContext);
+    let context = createExpressionScope({
+        $el: element,
+        ...(runtime.root ? { $insert: createInsert(runtime) } : {}),
+    }, parentContext);
 
     // 2. b-data
     const dataAttr = element.getAttribute('b-data');
     if (dataAttr !== null) {
-        context = handleData(element, dataAttr, {}, parentContext);
+        context = handleData(element, dataAttr, {}, context);
         element.removeAttribute('b-data');
     }
 
@@ -138,6 +157,7 @@ export function hydrateNode(
         context = handleId(element, idAttr, {}, context);
         element.removeAttribute('b-id');
     }
+    getNodeOwner(element)!.context = context;
 
     // 5. b-for
     const forAttr = element.getAttribute('b-for');
@@ -198,10 +218,12 @@ export function hydrateNode(
             handleShow(element, attrValue, modifiers, context);
             element.removeAttribute(attrName);
         } else if (baseName === 'b-text' || baseName === 'text') {
+            getNodeOwner(element)!.controlsChildren = true;
             handleText(element, attrValue, modifiers, context);
             element.removeAttribute(attrName);
             hasText = true;
         } else if (baseName === 'b-html' || baseName === 'html') {
+            getNodeOwner(element)!.controlsChildren = true;
             handleHtml(element, attrValue, modifiers, context, runtime, hydrateChildren);
             element.removeAttribute(attrName);
             hasHtml = true;
@@ -221,6 +243,7 @@ export function hydrateNode(
             handleScript(element, attrValue, modifiers, context);
             element.removeAttribute(attrName);
         } else if (baseName === 'b-router-outlet') {
+            getNodeOwner(element)!.controlsChildren = true;
             mountRouterOutlet(element, context, runtime, hydrateNode);
             element.removeAttribute(attrName);
             return;

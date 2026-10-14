@@ -19,3 +19,9 @@ createApp({ state: () => ({ count: 0 }) }).mount('#counter');
 ```
 
 Read the [vNext documentation](./DOCUMENTATION.md) for widgets, multi-page sites, SPAs, components, reactivity, persistence, routing, and the breaking v4 migration.
+
+For standalone browser use, load `dist/brio.min.js` in production or
+`dist/brio.dev.min.js` during development. Both expose `window.brio`; the
+development bundle also includes the live inspector and its tracking tools.
+Use `app.insert(target, placement, content, options?)` for managed dynamic content,
+or `$insert(...)` inside directives and scripts.

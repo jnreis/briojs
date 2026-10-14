@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { JSDOM } from 'jsdom';
-import { evaluateFunction } from 'briojs';
+import { evaluateFunction, hydrateRoot, hydrateNode } from 'briojs';
 
 const bundle = readFileSync(new URL('../dist/brio.min.js', import.meta.url), 'utf8');
 
@@ -54,6 +54,207 @@ function transitionClock(window) {
     };
 }
 
+test('$insert supports every placement, literal text, multiple roots and cloned fragments', t => {
+    const { app, root, window } = environment(t, '<section id="target"><i>old</i></section><aside>end</aside>', { count: 1 });
+    app.mount(root);
+    const before = app.insert('#target', 'before', '<b>before</b>');
+    const after = app.insert('#target', 'after', '<b>after</b>');
+    app.insert('#target', 'prepend', '<u>first</u>');
+    const appended = app.insert('#target', 'append', '<em b-text="$data.count"></em><span>last</span>');
+    assert.equal(root.textContent, 'beforefirstold1lastafterend');
+    app.state.count = 2;
+    assert.equal(appended.nodes[0].textContent, '2');
+    app.insert('#target', 'replaceChildren', '<strong>replacement</strong>');
+    assert.equal(appended.removed, true);
+    app.insert('#target', 'textContent', '<b>${$data.count}</b>');
+    assert.equal(root.querySelector('#target').textContent, '<b>${$data.count}</b>');
+    assert.equal(root.querySelector('#target').children.length, 0);
+    const fragment = window.document.createDocumentFragment();
+    const button = window.document.createElement('button');
+    button.setAttribute('on-click', '$data.count++');
+    fragment.append(button, window.document.createTextNode('${$data.count}'));
+    const cloned = app.insert('#target', 'replaceWith', fragment);
+    assert.equal(fragment.childNodes.length, 2);
+    assert.equal(button.hasAttribute('on-click'), true);
+    cloned.nodes[0].click();
+    assert.equal(cloned.nodes[1].textContent, '3');
+    assert.equal(root.querySelector('#target'), null);
+    assert.equal(root.lastElementChild.textContent, 'end');
+    cloned.remove();
+    cloned.remove();
+    assert.equal(cloned.removed, true);
+    assert.equal(cloned.nodes.length, 0);
+    before.remove();
+    after.remove();
+});
+
+test('$insert replacement dehydrates original children without stopping siblings or the container', t => {
+    const { app, root } = environment(t, `
+        <section id="target"><button on-click="$data.count++"></button><span b-text="$data.count"></span></section>
+        <aside b-text="$data.count"></aside>`, { count: 0 });
+    const mount = app.mount(root);
+    const oldButton = root.querySelector('button');
+    const oldSpan = root.querySelector('span');
+    const inserted = app.insert('#target', 'replaceChildren', '<button on-click="$data.count++">new</button>');
+    oldButton.click();
+    assert.equal(app.state.count, 0);
+    root.querySelector('button').click();
+    assert.equal(app.state.count, 1);
+    assert.equal(oldSpan.textContent, '0');
+    assert.equal(root.querySelector('aside').textContent, '1');
+    const nested = app.insert(root.querySelector('button'), 'after', '<span b-text="$data.count"></span>');
+    mount.unmount();
+    assert.equal(inserted.removed, true);
+    assert.equal(nested.removed, true);
+});
+
+test('$insert inherits destination data and loop context, and optional data adds one scope', t => {
+    const { app, root, window } = environment(t, `
+        <section b-data="{ local: 'parent' }"><div id="target" b-data="{ local: 'target' }"></div></section>
+        <div b-for="item in $data.items"><div class="row"></div></div>`, { items: ['A'] });
+    app.mount(root);
+    app.insert('#target', 'append', '<span b-text="$data.local"></span>');
+    app.insert('#target', 'before', '<em b-text="$data.local"></em>');
+    app.insert('#target', 'append', '<b b-text="$data.local + $data.$parent.local"></b>',
+        { data: window.JSON.parse('{"local":"child:"}') });
+    app.insert('.row', 'append', '<u b-text="$for.item"></u>');
+    assert.equal(root.querySelector('span').textContent, 'target');
+    assert.equal(root.querySelector('em').textContent, 'parent');
+    assert.equal(root.querySelector('b').textContent, 'child:target');
+    assert.equal(root.querySelector('u').textContent, 'A');
+    app.state.items[0] = 'B';
+    assert.equal(root.querySelector('u').textContent, 'B');
+});
+
+test('contextual $insert is lexical, root-bound, and owned by the destination', t => {
+    const { app, root, window } = environment(t, `
+        <div class="target"></div>
+        <button b-if="$data.visible" on-click="$insert('.target', 'append', '<span b-text=&quot;$data.count&quot;></span>')">insert</button>
+        <script b-script>() => { $data.insert = ctx.$insert; }</script>`, { visible: true, count: 0 });
+    const otherRoot = window.document.createElement('main');
+    otherRoot.innerHTML = '<div class="target"></div>';
+    window.document.body.append(otherRoot);
+    app.mount(root);
+    app.mount(otherRoot);
+    assert.throws(() => app.insert('.target', 'append', 'ambiguous'), /exactly one/);
+    root.querySelector('button').click();
+    assert.equal(otherRoot.querySelector('.target').textContent, '');
+    app.state.visible = false;
+    app.state.count = 4;
+    assert.equal(root.querySelector('span').textContent, '4');
+    const handle = app.state.insert('.target', 'append', 'script');
+    const staleInsert = app.state.insert;
+    assert.equal(handle.removed, false);
+    app.unmount();
+    assert.equal(handle.removed, true);
+    assert.throws(() => app.state.insert('.target', 'append', 'late'), /active mounted/);
+    app.mount(root);
+    assert.throws(() => staleInsert('.target', 'append', 'stale'), /active mounted/);
+    app.insert('.target', 'append', 'new mount');
+    assert.equal(root.querySelector('.target').textContent, 'new mount');
+});
+
+test('$insert owns structural regions, teleports, hidden nodes and enclosing branch cleanup', t => {
+    const { app, root } = environment(t, '<div id="target"></div><aside id="portal"></aside>', { visible: false, items: [1, 2] });
+    app.mount(root);
+    const region = app.insert('#target', 'append', `
+        <template b-template><span b-for="item in $data.items" b-text="$for.item"></span></template>
+        <div id="hidden" b-show="$data.visible"></div>
+        <div b-if="$data.visible"><section id="branch"></section></div>
+        <div b-teleport="'#portal'"><button on-click="$data.items.push(3)">teleported</button></div>`);
+    const hidden = region.nodes.find(node => node.nodeType === 8 && node.nodeValue === 'brio:show');
+    assert.ok(hidden);
+    app.state.visible = true;
+    const hiddenElement = root.querySelector('#hidden');
+    app.state.visible = false;
+    const hiddenInsertion = app.insert(hiddenElement, 'append', '<b b-text="$data.items.length"></b>');
+    app.state.visible = true;
+    assert.equal(root.querySelector('#hidden b').textContent, '2');
+    const branch = app.insert('#branch', 'append', '<em>child</em>');
+    app.state.visible = false;
+    assert.equal(branch.removed, true);
+    const teleportedButton = root.querySelector('#portal button');
+    region.remove();
+    assert.equal(hiddenInsertion.removed, true);
+    assert.equal(root.querySelector('#portal button'), null);
+    teleportedButton.click();
+    assert.equal(app.state.items.length, 2);
+    assert.equal(root.querySelector('#target').textContent, '');
+});
+
+test('$insert errors are explicit, preserve content on invalid input, and clean failed hydration', t => {
+    const { app, root, window } = environment(t, '<div id="target">old</div><div b-text="$data.count"></div>', { count: 0 });
+    app.mount(root);
+    assert.throws(() => app.insert('#missing', 'append', ''), /exactly one/);
+    assert.throws(() => app.insert('#target', 'invalid', ''), /placement/);
+    assert.throws(() => app.insert('#target', 'replaceChildren', 42), /content/);
+    assert.throws(() => app.insert('#target', 'append', '', null), /options/);
+    assert.throws(() => app.insert(root, 'before', ''), /mount root/);
+    assert.throws(() => app.insert(root.lastElementChild, 'append', ''), /controlled/);
+    assert.throws(() => app.insert('#target', 'replaceChildren', '', { data: null }), /state|object|data/i);
+    assert.equal(root.querySelector('#target').textContent, 'old');
+    let cleanups = 0;
+    app.state.cleanup = () => cleanups++;
+    assert.throws(() => app.insert('#target', 'append',
+        '<script b-script>() => { onCleanup($data.cleanup); }</script><b b-text="missing.name"></b>'), /expression/i);
+    assert.equal(cleanups, 1);
+    assert.equal(root.querySelector('#target').textContent, 'old');
+    const outside = window.document.createElement('div');
+    assert.throws(() => app.insert(outside, 'append', ''), /exactly one/);
+    window.document.body.append(outside);
+    const otherApp = window.brio.createApp();
+    outside.innerHTML = '<div b-teleport="\'#target\'">foreign</div>';
+    otherApp.mount(outside);
+    try {
+        assert.throws(() => app.insert(outside, 'append', ''), /exactly one/);
+        const foreign = root.querySelector('#target div');
+        assert.throws(() => app.insert(foreign, 'before', ''), /another Brio app/);
+        const externalInsertion = otherApp.insert(foreign, 'append', '<span>owned</span>');
+        assert.equal(foreign.textContent, 'foreignowned');
+        externalInsertion.remove();
+    } finally {
+        otherApp.dispose();
+    }
+});
+
+test('$insert replacements clean original structural controllers, including teleported and hidden children', t => {
+    const { app, root } = environment(t, `
+        <section id="target">
+            <div b-if="$data.visible"><button on-click="$data.count++">if</button></div>
+            <div b-for="item in $data.items"><button on-click="$data.count++">for</button></div>
+            <div b-show="$data.hidden"><button on-click="$data.count++">show</button></div>
+            <div b-teleport="'#portal'"><button on-click="$data.count++">teleport</button></div>
+        </section><aside id="portal"></aside>`, { visible: true, hidden: false, count: 0, items: [1] });
+    app.mount(root);
+    const buttons = [...root.querySelectorAll('button')];
+    assert.throws(() => app.insert(root.querySelector('#target div'), 'replaceWith', ''), /managed by b-if/);
+    app.insert('#target', 'replaceChildren', '<b>new</b>');
+    assert.equal(root.querySelector('#portal').textContent, '');
+    assert.equal(root.querySelector('#target').textContent, 'new');
+    app.state.visible = false;
+    app.state.hidden = true;
+    app.state.items.push(2);
+    assert.equal(root.querySelector('#target').textContent, 'new');
+    buttons.forEach(button => button.click());
+    assert.equal(app.state.count, 0);
+});
+
+test('$insert uses component state at hosts and retains slot contexts', t => {
+    const { app, root, window } = environment(t, `
+        <test-component><div id="projected"></div></test-component>`, { label: 'root' });
+    app.component('test-component', {
+        template: '<div id="internal"></div><slot></slot>',
+        setup: () => window.JSON.parse('{"label":"component"}'),
+    });
+    app.mount(root);
+    app.insert('test-component', 'append', '<b b-text="$data.label"></b>');
+    app.insert('#internal', 'append', '<i b-text="$data.label"></i>');
+    app.insert('#projected', 'append', '<em b-text="$data.label"></em>');
+    assert.equal(root.querySelector('b').textContent, 'component');
+    assert.equal(root.querySelector('i').textContent, 'component');
+    assert.equal(root.querySelector('em').textContent, 'root');
+});
+
 function transitionEvent(window, element, type, propertyName) {
     const event = new window.Event(type, { bubbles: true });
     Object.defineProperties(event, {
@@ -62,6 +263,26 @@ function transitionEvent(window, element, type, propertyName) {
     });
     element.dispatchEvent(event);
 }
+
+test('browser app.insert replaces global hydration methods while ESM keeps the low-level API', t => {
+    const { window, app, root } = environment(t, '', { count: 0 });
+    assert.equal(typeof hydrateRoot, 'function');
+    assert.equal(typeof hydrateNode, 'function');
+    assert.equal(window.brio.hydrateRoot, undefined);
+    assert.equal(window.brio.hydrateNode, undefined);
+    assert.equal(app.$insert, undefined);
+    app.mount(root);
+    const handle = app.insert(root, 'append',
+        '<button on-click="$data.count++">Increment</button><span b-text="$data.count"></span>');
+    const [button, span] = handle.nodes;
+    button.click();
+    assert.equal(span.textContent, '1');
+    handle.remove();
+    button.click();
+    app.state.count++;
+    assert.equal(app.state.count, 2);
+    assert.equal(span.textContent, '1');
+});
 
 test('b-if recreates local b-data, disposes listeners/effects, and preserves parent state', t => {
     const { app, root } = environment(t, `

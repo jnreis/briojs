@@ -1,7 +1,7 @@
-import { e as effect } from "./effect-DZvu7u5S.js";
-import { b, a, k, o, j } from "./effect-DZvu7u5S.js";
-import { t as trigger, b as track, a as signal } from "./state-UFBFm952.js";
-import { s } from "./state-UFBFm952.js";
+import { e as effect } from "./effect-C-FJkXLS.js";
+import { b, f, a, h, o } from "./effect-C-FJkXLS.js";
+import { t as trigger, b as track, a as signal } from "./state-CUrQJxT2.js";
+import { s } from "./state-CUrQJxT2.js";
 import { persist } from "./persistence-entry.js";
 function computed(getter) {
   let dirty = true;
@@ -61,11 +61,11 @@ function resource(fetcher) {
 export {
   b as batch,
   computed,
-  a as createScope,
+  f as createScope,
   effect,
-  k as getCurrentScope,
-  o as onCleanup,
-  j as onDispose,
+  a as getCurrentScope,
+  h as onCleanup,
+  o as onDispose,
   persist,
   resource,
   signal,

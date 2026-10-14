@@ -4,6 +4,7 @@ import { createScope, onCleanup } from '../../core/scope';
 import type { Scope } from '../../core/scope';
 import type { DomRuntime } from '../types';
 import { cancelTransition, getTransitionName, leaveTransition } from './transition';
+import { getNodeOwner, ownNode } from '../ownership';
 
 export function handleIf(
     element: Element,
@@ -42,6 +43,7 @@ export function handleIf(
     }
 
     const placeholder = document.createComment('brio:if');
+    ownNode(placeholder, context, runtime);
     parent.replaceChild(placeholder, element);
     const leaving = new Set<Element>();
     let instance: Element | undefined;
@@ -96,5 +98,7 @@ export function handleIf(
         activeBranch = branch;
         placeholder.parentNode?.insertBefore(instance, placeholder.nextSibling);
         instanceScope.run(() => hydrateNodeFn(instance!, context, runtime));
+        const owner = getNodeOwner(instance);
+        if (owner) owner.structuralRoot = true;
     });
 }

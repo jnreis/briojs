@@ -1,43 +1,7 @@
-import {
-    createApp,
-    state,
-    signal,
-    computed,
-    effect,
-    batch,
-    createScope,
-    onCleanup,
-    persist,
-    createRouter,
-    newStepEngine,
-    createStepEngine,
-    validate,
-    http,
-    trustedHTML,
-    devtools,
-} from './index';
-
-const brio = {
-    createApp,
-    state,
-    signal,
-    computed,
-    effect,
-    batch,
-    createScope,
-    onCleanup,
-    persist,
-    createRouter,
-    newStepEngine,
-    createStepEngine,
-    validate,
-    http,
-    trustedHTML,
-    devtools,
-};
+import brio from './browser-api';
 
 if (typeof window !== 'undefined') {
-    (window as any).brio = brio;
+    Object.assign(window, { brio });
     window.dispatchEvent(new CustomEvent('brio'));
 }
 

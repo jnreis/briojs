@@ -55,6 +55,16 @@ remain available through ESM. Use `app.insert()` for managed dynamic content.
 The legacy `newStepEngine` tuple API has been removed from all exports; use
 `createStepEngine()` and its named methods instead.
 
+## AI-assisted application development
+
+The [portable AI developer kit](./ai/README.md) includes a tool-neutral
+[Brio v4 application guide](./ai/brio-apps/references/guide.md), an on-demand
+skill, and runnable widget, multi-page enhancement, and SPA recipes. It ships
+in the npm package under `ai/`. Read the kit's installation instructions before
+copying the entire skill folder to a supported assistant location; npm
+installation does not activate it. These resources guide app development, not
+framework maintenance, and generated code still requires review and testing.
+
 ## First app
 
 ```js
@@ -306,7 +316,7 @@ Effects run synchronously by default. Explicit batches are synchronous too; ther
 
 ## Persistence
 
-Import persistence where needed. Create persistent values inside an app/component setup function or an explicit reactive scope so disposal removes both its effect and cross-tab listener:
+Import persistence where needed. Create persistent values inside component setup, an app plugin, or an explicit reactive scope so disposal removes both its effect and cross-tab listener. The app's `state` factory does not itself run in an owned scope:
 
 ```js
 import { createApp } from 'briojs';
@@ -336,7 +346,7 @@ Objects and arrays are reactive directly. Primitive values are returned as signa
 
 Directive expressions are ordinary strict-mode JavaScript compiled and cached at runtime with `new Function`, without `with`. They are authored application code, **not a sandbox**; the approach is incompatible with a strict CSP that disallows `unsafe-eval`. Never render untrusted content as a Brio template or directive expression.
 
-`b-text` writes text, not HTML. `b-html` accepts only an explicit trusted value:
+`b-text` writes text, not HTML. Use an explicit trusted value for `b-html` (the current implementation also accepts ordinary strings; the helper does not enforce sanitization):
 
 ```js
 import { trustedHTML } from 'briojs';

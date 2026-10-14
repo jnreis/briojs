@@ -25,3 +25,11 @@ For standalone browser use, load `dist/brio.min.js` in production or
 development bundle also includes the live inspector and its tracking tools.
 Use `app.insert(target, placement, content, options?)` for managed dynamic content,
 or `$insert(...)` inside directives and scripts.
+
+## Building with AI assistants
+
+The package ships a [portable AI developer kit](./ai/README.md) with a
+[Brio v4 application guide](./ai/brio-apps/references/guide.md), an installable
+skill, and tested widget, multi-page, and SPA recipes. Use the guide directly,
+or copy the complete skill folder into your assistant's supported discovery
+location. Installing Brio does not automatically activate the skill.

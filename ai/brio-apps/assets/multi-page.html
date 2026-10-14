@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Brio multi-page enhancement recipe</title>
+</head>
+<body>
+  <h1>Server-rendered account page</h1>
+  <a id="normal-link" href="/account">Ordinary server navigation</a>
+  <main id="enhancement">
+    <form id="form" b-id="['email']" b-on-submit.prevent="$data.submit()">
+      <label b-bind-for="$id.email">Email</label>
+      <input type="text" name="email" inputmode="email" autocomplete="email"
+        b-bind-id="$id.email" b-model.trim="$data.email">
+      <button type="submit">Validate</button>
+      <p id="status" role="status" b-text="$data.status"></p>
+    </form>
+    <recipe-preferences></recipe-preferences>
+  </main>
+  <script src="./brio.min.js"></script>
+  <script data-brio-recipe>
+    const app = brio.createApp({
+      state: () => ({
+        email: '',
+        status: '',
+        submit() {
+          const result = brio.validate({ email: this.email }, {
+            email: [
+              { name: 'required', message: 'Email is required' },
+              { name: 'email', message: 'Enter a valid email' },
+            ],
+          });
+          this.status = result === true ? 'Valid email' : result.email.join('; ');
+        },
+      }),
+    });
+    app.component('recipe-preferences', {
+      template: `
+        <label>Theme
+          <select b-model="$data.preferences.theme">
+            <option value="light">Light</option>
+            <option value="dark">Dark</option>
+          </select>
+        </label>
+        <p id="theme" b-text="$data.preferences.theme"></p>
+      `,
+      setup() {
+        return {
+          preferences: brio.persist('brio-recipe-theme-v4', { theme: 'light' }),
+        };
+      },
+    });
+    app.mount('#enhancement');
+    window.addEventListener('pagehide', () => app.dispose(), { once: true });
+  </script>
+</body>
+</html>

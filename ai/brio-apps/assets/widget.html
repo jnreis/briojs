@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Brio widget recipe</title>
+</head>
+<body>
+  <h1>Existing host page</h1>
+  <button id="host-button" type="button">Unaffected host control</button>
+  <section id="widget" aria-label="Counter widget">
+    <h2>Widget</h2>
+    <button id="shared" type="button" b-on-click="$data.total++">Shared +</button>
+    <output id="total" b-text="$data.total"></output>
+    <ul>
+      <li b-for="group in $data.groups" b-key="$for.group.id">
+        <span b-for="item in $for.group.items" b-key="$for.item.id"
+          b-text="$for.$parent.group.name + ': ' + $for.item.name"></span>
+      </li>
+    </ul>
+    <button id="toggle-if" type="button" b-on-click="$data.conditional = !$data.conditional">Toggle resetting state</button>
+    <div id="conditional" b-if="$data.conditional" b-data="{ count: 0 }">
+      <button type="button" b-on-click="$data.count++; $data.$parent.total++">Local +</button>
+      <output b-text="$data.count"></output>
+    </div>
+    <button id="toggle-show" type="button" b-on-click="$data.visible = !$data.visible">Toggle preserved state</button>
+    <div id="preserved" b-show="$data.$parent.visible" b-data="{ count: 0 }">
+      <button type="button" b-on-click="$data.count++">Preserved +</button>
+      <output b-text="$data.count"></output>
+    </div>
+    <button id="insert" type="button" b-on-click="$data.insertion = $insert('#dynamic', 'append', '&lt;button b-on-click=&quot;$data.count++&quot;&gt;Inserted: ${$data.count}&lt;/button&gt;', { data: { count: 0 } })">Insert local counter</button>
+    <button id="remove" type="button" b-on-click="$data.insertion?.remove()">Remove latest insertion</button>
+    <div id="dynamic"></div>
+    <output id="pulses" b-text="$data.pulses"></output>
+    <script b-script>
+      (ctx) => {
+        const pulse = () => { ctx.$data.pulses++; };
+        window.addEventListener('brio-recipe-pulse', pulse);
+        ctx.onCleanup(() => window.removeEventListener('brio-recipe-pulse', pulse));
+      }
+    </script>
+  </section>
+  <script src="./brio.min.js"></script>
+  <script data-brio-recipe>
+    const app = brio.createApp({
+      state: () => ({
+        total: 0,
+        conditional: true,
+        visible: true,
+        pulses: 0,
+        insertion: null,
+        groups: [{ id: 'a', name: 'Group A', items: [{ id: 'one', name: 'One' }] }],
+      }),
+    });
+    app.mount('#widget');
+    window.addEventListener('pagehide', () => app.dispose(), { once: true });
+  </script>
+</body>
+</html>

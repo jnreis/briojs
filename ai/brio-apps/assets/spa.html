@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Brio SPA recipe</title>
+</head>
+<body>
+  <main id="spa">
+    <nav aria-label="Main navigation">
+      <a id="home-link" href="/">Home</a>
+      <a id="item-link" href="/items/42">Item 42</a>
+    </nav>
+    <div b-router-outlet></div>
+  </main>
+  <script src="/brio.min.js"></script>
+  <script data-brio-recipe>
+    const router = brio.createRouter([
+      { path: '/', component: 'recipe-home' },
+      { path: '/items/:id', component: 'recipe-item' },
+    ]);
+    const app = brio.createApp({
+      router,
+      state: () => ({ label: 'Visits', selected: 0 }),
+    });
+    app.component('recipe-counter', {
+      template: `
+        <button id="component-counter" type="button" b-on-click="$data.increment()">
+          <span b-text="$props.label"></span>: <span id="component-count" b-text="$data.count"></span>
+        </button>
+        <slot></slot>
+      `,
+      setup({ $emit }) {
+        return {
+          count: 0,
+          increment() {
+            this.count++;
+            $emit('change', this.count);
+          },
+        };
+      },
+    });
+    app.component('recipe-home', {
+      template: `
+        <h1>Home</h1>
+        <recipe-counter b-bind-label="$data.$parent.label" b-on-change="$data.$parent.selected = $event.detail">
+          <p id="projected" b-text="$data.$parent.label"></p>
+        </recipe-counter>
+        <p id="selected" b-text="$data.$parent.selected"></p>
+      `,
+    });
+    app.component('recipe-item', {
+      template: `
+        <h1>Item <span id="item-id" b-text="$data.route.value.params.id"></span></h1>
+        <p id="item-pulses" b-text="$data.pulses.value"></p>
+      `,
+      setup({ app }) {
+        const pulses = brio.signal(0);
+        const pulse = () => { pulses.value++; };
+        window.addEventListener('brio-recipe-pulse', pulse);
+        brio.onCleanup(() => window.removeEventListener('brio-recipe-pulse', pulse));
+        return { route: app.router.current, pulses };
+      },
+    });
+    app.mount('#spa');
+    window.addEventListener('pagehide', () => app.dispose(), { once: true });
+  </script>
+</body>
+</html>

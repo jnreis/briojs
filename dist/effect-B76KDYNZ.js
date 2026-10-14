@@ -214,12 +214,12 @@ export {
   getActiveEffect as g,
   onCleanup as h,
   installDevtoolsBridge as i,
-  notifyRootUnmounted as j,
-  notifyRootMounted as k,
-  notifyAppDisposed as l,
-  notifyAppCreated as n,
+  notifyAppDisposed as j,
+  notifyAppCreated as k,
+  notifyRootUnmounted as l,
+  notifyRootMounted as n,
   onDispose as o,
   queueEffect as q,
   setActiveScope as s
 };
-//# sourceMappingURL=effect-C-FJkXLS.js.map
+//# sourceMappingURL=effect-B76KDYNZ.js.map

@@ -3,10 +3,11 @@ import { createScope, onCleanup } from '../core/scope';
 import type { Scope } from '../core/scope';
 import { effect } from '../reactivity/effect';
 import type { DomRuntime } from './types';
-import { mountComponent } from './components';
+import { mountComponent, takeProjectedContext } from './components';
 import { prepareTransition } from './directives/transition';
 import { createInsert } from './insert';
 import { getNodeOwner, ownNode } from './ownership';
+import { emptyContextValues } from '../core/context-values';
 
 export function mountRouterOutlet(
     element: Element,
@@ -57,6 +58,7 @@ import {
     handleHtml,
     handleText,
     handleData,
+    handleProvide,
     handleId,
     handleIgnore,
     handleMask,
@@ -105,6 +107,7 @@ export function hydrateNode(
     runtime: DomRuntime,
 ): void {
     if (getNodeOwner(node)) throw new Error('Cannot hydrate an already hydrated Brio node.');
+    parentContext = takeProjectedContext(node) ?? parentContext;
     const scope = createScope();
     scope.run(() => {
         ownNode(node, parentContext, runtime);
@@ -141,6 +144,8 @@ function hydrateOwnedNode(
 
     let context = createExpressionScope({
         $el: element,
+        $stores: parentContext.$stores ?? emptyContextValues,
+        $provided: parentContext.$provided ?? emptyContextValues,
         ...(runtime.root ? { $insert: createInsert(runtime) } : {}),
     }, parentContext);
 
@@ -165,6 +170,13 @@ function hydrateOwnedNode(
         const { modifiers } = extractModifiers('b-for');
         handleFor(element, forAttr, modifiers, context, runtime, hydrateNode);
         return;
+    }
+
+    const provideAttr = element.getAttribute('b-provide');
+    if (provideAttr !== null) {
+        context = handleProvide(provideAttr, context);
+        element.removeAttribute('b-provide');
+        getNodeOwner(element)!.context = context;
     }
 
     // 6. b-template

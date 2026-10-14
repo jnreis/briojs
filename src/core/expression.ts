@@ -9,7 +9,7 @@ const functionExpressions = new Map<string, Function>();
 
 const contextBindings = `
 "use strict";
-const { $data, $el, $event, $id, $for, $mutations, $size, $entry, $props, $emit, $insert, trustedHTML, onCleanup, money } = ctx;
+const { $data, $el, $event, $id, $for, $mutations, $size, $entry, $props, $emit, $insert, $stores, $provided, trustedHTML, onCleanup, money } = ctx;
 `;
 
 export function evaluateFunction(source: string, context: ExpressionScope): (ctx: ExpressionScope) => unknown {

@@ -24,6 +24,14 @@ metadata on `main`, through commit `d868d43`.
 
 ### Added
 
+- Optional standalone router, persistence, and forms scripts sharing the
+  browser core runtime; HTTP and step remain bundled.
+- Main npm entry exports for devtools, with explicit `enableDevtools()`
+  activation and automatic activation retained by the devtools subpath.
+- Fixed named app stores through `createApp({ stores })`, `app.stores`, and
+  `$stores`, preserving supplied references without implicit reactivity.
+- Live subtree values through `b-provide` and `$provided`, with nested overrides,
+  read-only names, and component setup access.
 - Portable 1.1.5-to-v4 migration skill, legacy API inventory, semantic migration
   guide, paired examples, and production verification checklist.
 - Portable AI app-development kit: a reusable skill, framework guide, recipes,
@@ -33,6 +41,8 @@ metadata on `main`, through commit `d868d43`.
 
 ### Documentation
 
+- Documented shared store ownership, explicit reactivity, provider inheritance,
+  and their use when migrating legacy shared state.
 - Clarified that persistence must have an owned cleanup scope; an app state
   factory alone does not provide one.
 - Clarified that `trustedHTML` marks developer-authored markup, does not sanitize

@@ -9,7 +9,9 @@ No compatibility build is provided.
 
 The source baseline is the downloaded 1.1.5 browser artifact described in the
 [legacy inventory](./legacy-api.md), whose mapped sources match `df5fbdc`.
-The target is v4.0.0 through framework commit `d868d43`. Check the application's
+The original target baseline is v4.0.0 through framework commit `d868d43`;
+named stores and subtree providers below require this checkout's newer
+Unreleased implementation. Check the application's
 actual artifact and target declarations before following this guide.
 
 Most ordinary bindings, events, loops, forms, and conditional UI can be
@@ -37,6 +39,10 @@ app.dispose();
 ```
 
 Use `brio.min.js` in production or `brio.dev.min.js` in development, not both.
+Browser routing/persistence/validation now require the optional
+`brio.router.min.js`, `brio.persistence.min.js`, and `brio.forms.min.js` scripts.
+Load the needed scripts after the core and before mounting. HTTP and step remain
+bundled; npm main-entry imports still expose every plugin and development helper.
 Run bootstrap after the bundle and markup are available. ESM consumers can
 import `createApp` from `briojs`; do not mix browser and ESM runtimes on a root.
 For side-by-side migration testing, use separate pages/builds, not competing
@@ -59,7 +65,7 @@ V4 compiles strict JavaScript with explicit context bindings and no `with`.
 | `count`, bare method names | `$data.count`, `$data.increment()` |
 | `{{ count }}` | `${$data.count}` or `b-text="$data.count"` |
 | `$each` collection fields | Explicit declared `$for.item` / `$for.index` |
-| Root shared `$store` | Initialize shared `app.state`; use `$data` or an explicit shared object exposed in local state |
+| Root shared `$store` | App state for small apps, or an explicit reactive store registered in `createApp({ stores })` and read through `$stores.name` |
 | Inherited general `$props` | Local/app state and explicit ancestry, or real component `$props` |
 | `$el` | `$el` remains the current element |
 | `$uid.name` | `$id.name` from `b-id` |
@@ -71,6 +77,23 @@ V4 compiles strict JavaScript with explicit context bindings and no `with`.
 A nested v4 `b-data` does not implicitly merge all app methods into its own
 object. Navigate `$data.$parent`, or explicitly pass shared state/operations.
 An app factory is plain initialization, not a cleanup scope.
+
+In builds with named stores, shared state does not need to be copied into every
+local scope:
+
+```js
+const shared = brio.state({ user: null, cart: [] });
+const app = brio.createApp({ stores: { shared } });
+// Markup: $stores.shared.cart.length, not legacy $store.cart.length.
+```
+
+Registration does not make a plain object reactive, own store effects, or add
+persistence. Explicitly use `brio.state()` when migrating the reactive legacy
+`$store`. Store names are fixed; store fields remain mutable. The same store can
+be registered with multiple apps without being reset when one app disposes.
+Use `b-provide="{ theme: $data.theme }"` / `$provided.theme` for deliberate
+subtree sharing. This is not a rename of legacy inherited `$props`: identify
+the actual owner and choose mutation, override and lifecycle behavior explicitly.
 
 ```html
 <section b-data="{ count: 0 }">

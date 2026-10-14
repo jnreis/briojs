@@ -1,6 +1,7 @@
 import { effect } from '../reactivity/effect';
 import { causedError } from '../core/errors';
 import { installDevtoolsBridge } from './devtools-bridge';
+import type { DevtoolsBridge } from './devtools-bridge';
 
 export type DevtoolsSnapshot = {
     appCount: number;
@@ -48,7 +49,9 @@ const getSnapshot = (): DevtoolsSnapshot => {
     };
 };
 
-installDevtoolsBridge({
+let enabled = false;
+
+const bridge: DevtoolsBridge = {
     appCreated(app, appState) {
         const record: AppRecord = { state: undefined, roots: new Set(), snapshot: () => {} };
         record.snapshot = effect(() => {
@@ -89,7 +92,13 @@ installDevtoolsBridge({
         activeEffects--;
         notifySubscribers();
     },
-});
+};
+
+export function enableDevtools(): void {
+    if (enabled) return;
+    enabled = true;
+    installDevtoolsBridge(bridge);
+}
 
 export const devtools = {
     subscribe(callback: () => void): () => void {

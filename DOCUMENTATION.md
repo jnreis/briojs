@@ -29,7 +29,16 @@ The development tools are deliberately separate:
 import { devtoolsPanel } from 'briojs/devtools';
 ```
 
-Import that entry before creating apps to register apps and effects with the development inspector. Production applications that do not import `briojs/devtools` do not include the inspector UI or its instrumentation.
+Import that entry before creating apps to enable the development inspector.
+All tooling is also available from the npm main entry without implicit activation:
+
+```js
+import { createApp, enableDevtools, inspectDevtools, devtoolsPanel } from 'briojs';
+enableDevtools(); // Development only; before creating apps.
+```
+
+Unused devtools exports can be tree-shaken. Main-entry imports alone do not
+enable snapshotting; the dedicated `briojs/devtools` entry enables it automatically.
 
 ### Browser bundles
 
@@ -43,12 +52,29 @@ Load one of the standalone bundles, not both:
 ```
 
 Both expose `window.brio` with `createApp`, `state`, `signal`, `computed`,
-`effect`, `batch`, `createScope`, `onCleanup`, `persist`, `createRouter`,
-`createStepEngine`, `validate`, `http`, and `trustedHTML`. Both dispatch the
-`brio` ready event after publishing the complete API.
+`effect`, `batch`, `createScope`, `onCleanup`, `getCurrentScope`,
+`createStepEngine`, `http`, and `trustedHTML`. Both dispatch the
+`brio` ready event after publishing the core API.
 
-The development bundle additionally exposes `devtools`, `inspectDevtools`, and
-`devtoolsPanel`. The production bundle compiles out devtools tracking hooks and
+Router, persistence, and forms are optional browser scripts. Load only what you
+need, **after** the core and **before** application bootstrap:
+
+```html
+<script src="/dist/brio.min.js"></script>
+<script src="/dist/brio.router.min.js"></script>      <!-- Adds brio.createRouter -->
+<script src="/dist/brio.persistence.min.js"></script> <!-- Adds brio.persist -->
+<script src="/dist/brio.forms.min.js"></script>       <!-- Adds brio.validate -->
+<script src="/app.js"></script>
+```
+
+The optional scripts extend the existing `window.brio`, use its reactive engine
+and cleanup scopes, and do not dispatch another `brio` ready event. For deferred
+loading, bootstrap after the needed scripts finish, not at the core's ready
+event. Loading a plugin before the core throws. The same scripts work with the
+development core. HTTP and step remain included in both core bundles.
+
+The development bundle additionally exposes `devtools`, `inspectDevtools`,
+`devtoolsPanel`, and `enableDevtools`, with tracking enabled automatically. The production bundle compiles out devtools tracking hooks and
 does not include the inspector or reactive state snapshotting.
 The browser global no longer exposes `hydrateRoot` or `hydrateNode`; those
 remain available through ESM. Use `app.insert()` for managed dynamic content.
@@ -94,11 +120,107 @@ app.mount('#counter');
 
 Expressions run in strict mode without `with` or implicit state-name resolution. Use `$data` for the nearest state object (app state, component setup state, or `b-data`), `$data.$parent` for parent state, and `$for` for loop values. Bare state names such as `count` are not supported and unresolved identifiers throw `ReferenceError`. JavaScript globals such as `Math`, `JSON`, and `setTimeout` resolve normally.
 
-The context is also available as `ctx`. Named bindings include `$data`, `$el`, `$id`, `$for`, `$props`, `$emit`, `$insert`, and `trustedHTML`. Event handlers receive `$event`; observers supply `$mutations`, `$size`, or `$entry`. The mask directive supplies `money`, and contextual scripts supply `onCleanup`. Helpers not supplied in that context are `undefined`. Bindings are read-only references; mutate their properties (`$data.count++`), not the binding itself (`$data = {}`). Event statements can declare ordinary local variables.
+The context is also available as `ctx`. Named bindings include `$data`, `$el`, `$id`, `$for`, `$props`, `$emit`, `$insert`, `$stores`, `$provided`, and `trustedHTML`. Event handlers receive `$event`; observers supply `$mutations`, `$size`, or `$entry`. The mask directive supplies `money`, and contextual scripts supply `onCleanup`. Helpers not supplied in that context are `undefined`. Bindings are read-only references; mutate their properties (`$data.count++`), not the binding itself (`$data = {}`). Event statements can declare ordinary local variables.
 
 Data and loop ancestry are independent: `$data.$parent.$parent` accesses a grandparent data scope, while `$for.$parent.$parent` accesses a grandparent loop. Ordinary elements and loops do not add data ancestry levels; data scopes do not add loop ancestry levels. Component setup state creates a data scope. App state and outermost loops have `$parent === undefined`. An empty `b-data` attribute inherits data without adding a scope; `b-data="{}"` creates one.
 
 `$parent` is reserved, read-only metadata on scope-specific views, not a field added to user state. It is excluded from keys, spreads, and JSON serialization. The same underlying state object may have different parents in different scopes. Normal reads, writes, and methods remain reactive. Use `ctx` for other helpers; standalone `$parent` and `ctx.$parent` are no longer provided.
+
+`trustedHTML` remains public for JavaScript-authored values, for example
+`app.state.markup = brio.trustedHTML('<em>Authored content</em>')` with
+`b-html="$data.markup"`. Expressions also receive `trustedHTML` directly.
+It marks trust intent, not sanitization; managed insertion uses it internally,
+and `b-html` currently also accepts unmarked strings.
+
+## Shared stores
+
+One app's mounted roots share `app.state`. For named stores that must be
+accessible regardless of local data or component boundaries, register them
+with `createApp({ stores })`:
+
+```js
+const session = brio.state({ user: null });
+const cart = brio.state({
+  items: [],
+  add(product) { this.items.push(product); },
+});
+const configuration = { apiBase: '/api' }; // Intentionally nonreactive.
+
+const app = brio.createApp({ stores: { session, cart, configuration } });
+app.mount('#catalog');
+app.mount('#header');
+// Another app can share the exact same store:
+const widget = brio.createApp({ stores: { cart } });
+widget.mount('#cart-widget');
+```
+
+```html
+<section b-data="{ search: '' }">
+  <span b-text="$stores.cart.items.length"></span>
+</section>
+```
+
+`$stores` is available in every app expression and as `ctx.$stores` in scripts.
+Component setup receives `$stores` directly; plugins can use `app.stores`.
+Registration preserves the supplied values and identities and **does not make
+them reactive**. Explicitly use `state()` for reactive objects/arrays or
+`signal()` for primitive values (read signals through `.value`). Mutating a plain
+store does not notify bindings, although another dependency may cause a later
+read to see the new value.
+
+`app.stores` is a shallow read-only, null-prototype snapshot of the registration
+object. Names cannot be added, replaced, or deleted after app creation; store
+contents remain mutable. Missing names return `undefined`. Registration must
+be a plain object of enumerable own data properties, not an accessor registry.
+No stores produces an empty mapping. Shared stores are not reset or disposed
+when an app unmounts/disposes. Own store effects/resources explicitly; registration
+does not create a resource scope or persistence. Normal stores last only for
+the current page; use scoped `persist()` or an explicit backend/storage adapter
+for reloads and multi-page navigation.
+
+## Subtree-provided values
+
+Use `b-provide` to expose values on an element and throughout its Brio subtree.
+Read them directly through `$provided`; no separate inject directive is needed:
+
+```html
+<section b-data="{ theme: 'dark' }"
+         b-provide="{ theme: $data.theme, cart: $stores.cart }">
+  <input b-model="$data.theme">
+  <p b-text="$provided.theme"></p>
+  <div b-provide="{ theme: 'light' }">
+    <span b-text="$provided.theme"></span>
+    <span b-text="$provided.cart.items.length"></span>
+  </div>
+</section>
+```
+
+Provider expressions stay reactive: changing the outer theme updates its
+consumers without remounting children. Nested providers override their own names
+and inherit others. An explicitly provided `undefined` shadows a parent value;
+removing the local key reveals the parent's value. Missing names return
+`undefined`; outside a provider, `$provided` is an empty read-only mapping.
+
+Provided names are read-only: `$provided.theme = 'light'` throws. Referenced
+objects are not frozen, so `$provided.cart.items.push(product)` can update the
+provided reactive object. The expression must return a synchronous plain object
+of enumerable own data properties. Invalid initial or updated results throw;
+they are not silently accepted. `$provided` in the provider expression refers
+to the inherited values, not its own result.
+
+Providers run after same-element `b-data` and, on repeated elements, after row
+`$for` exists. Other bindings on that element see its provided values.
+`b-if` conditions still use their parent context before branch-local providers.
+Providers do not add `$data.$parent` or `$for.$parent` levels.
+
+Component setup receives `$provided`; templates, scripts, routed views, and
+managed inserted content inherit the applicable context. A provider on a
+component host applies before setup. Slot content keeps its caller/authoring
+context, not providers inside the component's template. Teleports preserve
+their original context rather than inheriting from the physical destination.
+Child insertion inherits destination providers; sibling insertion inherits the
+parent container's providers. Provider effects stop when their owning scope is
+disposed; `b-show` keeps them active, while a false `b-if` disposes them.
 
 ## HTML directives
 
@@ -107,6 +229,7 @@ Directive arguments use hyphens (`b-on-click`, `b-bind-href`); options use chain
 | Directive | Purpose |
 | --- | --- |
 | `b-data` | Create a nested state scope from an object expression. |
+| `b-provide` | Provide live named values to this element and its subtree through `$provided`. |
 | `b-text` | Reactively set an element's text content. |
 | `b-bind-name` | Reactively bind an attribute or DOM property, e.g. `b-bind-href="$data.url"`. |
 | `b-on-event` | Listen for a DOM event, e.g. `b-on-submit="$data.save($event)"`. |
@@ -229,13 +352,13 @@ app.mount('#widgets');
 </main>
 ```
 
-Static host attributes become string props; `b-bind-name` supplies a reactive prop through `$props`. Setup receives `$props`, `$emit`, the host element as `el`, and `app`. Templates and contextual scripts also access `$props` and `$emit`. Component events are bubbling `CustomEvent`s emitted with `$emit(name, detail)`. The previous `props` and `emit` names are not aliases. Named slots use `slot="name"` on projected content and `<slot name="name">` in the template. Component setup runs in an owned scope; effects, persistence, and listeners registered during setup are disposed when the component is removed.
+Static host attributes become string props; `b-bind-name` supplies a reactive prop through `$props`. Setup receives `$props`, `$emit`, `$stores`, `$provided`, the host element as `el`, and `app`. Templates and contextual scripts also access `$props` and `$emit`. Component events are bubbling `CustomEvent`s emitted with `$emit(name, detail)`. The previous `props` and `emit` names are not aliases. Named slots use `slot="name"` on projected content and `<slot name="name">` in the template. Component setup runs in an owned scope; effects, persistence, and listeners registered during setup are disposed when the component is removed.
 
 ## Three ways to use Brio
 
 ### A widget in an existing app
 
-Mount a small root without taking over its host page. Non-overlapping roots can share app state; separate apps are isolated:
+Mount a small root without taking over its host page. Non-overlapping roots can share app state; separate apps have isolated app state unless stores are explicitly shared:
 
 ```js
 const widget = createApp({ state: () => ({ open: false }) });
@@ -433,6 +556,7 @@ ESM imports expose `hydrateRoot(element, context, runtime)` and `hydrateNode(nod
 ```ts
 createApp({
   state?: () => Record<string, unknown>,
+  stores?: Record<string, unknown>,
   components?: Record<string, ComponentDefinition>,
   router?: Router,
   plugins?: BrioPlugin[],
@@ -445,6 +569,7 @@ createApp({
 - `app.unmount()` unmounts all roots; the app remains mountable.
 - `app.dispose()` permanently disposes the app and its scopes.
 - `app.state` is shared by roots mounted from that app.
+- `app.stores` is a fixed read-only mapping of explicitly supplied stores; no automatic reactivity or persistence.
 
 The mount root is owned by Brio: unmount restores its original attributes and children. Put `b-if` and `b-for` on descendants, not on the mount root.
 

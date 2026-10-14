@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
+import { execFileSync } from 'node:child_process';
 import { JSDOM } from 'jsdom';
 import * as esm from 'briojs';
 
@@ -8,10 +9,10 @@ const production = readFileSync(new URL('../dist/brio.min.js', import.meta.url),
 const development = readFileSync(new URL('../dist/brio.dev.min.js', import.meta.url), 'utf8');
 const coreAPI = [
     'createApp', 'state', 'signal', 'computed', 'effect', 'batch',
-    'createScope', 'onCleanup', 'persist', 'createRouter', 'createStepEngine',
-    'validate', 'http', 'trustedHTML',
+    'createScope', 'onCleanup', 'getCurrentScope', 'createStepEngine',
+    'http', 'trustedHTML',
 ];
-const developmentAPI = ['devtools', 'inspectDevtools', 'devtoolsPanel'];
+const developmentAPI = ['devtools', 'inspectDevtools', 'devtoolsPanel', 'enableDevtools'];
 
 for (const [name, bundle, dev] of [
     ['production', production, false],
@@ -77,7 +78,7 @@ for (const [name, bundle, dev] of [
     });
 }
 
-test('ESM core does not snapshot state until the separate devtools entry is imported', async () => {
+test('ESM main exports devtools without activating tracking; the devtools subpath activates it', async () => {
     let reads = 0;
     const create = () => esm.createApp({ state: () => ({
         get count() {
@@ -88,6 +89,7 @@ test('ESM core does not snapshot state until the separate devtools entry is impo
     const productionApp = create();
     productionApp.dispose();
     assert.equal(reads, 0);
+    assert.equal(typeof esm.enableDevtools, 'function');
     const { inspectDevtools } = await import('briojs/devtools');
     const developmentApp = create();
     try {
@@ -109,7 +111,7 @@ test('production bundle excludes the inspector and tracking code; ESM tooling st
         assert.equal(development.includes(marker), true, `Development is missing ${marker}`);
     }
     assert.ok(Buffer.byteLength(production) < Buffer.byteLength(development));
-    assert.equal(esm.devtools, undefined);
+    assert.equal(typeof esm.devtools.getSnapshot, 'function');
     assert.equal('newStepEngine' in esm, false);
     const engine = esm.createStepEngine({
         intro: { active: true, next: 'details' },
@@ -121,4 +123,102 @@ test('production bundle excludes the inspector and tracking code; ESM tooling st
     assert.equal(engine.backStep('details'), true);
     assert.equal(engine.getActiveStep(), 'intro');
     assert.equal(typeof esm.hydrateNode, 'function');
+});
+
+for (const [name, bundle] of [['production', production], ['development', development]]) {
+    test(`${name} optional browser plugins share the core's state and lifetime without replacing its API`, t => {
+        const dom = new JSDOM('<main><span b-text="$stores.preferences.theme"></span></main>', {
+            runScripts: 'outside-only', url: 'https://brio.test/',
+        });
+        const { window } = dom;
+        let app;
+        let routed;
+        let scope;
+        t.after(() => {
+            try {
+                routed?.dispose();
+                app?.dispose();
+                scope?.dispose();
+            } finally {
+                window.close();
+            }
+        });
+        window.eval(bundle);
+        const core = window.brio;
+        for (const key of ['persist', 'createRouter', 'validate']) assert.equal(core[key], undefined);
+        for (const plugin of ['router', 'persistence', 'forms']) {
+            const source = readFileSync(new URL(`../dist/brio.${plugin}.min.js`, import.meta.url), 'utf8');
+            window.eval(source);
+        }
+        assert.equal(window.brio, core);
+        let preferences;
+        scope = core.createScope();
+        scope.run(() => { preferences = core.persist('test', window.eval('({ theme: "dark" })')); });
+        const markup = window.eval('({ value: null })');
+        markup.value = core.trustedHTML('<em>authored</em>');
+        app = core.createApp({ stores: window.Object.assign(new window.Object(), { preferences, markup }) });
+        app.mount('main');
+        preferences.theme = 'light';
+        assert.equal(window.document.querySelector('span').textContent, 'light');
+        assert.equal(window.localStorage.getItem('test'), '{"theme":"light"}');
+        scope.dispose();
+        preferences.theme = 'stopped';
+        assert.equal(window.localStorage.getItem('test'), '{"theme":"light"}');
+        assert.throws(() => core.persist('outside', 0), /scope/);
+        const router = core.createRouter(window.eval('[{ path: "/", component: "home-page" }]'));
+        const aside = window.document.createElement('aside');
+        aside.innerHTML = '<div b-router-outlet></div>';
+        window.document.body.append(aside);
+        routed = core.createApp({
+            router, state: () => window.eval('({})'),
+            components: { 'home-page': { template: '<b>home</b>' } },
+        });
+        routed.mount(aside);
+        assert.equal(aside.textContent, 'home');
+        router.current.value = null;
+        assert.equal(aside.textContent, '');
+        router.current.value = window.eval('({ path: "/", params: {}, component: "home-page" })');
+        assert.equal(aside.textContent, 'home');
+        const validity = core.validate({ email: '' }, { email: [{ name: 'required' }] });
+        assert.ok(Array.isArray(validity.email));
+        const inserted = app.insert('main', 'append', '<div b-html="$stores.markup.value"></div>');
+        assert.equal(inserted.nodes[0].innerHTML, '<em>authored</em>');
+    });
+}
+
+test('optional scripts report missing core explicitly and contain no separate reactive engine', t => {
+    const dom = new JSDOM('', { runScripts: 'outside-only' });
+    t.after(() => dom.window.close());
+    for (const plugin of ['router', 'persistence', 'forms']) {
+        const source = readFileSync(new URL(`../dist/brio.${plugin}.min.js`, import.meta.url), 'utf8');
+        assert.throws(() => dom.window.eval(source), /Load the Brio core/);
+        assert.equal(source.includes('brio.raw'), false);
+        assert.equal(source.includes('Cannot run a disposed Brio scope'), false);
+    }
+    for (const marker of ['persistence key', 'Unknown validation rule', 'Duplicate route pattern']) {
+        assert.equal(production.includes(marker), false);
+        assert.equal(development.includes(marker), false);
+    }
+});
+
+test('npm main entry exposes every plugin and enables devtools only on explicit request', () => {
+    execFileSync(process.execPath, ['--input-type=module', '-e', `
+        import assert from 'node:assert/strict';
+        import * as brio from 'briojs';
+        for (const name of ['persist', 'createRouter', 'createStepEngine', 'validate',
+            'resource', 'trustedHTML', 'enableDevtools', 'inspectDevtools', 'devtoolsPanel'])
+            assert.equal(typeof brio[name], 'function', name);
+        assert.equal(typeof brio.http.get, 'function');
+        let reads = 0;
+        const options = { state: () => ({ get value() { reads++; return 1; } }) };
+        brio.createApp(options).dispose();
+        assert.equal(reads, 0);
+        brio.enableDevtools();
+        brio.enableDevtools();
+        const app = brio.createApp(options);
+        assert.ok(reads > 0);
+        assert.equal(brio.inspectDevtools().appCount, 1);
+        app.dispose();
+        assert.equal(brio.inspectDevtools().appCount, 0);
+    `], { cwd: new URL('..', import.meta.url), stdio: 'pipe' });
 });

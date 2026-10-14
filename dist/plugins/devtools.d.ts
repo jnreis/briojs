@@ -9,6 +9,7 @@ export type DevtoolsSnapshot = {
         state: unknown;
     }[];
 };
+export declare function enableDevtools(): void;
 export declare const devtools: {
     subscribe(callback: () => void): () => void;
     getSnapshot: () => DevtoolsSnapshot;

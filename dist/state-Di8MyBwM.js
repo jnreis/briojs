@@ -1,4 +1,4 @@
-import { b as batch, q as queueEffect, g as getActiveEffect } from "./effect-C-FJkXLS.js";
+import { b as batch, q as queueEffect, g as getActiveEffect } from "./effect-B76KDYNZ.js";
 const targetMap = /* @__PURE__ */ new WeakMap();
 const proxyCache = /* @__PURE__ */ new WeakMap();
 const rawCache = /* @__PURE__ */ new WeakMap();
@@ -148,9 +148,9 @@ function signal(initialValue) {
   };
 }
 export {
-  signal as a,
-  track as b,
+  track as a,
+  signal as b,
   state as s,
   trigger as t
 };
-//# sourceMappingURL=state-CUrQJxT2.js.map
+//# sourceMappingURL=state-Di8MyBwM.js.map

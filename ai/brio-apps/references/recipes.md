@@ -12,6 +12,10 @@ Copy the chosen HTML into the application's served directory. Copy
 its script URL to the actual served production bundle. During development use
 the development bundle instead, never both. The copies are ordinary application
 assets; installing the skill does not make their relative bundle URL resolve.
+Also serve the plugin scripts referenced by the chosen HTML: the multi-page
+recipe needs `brio.forms.min.js` and `brio.persistence.min.js`; the SPA needs
+`brio.router.min.js`. The widget needs only the core. Plugins load after the
+core and before bootstrap, with the same URLs for development.
 
 Serve over HTTP with the app's existing server. Do not assume that a repository
 `/dist/` URL exists in production. For the SPA, serve its HTML at `/` and configure

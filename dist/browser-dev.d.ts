@@ -1,13 +1,14 @@
-import { inspectDevtools, devtoolsPanel } from './devtools-entry';
+import { inspectDevtools, devtoolsPanel, enableDevtools } from './devtools-entry';
 
 declare const brio: {
     devtools: {
         subscribe(callback: () => void): () => void;
-        getSnapshot: () => import('./devtools-entry').DevtoolsSnapshot;
+        getSnapshot: () => import('.').DevtoolsSnapshot;
         reset(): void;
     };
     inspectDevtools: typeof inspectDevtools;
     devtoolsPanel: typeof devtoolsPanel;
+    enableDevtools: typeof enableDevtools;
     createApp: typeof import('.').createApp;
     state: typeof import('.').state;
     signal: typeof import('.').signal;
@@ -16,10 +17,8 @@ declare const brio: {
     batch: typeof import('.').batch;
     createScope: typeof import('.').createScope;
     onCleanup: typeof import('.').onCleanup;
-    persist: typeof import('.').persist;
-    createRouter: typeof import('.').createRouter;
+    getCurrentScope: typeof import('.').getCurrentScope;
     createStepEngine: typeof import('.').createStepEngine;
-    validate: typeof import('.').validate;
     http: {
         get: (url: string, body?: any, options?: import('./plugins/http').HttpOptions) => Promise<any>;
         post: (url: string, body?: any, options?: import('./plugins/http').HttpOptions) => Promise<any>;

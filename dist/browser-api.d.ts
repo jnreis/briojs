@@ -1,4 +1,4 @@
-import { createApp, state, signal, computed, effect, batch, createScope, onCleanup, persist, createRouter, createStepEngine, validate, trustedHTML } from './index';
+import { createApp, state, signal, computed, effect, batch, createScope, onCleanup, getCurrentScope, createStepEngine, trustedHTML } from './index';
 
 declare const brio: {
     createApp: typeof createApp;
@@ -9,10 +9,8 @@ declare const brio: {
     batch: typeof batch;
     createScope: typeof createScope;
     onCleanup: typeof onCleanup;
-    persist: typeof persist;
-    createRouter: typeof createRouter;
+    getCurrentScope: typeof getCurrentScope;
     createStepEngine: typeof createStepEngine;
-    validate: typeof validate;
     http: {
         get: (url: string, body?: any, options?: import('./plugins/http').HttpOptions) => Promise<any>;
         post: (url: string, body?: any, options?: import('./plugins/http').HttpOptions) => Promise<any>;

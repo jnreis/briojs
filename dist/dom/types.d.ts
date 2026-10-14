@@ -1,7 +1,12 @@
+import { ContextValues } from '../core/context-values';
+import { StoreMap } from '../core/types';
+
 export type ComponentContext = {
     el: Element;
     $props: Record<string, unknown>;
     $emit(name: string, detail?: unknown): void;
+    $stores: Readonly<StoreMap>;
+    $provided: ContextValues;
     app: unknown;
 };
 export type ComponentDefinition = {

@@ -1,5 +1,6 @@
 import { build } from 'vite';
 import dts from 'vite-plugin-dts';
+import { resolve, dirname } from 'node:path';
 
 // 1. Build ES modules for npm distribution with TypeScript declarations
 await build({
@@ -45,6 +46,39 @@ for (const development of [false, true]) {
             },
             minify: 'esbuild',
             reportCompressedSize: true,
+            sourcemap: true,
+        },
+    });
+}
+
+// Optional scripts must use the host runtime's reactivity and cleanup scopes.
+const sharedRuntimeModules = new Set([
+    resolve('src/reactivity/state.ts'),
+    resolve('src/reactivity/effect.ts'),
+    resolve('src/core/scope.ts'),
+]);
+for (const plugin of ['router', 'persistence', 'forms']) {
+    await build({
+        publicDir: false,
+        plugins: [{
+            name: 'brio-shared-browser-runtime',
+            enforce: 'pre',
+            resolveId(source, importer) {
+                if (importer && source.startsWith('.') &&
+                    sharedRuntimeModules.has(resolve(dirname(importer), `${source}.ts`)))
+                    return { id: 'brio:runtime', external: true };
+            },
+        }],
+        build: {
+            emptyOutDir: false,
+            lib: {
+                entry: `src/browser-${plugin}.ts`,
+                name: `brio${plugin}`,
+                formats: ['iife'],
+                fileName: () => `brio.${plugin}.min.js`,
+            },
+            rollupOptions: { output: { globals: { 'brio:runtime': 'globalThis.brio' } } },
+            minify: 'esbuild',
             sourcemap: true,
         },
     });

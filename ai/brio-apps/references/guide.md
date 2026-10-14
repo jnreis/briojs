@@ -21,9 +21,14 @@ root markup are available. Bundle paths are application deployment paths,
 not automatically available `/dist/` URLs.
 
 The browser global contains `createApp`, `state`, `signal`, `computed`, `effect`,
-`batch`, `createScope`, `onCleanup`, `persist`, `createRouter`, `createStepEngine`,
-`validate`, `http`, and `trustedHTML`. The development bundle also contains
-`devtools`, `inspectDevtools`, and `devtoolsPanel`; production omits the inspector,
+`batch`, `createScope`, `onCleanup`, `getCurrentScope`, `createStepEngine`,
+`http`, and `trustedHTML`. Load optional `brio.router.min.js`,
+`brio.persistence.min.js`, and `brio.forms.min.js` after the core to add
+`createRouter`, `persist`, and `validate` respectively. These scripts share
+the core runtime and extend its global; they do not emit another ready event.
+Bootstrap after all needed scripts load, not at the core's ready event alone.
+The development bundle also contains
+`devtools`, `inspectDevtools`, `devtoolsPanel`, and `enableDevtools`; production omits the inspector,
 snapshotting, and development tracking hooks. Do not load both bundles.
 
 ESM with a bundler:
@@ -38,6 +43,9 @@ import { devtoolsPanel } from 'briojs/devtools';
 ```
 
 Keep devtools imports out of production application entry points. Native browser
+The npm main entry exports all these plugins and devtools too. Main-entry
+devtools exports are inert until `enableDevtools()` is called before app creation;
+the devtools subpath and development browser bundle activate automatically. Native browser
 ESM needs resolvable module URLs/import maps; npm bare imports do not resolve on
 their own. Do not mix a standalone runtime and ESM runtime on the same root.
 
@@ -51,10 +59,11 @@ mount.unmount();
 app.dispose();
 ```
 
-`createApp` accepts `state` (a factory), `components`, `router`, and `plugins`.
+`createApp` accepts `state` (a factory), `stores`, `components`, `router`, and `plugins`.
 `app.component(name, definition)` and `app.plugin(plugin)` return the app.
 Mount targets are elements or selectors; roots cannot overlap, even across apps.
-Separate apps isolate state; multiple roots of one app share `app.state`.
+Separate apps isolate app state; multiple roots of one app share `app.state`.
+Explicitly registered stores can be shared across apps.
 Root elements cannot carry `b-if` or `b-for`: use descendants.
 
 `mount.unmount()` restores the root's original attributes and child markup.
@@ -79,6 +88,8 @@ There is no `with`, implicit state-name resolution, or sandbox.
 | `$event` | DOM/component event in event handlers. |
 | `$mutations`, `$size`, `$entry` | Observer-specific payloads. |
 | `$insert` | Mount-bound dynamic insertion helper. |
+| `$stores.name` | Registered app-wide store, independent of data/component boundaries. |
+| `$provided.name` | Live subtree value from the nearest provider of that name. |
 | `trustedHTML` | Explicit HTML trust assertion, not a sanitizer. |
 | `onCleanup` | Script cleanup helper; use synchronously in the active scope. |
 | `money` | Mask-specific formatting descriptor helper. |
@@ -111,6 +122,64 @@ Outermost `$data.$parent` and `$for.$parent` are undefined.
 
 Both examples need the referenced parent/app fields initialized before mounting.
 
+## Shared stores and subtree values
+
+```js
+const session = brio.state({ user: null });
+const configuration = { apiBase: '/api' }; // Not reactive.
+const app = brio.createApp({ stores: { session, configuration } });
+const widget = brio.createApp({ stores: { session } });
+```
+
+`app.stores` / `$stores` are a fixed shallow read-only name mapping. References
+are preserved, not copied or automatically made reactive. Explicitly create
+reactive stores with `state()` (or a signal and `.value` for primitives).
+Plain-store writes do not notify bindings. Changing the original registration
+object does not change the app's registered names. Missing names return
+`undefined`; no stores gives an empty mapping. Store registries must be plain
+objects of enumerable own data properties, not accessors.
+
+`$stores` is available regardless of local data/component boundaries, including
+scripts, routed views and insertion. Component setup receives `$stores`;
+plugins use `app.stores`. Shared stores survive app disposal; registration does
+not own their resources or persist them across page loads. Scope resource
+effects/persistence explicitly.
+
+```html
+<section b-data="{ theme: 'dark' }"
+         b-provide="{ theme: $data.theme, session: $stores.session }">
+  <span b-text="$provided.theme"></span>
+  <div b-provide="{ theme: 'light' }">
+    <span b-text="$provided.session.user?.name ?? 'Guest'"></span>
+  </div>
+</section>
+```
+
+`b-provide` returns a synchronous plain-object mapping whose expression remains
+reactive. It applies on the element itself and throughout its Brio subtree,
+without an inject directive. Nested providers override their own keys and
+inherit others. Explicit `undefined` shadows a parent; removing a local key
+reveals the parent. `$provided` inside the expression is inherited, not its own
+result. Missing values return `undefined`; no provider gives an empty mapping.
+
+Provided names are read-only, but referenced objects are not deep-frozen.
+Mutate the actual reactive owner or supplied object's fields, not
+`$provided.theme`. Accessor mappings, arrays, promises and invalid updated
+results throw. Child state is not recreated when provided values change.
+Component setup receives `$provided` directly.
+
+Providers see same-element local data and per-row `$for`. Conditional
+expressions still use the parent context before the branch's provider.
+Providers add no data/loop ancestry levels. Providers on component hosts apply
+before setup; caller-authored slot nodes keep their authoring context even
+inside component-internal providers. Teleports retain original providers.
+Inserted children inherit the destination's providers; inserted siblings
+inherit the container's. Normal owned cleanup stops provider effects.
+
+The named-store/provider APIs are additions in this checkout's Unreleased
+section. Verify the consuming bundle supports them; the version number alone
+does not distinguish older v4.0.0 builds.
+
 ## Directive contracts
 
 Prefer canonical `b-` names. Arguments use hyphens; modifiers use dots, never
@@ -120,6 +189,7 @@ Escape HTML-significant characters in literal text/attribute values.
 | Directive | Contract |
 | --- | --- |
 | `b-text="expr"` | Sets text content; descendants are not hydrated. |
+| `b-provide="{ name: expression }"` | Supplies live read-only names through `$provided` on this element and its subtree. |
 | `b-bind-href="expr"` | Binds a DOM property when available, otherwise an attribute. `null`, `undefined`, and `false` remove attributes. |
 | `b-bind-class="expr"` | Accepts strings, arrays, or class-name/boolean objects. |
 | `b-bind-style="expr"` | Supports style objects. |

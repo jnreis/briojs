@@ -55,6 +55,7 @@
     "./package.json": "./package.json"
   },
   "sideEffects": [
+    "./src/devtools-entry.ts",
     "./dist/devtools-entry.js"
   ],
   "scripts": {

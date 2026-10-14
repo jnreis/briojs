@@ -25,6 +25,9 @@ its callers and generated markup.
   one owner per root, no old global readiness handler remains active.
 - **Ownership:** sibling widgets and host controls unchanged; explicit parent
   data/loop chains verified; unmount/remount does not duplicate listeners.
+- **Shared values:** named stores explicitly reactive where intended, exact
+  identity shared across apps, disposal does not reset another app's store.
+  Provider overrides, live updates and slot/teleport context boundaries tested.
 - **Expressions:** no reliance on bare state names, old contexts, automatic
   function-path invocation, async data factories, or unprovided ESM bindings.
 - **Loops:** empty/object/array cases, insert/delete/reorder, duplicate identities,

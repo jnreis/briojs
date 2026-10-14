@@ -6,6 +6,7 @@ export { handleFor } from './for';
 export { handleShow } from './show';
 export { handleHtml, handleText } from './html';
 export { handleData } from './data';
+export { handleProvide } from './provide';
 export { handleId } from './id';
 export { handleIgnore } from './ignore';
 export { handleMask } from './mask';

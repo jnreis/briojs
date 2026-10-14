@@ -7,10 +7,8 @@ import {
     batch,
     createScope,
     onCleanup,
-    persist,
-    createRouter,
+    getCurrentScope,
     createStepEngine,
-    validate,
     http,
     trustedHTML,
 } from './index';
@@ -24,10 +22,8 @@ const brio = {
     batch,
     createScope,
     onCleanup,
-    persist,
-    createRouter,
+    getCurrentScope,
     createStepEngine,
-    validate,
     http,
     trustedHTML,
 };

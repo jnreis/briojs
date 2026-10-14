@@ -6,8 +6,15 @@ import { createScope, onCleanup } from '../core/scope';
 import { generateScopeId, injectScopedStyles } from './scoped-style';
 import type { ComponentDefinition, DomRuntime } from './types';
 import { getNodeOwner, ownNode } from './ownership';
+import { emptyContextValues } from '../core/context-values';
 
 const projectedContexts = new WeakMap<Node, Record<PropertyKey, any>>();
+
+export function takeProjectedContext(node: Node): Record<PropertyKey, any> | undefined {
+    const context = projectedContexts.get(node);
+    projectedContexts.delete(node);
+    return context;
+}
 
 export function fillSlots(
     host: Element,
@@ -97,7 +104,11 @@ export function mountComponent(
 
         for (const binding of propBindings)
             $props[binding.name] = evaluate(binding.expression, context);
-        const setupResult = definition.setup?.({ el: element, $props, $emit, app: runtime.app }) ?? {};
+        const setupResult = definition.setup?.({
+            el: element, $props, $emit, app: runtime.app,
+            $stores: context.$stores ?? emptyContextValues,
+            $provided: context.$provided ?? emptyContextValues,
+        }) ?? {};
         const local = createScopedState(setupResult, context.$data);
         const componentContext = createExpressionScope(
             { $data: local, $el: element, $props, $emit },
@@ -130,9 +141,7 @@ export function mountComponent(
         element.replaceChildren(template.content);
 
         for (const child of Array.from(element.childNodes)) {
-            const childContext = projectedContexts.get(child) ?? componentContext;
-            projectedContexts.delete(child);
-            hydrateNodeFn(child, childContext, runtime);
+            hydrateNodeFn(child, componentContext, runtime);
         }
 
         for (const attribute of Array.from(element.attributes)) {

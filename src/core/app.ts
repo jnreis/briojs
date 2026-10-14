@@ -8,11 +8,13 @@ import { createScope, onCleanup } from './scope';
 import { state } from '../reactivity/state';
 import { createScopedState } from './scoped-state';
 import { combinedError } from './errors';
+import { copyContextValues, emptyContextValues } from './context-values';
 import type {
     AppOptions,
     BrioApp,
     BrioPlugin,
     MountHandle,
+    StoreMap,
 } from './types';
 import {
     notifyAppCreated,
@@ -24,10 +26,16 @@ import {
 const componentNamePattern = /^[a-z][a-z0-9]*-[a-z0-9-]+$/;
 const activeMountRoots = new Set<Element>();
 
-export function createApp<T extends Record<string, unknown> = Record<string, unknown>>(
-    options: AppOptions<T> = {},
-): BrioApp<T> {
+export function createApp<
+    T extends Record<string, unknown> = Record<string, unknown>,
+    S extends StoreMap = StoreMap,
+>(
+    options: AppOptions<T, S> = {},
+): BrioApp<T, S> {
     const appState = state((options.state?.() ?? {}) as T);
+    const stores = Object.freeze(copyContextValues(
+        options.stores === undefined ? {} : options.stores, 'Brio stores',
+    )) as Readonly<S>;
     const components = new Map<string, ComponentDefinition>();
     const roots = new Set<MountHandle>();
     const appScope = createScope();
@@ -40,8 +48,9 @@ export function createApp<T extends Record<string, unknown> = Record<string, unk
         router: options.router,
     };
 
-    const app: BrioApp<T> = {
+    const app: BrioApp<T, S> = {
         state: appState,
+        get stores() { return stores; },
         components,
         router: options.router,
         get roots() {
@@ -131,7 +140,7 @@ export function createApp<T extends Record<string, unknown> = Record<string, unk
             notifyRootMounted(app, root);
 
             const context = createExpressionScope(
-                { $data: createScopedState(appState), trustedHTML },
+                { $data: createScopedState(appState), $stores: stores, $provided: emptyContextValues, trustedHTML },
             );
             try {
                 scope.run(() => {

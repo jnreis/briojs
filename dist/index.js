@@ -1,17 +1,18 @@
-import { c as causedError, o as onDispose, a as getCurrentScope, d as combinedError, f as createScope, h as onCleanup, e as effect, b as batch, n as notifyAppCreated, j as notifyRootUnmounted, k as notifyRootMounted, l as notifyAppDisposed } from "./effect-C-FJkXLS.js";
-import { s } from "./effect-C-FJkXLS.js";
-import { s as state } from "./state-CUrQJxT2.js";
-import { a } from "./state-CUrQJxT2.js";
+import { c as causedError, o as onDispose, a as getCurrentScope, d as combinedError, e as effect, f as createScope, h as onCleanup, b as batch, n as notifyRootMounted, j as notifyAppDisposed, k as notifyAppCreated, l as notifyRootUnmounted } from "./effect-B76KDYNZ.js";
+import { s } from "./effect-B76KDYNZ.js";
+import { s as state, t as trigger, a as track } from "./state-Di8MyBwM.js";
+import { b } from "./state-Di8MyBwM.js";
 import { computed, resource } from "./reactivity.js";
 import { createRouter } from "./router-entry.js";
 import { persist } from "./persistence-entry.js";
+import { d, a, e, i } from "./devtools-C9eZPghE.js";
 const valueExpressions = /* @__PURE__ */ new Map();
 const statementExpressions = /* @__PURE__ */ new Map();
 const assignmentExpressions = /* @__PURE__ */ new Map();
 const functionExpressions = /* @__PURE__ */ new Map();
 const contextBindings = `
 "use strict";
-const { $data, $el, $event, $id, $for, $mutations, $size, $entry, $props, $emit, $insert, trustedHTML, onCleanup, money } = ctx;
+const { $data, $el, $event, $id, $for, $mutations, $size, $entry, $props, $emit, $insert, $stores, $provided, trustedHTML, onCleanup, money } = ctx;
 `;
 function evaluateFunction(source, context) {
   const fn = compile(
@@ -194,7 +195,66 @@ function disposeNodes(nodes) {
   }
   if (errors.length) throw combinedError("Brio DOM content cleanup failed.", errors);
 }
+function copyContextValues(value, label) {
+  if (value === null || typeof value !== "object" || ![Object.prototype, null].includes(Object.getPrototypeOf(value)))
+    throw new TypeError(`${label} must be a synchronous plain object.`);
+  const result = /* @__PURE__ */ Object.create(null);
+  for (const key of Object.keys(value)) {
+    const descriptor = Object.getOwnPropertyDescriptor(value, key);
+    if (!("value" in descriptor))
+      throw new TypeError(`${label} must contain data properties, not accessors.`);
+    result[key] = Reflect.get(value, key);
+  }
+  return result;
+}
+const emptyContextValues = Object.freeze(/* @__PURE__ */ Object.create(null));
+function createProvidedValues(getValues, parent = emptyContextValues) {
+  let values = /* @__PURE__ */ Object.create(null);
+  const holder = {};
+  effect(() => {
+    values = copyContextValues(getValues(), "b-provide");
+    trigger(holder, "values", "set");
+  });
+  const readOnly = () => {
+    throw new TypeError("$provided names are read-only.");
+  };
+  const hasOwn = (key) => Object.prototype.hasOwnProperty.call(values, key);
+  return new Proxy(/* @__PURE__ */ Object.create(null), {
+    get(_target, key) {
+      track(holder, "values");
+      return hasOwn(key) ? Reflect.get(values, key) : Reflect.get(parent, key);
+    },
+    has(_target, key) {
+      track(holder, "values");
+      return hasOwn(key) || Reflect.has(parent, key);
+    },
+    ownKeys() {
+      track(holder, "values");
+      return [.../* @__PURE__ */ new Set([...Reflect.ownKeys(parent), ...Reflect.ownKeys(values)])];
+    },
+    getOwnPropertyDescriptor(_target, key) {
+      track(holder, "values");
+      if (!hasOwn(key) && !Object.prototype.hasOwnProperty.call(parent, key)) return;
+      return {
+        configurable: true,
+        enumerable: true,
+        writable: false,
+        value: hasOwn(key) ? Reflect.get(values, key) : Reflect.get(parent, key)
+      };
+    },
+    set: readOnly,
+    deleteProperty: readOnly,
+    defineProperty: readOnly,
+    setPrototypeOf: readOnly,
+    preventExtensions: readOnly
+  });
+}
 const projectedContexts = /* @__PURE__ */ new WeakMap();
+function takeProjectedContext(node) {
+  const context = projectedContexts.get(node);
+  projectedContexts.delete(node);
+  return context;
+}
 function fillSlots(host, template, context) {
   var _a;
   const slots = /* @__PURE__ */ new Map();
@@ -263,7 +323,14 @@ function mountComponent(element, definition, context, runtime, hydrateNodeFn) {
     }
     for (const binding of propBindings)
       $props[binding.name] = evaluate(binding.expression, context);
-    const setupResult = ((_a = definition.setup) == null ? void 0 : _a.call(definition, { el: element, $props, $emit, app: runtime.app })) ?? {};
+    const setupResult = ((_a = definition.setup) == null ? void 0 : _a.call(definition, {
+      el: element,
+      $props,
+      $emit,
+      app: runtime.app,
+      $stores: context.$stores ?? emptyContextValues,
+      $provided: context.$provided ?? emptyContextValues
+    })) ?? {};
     const local = createScopedState(setupResult, context.$data);
     const componentContext = createExpressionScope(
       { $data: local, $el: element, $props, $emit },
@@ -290,9 +357,7 @@ function mountComponent(element, definition, context, runtime, hydrateNodeFn) {
     fillSlots(element, template.content, context);
     element.replaceChildren(template.content);
     for (const child of Array.from(element.childNodes)) {
-      const childContext = projectedContexts.get(child) ?? componentContext;
-      projectedContexts.delete(child);
-      hydrateNodeFn(child, childContext, runtime);
+      hydrateNodeFn(child, componentContext, runtime);
     }
     for (const attribute of Array.from(element.attributes)) {
       if (attribute.name.startsWith("b-")) element.removeAttribute(attribute.name);
@@ -952,6 +1017,10 @@ function handleData(element, expression, _modifiers, parentContext) {
     parentContext
   );
 }
+function handleProvide(expression, context) {
+  const $provided = createProvidedValues(() => evaluate(expression, context), context.$provided);
+  return createExpressionScope({ $provided }, context);
+}
 let idSeq = 0;
 const activeIds = /* @__PURE__ */ new Set();
 function handleId(_element, expression, _modifiers, context) {
@@ -1011,8 +1080,8 @@ function formatMoney(value, options = {}) {
 function formatPattern(value, pattern, positions) {
   let result = "";
   let valIndex = 0;
-  for (let i = 0; i < pattern.length && valIndex < value.length; i++) {
-    const patternChar = pattern[i];
+  for (let i2 = 0; i2 < pattern.length && valIndex < value.length; i2++) {
+    const patternChar = pattern[i2];
     if (patternChar === "9" || patternChar === "#") {
       while (valIndex < value.length && !/\d/.test(value[valIndex])) valIndex++;
       if (valIndex < value.length) {
@@ -1256,8 +1325,8 @@ function extractModifiers(attrName) {
   const parts = attrName.split(".");
   const baseName = parts[0];
   const modifiers = {};
-  for (let i = 1; i < parts.length; i++) {
-    modifiers[parts[i]] = true;
+  for (let i2 = 1; i2 < parts.length; i2++) {
+    modifiers[parts[i2]] = true;
   }
   return { baseName, modifiers };
 }
@@ -1312,6 +1381,7 @@ function hydrateTextNode(node, context) {
 }
 function hydrateNode(node, parentContext, runtime) {
   if (getNodeOwner(node)) throw new Error("Cannot hydrate an already hydrated Brio node.");
+  parentContext = takeProjectedContext(node) ?? parentContext;
   const scope = createScope();
   scope.run(() => {
     ownNode(node, parentContext, runtime);
@@ -1338,6 +1408,8 @@ function hydrateOwnedNode(node, parentContext, runtime) {
     throw new SyntaxError("b-else-if and b-else require an adjacent preceding b-if branch.");
   let context = createExpressionScope({
     $el: element,
+    $stores: parentContext.$stores ?? emptyContextValues,
+    $provided: parentContext.$provided ?? emptyContextValues,
     ...runtime.root ? { $insert: createInsert(runtime) } : {}
   }, parentContext);
   const dataAttr = element.getAttribute("b-data");
@@ -1356,6 +1428,12 @@ function hydrateOwnedNode(node, parentContext, runtime) {
     const { modifiers } = extractModifiers("b-for");
     handleFor(element, forAttr, modifiers, context, runtime, hydrateNode);
     return;
+  }
+  const provideAttr = element.getAttribute("b-provide");
+  if (provideAttr !== null) {
+    context = handleProvide(provideAttr, context);
+    element.removeAttribute("b-provide");
+    getNodeOwner(element).context = context;
   }
   const templateAttr = element.getAttribute("b-template");
   if (templateAttr !== null) {
@@ -1441,6 +1519,10 @@ const activeMountRoots = /* @__PURE__ */ new Set();
 function createApp(options = {}) {
   var _a;
   const appState = state(((_a = options.state) == null ? void 0 : _a.call(options)) ?? {});
+  const stores = Object.freeze(copyContextValues(
+    options.stores === void 0 ? {} : options.stores,
+    "Brio stores"
+  ));
   const components = /* @__PURE__ */ new Map();
   const roots = /* @__PURE__ */ new Set();
   const appScope = createScope();
@@ -1454,6 +1536,9 @@ function createApp(options = {}) {
   };
   const app = {
     state: appState,
+    get stores() {
+      return stores;
+    },
     components,
     router: options.router,
     get roots() {
@@ -1540,7 +1625,7 @@ function createApp(options = {}) {
       activeMountRoots.add(root);
       notifyRootMounted(app, root);
       const context = createExpressionScope(
-        { $data: createScopedState(appState), trustedHTML }
+        { $data: createScopedState(appState), $stores: stores, $provided: emptyContextValues, trustedHTML }
       );
       try {
         scope.run(() => {
@@ -1619,8 +1704,8 @@ function flushQueue() {
   try {
     const queue = scheduledQueue;
     scheduledQueue = [];
-    for (let i = 0; i < queue.length; i++) {
-      queue[i]();
+    for (let i2 = 0; i2 < queue.length; i2++) {
+      queue[i2]();
     }
   } finally {
     isFlushing = false;
@@ -1781,7 +1866,10 @@ export {
   createRouter,
   createScope,
   createStepEngine,
+  d as devtools,
+  a as devtoolsPanel,
   effect,
+  e as enableDevtools,
   evaluate,
   evaluateFunction,
   execute,
@@ -1789,13 +1877,14 @@ export {
   http,
   hydrateNode,
   hydrateRoot,
+  i as inspectDevtools,
   onCleanup,
   onDispose,
   persist,
   queueTask,
   resource,
   s as setActiveScope,
-  a as signal,
+  b as signal,
   state,
   trustedHTML,
   validate

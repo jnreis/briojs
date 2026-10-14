@@ -24,6 +24,15 @@ metadata on `main`, through commit `d868d43`.
 
 ### Changed
 
+- Unified conditional branch creation, activation, deactivation, and cleanup.
+  Plain `b-if` now dehydrates after leave completes, allowing interrupted
+  transitions to reverse the same live element without duplicate nodes or state
+  resets. Completed leaves still remove/dehydrate and subsequent mounts start fresh.
+- Removed `b-show` in favor of `b-if.hide` (CSS display hiding) and
+  `b-if.detach` (detachment without dehydration). The leading `b-if` sets the
+  mode for the entire chain; preservation modes hydrate all branches once and
+  keep inactive effects live. Conditions always evaluate in the parent context.
+  Unmodified `b-if` retains destructive removal and fresh hydration.
 - `b-text` now hydrates interpolation in evaluated text, including state
   references. Added `.raw` to `b-text` and `b-html` to skip content hydration
   while retaining reactive source evaluation; use `b-text.raw` for user text.

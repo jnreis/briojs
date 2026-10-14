@@ -21,7 +21,7 @@ They intentionally do not pretend to demonstrate every production integration.
 | `count` / mustache | `$data.count` / `${...}` |
 | Numeric legacy model | Explicit `.number` in v4 preserves ordinary integer input; not all legacy JSON types |
 | `b-each` / `$each` | `b-for` / `$for`, stable key added intentionally |
-| Legacy display `b-show` | `.display` retains hidden element in the DOM |
+| Legacy display `b-show` | `b-if.hide` retains hidden element in the DOM |
 | Local conditional state | Removing/recreating branch resets the local count |
 | `$cleanup` | `$context.onCleanup` in a scoped script |
 | Content-first `$dom.insert` | Destination-first `$insert`, with an owned removal handle |

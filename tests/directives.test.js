@@ -269,10 +269,10 @@ test('$insert owns structural regions, teleports, hidden nodes and enclosing bra
     app.mount(root);
     const region = app.insert('#target', 'append', `
         <template b-template><span b-for="item in $data.items" b-text="$for.item"></span></template>
-        <div id="hidden" b-show="$data.visible"></div>
+        <div id="hidden" b-if.detach="$data.visible"></div>
         <div b-if="$data.visible"><section id="branch"></section></div>
         <div b-teleport="'#portal'"><button on-click="$data.items.push(3)">teleported</button></div>`);
-    const hidden = region.nodes.find(node => node.nodeType === 8 && node.nodeValue === 'brio:show');
+    const hidden = region.nodes.find(node => node.nodeType === 8 && node.nodeValue === 'brio:if:branch');
     assert.ok(hidden);
     app.state.visible = true;
     const hiddenElement = root.querySelector('#hidden');
@@ -332,7 +332,7 @@ test('$insert replacements clean original structural controllers, including tele
         <section id="target">
             <div b-if="$data.visible"><button on-click="$data.count++">if</button></div>
             <div b-for="item in $data.items"><button on-click="$data.count++">for</button></div>
-            <div b-show="$data.hidden"><button on-click="$data.count++">show</button></div>
+            <div b-if.detach="$data.hidden"><button on-click="$data.count++">preserved</button></div>
             <div b-teleport="'#portal'"><button on-click="$data.count++">teleport</button></div>
         </section><aside id="portal"></aside>`, { visible: true, hidden: false, count: 0, items: [1] });
     app.mount(root);
@@ -595,10 +595,10 @@ test('component setup exposes $data, $props and $emit while slots and events kee
     assert.equal(app.state.last, 'updated');
 });
 
-test('b-show preserves the same state and reactive node in detach and display modes', t => {
-    for (const modifier of ['', '.display']) {
+test('b-if preserves the same state and reactive node in detach and hide modes', t => {
+    for (const modifier of ['.detach', '.hide']) {
         const { app, root } = environment(t, `
-            <section b-show${modifier}="$data.$parent.visible" b-data="{ count: 0 }">
+            <section b-if${modifier}="$data.visible" b-data="{ count: 0 }">
                 <button on-click="$data.count++"></button><span b-text="$data.count"></span>
                 <em b-text="$data.$parent.total"></em>
             </section>`, { visible: true, total: 0 });
@@ -606,14 +606,335 @@ test('b-show preserves the same state and reactive node in detach and display mo
         const section = root.querySelector('section');
         section.querySelector('button').click();
         app.state.visible = false;
-        assert.equal(section.isConnected, Boolean(modifier));
-        if (modifier) assert.equal(section.style.display, 'none');
+        assert.equal(section.isConnected, modifier === '.hide');
+        if (modifier === '.hide') assert.equal(section.style.display, 'none');
         app.state.total = 5;
         assert.equal(section.querySelector('em').textContent, '5');
         app.state.visible = true;
         assert.equal(root.querySelector('section'), section);
         assert.equal(section.querySelector('span').textContent, '1');
     }
+});
+
+test('conditional chains use one parent-context mode, eager preserved setup, and first-match selection', t => {
+    for (const mode of ['', '.hide', '.detach']) {
+        const { app, root } = environment(t, `
+            <section id="a" b-if${mode}="$data.choice === 1" b-data="{ count: 0, choice: 99 }" style="display: flex;">
+                <script b-script>() => { $data.$parent.capture($el.parentElement); }</script>
+                <button on-click="$data.count++"></button><span b-text="$data.count"></span>
+                <em b-text="$data.$parent.total"></em>
+            </section>
+            <!-- adjacency allows comments and whitespace -->
+            <section id="b" b-else-if="$data.choice >= 1" b-data="{ count: 0 }">
+                <script b-script>() => { $data.$parent.capture($el.parentElement); }</script>
+                <button on-click="$data.count++"></button><span b-text="$data.count"></span>
+            </section>
+            <section id="c" b-else b-data="{ count: 0 }">
+                <script b-script>() => { $data.$parent.capture($el.parentElement); }</script>
+                <button on-click="$data.count++"></button><span b-text="$data.count"></span>
+            </section>`, { choice: 1, total: 0 });
+        const created = [];
+        app.state.capture = element => created.push(element);
+        app.mount(root);
+        const a = root.querySelector('#a');
+        assert.equal(created.length, mode ? 3 : 1);
+        a.querySelector('button').click();
+        const activeIds = () => [...root.querySelectorAll('section')]
+            .filter(node => node.style.display !== 'none').map(node => node.id);
+        assert.deepEqual(activeIds(), ['a']);
+        app.state.choice = 2;
+        assert.deepEqual(activeIds(), ['b']);
+        app.state.total = 4;
+        assert.equal(a.querySelector('em').textContent, mode ? '4' : '0');
+        app.state.choice = 0;
+        assert.deepEqual(activeIds(), ['c']);
+        app.state.choice = 1;
+        const nextA = root.querySelector('#a');
+        assert.equal(nextA === a, Boolean(mode));
+        assert.equal(nextA.querySelector('span').textContent, mode ? '1' : '0');
+        assert.equal(nextA.style.display, 'flex');
+        assert.equal(created.length, mode ? 3 : 4);
+        assert.equal(root.querySelectorAll('section').length, mode === '.hide' ? 3 : 1);
+        assert.throws(() => app.insert(nextA, 'replaceWith', ''), /managed by b-if/);
+    }
+});
+
+test('initially inactive preserved branches retain listeners/effects until all branches are disposed', t => {
+    for (const mode of ['hide', 'detach']) {
+        const { app, root } = environment(t, `
+            <section b-if.${mode}="$data.visible" b-data="{ count: 0 }">
+                <script b-script>() => {
+                    $data.$parent.capture($el.parentElement);
+                    onCleanup($data.$parent.cleaned);
+                }</script>
+                <button on-click="$data.count++"></button><span b-text="$data.count"></span>
+                <em b-text="$data.$parent.total"></em>
+            </section>
+            <article b-else><script b-script>() => { onCleanup($data.cleaned); }</script></article>`,
+        { visible: false, total: 0 });
+        let section;
+        let cleaned = 0;
+        app.state.capture = element => { section = element; };
+        app.state.cleaned = () => cleaned++;
+        const mount = app.mount(root);
+        assert.ok(section);
+        assert.equal(section.isConnected, mode === 'hide');
+        section.querySelector('button').click();
+        app.state.total = 3;
+        assert.equal(section.querySelector('span').textContent, '1');
+        assert.equal(section.querySelector('em').textContent, '3');
+        app.state.visible = true;
+        assert.equal(root.querySelector('section'), section);
+        app.state.visible = false;
+        mount.unmount();
+        assert.equal(cleaned, 2);
+        const oldText = section.textContent;
+        section.querySelector('button').click();
+        app.state.total = 9;
+        assert.equal(section.textContent, oldText);
+        assert.equal(section.isConnected, false);
+        app.dispose();
+        assert.equal(cleaned, 2);
+    }
+});
+
+test('initially hidden branches remain queryable during setup while detached branches stay off-document', t => {
+    for (const mode of ['hide', 'detach']) {
+        const { app, root } = environment(t, `
+            <section id="inactive" b-if.${mode}="false">
+                <script b-script>() => { $data.capture($el.parentElement, document.querySelector('#inactive')); }</script>
+            </section>`);
+        let connected;
+        let queryMatches;
+        app.state.capture = (element, queried) => {
+            connected = element.isConnected;
+            queryMatches = element === queried;
+        };
+        app.mount(root);
+        assert.equal(connected, mode === 'hide');
+        assert.equal(queryMatches, mode === 'hide');
+    }
+});
+
+test('conditional validation rejects obsolete syntax, conflicting modes and modified else branches', t => {
+    const invalid = [
+        ['<div b-show="true"></div>', /removed/],
+        ['<div show.display="true"></div>', /removed/],
+        ['<div b-if.display="true"></div>', /only .hide and .detach/],
+        ['<div b-if.hide.detach="true"></div>', /cannot be combined/],
+        ['<div b-if="true" b-if.hide="true"></div>', /only one conditional/],
+        ['<div b-if="true"></div><div b-else.hide></div>', /leading b-if/],
+        ['<div b-if="true"></div><div b-else-if.detach="false"></div>', /leading b-if/],
+        ['<div b-if="true"></div><div b-else b-else-if="false"></div>', /only one conditional/],
+        ['<div b-if="true"></div><div b-else></div><div b-else-if="false"></div>', /last branch/],
+        ['<div b-else-if.hide="true"></div>', /adjacent preceding/],
+        ['<div b-if="false"></div>text<div b-else></div>', /adjacent preceding/],
+    ];
+    for (const mode of ['hide', 'detach']) {
+        invalid.push(
+            [`<div b-if.${mode}="false" b-for="n in 2"></div>`, /concrete branch/],
+            [`<template b-if.${mode}="true" b-template></template>`, /concrete branch/],
+            [`<div b-if.${mode}="true"></div><div b-else b-for="n in 2"></div>`, /concrete branch/],
+        );
+        const { app, root } = environment(t, '');
+        root.setAttribute(`b-if.${mode}`, 'true');
+        assert.throws(() => app.mount(root), /container root/);
+    }
+    for (const [markup, message] of invalid) {
+        const { app, root } = environment(t, markup);
+        const original = root.innerHTML;
+        assert.throws(() => app.mount(root), message);
+        assert.equal(root.innerHTML, original);
+    }
+});
+
+test('preserved branches own nested components, providers, loops, templates, teleports and insertion cleanup', t => {
+    for (const mode of ['hide', 'detach']) {
+        const { app, root, window } = environment(t, `
+            <section b-if.${mode}="$data.visible" b-provide="{ label: $data.label }">
+                <owned-counter></owned-counter>
+                <template b-template><span b-for="n in $data.items" b-text="$for.n"></span></template>
+                <div b-teleport="'#portal'"><em b-text="$provided.label"></em></div>
+                <div id="destination"></div>
+            </section><aside id="portal"></aside>`, { visible: true, label: 'first', items: [1] });
+        let setups = 0;
+        let cleanups = 0;
+        app.component('owned-counter', {
+            template: '<button on-click="$data.count++" b-text="$data.count"></button><b b-text="$provided.label"></b>',
+            setup() {
+                setups++;
+                window.brio.onCleanup(() => cleanups++);
+                return window.eval('({ count: 0 })');
+            },
+        });
+        app.mount(root);
+        const section = root.querySelector('section');
+        const button = section.querySelector('button');
+        button.click();
+        app.state.visible = false;
+        const insertion = app.insert(section.querySelector('#destination'), 'append', '<i b-text="$provided.label"></i>');
+        app.state.label = 'second';
+        app.state.items.push(2);
+        assert.equal(section.querySelector('b').textContent, 'second');
+        assert.equal(root.querySelector('#portal em').textContent, 'second');
+        assert.equal(section.querySelector('#destination i').textContent, 'second');
+        assert.deepEqual([...section.querySelectorAll('span')].map(node => node.textContent), ['1', '2']);
+        app.state.visible = true;
+        assert.equal(root.querySelector('section'), section);
+        assert.equal(section.querySelector('button'), button);
+        assert.equal(button.textContent, '1');
+        assert.equal(setups, 1);
+        app.state.visible = false;
+        app.insert(root, 'replaceChildren', '<p>replacement</p>');
+        assert.equal(cleanups, 1);
+        assert.equal(insertion.removed, true);
+        assert.equal(root.textContent, 'replacement');
+        app.state.visible = true;
+        assert.equal(root.textContent, 'replacement');
+        button.click();
+        assert.equal(button.textContent, '1');
+    }
+});
+
+test('preserved component-host chains set up inactive components exactly once', t => {
+    for (const mode of ['hide', 'detach']) {
+        const { app, root, window } = environment(t, `
+            <owned-counter id="first" b-if.${mode}="$data.visible"></owned-counter>
+            <owned-counter id="second" b-else></owned-counter>`, { visible: false });
+        let setups = 0;
+        let cleanups = 0;
+        app.component('owned-counter', {
+            template: '<button on-click="$data.count++" b-text="$data.count"></button>',
+            setup() {
+                setups++;
+                window.brio.onCleanup(() => cleanups++);
+                return window.eval('({ count: 0 })');
+            },
+        });
+        const mount = app.mount(root);
+        assert.equal(setups, 2);
+        const second = root.querySelector('#second');
+        second.querySelector('button').click();
+        app.state.visible = true;
+        app.state.visible = false;
+        assert.equal(root.querySelector('#second'), second);
+        assert.equal(second.textContent, '1');
+        assert.equal(setups, 2);
+        mount.unmount();
+        assert.equal(cleanups, 2);
+    }
+});
+
+test('failed eager conditional hydration cleans inactive scopes and restores mount markup', t => {
+    for (const mode of ['hide', 'detach']) {
+        const { app, root } = environment(t, `
+            <section b-if.${mode}="true"><script b-script>() => { onCleanup($data.cleaned); }</script></section>
+            <section b-else><script b-script>() => { onCleanup($data.cleaned); }</script>
+                <b b-text="missing.value"></b></section>`);
+        let cleaned = 0;
+        app.state.cleaned = () => cleaned++;
+        const original = root.innerHTML;
+        assert.throws(() => app.mount(root), /expression/i);
+        assert.equal(cleaned, 2);
+        assert.equal(root.innerHTML, original);
+    }
+});
+
+test('conditional cleanup stops selection before user cleanup mutates condition state', t => {
+    for (const mode of ['', '.hide', '.detach']) {
+        const { app, root } = environment(t, `
+            <section b-if${mode}="$data.visible">
+                <script b-script>() => { onCleanup($data.cleaned); }</script>
+            </section>`, { visible: true });
+        app.state.cleaned = () => { app.state.visible = false; };
+        const mount = app.mount(root);
+        assert.doesNotThrow(() => mount.unmount());
+    }
+});
+
+test('b-if.hide restores visible display from initially authored display:none', t => {
+    const { app, root } = environment(t, '<section b-if.hide="$data.visible" style="display: none;"></section>', { visible: true });
+    app.mount(root);
+    const section = root.querySelector('section');
+    assert.equal(section.style.display, '');
+    app.state.visible = false;
+    assert.equal(section.style.display, 'none');
+    app.state.visible = true;
+    assert.equal(section.style.display, '');
+});
+
+test('preserved teleported branch hosts keep their destination and chain source positions', t => {
+    for (const mode of ['hide', 'detach']) {
+        const { app, root } = environment(t, `
+            <section id="teleported" b-if.${mode}="$data.visible" b-teleport="'#portal'">remote</section>
+            <article b-else>fallback</article>
+            <footer>end</footer>
+            <aside id="portal"><b>existing</b><i>after</i></aside>`, { visible: true });
+        app.mount(root);
+        const section = root.querySelector('#teleported');
+        const portal = root.querySelector('#portal');
+        app.state.visible = false;
+        assert.equal(section.isConnected, mode === 'hide');
+        assert.equal(root.querySelector('article').nextElementSibling.tagName, 'FOOTER');
+        app.state.visible = true;
+        assert.equal(section.parentNode, portal);
+        assert.equal(root.querySelector('article')?.style.display, mode === 'hide' ? 'none' : undefined);
+        assert.equal(root.querySelector('footer').nextElementSibling, portal);
+        app.unmount();
+        assert.equal(section.isConnected, false);
+    }
+});
+
+test('preserved chain initial selection reflects synchronous setup writes', t => {
+    for (const mode of ['hide', 'detach']) {
+        const { app, root } = environment(t, `
+            <section b-if.${mode}="$data.visible">
+                <script b-script>() => { $data.visible = false; }</script>
+            </section><article b-else>selected after setup</article>`, { visible: true });
+        app.mount(root);
+        assert.equal(root.querySelector('article').style.display, '');
+        const section = root.querySelector('section');
+        if (mode === 'hide') assert.equal(section.style.display, 'none');
+        else assert.equal(section, null);
+    }
+});
+
+test('manual conditional page covers hide/detach chains, eager setup and preserved counters', t => {
+    const markup = readFileSync(new URL('./directives/if.html', import.meta.url), 'utf8');
+    const dom = new JSDOM(markup, { runScripts: 'outside-only' });
+    const { window } = dom;
+    window.eval(bundle);
+    const app = window.brio.createApp();
+    t.after(() => { try { app.dispose(); } finally { window.close(); } });
+    app.mount('body');
+    const { document } = window;
+    assert.equal(document.querySelector('#setup-count').textContent, '6');
+    const hidden = document.querySelector('#hidden-dashboard');
+    assert.equal(hidden.style.display, 'none');
+    document.querySelector('#toggle-hide').click();
+    assert.equal(hidden.style.display, 'flex');
+    const detached = document.querySelector('#detached-dashboard');
+    detached.querySelector('button').click();
+    document.querySelector('#toggle-detach').click();
+    assert.equal(detached.isConnected, false);
+    document.querySelector('#toggle-detach').click();
+    assert.equal(document.querySelector('#detached-dashboard'), detached);
+    assert.equal(detached.querySelector('strong').textContent, '1');
+    const first = document.querySelector('#detach-one');
+    first.querySelector('button').click();
+    document.querySelector('#tab-two').click();
+    assert.equal(first.isConnected, false);
+    assert.equal(document.querySelector('#hide-one').style.display, 'none');
+    const message = document.querySelector('#live-message');
+    message.value = 'updated';
+    message.dispatchEvent(new window.Event('input', { bubbles: true }));
+    assert.equal(first.querySelector('span').textContent, 'updated');
+    document.querySelector('#tab-other').click();
+    assert.ok(document.querySelector('#detach-other'));
+    document.querySelector('#tab-one').click();
+    assert.equal(document.querySelector('#detach-one'), first);
+    assert.equal(first.querySelector('button').textContent, 'Detached tab 1: 1');
+    assert.equal(document.querySelector('#setup-count').textContent, '6');
 });
 
 test('money options reach the formatter and b-model in either attribute order', t => {
@@ -774,7 +1095,7 @@ test('script failures run once, do not fall back, and unmarked scripts are left 
     assert.equal(failed.app.state.calls, 1);
 });
 
-test('leave waits for every own property, ignores child events, and dehydrates b-if immediately', t => {
+test('leave waits for every own property and dehydrates b-if only after completion', t => {
     const { window, app, root } = environment(t, `
         <section b-if="$data.visible" b-transition="'fade'"
             style="transition-property: opacity, transform; transition-duration: 0.2s, 1.6s; transition-delay: 0s, 0.2s">
@@ -788,9 +1109,9 @@ test('leave waits for every own property, ignores child events, and dehydrates b
     clock.advanceFrames();
     assert.equal([...clock.timers.values()][0].delay, 1850);
     section.querySelector('button').click();
-    assert.equal(app.state.count, 0);
+    assert.equal(app.state.count, 1);
     app.state.count = 4;
-    assert.equal(section.querySelector('span').textContent, '0');
+    assert.equal(section.querySelector('span').textContent, '4');
     for (const property of ['opacity', 'transform'])
         transitionEvent(window, section, 'transitionrun', property);
     transitionEvent(window, section.querySelector('span'), 'transitionend', 'transform');
@@ -801,13 +1122,79 @@ test('leave waits for every own property, ignores child events, and dehydrates b
     assert.equal(section.isConnected, false);
     assert.equal(clock.timers.size, 0);
     assert.equal(section.className, '');
+    section.querySelector('button').click();
+    assert.equal(app.state.count, 4);
+    app.state.count = 5;
+    assert.equal(section.querySelector('span').textContent, '4');
 });
 
-test('show transitions reverse safely and re-enter in both modes and attribute orders', t => {
-    for (const modifier of ['', '.display']) {
+test('plain b-if reverses the same live instance and resets state only after a completed leave', t => {
+    for (const attributes of [
+        `b-if="$data.visible" b-transition="'fade'"`,
+        `b-transition="'fade'" b-if="$data.visible"`,
+    ]) {
+        const { window, app, root } = environment(t, `
+            <style>
+                .fade-enter-active, .fade-leave-active {
+                    transition-property: opacity; transition-duration: 1.3s; transition-delay: 0s;
+                }
+                .fade-enter, .fade-leave-to { opacity: 0; }
+                .fade-enter-to, .fade-leave { opacity: 1; }
+            </style>
+            <section ${attributes} b-data="{ local: 0, count: 0 }">
+                <button on-click="$data.count++"></button><span b-text="$data.count"></span>
+                <button class="local" on-click="$data.local++" b-text="$data.local"></button>
+                <script b-script>() => { onCleanup($data.$parent.cleaned); }</script>
+            </section>`, { visible: false, count: 0 });
+        let cleaned = 0;
+        app.state.cleaned = () => cleaned++;
+        const clock = transitionClock(window);
+        const mount = app.mount(root);
+        app.state.visible = true;
+        clock.advanceFrames();
+        const section = root.querySelector('section');
+        assert.ok(section.classList.contains('fade-enter-to'));
+        const staleEnter = [...clock.timers.values()][0].callback;
+        app.state.visible = false;
+        assert.equal(cleaned, 0);
+        assert.ok(section.classList.contains('fade-leave-to'));
+        assert.equal(section.classList.contains('fade-leave'), false);
+        staleEnter();
+        assert.ok(section.classList.contains('fade-leave-to'));
+        section.querySelector('button').click();
+        assert.equal(section.querySelector('span').textContent, '1');
+        section.querySelector('.local').click();
+        const staleLeave = [...clock.timers.values()][0].callback;
+        app.state.visible = true;
+        assert.equal(root.querySelector('section'), section);
+        assert.equal(root.querySelectorAll('section').length, 1);
+        assert.equal(section.querySelector('.local').textContent, '1');
+        assert.ok(section.classList.contains('fade-enter-to'));
+        staleLeave();
+        assert.equal(section.isConnected, true);
+        assert.equal(cleaned, 0);
+        app.state.visible = false;
+        transitionEvent(window, section, 'transitionrun', 'opacity');
+        transitionEvent(window, section, 'transitionend', 'opacity');
+        clock.advanceFrames();
+        assert.equal(section.isConnected, false);
+        assert.equal(cleaned, 1);
+        app.state.visible = true;
+        const fresh = root.querySelector('section');
+        assert.notEqual(fresh, section);
+        assert.equal(fresh.querySelector('.local').textContent, '0');
+        mount.unmount();
+        assert.equal(cleaned, 2);
+        assert.equal(clock.timers.size, 0);
+        assert.equal(clock.frames.size, 0);
+    }
+});
+
+test('conditional transitions reverse safely in all modes and attribute orders', t => {
+    for (const modifier of ['', '.detach', '.hide']) {
         for (const attributes of [
-            `b-transition="'fade'" b-show${modifier}="$data.visible"`,
-            `b-show${modifier}="$data.visible" b-transition="'fade'"`,
+            `b-transition="'fade'" b-if${modifier}="$data.visible"`,
+            `b-if${modifier}="$data.visible" b-transition="'fade'"`,
         ]) {
             const { window, app, root } = environment(t, `
                 <section ${attributes} style="transition-property: opacity; transition-duration: 2s; transition-delay: 0s"></section>`,
@@ -833,17 +1220,84 @@ test('show transitions reverse safely and re-enter in both modes and attribute o
             transitionEvent(window, section, 'transitionrun', 'opacity');
             transitionEvent(window, section, 'transitioncancel', 'opacity');
             clock.advanceFrames();
-            assert.equal(section.isConnected, Boolean(modifier));
-            if (modifier) assert.equal(section.style.display, 'none');
+            assert.equal(section.isConnected, modifier === '.hide');
+            if (modifier === '.hide') assert.equal(section.style.display, 'none');
             app.state.visible = true;
-            assert.equal(root.querySelector('section'), section);
+            if (modifier) assert.equal(root.querySelector('section'), section);
+            else assert.notEqual(root.querySelector('section'), section);
         }
+    }
+});
+
+test('completed b-if leave can reactivate from cleanup without reusing a disposed branch', t => {
+    const { window, app, root } = environment(t, `
+        <section b-if="$data.visible" b-transition="'fade'" style="transition-property: opacity; transition-duration: 1s; transition-delay: 0s">
+            <script b-script>() => { onCleanup($data.reopen); }</script>
+            <button on-click="$data.count++" b-text="$data.count"></button>
+        </section>`, { visible: true, count: 0 });
+    let cleanups = 0;
+    app.state.reopen = () => { cleanups++; app.state.visible = true; };
+    const clock = transitionClock(window);
+    const mount = app.mount(root);
+    clock.advanceFrames();
+    const old = root.querySelector('section');
+    app.state.visible = false;
+    clock.advanceFrames();
+    transitionEvent(window, old, 'transitionrun', 'opacity');
+    transitionEvent(window, old, 'transitionend', 'opacity');
+    clock.advanceFrames();
+    const fresh = root.querySelector('section');
+    assert.notEqual(fresh, old);
+    assert.equal(old.isConnected, false);
+    assert.equal(root.querySelectorAll('section').length, 1);
+    fresh.querySelector('button').click();
+    assert.equal(app.state.count, 1);
+    assert.equal(cleanups, 1);
+    mount.unmount();
+    assert.equal(cleanups, 2);
+    assert.equal(clock.frames.size, 0);
+    assert.equal(clock.timers.size, 0);
+});
+
+test('conditional chain transitions cancel stale removals across rapid branch switches and unmount', t => {
+    for (const mode of ['', '.hide', '.detach']) {
+        const { window, app, root } = environment(t, `
+            <section id="a" b-if${mode}="$data.choice === 1" b-transition="'fade'"
+                style="transition-property: opacity; transition-duration: 2s; transition-delay: 0s">a</section>
+            <section id="b" b-else-if="$data.choice === 2" b-transition="'fade'"
+                style="transition-property: opacity; transition-duration: 2s; transition-delay: 0s">b</section>
+            <section id="c" b-else b-transition="'fade'"
+                style="transition-property: opacity; transition-duration: 2s; transition-delay: 0s">c</section>`,
+        { choice: 1 });
+        const clock = transitionClock(window);
+        const mount = app.mount(root);
+        clock.advanceFrames();
+        const a = root.querySelector('#a');
+        const stale = [];
+        for (const choice of [2, 3, 1, 2, 1]) {
+            app.state.choice = choice;
+            clock.advanceFrames();
+            stale.push(...[...clock.timers.values()].map(timer => timer.callback));
+        }
+        stale.forEach(callback => callback());
+        assert.equal(root.querySelector('#a'), a);
+        assert.equal(a.style.display, '');
+        assert.deepEqual([...root.querySelectorAll('section')]
+            .filter(section => section.style.display !== 'none').map(section => section.id), ['a']);
+        app.state.choice = 2;
+        clock.advanceFrames();
+        const pending = [...clock.timers.values()].map(timer => timer.callback);
+        mount.unmount();
+        pending.forEach(callback => callback());
+        assert.equal(clock.frames.size, 0);
+        assert.equal(clock.timers.size, 0);
+        assert.equal(a.isConnected, false);
     }
 });
 
 test('a cancelled transition can be replaced before completion is committed', t => {
     const { window, app, root } = environment(t, `
-        <section b-show="$data.visible" b-transition="'fade'"
+        <section b-if.detach="$data.visible" b-transition="'fade'"
             style="transition-property: transform; transition-duration: 2s; transition-delay: 0s"></section>`,
     { visible: true });
     const clock = transitionClock(window);
@@ -862,9 +1316,10 @@ test('a cancelled transition can be replaced before completion is committed', t 
     assert.equal(section.isConnected, false);
 });
 
-test('initially hidden show nodes do not animate; no-CSS leave completes and unmount cancels pending work', t => {
-    for (const modifier of ['', '.display']) {
-        const { window, app, root } = environment(t, `<section b-transition="'fade'" b-show${modifier}="$data.visible"></section>`,
+test('initially inactive preserved branches do not animate; no-CSS leave completes and unmount cancels pending work', t => {
+    for (const modifier of ['.detach', '.hide']) {
+        const { window, app, root } = environment(t, `<section b-transition="'fade'" b-if${modifier}="$data.visible">
+            <div b-transition="'fade'"></div></section>`,
             { visible: false });
         const clock = transitionClock(window);
         const mount = app.mount(root);
@@ -885,14 +1340,14 @@ test('initially hidden show nodes do not animate; no-CSS leave completes and unm
     const clock = transitionClock(window);
     const mount = app.mount(root);
     clock.advanceFrames();
+    const section = root.querySelector('section');
     app.state.visible = false;
     clock.advanceFrames();
     app.state.visible = true;
-    const fresh = root.querySelector('section');
-    const exiting = root.querySelectorAll('section')[1];
-    assert.notEqual(fresh, exiting);
+    assert.equal(root.querySelector('section'), section);
+    assert.equal(root.querySelectorAll('section').length, 1);
     mount.unmount();
     assert.equal(clock.timers.size, 0);
     assert.equal(clock.frames.size, 0);
-    assert.equal(exiting.isConnected, false);
+    assert.equal(section.isConnected, false);
 });

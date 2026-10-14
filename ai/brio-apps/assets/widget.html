@@ -24,7 +24,7 @@
       <output b-text="$data.count"></output>
     </div>
     <button id="toggle-show" type="button" b-on-click="$data.visible = !$data.visible">Toggle preserved state</button>
-    <div id="preserved" b-show="$data.$parent.visible" b-data="{ count: 0 }">
+    <div id="preserved" b-if.detach="$data.visible" b-data="{ count: 0 }">
       <button type="button" b-on-click="$data.count++">Preserved +</button>
       <output b-text="$data.count"></output>
     </div>

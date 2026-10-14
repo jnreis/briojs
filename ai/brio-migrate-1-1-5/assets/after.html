@@ -19,7 +19,7 @@
       <button b-on-click="$data.local++">Local</button>
       <output b-text="$data.local"></output>
     </section>
-    <section id="preserved" b-show.display="$data.visible">Preserved in DOM while hidden</section>
+    <section id="preserved" b-if.hide="$data.visible">Preserved in DOM while hidden</section>
     <ul>
       <li b-for="item, index in $data.items" b-key="$for.item.id">
         <span>${$for.index}: ${$for.item.name}</span>

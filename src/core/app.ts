@@ -104,7 +104,8 @@ export function createApp<
                 throw new TypeError(`Brio mount target "${String(target)}" did not resolve to an element.`);
             if ([...activeMountRoots].some(mounted => mounted.contains(root) || root.contains(mounted)))
                 throw new Error('Brio mount roots cannot be equal or nested; use one app root with child components.');
-            if (root.hasAttribute('b-if') || root.hasAttribute('b-for'))
+            if (Array.from(root.attributes).some(attribute =>
+                ['b-if', 'b-for'].includes(attribute.name.split('.')[0])))
                 throw new Error('b-if and b-for require a container root; wrap the structural directive in another element.');
 
             const originalAttributes = Array.from(root.attributes)

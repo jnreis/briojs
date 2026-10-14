@@ -55,7 +55,6 @@ import {
     handleModel,
     handleIf,
     handleFor,
-    handleShow,
     handleHtml,
     handleText,
     handleData,
@@ -129,12 +128,20 @@ function hydrateOwnedNode(
         return;
     }
 
-    const ifAttr = element.getAttribute('b-if');
-    if (ifAttr !== null) {
-        handleIf(element, ifAttr, {}, parentContext, runtime, hydrateNode);
+    const conditionalAttributes = Array.from(element.attributes).filter(attribute =>
+        ['b-if', 'b-else-if', 'b-else'].includes(extractModifiers(attribute.name).baseName));
+    if (conditionalAttributes.length > 1)
+        throw new SyntaxError('An element can have only one conditional directive.');
+    const removedShow = Array.from(element.attributes).find(attribute =>
+        ['b-show', 'show'].includes(extractModifiers(attribute.name).baseName));
+    if (removedShow)
+        throw new SyntaxError('b-show has been removed. Use b-if.detach or b-if.hide; conditions evaluate in the parent context.');
+    const ifAttr = conditionalAttributes[0];
+    if (ifAttr && extractModifiers(ifAttr.name).baseName === 'b-if') {
+        handleIf(element, ifAttr.value, extractModifiers(ifAttr.name).modifiers, parentContext, runtime, hydrateNode);
         return;
     }
-    if (element.hasAttribute('b-else-if') || element.hasAttribute('b-else'))
+    if (ifAttr)
         throw new SyntaxError('b-else-if and b-else require an adjacent preceding b-if branch.');
 
     let context = createExpressionScope({
@@ -220,9 +227,6 @@ function hydrateOwnedNode(
             element.removeAttribute(attrName);
         } else if (baseName === 'b-model' || baseName === 'model') {
             handleModel(element, attrValue, modifiers, context);
-            element.removeAttribute(attrName);
-        } else if (baseName === 'b-show' || baseName === 'show') {
-            handleShow(element, attrValue, modifiers, context);
             element.removeAttribute(attrName);
         } else if (baseName === 'b-text' || baseName === 'text') {
             getNodeOwner(element)!.controlsChildren = true;

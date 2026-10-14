@@ -132,7 +132,8 @@ Do not attribute later-version features to 1.1.5.
 - `b-if` uses a placeholder and hydrates a cloned branch; false removes and
   dehydrates its instance, after the transition callback when one is present.
 - `b-show` preserves bindings and toggles **display**, rather than detaching the
-  subtree. Its closest v4 display behavior is `b-show.display`.
+  subtree. Its closest current v4 display behavior is `b-if.hide` (with
+  conditions evaluated before branch-local data).
 - `b-template` replaces its host with template content, allowing multiple roots.
   It cannot preserve all host-bound directives. Template registration and
   inserted HTML also participate in legacy asset lookup.

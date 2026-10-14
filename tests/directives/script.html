@@ -63,11 +63,11 @@
         <script b-script>
             async ($context) => {
                 $data.status = 'Started';
+                console.warn('Async script started', $context);
                 $data.parentUser = $data.$parent.user;
                 $data.scriptTag = $el.tagName;
                 await new Promise(resolve => setTimeout(resolve, 250));
                 $data.status = 'Async function completed';
-                console.warn('Async script started', $context);
             }
         </script>
         <p>${$data.status}. Parent user: ${$data.parentUser}. Element: ${$data.scriptTag}.</p>

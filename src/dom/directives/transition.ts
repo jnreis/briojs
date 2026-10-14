@@ -118,6 +118,10 @@ export function handleTransition(
         cancelTransition(element);
         names.delete(element);
     });
-    if (element.isConnected && (element as HTMLElement).style.display !== 'none')
+    if (element.isConnected) {
+        for (let ancestor: Element | null = element; ancestor; ancestor = ancestor.parentElement) {
+            if ((ancestor as HTMLElement).style?.display === 'none') return;
+        }
         enterTransition(element, getTransitionName(element));
+    }
 }

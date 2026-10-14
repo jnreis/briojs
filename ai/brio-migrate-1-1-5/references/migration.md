@@ -123,8 +123,8 @@ forbids runtime `new Function` remains a deployment blocker.
 | `b-props` | Removed as a general data directive. Use app/local state or a registered component, not a rename to component `$props`. |
 | `b-data` | Evaluate an object synchronously, e.g. `b-data="{ count: 0 }"` or an explicit factory call returning an object. Registered asset names and promises are not automatically resolved/awaited. |
 | `b-each` | Rewrite into `b-for="item, index in $data.items"`; rewrite row bindings to `$for`. Add a stable `b-key="$for.item.id"` where identity matters. |
-| `b-if` | Keep name but condition runs before branch-local data. False disposes immediately; true creates fresh local data. Wrap root structural directives. |
-| `b-show` | To preserve legacy display toggling, use **`b-show.display`**. Plain v4 `b-show` detaches/reinserts the same live node. These differ for layout, queries, focus, observers, and form submission. |
+| `b-if` | Keep name but condition runs before branch-local data. False disposes after leave completes (immediately without a transition); reversal reuses the live branch, while activation after completed removal creates fresh local data. Wrap root structural directives. |
+| `b-show` | Use **`b-if.hide`** for legacy display toggling. Conditions now run before branch-local data. `b-if.detach` instead detaches/reinserts the same live node; these differ for layout, queries, focus, observers, and form submission. V4 no longer supports `b-show`. |
 | `b-html` | Supply actual authored HTML, not a legacy template registry name. It replaces/hydrates children; prefer components for reusable behavior. |
 | `b-text` | Use an explicit value expression. Current builds hydrate `${...}` in its evaluated text without parsing tags; use `.raw` for literal/untrusted text. Never depend on combined `b-html` / `b-text` precedence. |
 | `b-bind-*`, `bind-*` | Prefer `b-bind-*`; give an explicit expression. No empty-value inference. `.prop` forces property assignment; property/attribute and falsy-value semantics require tests. |
@@ -151,10 +151,19 @@ Search for leftovers as well as testing visible behavior.
 New v4 conditional chains use adjacent `b-else-if` and `b-else`, with
 whitespace/comments allowed between branches. Do not synthesize branches that
 alter the original conditions' precedence.
-Legacy conditional updates are deferred, and with a leave transition the
-branch stays hydrated until its end callback. V4 disposes the branch immediately,
-leaving only an inert visual snapshot. Test code that expects to interact with
-an exiting form or receive its events.
+Use `.hide` or `.detach` only on the leading `b-if`, not on else branches.
+These preservation modes hydrate every branch once at initial mount, run all
+setup/scripts immediately, and keep inactive effects/listeners live. Use a
+concrete branch element; wrap same-element loops/templates. Conditions always
+see parent data before branch-local `b-data` and providers; review legacy
+expressions that relied on the element's own local data rather than blindly
+renaming the directive. Former v4 `b-show` maps to `b-if.detach`;
+`b-show.display` maps to `b-if.hide`. Neither old name is a compatibility alias.
+Legacy conditional updates are deferred; v4 selection updates synchronously.
+With a leave transition, current v4 also keeps the branch hydrated until
+completion. Reversing leave reuses the same branch and its state; after completed
+removal, activation creates fresh state. Test exiting form events, reversal,
+cleanup timing, and focus rather than assuming the old transition engine's behavior.
 
 Legacy row alias reassignment can write back to the collection. In v4,
 `$for.item = replacement` does not replace the source collection entry:

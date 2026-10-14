@@ -20,11 +20,16 @@
     isVisible: true,
     score: 85,
     userLoggedIn: false,
-    showDashboard: true
+    showDashboard: true,
+    hideDashboard: false,
+    tab: 1,
+    setupCount: 0,
+    message: 'Live even while hidden'
 }">
 
     <h1>b-if Directive Manual Tests</h1>
-    <p>Tests conditional DOM mounting, unmounting, DOM placeholder comments, and cleanup of nested effects when removed.</p>
+    <p>Default b-if removes and dehydrates. b-if.detach preserves state outside the DOM;
+        b-if.hide preserves state in the DOM with display: none. Conditions always use the parent context.</p>
 
     <!-- Test 1: Simple Toggle -->
     <div class="card">
@@ -69,13 +74,65 @@
     </div>
 
     <div class="card">
-        <h3>4. Compare b-show: State Is Preserved</h3>
-        <button on-click="$data.showDashboard = !$data.showDashboard">Toggle preserved dashboard</button>
-        <div b-show="$data.$parent.showDashboard" b-data="{ childCount: 0 }" class="box success">
+        <h3>4. b-if.detach: State Is Preserved Outside the DOM</h3>
+        <button id="toggle-detach" on-click="$data.showDashboard = !$data.showDashboard">Toggle preserved dashboard</button>
+        <div id="detached-dashboard" b-if.detach="$data.showDashboard" b-data="{ childCount: 0 }" class="box success">
             <p>Preserved counter: <strong>${$data.childCount}</strong></p>
             <button on-click="$data.childCount++">Increment Preserved Counter</button>
         </div>
         <p>Increment, hide, then show: the counter must keep its value. State owned by a parent also survives b-if; only branch-local state is recreated.</p>
+    </div>
+
+    <div class="card">
+        <h3>5. b-if.hide: Initially Hidden, Still Hydrated</h3>
+        <button id="toggle-hide" on-click="$data.hideDashboard = !$data.hideDashboard">Toggle CSS-hidden dashboard</button>
+        <div id="hidden-dashboard" b-if.hide="$data.hideDashboard" b-data="{ childCount: 0 }" class="box success" style="display: flex; gap: 12px;">
+            <p>Preserved counter: <strong>${$data.childCount}</strong></p>
+            <button on-click="$data.childCount++">Increment CSS-hidden Counter</button>
+            <span b-text="$data.$parent.message"></span>
+        </div>
+        <p>This dashboard starts hidden but hydrated. Its authored display: flex must return when shown.
+            Hidden/detached bindings stay reactive; they are not paused.</p>
+    </div>
+
+    <div class="card">
+        <h3>6. Preserved Chains: Set the Mode Only on b-if</h3>
+        <button id="tab-one" on-click="$data.tab = 1">Tab 1</button>
+        <button id="tab-two" on-click="$data.tab = 2">Tab 2</button>
+        <button id="tab-other" on-click="$data.tab = 3">Fallback</button>
+        <input id="live-message" b-model="$data.message" aria-label="Live message">
+        <div id="detach-one" b-if.detach="$data.tab === 1" b-data="{ count: 0 }" class="box success">
+            <script b-script>() => { $data.$parent.setupCount++; }</script>
+            <button on-click="$data.count++">Detached tab 1: ${$data.count}</button>
+            <span b-text="$data.$parent.message"></span>
+        </div>
+        <div id="detach-two" b-else-if="$data.tab === 2" b-data="{ count: 0 }" class="box success">
+            <script b-script>() => { $data.$parent.setupCount++; }</script>
+            <button on-click="$data.count++">Detached tab 2: ${$data.count}</button>
+            <span b-text="$data.$parent.message"></span>
+        </div>
+        <div id="detach-other" b-else b-data="{ count: 0 }" class="box alert">
+            <script b-script>() => { $data.$parent.setupCount++; }</script>
+            <button on-click="$data.count++">Detached fallback: ${$data.count}</button>
+        </div>
+        <hr>
+        <div id="hide-one" b-if.hide="$data.tab === 1" b-data="{ count: 0 }" class="box success">
+            <script b-script>() => { $data.$parent.setupCount++; }</script>
+            <button on-click="$data.count++">Hidden tab 1: ${$data.count}</button>
+            <span b-text="$data.$parent.message"></span>
+        </div>
+        <div id="hide-two" b-else-if="$data.tab === 2" b-data="{ count: 0 }" class="box success">
+            <script b-script>() => { $data.$parent.setupCount++; }</script>
+            <button on-click="$data.count++">Hidden tab 2: ${$data.count}</button>
+            <span b-text="$data.$parent.message"></span>
+        </div>
+        <div id="hide-other" b-else b-data="{ count: 0 }" class="box alert">
+            <script b-script>() => { $data.$parent.setupCount++; }</script>
+            <button on-click="$data.count++">Hidden fallback: ${$data.count}</button>
+        </div>
+        <p>Setup executions: <output id="setup-count" b-text="$data.setupCount"></output> (must stay at 6).
+            All six branches hydrate once immediately. Switch tabs: counters survive.
+            The first matching branch wins; do not put .hide or .detach on else branches.</p>
     </div>
 
     <script src="/dist/brio.min.js"></script>

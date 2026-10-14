@@ -220,11 +220,12 @@ context, not providers inside the component's template. Teleports preserve
 their original context rather than inheriting from the physical destination.
 Child insertion inherits destination providers; sibling insertion inherits the
 parent container's providers. Provider effects stop when their owning scope is
-disposed; `b-show` keeps them active, while a false `b-if` disposes them.
+disposed; `b-if.hide` and `b-if.detach` keep them active, while a false
+unmodified `b-if` disposes them.
 
 ## HTML directives
 
-Directive arguments use hyphens (`b-on-click`, `b-bind-href`); options use chained dot modifiers (`on-click.prevent.stop`, `b-show.display`, `b-mask.money`).
+Directive arguments use hyphens (`b-on-click`, `b-bind-href`); options use chained dot modifiers (`on-click.prevent.stop`, `b-if.hide`, `b-mask.money`).
 
 | Directive | Purpose |
 | --- | --- |
@@ -234,8 +235,7 @@ Directive arguments use hyphens (`b-on-click`, `b-bind-href`); options use chain
 | `b-bind-name` | Reactively bind an attribute or DOM property, e.g. `b-bind-href="$data.url"`. |
 | `b-on-event` | Listen for a DOM event, e.g. `b-on-submit="$data.save($event)"`. |
 | `b-model` | Two-way bind a text-like input, checkbox, radio, or select. |
-| `b-if`, `b-else-if`, `b-else` | Mount one conditional branch; dispose its state scope, effects, and listeners when it becomes false. |
-| `b-show` | Detach the element without dehydrating it; `.display` uses CSS display instead. |
+| `b-if`, `b-else-if`, `b-else` | Select the first matching branch. Default: remove/dehydrate inactive branches. `.hide`: preserve in the DOM; `.detach`: preserve outside the DOM. |
 | `b-script` | Execute a contextual function expression inside a marked script element. |
 | `b-mask` | Format an input with a pattern string or `money(options)`. |
 | `b-transition` | Animate enter/leave with named CSS transition classes. |
@@ -274,7 +274,7 @@ not model value conversion.
 
 ### Conditional lifecycle
 
-`b-else-if` and `b-else` follow an adjacent `b-if` branch (whitespace and comments are allowed between branches). The first true branch is mounted; `b-else` is the final fallback. Conditions run in the parent scope.
+`b-else-if` and `b-else` follow an adjacent `b-if` branch (whitespace and comments are allowed between branches). The first matching branch is selected; `b-else` is the final fallback. In every mode, conditions run in the parent scope before branch-local `b-data` or providers.
 
 ```html
 <section b-if="$data.loggedIn" b-data="{ clicks: 0 }">
@@ -284,9 +284,50 @@ not model value conversion.
 <p b-else>Please log in.</p>
 ```
 
-When a branch becomes false, its bindings and listeners are disposed immediately. Its next mount recreates branch-local `b-data` and component state. Parent/app state is not reset. With a transition, the exiting DOM is an inert visual snapshot until the animation finishes.
+With unmodified `b-if`, an inactive branch is removed and dehydrated after its
+leave transition completes, or immediately when no transition runs. Its bindings
+and listeners remain live during leave. Reversing before completion reuses the
+same element and local state; after a completed leave, activation creates fresh
+branch-local `b-data` and component state. Parent/app state is not reset.
 
-`b-show` preserves the same node, bindings, and local state when detached. `b-show.display` preserves it in the DOM using `display: none`. Both modes animate on subsequent show/hide changes, and a reversed toggle cancels pending removal.
+Set a preservation mode **only on the leading `b-if`**; it applies to every
+branch in that chain:
+
+```html
+<section b-if.hide="$data.tab === 'settings'" b-data="{ edits: 0 }">
+  <button on-click="$data.edits++">Edits: ${$data.edits}</button>
+</section>
+<section b-else-if="$data.tab === 'preview'">Preview</section>
+<section b-else>Choose a tab</section>
+
+<aside b-if.detach="$data.open" b-data="{ count: 0 }">
+  <button on-click="$data.count++">Count: ${$data.count}</button>
+</aside>
+```
+
+- `.hide` keeps every branch in the DOM and sets inactive branches to
+  `display: none`; activation restores their authored visible display.
+- `.detach` removes inactive branches without dehydration and reinserts the
+  same nodes when selected.
+- Both modes hydrate **all branches once at initial mount**, even initially
+  inactive branches. Component setup and contextual scripts run immediately;
+  local state, bindings, listeners, and effects remain live while inactive.
+  Neither mode pauses effects. Enclosing scope disposal cleans up all branches.
+- Initially inactive branches do not enter-transition on mount. Subsequent
+  activation/deactivation animates; hiding/detaching waits for leave completion.
+  Rapid reversals cancel stale removal callbacks.
+- Use a concrete element or component host for preserved branches. Put
+  `b-for` / `b-template` inside a wrapper, not on that same branch element.
+  Hiding a wrapper does not hide descendants teleported elsewhere.
+- Combining `.hide` and `.detach`, unknown conditional modifiers, or modifiers
+  on `b-else-if` / `b-else` is an error.
+
+`b-show` has been removed. Migrate former v4 `b-show` to `b-if.detach` and
+`b-show.display` to `b-if.hide`. Review each condition: it now sees parent data,
+not branch-local data. For example, a former
+`b-show="$data.$parent.open"` with same-element `b-data` becomes
+`b-if.detach="$data.open"`. Legacy 1.1.5 `b-show` used display hiding, so migrate
+that version to `b-if.hide`. The old directive and `b-if.display` are not aliases.
 
 ### Contextual scripts
 
@@ -321,7 +362,12 @@ Masks preserve the focused input's caret and selection when formatting changes i
 
 Brio tracks the element's own `transitionrun`, `transitionend`, and `transitioncancel` events for every running property, ignoring descendant events. Removal waits for all properties, including delays. A fallback uses computed CSS duration plus delay, not a fixed timeout. No-duration/reduced-motion styles complete without waiting for an event; unmount cancels pending frames, listeners, and timers. This directive handles CSS transitions, not keyframe animations.
 
-Reversing a running `b-show` transition retargets its CSS properties from their current interpolated values, without replaying the opposite starting pose. A new `b-if` instance still enters from its starting pose because the previous branch has already been dehydrated.
+Reversing a running transition in **any `b-if` mode** retargets the same element's
+CSS properties from their current interpolated values without replaying the
+opposite starting pose. Plain `b-if` keeps the branch hydrated during leave so
+a reversal can reuse it without a second element or state reset. Only a completed
+leave dehydrates that branch; its next activation starts a fresh enter animation.
+Enclosing cleanup cancels transitions and disposes all branches immediately.
 
 ## Observer options
 
@@ -604,7 +650,7 @@ The app method is `insert` (without `$`); the matching `$insert` helper is avail
 in scripts. Its selectors are restricted to the originating mount root.
 App-level selectors must resolve within exactly one of that app's mounted roots;
 missing, ambiguous, cross-app, and disposed targets throw. Direct node references
-also work for child placements on managed detached `b-show` elements and teleported
+also work for child placements on managed detached `b-if.detach` elements and teleported
 elements. A contextual helper expires when its mount is unmounted, even if the
 same root element is mounted again.
 

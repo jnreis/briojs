@@ -195,8 +195,7 @@ Escape HTML-significant characters in literal text/attribute values.
 | `b-bind-style="expr"` | Supports style objects. |
 | `b-on-click="statements"` | Executes event statements; listeners are scope-owned. |
 | `b-model="$data.field"` | Assignable input/textarea/select state; supports checkboxes, radios, and multiple selects. |
-| `b-if`, `b-else-if`, `b-else` | Adjacent conditional branches; whitespace/comments can separate them. |
-| `b-show="$data.visible"` | Detaches without disposing local state or bindings. `.display` uses `display: none`. |
+| `b-if`, `b-else-if`, `b-else` | Adjacent first-match branches; whitespace/comments can separate them. Default dehydrates inactive branches; `.hide` preserves in DOM, `.detach` preserves outside DOM. |
 | `b-for="item, index in $data.items"` | Arrays, iterables, objects, or nonnegative integers; values live in `$for`. |
 | `b-key="$for.item.id"` | Stable string/number identity; duplicate keys throw. Index is the default key. |
 | `b-html="trustedHTML($data.markup)"` | Replaces and hydrates children; `.raw` only inserts parsed HTML without Brio hydration. Always treat hydrated content as executable authored markup. |
@@ -208,11 +207,25 @@ Escape HTML-significant characters in literal text/attribute values.
 | `b-teleport="'#portal'"` | Moves an element to an existing document selector; not a reactive destination expression. |
 | `b-router-outlet` | Renders the router's matched registered component. |
 
-When `b-if` becomes false, local state, effects, and listeners are disposed
-immediately; reactivation creates fresh local state. App/parent state survives.
-Exit-transition DOM is an inert snapshot. Use `b-show` to preserve local state.
-`b-if` conditions evaluate before that branch's `b-data`; ordinary directives
-such as `b-show` evaluate in the element's resulting local data scope.
+When unmodified `b-if` becomes false, removal and disposal wait for leave completion
+(immediate without a transition). Bindings/listeners remain live during leave.
+Reversal reuses the same node/state; activation after a completed leave creates
+fresh local state. App/parent state survives. Use `b-if.hide` or `b-if.detach` to
+preserve the same nodes and local state. Declare the mode only on the leading
+`b-if`; it applies to all else branches. Both modes hydrate all branches once
+at mount (including inactive branches), run setup/scripts immediately, and
+keep effects/listeners reactive while hidden; they do not pause work.
+`.hide` uses `display: none` and restores authored display; `.detach` removes
+and reinserts the same live nodes. Leave transitions finish before hiding or
+detaching; rapid reversals cancel stale callbacks.
+All conditional expressions evaluate in the parent context before the branch's
+`b-data` / providers. Do not put modifiers on else branches, combine preservation
+modes, or invent `.display`. Same-element `b-for` / `b-template` requires a
+wrapper in preservation modes; nested structural directives remain supported.
+`b-show` is removed, not deprecated: migrate former v4 `b-show` to
+`b-if.detach`, and `b-show.display` to `b-if.hide`, reviewing conditions that
+previously relied on local data or `$data.$parent`. Teleported descendants are
+not hidden by hiding their source wrapper.
 Avoid competing imperative writes to directive-owned children.
 
 Events support `.prevent`, `.stop`, `.self`, `.outside`, `.window`, `.document`,

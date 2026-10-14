@@ -3,7 +3,6 @@ export { handleOn } from './on';
 export { handleModel } from './model';
 export { handleIf } from './if';
 export { handleFor } from './for';
-export { handleShow } from './show';
 export { handleHtml, handleText } from './html';
 export { handleData } from './data';
 export { handleProvide } from './provide';

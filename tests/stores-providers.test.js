@@ -257,10 +257,10 @@ test('row providers update with keyed reuse and conditions dispose and recreate 
     assert.equal(root.querySelector('i').textContent, '0');
 });
 
-test('providers follow original contexts through show, teleport, templates and trusted HTML', t => {
+test('providers follow original contexts through preserved conditionals, teleport, templates and trusted HTML', t => {
     const { app, root, window } = environment(t, `
         <template b-provide="{ theme: $data.theme }" b-template>
-          <span b-show="$data.visible" b-text="$provided.theme"></span>
+          <span b-if.detach="$data.visible" b-text="$provided.theme"></span>
           <div b-teleport="'#portal'"><b b-text="$provided.theme"></b></div>
           <article b-html="trustedHTML($data.html)"></article>
         </template>`, `({ state: () => ({

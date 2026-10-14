@@ -41,7 +41,7 @@ Try:
 
 1. Increment shared count and a nested conditional counter.
 2. Hide/re-show the conditional branch: its counter resets.
-3. Hide/re-show the `b-show` branch: its counter survives.
+3. Hide/re-show the `b-if.detach` branch: its counter survives.
 4. Insert content, increment its local counter, and remove it.
 5. Trigger the external pulse event while mounted; dispose before host removal.
 

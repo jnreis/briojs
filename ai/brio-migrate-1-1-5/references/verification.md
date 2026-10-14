@@ -32,8 +32,12 @@ its callers and generated markup.
   function-path invocation, async data factories, or unprovided ESM bindings.
 - **Loops:** empty/object/array cases, insert/delete/reorder, duplicate identities,
   nested loop and local state semantics. Stable keys are unique strings/numbers.
-- **Conditions:** false immediately disposes effects/listeners; reactivation
-  resets local state. Preserved `b-show` state and focus behavior checked.
+- **Conditions:** false disposes effects/listeners after leave completion
+  (immediately without a transition); reversal reuses the live element and state,
+  while activation after completed removal resets local state.
+  Preserved `b-if.hide` / `b-if.detach` state and focus
+  behavior checked, including parent-context conditions and eager setup of all
+  branches in preservation-mode chains.
 - **Forms:** input/change/submit, checkbox arrays and radio types, multiple
   selects, blank/NaN/zero/false values, initial values, composition/paste,
   masks/caret, validation messages and the exact server payload.

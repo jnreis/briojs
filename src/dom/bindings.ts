@@ -135,10 +135,6 @@ function hydrateOwnedNode(
         ['b-if', 'b-else-if', 'b-else'].includes(extractModifiers(attribute.name).baseName));
     if (conditionalAttributes.length > 1)
         throw new SyntaxError('An element can have only one conditional directive.');
-    const removedShow = Array.from(element.attributes).find(attribute =>
-        ['b-show', 'show'].includes(extractModifiers(attribute.name).baseName));
-    if (removedShow)
-        throw new SyntaxError('b-show has been removed. Use b-if.detach or b-if.hide; conditions evaluate in the parent context.');
     const ifAttr = conditionalAttributes[0];
     if (ifAttr && extractModifiers(ifAttr.name).baseName === 'b-if') {
         handleIf(element, ifAttr.value, extractModifiers(ifAttr.name).modifiers, parentContext, runtime, hydrateNode);

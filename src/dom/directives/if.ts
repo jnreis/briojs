@@ -33,8 +33,6 @@ export function handleIf(
             throw new SyntaxError('An element can have only one conditional directive.');
         if (node !== element && Object.keys(extractModifiers(conditional[0].name).modifiers).length)
             throw new SyntaxError('Conditional modifiers belong only on the leading b-if, not b-else-if or b-else.');
-        if (attributes.some(attribute => ['b-show', 'show'].includes(extractModifiers(attribute.name).baseName)))
-            throw new SyntaxError('b-show has been removed. Use b-if.detach or b-if.hide.');
         if (preserved && attributes.some(attribute =>
             ['b-for', 'b-template', 'template'].includes(extractModifiers(attribute.name).baseName)))
             throw new SyntaxError('b-if.hide and b-if.detach require a concrete branch element; wrap b-for or b-template in another element.');

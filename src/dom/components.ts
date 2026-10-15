@@ -50,8 +50,6 @@ export function mountComponent(
     runtime: DomRuntime,
     hydrateNodeFn: (node: Node, context: Record<PropertyKey, any>, runtime: DomRuntime) => void,
 ): void {
-    if ('style' in definition)
-        throw new TypeError('Component style has been removed; put <style b-style> inside the component template.');
     markStyleBoundary(element);
     runtime = { ...runtime, styleBoundary: element };
     const hostOwner = getNodeOwner(element);

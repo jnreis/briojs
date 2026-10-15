@@ -358,8 +358,6 @@ function fillSlots(host, template, context) {
     for (const node of remaining) (_a = node.parentNode) == null ? void 0 : _a.removeChild(node);
 }
 function mountComponent(element, definition, context, runtime, hydrateNodeFn) {
-  if ("style" in definition)
-    throw new TypeError("Component style has been removed; put <style b-style> inside the component template.");
   markStyleBoundary(element);
   runtime = { ...runtime, styleBoundary: element };
   const hostOwner = getNodeOwner(element);
@@ -889,8 +887,6 @@ function handleIf(element, expression, modifiers, context, runtime, hydrateNodeF
       throw new SyntaxError("An element can have only one conditional directive.");
     if (node !== element && Object.keys(extractModifiers(conditional[0].name).modifiers).length)
       throw new SyntaxError("Conditional modifiers belong only on the leading b-if, not b-else-if or b-else.");
-    if (attributes.some((attribute) => ["b-show", "show"].includes(extractModifiers(attribute.name).baseName)))
-      throw new SyntaxError("b-show has been removed. Use b-if.detach or b-if.hide.");
     if (preserved && attributes.some((attribute) => ["b-for", "b-template", "template"].includes(extractModifiers(attribute.name).baseName)))
       throw new SyntaxError("b-if.hide and b-if.detach require a concrete branch element; wrap b-for or b-template in another element.");
     const template = node.cloneNode(true);
@@ -1640,9 +1636,6 @@ function hydrateOwnedNode(node, parentContext, runtime) {
   const conditionalAttributes = Array.from(element.attributes).filter((attribute) => ["b-if", "b-else-if", "b-else"].includes(extractModifiers(attribute.name).baseName));
   if (conditionalAttributes.length > 1)
     throw new SyntaxError("An element can have only one conditional directive.");
-  const removedShow = Array.from(element.attributes).find((attribute) => ["b-show", "show"].includes(extractModifiers(attribute.name).baseName));
-  if (removedShow)
-    throw new SyntaxError("b-show has been removed. Use b-if.detach or b-if.hide; conditions evaluate in the parent context.");
   const ifAttr = conditionalAttributes[0];
   if (ifAttr && extractModifiers(ifAttr.name).baseName === "b-if") {
     handleIf(element, ifAttr.value, extractModifiers(ifAttr.name).modifiers, parentContext, runtime, hydrateNode);
@@ -1802,8 +1795,6 @@ function createApp(options = {}) {
         throw new TypeError(`Component name "${name}" must be a custom-element name such as "user-card".`);
       if (components.has(normalized))
         throw new Error(`Component "${normalized}" is already registered.`);
-      if ("style" in definition)
-        throw new TypeError("Component style has been removed; put <style b-style> inside the component template.");
       if (!definition.template.trim())
         throw new TypeError(`Component "${normalized}" requires a non-empty template.`);
       components.set(normalized, definition);

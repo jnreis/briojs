@@ -517,7 +517,7 @@ test('reserved ancestry fields and loop names fail explicitly', t => {
     }
 });
 
-test('loop ancestry metadata is read-only and standalone $parent is no longer supplied', t => {
+test('loop ancestry metadata is read-only and available through $for.$parent', t => {
     const { app, root, window } = environment(t, `
         <section b-for="n in 1"><div b-for="child in 1">
             <script b-script>($context) => { $data.capture($context); }</script>
@@ -716,10 +716,8 @@ test('initially hidden branches remain queryable during setup while detached bra
     }
 });
 
-test('conditional validation rejects obsolete syntax, conflicting modes and modified else branches', t => {
+test('conditional validation rejects unsupported modifiers, conflicting modes and modified else branches', t => {
     const invalid = [
-        ['<div b-show="true"></div>', /removed/],
-        ['<div show.display="true"></div>', /removed/],
         ['<div b-if.display="true"></div>', /only .hide and .detach/],
         ['<div b-if.hide.detach="true"></div>', /cannot be combined/],
         ['<div b-if="true" b-if.hide="true"></div>', /only one conditional/],

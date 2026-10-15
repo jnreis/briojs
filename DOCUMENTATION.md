@@ -76,10 +76,9 @@ development core. HTTP and step remain included in both core bundles.
 The development bundle additionally exposes `devtools`, `inspectDevtools`,
 `devtoolsPanel`, and `enableDevtools`, with tracking enabled automatically. The production bundle compiles out devtools tracking hooks and
 does not include the inspector or reactive state snapshotting.
-The browser global no longer exposes `hydrateRoot` or `hydrateNode`; those
-remain available through ESM. Use `app.insert()` for managed dynamic content.
-The legacy `newStepEngine` tuple API has been removed from all exports; use
-`createStepEngine()` and its named methods instead.
+Low-level `hydrateRoot` and `hydrateNode` are ESM-only APIs.
+Use `app.insert()` for managed dynamic content and `createStepEngine()` for
+step navigation.
 
 ## AI-assisted application development
 
@@ -124,7 +123,7 @@ The context is also available as `$context`. Named bindings include `$data`, `$e
 
 Data and loop ancestry are independent: `$data.$parent.$parent` accesses a grandparent data scope, while `$for.$parent.$parent` accesses a grandparent loop. Ordinary elements and loops do not add data ancestry levels; data scopes do not add loop ancestry levels. Component setup state creates a data scope. App state and outermost loops have `$parent === undefined`. An empty `b-data` attribute inherits data without adding a scope; `b-data="{}"` creates one.
 
-`$parent` is reserved, read-only metadata on scope-specific views, not a field added to user state. It is excluded from keys, spreads, and JSON serialization. The same underlying state object may have different parents in different scopes. Normal reads, writes, and methods remain reactive. Use `$context` for other helpers; standalone `$parent` and `$context.$parent` are no longer provided.
+`$parent` is reserved, read-only metadata on scope-specific views, not a field added to user state. It is excluded from keys, spreads, and JSON serialization. The same underlying state object may have different parents in different scopes. Normal reads, writes, and methods remain reactive. Access ancestry through `$data.$parent` and `$for.$parent`, and use `$context` for other helpers.
 
 `trustedHTML` remains public for JavaScript-authored values, for example
 `app.state.markup = brio.trustedHTML('<em>Authored content</em>')` with
@@ -323,13 +322,6 @@ branch in that chain:
 - Combining `.hide` and `.detach`, unknown conditional modifiers, or modifiers
   on `b-else-if` / `b-else` is an error.
 
-`b-show` has been removed. Migrate former v4 `b-show` to `b-if.detach` and
-`b-show.display` to `b-if.hide`. Review each condition: it now sees parent data,
-not branch-local data. For example, a former
-`b-show="$data.$parent.open"` with same-element `b-data` becomes
-`b-if.detach="$data.open"`. Legacy 1.1.5 `b-show` used display hiding, so migrate
-that version to `b-if.hide`. The old directive and `b-if.display` are not aliases.
-
 ### Contextual scripts
 
 Only `<script b-script>` is processed. Write an unassigned arrow expression so the browser does not execute its body:
@@ -459,13 +451,12 @@ app.mount('#widgets');
 </main>
 ```
 
-Static host attributes become string props; `b-bind-name` supplies a reactive prop through `$props`. Setup receives `$props`, `$emit`, `$stores`, `$provided`, the host element as `el`, and `app`. Templates and contextual scripts also access `$props` and `$emit`. Component events are bubbling `CustomEvent`s emitted with `$emit(name, detail)`. The previous `props` and `emit` names are not aliases. Named slots use `slot="name"` on projected content and `<slot name="name">` in the template. Component setup runs in an owned scope; effects, persistence, and listeners registered during setup are disposed when the component is removed.
+Static host attributes become string props; `b-bind-name` supplies a reactive prop through `$props`. Setup receives `$props`, `$emit`, `$stores`, `$provided`, the host element as `el`, and `app`. Templates and contextual scripts also access `$props` and `$emit`. Component events are bubbling `CustomEvent`s emitted with `$emit(name, detail)`. Named slots use `slot="name"` on projected content and `<slot name="name">` in the template. Component setup runs in an owned scope; effects, persistence, and listeners registered during setup are disposed when the component is removed.
 
 ## Scoped CSS beside markup
 
 Use a static `<style b-style>` inside an app, local data scope, or component
-template. `component({ style: ... })` is no longer supported; put that CSS in
-the component's `template` instead.
+template.
 
 ```html
 <section b-data="{ accent: 'teal' }" b-bind-style="{ '--accent': $data.accent }">
@@ -742,7 +733,7 @@ trust assertion, not sanitization; inserted expressions and scripts execute code
 
 ### Low-level dynamic hydration
 
-ESM imports expose `hydrateRoot(element, context, runtime)` and `hydrateNode(node, context, runtime)`; these are no longer on the browser global. These are low-level APIs: supply an explicit context (including `$data`), a runtime with `app`, `state`, and `components`, and invoke hydration inside `createScope().run(...)`. Dispose that scope before removing or replacing the hydrated content; raw DOM removal does not dispose bindings or listeners. Hydrate only new content, not an already hydrated subtree. Prefer `app.mount()` for independent roots, since it manages runtime and cleanup automatically.
+ESM imports expose the low-level APIs `hydrateRoot(element, context, runtime)` and `hydrateNode(node, context, runtime)`: supply an explicit context (including `$data`), a runtime with `app`, `state`, and `components`, and invoke hydration inside `createScope().run(...)`. Dispose that scope before removing or replacing the hydrated content; raw DOM removal does not dispose bindings or listeners. Hydrate only new content, not an already hydrated subtree. Prefer `app.mount()` for independent roots, since it manages runtime and cleanup automatically.
 
 ```ts
 createApp({

@@ -318,9 +318,6 @@ test('invalid scoped styles fail explicitly and roll back styles/classes', t => 
         assert.equal(scopeClass(root), undefined);
         assert.equal(root.innerHTML, original);
     }
-    const app = createApp();
-    assert.throws(() => app.component('old-card', { style: 'p{}', template: '<p></p>' }), /style has been removed/);
-    app.dispose();
 });
 
 test('ordinary styles, ignored/raw HTML and static literal CSS retain their intended semantics', t => {

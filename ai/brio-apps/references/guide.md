@@ -221,12 +221,9 @@ and reinserts the same live nodes. Leave transitions finish before hiding or
 detaching; rapid reversals cancel stale callbacks.
 All conditional expressions evaluate in the parent context before the branch's
 `b-data` / providers. Do not put modifiers on else branches, combine preservation
-modes, or invent `.display`. Same-element `b-for` / `b-template` requires a
+modes. Same-element `b-for` / `b-template` requires a
 wrapper in preservation modes; nested structural directives remain supported.
-`b-show` is removed, not deprecated: migrate former v4 `b-show` to
-`b-if.detach`, and `b-show.display` to `b-if.hide`, reviewing conditions that
-previously relied on local data or `$data.$parent`. Teleported descendants are
-not hidden by hiding their source wrapper.
+Teleported descendants are not hidden by hiding their source wrapper.
 Avoid competing imperative writes to directive-owned children.
 
 Events support `.prevent`, `.stop`, `.self`, `.outside`, `.window`, `.document`,
@@ -309,8 +306,8 @@ Use hyphenated component names. Setup returns plain state, exposed as `$data`.
 Static host attributes become string props; `b-bind-label` gives a reactive prop.
 Emits are bubbling CustomEvents; consume `$event.detail` in host handlers.
 Named slots use `slot="name"` and `<slot name="name">`. Projected content retains
-the caller's data context. `ComponentDefinition.style` has been removed: author
-`<style b-style>...</style>` inside the component template instead.
+the caller's data context. Author scoped CSS with
+`<style b-style>...</style>` inside the component template.
 Do not mutate props as an alternative to emitting a parent update.
 Setup runs in an owned scope; `brio.onCleanup(...)` can register listeners,
 timers, and other external resources there.
@@ -416,10 +413,10 @@ cleans the failed insertion, but does not restore old content.
   an active source and an existing destination; honor boolean results.
   `keep` preserves the source's active flag, so multiple steps may be active.
 
-## Never invent or revive these APIs
+## API boundaries
 
 No `newApp`, `newStepEngine`, app `$insert`, standalone `$parent`, implicit
-bare state names, `props`/`emit` component aliases, Vue/React lifecycle hooks,
+bare state names, Vue/React lifecycle hooks,
 Vue-style directive syntax, `$nextTick`, or `$refs` API.
 Low-level `hydrateRoot`/`hydrateNode` remain ESM-only; do not call them on
 `window.brio`. Prefer mount/insert for application development.

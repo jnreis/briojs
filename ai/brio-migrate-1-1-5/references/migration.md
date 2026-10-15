@@ -136,7 +136,7 @@ forbids runtime `new Function` remains a deployment blocker.
 | `b-template` | Unwraps its own authored children only; its value does not select a registered template. It replaces the host with hydrated siblings. |
 | `b-teleport` | Explicit selector expression such as `b-teleport="'#portal'"`. Destination must exist; dispose the original owner before removing it. |
 | `b-script` | Inline function expression on a script element only; no registry name/array/src loader. Async script completion no longer delays the rest of mounting. |
-| `b-style` | Rewrite to static `<style b-style>CSS</style>` inside a concrete data/component/root boundary. This is not the old expression-based host directive. Use CSS custom properties via `b-bind-style` for dynamic values, not `component.style`. |
+| `b-style` | Rewrite to static `<style b-style>CSS</style>` inside a concrete data/component/root boundary. This is not the old expression-based host directive. Use CSS custom properties via `b-bind-style` for dynamic values. |
 | `b-save`, `b-hydrate` | Removed asset-preprocessing contract; move saved templates/scripts/styles to explicit application definitions/imports. |
 | `b-load-once` | No v4 script-loader equivalent; control asset loading through normal application boot/imports. |
 | `b-transition` | Rewrite the two-selector expression into named CSS classes. Historical comments mention play/reverse aliases, but they are not registered in this build. |
@@ -157,8 +157,7 @@ setup/scripts immediately, and keep inactive effects/listeners live. Use a
 concrete branch element; wrap same-element loops/templates. Conditions always
 see parent data before branch-local `b-data` and providers; review legacy
 expressions that relied on the element's own local data rather than blindly
-renaming the directive. Former v4 `b-show` maps to `b-if.detach`;
-`b-show.display` maps to `b-if.hide`. Neither old name is a compatibility alias.
+renaming the directive.
 Legacy conditional updates are deferred; v4 selection updates synchronously.
 With a leave transition, current v4 also keeps the branch hydrated until
 completion. Reversing leave reuses the same branch and its state; after completed
@@ -268,8 +267,7 @@ or a disposed guard for late async results. Mounting does not await async
 `b-script`, so initialize template-visible fields first.
 
 Move authored scoped CSS into `<style b-style>...</style>` inside a component
-template or concrete data scope. The former v4 component `style` property is
-removed too. Use CSS custom properties bound through `b-bind-style` for dynamic
+template or concrete data scope. Use CSS custom properties bound through `b-bind-style` for dynamic
 values; scoped style text is static, not an expression or interpolation target.
 Ordinary selectors are prefixed with the nearest concrete b-data/component/root
 boundary's generated class; `:scope` styles that boundary. Nested scopes and slots

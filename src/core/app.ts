@@ -63,8 +63,6 @@ export function createApp<
                 throw new TypeError(`Component name "${name}" must be a custom-element name such as "user-card".`);
             if (components.has(normalized))
                 throw new Error(`Component "${normalized}" is already registered.`);
-            if ('style' in definition)
-                throw new TypeError('Component style has been removed; put <style b-style> inside the component template.');
             if (!definition.template.trim())
                 throw new TypeError(`Component "${normalized}" requires a non-empty template.`);
             components.set(normalized, definition);

@@ -5,6 +5,7 @@ import { createScopedState } from '../../core/scoped-state';
 import type { Scope } from '../../core/scope';
 import type { DomRuntime } from '../types';
 import { getNodeOwner, ownNode } from '../ownership';
+import { markStyleBoundary } from '../scoped-style';
 
 type LoopRow = {
     element: Element;
@@ -31,6 +32,7 @@ export function handleFor(
     context: Record<PropertyKey, any>,
     runtime: DomRuntime,
     hydrateNodeFn: (node: Node, context: Record<PropertyKey, any>, runtime: DomRuntime) => void,
+    hasDataBoundary = false,
 ): void {
     const parent = element.parentNode;
     if (!parent) throw new Error('b-for requires an element with a parent node.');
@@ -86,7 +88,12 @@ export function handleFor(
                 const rowScope = createScope();
                 row = { element: rowElement, context: rowContext, values: rowState, scope: rowScope, key: evaluatedKey };
                 rows.set(evaluatedKey, row);
-                rowScope.run(() => hydrateNodeFn(rowElement, rowContext, runtime));
+                rowScope.run(() => {
+                    const concreteBoundary = hasDataBoundary && !rowElement.hasAttribute('b-template');
+                    if (concreteBoundary) markStyleBoundary(rowElement);
+                    hydrateNodeFn(rowElement, rowContext,
+                        concreteBoundary ? { ...runtime, styleBoundary: rowElement } : runtime);
+                });
                 const owner = getNodeOwner(rowElement);
                 if (owner) owner.structuralRoot = true;
             } else {

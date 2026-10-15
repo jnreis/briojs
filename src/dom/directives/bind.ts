@@ -1,6 +1,7 @@
 import { evaluate } from '../../core/expression';
 import { effect } from '../../reactivity/effect';
 import { causedError } from '../../core/errors';
+import { getStyleClass } from '../scoped-style';
 
 const staticClasses = new WeakMap<Element, Set<string>>();
 const dynamicStyles = new WeakMap<Element, Set<string>>();
@@ -9,7 +10,8 @@ export const setBoundValue = (element: Element, name: string, value: unknown, fo
     if (name === 'class') {
         let staticNames = staticClasses.get(element);
         if (!staticNames) {
-            staticNames = new Set((element.getAttribute('class') ?? '').split(/\s+/).filter(Boolean));
+            staticNames = new Set((element.getAttribute('class') ?? '').split(/\s+/)
+                .filter(name => Boolean(name) && name !== getStyleClass(element)));
             staticClasses.set(element, staticNames);
         }
         const currentDynamic = new Set<string>();
@@ -22,6 +24,8 @@ export const setBoundValue = (element: Element, name: string, value: unknown, fo
                 if (enabled) className.split(/\s+/).filter(Boolean).forEach(name => currentDynamic.add(name));
         }
         const combined = new Set([...staticNames, ...currentDynamic]);
+        const styleClass = getStyleClass(element);
+        if (styleClass) combined.add(styleClass);
         if (combined.size) element.setAttribute('class', Array.from(combined).join(' '));
         else element.removeAttribute('class');
         return;

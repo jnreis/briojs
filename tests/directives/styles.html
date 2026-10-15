@@ -3,47 +3,105 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Manual Test: styles directive</title>
+    <title>Manual Test: scoped styles</title>
     <style>
-        body { font-family: system-ui, -apple-system, sans-serif; margin: 20px; background: #f8fafc; color: #1e293b; }
-        .card { background: white; border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; }
-        h1 { font-size: 1.5rem; }
-        h3 { margin-top: 0; color: #0f172a; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; }
+        body { font-family: system-ui, sans-serif; margin: 20px; background: #f8fafc; color: #1e293b; }
+        .card { background: white; padding: 16px; margin-block: 16px; border: 1px solid #cbd5e1; border-radius: 8px; }
+        button { margin: 4px; padding: 6px 12px; }
+        .global-example { text-decoration: underline; }
     </style>
 </head>
-<body b-data="{
-    theme: 'customTheme'
-}">
+<body>
+    <style b-style>
+        .root-example { color: rgb(29, 78, 216); }
+        .outer-reaches-inner { border-left: 4px solid rgb(29, 78, 216); }
+    </style>
+    <h1>HTML-first Scoped Styles</h1>
+    <p id="root-example" class="root-example global-example">Root fallback: blue and globally underlined.</p>
+    <section id="local" class="card" b-data="{ accent: 'rgb(21, 128, 61)', active: true }"
+        b-bind-class="{ active: $data.active }" b-bind-style="{ '--accent': $data.accent }">
+        <style b-style>
+            :scope { border-color: var(--accent); }
+            :scope.active > h2 { color: var(--accent); }
+            p:is(.local-example, [data-kind="a,b"]) { color: var(--accent); }
+            @media (min-width: 0px) { .media-example { font-weight: 700; } }
+            @supports (display: grid) { .supports-example { display: grid; } }
+            @layer brio-demo { .layer-example { text-decoration: underline; } }
+            @container (min-width: 0px) { .container-example { font-style: italic; } }
+            .nested-example { & > strong { color: var(--accent); } }
+            @keyframes brio-demo-pulse { from { opacity: .7; } to { opacity: 1; } }
+            .animated-example { animation: brio-demo-pulse 2s alternate infinite; }
+        </style>
+        <style b-style>.second-sheet { font-style: italic; }</style>
+        <h2>One boundary, two stylesheets</h2>
+        <p id="local-example" class="local-example media-example second-sheet">Green, bold, italic. Changes with the CSS custom property.</p>
+        <p data-kind="a,b">Comma inside an attribute selector is not a selector separator.</p>
+        <div class="nested-example"><strong id="nested-example">Native CSS nesting: green.</strong></div>
+        <p class="supports-example layer-example animated-example">Supports, layer, and uniquely named keyframes.</p>
+        <div style="container-type: inline-size;"><p id="container-example" class="container-example">Container query: italic in supporting browsers.</p></div>
+        <button id="change-accent" b-on-click="$data.accent = 'rgb(190, 18, 60)'">Make local styles rose</button>
+        <button id="toggle-class" b-on-click="$data.active = !$data.active">Toggle authored class (scope class must survive)</button>
+        <section id="inner" class="outer-reaches-inner" b-data="{}">
+            <style b-style>.inner-example { color: rgb(126, 34, 206); }</style>
+            <p id="inner-example" class="inner-example">Purple inner scope; outer blue border still applies.</p>
+        </section>
+    </section>
+    <p id="outside-example" class="local-example inner-example">Outside: neither local green nor inner purple.</p>
 
-    <h1>Component Scoped Styles Manual Tests</h1>
-    <p>Tests component scoped style isolation with automated CSS scoping and rewriting (<code>style</code> property on component definitions).</p>
-
-    <!-- Test 1: Scoped style application -->
-    <div class="card">
-        <h3>1. Scoped CSS in Custom Component</h3>
+    <section class="card">
+        <h2>Component hosts are implicit boundaries</h2>
+        <styled-card><span id="slotted-example" class="component-example" slot="content">Slotted content is physically inside the component scope.</span></styled-card>
         <styled-card></styled-card>
-        <p style="margin-top: 14px;">This paragraph outside <code>styled-card</code> is completely untouched by the component's internal styles.</p>
-    </div>
+        <p id="component-outside" class="component-example">Outside component: no component color.</p>
+    </section>
 
+    <section class="card" b-data="{ visible: true, mode: 'hide' }">
+        <h2>Conditional ownership and cleanup</h2>
+        <button id="toggle-branches" b-on-click="$data.visible = !$data.visible">Toggle all three branches</button>
+        <div id="destructive" b-if="$data.visible" b-data="{}">
+            <style b-style>.branch-example { color: rgb(180, 83, 9); }</style>
+            <p class="branch-example">Default b-if removes its stylesheet on dehydration.</p>
+        </div>
+        <div id="hidden" b-if.hide="$data.visible" b-data="{}">
+            <style b-style>.branch-example { color: rgb(180, 83, 9); }</style>
+            <p class="branch-example">b-if.hide retains its stylesheet.</p>
+        </div>
+        <div id="detached" b-if.detach="$data.visible" b-data="{}">
+            <style b-style>.branch-example { color: rgb(180, 83, 9); }</style>
+            <p class="branch-example">b-if.detach retains its stylesheet in head.</p>
+        </div>
+    </section>
+
+    <section class="card" b-data="{}">
+        <style b-style>.teleport-example { color: rgb(21, 128, 61); }</style>
+        <h2>Normal descendant CSS, not Shadow DOM</h2>
+        <p class="teleport-example">Green here.</p>
+        <p id="teleported-example" class="teleport-example" b-teleport="'#portal'">Outside after teleport: no green.</p>
+    </section>
+    <aside id="portal" class="card"></aside>
+    <section class="card">
+        <h2>Invalid usage fails explicitly</h2>
+        <p>Only static CSS in a style element is supported. Expressions, modifiers and recognized
+            global rules (@import, @font-face, @property) produce errors. CSSOM follows normal
+            browser error recovery: invalid or unsupported CSS may be ignored.
+            Put global registrations in an ordinary stylesheet.
+            Use a concrete wrapper for b-data on unwrapped templates.</p>
+    </section>
     <script src="/dist/brio.min.js"></script>
     <script>
         window.addEventListener('DOMContentLoaded', () => {
             const app = brio.createApp();
             app.component('styled-card', {
-                style: `
-                    h4 { color: #15803d; margin: 0 0 8px 0; }
-                    p { color: #166534; margin: 0; }
-                    .box { background-color: #f0fdf4; border: 2px dashed #16a34a; padding: 16px; border-radius: 8px; }
-                `,
                 template: `
-                    <div class="box">
-                        <h4>Scoped Green Component</h4>
-                        <p>Styles defined in the component are automatically rewritten and scoped!</p>
-                    </div>
-                `
+                    <style b-style>
+                        :scope { display: block; padding: 12px; margin-block: 8px; border: 1px dashed green; }
+                        .component-example { color: rgb(15, 118, 110); }
+                    </style>
+                    <p class="component-example">Component-local teal text.</p>
+                    <slot name="content"><p class="component-example">Fallback slot.</p></slot>
+                `,
             });
             app.mount('body');
-            console.log('styles.html hydrated successfully');
         });
     </script>
 </body>

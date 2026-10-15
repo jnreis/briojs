@@ -1,3 +1,7 @@
-export declare function generateScopeId(): string;
-export declare function scopeCss(content: string, scopeAttr: string): string;
-export declare function injectScopedStyles(styleContent: string, scopeAttr: string): HTMLStyleElement;
+import { DomRuntime } from './types';
+
+export declare function markStyleBoundary(element: Element): void;
+export declare function findStyleBoundary(node: Node, runtime: DomRuntime): Element | undefined;
+export declare function getStyleClass(element: Element): string | undefined;
+export declare function scopeCss(content: string, className: string, document: Document): string;
+export declare function installScopedStyle(source: HTMLStyleElement, boundary: Element): void;

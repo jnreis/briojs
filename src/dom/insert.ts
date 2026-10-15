@@ -13,7 +13,9 @@ const placements = new Set(['before', 'after', 'prepend', 'append', 'replaceWith
 export function createInsert(runtime: DomRuntime): Insert {
     return (target, placement, content, options = {}) => {
         const root = runtime.root;
-        if (!root || getNodeOwner(root)?.runtime !== runtime)
+        const rootOwner = root && getNodeOwner(root);
+        if (!root || !rootOwner || rootOwner.runtime.app !== runtime.app ||
+            rootOwner.runtime.mountScope !== runtime.mountScope || runtime.mountScope?.disposed)
             throw new Error('$insert requires an active mounted Brio root.');
         const node = typeof target === 'string'
             ? (root.matches(target) ? root : root.querySelector(target))

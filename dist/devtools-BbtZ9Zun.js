@@ -1,4 +1,4 @@
-import { i as installDevtoolsBridge, e as effect, c as causedError } from "./effect-B76KDYNZ.js";
+import { i as installDevtoolsBridge, e as effect, c as causedError } from "./effect-B5fA5FiW.js";
 let effectsCreated = 0;
 let activeEffects = 0;
 const apps = /* @__PURE__ */ new Map();
@@ -117,4 +117,4 @@ export {
   enableDevtools as e,
   inspectDevtools as i
 };
-//# sourceMappingURL=devtools-C9eZPghE.js.map
+//# sourceMappingURL=devtools-BbtZ9Zun.js.map

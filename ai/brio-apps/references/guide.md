@@ -201,6 +201,7 @@ Escape HTML-significant characters in literal text/attribute values.
 | `b-html="trustedHTML($data.markup)"` | Replaces and hydrates children; `.raw` only inserts parsed HTML without Brio hydration. Always treat hydrated content as executable authored markup. |
 | `b-ignore` | Skips hydration of the element and descendants. |
 | `b-script` | Only on a script element; see required writing style below. |
+| `b-style` | Static CSS on a style element, scoped to the nearest concrete b-data/component/root boundary. |
 | `b-effect="$data.observe($data.count)"` | Reactive expression, not a block of event-style statements. Avoid feedback writes. |
 | `b-id="['input']"` | Creates `$id.input`; bind `id`/label `for` explicitly. |
 | `b-template` | Unwraps a template or element into hydrated sibling nodes. |
@@ -308,10 +309,41 @@ Use hyphenated component names. Setup returns plain state, exposed as `$data`.
 Static host attributes become string props; `b-bind-label` gives a reactive prop.
 Emits are bubbling CustomEvents; consume `$event.detail` in host handlers.
 Named slots use `slot="name"` and `<slot name="name">`. Projected content retains
-the caller's context. Optional `style` is scoped to component template elements.
+the caller's data context. `ComponentDefinition.style` has been removed: author
+`<style b-style>...</style>` inside the component template instead.
 Do not mutate props as an alternative to emitting a parent update.
 Setup runs in an owned scope; `brio.onCleanup(...)` can register listeners,
 timers, and other external resources there.
+
+### Scoped style contract
+
+- Use only `<style b-style>` with static CSS, no expression/modifiers or
+  `b-text` / `b-html`. Do not interpolate CSS text. Bind custom properties with
+  `b-bind-style="{ '--accent': $data.accent }"` for reactive values.
+- The nearest surviving concrete `b-data`, component host (even without
+  b-data), or mount root receives one generated class shared by its styles.
+  Selectors are class-prefixed; `:scope` targets that boundary. Native nested
+  rules use `&` for their nesting parent. Generated classes are runtime-owned,
+  not stable selectors for application code.
+- Outer rules can reach nested data/components. Slots follow physical CSS
+  containment, not their data context. Teleporting outside a boundary loses
+  matching styles. This is not Shadow DOM or strict component isolation.
+- Wrap `b-template` in a concrete b-data element for a separate boundary;
+  removed template hosts cannot carry a class. Concrete repeated b-data rows
+  get unique classes. Inserted `{ data }` alone does not create a CSS boundary.
+- Support normal selector lists/functions, nested @media/@supports/@container/
+  @layer, native CSS nesting, and unchanged @keyframes steps. Choose unique
+  animation/layer names: they remain global. Browser support is required for
+  native nesting/container queries.
+- Global registrations (`@import`, `@font-face`, `@property`) and unknown
+  rule types belong in ordinary global CSS, not b-style. Recognized unsupported
+  rule types throw. Parsing uses native CSSOM (no parser dependency): browser
+  error recovery can discard invalid/unknown CSS before scoping, and CSSOM
+  serialization removes comments/formatting. Unmarked style elements stay global.
+- Compiled styles live in ownerDocument.head, preserving nonce/media/title/type.
+  They stay active during hide/detach/leave and are removed on source-scope
+  disposal. The last disposed style releases the generated boundary class.
+  Use Brio-owned replacement/removal rather than deleting DOM manually.
 
 `state` observes plain objects/arrays, not arbitrary class instances.
 Signals and computed values use `.value`; effects run synchronously by default.

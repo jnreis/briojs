@@ -41,6 +41,10 @@ its callers and generated markup.
 - **Forms:** input/change/submit, checkbox arrays and radio types, multiple
   selects, blank/NaN/zero/false values, initial values, composition/paste,
   masks/caret, validation messages and the exact server payload.
+- **Scoped styles:** legacy expression-style directives rewritten to static
+  `<style b-style>`; no component.style remains. Check :scope, generated boundary
+  classes, nested/slot reach, teleport limitations, custom-property updates,
+  supported at-rules, and stylesheet cleanup through branch/insertion disposal.
 - **Insertion:** all used placements; root/container restrictions; authored
   HTML versus plain text; removed nodes no longer respond; no network script
   loader or head/body replacement assumed.

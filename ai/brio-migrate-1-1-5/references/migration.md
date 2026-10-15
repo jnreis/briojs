@@ -136,7 +136,7 @@ forbids runtime `new Function` remains a deployment blocker.
 | `b-template` | Unwraps its own authored children only; its value does not select a registered template. It replaces the host with hydrated siblings. |
 | `b-teleport` | Explicit selector expression such as `b-teleport="'#portal'"`. Destination must exist; dispose the original owner before removing it. |
 | `b-script` | Inline function expression on a script element only; no registry name/array/src loader. Async script completion no longer delays the rest of mounting. |
-| `b-style` | Removed. Use static CSS, scoped component `style`, or explicit `b-bind-style`. |
+| `b-style` | Rewrite to static `<style b-style>CSS</style>` inside a concrete data/component/root boundary. This is not the old expression-based host directive. Use CSS custom properties via `b-bind-style` for dynamic values, not `component.style`. |
 | `b-save`, `b-hydrate` | Removed asset-preprocessing contract; move saved templates/scripts/styles to explicit application definitions/imports. |
 | `b-load-once` | No v4 script-loader equivalent; control asset loading through normal application boot/imports. |
 | `b-transition` | Rewrite the two-selector expression into named CSS classes. Historical comments mention play/reverse aliases, but they are not registered in this build. |
@@ -267,9 +267,21 @@ unassigned arrow form shown. Register cleanup before awaiting; use cancellation
 or a disposed guard for late async results. Mounting does not await async
 `b-script`, so initialize template-visible fields first.
 
-Move dynamic scoped styles into a component's `style` definition. Static/global
-styles belong in the application's normal stylesheet pipeline. Any application
-owned style element must be removed when its owner is disposed.
+Move authored scoped CSS into `<style b-style>...</style>` inside a component
+template or concrete data scope. The former v4 component `style` property is
+removed too. Use CSS custom properties bound through `b-bind-style` for dynamic
+values; scoped style text is static, not an expression or interpolation target.
+Ordinary selectors are prefixed with the nearest concrete b-data/component/root
+boundary's generated class; `:scope` styles that boundary. Nested scopes and slots
+follow normal descendant CSS, not strict isolation; teleported content outside
+the boundary loses that selector match. Removed template hosts need a wrapper.
+Keep document-global @import/@font-face/@property rules in the normal stylesheet
+pipeline; recognized unsupported scoped rule types report errors. CSSOM uses
+normal browser parsing/error recovery, which may discard invalid or unknown CSS
+and does not preserve comments/formatting. Keyframe/layer names remain
+global, so use unique names. Stylesheets live in the owning document head and
+remain active during hide/detach/leave; their source scope disposal removes them
+and releases the generated class when the last style is gone.
 
 ## 5. Insertion and hydration
 

@@ -3,7 +3,7 @@ import { state } from '../reactivity/state';
 import { createScopedState } from '../core/scoped-state';
 import { effect, batch } from '../reactivity/effect';
 import { createScope, onCleanup } from '../core/scope';
-import { generateScopeId, injectScopedStyles } from './scoped-style';
+import { markStyleBoundary } from './scoped-style';
 import type { ComponentDefinition, DomRuntime } from './types';
 import { getNodeOwner, ownNode } from './ownership';
 import { emptyContextValues } from '../core/context-values';
@@ -50,6 +50,12 @@ export function mountComponent(
     runtime: DomRuntime,
     hydrateNodeFn: (node: Node, context: Record<PropertyKey, any>, runtime: DomRuntime) => void,
 ): void {
+    if ('style' in definition)
+        throw new TypeError('Component style has been removed; put <style b-style> inside the component template.');
+    markStyleBoundary(element);
+    runtime = { ...runtime, styleBoundary: element };
+    const hostOwner = getNodeOwner(element);
+    if (hostOwner) hostOwner.runtime = runtime;
     const propsObject: Record<string, unknown> = {};
     for (const attribute of Array.from(element.attributes)) {
         if (!attribute.name.startsWith('b-')) propsObject[attribute.name] = attribute.value;
@@ -77,15 +83,6 @@ export function mountComponent(
     };
 
     componentScope.run(() => {
-        // Scoped style support
-        let scopeAttr: string | undefined;
-        if (definition.style) {
-            scopeAttr = generateScopeId();
-            element.setAttribute(scopeAttr, '');
-            const styleEl = injectScopedStyles(definition.style, scopeAttr);
-            onCleanup(() => styleEl.remove());
-        }
-
         for (const attribute of Array.from(element.attributes)) {
             if (attribute.name.startsWith('b-on-') || attribute.name.startsWith('on-')) {
                 const prefix = attribute.name.startsWith('b-on-') ? 'b-on-' : 'on-';
@@ -129,13 +126,6 @@ export function mountComponent(
 
         const template = document.createElement('template');
         template.innerHTML = definition.template;
-
-        // If scoped styles exist, tag template element children with scopeAttr
-        if (scopeAttr) {
-            for (const el of Array.from(template.content.querySelectorAll('*'))) {
-                el.setAttribute(scopeAttr, '');
-            }
-        }
 
         fillSlots(element, template.content, context);
         element.replaceChildren(template.content);

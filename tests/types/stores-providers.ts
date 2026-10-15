@@ -40,3 +40,9 @@ const snapshot: ReturnType<typeof inspectDevtools> = devtools.getSnapshot();
 const start: () => void = enableDevtools;
 const panel: (element: Element) => () => void = devtoolsPanel;
 void [snapshot, start, panel];
+app.component('styled-card', { template: '<style b-style>:scope { display: block; }</style><p>Styled</p>' });
+app.component('obsolete-styled-card', {
+    template: '<p></p>',
+    // @ts-expect-error Scoped CSS is authored in <style b-style>, not a definition property.
+    style: 'p { color: red; }',
+});

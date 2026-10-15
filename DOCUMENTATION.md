@@ -239,6 +239,7 @@ Directive arguments use hyphens (`b-on-click`, `b-bind-href`); options use chain
 | `b-script` | Execute a contextual function expression inside a marked script element. |
 | `b-mask` | Format an input with a pattern string or `money(options)`. |
 | `b-transition` | Animate enter/leave with named CSS transition classes. |
+| `b-style` | Scope static CSS in a `<style>` element to the nearest concrete data/component/root boundary. |
 | `b-for` | Render an array, iterable, object, or integer. |
 | `b-key` | Give a repeated item a stable string or number identity. Used with `b-for`. |
 | `b-html` | Insert explicitly trusted HTML created by `trustedHTML()`. |
@@ -459,6 +460,72 @@ app.mount('#widgets');
 ```
 
 Static host attributes become string props; `b-bind-name` supplies a reactive prop through `$props`. Setup receives `$props`, `$emit`, `$stores`, `$provided`, the host element as `el`, and `app`. Templates and contextual scripts also access `$props` and `$emit`. Component events are bubbling `CustomEvent`s emitted with `$emit(name, detail)`. The previous `props` and `emit` names are not aliases. Named slots use `slot="name"` on projected content and `<slot name="name">` in the template. Component setup runs in an owned scope; effects, persistence, and listeners registered during setup are disposed when the component is removed.
+
+## Scoped CSS beside markup
+
+Use a static `<style b-style>` inside an app, local data scope, or component
+template. `component({ style: ... })` is no longer supported; put that CSS in
+the component's `template` instead.
+
+```html
+<section b-data="{ accent: 'teal' }" b-bind-style="{ '--accent': $data.accent }">
+  <style b-style>
+    :scope { border: 1px solid var(--accent); }
+    p, .label { color: var(--accent); }
+    @media (min-width: 40rem) { .label { font-weight: bold; } }
+    .details { & > strong { color: var(--accent); } }
+  </style>
+  <p>Scoped text</p>
+  <div class="details"><strong>Nested CSS</strong></div>
+</section>
+```
+
+Brio adds one unique `brio-scope-*` class to the closest concrete `b-data`
+element, component host, or mount root. Several scoped styles in that boundary
+share the class. Ordinary selectors are prefixed (`p` becomes `.brio-scope-N p`);
+`:scope` targets the boundary itself. Selector functions, attribute strings,
+escaped identifiers, and commas inside them are handled without splitting
+strings or selector functions. Brio uses the browser's CSSOM, with no CSS parser
+dependency. Native CSS nesting remains native: use `&` within a nested
+rule to target its nesting parent. Containment guards prevent selectors using
+`:scope`, negation, or nested sibling combinators from styling outside the
+boundary. The added class can increase selector specificity.
+
+This is **descendant scoping, not Shadow DOM isolation**. Outer scoped styles
+can reach nested `b-data` and component descendants; projected slots are styled
+according to physical containment even though their data keeps its authoring
+context. Teleported content outside the boundary stops matching its prefix.
+Use a concrete `b-data` wrapper for a separate boundary: `b-template` wrappers
+are removed, so their styles use the nearest surviving boundary. Concrete
+repeated `b-data` rows each receive their own class. Insertion's `{ data }`
+option does not itself create a new CSS boundary.
+
+The directive is only valid on `<style>`, with no expression or modifiers.
+Its text is static CSS, **not** `${...}` interpolation or a legacy style-loader
+expression. For reactive values, bind CSS custom properties on the boundary.
+Do not combine `b-style` with `b-text` / `b-html`. Unmarked style elements remain
+ordinary global styles.
+
+Nested `@media`, `@supports`, `@container`, and `@layer` groups are supported.
+`@keyframes` (including `-webkit-keyframes`) and their step selectors are left
+unchanged; animation and layer names remain document-global, so choose
+application-specific names. Native CSS nesting and container queries require
+browser support. Recognized `@import`, `@font-face`, `@property`, and other
+unsupported rule types throw actionable errors; place document-global rules in
+a normal stylesheet. Parsing follows normal browser CSS error recovery: invalid
+declarations/selectors and unknown or unsupported rules may be discarded by the
+browser before scoping. Comments and formatting are not retained by CSSOM.
+
+Brio empties the source style node and installs an owned compiled stylesheet
+in its document's head, preserving `nonce`, `media`, `title`, and `type`.
+The stylesheet is registered in hydration order and belongs to the source
+style's scope. It remains active during hide/detach and leave transitions;
+removal, completed destructive leave, replacement, insertion removal, failed
+hydration, and unmount clean it up. The generated boundary class is removed
+after the last owned stylesheet is disposed; authored classes are preserved.
+Do not manually remove source nodes without disposing their Brio scope.
+Scoped CSS is trusted author code, not a sanitizer. Inline styles can apply
+before hydration; this does not provide pre-hydration style isolation.
 
 ## Three ways to use Brio
 

@@ -210,9 +210,9 @@ export {
   causedError as c,
   combinedError as d,
   effect as e,
-  createScope as f,
+  onCleanup as f,
   getActiveEffect as g,
-  onCleanup as h,
+  createScope as h,
   installDevtoolsBridge as i,
   notifyAppDisposed as j,
   notifyAppCreated as k,
@@ -222,4 +222,4 @@ export {
   queueEffect as q,
   setActiveScope as s
 };
-//# sourceMappingURL=effect-B76KDYNZ.js.map
+//# sourceMappingURL=effect-B5fA5FiW.js.map

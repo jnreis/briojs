@@ -1,18 +1,19 @@
 export type StepDefinition = {
-    active?: boolean;
-    next?: string;
-    back?: string;
-    origin?: string;
-    keep?: boolean;
-    [key: string]: unknown;
+    readonly next?: string;
 };
-export type StepRecord = Record<string, StepDefinition>;
+export type StepRecord = Readonly<Record<string, StepDefinition>>;
+export type StepOptions = {
+    readonly initial: string;
+    readonly steps: StepRecord;
+};
 export type StepEngine = {
-    setStep(name: string, definition: StepDefinition): boolean;
-    isStepActive(name: string): boolean;
-    nextStep(currentName: string): boolean;
-    backStep(currentName: string): boolean;
-    originStep(currentName: string): boolean;
-    getActiveStep(): string | undefined;
+    readonly current: string;
+    readonly canGoNext: boolean;
+    readonly canGoBack: boolean;
+    readonly isActive: (name: string) => boolean;
+    readonly go: (name: string) => boolean;
+    readonly next: () => boolean;
+    readonly back: () => boolean;
+    readonly reset: () => boolean;
 };
-export declare function createStepEngine(steps: StepRecord): StepEngine;
+export declare function createStepEngine(options: StepOptions): StepEngine;

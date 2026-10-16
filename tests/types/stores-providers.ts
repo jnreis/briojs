@@ -1,5 +1,5 @@
-import { createApp, state, enableDevtools, devtools, devtoolsPanel, inspectDevtools } from 'briojs';
-import type { AppOptions, BrioApp, ComponentContext, RefMap } from 'briojs';
+import { createApp, state, enableDevtools, devtools, devtoolsPanel, inspectDevtools, createStepEngine } from 'briojs';
+import type { AppOptions, BrioApp, ComponentContext, RefMap, StepOptions, StepDefinition, StepRecord, StepEngine } from 'briojs';
 
 const session = state({ user: 'Alice' });
 const app = createApp({
@@ -46,3 +46,29 @@ const start: () => void = enableDevtools;
 const panel: (element: Element) => () => void = devtoolsPanel;
 void [snapshot, start, panel];
 app.component('styled-card', { template: '<style>@scope { :scope { display: block; } }</style><p>Styled</p>' });
+
+const definition: StepDefinition = { next: 'end' };
+const steps: StepRecord = { start: definition, end: {} };
+const stepOptions: StepOptions = { initial: 'start', steps };
+const wizard: StepEngine = createStepEngine(stepOptions);
+const currentStep: string = wizard.current;
+const hasNext: boolean = wizard.canGoNext;
+const hasBack: boolean = wizard.canGoBack;
+const navigationResults: boolean[] = [
+    wizard.isActive('start'), wizard.go('end'), wizard.next(), wizard.back(), wizard.reset(),
+];
+// @ts-expect-error Navigation state is read-only.
+wizard.current = 'end';
+// @ts-expect-error Capabilities are read-only.
+wizard.canGoBack = false;
+// @ts-expect-error Navigation methods cannot be replaced.
+wizard.go = () => true;
+// @ts-expect-error Removed multi-active options are not supported.
+const keptStep: StepDefinition = { keep: true };
+// @ts-expect-error Back is history, not a definition edge.
+const backStep: StepDefinition = { back: 'start' };
+// @ts-expect-error Initial is required.
+createStepEngine({ steps });
+// @ts-expect-error Dynamic registration is not supported.
+wizard.setStep('new', {});
+void [currentStep, hasNext, hasBack, navigationResults, keptStep, backStep];

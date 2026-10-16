@@ -57,6 +57,11 @@ its callers and generated markup.
 - **Forms:** input/change/submit, checkbox arrays and radio types, multiple
   selects, blank/NaN/zero/false values, initial values, composition/paste,
   masks/caret, validation messages and the exact server payload.
+- **Steps:** fixed `{ initial, steps }` configuration and exactly one reactive
+  current step. Verify next/terminal state, explicit go, actual-history Back,
+  branches after Back, self no-ops, reset/history clearing vs preserved form data,
+  disabled capabilities, local `$data` and optional shared `$stores`. No caller
+  reactive record, active/keep/back/origin definition fields, or dynamic registration.
 - **CSS:** legacy style-loader directives replaced with ordinary stylesheets or
   native inline @scope. Check browser support, physical parent roots/limits,
   b-id selector interpolation, global animation names, custom-property updates,

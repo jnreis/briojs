@@ -169,3 +169,56 @@ test('DOM manual page demonstrates every placement through contextual $insert wi
     assert.ok(source.includes('let lastInsertion'));
     assert.ok(!source.includes('insertAndHydrate'));
 });
+
+test('step manual page advances, goes back and restarts using its app-state methods', async t => {
+    const window = await page(t, './methods/step.html');
+    const { document } = window;
+    const failures = [];
+    window.addEventListener('error', event => failures.push(event.error));
+    const expectStep = (heading, indicator) => {
+        assert.equal(document.querySelectorAll('.step-container').length, 1);
+        assert.ok(document.querySelector('.step-container h4').textContent.includes(heading));
+        assert.equal(document.querySelectorAll('.step-pill.active').length, 1);
+        assert.equal(document.querySelector('.step-pill.active').textContent, indicator);
+    };
+    const click = text => {
+        const button = [...document.querySelectorAll('.step-container button')]
+            .find(button => button.textContent.includes(text));
+        assert.ok(button, `Missing wizard button: ${text}`);
+        button.click();
+        assert.deepEqual(failures, []);
+    };
+    expectStep('Welcome', '1. Intro');
+    assert.equal(document.querySelector('.step-container button').disabled, true);
+    click('Next');
+    expectStep('Enter Information', '2. Details');
+    click('Back');
+    expectStep('Welcome', '1. Intro');
+    click('Next');
+    click('Next');
+    expectStep('Review', '3. Review');
+    assert.equal([...document.querySelectorAll('.step-container button')]
+        .find(button => button.textContent.includes('Next')).disabled, true);
+    click('Back');
+    expectStep('Enter Information', '2. Details');
+    click('Next');
+    click('Start Over');
+    expectStep('Welcome', '1. Intro');
+    assert.equal(document.getElementById('can-back').textContent, 'false');
+    document.getElementById('jump-review').click();
+    expectStep('Review', '3. Review');
+    click('Back');
+    expectStep('Welcome', '1. Intro');
+    document.getElementById('jump-review').click();
+    document.getElementById('loop-intro').click();
+    expectStep('Welcome', '1. Intro');
+    assert.equal(document.getElementById('can-back').textContent, 'true');
+    click('Back');
+    expectStep('Review', '3. Review');
+    document.getElementById('reset-wizard').click();
+    expectStep('Welcome', '1. Intro');
+    assert.equal(document.getElementById('can-back').textContent, 'false');
+    click('Next');
+    click('Next');
+    expectStep('Review', '3. Review');
+});

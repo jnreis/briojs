@@ -808,14 +808,14 @@ const setBoundValue = (element, name, value, forceProp = false) => {
     const style = element.style;
     const previousProperties = dynamicStyles.get(element) ?? /* @__PURE__ */ new Set();
     const currentProperties = /* @__PURE__ */ new Set();
-    const properties = Object.entries(value);
-    for (const [property] of properties) {
+    const properties2 = Object.entries(value);
+    for (const [property] of properties2) {
       const normalized = property.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
       currentProperties.add(normalized);
       previousProperties.delete(normalized);
     }
     for (const property of previousProperties) style.removeProperty(property);
-    for (const [property, propertyValue] of properties) {
+    for (const [property, propertyValue] of properties2) {
       const normalized = property.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
       if (propertyValue === null || propertyValue === void 0 || propertyValue === false)
         style.removeProperty(normalized);
@@ -2153,54 +2153,94 @@ function flushQueue() {
     }
   }
 }
-function createStepEngine(steps) {
-  const setStep = (stepName, stepObject) => {
-    if (!stepName) {
-      console.warn("Step name is required.");
-      return false;
-    }
-    steps[stepName] = stepObject && typeof stepObject === "object" ? stepObject : {};
+function properties(value, label) {
+  if (!value || typeof value !== "object" || ![Object.prototype, null].includes(Object.getPrototypeOf(value)))
+    throw new TypeError(`${label} must be a plain object.`);
+  const result = /* @__PURE__ */ Object.create(null);
+  for (const key of Reflect.ownKeys(value)) {
+    const descriptor = Object.getOwnPropertyDescriptor(value, key);
+    if (typeof key !== "string" || !("value" in descriptor))
+      throw new TypeError(`${label} must contain string-keyed data properties.`);
+    result[key] = descriptor.value;
+  }
+  return result;
+}
+const validName = (value) => typeof value === "string" && value.trim().length > 0;
+function createStepEngine(options) {
+  const config = properties(options, "Step options");
+  if (Object.keys(config).some((key) => key !== "initial" && key !== "steps"))
+    throw new TypeError("Step options support only initial and steps.");
+  const definitions = properties(config.steps, "Step definitions");
+  const names2 = Object.keys(definitions);
+  if (!names2.length || names2.some((name) => !validName(name)))
+    throw new TypeError("Step definitions require nonempty step names.");
+  const links = /* @__PURE__ */ new Map();
+  for (const name of names2) {
+    const definition = properties(definitions[name], `Step "${name}"`);
+    if (Object.keys(definition).some((key) => key !== "next"))
+      throw new TypeError(`Step "${name}" supports only next.`);
+    const next = definition.next;
+    if (Object.prototype.hasOwnProperty.call(definition, "next") && !validName(next))
+      throw new TypeError(`Step "${name}" next must be a nonempty string.`);
+    links.set(name, typeof next === "string" ? next : void 0);
+  }
+  const initial = config.initial;
+  if (!validName(initial) || !links.has(initial))
+    throw new TypeError("Step initial must name a registered step.");
+  for (const [name, next] of links) {
+    if (next !== void 0 && !links.has(next))
+      throw new TypeError(`Step "${name}" has an unknown next step "${next}".`);
+  }
+  let current = initial;
+  const history = [];
+  const holder = {};
+  const notify = () => trigger(holder, "navigation", "set");
+  const observe = () => track(holder, "navigation");
+  const go = (name) => {
+    if (!validName(name) || !links.has(name))
+      throw new TypeError("Step go target must name a registered step.");
+    if (name === current) return true;
+    history.push(current);
+    current = name;
+    notify();
     return true;
   };
-  const isStepActive = (stepName) => {
-    var _a;
-    return Boolean((_a = steps[stepName]) == null ? void 0 : _a.active);
-  };
-  const toStep = (currStepName, stepKey) => {
-    if (!isStepActive(currStepName)) return false;
-    const currStep = steps[currStepName];
-    const toStepName = currStep[stepKey];
-    if (toStepName && steps[toStepName]) {
-      if (!isStepActive(toStepName)) {
-        steps[toStepName].active = true;
-      }
-      steps[toStepName].origin = currStepName;
-      if (!currStep.keep) {
-        currStep.active = false;
-      }
+  return Object.freeze({
+    get current() {
+      observe();
+      return current;
+    },
+    get canGoNext() {
+      observe();
+      return links.get(current) !== void 0;
+    },
+    get canGoBack() {
+      observe();
+      return history.length > 0;
+    },
+    isActive(name) {
+      observe();
+      return current === name;
+    },
+    go,
+    next() {
+      const next = links.get(current);
+      return next === void 0 ? false : go(next);
+    },
+    back() {
+      if (!history.length) return false;
+      current = history.pop();
+      notify();
       return true;
-    } else {
-      console.warn(`Step "${currStepName}" does not have a valid ${stepKey} step to go to.`);
-      return false;
+    },
+    reset() {
+      if (current === initial && !history.length) return false;
+      current = initial;
+      history.length = 0;
+      notify();
+      return true;
     }
-  };
-  const nextStep = (currStepName) => toStep(currStepName, "next");
-  const backStep = (currStepName) => toStep(currStepName, "back");
-  const originStep = (currStepName) => toStep(currStepName, "origin");
-  const getActiveStep = () => {
-    for (const [key, val] of Object.entries(steps)) {
-      if (val.active) return key;
-    }
-    return void 0;
-  };
-  return {
-    setStep,
-    isStepActive,
-    nextStep,
-    backStep,
-    originStep,
-    getActiveStep
-  };
+  });
 }
 const defaultRules = {
   required: (val) => {

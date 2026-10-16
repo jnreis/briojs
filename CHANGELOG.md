@@ -24,6 +24,10 @@ metadata on `main`, through commit `d868d43`.
 
 ### Changed
 
+- Step navigation uses fixed `{ initial, steps }` configuration, internally
+  reactive read-only current/capabilities, one active step, and private history.
+  `go`, `next`, history-based `back`, and `reset` publish atomic navigation state;
+  definitions contain only optional next links.
 - Wrapperless `b-template` output uses owned DOM ranges shared with structural
   directives and managed insertion. Plain conditionals, `.detach`, keyed loops,
   teleport, and template effects compose without losing multi-root/text output.

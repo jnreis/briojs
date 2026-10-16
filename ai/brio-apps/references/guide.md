@@ -485,10 +485,20 @@ cleans the failed insertion, but does not restore old content.
   FormData, URLSearchParams, and strings are passed appropriately. Non-OK
   responses reject. Fetch options (including signal) and parser selection can
   be supplied. Implement visible errors, loading state, and request cancellation.
-- Steps: `createStepEngine(steps)` returns named methods `setStep`,
-  `isStepActive`, `nextStep`, `backStep`, `originStep`, `getActiveStep`.
-  Supply a reactive steps record if UI reads active flags. Transitions require
-  an active source and an existing destination; honor boolean results.
+- Steps: `createStepEngine({ initial: 'intro', steps: { intro: { next: 'review' },
+  review: {} } })` owns reactive navigation state. Place the engine in `$data`
+  locally, or share through `$stores`; no caller `state()` wrapping is needed.
+  Read-only `current`, `canGoNext`, `canGoBack`; methods `isActive(name)`,
+  `go(name)`, `next()`, `back()`, `reset()` return booleans. Exactly one step is
+  current. Back pops actual navigation history, not a definition link.
+  Terminal Next/empty Back return false without warnings. Invalid explicit go
+  targets throw. Self-navigation returns true without state/history changes.
+  Reset restores initial and clears private unlimited history, not app/form
+  data; returning to initial through go/next preserves history.
+  Configuration is validated/copied once; only next is allowed per definition,
+  all links must resolve, cycles are allowed, and mutations to input do nothing.
+  No active/keep/back/origin fields, dynamic registration, history exposure, async
+  guards/hooks, or completion state. Validate/await app work before navigation.
   `keep` preserves the source's active flag, so multiple steps may be active.
 
 ## API boundaries

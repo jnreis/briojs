@@ -343,9 +343,14 @@ pipeline. Reimplement necessary custom directives/hooks as scoped component or
 application code with explicit event/lifetime semantics. Flag unsupported
 extensions instead of fabricating `$set` or mutating internal maps.
 
-V4 steps use `createStepEngine(reactiveSteps)` with named methods; no legacy
-`newStepEngine` exists. Step navigation was not a built-in 1.1.5 browser helper:
-do not treat it as an automatic replacement for application navigation.
+V4 steps use `createStepEngine({ initial, steps })` with fixed definitions
+containing only optional `next` links. The engine owns one reactive `current`
+and private history; keep it in `$data` or share via `$stores`, without caller
+`state()` wrapping. Use `isActive(name)`, `go(name)`, `next()`, `back()`, `reset()`
+and read-only `canGoNext`/`canGoBack`. Back follows actual history; reset clears
+navigation history but not application data. No active/keep/back/origin definition
+fields or registration API. Step navigation was not a built-in 1.1.5 browser
+helper: do not treat it as an automatic replacement for application navigation.
 
 ## 7. HTTP, validation, persistence, routing, transitions
 

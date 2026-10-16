@@ -20,7 +20,7 @@ export type { Router, RouteDefinition, RouteMatch } from './plugins/router';
 export { persist } from './plugins/persistence';
 export type { PersistOptions, StorageAdapter } from './plugins/persistence';
 export { createStepEngine } from './plugins/step';
-export type { StepEngine, StepDefinition, StepRecord } from './plugins/step';
+export type { StepEngine, StepDefinition, StepRecord, StepOptions } from './plugins/step';
 export { validate } from './plugins/forms';
 export { http } from './plugins/http';
 export { devtools, inspectDevtools, devtoolsPanel, enableDevtools } from './plugins/devtools';

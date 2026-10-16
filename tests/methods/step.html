@@ -19,77 +19,76 @@
         .step-pill.active { background: #3b82f6; color: white; }
     </style>
 </head>
-<body b-data="{
-    currentStep: 'intro'
-}">
+<body>
 
     <h1>Step Engine (createStepEngine) Manual Tests</h1>
-    <p>Tests multi-step wizard state management, transitions (<code>next</code>, <code>back</code>), and step histories.</p>
+    <p>One reactive current step, configured Next links, and history-based Back.
+        Reset clears navigation history, not application or form data.</p>
 
     <div class="card">
         <h3>1. Multi-Step Wizard</h3>
+        <p>Current: <strong id="current-step" b-text="$data.wizard.current"></strong>.
+            Back available: <span id="can-back" b-text="$data.wizard.canGoBack"></span>.
+            Next available: <span id="can-next" b-text="$data.wizard.canGoNext"></span>.</p>
+        <button id="jump-review" b-on-click="$data.wizard.go('review')">Jump to Review</button>
+        <button id="reset-wizard" b-on-click="$data.wizard.reset()">Reset Wizard</button>
 
         <div class="step-indicator">
-            <span class="step-pill" bind-class="{ active: $data.currentStep === 'intro' }">1. Intro</span>
-            <span class="step-pill" bind-class="{ active: $data.currentStep === 'details' }">2. Details</span>
-            <span class="step-pill" bind-class="{ active: $data.currentStep === 'review' }">3. Review</span>
+            <span class="step-pill" bind-class="{ active: $data.wizard.isActive('intro') }">1. Intro</span>
+            <span class="step-pill" bind-class="{ active: $data.wizard.isActive('details') }">2. Details</span>
+            <span class="step-pill" bind-class="{ active: $data.wizard.isActive('review') }">3. Review</span>
         </div>
 
-        <div b-if="$data.currentStep === 'intro'" class="step-container">
+        <div b-if="$data.wizard.isActive('intro')" class="step-container">
             <h4>Step 1: Welcome</h4>
             <p>Welcome to the wizard. Click Next to continue.</p>
-            <button on-click="$data.next('intro')">Next Step &rarr;</button>
+            <button b-on-click="$data.wizard.back()" b-bind-disabled="!$data.wizard.canGoBack" class="secondary">&larr; Back</button>
+            <button b-on-click="$data.wizard.next()" b-bind-disabled="!$data.wizard.canGoNext">Next Step &rarr;</button>
         </div>
 
-        <div b-if="$data.currentStep === 'details'" class="step-container">
+        <div b-if="$data.wizard.isActive('details')" class="step-container">
             <h4>Step 2: Enter Information</h4>
             <p>Here you configure your setup options.</p>
-            <button on-click="$data.back('details')" class="secondary">&larr; Back</button>
-            <button on-click="$data.next('details')">Next Step &rarr;</button>
+            <button b-on-click="$data.wizard.back()" b-bind-disabled="!$data.wizard.canGoBack" class="secondary">&larr; Back</button>
+            <button b-on-click="$data.wizard.next()" b-bind-disabled="!$data.wizard.canGoNext">Next Step &rarr;</button>
         </div>
 
-        <div b-if="$data.currentStep === 'review'" class="step-container">
+        <div b-if="$data.wizard.isActive('review')" class="step-container">
             <h4>Step 3: Review & Finish</h4>
             <p>Everything looks good! Ready to submit.</p>
-            <button on-click="$data.back('review')" class="secondary">&larr; Back</button>
-            <button on-click="$data.restart()">Start Over</button>
+            <button b-on-click="$data.wizard.back()" b-bind-disabled="!$data.wizard.canGoBack" class="secondary">&larr; Back</button>
+            <button b-on-click="$data.wizard.next()" b-bind-disabled="!$data.wizard.canGoNext">Next Step &rarr;</button>
+            <button b-on-click="$data.wizard.reset()">Start Over</button>
+            <button id="loop-intro" b-on-click="$data.wizard.go('intro')">Return to Intro (keep history)</button>
         </div>
+        <p>Jump directly to Review, then Back: it returns to the step you actually left.
+            Review is terminal, so Next is disabled. Return to Intro keeps history;
+            Start Over and Reset Wizard clear it.</p>
     </div>
 
     <script src="/tests/source-viewer.js"></script>
     <script src="/dist/brio.min.js"></script>
     <script>
         window.addEventListener('DOMContentLoaded', () => {
-            const stepsRecord = {
-                intro: { active: true, next: 'details' },
-                details: { active: false, next: 'review', back: 'intro' },
-                review: { active: false, back: 'details' }
-            };
-
-            const engine = brio.createStepEngine(stepsRecord);
+            const wizard = brio.createStepEngine({
+                initial: 'intro',
+                steps: {
+                    intro: { next: 'details' },
+                    details: { next: 'review' },
+                    review: {},
+                },
+            });
 
             const app = brio.createApp({
                 state: () => ({
-                    currentStep: 'intro',
-                    next(curr) {
-                        engine.nextStep(curr);
-                        this.currentStep = engine.getActiveStep() || 'intro';
-                    },
-                    back(curr) {
-                        engine.backStep(curr);
-                        this.currentStep = engine.getActiveStep() || 'intro';
-                    },
-                    restart() {
-                        stepsRecord.review.active = false;
-                        stepsRecord.intro.active = true;
-                        this.currentStep = 'intro';
-                    }
+                    wizard
                 })
             });
 
             app.mount('body');
+            window.addEventListener('pagehide', () => app.dispose(), { once: true });
             console.log('step.html hydrated successfully');
-        });
+        }, { once: true });
     </script>
 </body>
 </html>

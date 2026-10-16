@@ -1014,6 +1014,88 @@ scope.dispose(); // Stops effects and nested scopes created in the scope.
 
 Effects run synchronously by default. Explicit batches are synchronous too; there is no hidden next-tick scheduler.
 
+## Step navigation
+
+`createStepEngine({ initial, steps })` is a small synchronous navigation engine
+with **exactly one current step** and history-based Back. It owns its reactive
+state: definitions are configuration, not a record of mutable active flags.
+
+```js
+const wizard = brio.createStepEngine({
+  initial: 'intro',
+  steps: {
+    intro: { next: 'details' },
+    details: { next: 'review' },
+    review: {},
+  },
+});
+
+const app = brio.createApp({
+  state: () => ({ wizard }),
+});
+app.mount('#app');
+```
+
+```html
+<div id="app">
+  <p>Current: <span b-text="$data.wizard.current"></span></p>
+  <section b-if="$data.wizard.isActive('intro')">Welcome</section>
+  <section b-if="$data.wizard.isActive('details')">Enter your details</section>
+  <section b-if="$data.wizard.isActive('review')">Review your answers</section>
+  <button b-on-click="$data.wizard.back()"
+          b-bind-disabled="!$data.wizard.canGoBack">Back</button>
+  <button b-on-click="$data.wizard.next()"
+          b-bind-disabled="!$data.wizard.canGoNext">Next</button>
+  <button b-on-click="$data.wizard.go('review')">Jump to review</button>
+  <button b-on-click="$data.wizard.reset()">Start over</button>
+</div>
+```
+
+Keep the engine in `$data` for local use. For intentional sharing, pass the same
+instance through `createApp({ stores: { wizard } })` and read `$stores.wizard`.
+Neither pattern requires wrapping the definitions or engine in `state()`.
+
+| API | Behavior |
+|-----|----------|
+| `current` | Read-only reactive name of the current step. |
+| `canGoNext` | Read-only reactive boolean: the current definition has a `next` link. |
+| `canGoBack` | Read-only reactive boolean: history is nonempty. |
+| `isActive(name)` | Reactive current-name comparison; unknown names return `false`. |
+| `go(name)` | Navigate to a registered name and push the former current name; returns `true`. Invalid/unknown targets throw before mutation. |
+| `next()` | Follow the configured next link; return `false` without warning at a terminal step. |
+| `back()` | Pop history, without pushing another entry; return `false` without warning when empty. |
+| `reset()` | Restore initial and clear history; return `true` if current or history changed, otherwise `false`. |
+
+Back follows the **actual path**, not a configured reverse link. For example,
+Intro → Review → Back returns directly to Intro. After Back, further navigation
+records a new path; there is no Forward stack. History is private and unlimited
+until reset or the engine is released.
+
+Cycles are allowed. Navigating to the current step is a successful no-op, with
+no history entry or reactive notification. A self-linked step still has
+`canGoNext === true`. Returning to the initial step through `go()` or a configured
+link **preserves history**; only `reset()` clears it.
+
+Configuration is validated and copied once. Require a nonempty plain-object
+steps record and an explicit registered initial name. Each definition accepts
+only an optional nonempty `next` string naming a registered step; `{}` is terminal.
+Forward references, cycles, and exact literal names are supported. Unknown
+fields, accessors, malformed values, and dangling links throw. Step definitions
+cannot contain `active`, `keep`, `back`, `origin`, or business metadata; keep
+labels/form data separately. Later changes to the input objects do not change
+the engine. npm exports `StepOptions`, `StepDefinition`, `StepRecord`, and
+`StepEngine`.
+
+The facade and its methods are read-only. Navigation publishes a coherent final
+state even when called directly from JavaScript. Constructing an engine creates
+no effect or app-owned resource; disposing a consumer does not reset an engine
+shared with another app.
+
+Reset affects navigation only, not form/application data. This utility has no
+dynamic registration, multiple-active mode, completion tracking, asynchronous
+guards, or hooks. Validate/await application work before navigating; manage
+loading, errors, and competing requests in that application workflow.
+
 ## Persistence
 
 Import persistence where needed. Create persistent values inside component setup, an app plugin, or an explicit reactive scope so disposal removes both its effect and cross-tab listener. The app's `state` factory does not itself run in an owned scope:

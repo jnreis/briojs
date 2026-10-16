@@ -114,14 +114,14 @@ test('production bundle excludes the inspector and tracking code; ESM tooling st
     assert.equal(typeof esm.devtools.getSnapshot, 'function');
     assert.equal('newStepEngine' in esm, false);
     const engine = esm.createStepEngine({
-        intro: { active: true, next: 'details' },
-        details: { back: 'intro' },
+        initial: 'intro',
+        steps: { intro: { next: 'details' }, details: {} },
     });
-    assert.equal(engine.getActiveStep(), 'intro');
-    assert.equal(engine.nextStep('intro'), true);
-    assert.equal(engine.getActiveStep(), 'details');
-    assert.equal(engine.backStep('details'), true);
-    assert.equal(engine.getActiveStep(), 'intro');
+    assert.equal(engine.current, 'intro');
+    assert.equal(engine.next(), true);
+    assert.equal(engine.current, 'details');
+    assert.equal(engine.back(), true);
+    assert.equal(engine.current, 'intro');
     assert.equal(typeof esm.hydrateNode, 'function');
 });
 

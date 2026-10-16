@@ -47,6 +47,10 @@ metadata on `main`, through commit `d868d43`.
 
 ### Added
 
+- Reactive `b-teleport` Element/ref and selector expressions with explicit
+  `[target, placement]` tuples, default `after`, and `before`/`prepend`/`append`.
+  Missing targets restore source output; keyed destination groups and detached
+  ranges retain identity, order, and source ownership through retargeting.
 - Static `b-ref` and a local read-only `$ref` registry with reactive membership,
   raw DOM targets, component privacy, row-local identity, and lifecycle cleanup.
 - Observer-specific keyed `b-options`: intersection roots/margins/thresholds,

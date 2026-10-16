@@ -206,7 +206,7 @@ Escape HTML-significant characters in literal text/attribute values.
 | `b-id="['input']"` | Creates `$id.input`; bind `id`/label `for` explicitly. |
 | `b-ref="input"` | Register a concrete DOM target by literal name. Read `$ref.input`; not `$refs`. |
 | `b-template` | Unwraps authored contents into an owned range of hydrated siblings. Supports keyed `b-for`, plain `b-if`, `.detach`, `b-id`, providers, teleport and effects; no template-name/expression sourcing. |
-| `b-teleport="'#portal'"` | Moves an element or template range to an existing document selector; not a reactive destination expression. |
+| `b-teleport="$ref.panel"` | Reactive Element/ref or selector expression; defaults to `after`. Use `[$ref.panel, 'append']` to insert inside. |
 | `b-router-outlet` | Renders the router's matched registered component. |
 
 When unmodified `b-if` becomes false, removal and disposal wait for leave completion
@@ -234,6 +234,33 @@ Detached conditional loops suspend their teleported row groups and reconcile
 hidden collection updates before restoring output at its destination.
 Teleported descendants are not hidden by hiding their source wrapper.
 Avoid competing imperative writes to directive-owned children.
+
+### Teleport destinations
+
+Use `b-teleport="$ref.panel"` for an Element or
+`b-teleport="['#portal', 'append']"` for a selector and placement.
+Only `before`, `after` (default), `prepend`, and `append` are supported.
+A tuple has exactly two items. Strings always mean document-wide CSS selectors,
+never ref names. There is no `.ref` modifier or unquoted-selector shorthand.
+Ref lookup stays local-only; row/component/data boundaries still apply.
+
+Targets/placements are reactive expressions. Null/undefined or unmatched selectors
+keep/restore live output at its authored source without cloning/rehydrating.
+Ref membership changes retry automatically; later targets wait for hydration,
+including component rendering. An unmatched selector warns once per unchanged
+miss; there is no DOM observer/polling, so arbitrary insertion does not retry it.
+Invalid values/placements/selectors/modifiers, cycles, inert native template
+child destinations, and directive-controlled child containers throw.
+Before/after may target siblings beside a controlled container.
+
+Moving output preserves source contexts, ownership, refs, listeners and native
+identity, but changes CSS ancestry and native event bubbling. Keyed loops maintain
+bounded groups per target/placement, not just parent. Same-element detached
+conditionals/conditional loops keep output suspended through retargeting.
+Disconnected refs remain valid; connectivity and native reparenting are not
+reactive. Brio removal of a ref target restores independent source output.
+For selector-only destinations, switch target/dispose source before removing
+the destination; native removal alone never updates ref membership.
 
 ### Local DOM refs
 

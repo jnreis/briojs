@@ -6,7 +6,7 @@ import type { DomRuntime } from './types';
 import { mountComponent, takeProjectedContext } from './components';
 import { prepareTransition } from './directives/transition';
 import { createInsert } from './insert';
-import { getNodeOwner, ownNode } from './ownership';
+import { getNodeOwner, ownNode, withHydration } from './ownership';
 import { emptyContextValues } from '../core/context-values';
 import { interpolateText } from './interpolation';
 import { createRefs, registerRef } from './refs';
@@ -79,9 +79,11 @@ export function hydrateChildren(
     context: Record<PropertyKey, any>,
     runtime: DomRuntime,
 ): void {
-    for (const child of Array.from(element.childNodes)) {
-        if (child.parentNode === element && !getNodeOwner(child)) hydrateNode(child, context, runtime);
-    }
+    withHydration(element, () => {
+        for (const child of Array.from(element.childNodes)) {
+            if (child.parentNode === element && !getNodeOwner(child)) hydrateNode(child, context, runtime);
+        }
+    });
 }
 
 export function hydrateTextNode(
@@ -105,10 +107,10 @@ export function hydrateNode(
     parentContext = takeProjectedContext(node) ?? parentContext;
     if (!parentContext.$ref) parentContext = createExpressionScope({ $ref: createRefs() }, parentContext);
     const scope = createScope();
-    scope.run(() => {
+    withHydration(node, () => scope.run(() => {
         ownNode(node, parentContext, runtime);
         hydrateOwnedNode(node, parentContext, runtime);
-    });
+    }));
 }
 
 function hydrateOwnedNode(
@@ -180,6 +182,9 @@ function hydrateOwnedNode(
     }
 
     const templateAttr = element.getAttribute('b-template');
+    if (Array.from(element.attributes).some(attribute =>
+        ['b-text', 'text', 'b-html', 'html', 'b-router-outlet'].includes(extractModifiers(attribute.name).baseName)))
+        getNodeOwner(element)!.controlsChildren = true;
     const refAttributes = Array.from(element.attributes).filter(attribute =>
         extractModifiers(attribute.name).baseName === 'b-ref' || attribute.name.startsWith('b-ref-'));
     if (refAttributes.length) {

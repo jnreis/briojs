@@ -1,11 +1,11 @@
-import { c as causedError, o as onDispose, a as getCurrentScope, d as combinedError, e as effect, f as onCleanup, b as batch, h as createScope, n as notifyRootMounted, j as notifyAppDisposed, k as notifyAppCreated, l as notifyRootUnmounted } from "./effect-DgjHEK0w.js";
-import { s } from "./effect-DgjHEK0w.js";
-import { s as state, t as trigger, a as track } from "./state-DXAL3L4e.js";
-import { b } from "./state-DXAL3L4e.js";
+import { c as causedError, o as onDispose, a as combinedError, d as getCurrentScope, e as effect, f as onCleanup, b as batch, h as createScope, n as notifyRootMounted, j as notifyAppDisposed, k as notifyAppCreated, l as notifyRootUnmounted } from "./effect-DGhE0oQi.js";
+import { s } from "./effect-DGhE0oQi.js";
+import { s as state, t as trigger, a as track } from "./state-CLBlAcxj.js";
+import { b } from "./state-CLBlAcxj.js";
 import { computed, resource } from "./reactivity.js";
 import { createRouter } from "./router-entry.js";
 import { persist } from "./persistence-entry.js";
-import { d, a, e, i } from "./devtools-NMY9OUFm.js";
+import { d, a, e, i } from "./devtools-CF9uSawU.js";
 const valueExpressions = /* @__PURE__ */ new Map();
 const statementExpressions = /* @__PURE__ */ new Map();
 const assignmentExpressions = /* @__PURE__ */ new Map();
@@ -111,6 +111,22 @@ function createScopedState(source, parent) {
   return view;
 }
 const owners = /* @__PURE__ */ new WeakMap();
+const pendingHydration = /* @__PURE__ */ new WeakMap();
+const getPendingHydration = (node) => pendingHydration.get(node);
+function withHydration(node, hydrate) {
+  if (pendingHydration.has(node)) {
+    hydrate();
+    return;
+  }
+  const callbacks = /* @__PURE__ */ new Set();
+  pendingHydration.set(node, callbacks);
+  try {
+    hydrate();
+  } finally {
+    pendingHydration.delete(node);
+  }
+  callbacks.forEach((callback) => callback());
+}
 function getNodeOwner(node) {
   return owners.get(node);
 }
@@ -126,12 +142,28 @@ function ownNode(node, context, runtime) {
 }
 function disposeNodes(nodes) {
   const scopes = /* @__PURE__ */ new Set();
+  const selected = (node) => nodes.some((root) => root === node || root.contains(node));
   const visit = (node) => {
     const owner = owners.get(node);
     if (owner) scopes.add(owner.scope);
-    for (const child of Array.from(node.childNodes)) visit(child);
+    visitChildren(Array.from(node.childNodes));
   };
-  nodes.forEach(visit);
+  const visitChildren = (children) => {
+    var _a;
+    for (let index = 0; index < children.length; index++) {
+      const child = children[index];
+      const portal = (_a = owners.get(child)) == null ? void 0 : _a.teleport;
+      if (portal && !selected(portal.source)) {
+        const end = children.indexOf(portal.end, index);
+        if (end !== -1) {
+          index = end;
+          continue;
+        }
+      }
+      visit(child);
+    }
+  };
+  visitChildren(nodes);
   const errors = [];
   for (const scope of scopes) {
     try {
@@ -360,9 +392,11 @@ function mountComponent(element, definition, context, runtime, hydrateNodeFn) {
     template.innerHTML = definition.template;
     fillSlots(element, template.content, context);
     element.replaceChildren(template.content);
-    for (const child of Array.from(element.childNodes)) {
-      hydrateNodeFn(child, componentContext, runtime);
-    }
+    withHydration(element, () => {
+      for (const child of Array.from(element.childNodes)) {
+        hydrateNodeFn(child, componentContext, runtime);
+      }
+    });
     for (const attribute of Array.from(element.attributes)) {
       if (attribute.name.startsWith("b-")) element.removeAttribute(attribute.name);
     }
@@ -487,6 +521,16 @@ function isTrustedHTML(value) {
 function getTrustedHTMLString(value) {
   return value[trustedMarkup];
 }
+function portalPosition({ target, placement }) {
+  const sibling = placement === "before" || placement === "after";
+  const parent = sibling ? target.parentNode : target;
+  if (!parent || parent.nodeType !== Node.ELEMENT_NODE && parent.nodeType !== Node.DOCUMENT_FRAGMENT_NODE)
+    throw new Error("b-teleport placement requires an element or fragment container.");
+  return {
+    parent,
+    reference: placement === "before" ? target : placement === "after" ? target.nextSibling : placement === "prepend" ? target.firstChild : null
+  };
+}
 function createDomRange(document2, name) {
   const start = document2.createComment(`brio:${name}`);
   const end = document2.createComment(`/brio:${name}`);
@@ -495,6 +539,11 @@ function createDomRange(document2, name) {
   const portals = /* @__PURE__ */ new Set();
   const homes = /* @__PURE__ */ new Map();
   let detached = false;
+  let destination;
+  let source;
+  let redirected;
+  let pendingRedirect = false;
+  let resume;
   const detachPortal = (portal) => {
     const home = document2.createComment("brio:portal");
     portal.start.parentNode.insertBefore(home, portal.start);
@@ -516,16 +565,35 @@ function createDomRange(document2, name) {
   return {
     start,
     end,
+    get detached() {
+      return detached;
+    },
+    get destination() {
+      return destination;
+    },
     nodes,
     moveBefore(parent, reference) {
+      const resuming = detached && parent.nodeType !== Node.DOCUMENT_FRAGMENT_NODE;
+      if (resuming && pendingRedirect && source) {
+        if (destination) ({ parent, reference } = portalPosition(destination));
+        else if (source.parentNode) {
+          parent = source.parentNode;
+          reference = source.nextSibling;
+        }
+      } else if (resuming && resume && (!resume.reference || resume.reference.parentNode === resume.parent)) {
+        ({ parent, reference } = resume);
+      }
+      if (reference === start && parent === start.parentNode) return;
       if (start.parentNode !== parent || end.nextSibling !== reference) {
         const contents = nodes(true);
         if (reference && contents.includes(reference))
           throw new Error("Cannot move a Brio range inside itself.");
         for (const node of contents) parent.insertBefore(node, reference);
       }
-      if (detached && parent.nodeType !== Node.DOCUMENT_FRAGMENT_NODE) {
+      if (resuming) {
         detached = false;
+        pendingRedirect = false;
+        resume = void 0;
         for (const [portal, home] of homes) {
           if (home.parentNode) portal.moveBefore(home.parentNode, home);
           home.remove();
@@ -535,6 +603,8 @@ function createDomRange(document2, name) {
     },
     detach() {
       if (!detached) {
+        if (source && destination && start.parentNode)
+          resume = { parent: start.parentNode, reference: end.nextSibling };
         detached = true;
         portals.forEach(detachPortal);
       }
@@ -542,6 +612,7 @@ function createDomRange(document2, name) {
     },
     remove() {
       var _a;
+      resume = void 0;
       portals.forEach((portal) => portal.remove());
       homes.forEach((home) => home.remove());
       homes.clear();
@@ -550,6 +621,28 @@ function createDomRange(document2, name) {
     addPortal(portal) {
       portals.add(portal);
       if (detached) detachPortal(portal);
+    },
+    removePortal(portal) {
+      var _a;
+      portals.delete(portal);
+      (_a = homes.get(portal)) == null ? void 0 : _a.remove();
+      homes.delete(portal);
+      portal.remove();
+    },
+    redirect(next, home) {
+      destination = next;
+      source = home;
+      if (detached) pendingRedirect = true;
+      if (redirected) redirected();
+      else if (!detached) {
+        if (destination) {
+          const { parent, reference } = portalPosition(destination);
+          this.moveBefore(parent, reference);
+        } else if (source.parentNode) this.moveBefore(source.parentNode, source.nextSibling);
+      }
+    },
+    onRedirect(callback) {
+      redirected = callback;
     }
   };
 }
@@ -664,8 +757,10 @@ function createInsert(runtime) {
         ownNode(start, context, containerOwner.runtime);
         ownNode(end, context, containerOwner.runtime);
         if (placement !== "textContent") {
-          for (const child of children)
-            if (child.parentNode === container) hydrateNode(child, context, containerOwner.runtime);
+          withHydration(container, () => {
+            for (const child of children)
+              if (child.parentNode === container) hydrateNode(child, context, containerOwner.runtime);
+          });
         }
       });
     } catch (error) {
@@ -1061,7 +1156,41 @@ function handleFor(element, expression, _modifiers, context, runtime, hydrateNod
   template.removeAttribute("b-key");
   element.remove();
   const rows = /* @__PURE__ */ new Map();
-  const portals = /* @__PURE__ */ new Map();
+  const portals = [];
+  let ordered = [];
+  let reconciling = false;
+  const reconcilePositions = () => {
+    if (reconciling) return;
+    const used = /* @__PURE__ */ new Set();
+    const destinations = /* @__PURE__ */ new Map();
+    for (const row of ordered) {
+      const destination = row.output.destination;
+      if (!destination) continue;
+      let portal = portals.find((candidate) => candidate.destination.target === destination.target && candidate.destination.placement === destination.placement);
+      if (!portal) {
+        const range = createDomRange(element.ownerDocument, "for:portal");
+        range.redirect(destination, output.end);
+        portal = { destination, range };
+        portals.push(portal);
+        output.addPortal(range);
+      }
+      used.add(portal.range);
+      destinations.set(row, portal.range);
+    }
+    const references = /* @__PURE__ */ new Map([[output, output.end]]);
+    for (const portal of portals) references.set(portal.range, portal.range.end);
+    for (const row of [...ordered].reverse()) {
+      const destination = destinations.get(row) ?? output;
+      row.output.moveBefore(destination.end.parentNode, references.get(destination) ?? null);
+      references.set(destination, row.output.start);
+    }
+    for (let index = portals.length - 1; index >= 0; index--) {
+      if (!used.has(portals[index].range)) {
+        output.removePortal(portals[index].range);
+        portals.splice(index, 1);
+      }
+    }
+  };
   onCleanup(() => {
     const errors = [];
     for (const row of rows.values()) {
@@ -1078,76 +1207,63 @@ function handleFor(element, expression, _modifiers, context, runtime, hydrateNod
     if (errors.length) throw new AggregateError(errors, "One or more repeated items failed to dispose.");
   });
   effect(() => {
-    const entries = enumerate(evaluate(collectionExpression, context));
-    const nextKeys = /* @__PURE__ */ new Set();
-    const ordered = [];
-    for (const [index, item] of entries) {
-      const loopData = { [itemName]: item, [indexName]: index };
-      const rowState = createScopedState(loopData, context.$for);
-      const rowContext = createExpressionScope({ $for: rowState }, context);
-      const evaluatedKey = keyExpression ? evaluate(keyExpression, rowContext) : index;
-      if (typeof evaluatedKey !== "string" && typeof evaluatedKey !== "number")
-        throw new TypeError("b-key must evaluate to a string or number.");
-      if (nextKeys.has(evaluatedKey))
-        throw new Error(`Duplicate b-for key "${evaluatedKey}".`);
-      nextKeys.add(evaluatedKey);
-      let row = rows.get(evaluatedKey);
-      if (!row) {
-        rowContext.$ref = createRefs();
-        const rowElement = cloneProjectedNode(template);
-        const rowScope = createScope();
-        output.end.parentNode.insertBefore(rowElement, output.end);
-        const range = rowScope.run(() => ownElementRange(rowElement, rowContext, runtime));
-        row = { element: rowElement, context: rowContext, values: rowState, scope: rowScope, key: evaluatedKey, output: range };
-        rows.set(evaluatedKey, row);
-        try {
-          rowScope.run(() => hydrateNodeFn(rowElement, rowContext, runtime));
-        } catch (error) {
-          rows.delete(evaluatedKey);
+    reconciling = true;
+    try {
+      const entries = enumerate(evaluate(collectionExpression, context));
+      const nextKeys = /* @__PURE__ */ new Set();
+      ordered = [];
+      for (const [index, item] of entries) {
+        const loopData = { [itemName]: item, [indexName]: index };
+        const rowState = createScopedState(loopData, context.$for);
+        const rowContext = createExpressionScope({ $for: rowState }, context);
+        const evaluatedKey = keyExpression ? evaluate(keyExpression, rowContext) : index;
+        if (typeof evaluatedKey !== "string" && typeof evaluatedKey !== "number")
+          throw new TypeError("b-key must evaluate to a string or number.");
+        if (nextKeys.has(evaluatedKey))
+          throw new Error(`Duplicate b-for key "${evaluatedKey}".`);
+        nextKeys.add(evaluatedKey);
+        let row = rows.get(evaluatedKey);
+        if (!row) {
+          rowContext.$ref = createRefs();
+          const rowElement = cloneProjectedNode(template);
+          const rowScope = createScope();
+          output.end.parentNode.insertBefore(rowElement, output.end);
+          const range = rowScope.run(() => ownElementRange(rowElement, rowContext, runtime));
+          range.onRedirect(reconcilePositions);
+          row = { element: rowElement, context: rowContext, values: rowState, scope: rowScope, key: evaluatedKey, output: range };
+          rows.set(evaluatedKey, row);
           try {
-            rowScope.dispose();
-          } catch (cleanupError) {
-            throw combinedError("Loop hydration and cleanup both failed.", [error, cleanupError]);
+            rowScope.run(() => hydrateNodeFn(rowElement, rowContext, runtime));
+          } catch (error) {
+            rows.delete(evaluatedKey);
+            try {
+              rowScope.dispose();
+            } catch (cleanupError) {
+              throw combinedError("Loop hydration and cleanup both failed.", [error, cleanupError]);
+            }
+            throw error;
           }
-          throw error;
+          const owner = getNodeOwner(rowElement);
+          if (owner) owner.structuralRoot = true;
+        } else {
+          row.values[itemName] = item;
+          row.values[indexName] = index;
         }
-        const owner = getNodeOwner(rowElement);
-        if (owner) owner.structuralRoot = true;
-      } else {
-        row.values[itemName] = item;
-        row.values[indexName] = index;
+        ordered.push(row);
       }
-      const destination = row.output.start.parentNode;
-      const local = destination === output.end.parentNode && Boolean(row.output.end.compareDocumentPosition(output.end) & Node.DOCUMENT_POSITION_FOLLOWING);
-      if (!local && ![...portals.values()].some((portal) => portal.start.parentNode === destination)) {
-        let portal = portals.get(destination);
-        if (!portal) {
-          portal = createDomRange(element.ownerDocument, "for:portal");
-          destination.insertBefore(portal.start, row.output.start);
-          destination.insertBefore(portal.end, row.output.end.nextSibling);
-          portals.set(destination, portal);
-          output.addPortal(portal);
+      for (const [key, row] of rows) {
+        if (nextKeys.has(key)) continue;
+        try {
+          row.scope.dispose();
+        } finally {
+          row.output.remove();
+          rows.delete(key);
         }
-        row.output.moveBefore(portal.end.parentNode, portal.end);
       }
-      ordered.push(row);
+    } finally {
+      reconciling = false;
     }
-    for (const [key, row] of rows) {
-      if (nextKeys.has(key)) continue;
-      try {
-        row.scope.dispose();
-      } finally {
-        row.output.remove();
-        rows.delete(key);
-      }
-    }
-    const destinations = /* @__PURE__ */ new Map([[output.end.parentNode, output.end]]);
-    for (const portal of portals.values()) destinations.set(portal.end.parentNode, portal.end);
-    for (const row of ordered.reverse()) {
-      const destination = row.output.end.parentNode;
-      row.output.moveBefore(destination, destinations.get(destination) ?? null);
-      destinations.set(destination, row.output.start);
-    }
+    reconcilePositions();
   });
 }
 function handleHtml(element, expression, modifiers, context, runtime, hydrateChildrenFn) {
@@ -1335,30 +1451,78 @@ function handleMask(element, expression, modifiers, context) {
     applyMask();
   });
 }
-function handleTeleport(element, expression, _modifiers, context) {
+function handleTeleport(element, expression, modifiers, context) {
   var _a;
-  const targetSelector = expression.trim().replace(/^['"]|['"]$/g, "");
-  const target = element.ownerDocument.querySelector(targetSelector);
-  if (!target) {
-    console.warn(`b-teleport target "${targetSelector}" not found.`);
-    return;
-  }
+  if (Object.keys(modifiers).length) throw new SyntaxError("b-teleport does not support modifiers.");
   const owner = getNodeOwner(element);
   if (!owner) throw new Error("b-teleport requires an owned Brio element.");
   const range = ownElementRange(element, context, owner.runtime);
-  if (range.nodes().some((node) => node === target || node.contains(target)))
-    throw new Error("b-teleport cannot target its own rendered output.");
   const placeholder = element.ownerDocument.createComment("brio:teleport");
   ownNode(placeholder, owner.context, owner.runtime);
   (_a = range.start.parentNode) == null ? void 0 : _a.insertBefore(placeholder, range.start);
-  range.moveBefore(target, null);
+  getNodeOwner(range.start).teleport = { source: placeholder, end: range.end };
+  let stop;
+  let cancelPending;
   onCleanup(() => {
-    if (placeholder.parentNode) {
-      range.moveBefore(placeholder.parentNode, placeholder);
-    } else {
-      range.remove();
-    }
+    stop == null ? void 0 : stop();
+    cancelPending == null ? void 0 : cancelPending();
+    range.remove();
     placeholder.remove();
+  });
+  let lastTarget;
+  let lastPlacement;
+  let missingSelector;
+  stop = effect(() => {
+    var _a2;
+    cancelPending == null ? void 0 : cancelPending();
+    cancelPending = void 0;
+    const value = evaluate(expression, context);
+    let target = value;
+    let placement = "after";
+    if (Array.isArray(value)) {
+      if (value.length !== 2) throw new TypeError("b-teleport expects a [target, placement] pair.");
+      [target, placement] = value;
+    }
+    if (placement !== "before" && placement !== "after" && placement !== "prepend" && placement !== "append")
+      throw new TypeError("b-teleport placement must be before, after, prepend, or append.");
+    if (typeof target === "string") {
+      const selector = target;
+      target = element.ownerDocument.querySelector(selector);
+      if (!target) {
+        if (missingSelector !== selector) console.warn(`b-teleport target "${selector}" not found.`);
+        missingSelector = selector;
+      } else missingSelector = void 0;
+    } else missingSelector = void 0;
+    if (target !== null && target !== void 0 && !(target instanceof element.ownerDocument.defaultView.Element))
+      throw new TypeError("b-teleport target must be an Element, selector string, null, or undefined.");
+    const resolved = target;
+    if (resolved) {
+      if (range.nodes(true).some((node) => node === resolved || node.contains(resolved)))
+        throw new Error("b-teleport cannot target its own rendered output.");
+      if ((placement === "append" || placement === "prepend") && resolved.localName === "template")
+        throw new Error("b-teleport cannot insert children into a native template.");
+      const { parent } = portalPosition({ target: resolved, placement });
+      if ((_a2 = getNodeOwner(parent)) == null ? void 0 : _a2.controlsChildren)
+        throw new Error("b-teleport cannot insert into a container whose content is controlled by a directive.");
+      const targetOwner = getNodeOwner(resolved);
+      let pending = getPendingHydration(resolved);
+      if (!targetOwner) {
+        for (let ancestor = resolved.parentNode; ancestor && !pending; ancestor = ancestor.parentNode)
+          pending = getPendingHydration(ancestor);
+      }
+      if (pending) {
+        const retry = () => stop == null ? void 0 : stop.run();
+        pending.add(retry);
+        cancelPending = () => {
+          pending.delete(retry);
+        };
+        return;
+      }
+    }
+    if (lastTarget === resolved && lastPlacement === placement) return;
+    range.redirect(resolved ? { target: resolved, placement } : void 0, placeholder);
+    lastTarget = resolved;
+    lastPlacement = placement;
   });
 }
 function handleTemplate(element, _expression, _modifiers, context, runtime, hydrateNodeFn) {
@@ -1375,9 +1539,11 @@ function handleTemplate(element, _expression, _modifiers, context, runtime, hydr
   const insertedNodes = Array.from(fragment.childNodes);
   parent.insertBefore(fragment, element);
   element.remove();
-  for (const node of insertedNodes) {
-    if (node.parentNode === parent) hydrateNodeFn(node, context, runtime);
-  }
+  withHydration(parent, () => {
+    for (const node of insertedNodes) {
+      if (node.parentNode === parent) hydrateNodeFn(node, context, runtime);
+    }
+  });
 }
 function observerOptions(element, attrName, modifiers, context) {
   const expression = element.getAttribute("b-options");
@@ -1616,9 +1782,11 @@ function mountRouterOutlet(element, context, runtime, hydrateNodeFn) {
 }
 const componentNamePattern$1 = /^[a-z][a-z0-9]*-[a-z0-9-]+$/;
 function hydrateChildren(element, context, runtime) {
-  for (const child of Array.from(element.childNodes)) {
-    if (child.parentNode === element && !getNodeOwner(child)) hydrateNode(child, context, runtime);
-  }
+  withHydration(element, () => {
+    for (const child of Array.from(element.childNodes)) {
+      if (child.parentNode === element && !getNodeOwner(child)) hydrateNode(child, context, runtime);
+    }
+  });
 }
 function hydrateTextNode(node, context) {
   const raw = node.nodeValue ?? "";
@@ -1632,10 +1800,10 @@ function hydrateNode(node, parentContext, runtime) {
   parentContext = takeProjectedContext(node) ?? parentContext;
   if (!parentContext.$ref) parentContext = createExpressionScope({ $ref: createRefs() }, parentContext);
   const scope = createScope();
-  scope.run(() => {
+  withHydration(node, () => scope.run(() => {
     ownNode(node, parentContext, runtime);
     hydrateOwnedNode(node, parentContext, runtime);
-  });
+  }));
 }
 function hydrateOwnedNode(node, parentContext, runtime) {
   if (node.nodeType === Node.TEXT_NODE) {
@@ -1690,6 +1858,8 @@ function hydrateOwnedNode(node, parentContext, runtime) {
     getNodeOwner(element).context = context;
   }
   const templateAttr = element.getAttribute("b-template");
+  if (Array.from(element.attributes).some((attribute) => ["b-text", "text", "b-html", "html", "b-router-outlet"].includes(extractModifiers(attribute.name).baseName)))
+    getNodeOwner(element).controlsChildren = true;
   const refAttributes = Array.from(element.attributes).filter((attribute) => extractModifiers(attribute.name).baseName === "b-ref" || attribute.name.startsWith("b-ref-"));
   if (refAttributes.length) {
     if (refAttributes.length !== 1 || refAttributes[0].name !== "b-ref")

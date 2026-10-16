@@ -261,7 +261,7 @@ test('providers follow original contexts through preserved conditionals, telepor
     const { app, root, window } = environment(t, `
         <template b-provide="{ theme: $data.theme }" b-template>
           <span b-if.detach="$data.visible" b-text="$provided.theme"></span>
-          <div b-teleport="'#portal'"><b b-text="$provided.theme"></b></div>
+          <div b-teleport="['#portal', 'append']"><b b-text="$provided.theme"></b></div>
           <article b-html="trustedHTML($data.html)"></article>
         </template>`, `({ state: () => ({
             theme: 'dark', visible: true, html: '<i b-text="$provided.theme"></i>'

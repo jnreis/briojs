@@ -1,7 +1,7 @@
-import { e as effect } from "./effect-DgjHEK0w.js";
-import { b, h, a, f, o } from "./effect-DgjHEK0w.js";
-import { t as trigger, a as track, b as signal } from "./state-DXAL3L4e.js";
-import { s } from "./state-DXAL3L4e.js";
+import { e as effect } from "./effect-DGhE0oQi.js";
+import { b, h, d, f, o } from "./effect-DGhE0oQi.js";
+import { t as trigger, a as track, b as signal } from "./state-CLBlAcxj.js";
+import { s } from "./state-CLBlAcxj.js";
 import { persist } from "./persistence-entry.js";
 function computed(getter) {
   let dirty = true;
@@ -63,7 +63,7 @@ export {
   computed,
   h as createScope,
   effect,
-  a as getCurrentScope,
+  d as getCurrentScope,
   f as onCleanup,
   o as onDispose,
   persist,

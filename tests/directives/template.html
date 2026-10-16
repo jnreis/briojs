@@ -76,7 +76,7 @@
         <h3>5. Teleported, detached loop fragments</h3>
         <button id="toggle-remote" b-on-click="$data.remote = !$data.remote">Toggle remote group</button>
         <template b-if.detach="$data.remote" b-for="row in $data.rows" b-key="$for.row.id"
-                  b-template b-teleport="'#template-portal'">
+                  b-template b-teleport="['#template-portal', 'append']">
             <strong class="remote-name" b-text="$for.row.name"></strong>
             <input b-bind-data-row="$for.row.id" placeholder="Retained remote value">
         </template>

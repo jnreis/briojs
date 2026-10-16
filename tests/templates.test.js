@@ -143,7 +143,7 @@ test('nested conditionals and loops remain inside keyed fragment ranges', t => {
 test('teleported fragments detach/reconnect at their destination and dispose listeners and effects', t => {
     for (const mode of ['', '.detach']) {
         const { app, root, portal } = environment(t, `
-            <template b-if${mode}="$data.visible" b-template b-teleport="'#portal'"
+            <template b-if${mode}="$data.visible" b-template b-teleport="['#portal', 'append']"
                 b-effect="$data.record($data.count)">
                 remote:<button on-click="$data.count++"></button><b b-text="$data.count"></b>
             </template>`, '{visible:false,count:0}');
@@ -173,7 +173,7 @@ test('teleported fragments detach/reconnect at their destination and dispose lis
 
 test('keyed teleported fragments reorder at the destination without pulling output back', t => {
     const { app, root, portal } = environment(t, `
-        <template b-for="n in $data.items" b-key="$for.n" b-template b-teleport="'#portal'">
+        <template b-for="n in $data.items" b-key="$for.n" b-template b-teleport="['#portal', 'append']">
             <button b-text="$for.n"></button><b b-text="$for.n"></b>
         </template>`, '{items:[1,2,3]}');
     app.mount(root);
@@ -191,7 +191,7 @@ test('keyed teleported fragments reorder at the destination without pulling outp
 test('a detached conditional loop suspends all teleported rows and reconciles their hidden order', t => {
     const { app, root, portal } = environment(t, `
         <template b-if.detach="$data.visible" b-for="n in $data.items" b-key="$for.n"
-                  b-template b-teleport="'#portal'">
+                  b-template b-teleport="['#portal', 'append']">
             <button b-text="$for.n"></button><b b-text="$for.n"></b>
         </template>`, '{visible:true,items:[1,2,3]}');
     app.mount(root);
@@ -211,8 +211,8 @@ test('a detached conditional loop suspends all teleported rows and reconciles th
 
 test('teleporting to the source parent preserves destination placement through detach and keyed movement', t => {
     const { app, root } = environment(t, `
-        <template b-if.detach="$data.visible" b-template b-teleport="'#app'"><b>remote branch</b></template>
-        <template b-for="n in $data.items" b-key="$for.n" b-template b-teleport="'#app'"><i b-text="$for.n"></i></template>
+        <template b-if.detach="$data.visible" b-template b-teleport="['#app', 'append']"><b>remote branch</b></template>
+        <template b-for="n in $data.items" b-key="$for.n" b-template b-teleport="['#app', 'append']"><i b-text="$for.n"></i></template>
         <footer>tail</footer>`, '{visible:true,items:[1,2]}');
     app.mount(root);
     const branch = root.querySelector('b');
@@ -230,10 +230,10 @@ test('empty fragments, multiple destinations and sibling portal content retain t
     const { app, root, portal } = environment(t, `
         <template b-if="$data.empty" b-template></template>
         <div id="other"></div>
-        <template b-for="n in $data.items" b-key="$for.n" b-template b-teleport="'#portal'">
+        <template b-for="n in $data.items" b-key="$for.n" b-template b-teleport="['#portal', 'append']">
             <template b-if="$for.n % 2" b-template><span b-text="$for.n"></span></template>
         </template>
-        <template b-for="n in $data.items" b-key="$for.n" b-template b-teleport="'#other'"><b b-text="$for.n"></b></template>`,
+        <template b-for="n in $data.items" b-key="$for.n" b-template b-teleport="['#other', 'append']"><b b-text="$for.n"></b></template>`,
     '{empty:true,items:[1,2,3]}');
     portal.innerHTML = '<em>before</em>';
     app.mount(root);
@@ -257,7 +257,7 @@ test('managed insertion removes nested template output and teleports and rolls b
     app.mount(root);
     const handle = app.insert('#target', 'append', `
         <template b-template><b b-text="$data.count"></b>
-            <template b-template b-teleport="'#portal'"><button on-click="$data.count++"></button></template>
+            <template b-template b-teleport="['#portal', 'append']"><button on-click="$data.count++"></button></template>
         </template>`);
     const button = portal.querySelector('button');
     const text = root.querySelector('b');
@@ -277,7 +277,7 @@ test('managed insertion removes nested template output and teleports and rolls b
 test('failed fragment mount removes teleports and disposes already hydrated children', t => {
     const { app, root, portal } = environment(t, `
         <template b-if="true" b-template>
-            <template b-template b-teleport="'#portal'"><button on-click="$data.count++"></button></template>
+            <template b-template b-teleport="['#portal', 'append']"><button on-click="$data.count++"></button></template>
             <script b-script>({onCleanup,$data}) => { onCleanup($data.cleaned); }</script>
             <b b-text="$data.missing()"></b>
         </template>`, '{count:0}');

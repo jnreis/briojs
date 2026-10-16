@@ -5,42 +5,95 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Manual Test: teleport directive</title>
     <style>
-        body { font-family: system-ui, -apple-system, sans-serif; margin: 20px; background: #f8fafc; color: #1e293b; }
-        .card { background: white; border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; }
-        h1 { font-size: 1.5rem; }
-        h3 { margin-top: 0; color: #0f172a; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; }
-        #modal-root { border: 2px dashed #6366f1; padding: 16px; background: #e0e7ff; border-radius: 8px; margin-top: 10px; min-height: 40px; }
-        .teleported-content { background: #4f46e5; color: white; padding: 10px 14px; border-radius: 6px; font-weight: bold; }
+        body { font-family: system-ui, sans-serif; margin: 20px; background: #f8fafc; color: #1e293b; }
+        section { background: white; border: 1px solid #cbd5e1; border-radius: 8px; padding: 16px; margin: 16px 0; }
+        aside { border: 2px dashed #6366f1; padding: 12px; margin: 8px 0; min-height: 24px; }
+        button, select, input { margin: 4px; }
+        .output { display: inline-block; background: #e0e7ff; padding: 8px; margin: 4px; }
+        .row { display: inline-flex; gap: 4px; align-items: center; }
     </style>
 </head>
 <body b-data="{
-    message: 'Teleported notification banner!'
+    second: false, placement: 'after', targetVisible: false, visible: true,
+    rowsVisible: true, rowTarget: '#rows-one', rowPlacement: 'append', items: [1, 2, 3]
 }">
+    <h1>b-teleport: targets, placement, and retained output</h1>
 
-    <h1>b-teleport Directive Manual Tests</h1>
-    <p>Tests moving elements dynamically to different positions in the DOM tree while retaining reactivity.</p>
-
-    <div class="card">
-        <h3>1. Teleport Target Container (#modal-root)</h3>
-        <p>This container lives outside the component origin:</p>
-        <div id="modal-root"></div>
-    </div>
-
-    <div class="card">
-        <h3>2. Component with Teleported Element</h3>
-        <p>The element below is written inside this card, but teleported into <code>#modal-root</code>:</p>
-        <div b-teleport="'#modal-root'" class="teleported-content">
-            🚀 <span>${$data.message}</span>
+    <section>
+        <h2>1. Reactive ref target and placement</h2>
+        <button id="switch-target" b-on-click="$data.second = !$data.second">Switch target</button>
+        <label>Placement
+            <select id="placement" b-model="$data.placement">
+                <option>before</option><option>after</option><option>prepend</option><option>append</option>
+            </select>
+        </label>
+        <div id="origin">
+            <input id="moving" placeholder="Type here, then move me"
+                   b-teleport="[$data.second ? $ref.two : $ref.one, $data.placement]">
         </div>
-    </div>
+        <aside id="one" b-ref="one">First target: <i>existing child</i></aside>
+        <aside id="two" b-ref="two">Second target: <i>existing child</i></aside>
+        <p>The input keeps its value and identity. before/after use siblings; prepend/append use children.</p>
+    </section>
+
+    <section>
+        <h2>2. Default after versus explicit append</h2>
+        <aside id="default-target">The target container.</aside>
+        <b id="default-after" class="output" b-teleport="'#default-target'">Default: outside, after.</b>
+        <b id="explicit-append" class="output" b-teleport="['#default-target', 'append']">Append: inside.</b>
+    </section>
+
+    <section>
+        <h2>3. Missing, late, and recreated refs</h2>
+        <button id="toggle-target" b-on-click="$data.targetVisible = !$data.targetVisible">Toggle target</button>
+        <div id="late-source">
+            <input id="late-input" b-teleport="[$ref.late, 'append']" placeholder="Retained through target removal">
+            <span>Source position when the target is missing.</span>
+        </div>
+        <aside b-if="$data.targetVisible" b-ref="late" id="late-target">Conditional target.</aside>
+    </section>
+
+    <section>
+        <h2>4. Detach while changing destination</h2>
+        <button id="toggle-detach" b-on-click="$data.visible = !$data.visible">Toggle output</button>
+        <p>Use section 1's target/placement controls while this output is detached.</p>
+        <input id="detached-input" b-if.detach="$data.visible"
+               b-teleport="[$data.second ? $ref.two : $ref.one, $data.placement]"
+               placeholder="Detached output retains value">
+    </section>
+
+    <section>
+        <h2>5. Keyed fragment groups and hidden updates</h2>
+        <button id="reverse-rows" b-on-click="$data.items.reverse()">Reverse rows</button>
+        <button id="add-row" b-on-click="$data.items.push(Math.max(0, ...$data.items) + 1)">Add row</button>
+        <button id="toggle-rows" b-on-click="$data.rowsVisible = !$data.rowsVisible">Toggle rows</button>
+        <label>Target
+            <select id="row-target" b-model="$data.rowTarget">
+                <option value="#rows-one">First</option><option value="#rows-two">Second</option>
+            </select>
+        </label>
+        <label>Placement
+            <select id="row-placement" b-model="$data.rowPlacement">
+                <option>before</option><option>after</option><option>prepend</option><option>append</option>
+            </select>
+        </label>
+        <aside id="rows-one"><em>First target's existing content</em></aside>
+        <aside id="rows-two"><em>Second target's existing content</em></aside>
+        <template b-if.detach="$data.rowsVisible" b-for="n in $data.items" b-key="$for.n"
+                  b-template b-teleport="[$data.rowTarget, $data.rowPlacement]">
+            <label class="row"><b b-text="$for.n"></b><input b-bind-data-row="$for.n" placeholder="Row value"></label>
+            <small class="row-tail">end</small>
+        </template>
+        <p>Rows preserve input identity, values, and order. Hidden updates must not reconnect them early.</p>
+    </section>
 
     <script src="/dist/brio.min.js"></script>
     <script>
         window.addEventListener('DOMContentLoaded', () => {
             const app = brio.createApp();
             app.mount('body');
-            console.log('teleport.html hydrated successfully');
-        });
+            window.addEventListener('pagehide', () => app.dispose(), { once: true });
+        }, { once: true });
     </script>
 </body>
 </html>

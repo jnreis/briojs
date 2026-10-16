@@ -2,6 +2,24 @@ import { onCleanup } from '../core/scope';
 import { ownNode } from './ownership';
 import type { DomRuntime } from './types';
 
+export type PortalDestination = {
+    target: Element;
+    placement: 'before' | 'after' | 'prepend' | 'append';
+};
+
+export function portalPosition({ target, placement }: PortalDestination): { parent: Node; reference: Node | null } {
+    const sibling = placement === 'before' || placement === 'after';
+    const parent = sibling ? target.parentNode : target;
+    if (!parent || (parent.nodeType !== Node.ELEMENT_NODE && parent.nodeType !== Node.DOCUMENT_FRAGMENT_NODE))
+        throw new Error('b-teleport placement requires an element or fragment container.');
+    return {
+        parent,
+        reference: placement === 'before' ? target :
+            placement === 'after' ? target.nextSibling :
+                placement === 'prepend' ? target.firstChild : null,
+    };
+}
+
 export type DomRange = {
     start: Comment;
     end: Comment;
@@ -10,6 +28,11 @@ export type DomRange = {
     detach(): void;
     remove(): void;
     addPortal(range: DomRange): void;
+    removePortal(range: DomRange): void;
+    readonly detached: boolean;
+    readonly destination: PortalDestination | undefined;
+    redirect(destination: PortalDestination | undefined, source: Comment): void;
+    onRedirect(callback: () => void): void;
 };
 
 export function createDomRange(document: Document, name: string): DomRange {
@@ -20,6 +43,11 @@ export function createDomRange(document: Document, name: string): DomRange {
     const portals = new Set<DomRange>();
     const homes = new Map<DomRange, Comment>();
     let detached = false;
+    let destination: PortalDestination | undefined;
+    let source: Comment | undefined;
+    let redirected: (() => void) | undefined;
+    let pendingRedirect = false;
+    let resume: { parent: Node; reference: Node | null } | undefined;
     const detachPortal = (portal: DomRange) => {
         const home = document.createComment('brio:portal');
         portal.start.parentNode!.insertBefore(home, portal.start);
@@ -40,16 +68,32 @@ export function createDomRange(document: Document, name: string): DomRange {
     };
     return {
         start, end,
+        get detached() { return detached; },
+        get destination() { return destination; },
         nodes,
         moveBefore(parent: Node, reference: Node | null) {
+            const resuming = detached && parent.nodeType !== Node.DOCUMENT_FRAGMENT_NODE;
+            if (resuming && pendingRedirect && source) {
+                if (destination) ({ parent, reference } = portalPosition(destination));
+                else if (source.parentNode) {
+                    parent = source.parentNode;
+                    reference = source.nextSibling;
+                }
+            } else if (resuming && resume &&
+                (!resume.reference || resume.reference.parentNode === resume.parent)) {
+                ({ parent, reference } = resume);
+            }
+            if (reference === start && parent === start.parentNode) return;
             if (start.parentNode !== parent || end.nextSibling !== reference) {
                 const contents = nodes(true);
                 if (reference && contents.includes(reference))
                     throw new Error('Cannot move a Brio range inside itself.');
                 for (const node of contents) parent.insertBefore(node, reference);
             }
-            if (detached && parent.nodeType !== Node.DOCUMENT_FRAGMENT_NODE) {
+            if (resuming) {
                 detached = false;
+                pendingRedirect = false;
+                resume = undefined;
                 for (const [portal, home] of homes) {
                     if (home.parentNode) portal.moveBefore(home.parentNode, home);
                     home.remove();
@@ -59,12 +103,15 @@ export function createDomRange(document: Document, name: string): DomRange {
         },
         detach() {
             if (!detached) {
+                if (source && destination && start.parentNode)
+                    resume = { parent: start.parentNode, reference: end.nextSibling };
                 detached = true;
                 portals.forEach(detachPortal);
             }
             this.moveBefore(document.createDocumentFragment(), null);
         },
         remove() {
+            resume = undefined;
             portals.forEach(portal => portal.remove());
             homes.forEach(home => home.remove());
             homes.clear();
@@ -73,6 +120,27 @@ export function createDomRange(document: Document, name: string): DomRange {
         addPortal(portal: DomRange) {
             portals.add(portal);
             if (detached) detachPortal(portal);
+        },
+        removePortal(portal: DomRange) {
+            portals.delete(portal);
+            homes.get(portal)?.remove();
+            homes.delete(portal);
+            portal.remove();
+        },
+        redirect(next: PortalDestination | undefined, home: Comment) {
+            destination = next;
+            source = home;
+            if (detached) pendingRedirect = true;
+            if (redirected) redirected();
+            else if (!detached) {
+                if (destination) {
+                    const { parent, reference } = portalPosition(destination);
+                    this.moveBefore(parent, reference);
+                } else if (source.parentNode) this.moveBefore(source.parentNode, source.nextSibling);
+            }
+        },
+        onRedirect(callback: () => void) {
+            redirected = callback;
         },
     };
 }

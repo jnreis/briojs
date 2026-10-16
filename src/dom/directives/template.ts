@@ -1,6 +1,7 @@
 import type { DomRuntime } from '../types';
 import { ownElementRange } from '../range';
 import { cloneProjectedNode } from '../components';
+import { withHydration } from '../ownership';
 
 export function handleTemplate(
     element: Element,
@@ -29,7 +30,9 @@ export function handleTemplate(
     parent.insertBefore(fragment, element);
     element.remove();
 
-    for (const node of insertedNodes) {
-        if (node.parentNode === parent) hydrateNodeFn(node, context, runtime);
-    }
+    withHydration(parent, () => {
+        for (const node of insertedNodes) {
+            if (node.parentNode === parent) hydrateNodeFn(node, context, runtime);
+        }
+    });
 }

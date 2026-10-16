@@ -41,6 +41,13 @@ its callers and generated markup.
   raw native APIs, setup hydration timing, slot author ownership, reactive membership,
   keyed retention, leave cleanup, detach retention, teleport and unmount. Preserved
   or overlapping branches need distinct names or separate data scopes.
+- **Teleport:** expressions return Elements/refs, selector strings, or exact
+  `[target, placement]` pairs. Verify default `after` vs explicit `append`, all
+  used placements, late/missing/replaced refs and source fallback, local lookup,
+  keyed ordering per target/placement and hidden retarget/reconnect. No bare ref
+  names, `.ref`, or selector DOM observer. Target removal must not dispose
+  independent source-owned output; selector-only destinations need explicit
+  source/target lifetime coordination.
 - **Conditions:** false disposes effects/listeners after leave completion
   (immediately without a transition); reversal reuses the live element and state,
   while activation after completed removal resets local state.

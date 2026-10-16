@@ -156,7 +156,7 @@ test('components get private reactive refs while host and projected refs stay in
 test('conditional membership follows destructive lifecycle, hide/detach retain disconnected nodes and teleport ownership', t => {
     for (const mode of ['', '.hide', '.detach']) {
         const { app, root, window } = environment(t, `${capture}
-            <input b-if${mode}="$data.visible" b-ref="field" b-teleport="'#portal'">
+            <input b-if${mode}="$data.visible" b-ref="field" b-teleport="['#portal', 'append']">
             <p b-effect="$data.capture($ref.field)"></p>`, '({state:()=>({visible:true})})');
         const seen = [];
         app.state.capture = element => seen.push(element);

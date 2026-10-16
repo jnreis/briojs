@@ -134,7 +134,7 @@ forbids runtime `new Function` remains a deployment blocker.
 | `b-ref` | Static literal registration in local `$ref` (not `$refs`). Data boundaries, components and rows isolate names; duplicates throw. No inherited lookup or automatic collection. |
 | `b-slot` | Removed as a registry. Use named component slots and `slot="name"` on caller content. |
 | `b-template` | Unwraps its authored children into an owned multi-node range; its value does not select a registered template. Supports keyed loops, plain conditionals, `.detach`, teleport, IDs, providers and effects. `.hide`/group transitions require a concrete wrapper. |
-| `b-teleport` | Explicit selector expression such as `b-teleport="'#portal'"`. Destination must exist; dispose the original owner before removing it. |
+| `b-teleport` | Reactive Element/ref or selector expression; use `$ref.panel`, not a bare ref name. Default `after`; use `[$ref.panel, 'append']` for children. Supports `before`/`after`/`prepend`/`append`. Missing targets restore source output; ref registration/removal retries, but selectors have no DOM observer. Dispose/switch source before removing selector-only targets. |
 | `b-script` | Inline function expression on a script element only; no registry name/array/src loader. Async script completion no longer delays the rest of mounting. |
 | `b-style` | Replace the legacy style-loader expression with ordinary CSS / `<style>@scope { ... }</style>`. Prefer CSS custom properties via `b-bind-style` for dynamic values; ordinary style text also supports `${...}` interpolation. |
 | `b-save`, `b-hydrate` | Removed asset-preprocessing contract; move saved templates/scripts/styles to explicit application definitions/imports. |

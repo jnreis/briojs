@@ -245,7 +245,7 @@ Directive arguments use hyphens (`b-on-click`, `b-bind-href`); options use chain
 | `b-template` | Unwrap an element or instantiate a `<template>`'s contents in place, hydrating them without a rendered wrapper. |
 | `b-html` | Insert explicitly trusted HTML created by `trustedHTML()`. |
 | `b-ignore` | Skip hydration for this element and its descendants. |
-| `b-teleport` | Move an element to an existing document selector while retaining its expression context. |
+| `b-teleport` | Reactively move an element or template range relative to an Element/ref or document selector. Default placement: `after`. |
 | `b-effect` | Run a reactive expression for side effects in the element's owned scope. |
 | `b-router-outlet` | Render the component matching the current optional route. |
 | `b-on-enter`, `b-on-exit` | Observe intersection/visibility changes. |
@@ -375,6 +375,74 @@ children via a ref, establish competing input-value bindings, or write back
 unconditionally from effects that observe those writes. Dispose integration
 listeners/widgets through `onCleanup`, not by deleting registry entries.
 
+### Teleport targets and placement
+
+`b-teleport` evaluates a reactive expression. Supply an actual `Element` (including
+a `$ref` value), a CSS selector string, or a `[target, placement]` pair:
+
+```html
+<aside b-ref="panel"><p>Existing content</p></aside>
+
+<!-- Default: immediately after the panel, not inside it. -->
+<p b-teleport="$ref.panel">A sibling of the panel</p>
+
+<!-- Explicitly insert inside the target. -->
+<input b-teleport="[$ref.panel, 'prepend']">
+<div b-teleport="['#modal-root', 'append']">Modal content</div>
+
+<!-- Targets and placements may depend on reactive data. -->
+<div b-teleport="[$data.compact ? $ref.sidebar : $ref.panel, $data.placement]">
+  The same live element moves; its state and source context are retained.
+</div>
+```
+
+| Placement | Location |
+|-----------|----------|
+| `before` | Immediately before the target, in its parent. |
+| `after` (default) | Immediately after the target, in its parent. |
+| `prepend` | Before the target's existing children. |
+| `append` | After the target's existing children. |
+
+Strings **always** mean selectors: `'panel'` selects a `<panel>` tag, even if a
+ref named `panel` exists. Write `$ref.panel` or `$ref['panel-name']` for refs;
+there is no bare-name lookup, `.ref` modifier, or unquoted-selector shorthand.
+Tuple syntax requires exactly two items and a valid placement. Only Elements,
+selector strings, and null/undefined targets are accepted; invalid expressions,
+values, placements, selectors, modifiers, and self/descendant destinations throw.
+Sibling placements require an element or fragment parent. Child placements
+cannot insert into an inert native `<template>` or a Brio container whose
+children are controlled by another directive, such as `b-text` or `b-html`.
+You may still place output beside such a container.
+
+Refs retain their normal **local-only** lookup. A ref may be declared later in
+hydration: teleport waits for that target's hydration to finish before inserting
+output, including component rendering. When a target is null/undefined, output
+stays at or returns to its authored source, without disposal or rehydration.
+Registration, removal, or replacement of that ref updates its placement.
+Missing targets do not implicitly hide the content; use a conditional when needed.
+
+Selectors are resolved against the source element's document, including outside
+the mount root. A valid selector with no match warns and restores source output.
+Repeated identical misses do not repeat the warning until the unresolved result
+changes. There is **no DOM observer or polling**: selectors are looked up again
+only when expression dependencies change. Prefer refs for conditional targets.
+An unchanged target/placement does not repeatedly move output. DOM connectivity,
+native reparenting, and sibling changes are not tracked. A retained ref can target
+a disconnected Element; sibling placement still requires a parent.
+
+Teleport preserves source data, providers, ref ownership, component/slot context,
+listeners, and node identity. It changes physical CSS ancestry and native event
+bubbling. Template ranges move together; keyed rows retain their order within
+each loop's bounded target/placement group. Reactive retargeting while a
+same-element conditional or conditional loop is detached does not reconnect its
+output; activation uses the latest requested destination.
+
+Removing a ref target through Brio returns independently owned teleported output
+to its source. Removing the teleport's original owner disposes that output
+wherever it lives. Selector-only targets have no reactive lifetime notification:
+dispose the source owner before removing those destinations, or switch the target
+expression first. Native DOM removal alone never unregisters a ref.
+
 ### Wrapperless content with `b-template`
 
 `b-template` is an **in-place, one-time unwrap**, not a component definition,
@@ -460,7 +528,7 @@ These combinations need no rendered wrapper:
   </template>
 </ul>
 
-<template b-if.detach="$data.open" b-template b-teleport="'#portal'">
+<template b-if.detach="$data.open" b-template b-teleport="['#portal', 'append']">
   <h2>Preserved at the destination</h2>
   <button b-on-click="$data.open = false">Close</button>
 </template>
@@ -518,7 +586,8 @@ overwrite each other. Do not rely on attribute order to resolve competing owners
 | `b-model` on non-form elements; `b-mask` on non-input/textarea elements; `b-script` on non-script elements | Errors when processed. A component host does not acquire native input/script capabilities by using one of these directives. |
 | `b-if.hide` + `b-bind-style` / effects writing `display` on the branch | Competing display owners; a reactive style write can reveal an inactive branch or override activation. Let the conditional own branch display; style a child or use `.detach` when appropriate. |
 | `b-transition` + dynamic class/style bindings | Avoid bindings that remove transition classes or overwrite animated properties while a transition runs. Put dynamic classes/styles on a child when possible. `b-transition` does not provide automatic list-move/leave animation for `b-for`, or animate every descendant when an ancestor is removed. |
-| `b-for` + same-row `b-teleport` | Supported for concrete or template rows. Keyed reconciliation moves the complete row range at its destination. Each loop owns a bounded destination group, preserving unrelated surrounding content. |
+| `b-for` + same-row `b-teleport` | Supported for concrete or template rows. Keyed reconciliation moves the complete row range at its destination. Each loop owns bounded groups per target/placement, preserving unrelated surrounding content through retargeting. |
+| `b-teleport` + a destination controlled by `b-text` / `b-html` / `b-router-outlet` / `b-ignore` | Child placements are errors; use `before` / `after` beside the controlled container, or choose an independently managed destination. |
 | `b-if` + teleported children | Supported, but hiding an ancestor with `.hide` cannot hide descendants moved elsewhere. Their effects also stay live in preservation modes. Put visibility on the surviving teleported element when it must be controlled independently. |
 | Multiple bindings/effects writing the same attribute/property | No arbitration. Use one expression per target; do not combine prefixed/unprefixed aliases or different modifier spellings to install competing bindings. |
 

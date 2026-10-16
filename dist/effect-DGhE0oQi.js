@@ -207,10 +207,10 @@ function batch(fn) {
   return result;
 }
 export {
-  getCurrentScope as a,
+  combinedError as a,
   batch as b,
   causedError as c,
-  combinedError as d,
+  getCurrentScope as d,
   effect as e,
   onCleanup as f,
   getActiveEffect as g,
@@ -224,4 +224,4 @@ export {
   queueEffect as q,
   setActiveScope as s
 };
-//# sourceMappingURL=effect-DgjHEK0w.js.map
+//# sourceMappingURL=effect-DGhE0oQi.js.map

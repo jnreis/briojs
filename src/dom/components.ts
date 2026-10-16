@@ -4,7 +4,7 @@ import { createScopedState } from '../core/scoped-state';
 import { effect, batch } from '../reactivity/effect';
 import { createScope, onCleanup } from '../core/scope';
 import type { ComponentDefinition, DomRuntime } from './types';
-import { getNodeOwner, ownNode } from './ownership';
+import { getNodeOwner, ownNode, withHydration } from './ownership';
 import { emptyContextValues } from '../core/context-values';
 import { createRefs } from './refs';
 
@@ -145,9 +145,11 @@ export function mountComponent(
         fillSlots(element, template.content, context);
         element.replaceChildren(template.content);
 
-        for (const child of Array.from(element.childNodes)) {
-            hydrateNodeFn(child, componentContext, runtime);
-        }
+        withHydration(element, () => {
+            for (const child of Array.from(element.childNodes)) {
+                hydrateNodeFn(child, componentContext, runtime);
+            }
+        });
 
         for (const attribute of Array.from(element.attributes)) {
             if (attribute.name.startsWith('b-')) element.removeAttribute(attribute.name);

@@ -6,7 +6,7 @@ import type { Insert, InsertHandle } from '../core/types';
 import type { DomRuntime } from './types';
 import { getTrustedHTMLString, trustedHTML } from './types';
 import { hydrateNode } from './bindings';
-import { disposeNodes, getNodeOwner, ownNode } from './ownership';
+import { disposeNodes, getNodeOwner, ownNode, withHydration } from './ownership';
 import { createDomRange } from './range';
 
 const placements = new Set(['before', 'after', 'prepend', 'append', 'replaceWith', 'replaceChildren', 'textContent']);
@@ -101,8 +101,10 @@ export function createInsert(runtime: DomRuntime): Insert {
                 ownNode(start, context, containerOwner.runtime);
                 ownNode(end, context, containerOwner.runtime);
                 if (placement !== 'textContent') {
-                    for (const child of children)
-                        if (child.parentNode === container) hydrateNode(child, context, containerOwner.runtime);
+                    withHydration(container, () => {
+                        for (const child of children)
+                            if (child.parentNode === container) hydrateNode(child, context, containerOwner.runtime);
+                    });
                 }
             });
         } catch (error) {

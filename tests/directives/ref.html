@@ -59,7 +59,7 @@
     <section>
         <h2>Detached and teleported refs</h2>
         <button id="toggle-remote" b-on-click="$data.remote = !$data.remote">Toggle remote input</button>
-        <input b-if.detach="$data.remote" b-ref="remote" b-teleport="'#portal'" id="remote">
+        <input b-if.detach="$data.remote" b-ref="remote" b-teleport="['#portal', 'append']" id="remote">
         <p>Registered while detached: <b id="remote-registered" b-text="Boolean($ref.remote)"></b> (always true).</p>
         <button id="remote-focus" b-on-click="$ref.remote?.focus()">Focus remote input when connected</button>
         <aside id="portal"></aside>

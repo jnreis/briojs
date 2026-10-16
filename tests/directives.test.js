@@ -271,7 +271,7 @@ test('$insert owns structural regions, teleports, hidden nodes and enclosing bra
         <template b-template><span b-for="item in $data.items" b-text="$for.item"></span></template>
         <div id="hidden" b-if.detach="$data.visible"></div>
         <div b-if="$data.visible"><section id="branch"></section></div>
-        <div b-teleport="'#portal'"><button on-click="$data.items.push(3)">teleported</button></div>`);
+        <div b-teleport="['#portal', 'append']"><button on-click="$data.items.push(3)">teleported</button></div>`);
     const hidden = region.nodes.find(node => node.nodeType === 8 && node.nodeValue === 'brio:if:branch');
     assert.ok(hidden);
     app.state.visible = true;
@@ -313,7 +313,7 @@ test('$insert errors are explicit, preserve content on invalid input, and clean 
     assert.throws(() => app.insert(outside, 'append', ''), /exactly one/);
     window.document.body.append(outside);
     const otherApp = window.brio.createApp();
-    outside.innerHTML = '<div b-teleport="\'#target\'">foreign</div>';
+    outside.innerHTML = '<div b-teleport="[\'#target\', \'append\']">foreign</div>';
     otherApp.mount(outside);
     try {
         assert.throws(() => app.insert(outside, 'append', ''), /exactly one/);
@@ -333,7 +333,7 @@ test('$insert replacements clean original structural controllers, including tele
             <div b-if="$data.visible"><button on-click="$data.count++">if</button></div>
             <div b-for="item in $data.items"><button on-click="$data.count++">for</button></div>
             <div b-if.detach="$data.hidden"><button on-click="$data.count++">preserved</button></div>
-            <div b-teleport="'#portal'"><button on-click="$data.count++">teleport</button></div>
+            <div b-teleport="['#portal', 'append']"><button on-click="$data.count++">teleport</button></div>
         </section><aside id="portal"></aside>`, { visible: true, hidden: false, count: 0, items: [1] });
     app.mount(root);
     const buttons = [...root.querySelectorAll('button')];
@@ -752,7 +752,7 @@ test('preserved branches own nested components, providers, loops, templates, tel
             <section b-if.${mode}="$data.visible" b-provide="{ label: $data.label }">
                 <owned-counter></owned-counter>
                 <template b-template><span b-for="n in $data.items" b-text="$for.n"></span></template>
-                <div b-teleport="'#portal'"><em b-text="$provided.label"></em></div>
+                <div b-teleport="['#portal', 'append']"><em b-text="$provided.label"></em></div>
                 <div id="destination"></div>
             </section><aside id="portal"></aside>`, { visible: true, label: 'first', items: [1] });
         let setups = 0;
@@ -864,7 +864,7 @@ test('b-if.hide restores visible display from initially authored display:none', 
 test('preserved teleported branch hosts keep their destination and chain source positions', t => {
     for (const mode of ['hide', 'detach']) {
         const { app, root } = environment(t, `
-            <section id="teleported" b-if.${mode}="$data.visible" b-teleport="'#portal'">remote</section>
+            <section id="teleported" b-if.${mode}="$data.visible" b-teleport="['#portal', 'append']">remote</section>
             <article b-else>fallback</article>
             <footer>end</footer>
             <aside id="portal"><b>existing</b><i>after</i></aside>`, { visible: true });

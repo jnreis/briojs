@@ -7,6 +7,7 @@ import type { DomRuntime } from './types';
 import { getTrustedHTMLString, trustedHTML } from './types';
 import { hydrateNode } from './bindings';
 import { disposeNodes, getNodeOwner, ownNode } from './ownership';
+import { createDomRange } from './range';
 
 const placements = new Set(['before', 'after', 'prepend', 'append', 'replaceWith', 'replaceChildren', 'textContent']);
 
@@ -68,38 +69,25 @@ export function createInsert(runtime: DomRuntime): Insert {
                 placement === 'prepend' ? container.firstChild : null;
         // Validate and parse before disposing any existing content.
         disposeNodes(previous);
-        const start = document.createComment('brio:insert');
-        const end = document.createComment('/brio:insert');
+        const range = createDomRange(document, 'insert');
+        const { start, end } = range;
         const children = Array.from(fragment.childNodes);
         fragment.prepend(start);
         fragment.append(end);
         const scope = createScope(containerOwner.scope);
-        const nodes = (): Node[] => {
-            const result: Node[] = [];
-            if (start.parentNode && start.parentNode === end.parentNode) {
-                let current = start.nextSibling;
-                while (current && current !== end) {
-                    result.push(current);
-                    current = current.nextSibling;
-                }
-            }
-            return result;
-        };
         let removed = false;
         const handle: InsertHandle = {
-            get nodes() { return nodes(); },
+            get nodes() { return range.nodes(); },
             get removed() { return removed; },
             remove() { scope.dispose(); },
         };
         onDispose(scope, () => {
             removed = true;
-            const current = nodes();
+            const current = range.nodes();
             try {
                 disposeNodes(current);
             } finally {
-                nodes().forEach(child => child.parentNode?.removeChild(child));
-                start.remove();
-                end.remove();
+                range.remove();
             }
         });
         try {

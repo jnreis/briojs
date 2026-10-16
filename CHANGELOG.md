@@ -24,6 +24,10 @@ metadata on `main`, through commit `d868d43`.
 
 ### Changed
 
+- Wrapperless `b-template` output uses owned DOM ranges shared with structural
+  directives and managed insertion. Plain conditionals, `.detach`, keyed loops,
+  teleport, and template effects compose without losing multi-root/text output.
+  Repeated `b-id` values are row-local; `.hide` remains concrete-only.
 - Ordinary reactive `<style>` text and recommended native CSS `@scope` patterns,
   using existing `b-id`, class bindings, and CSS custom properties. Styles remain
   in authored DOM with native connectivity, cascade, and animation naming.

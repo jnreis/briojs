@@ -48,7 +48,7 @@ import `createApp` from `briojs`; do not mix browser and ESM runtimes on a root.
 For side-by-side migration testing, use separate pages/builds, not competing
 `window.brio` globals.
 
-V4 mount roots cannot overlap. Wrap root-level `b-if` / `b-for` in a stable
+V4 mount roots cannot overlap. Wrap root-level `b-if` / `b-for` / `b-template` in a stable
 container. One app can mount multiple disjoint roots sharing `app.state`, or
 use separate apps for isolated widgets. `unmount()` restores original markup;
 `dispose()` also stops app plugins and permanently closes the app.
@@ -133,7 +133,7 @@ forbids runtime `new Function` remains a deployment blocker.
 | `b-uid` | `b-id="['input']"` then explicit `b-bind-id="$id.input"` / label `b-bind-for="$id.input"`. |
 | `b-ref` | Removed. Use scoped queries or component setup; no v4 `$refs` collector. |
 | `b-slot` | Removed as a registry. Use named component slots and `slot="name"` on caller content. |
-| `b-template` | Unwraps its own authored children only; its value does not select a registered template. It replaces the host with hydrated siblings. |
+| `b-template` | Unwraps its authored children into an owned multi-node range; its value does not select a registered template. Supports keyed loops, plain conditionals, `.detach`, teleport, IDs, providers and effects. `.hide`/group transitions require a concrete wrapper. |
 | `b-teleport` | Explicit selector expression such as `b-teleport="'#portal'"`. Destination must exist; dispose the original owner before removing it. |
 | `b-script` | Inline function expression on a script element only; no registry name/array/src loader. Async script completion no longer delays the rest of mounting. |
 | `b-style` | Replace the legacy style-loader expression with ordinary CSS / `<style>@scope { ... }</style>`. Prefer CSS custom properties via `b-bind-style` for dynamic values; ordinary style text also supports `${...}` interpolation. |
@@ -153,8 +153,9 @@ whitespace/comments allowed between branches. Do not synthesize branches that
 alter the original conditions' precedence.
 Use `.hide` or `.detach` only on the leading `b-if`, not on else branches.
 These preservation modes hydrate every branch once at initial mount, run all
-setup/scripts immediately, and keep inactive effects/listeners live. Use a
-concrete branch element; wrap same-element loops/templates. Conditions always
+setup/scripts immediately, and keep inactive effects/listeners live. `.hide`
+needs a concrete branch; `.detach` supports template fragments and same-element
+loops, including their teleported row groups. Conditions always
 see parent data before branch-local `b-data` and providers; review legacy
 expressions that relied on the element's own local data rather than blindly
 renaming the directive.

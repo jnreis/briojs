@@ -202,6 +202,22 @@ function takeProjectedContext(node) {
   projectedContexts.delete(node);
   return context;
 }
+function cloneProjectedNode(node) {
+  const clone = node.cloneNode(true);
+  const copy = (source, target) => {
+    const context = projectedContexts.get(source);
+    if (context) projectedContexts.set(target, context);
+    const children = Array.from(target.childNodes);
+    Array.from(source.childNodes).forEach((child, index) => copy(child, children[index]));
+    if (source instanceof HTMLTemplateElement && target instanceof HTMLTemplateElement)
+      copy(source.content, target.content);
+  };
+  copy(node, clone);
+  return clone;
+}
+function findSlots(root) {
+  return Array.from(root.querySelectorAll("slot, template[b-template]")).flatMap((node) => node instanceof HTMLTemplateElement ? findSlots(node.content) : [node]);
+}
 function fillSlots(host, template, context) {
   var _a;
   const slots = /* @__PURE__ */ new Map();
@@ -211,7 +227,7 @@ function fillSlots(host, template, context) {
     content.push(child);
     slots.set(name, content);
   }
-  for (const outlet of Array.from(template.querySelectorAll("slot"))) {
+  for (const outlet of findSlots(template)) {
     const name = outlet.getAttribute("name") ?? "";
     const content = slots.get(name);
     if (!(content == null ? void 0 : content.length)) {
@@ -418,6 +434,90 @@ function isTrustedHTML(value) {
 function getTrustedHTMLString(value) {
   return value[trustedMarkup];
 }
+function createDomRange(document2, name) {
+  const start = document2.createComment(`brio:${name}`);
+  const end = document2.createComment(`/brio:${name}`);
+  const fragment = document2.createDocumentFragment();
+  fragment.append(start, end);
+  const portals = /* @__PURE__ */ new Set();
+  const homes = /* @__PURE__ */ new Map();
+  let detached = false;
+  const detachPortal = (portal) => {
+    const home = document2.createComment("brio:portal");
+    portal.start.parentNode.insertBefore(home, portal.start);
+    homes.set(portal, home);
+    portal.detach();
+  };
+  const nodes = (includeAnchors = false) => {
+    const result = [];
+    if (start.parentNode && start.parentNode === end.parentNode) {
+      let current = includeAnchors ? start : start.nextSibling;
+      while (current && current !== end) {
+        result.push(current);
+        current = current.nextSibling;
+      }
+      if (includeAnchors) result.push(end);
+    }
+    return result;
+  };
+  return {
+    start,
+    end,
+    nodes,
+    moveBefore(parent, reference) {
+      if (start.parentNode !== parent || end.nextSibling !== reference) {
+        const contents = nodes(true);
+        if (reference && contents.includes(reference))
+          throw new Error("Cannot move a Brio range inside itself.");
+        for (const node of contents) parent.insertBefore(node, reference);
+      }
+      if (detached && parent.nodeType !== Node.DOCUMENT_FRAGMENT_NODE) {
+        detached = false;
+        for (const [portal, home] of homes) {
+          if (home.parentNode) portal.moveBefore(home.parentNode, home);
+          home.remove();
+        }
+        homes.clear();
+      }
+    },
+    detach() {
+      if (!detached) {
+        detached = true;
+        portals.forEach(detachPortal);
+      }
+      this.moveBefore(document2.createDocumentFragment(), null);
+    },
+    remove() {
+      var _a;
+      portals.forEach((portal) => portal.remove());
+      homes.forEach((home) => home.remove());
+      homes.clear();
+      for (const node of nodes(true)) (_a = node.parentNode) == null ? void 0 : _a.removeChild(node);
+    },
+    addPortal(portal) {
+      portals.add(portal);
+      if (detached) detachPortal(portal);
+    }
+  };
+}
+const outputs = /* @__PURE__ */ new WeakMap();
+function ownElementRange(element, context, runtime) {
+  const existing = outputs.get(element);
+  if (existing) return existing;
+  const parent = element.parentNode;
+  if (!parent) throw new Error("Brio rendered output requires an element with a parent node.");
+  const range = createDomRange(element.ownerDocument, "range");
+  parent.insertBefore(range.start, element);
+  parent.insertBefore(range.end, element.nextSibling);
+  outputs.set(element, range);
+  ownNode(range.start, context, runtime);
+  ownNode(range.end, context, runtime);
+  onCleanup(() => {
+    outputs.delete(element);
+    range.remove();
+  });
+  return range;
+}
 const placements = /* @__PURE__ */ new Set(["before", "after", "prepend", "append", "replaceWith", "replaceChildren", "textContent"]);
 function createInsert(runtime) {
   return (target, placement, content, options = {}) => {
@@ -470,27 +570,16 @@ function createInsert(runtime) {
     const previous = placement === "replaceWith" ? [node] : placement === "replaceChildren" || placement === "textContent" ? Array.from(container.childNodes) : [];
     const reference = placement === "before" ? node : placement === "after" || placement === "replaceWith" ? node.nextSibling : placement === "prepend" ? container.firstChild : null;
     disposeNodes(previous);
-    const start = document2.createComment("brio:insert");
-    const end = document2.createComment("/brio:insert");
+    const range = createDomRange(document2, "insert");
+    const { start, end } = range;
     const children = Array.from(fragment.childNodes);
     fragment.prepend(start);
     fragment.append(end);
     const scope = createScope(containerOwner.scope);
-    const nodes = () => {
-      const result = [];
-      if (start.parentNode && start.parentNode === end.parentNode) {
-        let current = start.nextSibling;
-        while (current && current !== end) {
-          result.push(current);
-          current = current.nextSibling;
-        }
-      }
-      return result;
-    };
     let removed = false;
     const handle = {
       get nodes() {
-        return nodes();
+        return range.nodes();
       },
       get removed() {
         return removed;
@@ -501,16 +590,11 @@ function createInsert(runtime) {
     };
     onDispose(scope, () => {
       removed = true;
-      const current = nodes();
+      const current = range.nodes();
       try {
         disposeNodes(current);
       } finally {
-        nodes().forEach((child) => {
-          var _a2;
-          return (_a2 = child.parentNode) == null ? void 0 : _a2.removeChild(child);
-        });
-        start.remove();
-        end.remove();
+        range.remove();
       }
     });
     try {
@@ -748,9 +832,9 @@ function handleIf(element, expression, modifiers, context, runtime, hydrateNodeF
       throw new SyntaxError("An element can have only one conditional directive.");
     if (node !== element && Object.keys(extractModifiers(conditional[0].name).modifiers).length)
       throw new SyntaxError("Conditional modifiers belong only on the leading b-if, not b-else-if or b-else.");
-    if (preserved && attributes.some((attribute) => ["b-for", "b-template", "template"].includes(extractModifiers(attribute.name).baseName)))
-      throw new SyntaxError("b-if.hide and b-if.detach require a concrete branch element; wrap b-for or b-template in another element.");
-    const template = node.cloneNode(true);
+    if (modifiers.hide && attributes.some((attribute) => ["b-for", "b-template", "template"].includes(extractModifiers(attribute.name).baseName)))
+      throw new SyntaxError("b-if.hide requires a concrete branch element; wrap b-for or b-template in another element or use .detach.");
+    const template = cloneProjectedNode(node);
     template.removeAttribute(conditional[0].name);
     originals.push(node);
     branches.push({ template, expression: condition });
@@ -773,9 +857,9 @@ function handleIf(element, expression, modifiers, context, runtime, hydrateNodeF
     addBranch(sibling, ended ? void 0 : conditional.value);
     sibling = nextBranch(sibling);
   }
-  const placeholder = element.ownerDocument.createComment("brio:if");
-  ownNode(placeholder, context, runtime);
-  parent.replaceChild(placeholder, element);
+  const output = ownElementRange(element, context, runtime);
+  const placeholder = output.start;
+  element.remove();
   originals.slice(1).forEach((node) => node.remove());
   let stopCondition;
   onCleanup(() => stopCondition == null ? void 0 : stopCondition());
@@ -797,7 +881,7 @@ function handleIf(element, expression, modifiers, context, runtime, hydrateNodeF
     try {
       instance.scope.dispose();
     } finally {
-      instance.element.remove();
+      instance.output.remove();
     }
   };
   onCleanup(() => {
@@ -819,7 +903,7 @@ function handleIf(element, expression, modifiers, context, runtime, hydrateNodeF
     const finish = () => {
       if (!preserved) destroy(instance);
       else if (modifiers.hide) current.style.display = "none";
-      else current.remove();
+      else instance.output.detach();
     };
     if (animate && name && current.isConnected) leaveTransition(current, name, finish);
     else {
@@ -828,26 +912,28 @@ function handleIf(element, expression, modifiers, context, runtime, hydrateNodeF
     }
   };
   const createInstance = (index, visible, anchor = placeholder) => {
-    var _a;
-    const current = branches[index].template.cloneNode(true);
+    const current = cloneProjectedNode(branches[index].template);
+    const scope = createScope();
+    const destination = visible || modifiers.hide ? anchor.parentNode : element.ownerDocument.createDocumentFragment();
+    destination.insertBefore(current, destination === anchor.parentNode ? anchor.nextSibling : null);
+    const range = scope.run(() => ownElementRange(current, context, runtime));
     const instance = {
       index,
       element: current,
-      scope: createScope(),
+      scope,
       anchor,
+      output: range,
       display: current.style.display === "none" ? "" : current.style.display
     };
     instances.set(index, instance);
     if (modifiers.hide) current.style.display = visible ? instance.display : "none";
-    if (visible || modifiers.hide) (_a = anchor.parentNode) == null ? void 0 : _a.insertBefore(current, anchor.nextSibling);
-    else element.ownerDocument.createDocumentFragment().append(current);
     try {
       instance.scope.run(() => hydrateNodeFn(current, context, runtime));
       const owner = getNodeOwner(current);
       if (owner) owner.structuralRoot = true;
-      if (preserved && current.isConnected && current.parentNode !== parent) {
+      if (preserved && range.start.isConnected && !output.nodes().includes(range.start)) {
         instance.anchor = createAnchor();
-        current.before(instance.anchor);
+        range.start.before(instance.anchor);
       }
       if (!visible) deactivate(instance, false);
       return instance;
@@ -866,7 +952,8 @@ function handleIf(element, expression, modifiers, context, runtime, hydrateNodeF
     if (!instance) return createInstance(index, true);
     const current = instance.element;
     if (modifiers.hide) current.style.display = instance.display;
-    else if (!current.parentNode) (_a = instance.anchor.parentNode) == null ? void 0 : _a.insertBefore(current, instance.anchor.nextSibling);
+    else if (((_a = instance.output.start.parentNode) == null ? void 0 : _a.nodeType) === Node.DOCUMENT_FRAGMENT_NODE && instance.anchor.parentNode)
+      instance.output.moveBefore(instance.anchor.parentNode, instance.anchor.nextSibling);
     const name = getTransitionName(current);
     if (animate && name) enterTransition(current, name);
     else cancelTransition(current);
@@ -882,7 +969,7 @@ function handleIf(element, expression, modifiers, context, runtime, hydrateNodeF
         const anchor = createAnchor();
         parent.insertBefore(anchor, cursor.nextSibling);
         const instance = createInstance(index, index === selected, anchor);
-        cursor = instance.element.parentNode === parent ? instance.element : anchor;
+        cursor = instance.output.end.parentNode === parent ? instance.output.end : anchor;
       }
       activeBranch = selected;
       active = instances.get(selected);
@@ -914,13 +1001,14 @@ function handleFor(element, expression, _modifiers, context, runtime, hydrateNod
   if (itemName === "$parent" || indexName === "$parent")
     throw new SyntaxError("$parent is reserved for Brio loop ancestry.");
   const keyExpression = element.getAttribute("b-key");
-  const placeholder = document.createComment("brio:for");
-  ownNode(placeholder, context, runtime);
-  const template = element.cloneNode(true);
+  const output = ownElementRange(element, context, runtime);
+  const placeholder = output.start;
+  const template = cloneProjectedNode(element);
   template.removeAttribute("b-for");
   template.removeAttribute("b-key");
-  parent.replaceChild(placeholder, element);
+  element.remove();
   const rows = /* @__PURE__ */ new Map();
+  const portals = /* @__PURE__ */ new Map();
   onCleanup(() => {
     const errors = [];
     for (const row of rows.values()) {
@@ -929,7 +1017,7 @@ function handleFor(element, expression, _modifiers, context, runtime, hydrateNod
       } catch (error) {
         errors.push(error);
       } finally {
-        row.element.remove();
+        row.output.remove();
       }
     }
     rows.clear();
@@ -937,10 +1025,9 @@ function handleFor(element, expression, _modifiers, context, runtime, hydrateNod
     if (errors.length) throw new AggregateError(errors, "One or more repeated items failed to dispose.");
   });
   effect(() => {
-    var _a;
     const entries = enumerate(evaluate(collectionExpression, context));
     const nextKeys = /* @__PURE__ */ new Set();
-    let cursor = placeholder;
+    const ordered = [];
     for (const [index, item] of entries) {
       const loopData = { [itemName]: item, [indexName]: index };
       const rowState = createScopedState(loopData, context.$for);
@@ -953,29 +1040,59 @@ function handleFor(element, expression, _modifiers, context, runtime, hydrateNod
       nextKeys.add(evaluatedKey);
       let row = rows.get(evaluatedKey);
       if (!row) {
-        const rowElement = template.cloneNode(true);
+        const rowElement = cloneProjectedNode(template);
         const rowScope = createScope();
-        row = { element: rowElement, context: rowContext, values: rowState, scope: rowScope, key: evaluatedKey };
+        output.end.parentNode.insertBefore(rowElement, output.end);
+        const range = rowScope.run(() => ownElementRange(rowElement, rowContext, runtime));
+        row = { element: rowElement, context: rowContext, values: rowState, scope: rowScope, key: evaluatedKey, output: range };
         rows.set(evaluatedKey, row);
-        rowScope.run(() => hydrateNodeFn(rowElement, rowContext, runtime));
+        try {
+          rowScope.run(() => hydrateNodeFn(rowElement, rowContext, runtime));
+        } catch (error) {
+          rows.delete(evaluatedKey);
+          try {
+            rowScope.dispose();
+          } catch (cleanupError) {
+            throw combinedError("Loop hydration and cleanup both failed.", [error, cleanupError]);
+          }
+          throw error;
+        }
         const owner = getNodeOwner(rowElement);
         if (owner) owner.structuralRoot = true;
       } else {
         row.values[itemName] = item;
         row.values[indexName] = index;
       }
-      if (row.element.previousSibling !== cursor)
-        (_a = placeholder.parentNode) == null ? void 0 : _a.insertBefore(row.element, cursor.nextSibling);
-      cursor = row.element;
+      const destination = row.output.start.parentNode;
+      const local = destination === output.end.parentNode && Boolean(row.output.end.compareDocumentPosition(output.end) & Node.DOCUMENT_POSITION_FOLLOWING);
+      if (!local && ![...portals.values()].some((portal) => portal.start.parentNode === destination)) {
+        let portal = portals.get(destination);
+        if (!portal) {
+          portal = createDomRange(element.ownerDocument, "for:portal");
+          destination.insertBefore(portal.start, row.output.start);
+          destination.insertBefore(portal.end, row.output.end.nextSibling);
+          portals.set(destination, portal);
+          output.addPortal(portal);
+        }
+        row.output.moveBefore(portal.end.parentNode, portal.end);
+      }
+      ordered.push(row);
     }
     for (const [key, row] of rows) {
       if (nextKeys.has(key)) continue;
       try {
         row.scope.dispose();
       } finally {
-        row.element.remove();
+        row.output.remove();
         rows.delete(key);
       }
+    }
+    const destinations = /* @__PURE__ */ new Map([[output.end.parentNode, output.end]]);
+    for (const portal of portals.values()) destinations.set(portal.end.parentNode, portal.end);
+    for (const row of ordered.reverse()) {
+      const destination = row.output.end.parentNode;
+      row.output.moveBefore(destination, destinations.get(destination) ?? null);
+      destinations.set(destination, row.output.start);
     }
   });
 }
@@ -1164,32 +1281,36 @@ function handleMask(element, expression, modifiers, context) {
     applyMask();
   });
 }
-function handleTeleport(element, expression, _modifiers, _context) {
+function handleTeleport(element, expression, _modifiers, context) {
   var _a;
   const targetSelector = expression.trim().replace(/^['"]|['"]$/g, "");
-  const target = document.querySelector(targetSelector);
+  const target = element.ownerDocument.querySelector(targetSelector);
   if (!target) {
     console.warn(`b-teleport target "${targetSelector}" not found.`);
     return;
   }
-  const placeholder = document.createComment("brio:teleport");
   const owner = getNodeOwner(element);
-  if (owner) ownNode(placeholder, owner.context, owner.runtime);
-  (_a = element.parentNode) == null ? void 0 : _a.replaceChild(placeholder, element);
-  target.appendChild(element);
+  if (!owner) throw new Error("b-teleport requires an owned Brio element.");
+  const range = ownElementRange(element, context, owner.runtime);
+  if (range.nodes().some((node) => node === target || node.contains(target)))
+    throw new Error("b-teleport cannot target its own rendered output.");
+  const placeholder = element.ownerDocument.createComment("brio:teleport");
+  ownNode(placeholder, owner.context, owner.runtime);
+  (_a = range.start.parentNode) == null ? void 0 : _a.insertBefore(placeholder, range.start);
+  range.moveBefore(target, null);
   onCleanup(() => {
     if (placeholder.parentNode) {
-      placeholder.parentNode.replaceChild(element, placeholder);
+      range.moveBefore(placeholder.parentNode, placeholder);
     } else {
-      element.remove();
+      range.remove();
     }
     placeholder.remove();
   });
 }
 function handleTemplate(element, _expression, _modifiers, context, runtime, hydrateNodeFn) {
-  var _a;
+  ownElementRange(element, context, runtime);
   const isTemplateTag = element.tagName.toLowerCase() === "template";
-  const fragment = isTemplateTag ? element.content.cloneNode(true) : document.createDocumentFragment();
+  const fragment = isTemplateTag ? cloneProjectedNode(element.content) : element.ownerDocument.createDocumentFragment();
   if (!isTemplateTag) {
     while (element.firstChild) {
       fragment.appendChild(element.firstChild);
@@ -1197,11 +1318,9 @@ function handleTemplate(element, _expression, _modifiers, context, runtime, hydr
   }
   const parent = element.parentNode;
   if (!parent) throw new Error("b-template requires an element with a parent node.");
-  const placeholder = document.createComment("brio:template");
-  ownNode(placeholder, context, runtime);
-  parent.replaceChild(placeholder, element);
   const insertedNodes = Array.from(fragment.childNodes);
-  (_a = placeholder.parentNode) == null ? void 0 : _a.insertBefore(fragment, placeholder.nextSibling);
+  parent.insertBefore(fragment, element);
+  element.remove();
   for (const node of insertedNodes) {
     if (node.parentNode === parent) hydrateNodeFn(node, context, runtime);
   }
@@ -1495,17 +1614,18 @@ function hydrateOwnedNode(node, parentContext, runtime) {
     context = handleData(element, dataAttr, {}, context);
     element.removeAttribute("b-data");
   }
-  const idAttr = element.getAttribute("b-id");
-  if (idAttr !== null) {
-    context = handleId(element, idAttr, {}, context);
-    element.removeAttribute("b-id");
-  }
   getNodeOwner(element).context = context;
   const forAttr = element.getAttribute("b-for");
   if (forAttr !== null) {
     const { modifiers } = extractModifiers("b-for");
     handleFor(element, forAttr, modifiers, context, runtime, hydrateNode);
     return;
+  }
+  const idAttr = element.getAttribute("b-id");
+  if (idAttr !== null) {
+    context = handleId(element, idAttr, {}, context);
+    element.removeAttribute("b-id");
+    getNodeOwner(element).context = context;
   }
   const provideAttr = element.getAttribute("b-provide");
   if (provideAttr !== null) {
@@ -1516,6 +1636,13 @@ function hydrateOwnedNode(node, parentContext, runtime) {
   const templateAttr = element.getAttribute("b-template");
   if (templateAttr !== null) {
     handleTemplate(element, templateAttr, {}, context, runtime, hydrateNode);
+    for (const attribute of Array.from(element.attributes)) {
+      const { baseName, modifiers } = extractModifiers(attribute.name);
+      if (baseName === "b-teleport" || baseName === "teleport")
+        handleTeleport(element, attribute.value, modifiers, context);
+      else if (baseName === "b-effect" || baseName === "effect")
+        handleEffect(element, attribute.value, modifiers, context);
+    }
     return;
   }
   const tagName = element.tagName.toLowerCase();
@@ -1564,7 +1691,7 @@ function hydrateOwnedNode(node, parentContext, runtime) {
       handleMask(element, attrValue, modifiers, context);
       element.removeAttribute(attrName);
     } else if (baseName === "b-teleport" || baseName === "teleport") {
-      handleTeleport(element, attrValue);
+      handleTeleport(element, attrValue, modifiers, context);
       element.removeAttribute(attrName);
     } else if (baseName === "b-transition" || baseName === "transition") {
       handleTransition(element, attrValue);
@@ -1668,8 +1795,8 @@ function createApp(options = {}) {
         throw new TypeError(`Brio mount target "${String(target)}" did not resolve to an element.`);
       if ([...activeMountRoots].some((mounted) => mounted.contains(root) || root.contains(mounted)))
         throw new Error("Brio mount roots cannot be equal or nested; use one app root with child components.");
-      if (Array.from(root.attributes).some((attribute) => ["b-if", "b-for"].includes(attribute.name.split(".")[0])))
-        throw new Error("b-if and b-for require a container root; wrap the structural directive in another element.");
+      if (Array.from(root.attributes).some((attribute) => ["b-if", "b-for", "b-template"].includes(attribute.name.split(".")[0])))
+        throw new Error("b-if, b-for and b-template require a container root; wrap the structural directive in another element.");
       const originalAttributes = Array.from(root.attributes).map((attribute) => [attribute.name, attribute.value]);
       const originalChildren = Array.from(root.childNodes, (child) => child.cloneNode(true));
       const scope = createScope(appScope);

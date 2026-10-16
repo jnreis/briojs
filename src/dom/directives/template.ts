@@ -1,5 +1,6 @@
 import type { DomRuntime } from '../types';
-import { ownNode } from '../ownership';
+import { ownElementRange } from '../range';
+import { cloneProjectedNode } from '../components';
 
 export function handleTemplate(
     element: Element,
@@ -9,11 +10,11 @@ export function handleTemplate(
     runtime: DomRuntime,
     hydrateNodeFn: (node: Node, context: Record<PropertyKey, any>, runtime: DomRuntime) => void,
 ): void {
-    // b-template can be used on any non-self-closing tag, including <template>
+    ownElementRange(element, context, runtime);
     const isTemplateTag = element.tagName.toLowerCase() === 'template';
     const fragment = isTemplateTag
-        ? (element as HTMLTemplateElement).content.cloneNode(true)
-        : document.createDocumentFragment();
+        ? cloneProjectedNode((element as HTMLTemplateElement).content)
+        : element.ownerDocument.createDocumentFragment();
 
     if (!isTemplateTag) {
         while (element.firstChild) {
@@ -24,12 +25,9 @@ export function handleTemplate(
     const parent = element.parentNode;
     if (!parent) throw new Error('b-template requires an element with a parent node.');
 
-    const placeholder = document.createComment('brio:template');
-    ownNode(placeholder, context, runtime);
-    parent.replaceChild(placeholder, element);
-
     const insertedNodes = Array.from(fragment.childNodes);
-    placeholder.parentNode?.insertBefore(fragment, placeholder.nextSibling);
+    parent.insertBefore(fragment, element);
+    element.remove();
 
     for (const node of insertedNodes) {
         if (node.parentNode === parent) hydrateNodeFn(node, context, runtime);

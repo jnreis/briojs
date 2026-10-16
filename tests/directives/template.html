@@ -12,13 +12,10 @@
         .box { padding: 14px; background: #f0fdf4; border: 1px solid #86efac; border-radius: 6px; }
     </style>
 </head>
-<body b-data="{
-    message: 'Hello from parent context!',
-    author: 'Grace Hopper'
-}">
+<body>
 
     <h1>b-template Directive Manual Tests</h1>
-    <p>Tests replacing wrapper template elements with their evaluated inner HTML contents while preserving context and hydration.</p>
+    <p>Authored contents become owned, wrapperless ranges. Text, multiple roots and nested structural output move and clean up together.</p>
 
     <!-- Test 1: In-place template extraction -->
     <div class="card">
@@ -31,13 +28,89 @@
         </div>
     </div>
 
+    <section class="card">
+        <h3>2. Destructive conditional fragment</h3>
+        <button id="toggle-destructive" b-on-click="$data.visible = !$data.visible">Toggle fragment</button>
+        <div id="destructive">
+            <template b-if="$data.visible" b-template b-data="{ count: 0 }">
+                Text root and
+                <button id="local-count" b-on-click="$data.count++">Local: ${$data.count}</button>
+                <template b-template><strong>Nested fragment</strong></template>
+            </template>
+        </div>
+        <p>Toggle off removes every root. Toggle on creates fresh local state.</p>
+    </section>
+
+    <section class="card">
+        <h3>3. Preserved fragment</h3>
+        <button id="toggle-preserved" b-on-click="$data.preserved = !$data.preserved">Toggle detached fragment</button>
+        <button id="increment" b-on-click="$data.counter++">Increment shared value</button>
+        <div id="preserved">
+            <template b-if.detach="$data.preserved" b-template>
+                <label for="preserved-input">Retained input</label>
+                <input id="preserved-input" placeholder="Type here, detach and return">
+                <b id="preserved-count" b-text="$data.counter"></b>
+            </template>
+        </div>
+        <p>Input node/value survive. Bindings stay reactive while disconnected.</p>
+    </section>
+
+    <section class="card">
+        <h3>4. Keyed, multi-root rows with unique IDs</h3>
+        <button id="reverse" b-on-click="$data.rows.reverse()">Reverse rows</button>
+        <button id="add" b-on-click="$data.rows.push({ id: $data.next, name: 'Row ' + $data.next++ })">Add row</button>
+        <button id="remove" b-on-click="$data.rows.pop()">Remove last</button>
+        <div id="rows">
+            <template b-for="row, index in $data.rows" b-key="$for.row.id" b-template
+                      b-id="['field']" b-provide="{ name: $for.row.name }">
+                ${$for.index}:
+                <label b-bind-for="$id.field" b-text="$provided.name"></label>
+                <input b-bind-id="$id.field" b-bind-data-row="$for.row.id">
+                <br>
+            </template>
+        </div>
+        <p>Each row has several roots and text. Reordering preserves inputs, their values and their IDs.</p>
+    </section>
+
+    <section class="card">
+        <h3>5. Teleported, detached loop fragments</h3>
+        <button id="toggle-remote" b-on-click="$data.remote = !$data.remote">Toggle remote group</button>
+        <template b-if.detach="$data.remote" b-for="row in $data.rows" b-key="$for.row.id"
+                  b-template b-teleport="'#template-portal'">
+            <strong class="remote-name" b-text="$for.row.name"></strong>
+            <input b-bind-data-row="$for.row.id" placeholder="Retained remote value">
+        </template>
+        <aside id="template-portal" class="box"></aside>
+        <p>Detach, reverse/add rows above, then restore: remote output returns in the new order with retained input values.</p>
+    </section>
+
+    <section class="card">
+        <h3>6. Template-owned effect</h3>
+        <template b-template b-effect="$data.record($data.counter)">
+            <span>Shared value: ${$data.counter}</span>
+        </template>
+        <p>Last observed value: <b id="effect-value" b-text="$data.observed"></b></p>
+        <p>Use a concrete wrapper for b-if.hide or group transitions. Put DOM events, bindings and form directives on surviving children.</p>
+    </section>
+
     <script src="/dist/brio.min.js"></script>
     <script>
         window.addEventListener('DOMContentLoaded', () => {
-            const app = brio.createApp();
+            const app = brio.createApp({ state: () => ({
+                message: 'Hello from parent context!',
+                author: 'Grace Hopper',
+                visible: true,
+                preserved: true,
+                remote: true,
+                counter: 0,
+                observed: 0,
+                rows: [{ id: 1, name: 'Ada' }, { id: 2, name: 'Grace' }],
+                next: 3,
+                record(value) { this.observed = value; },
+            }) });
             app.mount('body');
             console.log('template.html hydrated successfully');
-        });
+        }, { once: true });
     </script>
 </body>
 </html>

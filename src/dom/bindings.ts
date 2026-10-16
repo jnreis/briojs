@@ -147,27 +147,26 @@ function hydrateOwnedNode(
         ...(runtime.root ? { $insert: createInsert(runtime) } : {}),
     }, parentContext);
 
-    // 2. b-data
     const dataAttr = element.getAttribute('b-data');
     if (dataAttr !== null) {
         context = handleData(element, dataAttr, {}, context);
         element.removeAttribute('b-data');
     }
 
-    // 3. b-id
-    const idAttr = element.getAttribute('b-id');
-    if (idAttr !== null) {
-        context = handleId(element, idAttr, {}, context);
-        element.removeAttribute('b-id');
-    }
     getNodeOwner(element)!.context = context;
 
-    // 5. b-for
     const forAttr = element.getAttribute('b-for');
     if (forAttr !== null) {
         const { modifiers } = extractModifiers('b-for');
         handleFor(element, forAttr, modifiers, context, runtime, hydrateNode);
         return;
+    }
+
+    const idAttr = element.getAttribute('b-id');
+    if (idAttr !== null) {
+        context = handleId(element, idAttr, {}, context);
+        element.removeAttribute('b-id');
+        getNodeOwner(element)!.context = context;
     }
 
     const provideAttr = element.getAttribute('b-provide');
@@ -177,14 +176,19 @@ function hydrateOwnedNode(
         getNodeOwner(element)!.context = context;
     }
 
-    // 6. b-template
     const templateAttr = element.getAttribute('b-template');
     if (templateAttr !== null) {
         handleTemplate(element, templateAttr, {}, context, runtime, hydrateNode);
+        for (const attribute of Array.from(element.attributes)) {
+            const { baseName, modifiers } = extractModifiers(attribute.name);
+            if (baseName === 'b-teleport' || baseName === 'teleport')
+                handleTeleport(element, attribute.value, modifiers, context);
+            else if (baseName === 'b-effect' || baseName === 'effect')
+                handleEffect(element, attribute.value, modifiers, context);
+        }
         return;
     }
 
-    // 7. Component tags
     const tagName = element.tagName.toLowerCase();
     const isComponent = componentNamePattern.test(tagName);
     const definition = isComponent ? runtime.components.get(tagName) : undefined;
@@ -194,7 +198,6 @@ function hydrateOwnedNode(
         return;
     }
 
-    // 8. Directives & Event Bindings
     let hasText = false;
     let hasHtml = false;
     const transitionAttr = Array.from(element.attributes)

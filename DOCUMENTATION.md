@@ -230,6 +230,7 @@ Directive arguments use hyphens (`b-on-click`, `b-bind-href`); options use chain
 | --- | --- |
 | `b-data` | Create a nested state scope from an object expression. |
 | `b-provide` | Provide live named values to this element and its subtree through `$provided`. |
+| `b-id` | Generate named unique values in `$id`; bind them to `id`, `for`, or classes explicitly. |
 | `b-text` | Reactively set an element's text content. |
 | `b-bind-name` | Reactively bind an attribute or DOM property, e.g. `b-bind-href="$data.url"`. |
 | `b-on-event` | Listen for a DOM event, e.g. `b-on-submit="$data.save($event)"`. |
@@ -240,9 +241,16 @@ Directive arguments use hyphens (`b-on-click`, `b-bind-href`); options use chain
 | `b-transition` | Animate enter/leave with named CSS transition classes. |
 | `b-for` | Render an array, iterable, object, or integer. |
 | `b-key` | Give a repeated item a stable string or number identity. Used with `b-for`. |
+| `b-template` | Unwrap an element or instantiate a `<template>`'s contents in place, hydrating them without a rendered wrapper. |
 | `b-html` | Insert explicitly trusted HTML created by `trustedHTML()`. |
 | `b-ignore` | Skip hydration for this element and its descendants. |
+| `b-teleport` | Move an element to an existing document selector while retaining its expression context. |
+| `b-effect` | Run a reactive expression for side effects in the element's owned scope. |
 | `b-router-outlet` | Render the component matching the current optional route. |
+| `b-on-enter`, `b-on-exit` | Observe intersection/visibility changes. |
+| `b-on-addednodes`, `b-on-removednodes`, `b-on-attrs`, `b-on-text` | Observe DOM mutations. |
+| `b-on-resize` | Observe element or document size changes. |
+| `b-options` | Configure observer directives on the same element; see Observer options. |
 
 ```html
 <div b-data="{ query: '', visible: true, results: ['Brio', 'HTML'] }">
@@ -270,6 +278,163 @@ whitespace and numeric-looking text. Supported model modifiers are `.lazy`
 (`parseFloat`, keeping nonnumeric text unchanged). There is no `b-model.raw`
 modifier; `.raw` belongs to `b-text` and `b-html` and controls content hydration,
 not model value conversion.
+
+### Wrapperless content with `b-template`
+
+`b-template` is an **in-place, one-time unwrap**, not a component definition,
+named template registry, HTML expression, or reactive template selector:
+
+```html
+<div id="app">
+  <template b-template>
+    <h2>${$data.title}</h2>
+    <p b-text="$data.description"></p>
+  </template>
+</div>
+```
+
+Brio replaces the marked element with paired anchor comments and its hydrated
+contents. Multiple top-level elements, text nodes, and comments are allowed.
+The example renders the heading and paragraph directly inside `#app`.
+A native `<template>` without `b-template` stays inert; Brio does not hydrate
+its `.content` automatically.
+
+- On `<template b-template>`, Brio clones the template's inert contents.
+  On an ordinary container such as `<div b-template>`, it moves the existing
+  children out and removes the container. Use a non-void element with children.
+- Use the exact bare attribute `b-template` (or `b-template=""`). There are no
+  supported modifiers, arguments, or shorthand alias. Its attribute value is
+  not evaluated; `b-template="$data.template"` does not select a template.
+- No other directive is required. Children inherit the expression context and
+  hydrate normally, with their own `$el`. Their bindings remain reactive even
+  though unwrapping itself happens only once.
+- Same-element `b-data`, `b-id`, and `b-provide` are processed before unwrapping
+  and are available to the contents. These are useful optional companions:
+
+  ```html
+  <template b-template b-data="{ label: 'Name' }"
+            b-id="['input']" b-provide="{ label: $data.label }">
+    <label b-bind-for="$id.input" b-text="$provided.label"></label>
+    <input b-bind-id="$id.input">
+  </template>
+  ```
+
+  The label and input survive; the template does not. Context-creating
+  expressions on the wrapper see that wrapper as `$el`, not a rendered child.
+- Same-element `b-effect` runs in the template's owned scope, after its contents
+  hydrate. `b-teleport` moves the whole rendered range to its destination,
+  including text, nested structural output, and boundary comments. Its selector
+  must already exist; it is not a reactive template-source expression.
+- Ordinary same-element directives do **not** run after `b-template` takes
+  over: `b-text`, `b-html`, `b-bind-*`, events/observers, `b-model`, `b-mask`,
+  `b-script`, `b-transition`, and `b-router-outlet`
+  on that wrapper are skipped. Move them onto surviving children or an outer
+  container. A registered component tag with `b-template` is unwrapped rather
+  than instantiated as a component.
+- Wrapper attributes are not forwarded: `class`, `style`, `id`, accessibility
+  attributes, and the wrapper's layout/semantics disappear. Native CSS `@scope`
+  follows the style element's new physical parent.
+- Keep a stable, concrete mount root; `b-template` **inside** it is supported,
+  but putting it on the element passed to `app.mount()` is an error.
+- Plain `b-if` / `b-else-if` / `b-else` and `b-if.detach` support template
+  branches. Plain conditionals dispose and remove the complete rendered range;
+  `.detach` disconnects/reinserts the same range without stopping effects.
+  Nested templates, loops, and teleported output are cleaned up with their owner.
+- `b-for` with `b-key` supports template rows: all roots and text move together,
+  retained keys preserve DOM/local state, and removed keys dispose their scopes.
+  Same-element `b-id` generates IDs per row; providers may read that row's `$for`.
+- `.hide` still requires a concrete branch element. There is no wrapper whose
+  display could be changed, and text nodes have no display property. Use
+  `.detach` for wrapperless preservation or a concrete wrapper for `.hide`.
+  A same-element `b-transition` is not a fragment/group animation API; use a
+  concrete conditional branch when its whole output needs enter/leave transitions.
+
+These combinations need no rendered wrapper:
+
+```html
+<template b-if="$data.visible" b-template>
+  <h2>Conditional heading</h2>
+  <p>Both roots are removed and disposed together.</p>
+</template>
+
+<ul>
+  <template b-template b-for="item in $data.items" b-key="$for.item.id">
+    <li b-text="$for.item.name"></li>
+    <li b-text="$for.item.description"></li>
+  </template>
+</ul>
+
+<template b-if.detach="$data.open" b-template b-teleport="'#portal'">
+  <h2>Preserved at the destination</h2>
+  <button b-on-click="$data.open = false">Close</button>
+</template>
+```
+
+Teleported keyed rows reorder together at their destination without moving back
+to the source. When a conditional also owns a same-element loop, `.detach`
+suspends that loop's teleported row groups too; collection updates while detached
+are reflected on reinsertion. As with concrete wrappers, teleporting a
+**descendant** elsewhere does not make ancestor CSS display control it.
+
+### Directive combinations and conflicts
+
+Directives are not an unordered set of independent behaviors. Structural
+directives can replace a host or return before the ordinary directive pass.
+**Changing attribute order does not change structural precedence:**
+
+1. `b-ignore` skips the entire element and its subtree, including other directives.
+2. A conditional chain is collected and evaluated in the **parent** context;
+   only its branch instances proceed to the remaining steps.
+3. `b-data` establishes context on that element.
+4. `b-for` establishes repetition; each row is hydrated separately with `$for`.
+5. `b-id` and `b-provide` establish row-local IDs/live inherited values.
+6. `b-template` unwraps and hydrates contents, then processes its supported
+   `b-teleport` / `b-effect` companions, skipping other host processing.
+7. A registered component tag is mounted through its component-specific path.
+8. Ordinary host directives are processed in attribute order; children hydrate
+   afterward unless a directive owns their content. `b-router-outlet` returns
+   immediately when encountered.
+
+Use one owner per DOM resource (children, input value, display, or structural
+host). Not every conflict throws: some skip a directive or let reactive effects
+overwrite each other. Do not rely on attribute order to resolve competing owners.
+
+| Combination | Behavior / recommended pattern |
+| --- | --- |
+| `b-if` + same-element `b-data`, `b-provide`, or `b-id` | The condition cannot use values created by those directives on that branch. It sees the parent context. Move context creation onto an outer element if the condition needs it. |
+| `b-if` + same-element `b-for` | Plain `b-if` and `.detach` own the complete loop output, including template rows. The condition runs before the loop and cannot read that row's `$for`. `.hide` requires a concrete wrapper instead. For per-row conditions, put a conditional inside the repeated row/template. |
+| `b-for` + same-element `b-data` | Data is created before repetition, not independently per row. The initializer cannot read the new row's `$for`. Put per-item data on a child inside the row/template. |
+| `b-for` + same-element `b-id` | Supported: IDs are generated per row after `$for` is established. Retained keys keep their IDs; new keys get fresh IDs. A same-element `b-key` is evaluated before these new IDs exist. |
+| `b-for` + same-element `b-provide` | Supported: providers are created during row hydration and can use the row's `$for`. |
+| `b-for` + `b-key` | Supported; `b-key` belongs on that repeated element and evaluates in its row context. It has no standalone binding behavior. |
+| `b-template` + structural/ordinary host directives | See the limitations above. Context directives may share its wrapper; put behaviors requiring a surviving element inside or outside it. |
+| Multiple conditional directives on one element | An error. Use one of `b-if`, `b-else-if`, or `b-else` per branch; only the leading `b-if` accepts mode modifiers. |
+| `b-text` + `b-html` (including `.raw`) | Both replace the same children. Do not combine them. Existing child markup is replaced, not used as fallback or an additional hydrated template. |
+| `b-bind-*` targeting `textContent` / `innerHTML` or `b-effect` mutating children + hydrated content | Direct DOM writes are not a substitute for owned content replacement and may remove nodes without disposing their bindings. Use `b-text` / `b-html` instead; keep third-party-managed subtrees under `b-ignore`. |
+| `b-html` + child directives | Non-raw HTML hydrates each replacement in an owned content scope and disposes the previous one. `.raw` skips directives/interpolation in inserted content. In either mode, do not separately manage those same children with an outlet, insertion API, or another content writer. |
+| `b-router-outlet` + content writers / authored child bindings | Give the outlet a dedicated empty container. It manages routed component children; other content owners conflict, and ordinary attributes after the outlet are not processed. Put unrelated behaviors on an outer wrapper. |
+| `b-model` + `b-bind-value` / `b-bind-checked` / manual value-writing effects | Competing state-to-control writers. Let `b-model` own the control's value/selection; ordinary event handlers may perform additional actions but should not establish another independent value binding. |
+| `b-model` + `b-mask` | Supported on text-like inputs/textareas: the mask formats input before model listeners read it. Masked values are formatted strings; `.number` uses `parseFloat`, not locale-aware money parsing. Initialize model values in the expected format; changing model state alone does not cause an input event or guarantee reformatting by the mask. |
+| `b-model` on non-form elements; `b-mask` on non-input/textarea elements; `b-script` on non-script elements | Errors when processed. A component host does not acquire native input/script capabilities by using one of these directives. |
+| `b-if.hide` + `b-bind-style` / effects writing `display` on the branch | Competing display owners; a reactive style write can reveal an inactive branch or override activation. Let the conditional own branch display; style a child or use `.detach` when appropriate. |
+| `b-transition` + dynamic class/style bindings | Avoid bindings that remove transition classes or overwrite animated properties while a transition runs. Put dynamic classes/styles on a child when possible. `b-transition` does not provide automatic list-move/leave animation for `b-for`, or animate every descendant when an ancestor is removed. |
+| `b-for` + same-row `b-teleport` | Supported for concrete or template rows. Keyed reconciliation moves the complete row range at its destination. Each loop owns a bounded destination group, preserving unrelated surrounding content. |
+| `b-if` + teleported children | Supported, but hiding an ancestor with `.hide` cannot hide descendants moved elsewhere. Their effects also stay live in preservation modes. Put visibility on the surviving teleported element when it must be controlled independently. |
+| Multiple bindings/effects writing the same attribute/property | No arbitration. Use one expression per target; do not combine prefixed/unprefixed aliases or different modifier spellings to install competing bindings. |
+
+For ordinary DOM events, `.outside`, `.window`, and `.document` are alternative
+targets, not combinations: `.outside` wins over `.window`, which wins over
+`.document`. `.debounce` wins over `.throttle` if both are present; choose one.
+Avoid `.passive.prevent` because a passive listener cannot cancel the default
+action. `.prevent`/`.stop` execute before `.self`/`.outside` filtering, so those
+filters do not prevent the cancellation/propagation side effect. These are
+ordinary-element event rules; component hosts use the separate contract below.
+
+Observer `b-options` is specific to observer directives, not general directive
+configuration. An observer on an element whose attributes/children are updated
+by bindings or `b-html` can observe those framework writes too. Do not write the
+same observed state/DOM back unconditionally from its callback or `b-effect`:
+that can create feedback loops.
 
 ### Conditional lifecycle
 
@@ -315,8 +480,9 @@ branch in that chain:
 - Initially inactive branches do not enter-transition on mount. Subsequent
   activation/deactivation animates; hiding/detaching waits for leave completion.
   Rapid reversals cancel stale removal callbacks.
-- Use a concrete element or component host for preserved branches. Put
-  `b-for` / `b-template` inside a wrapper, not on that same branch element.
+- `.hide` needs a concrete element or component host. Put
+  `b-for` / `b-template` inside a wrapper for that mode. `.detach` also supports
+  wrapperless template branches and same-element loops.
   Hiding a wrapper does not hide descendants teleported elsewhere.
 - Combining `.hide` and `.detach`, unknown conditional modifiers, or modifiers
   on `b-else-if` / `b-else` is an error.
@@ -451,6 +617,27 @@ app.mount('#widgets');
 ```
 
 Static host attributes become string props; `b-bind-name` supplies a reactive prop through `$props`. Setup receives `$props`, `$emit`, `$stores`, `$provided`, the host element as `el`, and `app`. Templates and contextual scripts also access `$props` and `$emit`. Component events are bubbling `CustomEvent`s emitted with `$emit(name, detail)`. Named slots use `slot="name"` on projected content and `<slot name="name">` in the template. Component setup runs in an owned scope; effects, persistence, and listeners registered during setup are disposed when the component is removed.
+
+### Directives on component hosts
+
+Registered component tags do not use the ordinary-element directive pass.
+`b-bind-*` supplies props, not native host attribute/property bindings (so
+`b-bind-class` supplies a `class` prop; it does not style the host).
+`b-on-*`/`on-*` installs host event listeners using the part before the first
+dot as the event name; ordinary DOM event modifiers are **not applied**.
+For example, `.prevent`, `.once`, and `.window` do not gain their usual
+ordinary-element behavior here. Observer-style names are host event names,
+not observer installation. Put native modifiers/observers on a concrete
+wrapper or inside the component template.
+
+Earlier structural/context steps still apply: `b-if`, `b-for` with `b-key`,
+`b-data`, `b-id`, and `b-provide` can be handled before component setup, subject
+to the combination rules above. `b-ignore` skips setup altogether, while
+`b-template` unwraps the tag instead of setting it up.
+Other `b-*` host directives (such as `b-model`, `b-html`, `b-teleport`, and
+`b-transition`) are rejected. Do not use unprefixed aliases to bypass that
+restriction; they do not install ordinary host behaviors either.
+Use a surviving wrapper or put the directive inside the component.
 
 ## Recommended CSS
 

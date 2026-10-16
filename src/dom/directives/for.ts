@@ -4,7 +4,11 @@ import { createScope, onCleanup } from '../../core/scope';
 import { createScopedState } from '../../core/scoped-state';
 import type { Scope } from '../../core/scope';
 import type { DomRuntime } from '../types';
-import { getNodeOwner, ownNode } from '../ownership';
+import { getNodeOwner } from '../ownership';
+import { createDomRange, ownElementRange } from '../range';
+import type { DomRange } from '../range';
+import { combinedError } from '../../core/errors';
+import { cloneProjectedNode } from '../components';
 
 type LoopRow = {
     element: Element;
@@ -12,6 +16,7 @@ type LoopRow = {
     values: Record<string, unknown>;
     scope: Scope;
     key: string | number;
+    output: DomRange;
 };
 
 const enumerate = (value: unknown): [unknown, unknown][] => {
@@ -40,14 +45,15 @@ export function handleFor(
     if (itemName === '$parent' || indexName === '$parent')
         throw new SyntaxError('$parent is reserved for Brio loop ancestry.');
     const keyExpression = element.getAttribute('b-key');
-    const placeholder = document.createComment('brio:for');
-    ownNode(placeholder, context, runtime);
-    const template = element.cloneNode(true) as Element;
+    const output = ownElementRange(element, context, runtime);
+    const placeholder = output.start;
+    const template = cloneProjectedNode(element);
     template.removeAttribute('b-for');
     template.removeAttribute('b-key');
-    parent.replaceChild(placeholder, element);
+    element.remove();
 
     const rows = new Map<string | number, LoopRow>();
+    const portals = new Map<Node, DomRange>();
 
     onCleanup(() => {
         const errors: unknown[] = [];
@@ -57,7 +63,7 @@ export function handleFor(
             } catch (error) {
                 errors.push(error);
             } finally {
-                row.element.remove();
+                row.output.remove();
             }
         }
         rows.clear();
@@ -68,7 +74,7 @@ export function handleFor(
     effect(() => {
         const entries = enumerate(evaluate(collectionExpression, context));
         const nextKeys = new Set<string | number>();
-        let cursor: Node = placeholder;
+        const ordered: LoopRow[] = [];
         for (const [index, item] of entries) {
             const loopData = { [itemName]: item, [indexName]: index };
             const rowState = createScopedState(loopData, context.$for);
@@ -82,29 +88,60 @@ export function handleFor(
 
             let row = rows.get(evaluatedKey);
             if (!row) {
-                const rowElement = template.cloneNode(true) as Element;
+                const rowElement = cloneProjectedNode(template);
                 const rowScope = createScope();
-                row = { element: rowElement, context: rowContext, values: rowState, scope: rowScope, key: evaluatedKey };
+                output.end.parentNode!.insertBefore(rowElement, output.end);
+                const range = rowScope.run(() => ownElementRange(rowElement, rowContext, runtime));
+                row = { element: rowElement, context: rowContext, values: rowState, scope: rowScope, key: evaluatedKey, output: range };
                 rows.set(evaluatedKey, row);
-                rowScope.run(() => hydrateNodeFn(rowElement, rowContext, runtime));
+                try {
+                    rowScope.run(() => hydrateNodeFn(rowElement, rowContext, runtime));
+                } catch (error) {
+                    rows.delete(evaluatedKey);
+                    try {
+                        rowScope.dispose();
+                    } catch (cleanupError) {
+                        throw combinedError('Loop hydration and cleanup both failed.', [error, cleanupError]);
+                    }
+                    throw error;
+                }
                 const owner = getNodeOwner(rowElement);
                 if (owner) owner.structuralRoot = true;
             } else {
                 row.values[itemName] = item;
                 row.values[indexName] = index;
             }
-            if (row.element.previousSibling !== cursor)
-                placeholder.parentNode?.insertBefore(row.element, cursor.nextSibling);
-            cursor = row.element;
+            const destination = row.output.start.parentNode!;
+            const local = destination === output.end.parentNode &&
+                Boolean(row.output.end.compareDocumentPosition(output.end) & Node.DOCUMENT_POSITION_FOLLOWING);
+            if (!local && ![...portals.values()].some(portal => portal.start.parentNode === destination)) {
+                let portal = portals.get(destination);
+                if (!portal) {
+                    portal = createDomRange(element.ownerDocument, 'for:portal');
+                    destination.insertBefore(portal.start, row.output.start);
+                    destination.insertBefore(portal.end, row.output.end.nextSibling);
+                    portals.set(destination, portal);
+                    output.addPortal(portal);
+                }
+                row.output.moveBefore(portal.end.parentNode!, portal.end);
+            }
+            ordered.push(row);
         }
         for (const [key, row] of rows) {
             if (nextKeys.has(key)) continue;
             try {
                 row.scope.dispose();
             } finally {
-                row.element.remove();
+                row.output.remove();
                 rows.delete(key);
             }
+        }
+        const destinations = new Map<Node, Node | null>([[output.end.parentNode!, output.end]]);
+        for (const portal of portals.values()) destinations.set(portal.end.parentNode!, portal.end);
+        for (const row of ordered.reverse()) {
+            const destination = row.output.end.parentNode!;
+            row.output.moveBefore(destination, destinations.get(destination) ?? null);
+            destinations.set(destination, row.output.start);
         }
     });
 }

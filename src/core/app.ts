@@ -105,8 +105,8 @@ export function createApp<
             if ([...activeMountRoots].some(mounted => mounted.contains(root) || root.contains(mounted)))
                 throw new Error('Brio mount roots cannot be equal or nested; use one app root with child components.');
             if (Array.from(root.attributes).some(attribute =>
-                ['b-if', 'b-for'].includes(attribute.name.split('.')[0])))
-                throw new Error('b-if and b-for require a container root; wrap the structural directive in another element.');
+                ['b-if', 'b-for', 'b-template'].includes(attribute.name.split('.')[0])))
+                throw new Error('b-if, b-for and b-template require a container root; wrap the structural directive in another element.');
 
             const originalAttributes = Array.from(root.attributes)
                 .map(attribute => [attribute.name, attribute.value] as const);

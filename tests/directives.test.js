@@ -728,12 +728,12 @@ test('conditional validation rejects unsupported modifiers, conflicting modes an
         ['<div b-else-if.hide="true"></div>', /adjacent preceding/],
         ['<div b-if="false"></div>text<div b-else></div>', /adjacent preceding/],
     ];
+    invalid.push(
+        ['<div b-if.hide="false" b-for="n in 2"></div>', /concrete branch/],
+        ['<template b-if.hide="true" b-template></template>', /concrete branch/],
+        ['<div b-if.hide="true"></div><div b-else b-for="n in 2"></div>', /concrete branch/],
+    );
     for (const mode of ['hide', 'detach']) {
-        invalid.push(
-            [`<div b-if.${mode}="false" b-for="n in 2"></div>`, /concrete branch/],
-            [`<template b-if.${mode}="true" b-template></template>`, /concrete branch/],
-            [`<div b-if.${mode}="true"></div><div b-else b-for="n in 2"></div>`, /concrete branch/],
-        );
         const { app, root } = environment(t, '');
         root.setAttribute(`b-if.${mode}`, 'true');
         assert.throws(() => app.mount(root), /container root/);

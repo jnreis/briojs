@@ -64,7 +64,7 @@ app.dispose();
 Mount targets are elements or selectors; roots cannot overlap, even across apps.
 Separate apps isolate app state; multiple roots of one app share `app.state`.
 Explicitly registered stores can be shared across apps.
-Root elements cannot carry `b-if` or `b-for`: use descendants.
+Root elements cannot carry `b-if`, `b-for`, or `b-template`: use descendants.
 
 `mount.unmount()` restores the root's original attributes and child markup.
 `app.unmount()` unmounts all roots but permits later mounting.
@@ -203,8 +203,8 @@ Escape HTML-significant characters in literal text/attribute values.
 | `b-script` | Only on a script element; see required writing style below. |
 | `b-effect="$data.observe($data.count)"` | Reactive expression, not a block of event-style statements. Avoid feedback writes. |
 | `b-id="['input']"` | Creates `$id.input`; bind `id`/label `for` explicitly. |
-| `b-template` | Unwraps a template or element into hydrated sibling nodes. |
-| `b-teleport="'#portal'"` | Moves an element to an existing document selector; not a reactive destination expression. |
+| `b-template` | Unwraps authored contents into an owned range of hydrated siblings. Supports keyed `b-for`, plain `b-if`, `.detach`, `b-id`, providers, teleport and effects; no template-name/expression sourcing. |
+| `b-teleport="'#portal'"` | Moves an element or template range to an existing document selector; not a reactive destination expression. |
 | `b-router-outlet` | Renders the router's matched registered component. |
 
 When unmodified `b-if` becomes false, removal and disposal wait for leave completion
@@ -220,8 +220,16 @@ and reinserts the same live nodes. Leave transitions finish before hiding or
 detaching; rapid reversals cancel stale callbacks.
 All conditional expressions evaluate in the parent context before the branch's
 `b-data` / providers. Do not put modifiers on else branches, combine preservation
-modes. Same-element `b-for` / `b-template` requires a
-wrapper in preservation modes; nested structural directives remain supported.
+modes. `.hide` requires a concrete branch; wrap same-element loops/templates
+for that mode. Plain conditionals and `.detach` support template fragments and
+same-element loops; complete output moves/removes together. Keyed templates
+preserve multiple roots, text, and row-local IDs through reorder; `b-id` runs
+after `b-for`, while same-element `b-data` still runs before the loop.
+Same-element `b-teleport` moves the range and `b-effect` runs after children
+hydrate. Bindings/events/model/transition/script belong on surviving children,
+not the removed template wrapper. Use a concrete branch for group transitions.
+Detached conditional loops suspend their teleported row groups and reconcile
+hidden collection updates before restoring output at its destination.
 Teleported descendants are not hidden by hiding their source wrapper.
 Avoid competing imperative writes to directive-owned children.
 

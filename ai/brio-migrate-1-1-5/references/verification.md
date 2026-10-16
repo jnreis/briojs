@@ -32,6 +32,10 @@ its callers and generated markup.
   function-path invocation, async data factories, or unprovided ESM bindings.
 - **Loops:** empty/object/array cases, insert/delete/reorder, duplicate identities,
   nested loop and local state semantics. Stable keys are unique strings/numbers.
+- **Templates:** multi-root/text output moves and disposes as a range; check keyed
+  row identity/IDs, conditional cleanup, detach/reinsert with live updates,
+  teleport destination ordering, managed insertion cleanup, and nested fragments.
+  `.hide`/group transitions need concrete branches; mount roots cannot unwrap.
 - **Conditions:** false disposes effects/listeners after leave completion
   (immediately without a transition); reversal reuses the live element and state,
   while activation after completed removal resets local state.

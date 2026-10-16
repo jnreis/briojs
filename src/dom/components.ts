@@ -15,6 +15,25 @@ export function takeProjectedContext(node: Node): Record<PropertyKey, any> | und
     return context;
 }
 
+export function cloneProjectedNode<T extends Node>(node: T): T {
+    const clone = node.cloneNode(true) as T;
+    const copy = (source: Node, target: Node) => {
+        const context = projectedContexts.get(source);
+        if (context) projectedContexts.set(target, context);
+        const children = Array.from(target.childNodes);
+        Array.from(source.childNodes).forEach((child, index) => copy(child, children[index]));
+        if (source instanceof HTMLTemplateElement && target instanceof HTMLTemplateElement)
+            copy(source.content, target.content);
+    };
+    copy(node, clone);
+    return clone;
+}
+
+function findSlots(root: ParentNode): Element[] {
+    return Array.from(root.querySelectorAll('slot, template[b-template]')).flatMap(node =>
+        node instanceof HTMLTemplateElement ? findSlots(node.content) : [node]);
+}
+
 export function fillSlots(
     host: Element,
     template: DocumentFragment,
@@ -27,7 +46,7 @@ export function fillSlots(
         content.push(child);
         slots.set(name, content);
     }
-    for (const outlet of Array.from(template.querySelectorAll('slot'))) {
+    for (const outlet of findSlots(template)) {
         const name = outlet.getAttribute('name') ?? '';
         const content = slots.get(name);
         if (!content?.length) {

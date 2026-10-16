@@ -7,6 +7,9 @@ import { cancelTransition, enterTransition, getTransitionName, leaveTransition }
 import { getNodeOwner, ownNode } from '../ownership';
 import { extractModifiers } from './modifier';
 import { combinedError } from '../../core/errors';
+import { ownElementRange } from '../range';
+import type { DomRange } from '../range';
+import { cloneProjectedNode } from '../components';
 
 export function handleIf(
     element: Element,
@@ -33,10 +36,10 @@ export function handleIf(
             throw new SyntaxError('An element can have only one conditional directive.');
         if (node !== element && Object.keys(extractModifiers(conditional[0].name).modifiers).length)
             throw new SyntaxError('Conditional modifiers belong only on the leading b-if, not b-else-if or b-else.');
-        if (preserved && attributes.some(attribute =>
+        if (modifiers.hide && attributes.some(attribute =>
             ['b-for', 'b-template', 'template'].includes(extractModifiers(attribute.name).baseName)))
-            throw new SyntaxError('b-if.hide and b-if.detach require a concrete branch element; wrap b-for or b-template in another element.');
-        const template = node.cloneNode(true) as Element;
+            throw new SyntaxError('b-if.hide requires a concrete branch element; wrap b-for or b-template in another element or use .detach.');
+        const template = cloneProjectedNode(node);
         template.removeAttribute(conditional[0].name);
         originals.push(node);
         branches.push({ template, expression: condition });
@@ -61,16 +64,16 @@ export function handleIf(
         sibling = nextBranch(sibling);
     }
 
-    const placeholder = element.ownerDocument.createComment('brio:if');
-    ownNode(placeholder, context, runtime);
-    parent.replaceChild(placeholder, element);
+    const output = ownElementRange(element, context, runtime);
+    const placeholder = output.start;
+    element.remove();
     originals.slice(1).forEach(node => node.remove());
     let stopCondition: ReturnType<typeof effect> | undefined;
     onCleanup(() => stopCondition?.());
     const selectBranch = () => branches.findIndex(candidate =>
         candidate.expression === undefined || Boolean(evaluate(candidate.expression, context)));
 
-    type Instance = { index: number; element: HTMLElement; scope: Scope; anchor: Comment; display: string };
+    type Instance = { index: number; element: HTMLElement; scope: Scope; anchor: Comment; display: string; output: DomRange };
     const instances = new Map<number, Instance>();
     const anchors: Comment[] = [];
     let active: Instance | undefined;
@@ -88,7 +91,7 @@ export function handleIf(
         try {
             instance.scope.dispose();
         } finally {
-            instance.element.remove();
+            instance.output.remove();
         }
     };
     onCleanup(() => {
@@ -111,7 +114,7 @@ export function handleIf(
         const finish = () => {
             if (!preserved) destroy(instance);
             else if (modifiers.hide) current.style.display = 'none';
-            else current.remove();
+            else instance.output.detach();
         };
         if (animate && name && current.isConnected) leaveTransition(current, name, finish);
         else {
@@ -120,22 +123,25 @@ export function handleIf(
         }
     };
     const createInstance = (index: number, visible: boolean, anchor = placeholder): Instance => {
-        const current = branches[index].template.cloneNode(true) as HTMLElement;
+        const current = cloneProjectedNode(branches[index].template) as HTMLElement;
+        const scope = createScope();
+        const destination = visible || modifiers.hide ? anchor.parentNode! :
+            element.ownerDocument.createDocumentFragment();
+        destination.insertBefore(current, destination === anchor.parentNode ? anchor.nextSibling : null);
+        const range = scope.run(() => ownElementRange(current, context, runtime));
         const instance = {
-            index, element: current, scope: createScope(), anchor,
+            index, element: current, scope, anchor, output: range,
             display: current.style.display === 'none' ? '' : current.style.display,
         };
         instances.set(index, instance);
         if (modifiers.hide) current.style.display = visible ? instance.display : 'none';
-        if (visible || modifiers.hide) anchor.parentNode?.insertBefore(current, anchor.nextSibling);
-        else element.ownerDocument.createDocumentFragment().append(current);
         try {
             instance.scope.run(() => hydrateNodeFn(current, context, runtime));
             const owner = getNodeOwner(current);
             if (owner) owner.structuralRoot = true;
-            if (preserved && current.isConnected && current.parentNode !== parent) {
+            if (preserved && range.start.isConnected && !output.nodes().includes(range.start)) {
                 instance.anchor = createAnchor();
-                current.before(instance.anchor);
+                range.start.before(instance.anchor);
             }
             if (!visible) deactivate(instance, false);
             return instance;
@@ -153,7 +159,8 @@ export function handleIf(
         if (!instance) return createInstance(index, true);
         const current = instance.element;
         if (modifiers.hide) current.style.display = instance.display;
-        else if (!current.parentNode) instance.anchor.parentNode?.insertBefore(current, instance.anchor.nextSibling);
+        else if (instance.output.start.parentNode?.nodeType === Node.DOCUMENT_FRAGMENT_NODE && instance.anchor.parentNode)
+            instance.output.moveBefore(instance.anchor.parentNode, instance.anchor.nextSibling);
         const name = getTransitionName(current);
         if (animate && name) enterTransition(current, name);
         else cancelTransition(current);
@@ -169,7 +176,7 @@ export function handleIf(
                 const anchor = createAnchor();
                 parent.insertBefore(anchor, cursor.nextSibling);
                 const instance = createInstance(index, index === selected, anchor);
-                cursor = instance.element.parentNode === parent ? instance.element : anchor;
+                cursor = instance.output.end.parentNode === parent ? instance.output.end : anchor;
             }
             activeBranch = selected;
             active = instances.get(selected);

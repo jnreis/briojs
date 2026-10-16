@@ -40,4 +40,4 @@ const snapshot: ReturnType<typeof inspectDevtools> = devtools.getSnapshot();
 const start: () => void = enableDevtools;
 const panel: (element: Element) => () => void = devtoolsPanel;
 void [snapshot, start, panel];
-app.component('styled-card', { template: '<style b-style>:scope { display: block; }</style><p>Styled</p>' });
+app.component('styled-card', { template: '<style>@scope { :scope { display: block; } }</style><p>Styled</p>' });

@@ -1,6 +1,5 @@
 import type { ContextValues } from '../core/context-values';
 import type { StoreMap } from '../core/types';
-import type { Scope } from '../core/scope';
 
 export type ComponentContext = {
     el: Element;
@@ -22,8 +21,6 @@ export type DomRuntime = {
     components: Map<string, ComponentDefinition>;
     router?: any;
     root?: Element;
-    styleBoundary?: Element;
-    mountScope?: Scope;
 };
 
 const trustedMarkup = Symbol('brio.trustedMarkup');

@@ -149,7 +149,7 @@ export function createApp<
                         const stopRouter = options.router.start(root);
                         onCleanup(stopRouter);
                     }
-                    hydrateRoot(root, context, { ...runtime, root, mountScope: scope });
+                    hydrateRoot(root, context, { ...runtime, root });
                 });
             } catch (error) {
                 try {

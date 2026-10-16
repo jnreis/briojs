@@ -17,5 +17,4 @@ export { handleMutation } from './mutation';
 export { handleResize } from './resize';
 export { handleEffect } from './effect';
 export { handleScript } from './script';
-export { handleStyle } from './style';
 export { extractModifiers } from './modifier';

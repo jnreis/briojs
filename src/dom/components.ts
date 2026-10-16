@@ -3,7 +3,6 @@ import { state } from '../reactivity/state';
 import { createScopedState } from '../core/scoped-state';
 import { effect, batch } from '../reactivity/effect';
 import { createScope, onCleanup } from '../core/scope';
-import { markStyleBoundary } from './scoped-style';
 import type { ComponentDefinition, DomRuntime } from './types';
 import { getNodeOwner, ownNode } from './ownership';
 import { emptyContextValues } from '../core/context-values';
@@ -50,10 +49,6 @@ export function mountComponent(
     runtime: DomRuntime,
     hydrateNodeFn: (node: Node, context: Record<PropertyKey, any>, runtime: DomRuntime) => void,
 ): void {
-    markStyleBoundary(element);
-    runtime = { ...runtime, styleBoundary: element };
-    const hostOwner = getNodeOwner(element);
-    if (hostOwner) hostOwner.runtime = runtime;
     const propsObject: Record<string, unknown> = {};
     for (const attribute of Array.from(element.attributes)) {
         if (!attribute.name.startsWith('b-')) propsObject[attribute.name] = attribute.value;

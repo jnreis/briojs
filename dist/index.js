@@ -1,11 +1,11 @@
-import { c as causedError, o as onDispose, a as getCurrentScope, d as combinedError, f as onCleanup, e as effect, h as createScope, b as batch, n as notifyRootMounted, j as notifyAppDisposed, k as notifyAppCreated, l as notifyRootUnmounted } from "./effect-B5fA5FiW.js";
-import { s } from "./effect-B5fA5FiW.js";
-import { s as state, t as trigger, a as track } from "./state-DJos6eER.js";
-import { b } from "./state-DJos6eER.js";
+import { c as causedError, o as onDispose, a as getCurrentScope, d as combinedError, e as effect, f as createScope, h as onCleanup, b as batch, n as notifyRootMounted, j as notifyAppDisposed, k as notifyAppCreated, l as notifyRootUnmounted } from "./effect-B76KDYNZ.js";
+import { s } from "./effect-B76KDYNZ.js";
+import { s as state, t as trigger, a as track } from "./state-Di8MyBwM.js";
+import { b } from "./state-Di8MyBwM.js";
 import { computed, resource } from "./reactivity.js";
 import { createRouter } from "./router-entry.js";
 import { persist } from "./persistence-entry.js";
-import { d, a, e, i } from "./devtools-BbtZ9Zun.js";
+import { d, a, e, i } from "./devtools-C9eZPghE.js";
 const valueExpressions = /* @__PURE__ */ new Map();
 const statementExpressions = /* @__PURE__ */ new Map();
 const assignmentExpressions = /* @__PURE__ */ new Map();
@@ -142,138 +142,6 @@ function disposeNodes(nodes) {
   }
   if (errors.length) throw combinedError("Brio DOM content cleanup failed.", errors);
 }
-const boundaries = /* @__PURE__ */ new WeakSet();
-const styles = /* @__PURE__ */ new WeakMap();
-let nextId = 0;
-function markStyleBoundary(element) {
-  boundaries.add(element);
-  onCleanup(() => boundaries.delete(element));
-}
-function findStyleBoundary(node, runtime) {
-  var _a;
-  for (let parent = node.parentElement; parent; parent = parent.parentElement) {
-    if (boundaries.has(parent) && ((_a = getNodeOwner(parent)) == null ? void 0 : _a.runtime.app) === runtime.app) return parent;
-  }
-  return runtime.styleBoundary ?? runtime.root;
-}
-function getStyleClass(element) {
-  var _a;
-  return (_a = styles.get(element)) == null ? void 0 : _a.className;
-}
-function scopeSelectors(value, className, nested) {
-  const prefix = `.${className}`;
-  const guard = `:where(${prefix}, ${prefix} *)`;
-  const selectors = [];
-  let selector = "", quote = "", depth = 0, attribute = 0, pseudoElement = -1, hasScope = false;
-  const finish = () => {
-    const leading = selector.length - selector.trimStart().length;
-    const text = selector.trim();
-    const index = pseudoElement < 0 ? text.length : pseudoElement - leading;
-    selectors.push(nested || hasScope ? text.slice(0, index) + guard + text.slice(index) : `${prefix} ${text}`);
-    selector = "";
-    pseudoElement = -1;
-    hasScope = false;
-  };
-  for (let index = 0; index < value.length; index++) {
-    const character = value[index];
-    if (character === "\\") {
-      selector += character + (value[++index] ?? "");
-      continue;
-    }
-    if (quote) {
-      selector += character;
-      if (character === quote) quote = "";
-      continue;
-    }
-    if (character === '"' || character === "'") quote = character;
-    else if (character === "[") attribute++;
-    else if (character === "]") attribute--;
-    else if (!attribute) {
-      if (character === "(") depth++;
-      else if (character === ")") depth--;
-      else if (character === "," && !depth) {
-        finish();
-        continue;
-      } else if (character === "&" && !nested)
-        throw new Error("Top-level & requires a nesting parent in b-style; use :scope for the boundary.");
-      else if (character === ":") {
-        if (/^:scope(?![\w-])/i.test(value.slice(index))) {
-          selector += prefix;
-          hasScope = true;
-          index += 5;
-          continue;
-        }
-        if (!depth && pseudoElement < 0 && (value[index + 1] === ":" || /^:(before|after|first-letter|first-line)(?![\w-])/i.test(value.slice(index)))) pseudoElement = selector.length;
-      }
-    }
-    selector += character;
-  }
-  finish();
-  return selectors.join(", ");
-}
-function scopeRules(rules, className, nested = false) {
-  var _a;
-  for (const rule of Array.from(rules)) {
-    if (rule.type === 1) {
-      const style = rule;
-      const original = style.selectorText;
-      const scoped = scopeSelectors(original, className, nested);
-      style.selectorText = scoped;
-      if (style.selectorText === original && scoped !== original)
-        throw new Error(`b-style could not scope selector "${original}".`);
-    } else {
-      const name = (_a = /^@([\w-]+)/.exec(rule.cssText)) == null ? void 0 : _a[1].toLowerCase();
-      if (name === "keyframes" || name === "-webkit-keyframes") continue;
-      if (!name && nested && "style" in rule) continue;
-      if (!name || !["media", "supports", "container", "layer"].includes(name))
-        throw new Error(`${name ? `@${name}` : "This CSS rule"} is not supported in b-style; use an ordinary global stylesheet.`);
-    }
-    const group = rule;
-    if (group.cssRules) scopeRules(group.cssRules, className, nested || rule.type === 1);
-  }
-}
-function scopeCss(content, className, document2) {
-  const parsingDocument = document2.implementation.createHTMLDocument("");
-  const source = parsingDocument.createElement("style");
-  source.textContent = content;
-  parsingDocument.head.append(source);
-  if (!source.sheet) throw new Error("b-style stylesheet could not be parsed by this browser.");
-  scopeRules(source.sheet.cssRules, className);
-  return Array.from(source.sheet.cssRules, (rule) => rule.cssText).join("\n");
-}
-function installScopedStyle(source, boundary) {
-  let registration = styles.get(boundary);
-  if (!registration) {
-    let className;
-    do
-      className = `brio-scope-${++nextId}`;
-    while (boundary.ownerDocument.querySelector(`.${className}, style[data-brio-scoped="${className}"]`) || boundary.classList.contains(className));
-    registration = { className, count: 0 };
-  }
-  const document2 = boundary.ownerDocument;
-  const css = scopeCss(source.textContent ?? "", registration.className, document2);
-  if (!document2.head) throw new Error("b-style requires a document head for its owned stylesheet.");
-  const compiled = document2.createElement("style");
-  for (const attribute of Array.from(source.attributes)) {
-    if (["media", "nonce", "title", "type"].includes(attribute.name))
-      compiled.setAttribute(attribute.name, attribute.value);
-  }
-  if (source.nonce) compiled.nonce = source.nonce;
-  compiled.dataset.brioScoped = registration.className;
-  compiled.textContent = css;
-  registration.count++;
-  styles.set(boundary, registration);
-  boundary.classList.add(registration.className);
-  onCleanup(() => {
-    compiled.remove();
-    if (--registration.count === 0) {
-      boundary.classList.remove(registration.className);
-      styles.delete(boundary);
-    }
-  });
-  source.textContent = "";
-  document2.head.append(compiled);
-}
 function copyContextValues(value, label) {
   if (value === null || typeof value !== "object" || ![Object.prototype, null].includes(Object.getPrototypeOf(value)))
     throw new TypeError(`${label} must be a synchronous plain object.`);
@@ -358,10 +226,6 @@ function fillSlots(host, template, context) {
     for (const node of remaining) (_a = node.parentNode) == null ? void 0 : _a.removeChild(node);
 }
 function mountComponent(element, definition, context, runtime, hydrateNodeFn) {
-  markStyleBoundary(element);
-  runtime = { ...runtime, styleBoundary: element };
-  const hostOwner = getNodeOwner(element);
-  if (hostOwner) hostOwner.runtime = runtime;
   const propsObject = {};
   for (const attribute of Array.from(element.attributes)) {
     if (!attribute.name.startsWith("b-")) propsObject[attribute.name] = attribute.value;
@@ -559,8 +423,7 @@ function createInsert(runtime) {
   return (target, placement, content, options = {}) => {
     var _a, _b;
     const root = runtime.root;
-    const rootOwner = root && getNodeOwner(root);
-    if (!root || !rootOwner || rootOwner.runtime.app !== runtime.app || rootOwner.runtime.mountScope !== runtime.mountScope || ((_a = runtime.mountScope) == null ? void 0 : _a.disposed))
+    if (!root || ((_a = getNodeOwner(root)) == null ? void 0 : _a.runtime) !== runtime)
       throw new Error("$insert requires an active mounted Brio root.");
     const node = typeof target === "string" ? root.matches(target) ? root : root.querySelector(target) : target;
     if (!(node instanceof Node) || !root.contains(node) && ((_b = getNodeOwner(node)) == null ? void 0 : _b.runtime.root) !== root)
@@ -692,7 +555,7 @@ const setBoundValue = (element, name, value, forceProp = false) => {
   if (name === "class") {
     let staticNames = staticClasses.get(element);
     if (!staticNames) {
-      staticNames = new Set((element.getAttribute("class") ?? "").split(/\s+/).filter((name2) => Boolean(name2) && name2 !== getStyleClass(element)));
+      staticNames = new Set((element.getAttribute("class") ?? "").split(/\s+/).filter(Boolean));
       staticClasses.set(element, staticNames);
     }
     const currentDynamic = /* @__PURE__ */ new Set();
@@ -705,8 +568,6 @@ const setBoundValue = (element, name, value, forceProp = false) => {
         if (enabled) className.split(/\s+/).filter(Boolean).forEach((name2) => currentDynamic.add(name2));
     }
     const combined = /* @__PURE__ */ new Set([...staticNames, ...currentDynamic]);
-    const styleClass = getStyleClass(element);
-    if (styleClass) combined.add(styleClass);
     if (combined.size) element.setAttribute("class", Array.from(combined).join(" "));
     else element.removeAttribute("class");
     return;
@@ -1044,7 +905,7 @@ const enumerate = (value) => {
     return Array.from({ length: value }, (_, index) => [index, index + 1]);
   throw new TypeError("b-for expects an array, iterable, object, or non-negative integer.");
 };
-function handleFor(element, expression, _modifiers, context, runtime, hydrateNodeFn, hasDataBoundary = false) {
+function handleFor(element, expression, _modifiers, context, runtime, hydrateNodeFn) {
   const parent = element.parentNode;
   if (!parent) throw new Error("b-for requires an element with a parent node.");
   const parsed = /^\s*([A-Za-z_$][\w$]*)(?:\s*,\s*([A-Za-z_$][\w$]*))?\s+in\s+([\s\S]+)$/.exec(expression);
@@ -1096,15 +957,7 @@ function handleFor(element, expression, _modifiers, context, runtime, hydrateNod
         const rowScope = createScope();
         row = { element: rowElement, context: rowContext, values: rowState, scope: rowScope, key: evaluatedKey };
         rows.set(evaluatedKey, row);
-        rowScope.run(() => {
-          const concreteBoundary = hasDataBoundary && !rowElement.hasAttribute("b-template");
-          if (concreteBoundary) markStyleBoundary(rowElement);
-          hydrateNodeFn(
-            rowElement,
-            rowContext,
-            concreteBoundary ? { ...runtime, styleBoundary: rowElement } : runtime
-          );
-        });
+        rowScope.run(() => hydrateNodeFn(rowElement, rowContext, runtime));
         const owner = getNodeOwner(rowElement);
         if (owner) owner.structuralRoot = true;
       } else {
@@ -1557,17 +1410,6 @@ function handleScript(element, _expression, _modifiers, context) {
     throw causedError("Brio b-script execution failed.", error);
   }
 }
-function handleStyle(element, expression, modifiers, runtime) {
-  if (element.tagName.toLowerCase() !== "style")
-    throw new TypeError("b-style can only be used on a <style> element.");
-  if (expression.trim() || Object.keys(modifiers).length)
-    throw new SyntaxError("Use <style b-style> with static CSS, no expression or modifiers.");
-  if (Array.from(element.attributes).some((attribute) => ["b-text", "text", "b-html", "html"].includes(attribute.name.split(".")[0])))
-    throw new SyntaxError("b-style cannot be combined with text or HTML content directives; use CSS custom properties for reactive values.");
-  if (!runtime.styleBoundary)
-    throw new Error("b-style requires a concrete b-data element, component host, or mounted root.");
-  installScopedStyle(element, runtime.styleBoundary);
-}
 function mountRouterOutlet(element, context, runtime, hydrateNodeFn) {
   if (!runtime.router) throw new Error("b-router-outlet requires a router on the Brio app.");
   const router = runtime.router;
@@ -1615,7 +1457,6 @@ function hydrateTextNode(node, context) {
 function hydrateNode(node, parentContext, runtime) {
   if (getNodeOwner(node)) throw new Error("Cannot hydrate an already hydrated Brio node.");
   parentContext = takeProjectedContext(node) ?? parentContext;
-  runtime = { ...runtime, styleBoundary: findStyleBoundary(node, runtime) };
   const scope = createScope();
   scope.run(() => {
     ownNode(node, parentContext, runtime);
@@ -1663,14 +1504,8 @@ function hydrateOwnedNode(node, parentContext, runtime) {
   const forAttr = element.getAttribute("b-for");
   if (forAttr !== null) {
     const { modifiers } = extractModifiers("b-for");
-    handleFor(element, forAttr, modifiers, context, runtime, hydrateNode, dataAttr !== null);
+    handleFor(element, forAttr, modifiers, context, runtime, hydrateNode);
     return;
-  }
-  const unwraps = element.hasAttribute("b-template");
-  if (!unwraps && (dataAttr !== null || runtime.root === element)) {
-    markStyleBoundary(element);
-    runtime = { ...runtime, styleBoundary: element };
-    getNodeOwner(element).runtime = runtime;
   }
   const provideAttr = element.getAttribute("b-provide");
   if (provideAttr !== null) {
@@ -1737,10 +1572,6 @@ function hydrateOwnedNode(node, parentContext, runtime) {
     } else if (baseName === "b-effect" || baseName === "effect") {
       handleEffect(element, attrValue, modifiers, context);
       element.removeAttribute(attrName);
-    } else if (baseName === "b-style") {
-      getNodeOwner(element).controlsChildren = true;
-      handleStyle(element, attrValue, modifiers, runtime);
-      element.removeAttribute(attrName);
     } else if (baseName === "b-script") {
       handleScript(element, attrValue, modifiers, context);
       element.removeAttribute(attrName);
@@ -1751,7 +1582,7 @@ function hydrateOwnedNode(node, parentContext, runtime) {
       return;
     }
   }
-  if (!hasText && !hasHtml && tagName !== "script" && tagName !== "style") {
+  if (!hasText && !hasHtml && tagName !== "script") {
     hydrateChildren(element, context, runtime);
   }
 }
@@ -1877,7 +1708,7 @@ function createApp(options = {}) {
             const stopRouter = options.router.start(root);
             onCleanup(stopRouter);
           }
-          hydrateRoot(root, context, { ...runtime, root, mountScope: scope });
+          hydrateRoot(root, context, { ...runtime, root });
         });
       } catch (error) {
         try {

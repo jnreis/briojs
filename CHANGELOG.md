@@ -24,11 +24,9 @@ metadata on `main`, through commit `d868d43`.
 
 ### Changed
 
-- HTML-first static `<style b-style>` for scoped CSS.
-  A unique class on the nearest concrete data/component/root boundary prefixes
-  selectors; `:scope` targets the boundary. Native CSSOM supports rule groups and
-  nesting without third-party parser dependencies. Owned stylesheets live in
-  the document head and clean up with their source scopes.
+- Ordinary reactive `<style>` text and recommended native CSS `@scope` patterns,
+  using existing `b-id`, class bindings, and CSS custom properties. Styles remain
+  in authored DOM with native connectivity, cascade, and animation naming.
 - Unified conditional branch creation, activation, deactivation, and cleanup.
   Plain `b-if` now dehydrates after leave completes, allowing interrupted
   transitions to reverse the same live element without duplicate nodes or state

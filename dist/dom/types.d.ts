@@ -1,6 +1,5 @@
 import { ContextValues } from '../core/context-values';
 import { StoreMap } from '../core/types';
-import { Scope } from '../core/scope';
 
 export type ComponentContext = {
     el: Element;
@@ -20,8 +19,6 @@ export type DomRuntime = {
     components: Map<string, ComponentDefinition>;
     router?: any;
     root?: Element;
-    styleBoundary?: Element;
-    mountScope?: Scope;
 };
 declare const trustedMarkup: unique symbol;
 export type TrustedMarkup = {

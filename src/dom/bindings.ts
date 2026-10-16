@@ -9,7 +9,6 @@ import { createInsert } from './insert';
 import { getNodeOwner, ownNode } from './ownership';
 import { emptyContextValues } from '../core/context-values';
 import { interpolateText } from './interpolation';
-import { findStyleBoundary, markStyleBoundary } from './scoped-style';
 
 export function mountRouterOutlet(
     element: Element,
@@ -71,7 +70,6 @@ import {
     handleResize,
     handleEffect,
     handleScript,
-    handleStyle,
     extractModifiers,
 } from './directives';
 
@@ -104,7 +102,6 @@ export function hydrateNode(
 ): void {
     if (getNodeOwner(node)) throw new Error('Cannot hydrate an already hydrated Brio node.');
     parentContext = takeProjectedContext(node) ?? parentContext;
-    runtime = { ...runtime, styleBoundary: findStyleBoundary(node, runtime) };
     const scope = createScope();
     scope.run(() => {
         ownNode(node, parentContext, runtime);
@@ -169,15 +166,8 @@ function hydrateOwnedNode(
     const forAttr = element.getAttribute('b-for');
     if (forAttr !== null) {
         const { modifiers } = extractModifiers('b-for');
-        handleFor(element, forAttr, modifiers, context, runtime, hydrateNode, dataAttr !== null);
+        handleFor(element, forAttr, modifiers, context, runtime, hydrateNode);
         return;
-    }
-
-    const unwraps = element.hasAttribute('b-template');
-    if (!unwraps && (dataAttr !== null || runtime.root === element)) {
-        markStyleBoundary(element);
-        runtime = { ...runtime, styleBoundary: element };
-        getNodeOwner(element)!.runtime = runtime;
     }
 
     const provideAttr = element.getAttribute('b-provide');
@@ -256,10 +246,6 @@ function hydrateOwnedNode(
         } else if (baseName === 'b-effect' || baseName === 'effect') {
             handleEffect(element, attrValue, modifiers, context);
             element.removeAttribute(attrName);
-        } else if (baseName === 'b-style') {
-            getNodeOwner(element)!.controlsChildren = true;
-            handleStyle(element, attrValue, modifiers, runtime);
-            element.removeAttribute(attrName);
         } else if (baseName === 'b-script') {
             handleScript(element, attrValue, modifiers, context);
             element.removeAttribute(attrName);
@@ -271,7 +257,7 @@ function hydrateOwnedNode(
         }
     }
 
-    if (!hasText && !hasHtml && tagName !== 'script' && tagName !== 'style') {
+    if (!hasText && !hasHtml && tagName !== 'script') {
         hydrateChildren(element, context, runtime);
     }
 }

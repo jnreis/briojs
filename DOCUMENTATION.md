@@ -53,7 +53,7 @@ Load one of the standalone bundles, not both:
 
 Both expose `window.brio` with `createApp`, `state`, `signal`, `computed`,
 `effect`, `batch`, `createScope`, `onCleanup`, `getCurrentScope`,
-`createStepEngine`, `http`, and `trustedHTML`. Both dispatch the
+`createStepEngine`, `http`, `HttpError`, and `trustedHTML`. Both dispatch the
 `brio` ready event after publishing the core API.
 
 Router, persistence, and forms are optional browser scripts. Load only what you
@@ -1095,6 +1095,119 @@ Reset affects navigation only, not form/application data. This utility has no
 dynamic registration, multiple-active mode, completion tracking, asynchronous
 guards, or hooks. Validate/await application work before navigating; manage
 loading, errors, and competing requests in that application workflow.
+
+## HTTP
+
+Use `brio.http` and `brio.HttpError` in browser scripts, or import `http` and
+`HttpError` from `briojs`. HTTP is not an automatic `$http` expression helper:
+expose application methods through `$data` or component setup.
+
+```js
+import { http, HttpError } from 'briojs';
+
+const controller = new AbortController();
+try {
+  const result = await http.get('/api/items', {
+    filter: { published: true },
+    tags: ['js', 'html'],
+  }, { signal: controller.signal });
+  console.log(result);
+} catch (error) {
+  if (error instanceof HttpError) {
+    // The error response body has not been consumed.
+    console.error(error.status, await error.response.text());
+  } else {
+    // Network, cancellation, serialization, or response parsing failure.
+    console.error(error);
+  }
+}
+```
+
+All five methods use `(url, bodyOrQuery?, options?)`. There is no HEAD helper.
+GET and DELETE accept query parameters; POST, PUT, and PATCH accept bodies.
+To supply options alone, pass `undefined` as the second argument.
+
+### Query parameters
+
+Pass a plain object or `URLSearchParams` to GET/DELETE. A top-level null or
+undefined means no query argument. Existing parameters are preserved and new
+entries appended; fragments are preserved. Relative URLs with a query argument
+resolve against the current page URL (or `http://localhost` outside a browser).
+
+- Nested objects use brackets: `{ user: { name: 'Ada' } }` becomes
+  `user[name]=Ada`.
+- Scalar arrays repeat empty brackets: `{ tags: ['js', 'html'] }` becomes
+  `tags[]=js&tags[]=html`.
+- Structured array entries use indices: `{ rows: [{ id: 1 }] }` becomes
+  `rows[0][id]=1`. Nested arrays follow the same rule.
+- Strings, finite numbers, booleans, and Dates are supported; Dates use ISO UTC.
+  Null becomes an empty value; undefined is omitted, including inside arrays.
+  Empty arrays/objects add no entries.
+- Only own enumerable string-keyed object properties and present array entries
+  are serialized. Cycles, invalid Dates, functions, symbols, bigint, nonfinite
+  numbers, and unsupported object types reject before fetching.
+
+The examples above show decoded keys; URL encoding is handled by
+`URLSearchParams`. Bracket parsing requires server support, not a universal
+query standard. For repeated plain keys or another convention, pass an explicit
+`URLSearchParams`, for example `new URLSearchParams([['tag', 'a'], ['tag', 'b']])`.
+Brio appends those entries without adding brackets or mutating the input.
+DELETE has no body; use native Fetch if an endpoint requires one.
+
+### Request bodies and options
+
+Plain objects, arrays, numbers, booleans, and null are JSON-serialized for
+POST/PUT/PATCH. Nested values follow native `JSON.stringify` semantics, including
+its omissions and errors; this is not a schema validator. Unsupported top-level
+values and serialization yielding undefined reject. An omitted body stays absent.
+Brio adds `Content-Type: application/json` only when no content-type was supplied.
+Caller headers are copied, never mutated.
+
+Strings and native Fetch bodies (`FormData`, `URLSearchParams`, `Blob`/`File`,
+`ArrayBuffer`, typed arrays/DataView, and `ReadableStream`) pass through unchanged.
+Buffer-view offsets/lengths are preserved. Brio does not set their content-type:
+Fetch derives it when appropriate. Do not set a multipart content-type manually;
+the browser must generate its boundary. Build form bodies explicitly; a supplied
+content-type does not change how a plain object is serialized.
+
+Options accept Fetch's `RequestInit` fields except `method` and `body`, plus
+`parser` and optional `duplex: 'half'` for platforms requiring it for streams.
+Headers support all native `HeadersInit` forms. `parser` is not forwarded to Fetch.
+Fetch/platform restrictions still apply, including streaming support and CORS.
+Signals pass through unchanged; Brio does not automatically abort requests on
+scope disposal, retry failures, enforce timeouts, or coordinate competing requests.
+Own those policies in application methods and always restore loading state.
+
+### Response parsing and errors
+
+Without `parser`, successful responses follow this contract:
+
+| Response | Result |
+|---|---|
+| HTTP 204 or 205 | `undefined` |
+| `application/json` or a structured `+json` media type | Parsed JSON; a zero-length body returns `undefined` |
+| Other or missing content-type | Text, including `''` for an empty body |
+
+Media types are case-insensitive and may include parameters. Whitespace-only
+JSON and malformed nonempty JSON reject; Brio does not silently return their text.
+JSON `null` remains null, distinct from an absent response.
+
+An explicit `parser: 'json' | 'text' | 'blob' | 'arrayBuffer' | 'formData'`
+always calls the corresponding native Response method, even for 204/205.
+Consequently explicit JSON parsing rejects an empty body. Other native parser
+failures propagate unchanged.
+
+Non-OK responses reject with `HttpError` **before parsing**, exposing read-only
+`response` and numeric `status`. The body remains unread so the caller chooses
+how to consume it. Network/abort, serialization, and parsing failures retain
+their original error types; they are not wrapped as HTTP status errors.
+
+TypeScript defaults to unknown response data. `http.get<Item>(url)` returns
+`Promise<Item | undefined>`; explicit `{ parser: 'json' }` returns `Promise<Item>`.
+These generic arguments describe an expected shape, not runtime validation.
+Explicit non-JSON parsers infer their native result types. npm also exports
+`HttpMethod`, `HttpParser`, `HttpOptions`, `HttpBody`, `HttpQuery`, and
+`HttpQueryValue`.
 
 ## Persistence
 

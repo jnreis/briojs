@@ -1,7 +1,10 @@
 import assert from 'node:assert/strict';
 import { readFileSync, readdirSync } from 'node:fs';
 import { test } from 'node:test';
+import { createServer } from 'node:http';
+import { once } from 'node:events';
 import { JSDOM, ResourceLoader, VirtualConsole } from 'jsdom';
+import { httpFixtures } from './http-fixtures.js';
 
 class LocalResources extends ResourceLoader {
     fetch(url) {
@@ -32,6 +35,182 @@ async function page(t, path) {
     assert.deepEqual(failures, []);
     return dom.window;
 }
+
+test('HTTP manual page runs GET/POST and restores loading state on success and failure', async t => {
+    const window = await page(t, './methods/http.html');
+    const { document } = window;
+    const failures = [];
+    window.addEventListener('error', event => failures.push(event.error));
+    window.Headers = Headers;
+    const requests = [];
+    let resolveRequest;
+    let rejectRequest;
+    window.fetch = (url, options) => {
+        requests.push({ url, options });
+        return new Promise((resolve, reject) => {
+            resolveRequest = resolve;
+            rejectRequest = reject;
+        });
+    };
+    const get = document.getElementById('get-todo');
+    const post = document.getElementById('create-post');
+    const result = document.getElementById('http-result');
+    const settle = () => new Promise(resolve => setImmediate(resolve));
+    const expectLoading = loading => {
+        assert.equal(get.disabled, loading);
+        assert.equal(post.disabled, loading);
+        assert.equal(Boolean(document.querySelector('.card em')), loading);
+    };
+    expectLoading(false);
+    get.click();
+    expectLoading(true);
+    assert.equal(requests[0].url, 'https://jsonplaceholder.typicode.com/todos/1');
+    assert.equal(requests[0].options.method, 'GET');
+    resolveRequest(new Response(JSON.stringify({ id: 1, title: 'Test todo' }), {
+        headers: { 'Content-Type': 'application/json' },
+    }));
+    await settle();
+    assert.deepEqual(JSON.parse(result.textContent), { id: 1, title: 'Test todo' });
+    expectLoading(false);
+    post.click();
+    expectLoading(true);
+    assert.equal(requests[1].url, 'https://jsonplaceholder.typicode.com/posts');
+    assert.equal(requests[1].options.method, 'POST');
+    assert.equal(requests[1].options.headers.get('Content-Type'), 'application/json');
+    assert.deepEqual(JSON.parse(requests[1].options.body), {
+        title: 'Brio Framework Post', body: 'Testing http.post from Brio.js', userId: 1,
+    });
+    resolveRequest(new Response(JSON.stringify({ id: 101 }), {
+        headers: { 'Content-Type': 'application/json' },
+    }));
+    await settle();
+    assert.deepEqual(JSON.parse(result.textContent), { id: 101 });
+    expectLoading(false);
+    get.click();
+    rejectRequest(new Error('Network unavailable'));
+    await settle();
+    assert.equal(result.textContent, 'Error: Network unavailable');
+    expectLoading(false);
+    post.click();
+    resolveRequest(new Response('', { status: 503, statusText: 'Service Unavailable' }));
+    await settle();
+    assert.equal(result.textContent, 'Error: HTTP 503: Service Unavailable');
+    expectLoading(false);
+    assert.deepEqual(failures, []);
+});
+
+test('HTTP manual scenarios exercise real local Fetch requests, native bodies, parsing and cancellation', async t => {
+    const server = createServer((request, response) => httpFixtures(request, response, () => {
+        response.writeHead(404);
+        response.end('Not found');
+    }));
+    server.listen(0, '127.0.0.1');
+    await once(server, 'listening');
+    t.after(() => new Promise((resolve, reject) => {
+        server.close(error => error ? reject(error) : resolve());
+        server.closeAllConnections();
+    }));
+    const origin = `http://127.0.0.1:${server.address().port}`;
+    const window = await page(t, './methods/http.html');
+    const { document } = window;
+    const failures = [];
+    window.addEventListener('error', event => failures.push(event.error));
+    for (const name of ['Headers', 'FormData', 'URLSearchParams', 'Blob', 'TextDecoder', 'AbortController'])
+        window[name] = globalThis[name];
+    const requests = [];
+    window.fetch = (url, options) => {
+        requests.push({ url, options });
+        const target = new URL(url, window.location.href);
+        return fetch(new URL(target.pathname + target.search, origin), options);
+    };
+    const waitFor = async predicate => {
+        for (let attempt = 0; attempt < 200; attempt++) {
+            if (predicate()) return;
+            await new Promise(resolve => setTimeout(resolve, 5));
+        }
+        assert.fail('HTTP manual scenario did not settle');
+    };
+    const run = async (id, output) => {
+        document.getElementById(id).click();
+        const result = document.getElementById(output + '-result');
+        await waitFor(() => !result.textContent.startsWith('Loading '));
+        assert.equal(document.getElementById(id).disabled, false);
+        return JSON.parse(result.textContent);
+    };
+    const nested = await run('query-nested', 'query');
+    assert.equal(nested.method, 'GET');
+    assert.deepEqual(nested.query, [
+        ['keep', 'original'], ['user[name]', 'Ada & Lin'], ['user[empty]', ''],
+        ['tags[]', 'js'], ['tags[]', 'html'], ['rows[0][id]', '1'], ['rows[1][id]', '2'],
+        ['date', '2026-01-02T00:00:00.000Z'],
+    ]);
+    const explicit = await run('query-explicit', 'query');
+    assert.equal(explicit.method, 'DELETE');
+    assert.deepEqual(explicit.query, [['tag', 'original'], ['tag', 'js'], ['tag', 'html']]);
+    const json = await run('body-json', 'body');
+    assert.equal(json.method, 'POST');
+    assert.equal(json.contentType, 'application/vnd.brio+json');
+    assert.equal(json.demoHeader, 'preserved');
+    assert.deepEqual(JSON.parse(json.body), { title: 'Brio', published: true });
+    const form = await run('body-form', 'body');
+    assert.equal(form.method, 'PUT');
+    assert.match(form.contentType, /^application\/x-www-form-urlencoded/);
+    assert.equal(new URLSearchParams(form.body).get('topic'), 'JS & HTML');
+    const multipart = await run('body-multipart', 'body');
+    assert.match(multipart.contentType, /^multipart\/form-data; boundary=/);
+    assert.match(multipart.body, /filename="hello.txt"/);
+    assert.match(multipart.body, /Hello Brio/);
+    const binary = await run('body-binary', 'body');
+    assert.equal(binary.method, 'PATCH');
+    assert.deepEqual(binary.bytes, [1, 2, 3]);
+    assert.equal((await run('body-string', 'body')).body, 'Plain request text');
+    const automatic = await run('parse-auto', 'parse');
+    assert.equal(automatic.json.type, 'object');
+    assert.equal(automatic['problem-json'].type, 'object');
+    assert.equal(automatic['text-json'].type, 'string');
+    const empty = await run('parse-empty', 'parse');
+    for (const name of ['no-content', 'reset-content', 'empty-json'])
+        assert.deepEqual(empty[name], { type: 'undefined', value: '(undefined)' });
+    assert.deepEqual(empty['empty-text'], { type: 'string', value: '' });
+    const malformed = await run('parse-malformed', 'parse');
+    assert.equal(malformed.name, 'SyntaxError');
+    assert.equal(malformed.isHttpError, false);
+    const parsers = await run('parse-explicit', 'explicit');
+    assert.equal(parsers.json.type, 'object');
+    assert.equal(parsers.text.type, 'string');
+    assert.equal(parsers.blob.type, 'application/json');
+    assert.equal(parsers.blob.text, parsers.arrayBuffer.text);
+    assert.equal(parsers.blob.size, parsers.arrayBuffer.byteLength);
+    assert.deepEqual(parsers.formData, [['name', 'Ada'], ['tag', 'js'], ['tag', 'html']]);
+    assert.equal((await run('parse-strict-empty', 'explicit')).name, 'SyntaxError');
+    const error = await run('error-http', 'errors');
+    assert.equal(error.name, 'HttpError');
+    assert.equal(error.isHttpError, true);
+    assert.equal(error.status, 422);
+    assert.equal(error.unreadBefore, true);
+    assert.equal(error.consumedAfter, true);
+    assert.equal(error.body.field, 'email');
+    const count = requests.length;
+    const invalid = await run('error-query', 'errors');
+    assert.equal(invalid.name, 'TypeError');
+    assert.equal(invalid.isHttpError, false);
+    assert.equal(requests.length, count);
+    document.getElementById('request-slow').click();
+    assert.equal(document.getElementById('request-slow').disabled, true);
+    assert.equal(document.getElementById('request-cancel').disabled, false);
+    document.getElementById('request-cancel').click();
+    await waitFor(() => document.getElementById('request-cancel').disabled);
+    const aborted = JSON.parse(document.getElementById('errors-result').textContent);
+    assert.equal(aborted.name, 'AbortError');
+    assert.equal(aborted.isHttpError, false);
+    assert.equal(document.getElementById('request-slow').disabled, false);
+    document.getElementById('request-slow').click();
+    const signal = requests.at(-1).options.signal;
+    window.dispatchEvent(new window.Event('pagehide'));
+    assert.equal(signal.aborted, true);
+    await new Promise(resolve => setImmediate(resolve));
+    assert.deepEqual(failures, []);
+});
 
 test('every manual example page loads the source viewer before bootstrap', () => {
     let pages = 0;

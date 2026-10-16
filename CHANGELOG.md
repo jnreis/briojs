@@ -24,6 +24,10 @@ metadata on `main`, through commit `d868d43`.
 
 ### Changed
 
+- HTTP uses recursive bracket queries, complete native Fetch body support,
+  preserved caller headers, typed Fetch options and parser results, JSON/+json
+  media-type parsing, and explicit empty-response semantics. Public `HttpError`
+  exposes status and an unread response in npm and both browser bundles.
 - Step navigation uses fixed `{ initial, steps }` configuration, internally
   reactive read-only current/capabilities, one active step, and private history.
   `go`, `next`, history-based `back`, and `reset` publish atomic navigation state;

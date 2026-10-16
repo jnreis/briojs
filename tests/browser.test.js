@@ -10,7 +10,7 @@ const development = readFileSync(new URL('../dist/brio.dev.min.js', import.meta.
 const coreAPI = [
     'createApp', 'state', 'signal', 'computed', 'effect', 'batch',
     'createScope', 'onCleanup', 'getCurrentScope', 'createStepEngine',
-    'http', 'trustedHTML',
+    'http', 'HttpError', 'trustedHTML',
 ];
 const developmentAPI = ['devtools', 'inspectDevtools', 'devtoolsPanel', 'enableDevtools'];
 

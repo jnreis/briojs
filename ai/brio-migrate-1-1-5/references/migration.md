@@ -380,16 +380,23 @@ preserve the production event contract deliberately.
 
 Expose `brio.http` through app methods, not `$http` in markup. V4 provides
 get/post/put/patch/delete (not head). Fetch options and parsers are supported;
-non-OK responses reject. GET/DELETE object arguments become query parameters;
-other object bodies become JSON. Do not assume nested query encoding, response
-wrappers, header preservation, or DELETE body behavior match 1.1.5.
+non-OK responses reject. GET/DELETE plain objects use recursive bracket queries:
+scalar arrays use `[]`, structured entries use indices, null becomes empty,
+undefined is omitted, and Dates use ISO. Explicit URLSearchParams preserves
+caller-defined keys. Other plain object bodies become JSON; native Fetch bodies
+pass through. Supplied headers are preserved, not overwritten. Do not assume
+response wrappers or DELETE body behavior match 1.1.5; DELETE is query-only.
 In particular, legacy object POST bodies without a content-type override are
 URL-encoded, not JSON. If the endpoint expects form data, build a
 `URLSearchParams` or `FormData` body explicitly for v4.
 Legacy no-parser responses attempt JSON parsing of text regardless of headers;
-v4 chooses JSON by content-type. Request `{ parser: 'json' }` explicitly where
+v4 chooses JSON/+json by content-type. Automatic 204/205 and zero-length JSON
+return undefined; other empty text returns an empty string. Explicit parsers
+retain native behavior, including JSON errors on empty bodies.
+Request `{ parser: 'json' }` explicitly where
 the old backend returns JSON with a non-JSON header.
-Legacy errors carry parsed `error.content`; v4 only attaches `error.response`.
+Legacy errors carry parsed `error.content`; v4 throws `HttpError` (also exposed
+as `brio.HttpError`) with `status` and an unread `response`.
 Read the error response explicitly when the app needs its body and handle parse
 failure visibly.
 

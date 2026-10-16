@@ -22,7 +22,7 @@ not automatically available `/dist/` URLs.
 
 The browser global contains `createApp`, `state`, `signal`, `computed`, `effect`,
 `batch`, `createScope`, `onCleanup`, `getCurrentScope`, `createStepEngine`,
-`http`, and `trustedHTML`. Load optional `brio.router.min.js`,
+`http`, `HttpError`, and `trustedHTML`. Load optional `brio.router.min.js`,
 `brio.persistence.min.js`, and `brio.forms.min.js` after the core to add
 `createRouter`, `persist`, and `validate` respectively. These scripts share
 the core runtime and extend its global; they do not emit another ready event.
@@ -481,10 +481,19 @@ cleans the failed insertion, but does not restore old content.
   Unknown rules warn and are skipped; verify schema names. Client validation
   does not replace server validation.
 - HTTP: `http.get/post/put/patch/delete(url, bodyOrQuery?, options?)`.
-  GET/DELETE objects become query parameters. Other object bodies become JSON;
-  FormData, URLSearchParams, and strings are passed appropriately. Non-OK
-  responses reject. Fetch options (including signal) and parser selection can
-  be supplied. Implement visible errors, loading state, and request cancellation.
+  GET/DELETE accept plain query objects (nested brackets, scalar arrays `[]`,
+  structured array indices; null becomes empty, undefined omitted; Dates use ISO)
+  or explicit URLSearchParams. Top-level null/undefined means no query.
+  POST/PUT/PATCH use JSON for plain objects/arrays/scalars/null; supplied headers
+  are preserved. Native Fetch bodies pass through, including binary views and
+  streams; leave multipart boundaries to Fetch. Content-type selects JSON/+json
+  or text; automatic 204/205 and zero-length JSON return undefined. Malformed
+  nonempty JSON rejects. Explicit parsers use native behavior, including rejection
+  of empty JSON. Non-OK responses throw `HttpError` with status and an unread
+  response; network/abort/parse errors remain native. Fetch options (including
+  signal, optional streaming duplex) pass through; method/body belong to the helper,
+  parser does not reach Fetch. Generic response types do not validate data.
+  Implement visible errors, loading state, and owned request cancellation.
 - Steps: `createStepEngine({ initial: 'intro', steps: { intro: { next: 'review' },
   review: {} } })` owns reactive navigation state. Place the engine in `$data`
   locally, or share through `$stores`; no caller `state()` wrapping is needed.

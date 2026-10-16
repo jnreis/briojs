@@ -22,6 +22,7 @@ export type { PersistOptions, StorageAdapter } from './plugins/persistence';
 export { createStepEngine } from './plugins/step';
 export type { StepEngine, StepDefinition, StepRecord, StepOptions } from './plugins/step';
 export { validate } from './plugins/forms';
-export { http } from './plugins/http';
+export { http, HttpError } from './plugins/http';
+export type { HttpMethod, HttpParser, HttpOptions, HttpQueryValue, HttpQuery, HttpBody } from './plugins/http';
 export { devtools, inspectDevtools, devtoolsPanel, enableDevtools } from './plugins/devtools';
 export type { DevtoolsSnapshot } from './plugins/devtools';

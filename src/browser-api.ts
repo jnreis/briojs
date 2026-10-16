@@ -10,6 +10,7 @@ import {
     getCurrentScope,
     createStepEngine,
     http,
+    HttpError,
     trustedHTML,
 } from './index';
 
@@ -25,6 +26,7 @@ const brio = {
     getCurrentScope,
     createStepEngine,
     http,
+    HttpError,
     trustedHTML,
 };
 

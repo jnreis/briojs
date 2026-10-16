@@ -20,12 +20,143 @@ declare const brio: {
     getCurrentScope: typeof import('.').getCurrentScope;
     createStepEngine: typeof import('.').createStepEngine;
     http: {
-        get: (url: string, body?: any, options?: import('./plugins/http').HttpOptions) => Promise<any>;
-        post: (url: string, body?: any, options?: import('./plugins/http').HttpOptions) => Promise<any>;
-        put: (url: string, body?: any, options?: import('./plugins/http').HttpOptions) => Promise<any>;
-        patch: (url: string, body?: any, options?: import('./plugins/http').HttpOptions) => Promise<any>;
-        delete: (url: string, body?: any, options?: import('./plugins/http').HttpOptions) => Promise<any>;
+        get: {
+            <T = unknown>(url: string, input: import('.').HttpQuery | undefined, options: Omit<RequestInit, "body" | "method"> & {
+                parser?: import('.').HttpParser;
+                duplex?: "half";
+            } & {
+                parser: "json";
+            }): Promise<T>;
+            <P extends Exclude<import('.').HttpParser, "json">>(url: string, input: import('.').HttpQuery | undefined, options: Omit<RequestInit, "body" | "method"> & {
+                parser?: import('.').HttpParser;
+                duplex?: "half";
+            } & {
+                parser: P;
+            }): Promise<{
+                json: unknown;
+                text: string;
+                blob: Blob;
+                arrayBuffer: ArrayBuffer;
+                formData: FormData;
+            }[P]>;
+            <T = unknown>(url: string, input?: import('.').HttpQuery | undefined, options?: (Omit<RequestInit, "body" | "method"> & {
+                parser?: import('.').HttpParser;
+                duplex?: "half";
+            } & {
+                parser?: undefined;
+            }) | undefined): Promise<T | undefined>;
+            (url: string, input?: import('.').HttpQuery | undefined, options?: import('.').HttpOptions): Promise<unknown>;
+        };
+        post: {
+            <T = unknown>(url: string, input: import('.').HttpBody | undefined, options: Omit<RequestInit, "body" | "method"> & {
+                parser?: import('.').HttpParser;
+                duplex?: "half";
+            } & {
+                parser: "json";
+            }): Promise<T>;
+            <P extends Exclude<import('.').HttpParser, "json">>(url: string, input: import('.').HttpBody | undefined, options: Omit<RequestInit, "body" | "method"> & {
+                parser?: import('.').HttpParser;
+                duplex?: "half";
+            } & {
+                parser: P;
+            }): Promise<{
+                json: unknown;
+                text: string;
+                blob: Blob;
+                arrayBuffer: ArrayBuffer;
+                formData: FormData;
+            }[P]>;
+            <T = unknown>(url: string, input?: import('.').HttpBody | undefined, options?: (Omit<RequestInit, "body" | "method"> & {
+                parser?: import('.').HttpParser;
+                duplex?: "half";
+            } & {
+                parser?: undefined;
+            }) | undefined): Promise<T | undefined>;
+            (url: string, input?: import('.').HttpBody | undefined, options?: import('.').HttpOptions): Promise<unknown>;
+        };
+        put: {
+            <T = unknown>(url: string, input: import('.').HttpBody | undefined, options: Omit<RequestInit, "body" | "method"> & {
+                parser?: import('.').HttpParser;
+                duplex?: "half";
+            } & {
+                parser: "json";
+            }): Promise<T>;
+            <P extends Exclude<import('.').HttpParser, "json">>(url: string, input: import('.').HttpBody | undefined, options: Omit<RequestInit, "body" | "method"> & {
+                parser?: import('.').HttpParser;
+                duplex?: "half";
+            } & {
+                parser: P;
+            }): Promise<{
+                json: unknown;
+                text: string;
+                blob: Blob;
+                arrayBuffer: ArrayBuffer;
+                formData: FormData;
+            }[P]>;
+            <T = unknown>(url: string, input?: import('.').HttpBody | undefined, options?: (Omit<RequestInit, "body" | "method"> & {
+                parser?: import('.').HttpParser;
+                duplex?: "half";
+            } & {
+                parser?: undefined;
+            }) | undefined): Promise<T | undefined>;
+            (url: string, input?: import('.').HttpBody | undefined, options?: import('.').HttpOptions): Promise<unknown>;
+        };
+        patch: {
+            <T = unknown>(url: string, input: import('.').HttpBody | undefined, options: Omit<RequestInit, "body" | "method"> & {
+                parser?: import('.').HttpParser;
+                duplex?: "half";
+            } & {
+                parser: "json";
+            }): Promise<T>;
+            <P extends Exclude<import('.').HttpParser, "json">>(url: string, input: import('.').HttpBody | undefined, options: Omit<RequestInit, "body" | "method"> & {
+                parser?: import('.').HttpParser;
+                duplex?: "half";
+            } & {
+                parser: P;
+            }): Promise<{
+                json: unknown;
+                text: string;
+                blob: Blob;
+                arrayBuffer: ArrayBuffer;
+                formData: FormData;
+            }[P]>;
+            <T = unknown>(url: string, input?: import('.').HttpBody | undefined, options?: (Omit<RequestInit, "body" | "method"> & {
+                parser?: import('.').HttpParser;
+                duplex?: "half";
+            } & {
+                parser?: undefined;
+            }) | undefined): Promise<T | undefined>;
+            (url: string, input?: import('.').HttpBody | undefined, options?: import('.').HttpOptions): Promise<unknown>;
+        };
+        delete: {
+            <T = unknown>(url: string, input: import('.').HttpQuery | undefined, options: Omit<RequestInit, "body" | "method"> & {
+                parser?: import('.').HttpParser;
+                duplex?: "half";
+            } & {
+                parser: "json";
+            }): Promise<T>;
+            <P extends Exclude<import('.').HttpParser, "json">>(url: string, input: import('.').HttpQuery | undefined, options: Omit<RequestInit, "body" | "method"> & {
+                parser?: import('.').HttpParser;
+                duplex?: "half";
+            } & {
+                parser: P;
+            }): Promise<{
+                json: unknown;
+                text: string;
+                blob: Blob;
+                arrayBuffer: ArrayBuffer;
+                formData: FormData;
+            }[P]>;
+            <T = unknown>(url: string, input?: import('.').HttpQuery | undefined, options?: (Omit<RequestInit, "body" | "method"> & {
+                parser?: import('.').HttpParser;
+                duplex?: "half";
+            } & {
+                parser?: undefined;
+            }) | undefined): Promise<T | undefined>;
+            (url: string, input?: import('.').HttpQuery | undefined, options?: import('.').HttpOptions): Promise<unknown>;
+        };
     };
+    HttpError: typeof import('.').HttpError;
     trustedHTML: typeof import('.').trustedHTML;
 };
 export default brio;

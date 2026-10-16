@@ -1,61 +1,132 @@
 export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+export type HttpParser = 'json' | 'text' | 'blob' | 'arrayBuffer' | 'formData';
+export type HttpOptions = Omit<RequestInit, 'method' | 'body'> & {
+    parser?: HttpParser;
+    duplex?: 'half';
+};
+export type HttpQueryValue = string | number | boolean | Date | null | undefined |
+    readonly HttpQueryValue[] | { readonly [key: string]: HttpQueryValue };
+export type HttpQuery = Readonly<Record<string, HttpQueryValue>> | URLSearchParams | null;
+export type HttpBody = BodyInit | object | number | boolean | null;
 
-export type HttpOptions = {
-    headers?: Record<string, string> | Headers;
-    parser?: 'json' | 'text' | 'blob' | 'arrayBuffer' | 'formData';
-    [key: string]: unknown;
+type ParserResults = {
+    json: unknown;
+    text: string;
+    blob: Blob;
+    arrayBuffer: ArrayBuffer;
+    formData: FormData;
 };
 
-const request = (method: HttpMethod) => async (url: string, body?: any, options: HttpOptions = {}): Promise<any> => {
-    const headers = new Headers(options.headers);
-    let finalBody: BodyInit | undefined = undefined;
+export class HttpError extends Error {
+    readonly response: Response;
+    readonly status: number;
 
-    if (body !== undefined && method !== 'GET' && method !== 'DELETE') {
-        if (body instanceof FormData || body instanceof URLSearchParams || typeof body === 'string') {
-            finalBody = body;
-        } else {
-            headers.set('Content-Type', 'application/json');
-            finalBody = JSON.stringify(body);
-        }
-    } else if (body !== undefined && (method === 'GET' || method === 'DELETE')) {
-        const u = new URL(url, typeof location !== 'undefined' ? location.href : 'http://localhost');
-        if (typeof body === 'object') {
-            for (const [k, v] of Object.entries(body)) {
-                u.searchParams.append(k, String(v));
+    constructor(response: Response) {
+        super(`HTTP ${response.status}: ${response.statusText}`);
+        this.name = 'HttpError';
+        this.response = response;
+        this.status = response.status;
+    }
+}
+
+function isPlainObject(value: object): boolean {
+    const prototype = Object.getPrototypeOf(value);
+    return prototype === null ||
+        (Object.getPrototypeOf(prototype) === null && Object.prototype.toString.call(value) === '[object Object]');
+}
+
+function isDate(value: unknown): value is Date {
+    return Object.prototype.toString.call(value) === '[object Date]';
+}
+
+function appendQuery(url: string, query: unknown): string {
+    const target = new URL(url, typeof location !== 'undefined' ? location.href : 'http://localhost');
+    if (query instanceof URLSearchParams) {
+        query.forEach((value, key) => target.searchParams.append(key, value));
+    } else {
+        if (query === null || typeof query !== 'object' || !isPlainObject(query))
+            throw new TypeError('HTTP query must be a plain object or URLSearchParams.');
+        const ancestors = new Set<object>();
+        const append = (key: string, value: unknown): void => {
+            if (value === undefined) return;
+            if (value === null) {
+                target.searchParams.append(key, '');
+            } else if (isDate(value)) {
+                target.searchParams.append(key, Date.prototype.toISOString.call(value));
+            } else if (typeof value === 'string' || typeof value === 'boolean' ||
+                (typeof value === 'number' && Number.isFinite(value))) {
+                target.searchParams.append(key, String(value));
+            } else if (typeof value === 'object' && (Array.isArray(value) || isPlainObject(value))) {
+                if (ancestors.has(value)) throw new TypeError(`Circular HTTP query at "${key}".`);
+                ancestors.add(value);
+                if (Array.isArray(value)) {
+                    value.forEach((item, index) => {
+                        const structured = item !== null && typeof item === 'object' && !isDate(item);
+                        append(`${key}[${structured ? index : ''}]`, item);
+                    });
+                } else {
+                    for (const [name, item] of Object.entries(value)) append(`${key}[${name}]`, item);
+                }
+                ancestors.delete(value);
+            } else {
+                throw new TypeError(`Unsupported HTTP query value at "${key}".`);
             }
+        };
+        ancestors.add(query);
+        for (const [key, value] of Object.entries(query)) append(key, value);
+    }
+    return target.href;
+}
+
+function encodeBody(body: HttpBody, headers: Headers): BodyInit {
+    if (typeof body === 'string' ||
+        (typeof FormData !== 'undefined' && body instanceof FormData) ||
+        (typeof URLSearchParams !== 'undefined' && body instanceof URLSearchParams) ||
+        (typeof Blob !== 'undefined' && body instanceof Blob) ||
+        body instanceof ArrayBuffer || ArrayBuffer.isView(body) ||
+        (typeof ReadableStream !== 'undefined' && body instanceof ReadableStream)) return body;
+    if (body !== null && typeof body !== 'number' && typeof body !== 'boolean' &&
+        !(typeof body === 'object' && (Array.isArray(body) || isPlainObject(body))))
+        throw new TypeError('HTTP body must be JSON data or a native Fetch body.');
+    const json = JSON.stringify(body);
+    if (json === undefined) throw new TypeError('HTTP body did not serialize to JSON.');
+    if (!headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
+    return json;
+}
+
+function request<Input extends HttpQuery | HttpBody>(method: HttpMethod) {
+    function send<T = unknown>(url: string, input: Input | undefined, options: HttpOptions & { parser: 'json' }): Promise<T>;
+    function send<P extends Exclude<HttpParser, 'json'>>(url: string, input: Input | undefined, options: HttpOptions & { parser: P }): Promise<ParserResults[P]>;
+    function send<T = unknown>(url: string, input?: Input, options?: HttpOptions & { parser?: undefined }): Promise<T | undefined>;
+    function send(url: string, input?: Input, options?: HttpOptions): Promise<unknown>;
+    async function send(url: string, input?: Input, options: HttpOptions = {}): Promise<unknown> {
+        const { parser, ...init } = options;
+        if (parser !== undefined && !['json', 'text', 'blob', 'arrayBuffer', 'formData'].includes(parser))
+            throw new TypeError(`Unknown HTTP parser: "${parser}".`);
+        const headers = new Headers(init.headers);
+        let body: BodyInit | undefined;
+        if (method === 'GET' || method === 'DELETE') {
+            if (input !== undefined && input !== null) url = appendQuery(url, input);
+        } else if (input !== undefined) {
+            body = encodeBody(input, headers);
         }
-        url = u.href;
+        const response = await fetch(url, { ...init, method, headers, body });
+        if (!response.ok) throw new HttpError(response);
+        if (parser !== undefined) return response[parser]();
+        if (response.status === 204 || response.status === 205) return undefined;
+        const contentType = (response.headers.get('content-type') ?? '').split(';', 1)[0].trim().toLowerCase();
+        const text = await response.text();
+        if (contentType === 'application/json' || /^[^/\s]+\/[^/\s]+\+json$/.test(contentType))
+            return text === '' ? undefined : JSON.parse(text);
+        return text;
     }
-
-    const response = await fetch(url, {
-        ...options,
-        method,
-        headers,
-        body: finalBody,
-    });
-
-    if (!response.ok) {
-        const error = new Error(`HTTP ${response.status}: ${response.statusText}`) as any;
-        error.response = response;
-        throw error;
-    }
-
-    const parser = options.parser;
-    if (parser) {
-        return response[parser]();
-    }
-
-    const contentType = response.headers.get('content-type') || '';
-    if (contentType.includes('application/json')) {
-        return response.json();
-    }
-    return response.text();
-};
+    return send;
+}
 
 export const http = {
-    get: request('GET'),
-    post: request('POST'),
-    put: request('PUT'),
-    patch: request('PATCH'),
-    delete: request('DELETE'),
+    get: request<HttpQuery>('GET'),
+    post: request<HttpBody>('POST'),
+    put: request<HttpBody>('PUT'),
+    patch: request<HttpBody>('PATCH'),
+    delete: request<HttpQuery>('DELETE'),
 };

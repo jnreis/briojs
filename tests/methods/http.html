@@ -11,33 +11,206 @@
         h3 { margin-top: 0; color: #0f172a; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; }
         button { background: #3b82f6; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 0.9rem; margin-right: 8px; }
         button:hover { background: #2563eb; }
+        button { margin-bottom: 8px; }
+        button:disabled { opacity: 0.5; cursor: wait; }
         pre { background: #0f172a; color: #38bdf8; padding: 12px; border-radius: 6px; overflow-x: auto; font-size: 0.85rem; max-height: 250px; }
     </style>
 </head>
-<body b-data="{
-    httpResult: 'No request initiated yet',
-    isLoading: false
-}">
+<body>
 
     <h1>HTTP Client (http) Manual Tests</h1>
-    <p>Tests <code>http.get</code>, <code>http.post</code>, parameter encoding, and automatic response parsing.</p>
+    <p>Tests <code>http.get</code>, <code>http.post</code>, JSON request bodies, and automatic response parsing.</p>
+    <p>GET/DELETE accept nested query objects or <code>URLSearchParams</code>.
+        POST/PUT/PATCH accept JSON data or native Fetch bodies. Automatic parsing
+        recognizes JSON and <code>+json</code>; 204/205 and empty JSON return
+        <code>undefined</code>. Explicit parsers retain native behavior.</p>
+    <p>Non-OK responses throw <code>brio.HttpError</code> with
+        <code>status</code> and an unread <code>response</code>. Network and parsing
+        errors remain native. Inspect the collapsible page setup for loading/error handling.</p>
 
     <div class="card">
         <h3>1. Fetch API Request Test</h3>
-        <button on-click="$data.fetchTodo()">GET /api (Fetch Mock Users)</button>
-        <button on-click="$data.createPost()">POST /api (Simulate Post)</button>
+        <button id="get-todo" b-on-click="$data.fetchTodo()" b-bind-disabled="$data.isLoading">GET /todos/1 (Fetch Todo)</button>
+        <button id="create-post" b-on-click="$data.createPost()" b-bind-disabled="$data.isLoading">POST /posts (Simulate Post)</button>
 
         <p b-if="$data.isLoading"><em>Loading data from network...</em></p>
         <h4>Response Output:</h4>
-        <pre>${typeof $data.httpResult === 'object' ? JSON.stringify($data.httpResult, null, 2) : $data.httpResult}</pre>
+        <pre id="http-result">${typeof $data.httpResult === 'object' ? JSON.stringify($data.httpResult, null, 2) : $data.httpResult}</pre>
+    </div>
+
+    <p>The scenarios below use local <code>/__brio_http__/</code> fixtures served by
+        <code>npm run dev</code>: no external API or global Fetch mock. Each output
+        shows the actual result or expected error. Request echoes expose decoded
+        query entries, headers, and body bytes. JavaScript for every scenario is
+        available in the collapsible Page setup panel below.</p>
+
+    <div class="card">
+        <h3>2. Nested queries and explicit query keys</h3>
+        <p>Brackets preserve nested objects and arrays. Null becomes an empty value,
+            undefined disappears, and Dates become ISO strings. Existing query entries remain.
+            Explicit URLSearchParams can repeat plain keys instead.</p>
+        <button id="query-nested" b-on-click="$data.run('nested', 'query')" b-bind-disabled="$data.running !== ''">GET nested query</button>
+        <button id="query-explicit" b-on-click="$data.run('explicit', 'query')" b-bind-disabled="$data.running !== ''">DELETE explicit keys</button>
+        <pre id="query-result" b-text.raw="$data.results.query"></pre>
+    </div>
+
+    <div class="card">
+        <h3>3. JSON, form, and binary request bodies</h3>
+        <p>POST/PUT/PATCH use JSON for plain data and preserve supplied headers.
+            Native bodies pass through; Fetch creates multipart boundaries and keeps
+            typed-array slice offsets. The echo includes the bytes received by the server.</p>
+        <button id="body-json" b-on-click="$data.run('jsonBody', 'body')" b-bind-disabled="$data.running !== ''">POST JSON + custom headers</button>
+        <button id="body-form" b-on-click="$data.run('formBody', 'body')" b-bind-disabled="$data.running !== ''">PUT URLSearchParams</button>
+        <button id="body-multipart" b-on-click="$data.run('multipartBody', 'body')" b-bind-disabled="$data.running !== ''">POST FormData</button>
+        <button id="body-binary" b-on-click="$data.run('binaryBody', 'body')" b-bind-disabled="$data.running !== ''">PATCH binary slice</button>
+        <button id="body-string" b-on-click="$data.run('stringBody', 'body')" b-bind-disabled="$data.running !== ''">POST raw string</button>
+        <pre id="body-result" b-text.raw="$data.results.body"></pre>
+    </div>
+
+    <div class="card">
+        <h3>4. Automatic parsing and empty responses</h3>
+        <p>JSON and +json media types parse automatically. JSON-looking text stays text.
+            Automatic 204/205 and zero-length JSON return undefined; empty text remains "".
+            Malformed nonempty JSON rejects rather than silently returning text.</p>
+        <button id="parse-auto" b-on-click="$data.run('automatic', 'parse')" b-bind-disabled="$data.running !== ''">Compare media types</button>
+        <button id="parse-empty" b-on-click="$data.run('empty', 'parse')" b-bind-disabled="$data.running !== ''">Compare empty responses</button>
+        <button id="parse-malformed" b-on-click="$data.run('malformed', 'parse')" b-bind-disabled="$data.running !== ''">Malformed JSON</button>
+        <pre id="parse-result" b-text.raw="$data.results.parse"></pre>
+    </div>
+
+    <div class="card">
+        <h3>5. Explicit native response parsers</h3>
+        <p>Override a misleading content-type, read JSON as text, or request Blob,
+            ArrayBuffer, and FormData. Explicit JSON on an empty body throws a native
+            SyntaxError, even for 204.</p>
+        <button id="parse-explicit" b-on-click="$data.run('explicitParsers', 'explicit')" b-bind-disabled="$data.running !== ''">Compare all five parsers</button>
+        <button id="parse-strict-empty" b-on-click="$data.run('strictEmpty', 'explicit')" b-bind-disabled="$data.running !== ''">Explicit JSON on 204</button>
+        <pre id="explicit-result" b-text.raw="$data.results.explicit"></pre>
+    </div>
+
+    <div class="card">
+        <h3>6. HTTP errors, invalid input, and cancellation</h3>
+        <p>HttpError exposes status and an unread response. Parsing, serialization,
+            and cancellation failures are not HttpError. The slow request takes two
+            seconds unless cancelled; app disposal also aborts it.</p>
+        <button id="error-http" b-on-click="$data.run('httpError', 'errors')" b-bind-disabled="$data.running !== ''">Inspect HTTP 422</button>
+        <button id="error-query" b-on-click="$data.run('invalidQuery', 'errors')" b-bind-disabled="$data.running !== ''">Reject circular query</button>
+        <button id="request-slow" b-on-click="$data.run('slow', 'errors')" b-bind-disabled="$data.running !== ''">Start slow request</button>
+        <button id="request-cancel" b-on-click="$data.cancel()" b-bind-disabled="$data.running !== 'slow'">Cancel request</button>
+        <pre id="errors-result" b-text.raw="$data.results.errors"></pre>
     </div>
 
     <script src="/tests/source-viewer.js"></script>
     <script src="/dist/brio.min.js"></script>
     <script>
         window.addEventListener('DOMContentLoaded', () => {
+            const endpoint = name => '/__brio_http__/' + name;
+            const describe = value => ({
+                type: value === undefined ? 'undefined' : value === null ? 'null' : typeof value,
+                value: value === undefined ? '(undefined)' : value
+            });
+            const describeError = error => ({
+                name: error.name,
+                isHttpError: error instanceof brio.HttpError,
+                message: error.message
+            });
+            let controller;
+            const scenarios = {
+                nested: () => brio.http.get(endpoint('echo') + '?keep=original', {
+                    user: { name: 'Ada & Lin', empty: null, omitted: undefined },
+                    tags: ['js', 'html'],
+                    rows: [{ id: 1 }, { id: 2 }],
+                    date: new Date('2026-01-02T00:00:00Z')
+                }),
+                explicit: () => brio.http.delete(endpoint('echo') + '?tag=original',
+                    new URLSearchParams([['tag', 'js'], ['tag', 'html']])),
+                jsonBody: () => brio.http.post(endpoint('echo'), { title: 'Brio', published: true }, {
+                    headers: { 'Content-Type': 'application/vnd.brio+json', 'X-Brio-Demo': 'preserved' }
+                }),
+                formBody: () => brio.http.put(endpoint('echo'), new URLSearchParams({ name: 'Ada', topic: 'JS & HTML' })),
+                multipartBody: () => {
+                    const form = new FormData();
+                    form.append('name', 'Ada');
+                    form.append('file', new Blob(['Hello Brio'], { type: 'text/plain' }), 'hello.txt');
+                    return brio.http.post(endpoint('echo'), form);
+                },
+                binaryBody: () => {
+                    const bytes = new Uint8Array([99, 1, 2, 3, 99]);
+                    return brio.http.patch(endpoint('echo'), bytes.subarray(1, 4));
+                },
+                stringBody: () => brio.http.post(endpoint('echo'), 'Plain request text'),
+                automatic: async () => {
+                    const results = {};
+                    for (const name of ['json', 'problem-json', 'text-json'])
+                        results[name] = describe(await brio.http.get(endpoint(name)));
+                    return results;
+                },
+                empty: async () => {
+                    const results = {};
+                    for (const name of ['no-content', 'reset-content', 'empty-json', 'empty-text'])
+                        results[name] = describe(await brio.http.get(endpoint(name)));
+                    return results;
+                },
+                malformed: () => brio.http.get(endpoint('invalid-json')),
+                explicitParsers: async () => {
+                    const json = await brio.http.get(endpoint('text-json'), undefined, { parser: 'json' });
+                    const text = await brio.http.get(endpoint('json'), undefined, { parser: 'text' });
+                    const blob = await brio.http.get(endpoint('json'), undefined, { parser: 'blob' });
+                    const buffer = await brio.http.get(endpoint('json'), undefined, { parser: 'arrayBuffer' });
+                    const form = await brio.http.get(endpoint('form'), undefined, { parser: 'formData' });
+                    return {
+                        json: describe(json), text: describe(text),
+                        blob: { type: blob.type, size: blob.size, text: await blob.text() },
+                        arrayBuffer: { byteLength: buffer.byteLength, text: new TextDecoder().decode(buffer) },
+                        formData: [...form.entries()]
+                    };
+                },
+                strictEmpty: () => brio.http.get(endpoint('no-content'), undefined, { parser: 'json' }),
+                httpError: async () => {
+                    try {
+                        await brio.http.get(endpoint('error'));
+                        throw new Error('Expected the fixture to reject with HTTP 422.');
+                    } catch (error) {
+                        if (!(error instanceof brio.HttpError)) throw error;
+                        const unreadBefore = !error.response.bodyUsed;
+                        const body = await error.response.json();
+                        return {
+                            ...describeError(error), status: error.status,
+                            unreadBefore, consumedAfter: error.response.bodyUsed, body
+                        };
+                    }
+                },
+                invalidQuery: () => {
+                    const query = {};
+                    query.self = query;
+                    return brio.http.get(endpoint('echo'), query);
+                },
+                slow: () => {
+                    controller = new AbortController();
+                    return brio.http.get(endpoint('slow'), undefined, { signal: controller.signal });
+                }
+            };
             const app = brio.createApp({
                 state: () => ({
+                    results: Object.fromEntries(['query', 'body', 'parse', 'explicit', 'errors']
+                        .map(name => [name, 'Choose a scenario above.'])),
+                    running: '',
+                    async run(name, output) {
+                        this.running = name;
+                        this.results[output] = 'Loading ' + name + '...';
+                        try {
+                            const value = await scenarios[name]();
+                            this.results[output] = JSON.stringify(value, null, 2);
+                        } catch (error) {
+                            this.results[output] = JSON.stringify(describeError(error), null, 2);
+                        } finally {
+                            this.running = '';
+                            controller = undefined;
+                        }
+                    },
+                    cancel() {
+                        controller?.abort();
+                    },
                     httpResult: 'No request initiated yet',
                     isLoading: false,
                     async fetchTodo() {
@@ -68,8 +241,12 @@
             });
 
             app.mount('body');
+            window.addEventListener('pagehide', () => {
+                controller?.abort();
+                app.dispose();
+            }, { once: true });
             console.log('http.html hydrated successfully');
-        });
+        }, { once: true });
     </script>
 </body>
 </html>

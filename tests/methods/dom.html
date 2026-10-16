@@ -15,80 +15,66 @@
         .item { padding: 8px 12px; margin: 4px 0; background: #38bdf8; color: #0369a1; border-radius: 4px; font-weight: bold; }
     </style>
 </head>
-<body b-data>
+<body b-data="{ count: 0, next: 1 }">
 
     <h1>Managed $insert Manual Tests</h1>
-    <p>Insert HTML or cloned nodes with automatic context inheritance, hydration, and cleanup.</p>
-
+    <p>Call $insert(target, placement, content, options) directly from event expressions.
+        Inserted content inherits context, hydrates automatically, and returns a removable handle.</p>
     <div class="card">
         <h3>1. Placements on Container</h3>
-        <button id="btn-prepend">Prepend Item</button>
-        <button id="btn-append">Append Item</button>
-        <button id="btn-replace">Replace Children</button>
-        <button id="btn-replace-node">Replace First Item</button>
-        <button id="btn-before">Before Container</button>
-        <button id="btn-after">After Container</button>
-        <button id="btn-text">Plain Text</button>
-        <button id="btn-clone">Clone Node</button>
-        <button id="btn-remove">Remove Last Insertion</button>
-        <button on-click="$insert('#target-container', 'append', '<span b-text=&quot;$data.count&quot;></span>')">Context $insert</button>
-        <button on-click="$data.count++">Increment Shared Count</button>
+        <script b-script>
+            () => {
+                let lastInsertion;
+                $data.remember = handle => { lastInsertion = handle; };
+                $data.removeLast = () => lastInsertion?.remove();
+            }
+        </script>
+        <button id="btn-prepend" b-on-click="$data.remember($insert($ref.target, 'prepend',
+            '<div class=&quot;item&quot;>Prepended reactive count: ${$data.count} <button b-on-click=&quot;$data.count++&quot;>+</button></div>',
+            { data: { count: $data.next++ } }))">Prepend Item</button>
+        <button id="btn-append" b-on-click="$data.remember($insert('#target-container', 'append',
+            '<div class=&quot;item&quot;>Appended reactive count: ${$data.count} <button b-on-click=&quot;$data.count++&quot;>+</button></div>',
+            { data: { count: $data.next++ } }))">Append Item</button>
+        <button id="btn-replace" b-on-click="$data.remember($insert($ref.target, 'replaceChildren',
+            '<div class=&quot;item&quot;>Replaced all content at ' + new Date().toLocaleTimeString() + '</div>'))">Replace Children</button>
+        <button id="btn-replace-node" b-on-click="
+            if (!$ref.target.firstElementChild) throw new Error('Append an item before replacing it.');
+            $data.remember($insert($ref.target.firstElementChild, 'replaceWith',
+                '<div class=&quot;item&quot;>Replacement: ${$data.count}</div>'))">Replace First Item</button>
+        <button id="btn-before" b-on-click="$data.remember($insert($ref.target, 'before',
+            '<div class=&quot;item&quot;>${$data.label} <button b-on-click=&quot;$data.count++&quot;>+</button> ${$data.count}</div>',
+            { data: { label: 'before', count: 0 } }))">Before Container</button>
+        <button id="btn-after" b-on-click="$data.remember($insert($ref.target, 'after',
+            '<div class=&quot;item&quot;>${$data.label} <button b-on-click=&quot;$data.count++&quot;>+</button> ${$data.count}</div>',
+            { data: { label: 'after', count: 0 } }))">After Container</button>
+        <button id="btn-text" b-on-click="$data.remember($insert($ref.target, 'textContent',
+            '<b>Literal text: ${$data.count}</b>'))">Plain Text</button>
+        <button id="btn-clone" b-on-click="$data.remember($insert($ref.target, 'append',
+            $el.ownerDocument.getElementById('clone-source').content))">Clone Node</button>
+        <button id="btn-remove" b-on-click="$data.removeLast()">Remove Last Insertion</button>
+        <button id="btn-context" b-on-click="$data.remember($insert('#target-container', 'append',
+            '<span b-text=&quot;$data.count&quot;></span>'))">Context $insert</button>
+        <button id="btn-increment" b-on-click="$data.count++">Increment Shared Count</button>
 
-        <div id="target-container" class="container-box">
+        <template id="clone-source">
+            <button b-on-click="$data.count++">Cloned counter: ${$data.count}</button>
+        </template>
+        <div id="target-container" class="container-box" b-ref="target">
             <div class="item">Existing Static Child</div>
         </div>
+        <p>Prepend/append and sibling examples use options.data for local counters.
+            Replacement and cloned content inherit the shared count. Plain Text does not hydrate markup.
+            Append an item before using Replace First Item on an empty container.</p>
     </div>
 
     <script src="/tests/source-viewer.js"></script>
     <script src="/dist/brio.min.js"></script>
     <script>
         window.addEventListener('DOMContentLoaded', () => {
-            let counter = 1;
-            const app = brio.createApp({ state: () => ({ count: 0 }) });
-            console.log('App initialized', app);
+            const app = brio.createApp();
             app.mount(document.body);
-            let lastInsertion;
-            function insertAndHydrate(target, placement, content, options) {
-                lastInsertion = app.insert(target, placement, content, options);
-            }
-
-            document.getElementById('btn-prepend').addEventListener('click', () => {
-                insertAndHydrate('#target-container', 'prepend', `<div class="item" b-data="{ count: ${counter++} }">Prepended reactive count: \${$data.count} <button on-click="$data.count++">+</button></div>`);
-            });
-
-            document.getElementById('btn-append').addEventListener('click', () => {
-                insertAndHydrate('#target-container', 'append', `<div class="item" b-data="{ count: ${counter++} }">Appended reactive count: \${$data.count} <button on-click="$data.count++">+</button></div>`);
-            });
-
-            document.getElementById('btn-replace').addEventListener('click', () => {
-                insertAndHydrate('#target-container', 'replaceChildren', `<div class="item" style="background: #4ade80; color: #166534;">Replaced all content at ${new Date().toLocaleTimeString()}</div>`);
-            });
-            for (const placement of ['before', 'after']) {
-                document.getElementById(`btn-${placement}`).addEventListener('click', () => {
-                    insertAndHydrate('#target-container', placement,
-                        '<div class="item">${$data.label} <button on-click="$data.count++">+</button> ${$data.count}</div>',
-                        { data: { label: placement, count: 0 } });
-                });
-            }
-            document.getElementById('btn-text').addEventListener('click', () =>
-                insertAndHydrate('#target-container', 'textContent', '<b>Literal text: ${$data.count}</b>'));
-            document.getElementById('btn-replace-node').addEventListener('click', () => {
-                const target = document.getElementById('target-container').firstElementChild;
-                if (!target) throw new Error('Append an item before replacing it.');
-                insertAndHydrate(target, 'replaceWith', '<div class="item">Replacement: ${$data.count}</div>');
-            });
-            document.getElementById('btn-clone').addEventListener('click', () => {
-                const node = document.createElement('button');
-                node.textContent = 'Cloned counter: ${$data.count}';
-                node.setAttribute('on-click', '$data.count++');
-                insertAndHydrate('#target-container', 'append', node);
-            });
-            document.getElementById('btn-remove').addEventListener('click', () => lastInsertion?.remove());
-
             window.addEventListener('pagehide', () => app.dispose(), { once: true });
-
-            console.log('dom.html hydrated successfully');
-        });
+        }, { once: true });
     </script>
 </body>
 </html>

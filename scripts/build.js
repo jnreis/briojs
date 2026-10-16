@@ -57,7 +57,7 @@ const sharedRuntimeModules = new Set([
     resolve('src/reactivity/effect.ts'),
     resolve('src/core/scope.ts'),
 ]);
-for (const plugin of ['router', 'persistence', 'forms']) {
+for (const plugin of ['router', 'persistence']) {
     await build({
         publicDir: false,
         plugins: [{

@@ -10,7 +10,7 @@ const development = readFileSync(new URL('../dist/brio.dev.min.js', import.meta.
 const coreAPI = [
     'createApp', 'state', 'signal', 'computed', 'effect', 'batch',
     'createScope', 'onCleanup', 'getCurrentScope', 'createStepEngine',
-    'http', 'HttpError', 'trustedHTML',
+    'http', 'HttpError', 'validate', 'trustedHTML',
 ];
 const developmentAPI = ['devtools', 'inspectDevtools', 'devtoolsPanel', 'enableDevtools'];
 
@@ -37,6 +37,11 @@ for (const [name, bundle, dev] of [
         const brio = window.brio;
         assert.equal(readyEvents, 1);
         assert.deepEqual(Object.keys(brio).sort(), [...coreAPI, ...(dev ? developmentAPI : [])].sort());
+        assert.equal(brio.validate({ age: 18 }, { age: [{ name: 'min', value: 18 }] }), true);
+        const invalid = brio.validate({ email: 'invalid' }, { email: [{ name: 'email' }] });
+        assert.equal(invalid.email.length, 1);
+        assert.equal(brio.validate({ age: 20 }, { age: [{ name: 'even' }] },
+            { even: value => value % 2 === 0 }), true);
         window.snapshotReads = 0;
         const initialState = window.eval('({ count: 0, get inspected() { window.snapshotReads++; return 1; } })');
         const app = brio.createApp({ state: () => initialState });
@@ -145,8 +150,8 @@ for (const [name, bundle] of [['production', production], ['development', develo
         });
         window.eval(bundle);
         const core = window.brio;
-        for (const key of ['persist', 'createRouter', 'validate']) assert.equal(core[key], undefined);
-        for (const plugin of ['router', 'persistence', 'forms']) {
+        for (const key of ['persist', 'createRouter']) assert.equal(core[key], undefined);
+        for (const plugin of ['router', 'persistence']) {
             const source = readFileSync(new URL(`../dist/brio.${plugin}.min.js`, import.meta.url), 'utf8');
             window.eval(source);
         }
@@ -189,13 +194,13 @@ for (const [name, bundle] of [['production', production], ['development', develo
 test('optional scripts report missing core explicitly and contain no separate reactive engine', t => {
     const dom = new JSDOM('', { runScripts: 'outside-only' });
     t.after(() => dom.window.close());
-    for (const plugin of ['router', 'persistence', 'forms']) {
+    for (const plugin of ['router', 'persistence']) {
         const source = readFileSync(new URL(`../dist/brio.${plugin}.min.js`, import.meta.url), 'utf8');
         assert.throws(() => dom.window.eval(source), /Load the Brio core/);
         assert.equal(source.includes('brio.raw'), false);
         assert.equal(source.includes('Cannot run a disposed Brio scope'), false);
     }
-    for (const marker of ['persistence key', 'Unknown validation rule', 'Duplicate route pattern']) {
+    for (const marker of ['persistence key', 'Duplicate route pattern']) {
         assert.equal(production.includes(marker), false);
         assert.equal(development.includes(marker), false);
     }

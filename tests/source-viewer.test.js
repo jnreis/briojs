@@ -9,7 +9,8 @@ import { httpFixtures } from './http-fixtures.js';
 class LocalResources extends ResourceLoader {
     fetch(url) {
         const path = new URL(url).pathname;
-        if (path === '/tests/source-viewer.js' || path === '/tests/source-viewer.css' || path === '/dist/brio.min.js')
+        if (path === '/tests/source-viewer.js' || path === '/tests/source-viewer.css' ||
+            path === '/dist/brio.min.js')
             return Promise.resolve(readFileSync(new URL(`..${path}`, import.meta.url)));
         throw new Error(`Unexpected source-viewer test resource: ${url}`);
     }
@@ -35,6 +36,52 @@ async function page(t, path) {
     assert.deepEqual(failures, []);
     return dom.window;
 }
+
+test('validation manual page uses app methods, numeric age bounds and clears stale errors', async t => {
+    const window = await page(t, './methods/validate.html');
+    const { document } = window;
+    const failures = [];
+    window.addEventListener('error', event => failures.push(event.error));
+    const submit = () => document.getElementById('validate-btn').click();
+    const input = (id, value) => {
+        const element = document.getElementById(id);
+        element.value = value;
+        element.dispatchEvent(new window.Event('input', { bubbles: true }));
+    };
+    const errors = () => [...document.querySelectorAll('.error-msg')].map(element => element.textContent);
+    submit();
+    assert.deepEqual(errors(), ['Username is required', 'Email is required', 'Age is required']);
+    assert.equal(document.querySelector('.success-box'), null);
+    input('username', 'Al');
+    input('email', 'invalid');
+    input('age', '17');
+    submit();
+    assert.deepEqual(errors(), ['Username must be at least 3 characters', 'Invalid email address', 'Must be at least 18']);
+    input('username', 'Ada');
+    input('email', 'ada@example.com');
+    for (const age of ['18', '100']) {
+        input('age', age);
+        submit();
+        assert.deepEqual(errors(), []);
+        assert.match(document.querySelector('.success-box').textContent, /completely valid/);
+    }
+    input('age', '101');
+    submit();
+    assert.deepEqual(errors(), ['Must be 100 or younger']);
+    assert.equal(document.querySelector('.success-box'), null);
+    input('age', '');
+    submit();
+    assert.deepEqual(errors(), ['Age is required']);
+    input('age', '25');
+    submit();
+    assert.deepEqual(errors(), []);
+    window.dispatchEvent(new window.Event('pagehide'));
+    const disposedMarkup = document.querySelector('.card').innerHTML;
+    input('username', '');
+    submit();
+    assert.equal(document.querySelector('.card').innerHTML, disposedMarkup);
+    assert.deepEqual(failures, []);
+});
 
 test('HTTP manual page runs GET/POST and restores loading state on success and failure', async t => {
     const window = await page(t, './methods/http.html');

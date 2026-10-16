@@ -39,9 +39,9 @@ app.dispose();
 ```
 
 Use `brio.min.js` in production or `brio.dev.min.js` in development, not both.
-Browser routing/persistence/validation now require the optional
-`brio.router.min.js`, `brio.persistence.min.js`, and `brio.forms.min.js` scripts.
-Load the needed scripts after the core and before mounting. HTTP and step remain
+Browser routing/persistence require the optional
+`brio.router.min.js` and `brio.persistence.min.js` scripts.
+Load the needed scripts after the core and before mounting. HTTP, step, and validation remain
 bundled; npm main-entry imports still expose every plugin and development helper.
 Run bootstrap after the bundle and markup are available. ESM consumers can
 import `createApp` from `briojs`; do not mix browser and ESM runtimes on a root.

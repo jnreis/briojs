@@ -53,17 +53,16 @@ Load one of the standalone bundles, not both:
 
 Both expose `window.brio` with `createApp`, `state`, `signal`, `computed`,
 `effect`, `batch`, `createScope`, `onCleanup`, `getCurrentScope`,
-`createStepEngine`, `http`, `HttpError`, and `trustedHTML`. Both dispatch the
+`createStepEngine`, `http`, `HttpError`, `validate`, and `trustedHTML`. Both dispatch the
 `brio` ready event after publishing the core API.
 
-Router, persistence, and forms are optional browser scripts. Load only what you
+Router and persistence are optional browser scripts. Load only what you
 need, **after** the core and **before** application bootstrap:
 
 ```html
 <script src="/dist/brio.min.js"></script>
 <script src="/dist/brio.router.min.js"></script>      <!-- Adds brio.createRouter -->
 <script src="/dist/brio.persistence.min.js"></script> <!-- Adds brio.persist -->
-<script src="/dist/brio.forms.min.js"></script>       <!-- Adds brio.validate -->
 <script src="/app.js"></script>
 ```
 
@@ -71,7 +70,8 @@ The optional scripts extend the existing `window.brio`, use its reactive engine
 and cleanup scopes, and do not dispatch another `brio` ready event. For deferred
 loading, bootstrap after the needed scripts finish, not at the core's ready
 event. Loading a plugin before the core throws. The same scripts work with the
-development core. HTTP and step remain included in both core bundles.
+development core. HTTP, step, and validation are included in both core bundles;
+`brio.validate(data, schema, customRules?)` needs no additional script.
 
 The development bundle additionally exposes `devtools`, `inspectDevtools`,
 `devtoolsPanel`, and `enableDevtools`, with tracking enabled automatically. The production bundle compiles out devtools tracking hooks and

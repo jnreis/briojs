@@ -19,6 +19,7 @@ declare const brio: {
     onCleanup: typeof import('.').onCleanup;
     getCurrentScope: typeof import('.').getCurrentScope;
     createStepEngine: typeof import('.').createStepEngine;
+    validate: typeof import('.').validate;
     http: {
         get: {
             <T = unknown>(url: string, input: import('.').HttpQuery | undefined, options: Omit<RequestInit, "body" | "method"> & {

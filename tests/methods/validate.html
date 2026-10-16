@@ -18,11 +18,7 @@
         label { display: block; font-weight: 500; margin-bottom: 4px; }
     </style>
 </head>
-<body b-data="{
-    formData: { username: '', email: '', age: '' },
-    formErrors: {},
-    isValid: false
-}">
+<body>
 
     <h1>Validation Method (validate) Manual Tests</h1>
     <p>Tests form validation rules: <code>required</code>, <code>email</code>, <code>min</code>, <code>max</code>, and custom error reporting.</p>
@@ -31,20 +27,20 @@
         <h3>1. Interactive User Registration Form</h3>
 
         <div class="field">
-            <label>Username (required, min 3 chars):</label>
-            <input type="text" b-model="$data.formData.username">
+            <label for="username">Username (required, min 3 chars):</label>
+            <input id="username" type="text" b-model="$data.formData.username">
             <div b-if="$data.formErrors.username" class="error-msg">${$data.formErrors.username}</div>
         </div>
 
         <div class="field">
-            <label>Email (required, valid email):</label>
-            <input type="email" b-model="$data.formData.email">
+            <label for="email">Email (required, valid email):</label>
+            <input id="email" type="email" b-model="$data.formData.email">
             <div b-if="$data.formErrors.email" class="error-msg">${$data.formErrors.email}</div>
         </div>
 
         <div class="field">
-            <label>Age (numeric, min 18, max 100):</label>
-            <input type="number" b-model="$data.formData.age">
+            <label for="age">Age (numeric, min 18, max 100):</label>
+            <input id="age" type="number" b-model.number="$data.formData.age">
             <div b-if="$data.formErrors.age" class="error-msg">${$data.formErrors.age}</div>
         </div>
 
@@ -57,7 +53,6 @@
 
     <script src="/tests/source-viewer.js"></script>
     <script src="/dist/brio.min.js"></script>
-    <script src="/dist/brio.forms.min.js"></script>
     <script>
         window.addEventListener('DOMContentLoaded', () => {
             const schema = {
@@ -89,8 +84,9 @@
             });
 
             app.mount('body');
+            window.addEventListener('pagehide', () => app.dispose(), { once: true });
             console.log('validate.html hydrated successfully');
-        });
+        }, { once: true });
     </script>
 </body>
 </html>

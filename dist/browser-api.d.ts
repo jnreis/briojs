@@ -1,4 +1,4 @@
-import { createApp, state, signal, computed, effect, batch, createScope, onCleanup, getCurrentScope, createStepEngine, HttpError, trustedHTML } from './index';
+import { createApp, state, signal, computed, effect, batch, createScope, onCleanup, getCurrentScope, createStepEngine, validate, HttpError, trustedHTML } from './index';
 
 declare const brio: {
     createApp: typeof createApp;
@@ -11,6 +11,7 @@ declare const brio: {
     onCleanup: typeof onCleanup;
     getCurrentScope: typeof getCurrentScope;
     createStepEngine: typeof createStepEngine;
+    validate: typeof validate;
     http: {
         get: {
             <T = unknown>(url: string, input: import('./index').HttpQuery | undefined, options: Omit<RequestInit, "body" | "method"> & {

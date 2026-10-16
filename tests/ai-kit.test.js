@@ -28,7 +28,7 @@ function recipe(t, name, pathname = '/', prepare, directory = skill) {
     window.eval(bundle);
     for (const script of dom.window.document.querySelectorAll('script[src]')) {
         const name = script.getAttribute('src').split('/').pop();
-        if (/^brio\.(router|persistence|forms)\.min\.js$/.test(name))
+        if (/^brio\.(router|persistence)\.min\.js$/.test(name))
             window.eval(readFileSync(resolve(root, 'dist', name), 'utf8'));
     }
     const bootstrap = window.document.querySelector('script[data-brio-recipe]');
@@ -435,8 +435,9 @@ test('npm publication includes the complete developer kit', () => {
         assert.ok(published.has(relative(root, path)), `Kit file not published: ${path}`);
     assert.ok(published.has('dist/brio.min.js'));
     assert.ok(published.has('dist/brio.dev.min.js'));
-    for (const plugin of ['router', 'persistence', 'forms'])
+    for (const plugin of ['router', 'persistence'])
         assert.ok(published.has(`dist/brio.${plugin}.min.js`));
+    assert.equal(published.has('dist/brio.forms.min.js'), false);
     assert.equal(published.has('scripts/briojs.1.1.5.min.js'), false);
     assert.equal(published.has('scripts/briojs.1.1.5.min.js.map'), false);
 });

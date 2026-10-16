@@ -22,9 +22,9 @@ not automatically available `/dist/` URLs.
 
 The browser global contains `createApp`, `state`, `signal`, `computed`, `effect`,
 `batch`, `createScope`, `onCleanup`, `getCurrentScope`, `createStepEngine`,
-`http`, `HttpError`, and `trustedHTML`. Load optional `brio.router.min.js`,
-`brio.persistence.min.js`, and `brio.forms.min.js` after the core to add
-`createRouter`, `persist`, and `validate` respectively. These scripts share
+`http`, `HttpError`, `validate`, and `trustedHTML`. Load optional `brio.router.min.js`
+and `brio.persistence.min.js` after the core to add
+`createRouter` and `persist` respectively. Validation needs no extra script. These scripts share
 the core runtime and extend its global; they do not emit another ready event.
 Bootstrap after all needed scripts load, not at the core's ready event alone.
 The development bundle also contains

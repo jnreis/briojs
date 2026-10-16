@@ -115,7 +115,8 @@ const cleanupEffect = (eff) => {
   eff.deps.length = 0;
 };
 const runEffect = (eff) => {
-  if (!eff.active) return;
+  var _a;
+  if (!eff.active || ((_a = eff.scope) == null ? void 0 : _a.disposed)) return;
   if (eff.running) return;
   cleanupEffect(eff);
   const previous = activeEffect;
@@ -136,13 +137,14 @@ const queueEffect = (eff) => {
   if (!batchDepth) flushEffects();
 };
 const flushEffects = () => {
+  var _a;
   const errors = [];
   while (queuedEffects.size) {
     const current = [...queuedEffects];
     queuedEffects.clear();
     for (const eff of current) {
       try {
-        if (eff.active) eff.scheduler ? eff.scheduler() : runEffect(eff);
+        if (eff.active && !((_a = eff.scope) == null ? void 0 : _a.disposed)) eff.scheduler ? eff.scheduler() : runEffect(eff);
       } catch (error) {
         errors.push(error);
       }
@@ -210,9 +212,9 @@ export {
   causedError as c,
   combinedError as d,
   effect as e,
-  createScope as f,
+  onCleanup as f,
   getActiveEffect as g,
-  onCleanup as h,
+  createScope as h,
   installDevtoolsBridge as i,
   notifyAppDisposed as j,
   notifyAppCreated as k,
@@ -222,4 +224,4 @@ export {
   queueEffect as q,
   setActiveScope as s
 };
-//# sourceMappingURL=effect-B76KDYNZ.js.map
+//# sourceMappingURL=effect-DgjHEK0w.js.map

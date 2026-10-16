@@ -1,11 +1,11 @@
-import { c as causedError, o as onDispose, a as getCurrentScope, d as combinedError, e as effect, f as createScope, h as onCleanup, b as batch, n as notifyRootMounted, j as notifyAppDisposed, k as notifyAppCreated, l as notifyRootUnmounted } from "./effect-B76KDYNZ.js";
-import { s } from "./effect-B76KDYNZ.js";
-import { s as state, t as trigger, a as track } from "./state-Di8MyBwM.js";
-import { b } from "./state-Di8MyBwM.js";
+import { c as causedError, o as onDispose, a as getCurrentScope, d as combinedError, e as effect, f as onCleanup, b as batch, h as createScope, n as notifyRootMounted, j as notifyAppDisposed, k as notifyAppCreated, l as notifyRootUnmounted } from "./effect-DgjHEK0w.js";
+import { s } from "./effect-DgjHEK0w.js";
+import { s as state, t as trigger, a as track } from "./state-DXAL3L4e.js";
+import { b } from "./state-DXAL3L4e.js";
 import { computed, resource } from "./reactivity.js";
 import { createRouter } from "./router-entry.js";
 import { persist } from "./persistence-entry.js";
-import { d, a, e, i } from "./devtools-C9eZPghE.js";
+import { d, a, e, i } from "./devtools-NMY9OUFm.js";
 const valueExpressions = /* @__PURE__ */ new Map();
 const statementExpressions = /* @__PURE__ */ new Map();
 const assignmentExpressions = /* @__PURE__ */ new Map();
@@ -13,7 +13,7 @@ const functionExpressions = /* @__PURE__ */ new Map();
 const $CONTEXT = "$context";
 const contextBindings = `
 "use strict";
-const { $data, $el, $event, $id, $for, $mutations, $size, $entry, $props, $emit, $insert, $stores, $provided, trustedHTML, onCleanup, money } = ${$CONTEXT};
+const { $data, $el, $event, $id, $ref, $for, $mutations, $size, $entry, $props, $emit, $insert, $stores, $provided, trustedHTML, onCleanup, money } = ${$CONTEXT};
 `;
 function evaluateFunction(source, context) {
   const fn = compile(
@@ -196,6 +196,57 @@ function createProvidedValues(getValues, parent = emptyContextValues) {
     preventExtensions: readOnly
   });
 }
+const registries = /* @__PURE__ */ new WeakMap();
+const keys = Symbol("brio.refs");
+function createRefs() {
+  const values = /* @__PURE__ */ Object.create(null);
+  const readOnly = () => {
+    throw new TypeError("$ref names are read-only.");
+  };
+  const refs = new Proxy(values, {
+    get(target, key) {
+      track(target, key);
+      return Reflect.get(target, key);
+    },
+    has(target, key) {
+      track(target, key);
+      return Reflect.has(target, key);
+    },
+    ownKeys(target) {
+      track(target, keys);
+      return Reflect.ownKeys(target);
+    },
+    getOwnPropertyDescriptor(target, key) {
+      track(target, key);
+      const descriptor = Reflect.getOwnPropertyDescriptor(target, key);
+      return descriptor && { ...descriptor, writable: false };
+    },
+    set: readOnly,
+    deleteProperty: readOnly,
+    defineProperty: readOnly,
+    setPrototypeOf: readOnly,
+    preventExtensions: readOnly
+  });
+  registries.set(refs, values);
+  return refs;
+}
+function registerRef(refs, name, element) {
+  const values = registries.get(refs);
+  if (!values) throw new TypeError("b-ref requires a Brio ref registry.");
+  if (Object.prototype.hasOwnProperty.call(values, name))
+    throw new SyntaxError(`Duplicate b-ref name "${name}" in the same scope.`);
+  const notify = () => batch(() => {
+    trigger(values, name, "set");
+    trigger(values, keys, "set");
+  });
+  values[name] = element;
+  onCleanup(() => {
+    if (values[name] !== element) return;
+    delete values[name];
+    notify();
+  });
+  notify();
+}
 const projectedContexts = /* @__PURE__ */ new WeakMap();
 function takeProjectedContext(node) {
   const context = projectedContexts.get(node);
@@ -254,6 +305,7 @@ function mountComponent(element, definition, context, runtime, hydrateNodeFn) {
     };
   });
   const $props = state(propsObject);
+  const $ref = createRefs();
   const componentScope = createScope();
   onCleanup(() => componentScope.dispose());
   const $emit = (name, detail) => {
@@ -285,11 +337,12 @@ function mountComponent(element, definition, context, runtime, hydrateNodeFn) {
       $emit,
       app: runtime.app,
       $stores: context.$stores ?? emptyContextValues,
-      $provided: context.$provided ?? emptyContextValues
+      $provided: context.$provided ?? emptyContextValues,
+      $ref
     })) ?? {};
     const local = createScopedState(setupResult, context.$data);
     const componentContext = createExpressionScope(
-      { $data: local, $el: element, $props, $emit },
+      { $data: local, $el: element, $props, $emit, $ref },
       context
     );
     const owner = getNodeOwner(element);
@@ -1040,6 +1093,7 @@ function handleFor(element, expression, _modifiers, context, runtime, hydrateNod
       nextKeys.add(evaluatedKey);
       let row = rows.get(evaluatedKey);
       if (!row) {
+        rowContext.$ref = createRefs();
         const rowElement = cloneProjectedNode(template);
         const rowScope = createScope();
         output.end.parentNode.insertBefore(rowElement, output.end);
@@ -1576,6 +1630,7 @@ function hydrateTextNode(node, context) {
 function hydrateNode(node, parentContext, runtime) {
   if (getNodeOwner(node)) throw new Error("Cannot hydrate an already hydrated Brio node.");
   parentContext = takeProjectedContext(node) ?? parentContext;
+  if (!parentContext.$ref) parentContext = createExpressionScope({ $ref: createRefs() }, parentContext);
   const scope = createScope();
   scope.run(() => {
     ownNode(node, parentContext, runtime);
@@ -1612,6 +1667,7 @@ function hydrateOwnedNode(node, parentContext, runtime) {
   const dataAttr = element.getAttribute("b-data");
   if (dataAttr !== null) {
     context = handleData(element, dataAttr, {}, context);
+    context = createExpressionScope({ $ref: createRefs() }, context);
     element.removeAttribute("b-data");
   }
   getNodeOwner(element).context = context;
@@ -1634,6 +1690,17 @@ function hydrateOwnedNode(node, parentContext, runtime) {
     getNodeOwner(element).context = context;
   }
   const templateAttr = element.getAttribute("b-template");
+  const refAttributes = Array.from(element.attributes).filter((attribute) => extractModifiers(attribute.name).baseName === "b-ref" || attribute.name.startsWith("b-ref-"));
+  if (refAttributes.length) {
+    if (refAttributes.length !== 1 || refAttributes[0].name !== "b-ref")
+      throw new SyntaxError("b-ref does not support arguments or modifiers.");
+    const name = refAttributes[0].value.trim();
+    if (!name) throw new SyntaxError("b-ref requires a nonempty literal name.");
+    if (templateAttr !== null || element.tagName.toLowerCase() === "template")
+      throw new TypeError("b-ref requires a concrete element, not a template wrapper.");
+    registerRef(context.$ref, name, element);
+    element.removeAttribute("b-ref");
+  }
   if (templateAttr !== null) {
     handleTemplate(element, templateAttr, {}, context, runtime, hydrateNode);
     for (const attribute of Array.from(element.attributes)) {
@@ -1827,7 +1894,7 @@ function createApp(options = {}) {
       activeMountRoots.add(root);
       notifyRootMounted(app, root);
       const context = createExpressionScope(
-        { $data: createScopedState(appState), $stores: stores, $provided: emptyContextValues, trustedHTML }
+        { $data: createScopedState(appState), $stores: stores, $provided: emptyContextValues, $ref: createRefs(), trustedHTML }
       );
       try {
         scope.run(() => {

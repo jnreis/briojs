@@ -9,6 +9,7 @@ import { createInsert } from './insert';
 import { getNodeOwner, ownNode } from './ownership';
 import { emptyContextValues } from '../core/context-values';
 import { interpolateText } from './interpolation';
+import { createRefs, registerRef } from './refs';
 
 export function mountRouterOutlet(
     element: Element,
@@ -102,6 +103,7 @@ export function hydrateNode(
 ): void {
     if (getNodeOwner(node)) throw new Error('Cannot hydrate an already hydrated Brio node.');
     parentContext = takeProjectedContext(node) ?? parentContext;
+    if (!parentContext.$ref) parentContext = createExpressionScope({ $ref: createRefs() }, parentContext);
     const scope = createScope();
     scope.run(() => {
         ownNode(node, parentContext, runtime);
@@ -150,6 +152,7 @@ function hydrateOwnedNode(
     const dataAttr = element.getAttribute('b-data');
     if (dataAttr !== null) {
         context = handleData(element, dataAttr, {}, context);
+        context = createExpressionScope({ $ref: createRefs() }, context);
         element.removeAttribute('b-data');
     }
 
@@ -177,6 +180,18 @@ function hydrateOwnedNode(
     }
 
     const templateAttr = element.getAttribute('b-template');
+    const refAttributes = Array.from(element.attributes).filter(attribute =>
+        extractModifiers(attribute.name).baseName === 'b-ref' || attribute.name.startsWith('b-ref-'));
+    if (refAttributes.length) {
+        if (refAttributes.length !== 1 || refAttributes[0].name !== 'b-ref')
+            throw new SyntaxError('b-ref does not support arguments or modifiers.');
+        const name = refAttributes[0].value.trim();
+        if (!name) throw new SyntaxError('b-ref requires a nonempty literal name.');
+        if (templateAttr !== null || element.tagName.toLowerCase() === 'template')
+            throw new TypeError('b-ref requires a concrete element, not a template wrapper.');
+        registerRef(context.$ref, name, element);
+        element.removeAttribute('b-ref');
+    }
     if (templateAttr !== null) {
         handleTemplate(element, templateAttr, {}, context, runtime, hydrateNode);
         for (const attribute of Array.from(element.attributes)) {

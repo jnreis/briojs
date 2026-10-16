@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual Test: b-ref</title>
+    <style>
+        body { font-family: system-ui, sans-serif; margin: 24px; color: #1e293b; }
+        section { border: 1px solid #cbd5e1; padding: 16px; margin-block: 16px; }
+        button, input { margin: 4px; }
+        #portal { border: 1px dashed #64748b; padding: 12px; }
+    </style>
+</head>
+<body>
+    <h1>Local DOM references</h1>
+    <p>Static names, raw elements, native APIs. Each data scope, component and repeated row has its own registry.</p>
+
+    <section>
+        <h2>Focus and dialog APIs</h2>
+        <input id="search" b-ref="search" placeholder="Focus me">
+        <button id="focus" b-on-click="$ref.search?.focus()">Focus search</button>
+        <button id="open-dialog" b-on-click="$ref.dialog?.showModal()">Open dialog</button>
+        <dialog b-ref="dialog" id="dialog">
+            Native dialog
+            <button id="close-dialog" b-on-click="$ref.dialog.close()">Close</button>
+        </dialog>
+        <p>b-id supplies unique strings for labels/ARIA; b-ref supplies an element. Neither replaces the other.</p>
+    </section>
+
+    <section>
+        <h2>Conditional membership</h2>
+        <button id="toggle-conditional" b-on-click="$data.visible = !$data.visible">Toggle ref</button>
+        <input id="conditional" b-if="$data.visible" b-ref="conditional">
+        <p>Registered: <b id="membership" b-text="Boolean($ref.conditional)"></b></p>
+        <p>Names: <span id="names" b-text="Object.keys($ref).join(', ')"></span></p>
+    </section>
+
+    <section b-data="">
+        <h2>Local-only data scope</h2>
+        <input id="local-search" b-ref="search">
+        <button id="local-focus" b-on-click="$ref.search.focus()">Focus local search</button>
+        <p>Outer dialog accessible here: <b id="private" b-text="Boolean($ref.dialog)"></b> (expected false).</p>
+    </section>
+
+    <section>
+        <h2>Keyed row isolation</h2>
+        <button id="reverse" b-on-click="$data.rows.reverse()">Reverse rows</button>
+        <div id="rows">
+            <template b-for="row in $data.rows" b-key="$for.row.id" b-template>
+                <label><span b-text="$for.row.name"></span>
+                    <input b-ref="field" b-bind-data-row="$for.row.id">
+                </label>
+                <button class="row-focus" b-on-click="$ref.field.focus()">Focus row input</button>
+            </template>
+        </div>
+        <p>Every row uses the same ref name without collisions. Reordering retains each input and its value.</p>
+    </section>
+
+    <section>
+        <h2>Detached and teleported refs</h2>
+        <button id="toggle-remote" b-on-click="$data.remote = !$data.remote">Toggle remote input</button>
+        <input b-if.detach="$data.remote" b-ref="remote" b-teleport="'#portal'" id="remote">
+        <p>Registered while detached: <b id="remote-registered" b-text="Boolean($ref.remote)"></b> (always true).</p>
+        <button id="remote-focus" b-on-click="$ref.remote?.focus()">Focus remote input when connected</button>
+        <aside id="portal"></aside>
+        <p>Connectivity is native, not reactive. A retained ref can point to a disconnected node.</p>
+    </section>
+
+    <section>
+        <h2>Private component refs, caller host ref</h2>
+        <ref-field b-ref="widget"></ref-field>
+        <p>Host registered: <b id="host-registered" b-text="Boolean($ref.widget)"></b>.
+            Private input leaked: <b id="component-private" b-text="Boolean($ref.internal)"></b> (expected false).</p>
+    </section>
+
+    <p>Refs appear as elements hydrate; there is no descendant pre-scan. Duplicate names in one scope throw,
+        including retained branches. Use distinct names or separate b-data scopes. Ref names are read-only;
+        use native methods without replacing directive-owned children.</p>
+
+    <script src="/dist/brio.min.js"></script>
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            const app = brio.createApp({ state: () => ({
+                visible: true,
+                remote: true,
+                rows: [{ id: 1, name: 'Ada' }, { id: 2, name: 'Grace' }],
+            }) });
+            app.component('ref-field', {
+                template: '<input b-ref="internal" id="component-input"><button id="component-focus" b-on-click="$ref.internal.focus()">Focus private input</button>',
+            });
+            app.mount('body');
+            window.addEventListener('pagehide', () => app.dispose(), { once: true });
+        }, { once: true });
+    </script>
+</body>
+</html>

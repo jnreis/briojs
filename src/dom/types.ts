@@ -1,5 +1,6 @@
 import type { ContextValues } from '../core/context-values';
 import type { StoreMap } from '../core/types';
+import type { RefMap } from './refs';
 
 export type ComponentContext = {
     el: Element;
@@ -7,6 +8,7 @@ export type ComponentContext = {
     $emit(name: string, detail?: unknown): void;
     $stores: Readonly<StoreMap>;
     $provided: ContextValues;
+    $ref: RefMap;
     app: unknown;
 };
 

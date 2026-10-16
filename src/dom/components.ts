@@ -6,6 +6,7 @@ import { createScope, onCleanup } from '../core/scope';
 import type { ComponentDefinition, DomRuntime } from './types';
 import { getNodeOwner, ownNode } from './ownership';
 import { emptyContextValues } from '../core/context-values';
+import { createRefs } from './refs';
 
 const projectedContexts = new WeakMap<Node, Record<PropertyKey, any>>();
 
@@ -85,6 +86,7 @@ export function mountComponent(
         });
 
     const $props = state(propsObject);
+    const $ref = createRefs();
     const componentScope = createScope();
     onCleanup(() => componentScope.dispose());
 
@@ -117,10 +119,11 @@ export function mountComponent(
             el: element, $props, $emit, app: runtime.app,
             $stores: context.$stores ?? emptyContextValues,
             $provided: context.$provided ?? emptyContextValues,
+            $ref,
         }) ?? {};
         const local = createScopedState(setupResult, context.$data);
         const componentContext = createExpressionScope(
-            { $data: local, $el: element, $props, $emit },
+            { $data: local, $el: element, $props, $emit, $ref },
             context,
         );
         const owner = getNodeOwner(element);

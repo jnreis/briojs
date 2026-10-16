@@ -5,6 +5,7 @@ export * from './core/scheduler';
 export * from './core/errors';
 export * from './core/types';
 export type { ContextValues } from './core/context-values';
+export type { RefMap } from './dom/refs';
 export { effect, batch } from './reactivity/effect';
 export { state, signal } from './reactivity/state';
 export { computed } from './reactivity/computed';

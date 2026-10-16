@@ -84,6 +84,7 @@ There is no `with`, implicit state-name resolution, or sandbox.
 | `$for.$parent` | Enclosing loop, independently of data ancestry. |
 | `$el` | Current directive/script element. |
 | `$id.name` | Generated ID from a surrounding `b-id`. |
+| `$ref.name` | Raw DOM element in the current local ref registry, or undefined. Names are read-only. |
 | `$props`, `$emit` | Component props and event emitter. |
 | `$event` | DOM/component event in event handlers. |
 | `$mutations`, `$size`, `$entry` | Observer-specific payloads. |
@@ -203,6 +204,7 @@ Escape HTML-significant characters in literal text/attribute values.
 | `b-script` | Only on a script element; see required writing style below. |
 | `b-effect="$data.observe($data.count)"` | Reactive expression, not a block of event-style statements. Avoid feedback writes. |
 | `b-id="['input']"` | Creates `$id.input`; bind `id`/label `for` explicitly. |
+| `b-ref="input"` | Register a concrete DOM target by literal name. Read `$ref.input`; not `$refs`. |
 | `b-template` | Unwraps authored contents into an owned range of hydrated siblings. Supports keyed `b-for`, plain `b-if`, `.detach`, `b-id`, providers, teleport and effects; no template-name/expression sourcing. |
 | `b-teleport="'#portal'"` | Moves an element or template range to an existing document selector; not a reactive destination expression. |
 | `b-router-outlet` | Renders the router's matched registered component. |
@@ -232,6 +234,31 @@ Detached conditional loops suspend their teleported row groups and reconcile
 hidden collection updates before restoring output at its destination.
 Teleported descendants are not hidden by hiding their source wrapper.
 Avoid competing imperative writes to directive-owned children.
+
+### Local DOM refs
+
+Use `b-ref="input"` with `$ref.input?.focus()` for native APIs, not state/render
+replacement. Names are trimmed nonempty literals; arguments/modifiers/dynamic
+names/collections are unsupported. Duplicate names in one registry throw.
+`$ref` is read-only with reactive get/has/enumeration; raw DOM objects/properties
+are not proxied or made reactive. Missing names are undefined.
+
+Every mount, b-data boundary (even empty b-data), component instance and repeated
+row has a local-only registry, without parent fallback. Same-row refs stay with
+retained keys; same-element b-data refs belong to that new boundary.
+Component-host refs belong to the caller; setup/templates get private refs;
+projected slots retain author refs. Setup receives `$ref` before children hydrate:
+use an owned effect for later membership or read in events, not a pre-scan/mounted
+assumption. npm exports `RefMap` (Element | undefined); narrow specialized types.
+
+Plain conditionals unregister after completed leave; hide/detach retain refs,
+even to disconnected elements. Teleport preserves ownership. Preserved branches
+all hydrate, and plain leaves can overlap: duplicate names need distinct spelling
+or separate b-data boundaries. No automatic active-branch ref selection.
+b-template/native template refs are errors; ref concrete children. b-ignore/raw
+HTML do not register. Managed insertion/hydrated HTML inherit destination refs,
+normal nested boundaries apply, and disposal/unmount clears registrations.
+Use onCleanup for integration resources; do not assign/delete ref entries.
 
 Events support `.prevent`, `.stop`, `.self`, `.outside`, `.window`, `.document`,
 `.capture`, `.passive`, `.once`, `.debounce`, and `.throttle`.

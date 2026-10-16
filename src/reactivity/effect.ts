@@ -25,7 +25,7 @@ export const cleanupEffect = (eff: ReactiveEffect) => {
 };
 
 export const runEffect = (eff: ReactiveEffect): unknown => {
-    if (!eff.active) return;
+    if (!eff.active || eff.scope?.disposed) return;
     if (eff.running) return;
     cleanupEffect(eff);
     const previous = activeEffect;
@@ -54,7 +54,7 @@ export const flushEffects = () => {
         queuedEffects.clear();
         for (const eff of current) {
             try {
-                if (eff.active) eff.scheduler ? eff.scheduler() : runEffect(eff);
+                if (eff.active && !eff.scope?.disposed) eff.scheduler ? eff.scheduler() : runEffect(eff);
             } catch (error) {
                 errors.push(error);
             }

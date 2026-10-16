@@ -47,6 +47,8 @@ metadata on `main`, through commit `d868d43`.
 
 ### Added
 
+- Static `b-ref` and a local read-only `$ref` registry with reactive membership,
+  raw DOM targets, component privacy, row-local identity, and lifecycle cleanup.
 - Observer-specific keyed `b-options`: intersection roots/margins/thresholds,
   mutation targets/subtree/filter/old-value settings, resize document/box
   selection, and numeric debounce delays. Debounced mutations retain all records.

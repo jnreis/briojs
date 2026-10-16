@@ -11,7 +11,7 @@ const $CONTEXT: '$context' = '$context';
 
 const contextBindings = `
 "use strict";
-const { $data, $el, $event, $id, $for, $mutations, $size, $entry, $props, $emit, $insert, $stores, $provided, trustedHTML, onCleanup, money } = ${$CONTEXT};
+const { $data, $el, $event, $id, $ref, $for, $mutations, $size, $entry, $props, $emit, $insert, $stores, $provided, trustedHTML, onCleanup, money } = ${$CONTEXT};
 `;
 
 export function evaluateFunction(source: string, context: ExpressionScope): ($context: ExpressionScope) => unknown {

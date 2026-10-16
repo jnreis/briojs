@@ -9,6 +9,7 @@ import { createDomRange, ownElementRange } from '../range';
 import type { DomRange } from '../range';
 import { combinedError } from '../../core/errors';
 import { cloneProjectedNode } from '../components';
+import { createRefs } from '../refs';
 
 type LoopRow = {
     element: Element;
@@ -88,6 +89,7 @@ export function handleFor(
 
             let row = rows.get(evaluatedKey);
             if (!row) {
+                rowContext.$ref = createRefs();
                 const rowElement = cloneProjectedNode(template);
                 const rowScope = createScope();
                 output.end.parentNode!.insertBefore(rowElement, output.end);

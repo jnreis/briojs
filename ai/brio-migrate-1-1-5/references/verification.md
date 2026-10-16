@@ -36,6 +36,11 @@ its callers and generated markup.
   row identity/IDs, conditional cleanup, detach/reinsert with live updates,
   teleport destination ordering, managed insertion cleanup, and nested fragments.
   `.hide`/group transitions need concrete branches; mount roots cannot unwrap.
+- **Refs:** `$ref` (not `$refs`) uses literal b-ref names and local-only registries
+  per mount/data boundary/component/row. Check duplicate errors, safe missing reads,
+  raw native APIs, setup hydration timing, slot author ownership, reactive membership,
+  keyed retention, leave cleanup, detach retention, teleport and unmount. Preserved
+  or overlapping branches need distinct names or separate data scopes.
 - **Conditions:** false disposes effects/listeners after leave completion
   (immediately without a transition); reversal reuses the live element and state,
   while activation after completed removal resets local state.

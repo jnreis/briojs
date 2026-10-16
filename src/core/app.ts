@@ -9,6 +9,7 @@ import { state } from '../reactivity/state';
 import { createScopedState } from './scoped-state';
 import { combinedError } from './errors';
 import { copyContextValues, emptyContextValues } from './context-values';
+import { createRefs } from '../dom/refs';
 import type {
     AppOptions,
     BrioApp,
@@ -141,7 +142,7 @@ export function createApp<
             notifyRootMounted(app, root);
 
             const context = createExpressionScope(
-                { $data: createScopedState(appState), $stores: stores, $provided: emptyContextValues, trustedHTML },
+                { $data: createScopedState(appState), $stores: stores, $provided: emptyContextValues, $ref: createRefs(), trustedHTML },
             );
             try {
                 scope.run(() => {

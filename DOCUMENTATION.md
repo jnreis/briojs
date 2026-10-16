@@ -119,7 +119,7 @@ app.mount('#counter');
 
 Expressions run in strict mode without `with` or implicit state-name resolution. Use `$data` for the nearest state object (app state, component setup state, or `b-data`), `$data.$parent` for parent state, and `$for` for loop values. Bare state names such as `count` are not supported and unresolved identifiers throw `ReferenceError`. JavaScript globals such as `Math`, `JSON`, and `setTimeout` resolve normally.
 
-The context is also available as `$context`. Named bindings include `$data`, `$el`, `$id`, `$for`, `$props`, `$emit`, `$insert`, `$stores`, `$provided`, and `trustedHTML`. Event handlers receive `$event`; observers supply `$mutations`, `$size`, or `$entry`. The mask directive supplies `money`, and contextual scripts supply `onCleanup`. Helpers not supplied in that context are `undefined`. Bindings are read-only references; mutate their properties (`$data.count++`), not the binding itself (`$data = {}`). Event statements can declare ordinary local variables.
+The context is also available as `$context`. Named bindings include `$data`, `$el`, `$id`, `$ref`, `$for`, `$props`, `$emit`, `$insert`, `$stores`, `$provided`, and `trustedHTML`. Event handlers receive `$event`; observers supply `$mutations`, `$size`, or `$entry`. The mask directive supplies `money`, and contextual scripts supply `onCleanup`. Helpers not supplied in that context are `undefined`. Bindings are read-only references; mutate writable state properties (`$data.count++`), not the binding itself (`$data = {}`). `$ref` names are also read-only. Event statements can declare ordinary local variables.
 
 Data and loop ancestry are independent: `$data.$parent.$parent` accesses a grandparent data scope, while `$for.$parent.$parent` accesses a grandparent loop. Ordinary elements and loops do not add data ancestry levels; data scopes do not add loop ancestry levels. Component setup state creates a data scope. App state and outermost loops have `$parent === undefined`. An empty `b-data` attribute inherits data without adding a scope; `b-data="{}"` creates one.
 
@@ -231,6 +231,7 @@ Directive arguments use hyphens (`b-on-click`, `b-bind-href`); options use chain
 | `b-data` | Create a nested state scope from an object expression. |
 | `b-provide` | Provide live named values to this element and its subtree through `$provided`. |
 | `b-id` | Generate named unique values in `$id`; bind them to `id`, `for`, or classes explicitly. |
+| `b-ref` | Register a concrete element under a literal name in the local, read-only `$ref` registry. |
 | `b-text` | Reactively set an element's text content. |
 | `b-bind-name` | Reactively bind an attribute or DOM property, e.g. `b-bind-href="$data.url"`. |
 | `b-on-event` | Listen for a DOM event, e.g. `b-on-submit="$data.save($event)"`. |
@@ -278,6 +279,101 @@ whitespace and numeric-looking text. Supported model modifiers are `.lazy`
 (`parseFloat`, keeping nonnumeric text unchanged). There is no `b-model.raw`
 modifier; `.raw` belongs to `b-text` and `b-html` and controls content hydration,
 not model value conversion.
+
+### Local DOM references with `b-ref`
+
+Use `b-ref` when application code needs a particular element's native API:
+
+```html
+<section b-data="">
+  <input b-ref="search">
+  <button b-on-click="$ref.search?.focus()">Focus search</button>
+  <dialog b-ref="dialog">
+    <button b-on-click="$ref.dialog.close()">Close</button>
+  </dialog>
+  <button b-on-click="$ref.dialog?.showModal()">Open dialog</button>
+</section>
+```
+
+`$ref.search` (also `$context.$ref.search`) is the actual DOM element, not a
+proxy, component instance, or wrapper API. Use it for focus/selection, dialogs,
+scrolling, media controls, measurement, or third-party integrations.
+`$el` is still the current element; `b-id` still creates unique **strings** for
+IDs, label associations, ARIA relationships, or selectors. Refs do not set IDs.
+
+**Names and scope**
+
+- The name is literal, trimmed, and nonempty: `b-ref="search"` does not evaluate
+  JavaScript. Use `$ref['search-input']` for names requiring bracket access.
+  Empty names, arguments, and modifiers are errors. There is no `ref` shorthand,
+  dynamic-name expression, ref collection, or callback-ref API.
+- Each mounted root, `b-data` boundary, component instance, and repeated row
+  owns a separate registry. Even empty `b-data` creates a **ref** boundary,
+  although it does not create another data ancestry level.
+- Lookup is local-only. Missing names return `undefined`; there is no parent
+  fallback, `$ref.$parent`, or automatic parent collection of row refs.
+  Ordinary wrappers, conditionals, and `b-template` alone do not add a boundary.
+- Duplicate names in one registry throw. Separate rows/components/data scopes
+  may reuse names. Each keyed row retains its registry and nodes when reordered.
+  A same-element `b-ref` on a concrete row belongs to that row.
+  Loop collection/key expressions run before new row targets register.
+- A component-host `b-ref` references the host element in its caller's applicable
+  registry. Setup/templates get a separate private registry. Projected slot
+  content retains its author's registry, including through template cloning.
+  Cloning projected content with the same ref more than once can therefore
+  cause a duplicate in the author's registry; give repeated projected content
+  its own explicit data boundaries.
+- Refs on `b-template` wrappers or native `<template>` elements are errors:
+  no surviving rendered element represents that fragment. Put refs on concrete
+  children. `b-ignore` skips registration along with all other hydration.
+
+**Timing, reactivity, and lifetime**
+
+Refs register as their targets hydrate, before their ordinary effects/children.
+There is no pre-scan or descendant-ready guarantee during component setup or
+earlier sibling initialization. Event-time optional chaining handles missing
+targets; an owned effect can respond to a target appearing later:
+
+```js
+import { effect } from 'briojs';
+
+app.component('search-field', {
+  template: '<input b-ref="input">',
+  setup({ $ref }) {
+    effect(() => {
+      const input = $ref.input;
+      if (input instanceof HTMLInputElement) input.focus();
+    });
+  },
+});
+```
+
+Reads (`$ref.input`), presence checks (`'input' in $ref`), and enumeration
+(`Object.keys($ref)`) react to registrations/removals. DOM properties such as
+`$ref.input.value` or `.isConnected` are **not** made reactive. Registry changes
+may notify effects incrementally during hydration; this is not an "all mounted"
+hook. Names cannot be assigned, deleted, or redefined by application code.
+The npm `RefMap` type exposes `Element | undefined`; narrow the element type
+before using specialized methods.
+
+- Plain `b-if` retains refs through live leave transitions, then unregisters on
+  disposal. Reversal keeps the same ref; activation after completed removal
+  registers a new element.
+- `.hide` and `.detach` retain refs, including disconnected elements. Teleport
+  changes placement, not ref ownership. A truthy ref does not imply connectivity.
+- Preservation modes hydrate **all** branches, so the same name across branches
+  in one registry is a duplicate even when only one branch is visible. Plain
+  branches may also overlap during leave transitions. Use distinct names or a
+  `b-data` boundary per branch; refs do not silently switch to the active branch.
+- Managed insertion and hydrated `b-html` inherit the destination's registry,
+  subject to normal nested boundaries; removal/replacement unregisters owned
+  refs. `.raw` content is not registered. Unmount empties that mount's registry;
+  remount creates a fresh one.
+
+Use native APIs without bypassing Brio ownership: do not replace hydrated
+children via a ref, establish competing input-value bindings, or write back
+unconditionally from effects that observe those writes. Dispose integration
+listeners/widgets through `onCleanup`, not by deleting registry entries.
 
 ### Wrapperless content with `b-template`
 
@@ -387,7 +483,8 @@ directives can replace a host or return before the ordinary directive pass.
    only its branch instances proceed to the remaining steps.
 3. `b-data` establishes context on that element.
 4. `b-for` establishes repetition; each row is hydrated separately with `$for`.
-5. `b-id` and `b-provide` establish row-local IDs/live inherited values.
+5. `b-id` and `b-provide` establish row-local IDs/live inherited values, then
+   `b-ref` registers concrete targets in the applicable local registry.
 6. `b-template` unwraps and hydrates contents, then processes its supported
    `b-teleport` / `b-effect` companions, skipping other host processing.
 7. A registered component tag is mounted through its component-specific path.
@@ -408,6 +505,9 @@ overwrite each other. Do not rely on attribute order to resolve competing owners
 | `b-for` + same-element `b-provide` | Supported: providers are created during row hydration and can use the row's `$for`. |
 | `b-for` + `b-key` | Supported; `b-key` belongs on that repeated element and evaluates in its row context. It has no standalone binding behavior. |
 | `b-template` + structural/ordinary host directives | See the limitations above. Context directives may share its wrapper; put behaviors requiring a surviving element inside or outside it. |
+| `b-ref` + `b-template` / native `<template>` | An error. Ref concrete children, not fragment wrappers. |
+| `b-ref` + `b-data` / `b-for` / component host | Normal data elements register in their data-local registry; rows register in their row-local registry. Component hosts register in the caller's applicable registry; component internals are private. |
+| Reused ref name across live conditional branches | Duplicate error, including inactive preserved branches and transition-overlapping branches. Use distinct names or explicit `b-data` boundaries. |
 | Multiple conditional directives on one element | An error. Use one of `b-if`, `b-else-if`, or `b-else` per branch; only the leading `b-if` accepts mode modifiers. |
 | `b-text` + `b-html` (including `.raw`) | Both replace the same children. Do not combine them. Existing child markup is replaced, not used as fallback or an additional hydrated template. |
 | `b-bind-*` targeting `textContent` / `innerHTML` or `b-effect` mutating children + hydrated content | Direct DOM writes are not a substitute for owned content replacement and may remove nodes without disposing their bindings. Use `b-text` / `b-html` instead; keep third-party-managed subtrees under `b-ignore`. |
@@ -616,7 +716,7 @@ app.mount('#widgets');
 </main>
 ```
 
-Static host attributes become string props; `b-bind-name` supplies a reactive prop through `$props`. Setup receives `$props`, `$emit`, `$stores`, `$provided`, the host element as `el`, and `app`. Templates and contextual scripts also access `$props` and `$emit`. Component events are bubbling `CustomEvent`s emitted with `$emit(name, detail)`. Named slots use `slot="name"` on projected content and `<slot name="name">` in the template. Component setup runs in an owned scope; effects, persistence, and listeners registered during setup are disposed when the component is removed.
+Static host attributes become string props; `b-bind-name` supplies a reactive prop through `$props`. Setup receives `$props`, `$emit`, `$stores`, `$provided`, the private `$ref` registry, the host element as `el`, and `app`. Templates and contextual scripts also access `$props` and `$emit`. Component events are bubbling `CustomEvent`s emitted with `$emit(name, detail)`. Named slots use `slot="name"` on projected content and `<slot name="name">` in the template. Component setup runs in an owned scope; effects, persistence, and listeners registered during setup are disposed when the component is removed.
 
 ### Directives on component hosts
 
@@ -631,7 +731,7 @@ not observer installation. Put native modifiers/observers on a concrete
 wrapper or inside the component template.
 
 Earlier structural/context steps still apply: `b-if`, `b-for` with `b-key`,
-`b-data`, `b-id`, and `b-provide` can be handled before component setup, subject
+`b-data`, `b-id`, `b-provide`, and `b-ref` can be handled before component setup, subject
 to the combination rules above. `b-ignore` skips setup altogether, while
 `b-template` unwraps the tag instead of setting it up.
 Other `b-*` host directives (such as `b-model`, `b-html`, `b-teleport`, and

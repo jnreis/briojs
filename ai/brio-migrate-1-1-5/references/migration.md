@@ -69,7 +69,7 @@ V4 compiles strict JavaScript with explicit context bindings and no `with`.
 | Inherited general `$props` | Local/app state and explicit ancestry, or real component `$props` |
 | `$el` | `$el` remains the current element |
 | `$uid.name` | `$id.name` from `b-id` |
-| `$refs.name` | Scoped DOM lookup or a component-owned reference |
+| `$refs.name` | `$ref.name` from literal `b-ref="name"`; review local-only boundaries and hydration timing |
 | `$slots.name` | Component `<slot>` projection or explicit authored markup |
 | `$cleanup(fn)` | `onCleanup(fn)` in a synchronous owned script/setup/plugin scope |
 | `$dom`, `$set`, `$tools`, `$watch`, `$state`, `$effect`, `$http` | No automatic namespace in expressions; expose required operations as application methods |
@@ -131,7 +131,7 @@ forbids runtime `new Function` remains a deployment blocker.
 | `b-model` | Explicit assignable `$data.field`; type conversion and modifiers need special review below. |
 | `b-mask` | Pattern string or `money(options)`; legacy registries, token meanings, and callback masks are not drop-in compatible. |
 | `b-uid` | `b-id="['input']"` then explicit `b-bind-id="$id.input"` / label `b-bind-for="$id.input"`. |
-| `b-ref` | Removed. Use scoped queries or component setup; no v4 `$refs` collector. |
+| `b-ref` | Static literal registration in local `$ref` (not `$refs`). Data boundaries, components and rows isolate names; duplicates throw. No inherited lookup or automatic collection. |
 | `b-slot` | Removed as a registry. Use named component slots and `slot="name"` on caller content. |
 | `b-template` | Unwraps its authored children into an owned multi-node range; its value does not select a registered template. Supports keyed loops, plain conditionals, `.detach`, teleport, IDs, providers and effects. `.hide`/group transitions require a concrete wrapper. |
 | `b-teleport` | Explicit selector expression such as `b-teleport="'#portal'"`. Destination must exist; dispose the original owner before removing it. |

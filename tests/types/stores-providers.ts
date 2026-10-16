@@ -1,5 +1,5 @@
 import { createApp, state, enableDevtools, devtools, devtoolsPanel, inspectDevtools } from 'briojs';
-import type { AppOptions, BrioApp, ComponentContext } from 'briojs';
+import type { AppOptions, BrioApp, ComponentContext, RefMap } from 'briojs';
 
 const session = state({ user: 'Alice' });
 const app = createApp({
@@ -19,7 +19,12 @@ app.stores.session.user = 'Bob';
 app.plugin(owner => { owner.stores.session; });
 app.component('test-card', {
     template: '<span></span>',
-    setup({ $stores, $provided }: ComponentContext) {
+    setup({ $stores, $provided, $ref }: ComponentContext) {
+        const refs: RefMap = $ref;
+        const element: Element | undefined = refs.field;
+        if (element instanceof HTMLInputElement) element.focus();
+        // @ts-expect-error Ref names are read-only.
+        refs.field = document.createElement('input');
         // @ts-expect-error Component store names are read-only.
         $stores.session = session;
         // @ts-expect-error Provided names are read-only.

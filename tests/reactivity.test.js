@@ -17,6 +17,20 @@ test('state preserves cycles, shared references, and raw identity', () => {
     assert.strictEqual(state(observed), observed);
 });
 
+test('symbol-keyed state properties preserve values and reactive dependencies', () => {
+    const key = Symbol.for('brio.raw');
+    const model = state({ [key]: 'initial' });
+    const values = [];
+    const stop = effect(() => values.push(model[key]));
+
+    model[key] = 'updated';
+    delete model[key];
+    stop();
+    model[key] = 'disposed';
+
+    assert.deepEqual(values, ['initial', 'updated', undefined]);
+});
+
 test('effects recollect conditional dependencies and dispose cleanly', () => {
     const model = state({
         useFirst: true,

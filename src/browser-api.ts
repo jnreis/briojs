@@ -8,10 +8,6 @@ import {
     createScope,
     onCleanup,
     getCurrentScope,
-    createStepEngine,
-    validate,
-    http,
-    HttpError,
     trustedHTML,
 } from './index';
 
@@ -25,10 +21,6 @@ const brio = {
     createScope,
     onCleanup,
     getCurrentScope,
-    createStepEngine,
-    validate,
-    http,
-    HttpError,
     trustedHTML,
 };
 

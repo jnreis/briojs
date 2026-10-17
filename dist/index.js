@@ -1,13 +1,14 @@
-var __defProp = Object.defineProperty;
-var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
-var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "symbol" ? key + "" : key, value);
 import { c as causedError, o as onDispose, a as combinedError, d as getCurrentScope, e as effect, f as onCleanup, b as batch, h as createScope, n as notifyRootMounted, j as notifyAppDisposed, k as notifyAppCreated, l as notifyRootUnmounted } from "./effect-DGhE0oQi.js";
 import { s } from "./effect-DGhE0oQi.js";
-import { s as state, t as trigger, a as track } from "./state-CLBlAcxj.js";
-import { b } from "./state-CLBlAcxj.js";
+import { s as state, t as trigger, a as track } from "./state-FLvgaPZh.js";
+import { b } from "./state-FLvgaPZh.js";
 import { computed, resource } from "./reactivity.js";
 import { createRouter } from "./router-entry.js";
 import { persist } from "./persistence-entry.js";
+import { createStepEngine } from "./step-entry.js";
+import { validate } from "./forms-entry.js";
+import { moneyMask } from "./money-mask-entry.js";
+import { HttpError, http } from "./http-entry.js";
 import { d, a, e, i } from "./devtools-CF9uSawU.js";
 const valueExpressions = /* @__PURE__ */ new Map();
 const statementExpressions = /* @__PURE__ */ new Map();
@@ -16,7 +17,7 @@ const functionExpressions = /* @__PURE__ */ new Map();
 const $CONTEXT = "$context";
 const contextBindings = `
 "use strict";
-const { $data, $el, $event, $id, $ref, $for, $mutations, $size, $entry, $props, $emit, $insert, $stores, $provided, trustedHTML, onCleanup, money } = ${$CONTEXT};
+const { $data, $el, $event, $id, $ref, $for, $mutations, $size, $entry, $props, $emit, $insert, $stores, $provided, trustedHTML, onCleanup } = ${$CONTEXT};
 `;
 function evaluateFunction(source, context) {
   const fn = compile(
@@ -811,14 +812,14 @@ const setBoundValue = (element, name, value, forceProp = false) => {
     const style = element.style;
     const previousProperties = dynamicStyles.get(element) ?? /* @__PURE__ */ new Set();
     const currentProperties = /* @__PURE__ */ new Set();
-    const properties2 = Object.entries(value);
-    for (const [property] of properties2) {
+    const properties = Object.entries(value);
+    for (const [property] of properties) {
       const normalized = property.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
       currentProperties.add(normalized);
       previousProperties.delete(normalized);
     }
     for (const property of previousProperties) style.removeProperty(property);
-    for (const [property, propertyValue] of properties2) {
+    for (const [property, propertyValue] of properties) {
       const normalized = property.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
       if (propertyValue === null || propertyValue === void 0 || propertyValue === false)
         style.removeProperty(normalized);
@@ -1274,23 +1275,25 @@ function handleHtml(element, expression, modifiers, context, runtime, hydrateChi
   onCleanup(() => contentScope == null ? void 0 : contentScope.dispose());
   effect(() => {
     const html = evaluate(expression, context);
+    if (modifiers.hydrate && !isTrustedHTML(html))
+      throw new TypeError("b-html.hydrate requires a trustedHTML() value.");
     const htmlStr = isTrustedHTML(html) ? getTrustedHTMLString(html) : String(html ?? "");
     contentScope == null ? void 0 : contentScope.dispose();
     contentScope = void 0;
     const template = document.createElement("template");
     template.innerHTML = htmlStr;
     element.replaceChildren(template.content);
-    if (!modifiers.raw) {
+    if (modifiers.hydrate) {
       contentScope = createScope();
       contentScope.run(() => hydrateChildrenFn(element, context, runtime));
     }
   });
 }
-function handleText(element, expression, modifiers, context) {
+function handleText(element, expression, context) {
   effect(() => {
     const value = evaluate(expression, context);
     const text = value === null || value === void 0 ? "" : String(value);
-    element.textContent = modifiers.raw ? text : interpolateText(text, context);
+    element.textContent = text;
   });
 }
 function handleData(element, expression, _modifiers, parentContext) {
@@ -1331,126 +1334,123 @@ function handleId(_element, expression, _modifiers, context) {
   });
   return createExpressionScope({ $id: idMap }, context);
 }
-function validateMoneyOptions(options) {
-  if (options === null || typeof options !== "object" || Array.isArray(options))
-    throw new TypeError("Money mask options must be an object.");
-  if (options.thousands !== void 0 && typeof options.thousands !== "string")
-    throw new TypeError("Money mask thousands must be a string.");
-  if (options.decimal !== void 0 && (typeof options.decimal !== "string" || !options.decimal))
-    throw new TypeError("Money mask decimal must be a non-empty string.");
-  if (options.precision !== void 0 && (!Number.isInteger(options.precision) || options.precision < 0 || options.precision > 100))
-    throw new RangeError("Money mask precision must be an integer between 0 and 100.");
-  if ((options.thousands ?? ",") === (options.decimal ?? "."))
-    throw new TypeError("Money mask thousands and decimal separators must differ.");
-}
-function formatMoney(value, options = {}) {
-  validateMoneyOptions(options);
-  const thousands = options.thousands ?? ",";
-  const decimal = options.decimal ?? ".";
-  const precision = options.precision ?? 2;
-  const isNegative = value.trim().startsWith("-");
-  const digitsOnly = value.replace(/[^\d]/g, "");
-  if (!digitsOnly) return "";
-  let integerStr;
-  let decimalStr;
-  if (precision > 0) {
-    if (digitsOnly.length <= precision) {
-      integerStr = "0";
-      decimalStr = digitsOnly.padStart(precision, "0");
-    } else {
-      integerStr = digitsOnly.slice(0, digitsOnly.length - precision).replace(/^0+/, "") || "0";
-      decimalStr = digitsOnly.slice(digitsOnly.length - precision);
-    }
-  } else {
-    integerStr = digitsOnly.replace(/^0+/, "") || "0";
-    decimalStr = "";
+function compilePattern(pattern) {
+  const parts = [];
+  const characters = [...pattern];
+  for (let index = 0; index < characters.length; index++) {
+    const character = characters[index];
+    if (character === "\\") {
+      if (++index === characters.length) throw new SyntaxError("Mask pattern cannot end with an escape.");
+      parts.push({ literal: characters[index] });
+    } else if (character === "*") parts.push({ accepts: () => true });
+    else if (character === "A") parts.push({ accepts: (value) => /[\p{L}\p{Nd}]/u.test(value) });
+    else if (character === "a") parts.push({ accepts: (value) => new RegExp("\\p{L}", "u").test(value) });
+    else if (character === "#") parts.push({ accepts: (value) => new RegExp("\\p{Nd}", "u").test(value) });
+    else parts.push({ literal: character });
   }
-  const formattedInteger = integerStr.replace(/\B(?=(\d{3})+(?!\d))/g, () => thousands);
-  const result = decimalStr ? `${formattedInteger}${decimal}${decimalStr}` : formattedInteger;
-  return isNegative ? `-${result}` : result;
+  return parts;
 }
-function formatPattern(value, pattern, positions) {
-  let result = "";
-  let valIndex = 0;
-  for (let i2 = 0; i2 < pattern.length && valIndex < value.length; i2++) {
-    const patternChar = pattern[i2];
-    if (patternChar === "9" || patternChar === "#") {
-      while (valIndex < value.length && !/\d/.test(value[valIndex])) valIndex++;
-      if (valIndex < value.length) {
-        positions == null ? void 0 : positions.push({ input: valIndex, output: result.length + 1 });
-        result += value[valIndex++];
-      }
-    } else if (patternChar === "a" || patternChar === "A") {
-      while (valIndex < value.length && !/[a-zA-Z]/.test(value[valIndex])) valIndex++;
-      if (valIndex < value.length) {
-        positions == null ? void 0 : positions.push({ input: valIndex, output: result.length + 1 });
-        result += value[valIndex++];
-      }
-    } else {
-      result += patternChar;
-      if (value[valIndex] === patternChar) {
-        valIndex++;
+function patternFormatter(pattern) {
+  const parts = compilePattern(pattern);
+  return (context) => {
+    const input = [...context.value];
+    const positions = [];
+    let value = "";
+    let index = 0;
+    let offset = 0;
+    for (const part of parts) {
+      if (index >= input.length) break;
+      if ("literal" in part) {
+        value += part.literal;
+        if (input[index] === part.literal) {
+          offset += input[index++].length;
+        }
+      } else {
+        while (index < input.length && !part.accepts(input[index]))
+          offset += input[index++].length;
+        if (index < input.length) {
+          const character = input[index++];
+          value += character;
+          offset += character.length;
+          positions.push({ input: offset, output: value.length });
+        }
       }
     }
-  }
-  return result;
+    const map = (position) => {
+      var _a;
+      if (position === null) return void 0;
+      return ((_a = positions.filter((entry) => entry.input <= position).at(-1)) == null ? void 0 : _a.output) ?? 0;
+    };
+    return { value, selectionStart: map(context.selectionStart), selectionEnd: map(context.selectionEnd) };
+  };
 }
-function formatMask(value, pattern) {
-  return formatPattern(value, pattern);
+function validateResult(result) {
+  if (typeof result === "string") return;
+  if (result === null || typeof result !== "object" || !("value" in result) || typeof result.value !== "string")
+    throw new TypeError("Mask formatter must return a string or { value, selectionStart?, selectionEnd? }.");
+  for (const key of ["selectionStart", "selectionEnd"]) {
+    const position = key in result ? Reflect.get(result, key) : void 0;
+    if (position !== void 0 && (typeof position !== "number" || !Number.isInteger(position) || position < 0 || position > result.value.length))
+      throw new TypeError(`Mask formatter ${key} must be an integer within the formatted value.`);
+  }
 }
 function handleMask(element, expression, modifiers, context) {
-  if (!(element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement)) {
+  if (!(element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement))
     throw new TypeError("b-mask can only be used on input and textarea elements.");
-  }
-  const trimmed = expression.trim();
-  const money = (options = {}) => {
-    validateMoneyOptions(options);
-    return { kind: "money", options };
-  };
-  const maskContext = createExpressionScope({ money }, context);
-  let configuration = "";
+  if (Object.keys(modifiers).length) throw new TypeError("b-mask does not support modifiers; use a pattern or formatter function.");
+  let formatter;
+  let applying = false;
+  let composing = false;
   const applyMask = (event) => {
-    if (event instanceof InputEvent && event.isComposing) return;
+    if (applying || composing || event instanceof InputEvent && event.isComposing) return;
     const current = element.value;
     const start = element.selectionStart;
     const end = element.selectionEnd;
     const direction = element.selectionDirection;
-    const positions = [];
-    const formatted = typeof configuration === "string" ? formatPattern(current, configuration, positions) : formatMoney(current, configuration.options);
-    const deleting = event instanceof InputEvent && event.inputType.startsWith("delete");
-    const mapPosition = (position) => {
-      var _a;
-      if (typeof configuration === "string") {
-        if (!deleting) return formatMask(current.slice(0, position), configuration).length;
-        return ((_a = positions.filter((entry) => entry.input < position).at(-1)) == null ? void 0 : _a.output) ?? 0;
+    const result = formatter({
+      value: current,
+      selectionStart: start,
+      selectionEnd: end,
+      selectionDirection: direction,
+      inputType: event instanceof InputEvent ? event.inputType : void 0
+    });
+    validateResult(result);
+    const value = typeof result === "string" ? result : result.value;
+    const clamp = (position) => Math.min(position, value.length);
+    const mappedStart = typeof result === "string" ? start : result.selectionStart ?? start;
+    const mappedEnd = typeof result === "string" ? end : result.selectionEnd ?? end;
+    applying = true;
+    try {
+      if (current !== value) {
+        element.value = value;
+        element.dispatchEvent(new Event("input", { bubbles: true }));
       }
-      const rightDigits = current.slice(position).replace(/\D/g, "").length;
-      const digits = [...formatted.matchAll(/\d/g)];
-      const leftDigits = digits.length - rightDigits;
-      if (position === 0) return 0;
-      return leftDigits > 0 ? digits[leftDigits - 1].index + 1 : formatted.startsWith("-") ? 1 : 0;
-    };
-    const preserveSelection = element.ownerDocument.activeElement === element && start !== null && end !== null;
-    const mappedStart = preserveSelection ? mapPosition(start) : null;
-    const mappedEnd = preserveSelection ? mapPosition(end) : null;
-    if (element.value !== formatted) {
-      element.value = formatted;
-      element.dispatchEvent(new Event("input", { bubbles: true }));
+      if (element.ownerDocument.activeElement === element && mappedStart !== null && mappedEnd !== null)
+        element.setSelectionRange(clamp(mappedStart), clamp(mappedEnd), direction ?? "none");
+    } finally {
+      applying = false;
     }
-    if (mappedStart !== null && mappedEnd !== null && (current !== formatted || deleting))
-      element.setSelectionRange(mappedStart, mappedEnd, direction ?? "none");
+  };
+  const compositionStart = () => {
+    composing = true;
+  };
+  const compositionEnd = () => {
+    composing = false;
+    applyMask();
   };
   element.addEventListener("input", applyMask, true);
+  element.addEventListener("compositionstart", compositionStart);
+  element.addEventListener("compositionend", compositionEnd);
   onCleanup(() => {
     element.removeEventListener("input", applyMask, true);
+    element.removeEventListener("compositionstart", compositionStart);
+    element.removeEventListener("compositionend", compositionEnd);
   });
   effect(() => {
-    const value = trimmed ? evaluate(trimmed, maskContext) : void 0;
-    if (modifiers.money) configuration = money(value);
-    else if (value === "money" || value === money) configuration = money();
-    else if (typeof value === "string") configuration = value;
-    else if (value && typeof value === "object" && value.kind === "money") configuration = money(value.options);
-    else throw new TypeError("b-mask must evaluate to a pattern string or money(options).");
+    const value = evaluate(expression, context);
+    if (typeof value === "string") formatter = patternFormatter(value);
+    else if (typeof value === "function") formatter = value;
+    else throw new TypeError("b-mask must evaluate to a pattern string or formatter function.");
     applyMask();
   });
 }
@@ -1919,7 +1919,7 @@ function hydrateOwnedNode(node, parentContext, runtime) {
       element.removeAttribute(attrName);
     } else if (baseName === "b-text" || baseName === "text") {
       getNodeOwner(element).controlsChildren = true;
-      handleText(element, attrValue, modifiers, context);
+      handleText(element, attrValue, context);
       element.removeAttribute(attrName);
       hasText = true;
     } else if (baseName === "b-html" || baseName === "html") {
@@ -2156,234 +2156,6 @@ function flushQueue() {
     }
   }
 }
-function properties(value, label) {
-  if (!value || typeof value !== "object" || ![Object.prototype, null].includes(Object.getPrototypeOf(value)))
-    throw new TypeError(`${label} must be a plain object.`);
-  const result = /* @__PURE__ */ Object.create(null);
-  for (const key of Reflect.ownKeys(value)) {
-    const descriptor = Object.getOwnPropertyDescriptor(value, key);
-    if (typeof key !== "string" || !("value" in descriptor))
-      throw new TypeError(`${label} must contain string-keyed data properties.`);
-    result[key] = descriptor.value;
-  }
-  return result;
-}
-const validName = (value) => typeof value === "string" && value.trim().length > 0;
-function createStepEngine(options) {
-  const config = properties(options, "Step options");
-  if (Object.keys(config).some((key) => key !== "initial" && key !== "steps"))
-    throw new TypeError("Step options support only initial and steps.");
-  const definitions = properties(config.steps, "Step definitions");
-  const names2 = Object.keys(definitions);
-  if (!names2.length || names2.some((name) => !validName(name)))
-    throw new TypeError("Step definitions require nonempty step names.");
-  const links = /* @__PURE__ */ new Map();
-  for (const name of names2) {
-    const definition = properties(definitions[name], `Step "${name}"`);
-    if (Object.keys(definition).some((key) => key !== "next"))
-      throw new TypeError(`Step "${name}" supports only next.`);
-    const next = definition.next;
-    if (Object.prototype.hasOwnProperty.call(definition, "next") && !validName(next))
-      throw new TypeError(`Step "${name}" next must be a nonempty string.`);
-    links.set(name, typeof next === "string" ? next : void 0);
-  }
-  const initial = config.initial;
-  if (!validName(initial) || !links.has(initial))
-    throw new TypeError("Step initial must name a registered step.");
-  for (const [name, next] of links) {
-    if (next !== void 0 && !links.has(next))
-      throw new TypeError(`Step "${name}" has an unknown next step "${next}".`);
-  }
-  let current = initial;
-  const history = [];
-  const holder = {};
-  const notify = () => trigger(holder, "navigation", "set");
-  const observe = () => track(holder, "navigation");
-  const go = (name) => {
-    if (!validName(name) || !links.has(name))
-      throw new TypeError("Step go target must name a registered step.");
-    if (name === current) return true;
-    history.push(current);
-    current = name;
-    notify();
-    return true;
-  };
-  return Object.freeze({
-    get current() {
-      observe();
-      return current;
-    },
-    get canGoNext() {
-      observe();
-      return links.get(current) !== void 0;
-    },
-    get canGoBack() {
-      observe();
-      return history.length > 0;
-    },
-    isActive(name) {
-      observe();
-      return current === name;
-    },
-    go,
-    next() {
-      const next = links.get(current);
-      return next === void 0 ? false : go(next);
-    },
-    back() {
-      if (!history.length) return false;
-      current = history.pop();
-      notify();
-      return true;
-    },
-    reset() {
-      if (current === initial && !history.length) return false;
-      current = initial;
-      history.length = 0;
-      notify();
-      return true;
-    }
-  });
-}
-const defaultRules = {
-  required: (val) => {
-    if (val === null || val === void 0 || val === false || val === "") return false;
-    if (typeof val === "string") return val.trim().length > 0;
-    if (Array.isArray(val)) return val.length > 0;
-    if (typeof val === "object") return Object.keys(val).length > 0;
-    return true;
-  },
-  min: (val, min) => {
-    if (typeof val === "string" || Array.isArray(val)) return val.length >= Number(min);
-    if (typeof val === "number") return val >= Number(min);
-    return false;
-  },
-  max: (val, max) => {
-    if (typeof val === "string" || Array.isArray(val)) return val.length <= Number(max);
-    if (typeof val === "number") return val <= Number(max);
-    return false;
-  },
-  email: (val) => {
-    if (typeof val !== "string") return false;
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val);
-  },
-  same: (val, targetProp, allData) => val === allData[String(targetProp)],
-  in: (val, list) => Array.isArray(list) && list.includes(val)
-};
-function validate(data, schema, customRules = {}) {
-  const rules = { ...defaultRules, ...customRules };
-  const errors = {};
-  for (const [prop, propRules] of Object.entries(schema)) {
-    const val = data[prop];
-    for (const rule of propRules) {
-      const ruleFn = rules[rule.name];
-      if (ruleFn) {
-        const passed = ruleFn(val, rule.value, data);
-        if (!passed) {
-          if (!errors[prop]) errors[prop] = [];
-          errors[prop].push(rule.message || `${prop} failed ${rule.name} validation`);
-        }
-      } else {
-        console.warn(`Unknown validation rule: ${rule.name}`);
-      }
-    }
-  }
-  return Object.keys(errors).length === 0 ? true : errors;
-}
-class HttpError extends Error {
-  constructor(response) {
-    super(`HTTP ${response.status}: ${response.statusText}`);
-    __publicField(this, "response");
-    __publicField(this, "status");
-    this.name = "HttpError";
-    this.response = response;
-    this.status = response.status;
-  }
-}
-function isPlainObject(value) {
-  const prototype = Object.getPrototypeOf(value);
-  return prototype === null || Object.getPrototypeOf(prototype) === null && Object.prototype.toString.call(value) === "[object Object]";
-}
-function isDate(value) {
-  return Object.prototype.toString.call(value) === "[object Date]";
-}
-function appendQuery(url, query) {
-  const target = new URL(url, typeof location !== "undefined" ? location.href : "http://localhost");
-  if (query instanceof URLSearchParams) {
-    query.forEach((value, key) => target.searchParams.append(key, value));
-  } else {
-    if (query === null || typeof query !== "object" || !isPlainObject(query))
-      throw new TypeError("HTTP query must be a plain object or URLSearchParams.");
-    const ancestors = /* @__PURE__ */ new Set();
-    const append = (key, value) => {
-      if (value === void 0) return;
-      if (value === null) {
-        target.searchParams.append(key, "");
-      } else if (isDate(value)) {
-        target.searchParams.append(key, Date.prototype.toISOString.call(value));
-      } else if (typeof value === "string" || typeof value === "boolean" || typeof value === "number" && Number.isFinite(value)) {
-        target.searchParams.append(key, String(value));
-      } else if (typeof value === "object" && (Array.isArray(value) || isPlainObject(value))) {
-        if (ancestors.has(value)) throw new TypeError(`Circular HTTP query at "${key}".`);
-        ancestors.add(value);
-        if (Array.isArray(value)) {
-          value.forEach((item, index) => {
-            const structured = item !== null && typeof item === "object" && !isDate(item);
-            append(`${key}[${structured ? index : ""}]`, item);
-          });
-        } else {
-          for (const [name, item] of Object.entries(value)) append(`${key}[${name}]`, item);
-        }
-        ancestors.delete(value);
-      } else {
-        throw new TypeError(`Unsupported HTTP query value at "${key}".`);
-      }
-    };
-    ancestors.add(query);
-    for (const [key, value] of Object.entries(query)) append(key, value);
-  }
-  return target.href;
-}
-function encodeBody(body, headers) {
-  if (typeof body === "string" || typeof FormData !== "undefined" && body instanceof FormData || typeof URLSearchParams !== "undefined" && body instanceof URLSearchParams || typeof Blob !== "undefined" && body instanceof Blob || body instanceof ArrayBuffer || ArrayBuffer.isView(body) || typeof ReadableStream !== "undefined" && body instanceof ReadableStream) return body;
-  if (body !== null && typeof body !== "number" && typeof body !== "boolean" && !(typeof body === "object" && (Array.isArray(body) || isPlainObject(body))))
-    throw new TypeError("HTTP body must be JSON data or a native Fetch body.");
-  const json = JSON.stringify(body);
-  if (json === void 0) throw new TypeError("HTTP body did not serialize to JSON.");
-  if (!headers.has("Content-Type")) headers.set("Content-Type", "application/json");
-  return json;
-}
-function request(method) {
-  async function send(url, input, options = {}) {
-    const { parser, ...init } = options;
-    if (parser !== void 0 && !["json", "text", "blob", "arrayBuffer", "formData"].includes(parser))
-      throw new TypeError(`Unknown HTTP parser: "${parser}".`);
-    const headers = new Headers(init.headers);
-    let body;
-    if (method === "GET" || method === "DELETE") {
-      if (input !== void 0 && input !== null) url = appendQuery(url, input);
-    } else if (input !== void 0) {
-      body = encodeBody(input, headers);
-    }
-    const response = await fetch(url, { ...init, method, headers, body });
-    if (!response.ok) throw new HttpError(response);
-    if (parser !== void 0) return response[parser]();
-    if (response.status === 204 || response.status === 205) return void 0;
-    const contentType = (response.headers.get("content-type") ?? "").split(";", 1)[0].trim().toLowerCase();
-    const text = await response.text();
-    if (contentType === "application/json" || /^[^/\s]+\/[^/\s]+\+json$/.test(contentType))
-      return text === "" ? void 0 : JSON.parse(text);
-    return text;
-  }
-  return send;
-}
-const http = {
-  get: request("GET"),
-  post: request("POST"),
-  put: request("PUT"),
-  patch: request("PATCH"),
-  delete: request("DELETE")
-};
 export {
   HttpError,
   assign,
@@ -2408,6 +2180,7 @@ export {
   hydrateNode,
   hydrateRoot,
   i as inspectDevtools,
+  moneyMask,
   onCleanup,
   onDispose,
   persist,

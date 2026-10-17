@@ -1,34 +1,55 @@
-import { effect } from './effect';
-import type { Signal } from './types';
-
-export type Resource<T> = {
-    readonly data: Signal<T | undefined>;
-    readonly loading: Signal<boolean>;
-    readonly error: Signal<unknown | undefined>;
-    refetch(): Promise<void>;
-};
-
+import { createScope, onDispose } from '../core/scope';
+import { batch, effect } from './effect';
 import { signal } from './state';
+import type { Resource } from './types';
+export type { Resource } from './types';
 
-export function resource<T>(fetcher: () => Promise<T>): Resource<T> {
+export function resource<T>(fetcher: (signal: AbortSignal) => Promise<T>): Resource<T> {
     const data = signal<T | undefined>(undefined);
     const loading = signal<boolean>(true);
     const error = signal<unknown | undefined>(undefined);
+    const scope = createScope();
+    let current: AbortController | undefined;
+
+    onDispose(scope, () => {
+        const pending = current;
+        current = undefined;
+        pending?.abort();
+        loading.value = false;
+    });
 
     const run = async () => {
-        loading.value = true;
-        error.value = undefined;
+        if (scope.disposed) throw new Error('Cannot refetch a disposed Brio resource.');
+        const previous = current;
+        const controller = new AbortController();
+        current = controller;
+        previous?.abort();
+        if (scope.disposed || current !== controller) return;
+        batch(() => {
+            loading.value = true;
+            error.value = undefined;
+        });
+        if (scope.disposed || current !== controller) return;
+        let value: T | undefined;
+        let failure: unknown;
+        let failed = false;
         try {
-            data.value = await fetcher();
+            value = await fetcher(controller.signal);
         } catch (err) {
-            error.value = err;
-        } finally {
-            loading.value = false;
+            failed = true;
+            failure = err;
         }
+        if (scope.disposed || current !== controller) return;
+        current = undefined;
+        batch(() => {
+            if (failed) error.value = failure;
+            else data.value = value;
+            loading.value = false;
+        });
     };
 
-    effect(() => {
-        run();
+    scope.run(() => {
+        effect(() => { void run(); });
     });
 
     return {
@@ -36,5 +57,6 @@ export function resource<T>(fetcher: () => Promise<T>): Resource<T> {
         loading,
         error,
         refetch: run,
+        dispose: () => scope.dispose(),
     };
 }

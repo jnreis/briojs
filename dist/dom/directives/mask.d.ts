@@ -1,8 +1,14 @@
-export interface MoneyMaskOptions {
-    thousands?: string;
-    decimal?: string;
-    precision?: number;
-}
-export declare function formatMoney(value: string, options?: MoneyMaskOptions): string;
-export declare function formatMask(value: string, pattern: string): string;
+export type MaskContext = {
+    value: string;
+    selectionStart: number | null;
+    selectionEnd: number | null;
+    selectionDirection: 'forward' | 'backward' | 'none' | null;
+    inputType: string | undefined;
+};
+export type MaskResult = string | {
+    value: string;
+    selectionStart?: number;
+    selectionEnd?: number;
+};
+export type MaskFormatter = (context: MaskContext) => MaskResult;
 export declare function handleMask(element: Element, expression: string, modifiers: Record<string, boolean>, context: Record<PropertyKey, any>): void;

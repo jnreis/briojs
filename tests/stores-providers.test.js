@@ -262,7 +262,7 @@ test('providers follow original contexts through preserved conditionals, telepor
         <template b-provide="{ theme: $data.theme }" b-template>
           <span b-if.detach="$data.visible" b-text="$provided.theme"></span>
           <div b-teleport="['#portal', 'append']"><b b-text="$provided.theme"></b></div>
-          <article b-html="trustedHTML($data.html)"></article>
+          <article b-html.hydrate="trustedHTML($data.html)"></article>
         </template>`, `({ state: () => ({
             theme: 'dark', visible: true, html: '<i b-text="$provided.theme"></i>'
         }) })`);

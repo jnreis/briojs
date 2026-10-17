@@ -66,7 +66,6 @@ function state(target) {
   if (existing) return existing;
   const proxy = new Proxy(raw, {
     get(current, key, receiver) {
-      if (key === Symbol.for("brio.raw")) return current;
       track(current, key);
       const value = Reflect.get(current, key, receiver);
       const descriptor = Reflect.getOwnPropertyDescriptor(current, key);
@@ -153,4 +152,4 @@ export {
   state as s,
   trigger as t
 };
-//# sourceMappingURL=state-CLBlAcxj.js.map
+//# sourceMappingURL=state-FLvgaPZh.js.map

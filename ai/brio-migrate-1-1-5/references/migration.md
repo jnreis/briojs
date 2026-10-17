@@ -39,10 +39,11 @@ app.dispose();
 ```
 
 Use `brio.min.js` in production or `brio.dev.min.js` in development, not both.
-Browser routing/persistence require the optional
-`brio.router.min.js` and `brio.persistence.min.js` scripts.
-Load the needed scripts after the core and before mounting. HTTP, step, and validation remain
-bundled; npm main-entry imports still expose every plugin and development helper.
+All browser plugins require their optional scripts: `brio.router.min.js`,
+`brio.persistence.min.js`, `brio.http.min.js`, `brio.forms.min.js`,
+`brio.step.min.js`, or `brio.money-mask.min.js`. Load needed scripts after the
+core and before mounting. Dedicated npm subpaths and tree-shakable main-entry
+imports expose every plugin and development helper.
 Run bootstrap after the bundle and markup are available. ESM consumers can
 import `createApp` from `briojs`; do not mix browser and ESM runtimes on a root.
 For side-by-side migration testing, use separate pages/builds, not competing
@@ -125,11 +126,11 @@ forbids runtime `new Function` remains a deployment blocker.
 | `b-each` | Rewrite into `b-for="item, index in $data.items"`; rewrite row bindings to `$for`. Add a stable `b-key="$for.item.id"` where identity matters. |
 | `b-if` | Keep name but condition runs before branch-local data. False disposes after leave completes (immediately without a transition); reversal reuses the live branch, while activation after completed removal creates fresh local data. Wrap root structural directives. |
 | `b-show` | Use **`b-if.hide`** for legacy display toggling. Conditions now run before branch-local data. `b-if.detach` instead detaches/reinserts the same live node; these differ for layout, queries, focus, observers, and form submission. V4 no longer supports `b-show`. |
-| `b-html` | Supply actual authored HTML, not a legacy template registry name. It replaces/hydrates children; prefer components for reusable behavior. |
-| `b-text` | Use an explicit value expression. Current builds hydrate `${...}` in its evaluated text without parsing tags; use `.raw` for literal/untrusted text. Never depend on combined `b-html` / `b-text` precedence. |
+| `b-html` | Supply actual HTML, not a legacy template registry name. Default output is inert; use `b-html.hydrate` with `trustedHTML()` for executable templates and owned cleanup. |
+| `b-text` | Use an explicit value expression. Returned strings remain literal, including `${...}`. Never depend on combined `b-html` / `b-text` precedence. |
 | `b-bind-*`, `bind-*` | Prefer `b-bind-*`; give an explicit expression. No empty-value inference. `.prop` forces property assignment; property/attribute and falsy-value semantics require tests. |
 | `b-model` | Explicit assignable `$data.field`; type conversion and modifiers need special review below. |
-| `b-mask` | Pattern string or `money(options)`; legacy registries, token meanings, and callback masks are not drop-in compatible. |
+| `b-mask` | Pattern string or synchronous formatter function; Unicode tokens `*`/`A`/`a`/`#`, literal 9, backslash escaping. Money is optional `brio.moneyMask(options)` / `briojs/money-mask`; no injected helper or `.money`. Legacy registries and callbacks are not drop-in compatible. |
 | `b-uid` | `b-id="['input']"` then explicit `b-bind-id="$id.input"` / label `b-bind-for="$id.input"`. |
 | `b-ref` | Static literal registration in local `$ref` (not `$refs`). Data boundaries, components and rows isolate names; duplicates throw. No inherited lookup or automatic collection. |
 | `b-slot` | Removed as a registry. Use named component slots and `slot="name"` on caller content. |
@@ -182,8 +183,8 @@ array, not merely the number of same-name controls.
 - Legacy `b-options` model `raw: true` needs no v4 modifier: plain v4 text
   already stays text. Remove that legacy option rather than replacing it with
   `b-model.raw`, which is not supported in v4 (and was not a registered legacy
-  directive). The `.raw` modifiers on `b-text` and `b-html` concern content
-  hydration, not model value conversion.
+  directive). `.raw` on `b-text`/`b-html` is also removed: literal text and inert
+  HTML are the defaults; `b-html.hydrate` explicitly activates trusted templates.
 - Preserve existing defaults in state before mounting; do not rely on the input
   markup to populate them.
 - Test numeric radios/checkbox arrays separately: DOM values are strings, and
@@ -463,13 +464,15 @@ V4 transitions use six classes for a chosen name: `fade-enter`,
 Use CSS transitions, not keyframe animations. Old play/reverse logic and timing
 options need application-specific redesign; test reversal in a real browser.
 
-V4 patterns use `#` / `9` for digits and `a` / `A` for ASCII letters; other
-characters are literals. Custom Unicode/alphanumeric legacy tokens are not
-equivalent. Implement needed formats explicitly rather than silently replacing
-them. Convert simple fixed counts such as `#2/#2/#4` to `'##/##/####'` only
-when ASCII digit input is acceptable. `?`, `+`, escapes, per-field tokens, and
-callback formats have no equivalent pattern grammar.
-Money uses minor units and `thousands`, `decimal`, `precision` options;
+V4 patterns use `#` for Unicode decimal digits, `a` for Unicode letters, `A`
+for either, and `*` for any code point. Other characters, including `9`, are
+literals; backslash escapes the next code point. Translate legacy `&` to `a`
+and legacy alphanumeric `*` to `A`. Convert fixed counts such as `#2/#2/#4`
+to `'##/##/####'`. `?`, `+`, and custom token registries have no equivalent
+pattern grammar. Custom behavior can use a synchronous formatter function,
+but its `{value, selectionStart, selectionEnd, selectionDirection, inputType}`
+context/result contract differs from legacy callbacks. Positions use UTF-16.
+Optional moneyMask uses ASCII minor units and `thousands`, `decimal`, `precision` options;
 mask/model values remain formatted strings unless explicitly normalized.
 Test old monetary payloads, negatives, rounding expectations, paste, caret,
 and deletion around literals before adopting the new formatter.

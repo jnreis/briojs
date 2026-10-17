@@ -1,90 +1,84 @@
 import { onCleanup } from '../../core/scope';
-import { createExpressionScope, evaluate } from '../../core/expression';
+import { evaluate } from '../../core/expression';
 import { effect } from '../../reactivity/effect';
 
-export interface MoneyMaskOptions {
-    thousands?: string;
-    decimal?: string;
-    precision?: number;
-}
+export type MaskContext = {
+    value: string;
+    selectionStart: number | null;
+    selectionEnd: number | null;
+    selectionDirection: 'forward' | 'backward' | 'none' | null;
+    inputType: string | undefined;
+};
+export type MaskResult = string | {
+    value: string;
+    selectionStart?: number;
+    selectionEnd?: number;
+};
+export type MaskFormatter = (context: MaskContext) => MaskResult;
 
-function validateMoneyOptions(options: MoneyMaskOptions): void {
-    if (options === null || typeof options !== 'object' || Array.isArray(options))
-        throw new TypeError('Money mask options must be an object.');
-    if (options.thousands !== undefined && typeof options.thousands !== 'string')
-        throw new TypeError('Money mask thousands must be a string.');
-    if (options.decimal !== undefined && (typeof options.decimal !== 'string' || !options.decimal))
-        throw new TypeError('Money mask decimal must be a non-empty string.');
-    if (options.precision !== undefined && (!Number.isInteger(options.precision) || options.precision < 0 || options.precision > 100))
-        throw new RangeError('Money mask precision must be an integer between 0 and 100.');
-    if ((options.thousands ?? ',') === (options.decimal ?? '.'))
-        throw new TypeError('Money mask thousands and decimal separators must differ.');
-}
+type PatternPart = { literal: string } | { accepts: (character: string) => boolean };
 
-export function formatMoney(value: string, options: MoneyMaskOptions = {}): string {
-    validateMoneyOptions(options);
-    const thousands = options.thousands ?? ',';
-    const decimal = options.decimal ?? '.';
-    const precision = options.precision ?? 2;
-
-    const isNegative = value.trim().startsWith('-');
-    // Keep only digits and decimal separators
-    const digitsOnly = value.replace(/[^\d]/g, '');
-    if (!digitsOnly) return '';
-
-    let integerStr: string;
-    let decimalStr: string;
-
-    if (precision > 0) {
-        // Treat input as cents/fixed precision like currency inputs or partition by decimal
-        if (digitsOnly.length <= precision) {
-            integerStr = '0';
-            decimalStr = digitsOnly.padStart(precision, '0');
-        } else {
-            integerStr = digitsOnly.slice(0, digitsOnly.length - precision).replace(/^0+/, '') || '0';
-            decimalStr = digitsOnly.slice(digitsOnly.length - precision);
-        }
-    } else {
-        integerStr = digitsOnly.replace(/^0+/, '') || '0';
-        decimalStr = '';
+function compilePattern(pattern: string): PatternPart[] {
+    const parts: PatternPart[] = [];
+    const characters = [...pattern];
+    for (let index = 0; index < characters.length; index++) {
+        const character = characters[index];
+        if (character === '\\') {
+            if (++index === characters.length) throw new SyntaxError('Mask pattern cannot end with an escape.');
+            parts.push({ literal: characters[index] });
+        } else if (character === '*') parts.push({ accepts: () => true });
+        else if (character === 'A') parts.push({ accepts: value => /[\p{L}\p{Nd}]/u.test(value) });
+        else if (character === 'a') parts.push({ accepts: value => /\p{L}/u.test(value) });
+        else if (character === '#') parts.push({ accepts: value => /\p{Nd}/u.test(value) });
+        else parts.push({ literal: character });
     }
-
-    // Add thousands separators
-    const formattedInteger = integerStr.replace(/\B(?=(\d{3})+(?!\d))/g, () => thousands);
-    const result = decimalStr ? `${formattedInteger}${decimal}${decimalStr}` : formattedInteger;
-
-    return isNegative ? `-${result}` : result;
+    return parts;
 }
 
-function formatPattern(value: string, pattern: string, positions?: { input: number; output: number }[]): string {
-    let result = '';
-    let valIndex = 0;
-    for (let i = 0; i < pattern.length && valIndex < value.length; i++) {
-        const patternChar = pattern[i];
-        if (patternChar === '9' || patternChar === '#') {
-            while (valIndex < value.length && !/\d/.test(value[valIndex])) valIndex++;
-            if (valIndex < value.length) {
-                positions?.push({ input: valIndex, output: result.length + 1 });
-                result += value[valIndex++];
-            }
-        } else if (patternChar === 'a' || patternChar === 'A') {
-            while (valIndex < value.length && !/[a-zA-Z]/.test(value[valIndex])) valIndex++;
-            if (valIndex < value.length) {
-                positions?.push({ input: valIndex, output: result.length + 1 });
-                result += value[valIndex++];
-            }
-        } else {
-            result += patternChar;
-            if (value[valIndex] === patternChar) {
-                valIndex++;
+function patternFormatter(pattern: string): MaskFormatter {
+    const parts = compilePattern(pattern);
+    return context => {
+        const input = [...context.value];
+        const positions: { input: number; output: number }[] = [];
+        let value = '';
+        let index = 0;
+        let offset = 0;
+        for (const part of parts) {
+            if (index >= input.length) break;
+            if ('literal' in part) {
+                value += part.literal;
+                if (input[index] === part.literal) {
+                    offset += input[index++].length;
+                }
+            } else {
+                while (index < input.length && !part.accepts(input[index]))
+                    offset += input[index++].length;
+                if (index < input.length) {
+                    const character = input[index++];
+                    value += character;
+                    offset += character.length;
+                    positions.push({ input: offset, output: value.length });
+                }
             }
         }
-    }
-    return result;
+        const map = (position: number | null): number | undefined => {
+            if (position === null) return undefined;
+            return positions.filter(entry => entry.input <= position).at(-1)?.output ?? 0;
+        };
+        return { value, selectionStart: map(context.selectionStart), selectionEnd: map(context.selectionEnd) };
+    };
 }
 
-export function formatMask(value: string, pattern: string): string {
-    return formatPattern(value, pattern);
+function validateResult(result: unknown): asserts result is MaskResult {
+    if (typeof result === 'string') return;
+    if (result === null || typeof result !== 'object' || !('value' in result) || typeof result.value !== 'string')
+        throw new TypeError('Mask formatter must return a string or { value, selectionStart?, selectionEnd? }.');
+    for (const key of ['selectionStart', 'selectionEnd'] as const) {
+        const position: unknown = key in result ? Reflect.get(result, key) : undefined;
+        if (position !== undefined && (typeof position !== 'number' || !Number.isInteger(position) ||
+            position < 0 || position > result.value.length))
+            throw new TypeError(`Mask formatter ${key} must be an integer within the formatted value.`);
+    }
 }
 
 export function handleMask(
@@ -93,63 +87,55 @@ export function handleMask(
     modifiers: Record<string, boolean>,
     context: Record<PropertyKey, any>,
 ): void {
-    if (!(element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement)) {
+    if (!(element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement))
         throw new TypeError('b-mask can only be used on input and textarea elements.');
-    }
+    if (Object.keys(modifiers).length) throw new TypeError('b-mask does not support modifiers; use a pattern or formatter function.');
 
-    const trimmed = expression.trim();
-    const money = (options: MoneyMaskOptions = {}) => {
-        validateMoneyOptions(options);
-        return { kind: 'money' as const, options };
-    };
-    const maskContext = createExpressionScope({ money }, context);
-    let configuration: string | ReturnType<typeof money> = '';
+    let formatter: MaskFormatter;
+    let applying = false;
+    let composing = false;
     const applyMask = (event?: Event) => {
-        if (event instanceof InputEvent && event.isComposing) return;
+        if (applying || composing || (event instanceof InputEvent && event.isComposing)) return;
         const current = element.value;
         const start = element.selectionStart;
         const end = element.selectionEnd;
         const direction = element.selectionDirection;
-        const positions: { input: number; output: number }[] = [];
-        const formatted = typeof configuration === 'string'
-            ? formatPattern(current, configuration, positions)
-            : formatMoney(current, configuration.options);
-        const deleting = event instanceof InputEvent && event.inputType.startsWith('delete');
-        const mapPosition = (position: number): number => {
-            if (typeof configuration === 'string') {
-                if (!deleting) return formatMask(current.slice(0, position), configuration).length;
-                return positions.filter(entry => entry.input < position).at(-1)?.output ?? 0;
+        const result = formatter({
+            value: current, selectionStart: start, selectionEnd: end, selectionDirection: direction,
+            inputType: event instanceof InputEvent ? event.inputType : undefined,
+        });
+        validateResult(result);
+        const value = typeof result === 'string' ? result : result.value;
+        const clamp = (position: number) => Math.min(position, value.length);
+        const mappedStart = typeof result === 'string' ? start : result.selectionStart ?? start;
+        const mappedEnd = typeof result === 'string' ? end : result.selectionEnd ?? end;
+        applying = true;
+        try {
+            if (current !== value) {
+                element.value = value;
+                element.dispatchEvent(new Event('input', { bubbles: true }));
             }
-            // Anchor to the digits on the right: padding and grouping may change the left side.
-            const rightDigits = current.slice(position).replace(/\D/g, '').length;
-            const digits = [...formatted.matchAll(/\d/g)];
-            const leftDigits = digits.length - rightDigits;
-            if (position === 0) return 0;
-            return leftDigits > 0 ? digits[leftDigits - 1].index! + 1 : (formatted.startsWith('-') ? 1 : 0);
-        };
-        const preserveSelection = element.ownerDocument.activeElement === element && start !== null && end !== null;
-        const mappedStart = preserveSelection ? mapPosition(start) : null;
-        const mappedEnd = preserveSelection ? mapPosition(end) : null;
-
-        if (element.value !== formatted) {
-            element.value = formatted;
-            element.dispatchEvent(new Event('input', { bubbles: true }));
+            if (element.ownerDocument.activeElement === element && mappedStart !== null && mappedEnd !== null)
+                element.setSelectionRange(clamp(mappedStart), clamp(mappedEnd), direction ?? 'none');
+        } finally {
+            applying = false;
         }
-        if (mappedStart !== null && mappedEnd !== null && (current !== formatted || deleting))
-            element.setSelectionRange(mappedStart, mappedEnd, direction ?? 'none');
     };
-
+    const compositionStart = () => { composing = true; };
+    const compositionEnd = () => { composing = false; applyMask(); };
     element.addEventListener('input', applyMask, true);
+    element.addEventListener('compositionstart', compositionStart);
+    element.addEventListener('compositionend', compositionEnd);
     onCleanup(() => {
         element.removeEventListener('input', applyMask, true);
+        element.removeEventListener('compositionstart', compositionStart);
+        element.removeEventListener('compositionend', compositionEnd);
     });
     effect(() => {
-        const value = trimmed ? evaluate(trimmed, maskContext) : undefined;
-        if (modifiers.money) configuration = money(value);
-        else if (value === 'money' || value === money) configuration = money();
-        else if (typeof value === 'string') configuration = value;
-        else if (value && typeof value === 'object' && value.kind === 'money') configuration = money(value.options);
-        else throw new TypeError('b-mask must evaluate to a pattern string or money(options).');
+        const value = evaluate(expression, context);
+        if (typeof value === 'string') formatter = patternFormatter(value);
+        else if (typeof value === 'function') formatter = value;
+        else throw new TypeError('b-mask must evaluate to a pattern string or formatter function.');
         applyMask();
     });
 }

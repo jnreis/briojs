@@ -249,7 +249,7 @@ function hydrateOwnedNode(
             element.removeAttribute(attrName);
         } else if (baseName === 'b-text' || baseName === 'text') {
             getNodeOwner(element)!.controlsChildren = true;
-            handleText(element, attrValue, modifiers, context);
+            handleText(element, attrValue, context);
             element.removeAttribute(attrName);
             hasText = true;
         } else if (baseName === 'b-html' || baseName === 'html') {

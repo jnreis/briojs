@@ -76,10 +76,9 @@ test('observer and directive helpers are explicitly available without global fal
         $props: { label: 'Label' },
         $emit: name => name,
         trustedHTML: value => value,
-        money: options => options,
     });
-    execute('$data.result = [$mutations[0].type, $entry.isIntersecting, $size.width, $props.label, $emit("change"), trustedHTML("ok"), money({ precision: 3 }).precision];', scope);
-    assert.deepEqual(scope.$data.result, ['attributes', true, 42, 'Label', 'change', 'ok', 3]);
+    execute('$data.result = [$mutations[0].type, $entry.isIntersecting, $size.width, $props.label, $emit("change"), trustedHTML("ok")];', scope);
+    assert.deepEqual(scope.$data.result, ['attributes', true, 42, 'Label', 'change', 'ok']);
     assert.equal(evaluate('$context.$props.label', scope), 'Label');
     assert.throws(() => evaluate('props.label', scope), error => error.cause instanceof ReferenceError);
     assert.throws(() => execute('emit("change")', scope), error => error.cause instanceof ReferenceError);

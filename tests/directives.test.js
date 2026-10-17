@@ -20,7 +20,6 @@ test('manual model page shows default strings versus explicit numeric conversion
         input.value = value;
         input.dispatchEvent(new window.Event('input', { bubbles: true }));
     };
-    assert.equal(document.querySelector('[b-model\\.raw]'), null);
     for (const value of ['0042', 'true', 'null', '  spaces  ', '${$data.defaultNumber}', '']) {
         enter('default-model', value);
         assert.equal(document.getElementById('default-model').value, value);
@@ -34,40 +33,41 @@ test('manual model page shows default strings versus explicit numeric conversion
     assert.equal(document.getElementById('number-model-type').textContent, 'string');
 });
 
-test('b-text hydrates referenced text and authored strings without parsing HTML; raw skips interpolation', t => {
+test('b-text displays literal values; only the authored expression establishes dependencies', t => {
     const { app, root } = environment(t, `
         <p id="text" b-text="$data.text"></p>
-        <p id="raw" b-text.raw="$data.text"></p>
+        <p id="authored">\${$data.text}</p>
         <p id="direct" b-text="'Count: \${$data.count}'"></p>
         <p id="expression" b-text="'Count: ' + $data.count"></p>
-        <p id="raw-expression" b-text.raw="'Count: ' + $data.count"></p>`,
+        <p id="null" b-text="null"></p>`,
     { text: '<b>Count: ${$data.count}</b>', count: 1 });
     app.mount(root);
-    assert.equal(root.querySelector('#text').textContent, '<b>Count: 1</b>');
+    assert.equal(root.querySelector('#text').textContent, '<b>Count: ${$data.count}</b>');
     assert.equal(root.querySelector('#text').children.length, 0);
-    assert.equal(root.querySelector('#raw').textContent, '<b>Count: ${$data.count}</b>');
+    assert.equal(root.querySelector('#authored').textContent, '<b>Count: ${$data.count}</b>');
+    assert.equal(root.querySelector('#null').textContent, '');
     app.state.count = 2;
-    for (const id of ['direct', 'expression', 'raw-expression'])
-        assert.equal(root.querySelector(`#${id}`).textContent, 'Count: 2');
-    assert.equal(root.querySelector('#text').textContent, '<b>Count: 2</b>');
+    assert.equal(root.querySelector('#direct').textContent, 'Count: ${$data.count}');
+    assert.equal(root.querySelector('#expression').textContent, 'Count: 2');
+    assert.equal(root.querySelector('#text').textContent, '<b>Count: ${$data.count}</b>');
     app.state.text = 'Other: ${$data.other}';
     app.state.other = 7;
-    assert.equal(root.querySelector('#text').textContent, 'Other: 7');
+    assert.equal(root.querySelector('#text').textContent, 'Other: ${$data.other}');
     app.state.text = '${$data.missing}';
-    assert.equal(root.querySelector('#text').textContent, '');
+    assert.equal(root.querySelector('#text').textContent, '${$data.missing}');
     app.state.text = null;
-    assert.equal(root.querySelector('#raw').textContent, '');
+    assert.equal(root.querySelector('#text').textContent, '');
     app.state.text = '${$data.count}';
     const oldText = root.querySelector('#text');
     app.unmount();
     app.state.count = 3;
-    assert.equal(oldText.textContent, '2');
+    assert.equal(oldText.textContent, '${$data.count}');
 });
 
-test('b-html.raw parses HTML without directives/interpolation while its source remains reactive', t => {
+test('b-html is inert by default; trusted b-html.hydrate activates content and disposes replacements', t => {
     const { app, root } = environment(t, `
-        <div id="html" b-html="$data.html"></div>
-        <div id="raw" b-html.raw="$data.html"></div>`,
+        <div id="html" b-html.hydrate="trustedHTML($data.html)"></div>
+        <div id="raw" b-html="$data.html"></div>`,
     { html: '<button b-on-click="$data.count++">Count: ${$data.count}</button>', count: 1 });
     app.mount(root);
     const hydrated = root.querySelector('#html button');
@@ -87,15 +87,62 @@ test('b-html.raw parses HTML without directives/interpolation while its source r
     assert.equal(app.state.count, 2);
 });
 
-test('b-text interpolation failures are explicit and hydration performs only one interpolation pass', t => {
-    const { app, root } = environment(t, '<p b-text="$data.text"></p>',
+test('text results never execute interpolation; authored failures remain explicit', t => {
+    const { app, root } = environment(t, '<p b-text="$data.text"></p><span>\${$data.nested}</span>',
         { text: '${$data.nested}', nested: '${notEvaluated}' });
     app.mount(root);
-    assert.equal(root.querySelector('p').textContent, '${notEvaluated}');
-    assert.throws(() => { app.state.text = '${missingName}'; }, /reactive effects failed/);
+    assert.equal(root.querySelector('p').textContent, '${$data.nested}');
+    assert.equal(root.querySelector('span').textContent, '${notEvaluated}');
+    app.state.text = '${missingName}';
+    assert.equal(root.querySelector('p').textContent, '${missingName}');
+    const invalid = environment(t, '<p b-text="missingName"></p>');
+    assert.throws(() => invalid.app.mount(invalid.root), /Brio expression failed/);
 });
 
-test('manual HTML/text page demonstrates hydrated references and raw content', t => {
+test('untrusted hydration fails before replacing content', t => {
+    for (const markup of [
+        '<div b-html.hydrate="null"></div>', '<div b-html.hydrate="\'&lt;b&gt;plain&lt;/b&gt;\'"></div>']) {
+        const { app, root } = environment(t, markup);
+        const original = root.innerHTML;
+        assert.throws(() => app.mount(root), /requires a trustedHTML/);
+        assert.equal(root.innerHTML, original);
+    }
+});
+
+for (const distribution of ['brio.min.js', 'brio.dev.min.js']) {
+    test(`${distribution}: hydrated content owns cleanup; invalid trust updates preserve live content`, t => {
+        const source = readFileSync(new URL(`../dist/${distribution}`, import.meta.url), 'utf8');
+        const { app, root, window } = environment(t, `
+            <div id="inert" b-html="$data.markup"></div>
+            <div id="active" b-html.hydrate="$data.markup"></div>`,
+        { markup: '', count: 0, cleanups: 0 }, source);
+        app.state.markup = window.brio.trustedHTML(
+            '<button b-on-click="$data.count++" b-text="$data.count"></button>' +
+            '<script b-script>({onCleanup,$data}) => { onCleanup(() => $data.cleanups++); }</script>');
+        app.mount(root);
+        const button = root.querySelector('#active button');
+        assert.equal(root.querySelector('#inert button').textContent, '');
+        assert.equal(root.querySelector('#inert script').hasAttribute('b-script'), true);
+        button.click();
+        assert.equal(button.textContent, '1');
+        assert.throws(() => { app.state.markup = '<i>untrusted</i>'; }, /reactive effects failed/);
+        assert.equal(root.querySelector('#active button'), button);
+        assert.equal(app.state.cleanups, 0);
+        button.click();
+        assert.equal(button.textContent, '2');
+        app.state.markup = window.brio.trustedHTML('<b b-text="$data.count"></b>');
+        assert.equal(app.state.cleanups, 1);
+        button.click();
+        assert.equal(app.state.count, 2);
+        app.state.count = 3;
+        assert.equal(root.querySelector('#active b').textContent, '3');
+        assert.equal(root.querySelector('#inert b').textContent, '');
+        app.state.markup = window.brio.trustedHTML('');
+        assert.equal(root.querySelector('#active').childNodes.length, 0);
+    });
+}
+
+test('manual HTML/text page demonstrates explicit hydration and literal values', t => {
     const markup = readFileSync(new URL('./directives/html.html', import.meta.url), 'utf8');
     const dom = new JSDOM(markup, { runScripts: 'outside-only' });
     const { window } = dom;
@@ -107,22 +154,22 @@ test('manual HTML/text page demonstrates hydrated references and raw content', t
     app.mount('body');
     const { document } = window;
     assert.equal(document.querySelector('#hydrated-html strong').textContent, 'Counter: 1');
-    assert.equal(document.querySelector('#hydrated-text').textContent, '<strong>Counter: 1</strong>');
-    assert.equal(document.querySelector('#hydrated-text strong'), null);
+    assert.equal(document.querySelector('#literal-text').textContent, '<strong>Counter: ${$data.counter}</strong>');
+    assert.equal(document.querySelector('#literal-text strong'), null);
     assert.equal(document.querySelector('#raw-html strong').textContent, 'Counter: ${$data.counter}');
-    assert.equal(document.querySelector('#raw-text').textContent, '<strong>Counter: ${$data.counter}</strong>');
+    assert.equal(document.querySelector('#authored-text').textContent, '<strong>Counter: ${$data.counter}</strong>');
     document.querySelectorAll('button')[1].click();
     assert.equal(document.querySelector('#hydrated-html strong').textContent, 'Counter: 2');
-    assert.equal(document.querySelector('#hydrated-text').textContent, '<strong>Counter: 2</strong>');
+    assert.equal(document.querySelector('#literal-text').textContent, '<strong>Counter: ${$data.counter}</strong>');
 });
 
-function environment(t, markup, state = {}) {
+function environment(t, markup, state = {}, source = bundle) {
     const dom = new JSDOM(`<main id="app">${markup}</main>`, {
         runScripts: 'outside-only',
         pretendToBeVisual: true,
     });
     const { window } = dom;
-    window.eval(bundle);
+    window.eval(source);
     const errors = [];
     window.addEventListener('error', event => {
         errors.push(event.error);
@@ -937,12 +984,13 @@ test('manual conditional page covers hide/detach chains, eager setup and preserv
 
 test('money options reach the formatter and b-model in either attribute order', t => {
     for (const attributes of [
-        `b-mask="money($data.options)" b-model="$data.amount"`,
-        `b-model="$data.amount" b-mask.money="$data.options"`,
+        `b-mask="brio.moneyMask($data.options)" b-model="$data.amount"`,
+        `b-model="$data.amount" b-mask="brio.moneyMask($data.options)"`,
     ]) {
         const { app, root, window } = environment(t, `<input ${attributes}>`, {
             amount: '', options: { thousands: '.', decimal: ',', precision: 3 },
         });
+        window.eval(readFileSync(new URL('../dist/brio.money-mask.min.js', import.meta.url), 'utf8'));
         app.mount(root);
         const input = root.querySelector('input');
         input.value = '1234567';
@@ -957,18 +1005,19 @@ test('money options reach the formatter and b-model in either attribute order', 
 
 test('money defaults, zero precision, and invalid options', t => {
     for (const [attributes, value] of [
-        ['b-mask.money', '1,234.56'],
-        [`b-mask="'money'"`, '1,234.56'],
-        [`b-mask.money="{ precision: 0 }"`, '123,456'],
+        ['b-mask="brio.moneyMask()"', '1,234.56'],
+        [`b-mask="brio.moneyMask({ precision: 0 })"`, '123,456'],
     ]) {
         const { app, root, window } = environment(t, `<input ${attributes}>`);
+        window.eval(readFileSync(new URL('../dist/brio.money-mask.min.js', import.meta.url), 'utf8'));
         app.mount(root);
         const input = root.querySelector('input');
         input.value = '123456';
         input.dispatchEvent(new window.Event('input'));
         assert.equal(input.value, value);
     }
-    const { app, root } = environment(t, `<input b-mask="money({ precision: -1 })">`);
+    const { app, root, window } = environment(t, `<input b-mask="brio.moneyMask({ precision: -1 })">`);
+    window.eval(readFileSync(new URL('../dist/brio.money-mask.min.js', import.meta.url), 'utf8'));
     assert.throws(() => app.mount(root), error => /precision must be an integer/.test(error.cause?.message));
 });
 
@@ -994,10 +1043,11 @@ test('pattern deletions restore the caret after the preceding editable character
 
 test('money edits preserve caret and selection in either model attribute order', t => {
     for (const attributes of [
-        `b-mask.money b-model="$data.amount"`,
-        `b-model="$data.amount" b-mask.money`,
+        `b-mask="brio.moneyMask()" b-model="$data.amount"`,
+        `b-model="$data.amount" b-mask="brio.moneyMask()"`,
     ]) {
         const { app, root, window } = environment(t, `<input ${attributes}>`, { amount: '' });
+        window.eval(readFileSync(new URL('../dist/brio.money-mask.min.js', import.meta.url), 'utf8'));
         app.mount(root);
         const input = root.querySelector('input');
         input.focus();
@@ -1025,7 +1075,8 @@ test('money edits preserve caret and selection in either model attribute order',
 });
 
 test('money caret mapping handles custom separators, negative values and zero precision', t => {
-    const { app, root, window } = environment(t, `<input b-mask.money="{ thousands: ' ', decimal: ',', precision: 0 }">`);
+    const { app, root, window } = environment(t, `<input b-mask="brio.moneyMask({ thousands: ' ', decimal: ',', precision: 0 })">`);
+    window.eval(readFileSync(new URL('../dist/brio.money-mask.min.js', import.meta.url), 'utf8'));
     app.mount(root);
     const input = root.querySelector('input');
     input.focus();

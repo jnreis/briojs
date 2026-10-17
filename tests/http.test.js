@@ -15,6 +15,7 @@ function environment(t, bundle) {
         for (const name of ['Headers', 'FormData', 'URLSearchParams', 'Blob', 'ArrayBuffer', 'ReadableStream'])
             host[name] = globalThis[name];
         host.eval(readFileSync(new URL(`../dist/${bundle}`, import.meta.url), 'utf8'));
+        host.eval(readFileSync(new URL('../dist/brio.http.min.js', import.meta.url), 'utf8'));
         api = host.brio;
         t.after(() => host.close());
     }

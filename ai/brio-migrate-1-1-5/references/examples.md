@@ -7,7 +7,8 @@ Copy the HTML files into a static server's document root. Provide your preserved
 1.1.5 bundle at `/briojs.1.1.5.min.js` for the old page, and the v4 production
 bundle at `/brio.min.js` for the new page. Paths are deployment paths, not
 automatically exposed npm files. Open the pages separately, never combine their
-Validation is included in the v4 core bundle; no additional forms script is needed. Open the pages separately, never combine their
+Serve `brio.forms.min.js`, `brio.http.min.js`, and `brio.money-mask.min.js`
+beside the v4 core as referenced by the after page. Open the pages separately, never combine their
 runtime scripts. The portable kit does not redistribute the old bundle.
 
 The two pages cover app bootstrap, factory state, explicit method calls,

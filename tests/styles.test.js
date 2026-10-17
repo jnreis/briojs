@@ -55,7 +55,7 @@ test('static CSS, ignored literal interpolation and raw HTML remain ordinary mar
     const { app, root, document } = environment(t, `
         <style>@scope { h2 {color:var(--accent)} } @keyframes pulse {to {opacity:1}}</style>
         <style b-ignore>p::before {content:"\${literal}"}</style>
-        <div b-html.raw="trustedHTML($data.html)"></div>`,
+        <div b-html="trustedHTML($data.html)"></div>`,
     '({ state: () => ({ html: "<style>p::before {content:\\"${literal}\\"}</style>" }) })');
     const original = root.querySelector('style').textContent;
     app.mount(root);
@@ -166,8 +166,8 @@ test('inline style nodes stay live through leave reversal and disconnect after c
     assert.equal(timers.size, 0);
 });
 
-test('b-text.raw binds complete style text without secondary interpolation', t => {
-    const { app, root } = environment(t, '<style b-text.raw="$data.css"></style>',
+test('b-text binds complete style text without secondary interpolation', t => {
+    const { app, root } = environment(t, '<style b-text="$data.css"></style>',
         '({ state: () => ({ css: \'p::before {content:"${literal}"}\' }) })');
     app.mount(root);
     assert.equal(root.querySelector('style').textContent, 'p::before {content:"${literal}"}');

@@ -189,14 +189,14 @@ test('duplicate/invalid refs fail explicitly; ignored and raw HTML stay unregist
     }
     const { app, window } = environment(t, `${capture}
         <section b-ignore b-ref=""><b b-ref="ignored"></b></section>
-        <div b-html.raw="'&lt;b b-ref=&quot;raw&quot;&gt;&lt;/b&gt;'"></div>`);
+        <div b-html="'&lt;b b-ref=&quot;raw&quot;&gt;&lt;/b&gt;'"></div>`);
     app.mount('#app');
     assert.deepEqual(Object.keys(window.refs), []);
 });
 
 test('HTML replacement and managed insertion unregister exactly their own refs and recover from duplicates', t => {
     const { app, root, window } = environment(t, `${capture}
-        <div id="target"></div><section b-html="$data.html"></section>`,
+        <div id="target"></div><section b-html.hydrate="trustedHTML($data.html)"></section>`,
     '({state:()=>({html:\'<b b-ref="html"></b>\'})})');
     app.mount(root);
     const old = window.refs.html;

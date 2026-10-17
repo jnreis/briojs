@@ -51,7 +51,7 @@
             Explicit URLSearchParams can repeat plain keys instead.</p>
         <button id="query-nested" b-on-click="$data.run('nested', 'query')" b-bind-disabled="$data.running !== ''">GET nested query</button>
         <button id="query-explicit" b-on-click="$data.run('explicit', 'query')" b-bind-disabled="$data.running !== ''">DELETE explicit keys</button>
-        <pre id="query-result" b-text.raw="$data.results.query"></pre>
+        <pre id="query-result" b-text="$data.results.query"></pre>
     </div>
 
     <div class="card">
@@ -64,7 +64,7 @@
         <button id="body-multipart" b-on-click="$data.run('multipartBody', 'body')" b-bind-disabled="$data.running !== ''">POST FormData</button>
         <button id="body-binary" b-on-click="$data.run('binaryBody', 'body')" b-bind-disabled="$data.running !== ''">PATCH binary slice</button>
         <button id="body-string" b-on-click="$data.run('stringBody', 'body')" b-bind-disabled="$data.running !== ''">POST raw string</button>
-        <pre id="body-result" b-text.raw="$data.results.body"></pre>
+        <pre id="body-result" b-text="$data.results.body"></pre>
     </div>
 
     <div class="card">
@@ -75,7 +75,7 @@
         <button id="parse-auto" b-on-click="$data.run('automatic', 'parse')" b-bind-disabled="$data.running !== ''">Compare media types</button>
         <button id="parse-empty" b-on-click="$data.run('empty', 'parse')" b-bind-disabled="$data.running !== ''">Compare empty responses</button>
         <button id="parse-malformed" b-on-click="$data.run('malformed', 'parse')" b-bind-disabled="$data.running !== ''">Malformed JSON</button>
-        <pre id="parse-result" b-text.raw="$data.results.parse"></pre>
+        <pre id="parse-result" b-text="$data.results.parse"></pre>
     </div>
 
     <div class="card">
@@ -85,7 +85,7 @@
             SyntaxError, even for 204.</p>
         <button id="parse-explicit" b-on-click="$data.run('explicitParsers', 'explicit')" b-bind-disabled="$data.running !== ''">Compare all five parsers</button>
         <button id="parse-strict-empty" b-on-click="$data.run('strictEmpty', 'explicit')" b-bind-disabled="$data.running !== ''">Explicit JSON on 204</button>
-        <pre id="explicit-result" b-text.raw="$data.results.explicit"></pre>
+        <pre id="explicit-result" b-text="$data.results.explicit"></pre>
     </div>
 
     <div class="card">
@@ -97,11 +97,12 @@
         <button id="error-query" b-on-click="$data.run('invalidQuery', 'errors')" b-bind-disabled="$data.running !== ''">Reject circular query</button>
         <button id="request-slow" b-on-click="$data.run('slow', 'errors')" b-bind-disabled="$data.running !== ''">Start slow request</button>
         <button id="request-cancel" b-on-click="$data.cancel()" b-bind-disabled="$data.running !== 'slow'">Cancel request</button>
-        <pre id="errors-result" b-text.raw="$data.results.errors"></pre>
+        <pre id="errors-result" b-text="$data.results.errors"></pre>
     </div>
 
     <script src="/tests/source-viewer.js"></script>
     <script src="/dist/brio.min.js"></script>
+    <script src="/dist/brio.http.min.js"></script>
     <script>
         window.addEventListener('DOMContentLoaded', () => {
             const endpoint = name => '/__brio_http__/' + name;

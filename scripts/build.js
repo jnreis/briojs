@@ -14,6 +14,10 @@ await build({
                 'persistence-entry': 'src/persistence-entry.ts',
                 'router-entry': 'src/router-entry.ts',
                 'devtools-entry': 'src/devtools-entry.ts',
+                'http-entry': 'src/http-entry.ts',
+                'forms-entry': 'src/forms-entry.ts',
+                'step-entry': 'src/step-entry.ts',
+                'money-mask-entry': 'src/money-mask-entry.ts',
             },
             formats: ['es'],
             fileName: (_format, entryName) => `${entryName}.js`,
@@ -57,7 +61,7 @@ const sharedRuntimeModules = new Set([
     resolve('src/reactivity/effect.ts'),
     resolve('src/core/scope.ts'),
 ]);
-for (const plugin of ['router', 'persistence']) {
+for (const plugin of ['router', 'persistence', 'http', 'forms', 'step', 'money-mask']) {
     await build({
         publicDir: false,
         plugins: [{
@@ -73,7 +77,7 @@ for (const plugin of ['router', 'persistence']) {
             emptyOutDir: false,
             lib: {
                 entry: `src/browser-${plugin}.ts`,
-                name: `brio${plugin}`,
+                name: `brio${plugin.replaceAll('-', '')}`,
                 formats: ['iife'],
                 fileName: () => `brio.${plugin}.min.js`,
             },

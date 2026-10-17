@@ -10,7 +10,7 @@ class LocalResources extends ResourceLoader {
     fetch(url) {
         const path = new URL(url).pathname;
         if (path === '/tests/source-viewer.js' || path === '/tests/source-viewer.css' ||
-            path === '/dist/brio.min.js')
+            /^\/dist\/brio(?:\.(?:http|forms|step|money-mask))?\.min\.js$/.test(path))
             return Promise.resolve(readFileSync(new URL(`..${path}`, import.meta.url)));
         throw new Error(`Unexpected source-viewer test resource: ${url}`);
     }
@@ -36,6 +36,24 @@ async function page(t, path) {
     assert.deepEqual(failures, []);
     return dom.window;
 }
+
+test('mask manual page demonstrates Unicode tokens, escapes, custom functions and optional money', async t => {
+    const window = await page(t, './directives/mask.html');
+    const { document } = window;
+    const enter = (id, value) => {
+        const input = document.getElementById(id);
+        input.value = value;
+        input.dispatchEvent(new window.Event('input', { bubbles: true }));
+        return input.value;
+    };
+    assert.equal(enter('unicode', 'é中١２Ж7😀'), 'é中-١２-Ж7-😀');
+    assert.equal(enter('escaped', '12'), 'A12');
+    assert.equal(enter('uppercase', 'Brio'), 'BRIO');
+    assert.equal(enter('money', '123456'), '1,234.56');
+    assert.equal(enter('money-options', '123456'), '1.234,56');
+    document.querySelector('button').click();
+    assert.equal(document.getElementById('money-options').value, '1 234,56');
+});
 
 test('validation manual page uses app methods, numeric age bounds and clears stale errors', async t => {
     const window = await page(t, './methods/validate.html');

@@ -182,7 +182,7 @@ test('selector targets later in hydration wait for component rendering and rejec
 test('later selector targets hydrate safely during managed insertion and reactive HTML replacement', t => {
     for (const mode of ['insert', 'html', 'template']) {
         const { app, root } = environment(t,
-            `<section id="container"${mode === 'html' ? ' b-html="$data.html"' : ''}></section>`,
+            `<section id="container"${mode === 'html' ? ' b-html.hydrate="trustedHTML($data.html)"' : ''}></section>`,
             `({state:()=>({html:''}),components:{'ref-card':{template:'<i>component</i>'}}})`);
         app.mount(root);
         const content = `<input b-teleport="['#host','append']"><ref-card id="host"></ref-card>`;
@@ -358,7 +358,7 @@ test('managed target removal and HTML replacement preserve foreign source-owned 
     for (const mode of ['insert', 'html']) {
         const { app, root, window } = environment(t, `${capture}
             <button b-ref="field" b-teleport="[$ref.target,'append']" on-click="$data.count++">live</button>
-            <section id="container"${mode === 'html' ? ' b-html="$data.html"' : ''}></section>`,
+            <section id="container"${mode === 'html' ? ' b-html.hydrate="trustedHTML($data.html)"' : ''}></section>`,
         `({count:0,html:'<aside b-ref="target"></aside>'})`);
         app.mount(root);
         let handle;

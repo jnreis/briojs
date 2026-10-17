@@ -21,10 +21,11 @@ root markup are available. Bundle paths are application deployment paths,
 not automatically available `/dist/` URLs.
 
 The browser global contains `createApp`, `state`, `signal`, `computed`, `effect`,
-`batch`, `createScope`, `onCleanup`, `getCurrentScope`, `createStepEngine`,
-`http`, `HttpError`, `validate`, and `trustedHTML`. Load optional `brio.router.min.js`
-and `brio.persistence.min.js` after the core to add
-`createRouter` and `persist` respectively. Validation needs no extra script. These scripts share
+`batch`, `createScope`, `onCleanup`, `getCurrentScope`, and `trustedHTML`.
+All plugins are optional: load `brio.router.min.js`, `brio.persistence.min.js`,
+`brio.http.min.js`, `brio.forms.min.js`, `brio.step.min.js`, or
+`brio.money-mask.min.js` after the core as needed. They add createRouter, persist,
+http/HttpError, validate, createStepEngine, or moneyMask respectively. These scripts share
 the core runtime and extend its global; they do not emit another ready event.
 Bootstrap after all needed scripts load, not at the core's ready event alone.
 The development bundle also contains
@@ -38,6 +39,8 @@ import { createApp, trustedHTML, createStepEngine, validate, http } from 'briojs
 import { state, signal, computed, effect, batch, createScope, onCleanup } from 'briojs/reactivity';
 import { persist } from 'briojs/persistence';
 import { createRouter } from 'briojs/router';
+import { moneyMask } from 'briojs/money-mask';
+// Dedicated briojs/http, briojs/forms, and briojs/step entries are also available.
 // Development only; import before creating apps:
 import { devtoolsPanel } from 'briojs/devtools';
 ```
@@ -93,7 +96,6 @@ There is no `with`, implicit state-name resolution, or sandbox.
 | `$provided.name` | Live subtree value from the nearest provider of that name. |
 | `trustedHTML` | Explicit HTML trust assertion, not a sanitizer. |
 | `onCleanup` | Script cleanup helper; use synchronously in the active scope. |
-| `money` | Mask-specific formatting descriptor helper. |
 
 The context is also accessible as `$context`, especially in contextual scripts.
 Helpers not supplied by the current context are undefined.
@@ -189,7 +191,7 @@ Escape HTML-significant characters in literal text/attribute values.
 
 | Directive | Contract |
 | --- | --- |
-| `b-text="expr"` | Sets text content with one-pass `${...}` interpolation in the evaluated result; tags remain literal. `.raw` skips interpolation. |
+| `b-text="expr"` | Sets literal text; returned tags and `${...}` are never interpreted. |
 | `b-provide="{ name: expression }"` | Supplies live read-only names through `$provided` on this element and its subtree. |
 | `b-bind-href="expr"` | Binds a DOM property when available, otherwise an attribute. `null`, `undefined`, and `false` remove attributes. |
 | `b-bind-class="expr"` | Accepts strings, arrays, or class-name/boolean objects. |
@@ -199,7 +201,7 @@ Escape HTML-significant characters in literal text/attribute values.
 | `b-if`, `b-else-if`, `b-else` | Adjacent first-match branches; whitespace/comments can separate them. Default dehydrates inactive branches; `.hide` preserves in DOM, `.detach` preserves outside DOM. |
 | `b-for="item, index in $data.items"` | Arrays, iterables, objects, or nonnegative integers; values live in `$for`. |
 | `b-key="$for.item.id"` | Stable string/number identity; duplicate keys throw. Index is the default key. |
-| `b-html="trustedHTML($data.markup)"` | Replaces and hydrates children; `.raw` only inserts parsed HTML without Brio hydration. Always treat hydrated content as executable authored markup. |
+| `b-html="$data.markup"` | Inserts markup without Brio activation. `b-html.hydrate="trustedHTML($data.markup)"` explicitly activates executable authored templates with owned cleanup. |
 | `b-ignore` | Skips hydration of the element and descendants. |
 | `b-script` | Only on a script element; see required writing style below. |
 | `b-effect="$data.observe($data.count)"` | Reactive expression, not a block of event-style statements. Avoid feedback writes. |
@@ -292,9 +294,8 @@ Events support `.prevent`, `.stop`, `.self`, `.outside`, `.window`, `.document`,
 Event debounce/throttle is fixed at 150ms; do not invent `.debounce.500`.
 Do not combine passive listeners with preventDefault.
 Model modifiers: `.lazy` (change), `.trim`, `.number` (parseFloat, retaining
-non-numeric text). Text inputs and textareas preserve strings by default; do
-not use `b-model.raw`, which is not supported. The `.raw` modifiers on `b-text`
-and `b-html` control content hydration, not model value conversion.
+non-numeric text). Text inputs and textareas preserve strings by default.
+`b-text` is literal by default; `b-html.hydrate` opts into template activation.
 Do not assume checkbox/radio value coercion beyond current
 model behavior; test the form's exact value types.
 
@@ -323,11 +324,21 @@ measurements throw. Mutation debounce accumulates records. All options are
 read once at hydration, invalid settings throw, and cleanup cancels pending
 callbacks. This b-options API applies only to observer directives.
 
-Masks: `b-mask="'##/##/####'"`, or
-`b-mask="money({ thousands: ',', decimal: '.', precision: 2 })"`, or
-`b-mask.money="{ precision: 2 }"`. Money uses fixed-precision minor units;
-`123456` formats to `1,234.56`. Options may be reactive. Do not assume a masked
-`b-model` holds a numeric currency value; normalize it explicitly.
+Masks: `b-mask="'##/##/####'"` or `b-mask="$data.formatter"`.
+Tokens are Unicode-aware: `*` any code point, `A` letters/decimal digits, `a` letters,
+`#` decimal digits. `9` is literal. Backslash escapes tokens; double it inside a JS
+string expression. Patterns process code points, not grapheme clusters.
+Formatters synchronously accept `{ value, selectionStart, selectionEnd,
+selectionDirection, inputType }`, return a string or `{ value, selectionStart?,
+selectionEnd? }`; positions use native UTF-16 offsets. Without positions, clamp
+the existing selection. No registry or mask modifiers. Composition/model/cleanup
+are owned by Brio. Use pure formatters; reactive configuration re-evaluates.
+Optional `brio.money-mask.min.js` provides
+`b-mask="brio.moneyMask({ precision: 2 })"`; ESM imports moneyMask from
+briojs/money-mask and exposes the formatter through state. Money retains ASCII
+fixed-minor-unit entry: `123456` formats to `1,234.56`. Options may be reactive
+when passed to a factory in the expression. A masked
+model holds a formatted string, not a numeric currency value.
 
 Transitions: `b-transition="'fade'"` uses `fade-enter`, `fade-enter-active`,
 `fade-enter-to`, `fade-leave`, `fade-leave-active`, and `fade-leave-to`.
@@ -402,7 +413,7 @@ timers, and other external resources there.
   reactive values. Ordinary style text is reactive `${...}` text too; use simple
   references for authored selectors/structural changes. Expressions with nested
   braces are outside the simple text interpolator's grammar. `b-ignore` keeps
-  literal `${...}` text, while `b-text.raw` can bind full CSS without secondary
+  literal `${...}` text, while `b-text` can bind full CSS without secondary
   interpolation. CSS interpolation is trusted code, not sanitization.
 - CSS follows physical DOM: slots keep expression context but not CSS isolation;
   teleport can leave a scope, and unwrapped templates change the style's parent.
@@ -426,9 +437,17 @@ Signals and computed values use `.value`; effects run synchronously by default.
 dispose that scope. The app's state factory alone is not a scope.
 ESM also exports `resource(fetcher)` from `briojs` and `briojs/reactivity`,
 not the browser global. It starts fetching and exposes `data.value`,
-`loading.value`, `error.value`, and `refetch()`. It does not automatically abort
-requests, prevent stale responses, or block mounting. Display loading/errors
-and choose explicit cancellation/stale-result handling for concurrent work.
+`loading.value`, `error.value`, `refetch()`, and idempotent `dispose()`.
+The fetcher receives an AbortSignal; pass it to Fetch/cancellable work.
+New executions abort prior work; only the latest may publish, even if abort
+is ignored. Existing data remains during refresh/failure; refresh clears error.
+Failures are recorded in error.value, not rethrown by refetch. Synchronous
+fetcher reads establish reactive dependencies; reads after await do not.
+Owning-scope disposal aborts/stops the resource; outside a scope, call dispose
+explicitly. The app state factory is not an owner scope. Disposal clears loading,
+preserves settled data/error, and blocks late publication; later refetch rejects.
+Obsolete refetch promises still wait for their fetcher to settle. Display
+loading/errors. No caching, retries, timeouts, SSR, or mount blocking is provided.
 
 ## Managed insertion
 
@@ -508,24 +527,24 @@ cleans the failed insertion, but does not restore old content.
   all links must resolve, cycles are allowed, and mutations to input do nothing.
   No active/keep/back/origin fields, dynamic registration, history exposure, async
   guards/hooks, or completion state. Validate/await app work before navigation.
-  `keep` preserves the source's active flag, so multiple steps may be active.
 
 ## API boundaries
 
-No `newApp`, `newStepEngine`, app `$insert`, standalone `$parent`, implicit
-bare state names, Vue/React lifecycle hooks,
-Vue-style directive syntax, `$nextTick`, or `$refs` API.
+Use `createApp` and `createStepEngine`, `app.insert` or contextual `$insert`,
+explicit `$data` state access, `$data.$parent` ancestry, and `$ref` DOM references.
+Own integration resources with `onCleanup` inside a Brio scope.
 Low-level `hydrateRoot`/`hydrateNode` remain ESM-only; do not call them on
 `window.brio`. Prefer mount/insert for application development.
 
 ## Trust and verification
 
-Templates, `b-html`, and HTML insertion execute authored expressions/scripts.
+Templates, `b-html.hydrate`, and HTML insertion execute authored expressions/scripts.
 `trustedHTML` is a trust assertion, not sanitization or a security boundary;
-current `b-html` also accepts ordinary strings. Never bind untrusted HTML as
-executable templates. Use `b-text.raw` for user content: default `b-text`
-evaluates `${...}` embedded in returned strings. Both raw modifiers keep the
-source expression reactive; raw HTML is not sanitized. Strict CSP disallowing
+it is required by `b-html.hydrate`. Never bind untrusted HTML as executable
+templates. Use `b-text` for user content; returned values are always literal,
+including values returned by authored interpolation. Default `b-html` accepts
+strings or trusted values but does not activate Brio; it is not sanitized.
+Use trustedHTML('') to clear hydrated content. Strict CSP disallowing
 `unsafe-eval` is incompatible with runtime expression compilation.
 
 Before shipping: test the actual rendered app and console errors, form value

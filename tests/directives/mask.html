@@ -42,37 +42,57 @@
     </div>
 
     <div class="card">
-        <h3>3. Currency / Money Mask: b-mask.money / b-mask="'money'"</h3>
+        <h3>3. Optional Money Formatter: brio.moneyMask()</h3>
         <div class="field">
             <label>Type currency amount:</label>
-            <input type="text" b-mask.money placeholder="$0.00" b-model="$data.moneyVal">
+            <input id="money" type="text" b-mask="brio.moneyMask()" placeholder="$0.00" b-model="$data.moneyVal">
             <p>Model: ${$data.moneyVal}. Type 123456: expect 1,234.56.</p>
             <p>Delete or insert a digit in the middle, or delete a separator: the caret stays next to the edited digits. Repeat with a selected range and the custom separators below.</p>
         </div>
     </div>
 
     <div class="card">
-        <h3>4. Money Options via the v3 money(options) Helper</h3>
-        <input b-model="$data.euroVal" b-mask="money($data.options)" placeholder="1.234,56">
+        <h3>4. Reactive Formatter Options</h3>
+        <input id="money-options" b-model="$data.euroVal" b-mask="brio.moneyMask($data.options)" placeholder="1.234,56">
         <p>Model: ${$data.euroVal}. Type 123456: expect 1.234,56. This input also checks b-model before b-mask.</p>
         <button on-click="$data.options.thousands = $data.options.thousands === '.' ? ' ' : '.'">Toggle thousands separator</button>
     </div>
     <div class="card">
-        <h3>5. Options on b-mask.money</h3>
-        <input b-mask.money="{ thousands: ' ', decimal: ',', precision: 3 }" placeholder="123,456">
+        <h3>5. Configurable Money Formatters</h3>
+        <input b-mask="brio.moneyMask({ thousands: ' ', decimal: ',', precision: 3 })" placeholder="123,456">
         <p>Type 1234567: expect 1 234,567.</p>
-        <input b-mask.money="{ thousands: ',', precision: 0 }" placeholder="1,234">
+        <input b-mask="brio.moneyMask({ thousands: ',', precision: 0 })" placeholder="1,234">
         <p>Type 1234: expect 1,234 (no fractional digits).</p>
+    </div>
+
+    <div class="card">
+        <h3>6. Unicode Pattern Tokens and Escaping</h3>
+        <p>* accepts any code point (including emoji), A a Unicode letter or decimal digit,
+            a a Unicode letter, and # a Unicode decimal digit. 9 is literal.
+            Backslash escapes a token. Combining marks are separate code points.</p>
+        <label for="unicode">Try letters and digits from different scripts:</label>
+        <input id="unicode" b-mask="'aa-##-AA-*'" placeholder="Letters, digits, alphanumeric, any">
+        <label for="escaped">Literal A followed by two digits:</label>
+        <input id="escaped" b-mask="'\\A##'" placeholder="A12">
+    </div>
+
+    <div class="card">
+        <h3>7. Custom Function (No Registry or Plugin Required)</h3>
+        <p>The expression returns a synchronous formatter. Simple formatters return a string;
+            advanced formatters return a value and UTF-16 selection offsets.</p>
+        <input id="uppercase" b-mask="({ value }) => value.toUpperCase()" placeholder="Uppercase text">
     </div>
 
     <script src="/tests/source-viewer.js"></script>
     <script src="/dist/brio.min.js"></script>
+    <script src="/dist/brio.money-mask.min.js"></script>
     <script>
         window.addEventListener('DOMContentLoaded', () => {
             const app = brio.createApp();
             app.mount('body');
+            window.addEventListener('pagehide', () => app.dispose(), { once: true });
             console.log('mask.html hydrated successfully');
-        });
+        }, { once: true });
     </script>
 </body>
 </html>

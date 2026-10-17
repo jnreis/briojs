@@ -17,5 +17,5 @@ export type Resource<T> = {
     readonly loading: Signal<boolean>;
     readonly error: Signal<unknown | undefined>;
     refetch(): Promise<void>;
+    dispose(): void;
 };
-

@@ -178,8 +178,8 @@ Do not attribute later-version features to 1.1.5.
   lazy/trim/raw options. Unless `raw` is enabled, it attempts JSON typecasting,
   so numeric/boolean/null-looking strings need explicit compatibility handling.
 - Masks use app `masks` / `maskTokens` registries, string or function-driven
-  masks, and a built-in money formatter. The old callback receives a mask context,
-  not v4's `money(options)` descriptor. Default tokens are `#` (Unicode decimal
+  masks, and a built-in money formatter. The old callback's context differs from
+  v4's formatter-function contract. Default legacy tokens are `#` (Unicode decimal
   digit), `&` (Unicode letter), and `*` (Unicode letter/digit). Numeric quantifiers,
   `?`, `+`, and escapes are part of the old pattern parser.
 - `b-mask="money"` selects the registered formatter; decimal/thousands/precision

@@ -4,6 +4,9 @@
   <meta charset="utf-8">
   <title>Brio 1.1.5 migration: v4 example</title>
   <script src="/brio.min.js"></script>
+  <script src="/brio.forms.min.js"></script>
+  <script src="/brio.http.min.js"></script>
+  <script src="/brio.money-mask.min.js"></script>
 </head>
 <body>
   <p id="host">Host page outside the Brio root</p>
@@ -12,7 +15,7 @@
     <output id="count" b-text="$data.count"></output>
     <label>Quantity <input id="quantity" b-model.number="$data.quantity"></label>
     <output id="quantity-type" b-text="typeof $data.quantity"></output>
-    <label>Amount <input id="money" value="1234.56" b-mask="money()"></label>
+    <label>Amount <input id="money" value="1234.56" b-mask="brio.moneyMask()"></label>
     <button id="toggle" b-on-click="$data.visible = !$data.visible">Toggle</button>
     <section id="conditional" b-if="$data.visible" b-data="{ local: 0 }">
       <button b-on-click="$data.local++">Local</button>

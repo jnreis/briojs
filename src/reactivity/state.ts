@@ -74,7 +74,6 @@ export function state<T extends object>(target: T): T {
 
     const proxy = new Proxy(raw, {
         get(current, key, receiver) {
-            if (key === Symbol.for('brio.raw')) return current;
             track(current, key);
             const value = Reflect.get(current, key, receiver);
             const descriptor = Reflect.getOwnPropertyDescriptor(current, key);

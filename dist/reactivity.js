@@ -1,7 +1,7 @@
-import { e as effect } from "./effect-DGhE0oQi.js";
-import { b, h, d, f, o } from "./effect-DGhE0oQi.js";
-import { t as trigger, a as track, b as signal } from "./state-CLBlAcxj.js";
-import { s } from "./state-CLBlAcxj.js";
+import { e as effect, h as createScope, o as onDispose, b as batch } from "./effect-DGhE0oQi.js";
+import { d, f } from "./effect-DGhE0oQi.js";
+import { t as trigger, a as track, b as signal } from "./state-FLvgaPZh.js";
+import { s } from "./state-FLvgaPZh.js";
 import { persist } from "./persistence-entry.js";
 function computed(getter) {
   let dirty = true;
@@ -37,35 +37,64 @@ function resource(fetcher) {
   const data = signal(void 0);
   const loading = signal(true);
   const error = signal(void 0);
+  const scope = createScope();
+  let current;
+  onDispose(scope, () => {
+    const pending = current;
+    current = void 0;
+    pending == null ? void 0 : pending.abort();
+    loading.value = false;
+  });
   const run = async () => {
-    loading.value = true;
-    error.value = void 0;
+    if (scope.disposed) throw new Error("Cannot refetch a disposed Brio resource.");
+    const previous = current;
+    const controller = new AbortController();
+    current = controller;
+    previous == null ? void 0 : previous.abort();
+    if (scope.disposed || current !== controller) return;
+    batch(() => {
+      loading.value = true;
+      error.value = void 0;
+    });
+    if (scope.disposed || current !== controller) return;
+    let value;
+    let failure;
+    let failed = false;
     try {
-      data.value = await fetcher();
+      value = await fetcher(controller.signal);
     } catch (err) {
-      error.value = err;
-    } finally {
-      loading.value = false;
+      failed = true;
+      failure = err;
     }
+    if (scope.disposed || current !== controller) return;
+    current = void 0;
+    batch(() => {
+      if (failed) error.value = failure;
+      else data.value = value;
+      loading.value = false;
+    });
   };
-  effect(() => {
-    run();
+  scope.run(() => {
+    effect(() => {
+      void run();
+    });
   });
   return {
     data,
     loading,
     error,
-    refetch: run
+    refetch: run,
+    dispose: () => scope.dispose()
   };
 }
 export {
-  b as batch,
+  batch,
   computed,
-  h as createScope,
+  createScope,
   effect,
   d as getCurrentScope,
   f as onCleanup,
-  o as onDispose,
+  onDispose,
   persist,
   resource,
   signal,

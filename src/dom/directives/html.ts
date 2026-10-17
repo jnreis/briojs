@@ -4,7 +4,6 @@ import { createScope, onCleanup } from '../../core/scope';
 import type { Scope } from '../../core/scope';
 import { isTrustedHTML, getTrustedHTMLString } from '../types';
 import type { DomRuntime } from '../types';
-import { interpolateText } from '../interpolation';
 
 export function handleHtml(
     element: Element,
@@ -18,6 +17,8 @@ export function handleHtml(
     onCleanup(() => contentScope?.dispose());
     effect(() => {
         const html = evaluate(expression, context);
+        if (modifiers.hydrate && !isTrustedHTML(html))
+            throw new TypeError('b-html.hydrate requires a trustedHTML() value.');
         const htmlStr = isTrustedHTML(html)
             ? getTrustedHTMLString(html)
             : String(html ?? '');
@@ -26,7 +27,7 @@ export function handleHtml(
         const template = document.createElement('template');
         template.innerHTML = htmlStr;
         element.replaceChildren(template.content);
-        if (!modifiers.raw) {
+        if (modifiers.hydrate) {
             contentScope = createScope();
             contentScope.run(() => hydrateChildrenFn(element, context, runtime));
         }
@@ -36,12 +37,11 @@ export function handleHtml(
 export function handleText(
     element: Element,
     expression: string,
-    modifiers: Record<string, boolean>,
     context: Record<PropertyKey, any>,
 ): void {
     effect(() => {
         const value = evaluate(expression, context);
         const text = value === null || value === undefined ? '' : String(value);
-        element.textContent = modifiers.raw ? text : interpolateText(text, context);
+        element.textContent = text;
     });
 }

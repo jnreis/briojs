@@ -24,6 +24,17 @@ metadata on `main`, through commit `d868d43`.
 
 ### Changed
 
+- All browser plugins are opt-in builds: router, persistence, HTTP, forms,
+  step, and money-mask. Matching npm subpaths supplement tree-shakable main
+  exports. Pattern masks remain core and accept synchronous custom formatters.
+- Mask tokens use Unicode code points: `*` any, `A` letters/decimal digits,
+  `a` letters, `#` decimal digits. `9` is literal; backslash escapes tokens.
+  Money formatting/caret handling is an optional `moneyMask(options)` factory,
+  with no special modifier, injected helper, or registry.
+- Async resources pass per-execution AbortSignals, abort superseded work, and
+  publish only the latest result. Scoped or explicit disposal stops tracking,
+  aborts pending work, and prevents late publication/refetch; refresh retains
+  existing data and batches status changes.
 - HTTP uses recursive bracket queries, complete native Fetch body support,
   preserved caller headers, typed Fetch options and parser results, JSON/+json
   media-type parsing, and explicit empty-response semantics. Public `HttpError`
@@ -48,9 +59,9 @@ metadata on `main`, through commit `d868d43`.
   mode for the entire chain; preservation modes hydrate all branches once and
   keep inactive effects live. Conditions always evaluate in the parent context.
   Unmodified `b-if` retains destructive removal and fresh hydration.
-- `b-text` now hydrates interpolation in evaluated text, including state
-  references. Added `.raw` to `b-text` and `b-html` to skip content hydration
-  while retaining reactive source evaluation; use `b-text.raw` for user text.
+- `b-text` displays literal values without secondary interpolation. `b-html`
+  inserts inert markup by default; explicit `b-html.hydrate` requires a
+  `trustedHTML()` value and owns activated template cleanup.
 - Explicit `$context` binding for compiled expressions and contextual scripts.
 
 ### Added
@@ -64,8 +75,8 @@ metadata on `main`, through commit `d868d43`.
 - Observer-specific keyed `b-options`: intersection roots/margins/thresholds,
   mutation targets/subtree/filter/old-value settings, resize document/box
   selection, and numeric debounce delays. Debounced mutations retain all records.
-- Optional standalone router and persistence scripts sharing the browser core
-  runtime; HTTP, step, and `validate` are included in both core browser bundles.
+- Optional standalone plugin scripts share the browser core runtime rather than
+  embedding separate reactive engines.
 - Main npm entry exports for devtools, with explicit `enableDevtools()`
   activation and automatic activation retained by the devtools subpath.
 - Fixed named app stores through `createApp({ stores })`, `app.stores`, and
@@ -85,8 +96,8 @@ metadata on `main`, through commit `d868d43`.
   and their use when migrating legacy shared state.
 - Clarified that persistence must have an owned cleanup scope; an app state
   factory alone does not provide one.
-- Clarified that `trustedHTML` marks developer-authored markup, does not sanitize
-  HTML, and is not currently enforced as a requirement by `b-html`.
+- Clarified that `trustedHTML` asserts trust without sanitizing and is required
+  for explicit `b-html.hydrate`, not ordinary inert `b-html`.
 
 ## [4.0.0] - 2026-10-12 to 2026-10-13
 

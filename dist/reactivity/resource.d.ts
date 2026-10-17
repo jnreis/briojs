@@ -1,9 +1,4 @@
-import { Signal } from './types';
+import { Resource } from './types';
 
-export type Resource<T> = {
-    readonly data: Signal<T | undefined>;
-    readonly loading: Signal<boolean>;
-    readonly error: Signal<unknown | undefined>;
-    refetch(): Promise<void>;
-};
-export declare function resource<T>(fetcher: () => Promise<T>): Resource<T>;
+export type { Resource } from './types';
+export declare function resource<T>(fetcher: (signal: AbortSignal) => Promise<T>): Resource<T>;

@@ -13,7 +13,7 @@ its script URL to the actual served production bundle. During development use
 the development bundle instead, never both. The copies are ordinary application
 assets; installing the skill does not make their relative bundle URL resolve.
 Also serve the plugin scripts referenced by the chosen HTML: the multi-page
-recipe needs `brio.persistence.min.js`; validation is included in the core. The SPA needs
+recipe needs `brio.persistence.min.js` and `brio.forms.min.js`. The SPA needs
 `brio.router.min.js`. The widget needs only the core. Plugins load after the
 core and before bootstrap, with the same URLs for development.
 

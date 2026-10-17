@@ -9,6 +9,7 @@ function environment(t, bundle) {
     const dom = new JSDOM('<main></main><aside></aside>', { runScripts: 'outside-only' });
     t.after(() => dom.window.close());
     dom.window.eval(readFileSync(new URL(`../dist/${bundle}`, import.meta.url), 'utf8'));
+    dom.window.eval(readFileSync(new URL('../dist/brio.step.min.js', import.meta.url), 'utf8'));
     return {
         api: dom.window.brio, window: dom.window,
         realm: value => dom.window.JSON.parse(JSON.stringify(value)),

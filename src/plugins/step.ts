@@ -1,4 +1,4 @@
-import { track, trigger } from '../reactivity/state';
+import { signal } from '../reactivity/state';
 
 export type StepDefinition = { readonly next?: string };
 export type StepRecord = Readonly<Record<string, StepDefinition>>;
@@ -59,9 +59,10 @@ export function createStepEngine(options: StepOptions): StepEngine {
 
     let current = initial;
     const history: string[] = [];
-    const holder = {};
-    const notify = () => trigger(holder, 'navigation', 'set');
-    const observe = () => track(holder, 'navigation');
+    const revision = signal(0);
+    let version = 0;
+    const notify = () => { revision.value = ++version; };
+    const observe = () => { revision.value; };
     const go = (name: string): boolean => {
         if (!validName(name) || !links.has(name))
             throw new TypeError('Step go target must name a registered step.');

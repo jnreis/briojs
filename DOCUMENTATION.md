@@ -21,6 +21,10 @@ import { createApp } from 'briojs';
 import { state, effect, computed, batch } from 'briojs/reactivity';
 import { persist } from 'briojs/persistence';
 import { createRouter } from 'briojs/router';
+import { http, HttpError } from 'briojs/http';
+import { validate } from 'briojs/forms';
+import { createStepEngine } from 'briojs/step';
+import { moneyMask } from 'briojs/money-mask';
 ```
 
 The development tools are deliberately separate:
@@ -53,16 +57,20 @@ Load one of the standalone bundles, not both:
 
 Both expose `window.brio` with `createApp`, `state`, `signal`, `computed`,
 `effect`, `batch`, `createScope`, `onCleanup`, `getCurrentScope`,
-`createStepEngine`, `http`, `HttpError`, `validate`, and `trustedHTML`. Both dispatch the
+and `trustedHTML`. Both dispatch the
 `brio` ready event after publishing the core API.
 
-Router and persistence are optional browser scripts. Load only what you
+All plugins are optional browser scripts. Load only what you
 need, **after** the core and **before** application bootstrap:
 
 ```html
 <script src="/dist/brio.min.js"></script>
 <script src="/dist/brio.router.min.js"></script>      <!-- Adds brio.createRouter -->
 <script src="/dist/brio.persistence.min.js"></script> <!-- Adds brio.persist -->
+<script src="/dist/brio.http.min.js"></script>        <!-- Adds brio.http, brio.HttpError -->
+<script src="/dist/brio.forms.min.js"></script>       <!-- Adds brio.validate -->
+<script src="/dist/brio.step.min.js"></script>        <!-- Adds brio.createStepEngine -->
+<script src="/dist/brio.money-mask.min.js"></script>  <!-- Adds brio.moneyMask -->
 <script src="/app.js"></script>
 ```
 
@@ -70,8 +78,11 @@ The optional scripts extend the existing `window.brio`, use its reactive engine
 and cleanup scopes, and do not dispatch another `brio` ready event. For deferred
 loading, bootstrap after the needed scripts finish, not at the core's ready
 event. Loading a plugin before the core throws. The same scripts work with the
-development core. HTTP, step, and validation are included in both core bundles;
-`brio.validate(data, schema, customRules?)` needs no additional script.
+development core. No plugin above is included in either core bundle. Pattern
+masks and custom formatter support remain core; money formatting is optional.
+The npm main entry retains tree-shakable named exports for convenience; each
+plugin also has the dedicated subpath shown above. Importing a plugin has no
+implicit application registration in ESM.
 
 The development bundle additionally exposes `devtools`, `inspectDevtools`,
 `devtoolsPanel`, and `enableDevtools`, with tracking enabled automatically. The production bundle compiles out devtools tracking hooks and
@@ -119,7 +130,7 @@ app.mount('#counter');
 
 Expressions run in strict mode without `with` or implicit state-name resolution. Use `$data` for the nearest state object (app state, component setup state, or `b-data`), `$data.$parent` for parent state, and `$for` for loop values. Bare state names such as `count` are not supported and unresolved identifiers throw `ReferenceError`. JavaScript globals such as `Math`, `JSON`, and `setTimeout` resolve normally.
 
-The context is also available as `$context`. Named bindings include `$data`, `$el`, `$id`, `$ref`, `$for`, `$props`, `$emit`, `$insert`, `$stores`, `$provided`, and `trustedHTML`. Event handlers receive `$event`; observers supply `$mutations`, `$size`, or `$entry`. The mask directive supplies `money`, and contextual scripts supply `onCleanup`. Helpers not supplied in that context are `undefined`. Bindings are read-only references; mutate writable state properties (`$data.count++`), not the binding itself (`$data = {}`). `$ref` names are also read-only. Event statements can declare ordinary local variables.
+The context is also available as `$context`. Named bindings include `$data`, `$el`, `$id`, `$ref`, `$for`, `$props`, `$emit`, `$insert`, `$stores`, `$provided`, and `trustedHTML`. Event handlers receive `$event`; observers supply `$mutations`, `$size`, or `$entry`. Contextual scripts supply `onCleanup`. Bindings are read-only references; mutate writable state properties (`$data.count++`), not the binding itself (`$data = {}`). `$ref` names are also read-only. Event statements can declare ordinary local variables.
 
 Data and loop ancestry are independent: `$data.$parent.$parent` accesses a grandparent data scope, while `$for.$parent.$parent` accesses a grandparent loop. Ordinary elements and loops do not add data ancestry levels; data scopes do not add loop ancestry levels. Component setup state creates a data scope. App state and outermost loops have `$parent === undefined`. An empty `b-data` attribute inherits data without adding a scope; `b-data="{}"` creates one.
 
@@ -127,9 +138,9 @@ Data and loop ancestry are independent: `$data.$parent.$parent` accesses a grand
 
 `trustedHTML` remains public for JavaScript-authored values, for example
 `app.state.markup = brio.trustedHTML('<em>Authored content</em>')` with
-`b-html="$data.markup"`. Expressions also receive `trustedHTML` directly.
-It marks trust intent, not sanitization; managed insertion uses it internally,
-and `b-html` currently also accepts unmarked strings.
+`b-html.hydrate="$data.markup"`. Expressions also receive `trustedHTML` directly.
+It marks trust intent, not sanitization; managed insertion uses it internally.
+Default `b-html` also accepts unmarked strings but never activates Brio.
 
 ## Shared stores
 
@@ -224,7 +235,7 @@ unmodified `b-if` disposes them.
 
 ## HTML directives
 
-Directive arguments use hyphens (`b-on-click`, `b-bind-href`); options use chained dot modifiers (`on-click.prevent.stop`, `b-if.hide`, `b-mask.money`).
+Directive arguments use hyphens (`b-on-click`, `b-bind-href`); options use chained dot modifiers (`on-click.prevent.stop`, `b-if.hide`). `b-mask` takes a pattern or formatter, not modifiers.
 
 | Directive | Purpose |
 | --- | --- |
@@ -238,12 +249,12 @@ Directive arguments use hyphens (`b-on-click`, `b-bind-href`); options use chain
 | `b-model` | Two-way bind a text-like input, checkbox, radio, or select. |
 | `b-if`, `b-else-if`, `b-else` | Select the first matching branch. Default: remove/dehydrate inactive branches. `.hide`: preserve in the DOM; `.detach`: preserve outside the DOM. |
 | `b-script` | Execute a contextual function expression inside a marked script element. |
-| `b-mask` | Format an input with a pattern string or `money(options)`. |
+| `b-mask` | Format an input with a Unicode pattern string or synchronous formatter function. Optional `moneyMask(options)` returns a formatter. |
 | `b-transition` | Animate enter/leave with named CSS transition classes. |
 | `b-for` | Render an array, iterable, object, or integer. |
 | `b-key` | Give a repeated item a stable string or number identity. Used with `b-for`. |
 | `b-template` | Unwrap an element or instantiate a `<template>`'s contents in place, hydrating them without a rendered wrapper. |
-| `b-html` | Insert explicitly trusted HTML created by `trustedHTML()`. |
+| `b-html` | Insert markup without activating Brio; `.hydrate` activates templates explicitly marked with `trustedHTML()`. |
 | `b-ignore` | Skip hydration for this element and its descendants. |
 | `b-teleport` | Reactively move an element or template range relative to an Element/ref or document selector. Default placement: `after`. |
 | `b-effect` | Run a reactive expression for side effects in the element's owned scope. |
@@ -276,9 +287,8 @@ Directive arguments use hyphens (`b-on-click`, `b-bind-href`); options use chain
 `b-model` text inputs and textareas preserve strings by default, including
 whitespace and numeric-looking text. Supported model modifiers are `.lazy`
 (update on change instead of input), `.trim` (trim whitespace), and `.number`
-(`parseFloat`, keeping nonnumeric text unchanged). There is no `b-model.raw`
-modifier; `.raw` belongs to `b-text` and `b-html` and controls content hydration,
-not model value conversion.
+(`parseFloat`, keeping nonnumeric text unchanged). Text is literal by default;
+`b-html.hydrate` opts into content hydration.
 
 ### Local DOM references with `b-ref`
 
@@ -367,7 +377,7 @@ before using specialized methods.
   `b-data` boundary per branch; refs do not silently switch to the active branch.
 - Managed insertion and hydrated `b-html` inherit the destination's registry,
   subject to normal nested boundaries; removal/replacement unregisters owned
-  refs. `.raw` content is not registered. Unmount empties that mount's registry;
+  refs. Default `b-html` content is not registered. Unmount empties that mount's registry;
   remount creates a fresh one.
 
 Use native APIs without bypassing Brio ownership: do not replace hydrated
@@ -577,9 +587,9 @@ overwrite each other. Do not rely on attribute order to resolve competing owners
 | `b-ref` + `b-data` / `b-for` / component host | Normal data elements register in their data-local registry; rows register in their row-local registry. Component hosts register in the caller's applicable registry; component internals are private. |
 | Reused ref name across live conditional branches | Duplicate error, including inactive preserved branches and transition-overlapping branches. Use distinct names or explicit `b-data` boundaries. |
 | Multiple conditional directives on one element | An error. Use one of `b-if`, `b-else-if`, or `b-else` per branch; only the leading `b-if` accepts mode modifiers. |
-| `b-text` + `b-html` (including `.raw`) | Both replace the same children. Do not combine them. Existing child markup is replaced, not used as fallback or an additional hydrated template. |
+| `b-text` + `b-html` (including `.hydrate`) | Both replace the same children. Do not combine them. Existing child markup is replaced, not used as fallback or an additional hydrated template. |
 | `b-bind-*` targeting `textContent` / `innerHTML` or `b-effect` mutating children + hydrated content | Direct DOM writes are not a substitute for owned content replacement and may remove nodes without disposing their bindings. Use `b-text` / `b-html` instead; keep third-party-managed subtrees under `b-ignore`. |
-| `b-html` + child directives | Non-raw HTML hydrates each replacement in an owned content scope and disposes the previous one. `.raw` skips directives/interpolation in inserted content. In either mode, do not separately manage those same children with an outlet, insertion API, or another content writer. |
+| `b-html` + child directives | Default HTML leaves inserted directives/interpolation inert. `.hydrate` requires `trustedHTML()`, hydrates replacements in an owned content scope, and disposes the previous one. In either mode, do not separately manage those same children with an outlet, insertion API, or another content writer. |
 | `b-router-outlet` + content writers / authored child bindings | Give the outlet a dedicated empty container. It manages routed component children; other content owners conflict, and ordinary attributes after the outlet are not processed. Put unrelated behaviors on an outer wrapper. |
 | `b-model` + `b-bind-value` / `b-bind-checked` / manual value-writing effects | Competing state-to-control writers. Let `b-model` own the control's value/selection; ordinary event handlers may perform additional actions but should not establish another independent value binding. |
 | `b-model` + `b-mask` | Supported on text-like inputs/textareas: the mask formats input before model listeners read it. Masked values are formatted strings; `.number` uses `parseFloat`, not locale-aware money parsing. Initialize model values in the expected format; changing model state alone does not cause an input event or guarantee reformatting by the mask. |
@@ -672,16 +682,86 @@ Only `<script b-script>` is processed. Write an unassigned arrow expression so t
 
 Brio constructs a function factory with an explicit context parameter, then invokes the returned function with that context; scripts do not use `with`. Context includes `$data`, `$el`, `$id`, `$for`, and `$event` when supplied by the caller. Parent state is accessed with `$data.$parent`. `$el` is the script element. The same helpers are available as lexical bindings, so `() => { $data.ready = true; }` also works. Async arrows and destructured parameters are supported; errors are surfaced without retrying the script. Async initialization does not block mounting; initialize values used by the template before the first `await`. Register timer/listener cleanup synchronously through `$context.onCleanup`.
 
-### Money masks
+### Input masks
 
 ```html
-<input b-mask="money({ thousands: '.', decimal: ',', precision: 2 })">
-<input b-mask.money="{ thousands: ' ', decimal: ',', precision: 3 }">
+<input b-mask="'(###) ###-####'">
+<input b-mask="'aa-##-AA-*'">
+<!-- Two JS backslashes produce a single pattern escape: literal A -->
+<input b-mask="'\\A##'">
+<input b-mask="({ value }) => value.toUpperCase()">
 ```
 
-Options default to `thousands: ','`, `decimal: '.'`, `precision: 2`. Precision is an integer from 0 to 100. Digits are interpreted as fixed-precision minor units: `123456` becomes `1.234,56` in the first example. Options may reference reactive state and are forwarded to the formatter. `b-mask.money` without an expression and `b-mask="'money'"` use defaults. Pattern masks use expressions such as `b-mask="'(###) ###-####'"`.
+| Token | Accepted Unicode code point |
+|---|---|
+| `*` | Any code point, including emoji |
+| `A` | Letter or decimal digit: `[\p{L}\p{Nd}]` |
+| `a` | Letter: `\p{L}` |
+| `#` | Decimal digit: `\p{Nd}` |
 
-Masks preserve the focused input's caret and selection when formatting changes its value. Pattern deletions snap to the preceding editable character rather than a separator; money masks anchor the caret to the digits to its right so grouping and zero padding do not send it to the end.
+Other characters, including `9`, are literals. Backslash escapes the next code
+point; escape a backslash to include it literally. A trailing escape is an error.
+Tokens skip nonmatching input; literals are inserted and consume matching input
+when present. Matching uses code points, not grapheme clusters: combining marks
+do not independently match `a`/`A`, and emoji sequences can span several `*`
+tokens. Native input restrictions still apply.
+
+The expression can instead evaluate to a synchronous `MaskFormatter`:
+
+```ts
+type MaskContext = {
+  value: string;
+  selectionStart: number | null;
+  selectionEnd: number | null;
+  selectionDirection: 'forward' | 'backward' | 'none' | null;
+  inputType: string | undefined;
+};
+type MaskResult = string | {
+  value: string;
+  selectionStart?: number;
+  selectionEnd?: number;
+};
+type MaskFormatter = (context: MaskContext) => MaskResult;
+```
+
+For example `b-mask="$data.formatter"` or
+`b-mask="$data.createFormatter($data.options)"`. No registry, string-name lookup,
+`$mask` injection, or money-specific modifier is involved. The expression and
+synchronous reactive reads made while initially applying the formatter are
+tracked. Prefer pure formatters; avoid mutations of reactive state in them.
+Configuration changes reapply the mask. Formatters return a string or an
+object with a string value; promises and malformed results throw. Explicit
+selection positions must be integer UTF-16 offsets within the formatted string.
+Without positions, the existing selection is preserved and clamped. Patterns
+map selection to editable characters; money anchors it to digits on the right.
+Brio owns composition handling, input events, model synchronization, and cleanup.
+
+### Optional money formatter
+
+```html
+<script src="/dist/brio.min.js"></script>
+<script src="/dist/brio.money-mask.min.js"></script>
+<input b-mask="brio.moneyMask({ thousands: '.', decimal: ',', precision: 2 })">
+```
+
+```js
+import { moneyMask } from 'briojs/money-mask';
+const app = createApp({
+  state: () => ({ amount: '', amountMask: moneyMask({ precision: 2 }) }),
+});
+```
+
+```html
+<input b-model="$data.amount" b-mask="$data.amountMask">
+```
+
+Options default to `thousands: ','`, `decimal: '.'`, `precision: 2`.
+Precision is an integer from 0 to 100. Money intentionally retains ASCII-digit,
+fixed-minor-unit entry: `123456` becomes `1,234.56`. It is not a locale-aware
+number parser or Unicode digit converter. Options are copied at factory time;
+use `b-mask="brio.moneyMask($data.options)"` to rebuild reactively.
+npm exports the formatter types
+from both `briojs` and `briojs/money-mask`.
 
 ### CSS transitions
 
@@ -897,7 +977,7 @@ structural CSS when needed; prefer simple references such as `${$id.style}` or
 `${$data.selector}` rather than expressions with nested braces. Brio does not
 escape/sanitize interpolated CSS. Do not insert untrusted values into CSS or
 executable templates. To keep `${...}` literal, put `b-ignore` on the style
-element. `b-text.raw` is also available when explicitly binding complete CSS
+element. `b-text` is also available when explicitly binding complete CSS
 text without secondary interpolation.
 
 ### Native behavior and lifetime
@@ -1014,9 +1094,63 @@ scope.dispose(); // Stops effects and nested scopes created in the scope.
 
 Effects run synchronously by default. Explicit batches are synchronous too; there is no hidden next-tick scheduler.
 
+### Async resources
+
+`resource(fetcher)` is an ESM utility exported from `briojs` and
+`briojs/reactivity`, not the browser global. It starts immediately and tracks
+reactive dependencies read synchronously by the fetcher (before its first await).
+It does not block mounting or provide server rendering.
+
+```js
+import { createScope, resource, signal } from 'briojs/reactivity';
+
+const scope = createScope();
+const query = signal('Brio');
+const results = scope.run(() => resource(async signal => {
+  const url = '/api/search?q=' + encodeURIComponent(query.value);
+  const response = await fetch(url, { signal });
+  if (!response.ok) throw new Error(`Search failed: ${response.status}`);
+  return response.json();
+}));
+
+// Bind results.data.value, results.loading.value, and results.error.value.
+query.value = 'HTML'; // Aborts the previous execution and starts a new one.
+await results.refetch(); // Explicit refresh using the current query.
+scope.dispose(); // Stops dependency tracking and aborts pending work.
+```
+
+- The fetcher receives a fresh `AbortSignal` on every execution. Existing
+  zero-argument fetchers still work.
+- Starting a new execution aborts the previous one. Only the latest execution
+  may publish data, error, or completion, even if a fetcher ignores cancellation.
+  An obsolete `refetch()` promise still waits for its own fetcher to settle;
+  aborting does not forcibly terminate arbitrary asynchronous work.
+- Refreshing retains existing data, clears the previous error, and sets loading
+  true. A latest successful execution replaces data (including with undefined).
+  A latest failure retains data, records the original error, and clears loading.
+  Related status changes are batched for coherent reactive notifications.
+- Fetcher failures, including synchronous throws, are recorded in `error.value`;
+  `refetch()` resolves after recording them, rather than rethrowing them.
+  Render errors visibly. Aborted superseded/disposed executions do not publish
+  errors; other fetcher errors are not silently discarded.
+- A resource belongs to the scope active at construction. Component setup,
+  scoped plugins, or an explicit `scope.run()` can own it; the app's state factory
+  alone does not provide an owner scope.
+- Standalone resources work without an active scope, but must be explicitly
+  disposed with `results.dispose()`. Disposal is idempotent, stops dependency
+  tracking, aborts pending work, sets loading false, and preserves settled
+  data/error. No late completion publishes after disposal. Subsequent
+  `refetch()` calls reject with a disposed-resource error.
+
+The utility does not cache, deduplicate, retry, or impose timeouts. Actual
+cancellation requires the fetcher to pass its signal to a cancellable operation.
+Signals expose mutable values; application code should treat resource outputs
+as read-only and perform refreshes through `refetch()`.
+
 ## Step navigation
 
-`createStepEngine({ initial, steps })` is a small synchronous navigation engine
+The optional `briojs/step` entry (browser: `brio.step.min.js`) provides
+`createStepEngine({ initial, steps })`, a small synchronous navigation engine
 with **exactly one current step** and history-based Back. It owns its reactive
 state: definitions are configuration, not a record of mutable active flags.
 
@@ -1098,8 +1232,9 @@ loading, errors, and competing requests in that application workflow.
 
 ## HTTP
 
-Use `brio.http` and `brio.HttpError` in browser scripts, or import `http` and
-`HttpError` from `briojs`. HTTP is not an automatic `$http` expression helper:
+Load `brio.http.min.js` after the core for `brio.http` and `brio.HttpError`,
+or import `http` and `HttpError` from `briojs/http` (also exported by `briojs`).
+HTTP is not an automatic `$http` expression helper:
 expose application methods through `$data` or component setup.
 
 ```js
@@ -1241,25 +1376,27 @@ Objects and arrays are reactive directly. Primitive values are returned as signa
 
 Directive expressions are ordinary strict-mode JavaScript compiled and cached at runtime with `new Function`, without `with`. They are authored application code, **not a sandbox**; the approach is incompatible with a strict CSP that disallows `unsafe-eval`. Never render untrusted content as a Brio template or directive expression.
 
-`b-text` writes text, not HTML, and expands Brio `${...}` interpolation in the
-evaluated text by default, including strings returned by state references.
-Both `b-text` and `b-html` hydrate their evaluated content once; interpolation
-results are not recursively compiled. Use `.raw` to skip content hydration:
+`b-text` evaluates its source expression and writes the result as literal text.
+Tags and `${...}` inside returned values are never interpreted. Authored HTML
+interpolation still evaluates once; its returned values also remain literal.
+`b-html` parses markup without activating Brio directives, interpolation, or
+contextual scripts. Both sources remain reactive:
 
 ```html
-<p b-text="$data.authoredText"></p>
-<p b-text.raw="$data.userText"></p>
-<div b-html.raw="$data.staticMarkup"></div>
+<p b-text="$data.userText"></p>
+<p>${$data.userText}</p>
+<div b-html="$data.staticMarkup"></div>
 ```
 
-`.raw` does not disable evaluation or reactivity of the directive's value
-expression. `b-text.raw` keeps tags and `${...}` literal; `b-html.raw` parses
-HTML but does not hydrate directives, interpolation, or contextual scripts.
-Raw HTML is not sanitization: HTML attributes and other browser behavior can
-still be dangerous. Use **`b-text.raw` for untrusted/user-provided text**, since
-ordinary `b-text` now evaluates interpolation embedded in that text.
+Use **`b-text` for untrusted/user-provided text**. Inert HTML is not sanitized:
+HTML attributes and other browser behavior can still be dangerous.
 
-Use an explicit trusted value for `b-html` (the current implementation also accepts ordinary strings; the helper does not enforce sanitization):
+To activate a dynamic Brio template, explicitly use `b-html.hydrate` with a
+`trustedHTML()` value. Ordinary strings, null, and undefined are rejected in this
+mode. Use `trustedHTML('')` to clear an active template. Each replacement
+disposes previous effects, listeners, refs, and owned resources before hydrating
+the new content. A value without the trust marker is rejected before replacing
+existing content. Authored `b-template` and managed insertion are unchanged.
 
 ```js
 import { trustedHTML } from 'briojs';
@@ -1268,10 +1405,12 @@ createApp({ state: () => ({ content: '<em>Trusted</em>' }) }).mount('#content');
 ```
 
 ```html
-<div id="content" b-html="trustedHTML($data.content)"></div>
+<div id="content" b-html.hydrate="trustedHTML($data.content)"></div>
 ```
 
-Only call `trustedHTML()` with content your application has sanitized or authored.
+Only call `trustedHTML()` with templates you trust as application code. It is a
+trust assertion, not sanitization or a security boundary. Sanitizing ordinary
+HTML does not necessarily make it safe to execute as a Brio template.
 
 ## Devtools
 
@@ -1361,7 +1500,7 @@ Framework SSR and hydration are not part of this release. Brio enhances existing
 
 ## Package and migration
 
-Version 4 is not API-compatible with version 3. Replace `newApp()` with `createApp()`, `$state` with app state or the `state()` import, `$effect` with `effect()`, and the previous directives with the table above. Router, persistence, and devtools are first-party package subpaths. Review all templates: state access requires `$data` or `$data.$parent`, loop values require `$for` (outer loop values use `$for.$parent`), arguments use hyphens and modifiers use dots, expressions are explicitly trusted strict-mode JavaScript, and `b-html` requires `trustedHTML()` (`$insert` trusts authored markup automatically). Migrate `$parent.$parent.$data` to `$data.$parent.$parent`.
+Version 4 is not API-compatible with version 3. Replace `newApp()` with `createApp()`, `$state` with app state or the `state()` import, `$effect` with `effect()`, and the previous directives with the table above. Router, persistence, and devtools are first-party package subpaths. Review all templates: state access requires `$data` or `$data.$parent`, loop values require `$for` (outer loop values use `$for.$parent`), arguments use hyphens and modifiers use dots, expressions are explicitly trusted strict-mode JavaScript, and `b-html.hydrate` requires `trustedHTML()` (`$insert` trusts authored markup automatically). Default `b-html` is inert and `b-text` is literal. Migrate `$parent.$parent.$data` to `$data.$parent.$parent`.
 
 The package exports:
 

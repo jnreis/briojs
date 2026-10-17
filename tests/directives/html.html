@@ -21,27 +21,30 @@
 }">
 
     <h1>b-html & b-text Directive Manual Tests</h1>
-    <p>Both directives hydrate authored content by default. Text keeps tags literal; .raw skips content hydration.</p>
+    <p>b-text displays literal values. b-html inserts inert markup.
+        b-html.hydrate explicitly activates trusted Brio templates.</p>
 
     <!-- Test 1: b-html -->
     <div class="card">
         <h3>1. b-html Directive</h3>
         <button on-click="$data.rawMarkup = '<em>Updated at ' + new Date().toLocaleTimeString() + '</em> with <mark>highlight</mark>'">Update HTML</button>
-        <div id="hydrated-html" b-html="$data.escapedText" class="box"></div>
-        <p>Raw HTML parses tags but leaves interpolation untouched:</p>
-        <div id="raw-html" b-html.raw="$data.escapedText" class="box"></div>
+        <p>Explicitly hydrate an application-authored template:</p>
+        <div id="hydrated-html" b-html.hydrate="trustedHTML($data.escapedText)" class="box"></div>
+        <p>Default HTML parses tags but leaves interpolation untouched:</p>
+        <div id="raw-html" b-html="$data.escapedText" class="box"></div>
         <div b-html="$data.rawMarkup" class="box"></div>
     </div>
 
     <!-- Test 2: b-text -->
     <div class="card">
         <h3>2. b-text Directive</h3>
-        <p>Text directive guarantees tags are safely escaped:</p>
-        <div id="hydrated-text" b-text="$data.escapedText" class="box"></div>
-        <p>Raw text leaves interpolation and tags literal:</p>
-        <div id="raw-text" b-text.raw="$data.escapedText" class="box"></div>
+        <p>Text leaves interpolation and tags literal:</p>
+        <div id="literal-text" b-text="$data.escapedText" class="box"></div>
+        <p>Authored interpolation evaluates once; returned text remains literal:</p>
+        <div id="authored-text" class="box">${$data.escapedText}</div>
         <p>Dynamic string expression:</p>
         <div b-text="'Current count: ' + $data.counter" class="box"></div>
+        <div class="box">Current count: ${$data.counter}</div>
         <button on-click="$data.counter++">+1</button>
     </div>
 
@@ -51,8 +54,9 @@
         window.addEventListener('DOMContentLoaded', () => {
             const app = brio.createApp();
             app.mount('body');
+            window.addEventListener('pagehide', () => app.dispose(), { once: true });
             console.log('html.html hydrated successfully');
-        });
+        }, { once: true });
     </script>
 </body>
 </html>

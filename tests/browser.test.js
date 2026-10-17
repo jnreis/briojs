@@ -9,10 +9,17 @@ const production = readFileSync(new URL('../dist/brio.min.js', import.meta.url),
 const development = readFileSync(new URL('../dist/brio.dev.min.js', import.meta.url), 'utf8');
 const coreAPI = [
     'createApp', 'state', 'signal', 'computed', 'effect', 'batch',
-    'createScope', 'onCleanup', 'getCurrentScope', 'createStepEngine',
-    'http', 'HttpError', 'validate', 'trustedHTML',
+    'createScope', 'onCleanup', 'getCurrentScope', 'trustedHTML',
 ];
 const developmentAPI = ['devtools', 'inspectDevtools', 'devtoolsPanel', 'enableDevtools'];
+const pluginAPI = {
+    router: ['createRouter'],
+    persistence: ['persist'],
+    http: ['http', 'HttpError'],
+    forms: ['validate'],
+    step: ['createStepEngine'],
+    'money-mask': ['moneyMask'],
+};
 
 for (const [name, bundle, dev] of [
     ['production', production, false],
@@ -37,11 +44,6 @@ for (const [name, bundle, dev] of [
         const brio = window.brio;
         assert.equal(readyEvents, 1);
         assert.deepEqual(Object.keys(brio).sort(), [...coreAPI, ...(dev ? developmentAPI : [])].sort());
-        assert.equal(brio.validate({ age: 18 }, { age: [{ name: 'min', value: 18 }] }), true);
-        const invalid = brio.validate({ email: 'invalid' }, { email: [{ name: 'email' }] });
-        assert.equal(invalid.email.length, 1);
-        assert.equal(brio.validate({ age: 20 }, { age: [{ name: 'even' }] },
-            { even: value => value % 2 === 0 }), true);
         window.snapshotReads = 0;
         const initialState = window.eval('({ count: 0, get inspected() { window.snapshotReads++; return 1; } })');
         const app = brio.createApp({ state: () => initialState });
@@ -117,7 +119,6 @@ test('production bundle excludes the inspector and tracking code; ESM tooling st
     }
     assert.ok(Buffer.byteLength(production) < Buffer.byteLength(development));
     assert.equal(typeof esm.devtools.getSnapshot, 'function');
-    assert.equal('newStepEngine' in esm, false);
     const engine = esm.createStepEngine({
         initial: 'intro',
         steps: { intro: { next: 'details' }, details: {} },
@@ -150,12 +151,26 @@ for (const [name, bundle] of [['production', production], ['development', develo
         });
         window.eval(bundle);
         const core = window.brio;
-        for (const key of ['persist', 'createRouter']) assert.equal(core[key], undefined);
-        for (const plugin of ['router', 'persistence']) {
+        for (const key of ['persist', 'createRouter', 'http', 'HttpError', 'validate', 'createStepEngine', 'moneyMask'])
+            assert.equal(core[key], undefined);
+        for (const plugin of ['router', 'persistence', 'http', 'forms', 'step', 'money-mask']) {
             const source = readFileSync(new URL(`../dist/brio.${plugin}.min.js`, import.meta.url), 'utf8');
             window.eval(source);
         }
         assert.equal(window.brio, core);
+        assert.equal(typeof core.http.get, 'function');
+        assert.equal(typeof core.HttpError, 'function');
+        assert.equal(core.validate({ age: 18 }, { age: [{ name: 'min', value: 18 }] }), true);
+        assert.equal(core.validate({ age: 20 }, { age: [{ name: 'even' }] },
+            { even: value => value % 2 === 0 }), true);
+        assert.equal(typeof core.moneyMask(), 'function');
+        const wizard = core.createStepEngine(window.eval('({initial:"a",steps:{a:{next:"b"},b:{}}})'));
+        const steps = [];
+        const stopSteps = core.effect(() => steps.push(wizard.current));
+        wizard.next();
+        wizard.back();
+        stopSteps();
+        assert.deepEqual(steps, ['a', 'b', 'a']);
         let preferences;
         scope = core.createScope();
         scope.run(() => { preferences = core.persist('test', window.eval('({ theme: "dark" })')); });
@@ -194,17 +209,38 @@ for (const [name, bundle] of [['production', production], ['development', develo
 test('optional scripts report missing core explicitly and contain no separate reactive engine', t => {
     const dom = new JSDOM('', { runScripts: 'outside-only' });
     t.after(() => dom.window.close());
-    for (const plugin of ['router', 'persistence']) {
+    for (const plugin of ['router', 'persistence', 'http', 'forms', 'step', 'money-mask']) {
         const source = readFileSync(new URL(`../dist/brio.${plugin}.min.js`, import.meta.url), 'utf8');
         assert.throws(() => dom.window.eval(source), /Load the Brio core/);
-        assert.equal(source.includes('brio.raw'), false);
+        assert.equal(source.includes('Brio state() requires a plain object or array.'), false);
         assert.equal(source.includes('Cannot run a disposed Brio scope'), false);
     }
-    for (const marker of ['persistence key', 'Duplicate route pattern']) {
+    for (const marker of ['persistence key', 'Duplicate route pattern', 'Unknown validation rule',
+        'Step initial must', 'Money mask precision', 'Circular HTTP query']) {
         assert.equal(production.includes(marker), false);
         assert.equal(development.includes(marker), false);
     }
 });
+
+for (const [name, bundle, dev] of [['production', production, false], ['development', development, true]]) {
+    test(`${name}: each plugin loads independently and extends only its own public API`, t => {
+        for (const [plugin, keys] of Object.entries(pluginAPI)) {
+            const dom = new JSDOM('', { runScripts: 'outside-only' });
+            t.after(() => dom.window.close());
+            const { window } = dom;
+            let ready = 0;
+            window.addEventListener('brio', () => ready++);
+            window.eval(bundle);
+            const core = window.brio;
+            const before = Object.fromEntries(Object.entries(core));
+            window.eval(readFileSync(new URL(`../dist/brio.${plugin}.min.js`, import.meta.url), 'utf8'));
+            assert.equal(window.brio, core);
+            assert.equal(ready, 1);
+            assert.deepEqual(Object.keys(core).sort(), [...coreAPI, ...(dev ? developmentAPI : []), ...keys].sort());
+            for (const key of Object.keys(before)) assert.equal(core[key], before[key]);
+        }
+    });
+}
 
 test('npm main entry exposes every plugin and enables devtools only on explicit request', () => {
     execFileSync(process.execPath, ['--input-type=module', '-e', `

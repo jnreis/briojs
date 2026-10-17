@@ -52,6 +52,22 @@
       "types": "./dist/devtools-entry.d.ts",
       "import": "./dist/devtools-entry.js"
     },
+    "./http": {
+      "types": "./dist/http-entry.d.ts",
+      "import": "./dist/http-entry.js"
+    },
+    "./forms": {
+      "types": "./dist/forms-entry.d.ts",
+      "import": "./dist/forms-entry.js"
+    },
+    "./step": {
+      "types": "./dist/step-entry.d.ts",
+      "import": "./dist/step-entry.js"
+    },
+    "./money-mask": {
+      "types": "./dist/money-mask-entry.d.ts",
+      "import": "./dist/money-mask-entry.js"
+    },
     "./package.json": "./package.json"
   },
   "sideEffects": [

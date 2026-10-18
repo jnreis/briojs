@@ -9,6 +9,16 @@ import type { StepEngine } from 'briojs/step';
 import type { MaskFormatter as CoreFormatter } from 'briojs';
 import { createApp } from 'briojs';
 import type { UnmountOptions } from 'briojs';
+import { createRouter } from 'briojs/router';
+import type { RouterOptions } from 'briojs';
+
+const routerOptions: RouterOptions = { base: '/my-app/' };
+const router = createRouter([{ path: '/', component: 'home-page' }], routerOptions);
+const link: string = router.href('/?sort=name#details');
+const base: string = router.base;
+// @ts-expect-error Base must be a pathname string.
+createRouter([], { base: 123 });
+void [link, base];
 
 const teardown: UnmountOptions = { restore: false };
 const app = createApp();

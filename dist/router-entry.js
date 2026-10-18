@@ -1,4 +1,16 @@
 import { b as signal } from "./state-FLvgaPZh.js";
+const origin = () => {
+  var _a;
+  return ((_a = globalThis.location) == null ? void 0 : _a.origin) ?? "http://localhost";
+};
+const isAbsolutePath = (path) => typeof path === "string" && path.startsWith("/") && !path.startsWith("//") && !/[\\\u0000-\u001f\u007f]/u.test(path);
+const hasDotSegments = (path) => path.split("/").some((segment) => [".", ".."].includes(segment.replace(/%2e/gi, ".")));
+function normalizeBase(base) {
+  if (!isAbsolutePath(base) || /[ ?#]/u.test(base) || hasDotSegments(base) || base.includes("//"))
+    throw new TypeError("Router base must be an absolute pathname without an origin, query, fragment, or dot segments.");
+  const pathname = new URL(base, "http://localhost").pathname;
+  return pathname.endsWith("/") ? pathname : `${pathname}/`;
+}
 const parsePath = (path) => path.split("/").filter(Boolean).map((part) => {
   if (part.startsWith(":")) {
     const value = part.slice(1);
@@ -12,10 +24,25 @@ const parsePath = (path) => path.split("/").filter(Boolean).map((part) => {
     throw new TypeError(`Invalid encoded path segment "${part}" in "${path}".`, { cause: error });
   }
 });
-function createRouter(routes) {
+function createRouter(routes, options = {}) {
+  const base = normalizeBase(options.base ?? "/");
+  const prefix = base === "/" ? "" : base.slice(0, -1);
+  const appPath = (pathname) => {
+    if (!prefix) return pathname;
+    if (pathname === prefix) return "/";
+    return pathname.startsWith(base) ? pathname.slice(prefix.length) : null;
+  };
+  const href = (path) => {
+    if (!isAbsolutePath(path))
+      throw new TypeError('Router application paths must start with a single "/" and contain no origin or backslashes.');
+    const url = new URL(`${prefix}${path}`, origin());
+    if (appPath(url.pathname) === null)
+      throw new TypeError("Router application path cannot escape its base.");
+    return `${url.pathname}${url.search}${url.hash}`;
+  };
   const seenPaths = /* @__PURE__ */ new Set();
   const compiled = routes.map((route) => {
-    if (!route.path.startsWith("/") || route.path.includes("?") || route.path.includes("#"))
+    if (!isAbsolutePath(route.path) || route.path.includes("?") || route.path.includes("#") || hasDotSegments(route.path))
       throw new TypeError(`Route path "${route.path}" must be an absolute pathname without a query or fragment.`);
     if (!route.component) throw new TypeError(`Route "${route.path}" requires a component name.`);
     const segments = parsePath(route.path);
@@ -42,14 +69,17 @@ function createRouter(routes) {
     if (![...mountedRoots].some((root) => root.contains(anchor))) return;
     const url = new URL(anchor.href, location.href);
     if (url.origin !== location.origin || !match(url.href)) return;
-    if (url.pathname === location.pathname && url.hash) return;
+    if (url.pathname === location.pathname && url.search === location.search && url.hash) return;
     event.preventDefault();
-    navigate(url.href);
+    commit(url, false);
   };
   const match = (path) => {
     var _a;
     const url = new URL(path, ((_a = globalThis.location) == null ? void 0 : _a.href) ?? "http://localhost/");
-    const requested = url.pathname.split("/").filter(Boolean);
+    if (url.origin !== origin()) return null;
+    const pathname = appPath(url.pathname);
+    if (pathname === null) return null;
+    const requested = pathname.split("/").filter(Boolean);
     for (const candidate of compiled) {
       if (candidate.segments.length !== requested.length) continue;
       const params = {};
@@ -72,24 +102,19 @@ function createRouter(routes) {
         }
         params[part.value] = decoded;
       }
-      if (valid) return { path: url.pathname, params, component: candidate.route.component };
+      if (valid) return { path: pathname, params, component: candidate.route.component };
     }
     return null;
   };
-  const navigate = (path, options = {}) => {
-    var _a;
-    const url = new URL(path, ((_a = globalThis.location) == null ? void 0 : _a.href) ?? "http://localhost/");
-    if (globalThis.location && url.origin !== globalThis.location.origin) {
-      globalThis.location.assign(url.href);
-      return false;
-    }
+  const commit = (url, replace) => {
     const route = match(url.href);
     if (!route) return false;
-    if (options.replace) history.replaceState(null, "", url.href);
+    if (replace) history.replaceState(null, "", url.href);
     else history.pushState(null, "", url.href);
     current.value = route;
     return true;
   };
+  const navigate = (path, options2 = {}) => commit(new URL(href(path), origin()), Boolean(options2.replace));
   const start = (root) => {
     mountedRoots.add(root);
     if (!listening) {
@@ -107,7 +132,7 @@ function createRouter(routes) {
       }
     };
   };
-  return { current, match, navigate, start };
+  return { base, current, href, match, navigate, start };
 }
 export {
   createRouter

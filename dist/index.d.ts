@@ -17,7 +17,7 @@ export type { ComponentDefinition, ComponentContext, DomRuntime, TrustedMarkup }
 export { hydrateRoot } from './dom/mount';
 export { hydrateNode } from './dom/bindings';
 export { createRouter } from './plugins/router';
-export type { Router, RouteDefinition, RouteMatch } from './plugins/router';
+export type { Router, RouterOptions, RouteDefinition, RouteMatch } from './plugins/router';
 export { persist } from './plugins/persistence';
 export type { PersistOptions, StorageAdapter } from './plugins/persistence';
 export { createStepEngine } from './plugins/step';

@@ -19,8 +19,11 @@ core and before bootstrap, with the same URLs for development.
 
 Serve over HTTP with the app's existing server. Do not assume that a repository
 `/dist/` URL exists in production. For the SPA, serve its HTML at `/` and configure
-the server to return it for `/items/:id` direct loads. Avoid serving this root-
-based example under a subpath without adapting its routes and URLs.
+the server to return it for `/items/:id` direct loads. For a subdirectory,
+set `createRouter(routes, { base: '/my-app/' })`, leave route definitions
+app-relative, and render anchors such as `/my-app/items/42` (or generate
+client URLs with `router.href('/items/42')`). Configure fallback under that
+base and adapt asset URLs separately.
 The SPA deliberately uses `/brio.min.js` so refreshing a nested route does not
 request the bundle from `/items/brio.min.js`. Serve that bundle at the site root
 or replace the URL with your application's stable asset URL.

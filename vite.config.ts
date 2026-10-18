@@ -10,6 +10,13 @@ export default defineConfig(({ mode }) => {
       name: 'brio-manual-http-fixtures',
       configureServer(server) {
         server.middlewares.use(httpFixtures);
+        server.middlewares.use((request, _response, next) => {
+          const pathname = request.url?.split('?')[0];
+          if (pathname === '/my-app' || pathname?.startsWith('/my-app/')) {
+            request.url = '/tests/methods/route.html';
+          }
+          next();
+        });
       },
     }],
     build: {

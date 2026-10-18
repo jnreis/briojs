@@ -24,6 +24,11 @@ metadata on `main`, through commit `d868d43`.
 
 ### Changed
 
+- Optional router supports normalized deployment bases and `href()` generation.
+  App-relative navigation/route state is separated from browser URL matching,
+  with segment-aware base boundaries, direct-load/history support, and preserved
+  query strings/fragments. External navigation uses ordinary browser APIs.
+
 - Optional `briojs/astro` shared named-island registry with `b-app`, read-once
   trusted-expression `b-props`, eager factories and `lazyApp` code loading.
   Supports persistent roots/ancestors, pending-load abandonment, required

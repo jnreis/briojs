@@ -10,11 +10,16 @@ export type RouteMatch = {
     component: string;
 };
 export type Router = {
+    readonly base: string;
     readonly current: Signal<RouteMatch | null>;
+    href(path: string): string;
     match(path: string): RouteMatch | null;
     navigate(path: string, options?: {
         replace?: boolean;
     }): boolean;
     start(root: Element): () => void;
 };
-export declare function createRouter(routes: RouteDefinition[]): Router;
+export type RouterOptions = {
+    base?: string;
+};
+export declare function createRouter(routes: RouteDefinition[], options?: RouterOptions): Router;

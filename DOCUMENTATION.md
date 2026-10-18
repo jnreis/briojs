@@ -1061,6 +1061,65 @@ createApp({ router })
 
 `createRouter()` supports static paths and `:parameter` segments. It uses the History API for same-origin matches, responds to back/forward, and leaves modified clicks, external links, downloads, and unmatched routes to normal browser navigation.
 
+#### Deploying under a base path
+
+```js
+const router = createRouter([
+  { path: '/', component: 'home-page' },
+  { path: '/users/:username', component: 'user-page' },
+], { base: '/my-app/' });
+
+router.base;                                      // '/my-app/'
+router.href('/users/ada?sort=name#details');        // '/my-app/users/ada?sort=name#details'
+router.navigate('/users/ada?sort=name#details');    // Updates browser history.
+router.current.value.path;                        // '/users/ada'
+router.match('/my-app/users/ada');                 // Browser pathname -> route.
+router.match('/my-app-other/users/ada');           // null
+router.match('/users/ada');                        // null: outside this base.
+```
+
+The default base is `/`. `/my-app` and `/my-app/` both normalize to
+`/my-app/`, exposed as `router.base`. Bases must be absolute pathnames, not
+origins/URLs, and cannot contain queries, fragments, backslashes, whitespace,
+repeated slashes, or dot segments. Unicode base paths are URL-encoded.
+
+**Application paths and browser URLs are different inputs:**
+
+| API/source | Input |
+|---|---|
+| Route definitions | App-relative pathname, e.g. `/users/:username`; no query or fragment. |
+| `href(path)` | App-relative path with optional query/fragment; returns a deployment-aware pathname/search/hash. Does not require a matching route. |
+| `navigate(path, { replace? })` | Same app-relative input as `href`; returns false without changing history for unmatched routes. |
+| `match(browserUrl)` | Browser URL/pathname with the base already present; never prepends it. Foreign-origin/outside-base URLs return null. |
+| Initial load, Back/Forward, anchor interception | Actual browser URLs, stripped at a path-segment boundary before matching. |
+
+App-relative inputs start with a single `/`. Origins, protocol-relative URLs,
+and backslashes are rejected; use normal browser navigation for external links.
+Paths cannot escape the configured base through `..`. Do not pass an already
+base-prefixed browser pathname to `navigate` or `href`: it would be interpreted
+as an application path and prefixed again.
+
+`current.value.path` is always the matched **app-relative pathname**, excluding
+query/fragment. Query strings and fragments remain on the generated/browser URL
+through navigation and history; parameter matching uses only the pathname.
+Both `/my-app` and `/my-app/` can match the app's `/` route.
+
+Use ordinary anchors with deployment-aware `href` values. Generate those on the
+server when links must remain usable without JavaScript:
+
+```html
+<a href="/my-app/users/ada?sort=name#details">Ada</a>
+```
+
+Client code can generate the same URL with `router.href('/users/ada?sort=name#details')`.
+Only same-origin, matching URLs inside the configured base and a mounted root
+are intercepted. The base is not reapplied to anchors. Same-page fragment links
+with unchanged query retain native browser behavior.
+
+Configure your server to serve the SPA entry for direct URLs under `/my-app/`,
+including `/my-app/users/ada`. The router does not configure hosting rewrites,
+asset paths, or server rendering.
+
 ## Reactive primitives
 
 The standalone reactivity entry works without a DOM:

@@ -485,9 +485,17 @@ cleans the failed insertion, but does not restore old content.
   `createApp({ router })`, register components, use `b-router-outlet`. Dynamic
   path segments use `:id`; route state is `router.current.value`.
   `navigate(path, { replace })` returns a boolean; unmatched paths return false.
+  Optional second argument `{ base: '/my-app/' }` (default `/`) normalizes the
+  deployment prefix. Definitions, navigate and href use app-relative paths.
+  `router.href('/users/ada?q=1#bio')` prefixes the base and preserves query/hash.
+  `match(browserUrl)` instead consumes the already-prefixed browser URL;
+  initial loads, history and intercepted anchors use that path without doubling
+  the base. Outside-base/foreign-origin URLs do not match. current.value.path is
+  app-relative, pathname only. Never pass browser URLs to navigate/href.
   Matched same-origin links inside mounted roots use history navigation;
   external/unmatched/modified/download links retain normal browser behavior.
-  Configure server fallback for direct SPA URLs. For MPAs, retain normal links.
+  Render deployment-aware anchor hrefs on the server for no-JS use; configure
+  server fallback for direct SPA URLs under the base. For MPAs, retain normal links.
 - Persistence: `persist(key, initial, { storage })` inside component setup,
   a plugin, or explicit scope. Never call it in the app state factory unless
   an explicit owner scope surrounds that operation. Plain containers are

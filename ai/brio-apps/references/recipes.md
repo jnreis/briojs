@@ -25,11 +25,21 @@ The SPA deliberately uses `/brio.min.js` so refreshing a nested route does not
 request the bundle from `/items/brio.min.js`. Serve that bundle at the site root
 or replace the URL with your application's stable asset URL.
 
-All examples register pagehide cleanup for these standalone demonstrations.
+The examples dispose on pagehide only when `event.persisted` is false.
+Cached documents keep their existing mounts; do not remount on pageshow.
 Embedded applications must integrate unmount/dispose with their host lifecycle
-before removing roots. Applications using back-forward cache should implement
-the appropriate pageshow remount strategy rather than copying pagehide disposal
-unchanged.
+before removing roots, using `{ restore: false }` for outgoing DOM.
+For client-side swaps, dispose page-local apps before replacement and mount
+fresh server markup afterward. Keep actual host-preserved roots mounted and
+track roots by Element identity to avoid duplicate enhancement.
+
+For Astro, use the optional `briojs/astro` entry rather than writing a
+counter-specific coordinator. Install one shared
+`enhanceAstro({ apps, onError })` registry from a layout; declare `b-app` roots
+and read-once trusted `b-props`. Eager factories and `lazyApp` module loaders
+share the same `(root, props)` factory contract. The adapter handles ClientRouter
+cleanup and persistent root/ancestor lifetimes. See the main documentation's
+Astro islands section for setup, errors, HMR and safe server-data transfer.
 
 ## Widget
 

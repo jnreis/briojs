@@ -1,6 +1,7 @@
-import { c as causedError, o as onDispose, a as combinedError, d as getCurrentScope, e as effect, f as onCleanup, b as batch, h as createScope, n as notifyRootMounted, j as notifyAppDisposed, k as notifyAppCreated, l as notifyRootUnmounted } from "./effect-DGhE0oQi.js";
+import { e as evaluate, a as emptyContextValues, b as createExpressionScope, d as execute, f as assign, g as createProvidedValues, h as evaluateFunction, c as copyContextValues } from "./context-values-BA09Z6wf.js";
+import { o as onDispose, a as combinedError, d as getCurrentScope, f as onCleanup, b as batch, h as createScope, e as effect, c as causedError, n as notifyRootMounted, j as notifyAppDisposed, k as notifyAppCreated, l as notifyRootUnmounted } from "./effect-DGhE0oQi.js";
 import { s } from "./effect-DGhE0oQi.js";
-import { s as state, t as trigger, a as track } from "./state-FLvgaPZh.js";
+import { s as state, a as track, t as trigger } from "./state-FLvgaPZh.js";
 import { b } from "./state-FLvgaPZh.js";
 import { computed, resource } from "./reactivity.js";
 import { createRouter } from "./router-entry.js";
@@ -10,79 +11,6 @@ import { validate } from "./forms-entry.js";
 import { moneyMask } from "./money-mask-entry.js";
 import { HttpError, http } from "./http-entry.js";
 import { d, a, e, i } from "./devtools-CF9uSawU.js";
-const valueExpressions = /* @__PURE__ */ new Map();
-const statementExpressions = /* @__PURE__ */ new Map();
-const assignmentExpressions = /* @__PURE__ */ new Map();
-const functionExpressions = /* @__PURE__ */ new Map();
-const $CONTEXT = "$context";
-const contextBindings = `
-"use strict";
-const { $data, $el, $event, $id, $ref, $for, $mutations, $size, $entry, $props, $emit, $insert, $stores, $provided, trustedHTML, onCleanup } = ${$CONTEXT};
-`;
-function evaluateFunction(source, context) {
-  const fn = compile(
-    functionExpressions,
-    source,
-    (expression) => new Function($CONTEXT, `${contextBindings} return (${expression.replace(/;\s*$/, "")});`)
-  );
-  const result = fn(context);
-  if (typeof result !== "function")
-    throw new TypeError(`b-script must contain a function expression, such as (${$CONTEXT}) => { ... }.`);
-  return result;
-}
-function createExpressionScope(...sources2) {
-  return Object.assign(/* @__PURE__ */ Object.create(null), ...sources2.reverse());
-}
-const compile = (cache, source, make) => {
-  let fn = cache.get(source);
-  if (!fn) {
-    try {
-      fn = make(source);
-    } catch (error) {
-      throw new SyntaxError(`Invalid Brio expression "${source}": ${String(error)}`);
-    }
-    cache.set(source, fn);
-    if (cache.size > 500)
-      cache.delete(cache.keys().next().value);
-  }
-  return fn;
-};
-function evaluate(source, scope) {
-  const fn = compile(
-    valueExpressions,
-    source,
-    (expression) => new Function($CONTEXT, `${contextBindings} return (${expression});`)
-  );
-  try {
-    return fn(scope);
-  } catch (error) {
-    throw causedError(`Brio expression failed: "${source}"`, error);
-  }
-}
-function execute(source, scope, event) {
-  const fn = compile(
-    statementExpressions,
-    source,
-    (expression) => new Function($CONTEXT, `${contextBindings} ${expression}`)
-  );
-  try {
-    fn(event === void 0 ? scope : createExpressionScope({ $event: event }, scope));
-  } catch (error) {
-    throw causedError(`Brio event expression failed: "${source}"`, error);
-  }
-}
-function assign(source, scope, value) {
-  const fn = compile(
-    assignmentExpressions,
-    source,
-    (expression) => new Function($CONTEXT, "$value", `${contextBindings} return (${expression} = $value);`)
-  );
-  try {
-    fn(scope, value);
-  } catch (error) {
-    throw causedError(`Brio model expression failed: "${source}"`, error);
-  }
-}
 const sources = /* @__PURE__ */ new WeakMap();
 function createScopedState(source, parent) {
   const observed = state(sources.get(source) ?? source);
@@ -177,60 +105,6 @@ function disposeNodes(nodes) {
     }
   }
   if (errors.length) throw combinedError("Brio DOM content cleanup failed.", errors);
-}
-function copyContextValues(value, label) {
-  if (value === null || typeof value !== "object" || ![Object.prototype, null].includes(Object.getPrototypeOf(value)))
-    throw new TypeError(`${label} must be a synchronous plain object.`);
-  const result = /* @__PURE__ */ Object.create(null);
-  for (const key of Object.keys(value)) {
-    const descriptor = Object.getOwnPropertyDescriptor(value, key);
-    if (!("value" in descriptor))
-      throw new TypeError(`${label} must contain data properties, not accessors.`);
-    result[key] = Reflect.get(value, key);
-  }
-  return result;
-}
-const emptyContextValues = Object.freeze(/* @__PURE__ */ Object.create(null));
-function createProvidedValues(getValues, parent = emptyContextValues) {
-  let values = /* @__PURE__ */ Object.create(null);
-  const holder = {};
-  effect(() => {
-    values = copyContextValues(getValues(), "b-provide");
-    trigger(holder, "values", "set");
-  });
-  const readOnly = () => {
-    throw new TypeError("$provided names are read-only.");
-  };
-  const hasOwn = (key) => Object.prototype.hasOwnProperty.call(values, key);
-  return new Proxy(/* @__PURE__ */ Object.create(null), {
-    get(_target, key) {
-      track(holder, "values");
-      return hasOwn(key) ? Reflect.get(values, key) : Reflect.get(parent, key);
-    },
-    has(_target, key) {
-      track(holder, "values");
-      return hasOwn(key) || Reflect.has(parent, key);
-    },
-    ownKeys() {
-      track(holder, "values");
-      return [.../* @__PURE__ */ new Set([...Reflect.ownKeys(parent), ...Reflect.ownKeys(values)])];
-    },
-    getOwnPropertyDescriptor(_target, key) {
-      track(holder, "values");
-      if (!hasOwn(key) && !Object.prototype.hasOwnProperty.call(parent, key)) return;
-      return {
-        configurable: true,
-        enumerable: true,
-        writable: false,
-        value: hasOwn(key) ? Reflect.get(values, key) : Reflect.get(parent, key)
-      };
-    },
-    set: readOnly,
-    deleteProperty: readOnly,
-    defineProperty: readOnly,
-    setPrototypeOf: readOnly,
-    preventExtensions: readOnly
-  });
 }
 const registries = /* @__PURE__ */ new WeakMap();
 const keys = Symbol("brio.refs");
@@ -2046,7 +1920,7 @@ function createApp(options = {}) {
         get unmounted() {
           return unmounted;
         },
-        unmount() {
+        unmount(options2 = {}) {
           if (unmounted) return;
           unmounted = true;
           try {
@@ -2055,11 +1929,13 @@ function createApp(options = {}) {
             roots.delete(handle);
             activeMountRoots.delete(root);
             notifyRootUnmounted(app, root);
-            for (const attribute of Array.from(root.attributes))
-              root.removeAttribute(attribute.name);
-            for (const [name, value] of originalAttributes)
-              root.setAttribute(name, value);
-            root.replaceChildren(...originalChildren.map((child) => child.cloneNode(true)));
+            if (options2.restore !== false) {
+              for (const attribute of Array.from(root.attributes))
+                root.removeAttribute(attribute.name);
+              for (const [name, value] of originalAttributes)
+                root.setAttribute(name, value);
+              root.replaceChildren(...originalChildren.map((child) => child.cloneNode(true)));
+            }
           }
         }
       };
@@ -2087,22 +1963,22 @@ function createApp(options = {}) {
       }
       return handle;
     },
-    unmount() {
+    unmount(options2) {
       const errors = [];
       for (const root of [...roots]) {
         try {
-          root.unmount();
+          root.unmount(options2);
         } catch (error) {
           errors.push(error);
         }
       }
       if (errors.length) throw combinedError("One or more Brio app roots failed to unmount.", errors);
     },
-    dispose() {
+    dispose(options2) {
       if (disposed) return;
       let failure;
       try {
-        app.unmount();
+        app.unmount(options2);
       } catch (error) {
         failure = error;
       }

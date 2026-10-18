@@ -120,7 +120,7 @@ export function createApp<
                 get unmounted() {
                     return unmounted;
                 },
-                unmount() {
+                unmount(options = {}) {
                     if (unmounted) return;
                     unmounted = true;
                     try {
@@ -129,11 +129,13 @@ export function createApp<
                         roots.delete(handle);
                         activeMountRoots.delete(root);
                         notifyRootUnmounted(app, root);
-                        for (const attribute of Array.from(root.attributes))
-                            root.removeAttribute(attribute.name);
-                        for (const [name, value] of originalAttributes)
-                            root.setAttribute(name, value);
-                        root.replaceChildren(...originalChildren.map(child => child.cloneNode(true)));
+                        if (options.restore !== false) {
+                            for (const attribute of Array.from(root.attributes))
+                                root.removeAttribute(attribute.name);
+                            for (const [name, value] of originalAttributes)
+                                root.setAttribute(name, value);
+                            root.replaceChildren(...originalChildren.map(child => child.cloneNode(true)));
+                        }
                     }
                 },
             };
@@ -162,22 +164,22 @@ export function createApp<
             }
             return handle;
         },
-        unmount() {
+        unmount(options) {
             const errors: unknown[] = [];
             for (const root of [...roots]) {
                 try {
-                    root.unmount();
+                    root.unmount(options);
                 } catch (error) {
                     errors.push(error);
                 }
             }
             if (errors.length) throw combinedError('One or more Brio app roots failed to unmount.', errors);
         },
-        dispose() {
+        dispose(options) {
             if (disposed) return;
             let failure: unknown;
             try {
-                app.unmount();
+                app.unmount(options);
             } catch (error) {
                 failure = error;
             }

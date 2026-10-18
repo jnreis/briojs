@@ -1,0 +1,14 @@
+---
+import Page from '../layouts/Page.astro';
+---
+<Page title="Lazy apps">
+  <a href="/lazy-next">Next lazy page</a>
+  <aside transition:persist="lazy">
+    <section id="retained" b-app="delayed" b-props="{count:7}">
+      <b b-text="$data.count">Loading persistent counter</b>
+    </section>
+  </aside>
+  <section id="outgoing" b-app="delayed" b-props="{count:3}">
+    <b b-text="$data.count">Loading outgoing counter</b>
+  </section>
+</Page>

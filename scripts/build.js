@@ -18,6 +18,7 @@ await build({
                 'forms-entry': 'src/forms-entry.ts',
                 'step-entry': 'src/step-entry.ts',
                 'money-mask-entry': 'src/money-mask-entry.ts',
+                'astro-entry': 'src/astro-entry.ts',
             },
             formats: ['es'],
             fileName: (_format, entryName) => `${entryName}.js`,
@@ -29,7 +30,7 @@ await build({
     plugins: [
         dts({
             entryRoot: 'src',
-            include: ['src/core', 'src/dom', 'src/plugins', 'src/reactivity', 'src/*.ts'],
+            include: ['src/core', 'src/dom', 'src/plugins', 'src/reactivity', 'src/integrations', 'src/*.ts'],
             rollupTypes: false,
         }),
     ],

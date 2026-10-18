@@ -538,6 +538,31 @@ Low-level `hydrateRoot`/`hydrateNode` remain ESM-only; do not call them on
 
 ## Trust and verification
 
+For server-page/client-side swaps, the host owns navigation. Before removing
+roots, call `mount.unmount({ restore: false })` or
+`app.dispose({ restore: false })`; default teardown restores authored markup.
+Cleanup still runs and may remove directive-owned DOM. Do not remount that
+consumed markup; enhance fresh incoming HTML. Retain mounts when the host keeps
+the actual root Element. Keep page-local and persistent app lifetimes separate.
+Do not dispose cached documents on pagehide (`event.persisted`), or remount
+their live roots on pageshow. Register host lifecycle listeners only once.
+
+Astro: import enhanceAstro/lazyApp from optional `briojs/astro` in a shared
+layout's processed client script, installed once:
+`enhanceAstro({ apps: { counter: lazyApp(() => import('./counter')) }, onError(error, root) { console.error(error, root); } })`.
+Modules default-export synchronous `(root, props) => createApp(...)` factories.
+Use `b-app="counter"` with optional `b-props="{ initial: 5 }"`. Props are trusted
+JS, read once before loading with $el/no $data, and must be a plain data-property
+object. Validate values in the factory; no automatic state merge or reactive
+server props. Astro frontmatter is server-only; serialize server data through
+Astro mechanisms. Regular b-bind still binds DOM, not island props.
+Allow sibling instances, reject nested islands and unknown names. Lazy means
+code loading on discovery, not visibility. Pending outgoing roots never invoke
+late factories. Roots at/inside matching transition:persist boundaries retain
+the original app and props. Errors go to required onError; no automatic retries.
+Dispose the returned integration handle for shutdown/HMR (restores snapshots);
+normal page swaps are handled automatically. Tested with Astro 5.18.2.
+
 Templates, `b-html.hydrate`, and HTML insertion execute authored expressions/scripts.
 `trustedHTML` is a trust assertion, not sanitization or a security boundary;
 it is required by `b-html.hydrate`. Never bind untrusted HTML as executable

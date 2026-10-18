@@ -24,6 +24,15 @@ metadata on `main`, through commit `d868d43`.
 
 ### Changed
 
+- Optional `briojs/astro` shared named-island registry with `b-app`, read-once
+  trusted-expression `b-props`, eager factories and `lazyApp` code loading.
+  Supports persistent roots/ancestors, pending-load abandonment, required
+  per-island error reporting and disposable/reinstallable ownership.
+- Mount/app unmount and app disposal accept `{ restore: false }` for outgoing
+  host-owned DOM while retaining full cleanup. Default snapshot restoration is
+  unchanged. Added a runnable Astro ClientRouter fixture and production browser
+  tests for swaps, persistent islands, cancellation, and back/forward caching.
+
 - All browser plugins are opt-in builds: router, persistence, HTTP, forms,
   step, and money-mask. Matching npm subpaths supplement tree-shakable main
   exports. Pattern masks remain core and accept synchronous custom formatters.

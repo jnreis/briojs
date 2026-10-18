@@ -1019,7 +1019,7 @@ const handle = widget.mount('#account-menu');
 handle.unmount();
 ```
 
-Unmount restores the mount root's original attributes and child markup. `app.unmount()` unmounts all roots but leaves the app reusable. `app.dispose()` unmounts every root and permanently closes the app.
+Unmount restores the mount root's original attributes and child markup by default. `app.unmount()` unmounts all roots but leaves the app reusable. `app.dispose()` unmounts every root and permanently closes the app. All three teardown methods accept `{ restore: false }` when the host is about to discard the DOM; see [page lifecycle](#server-rendered-pages-and-page-swaps).
 
 ### Multi-page site
 
@@ -1489,14 +1489,183 @@ createApp({
 - `app.component(name, definition)` registers a reusable component; names must be valid hyphenated custom-element names.
 - `app.plugin(plugin)` installs a plugin once per app.
 - `app.mount(elementOrSelector)` mounts one independently disposable root and returns `{ root, unmounted, unmount() }`.
-- `app.unmount()` unmounts all roots; the app remains mountable.
-- `app.dispose()` permanently disposes the app and its scopes.
+- `app.unmount(options?)` unmounts all roots; the app remains mountable.
+- `app.dispose(options?)` permanently disposes the app and its scopes.
 - `app.state` is shared by roots mounted from that app.
 - `app.stores` is a fixed read-only mapping of explicitly supplied stores; no automatic reactivity or persistence.
 
-The mount root is owned by Brio: unmount restores its original attributes and children. Put `b-if` and `b-for` on descendants, not on the mount root.
+The mount root is owned by Brio: unmount restores its original attributes and children by default. Put `b-if` and `b-for` on descendants, not on the mount root.
 
 Framework SSR and hydration are not part of this release. Brio enhances existing HTML on the client, so server-rendered multi-page sites need no Brio server runtime.
+
+### Server-rendered pages and page swaps
+
+The host owns navigation and DOM replacement. Brio owns behavior attached to
+each mounted root. No document observer or navigation adapter runs automatically.
+
+```js
+const app = createApp({ state: () => ({ count: 0 }) });
+const mount = app.mount(element);
+
+mount.unmount();                   // Cleanup and restore authored HTML.
+// For outgoing DOM, use one of these instead:
+mount.unmount({ restore: false }); // Cleanup this root without snapshot restoration.
+app.unmount({ restore: false });   // Cleanup all roots; app remains reusable.
+app.dispose({ restore: false });   // Cleanup all roots and permanently close the app.
+```
+
+Root-owned cleanup always runs, including listeners, effects, observers, refs,
+and resources. App plugins and their resources live until app disposal, not
+individual root unmounting. `{ restore: false }` skips original-attribute/child restoration;
+it does not freeze the DOM: directive cleanup may remove owned output.
+The resulting DOM is not a reusable template. Mount fresh server markup for
+the next page. Teardown is idempotent; all roots are released even when cleanup
+reports errors. Failed mounting still restores its original markup.
+
+Before a client-side swap, dispose apps belonging to outgoing roots. After the
+swap, mount fresh roots. For a persistent island, preserve the actual root
+element and its existing mount; do not dispose or mount it again. DOM IDs do not
+transfer state. Keep persistent and page-local apps separate when they need
+independent app/plugin lifetimes.
+
+For ordinary document navigation, no pagehide handler is required. Do not
+unconditionally dispose on `pagehide`: `event.persisted === true` means the
+browser may resume this same document from its back/forward cache. Keep its
+mounts alive and do not remount on `pageshow`. If registering pagehide cleanup
+for non-cached navigation, guard `!event.persisted` and do not use `{ once: true }`
+(a cached departure would consume the listener).
+
+### Astro islands
+
+`briojs/astro` is an optional **client integration**, exported from the same
+package. It requires no Astro server plugin, component wrapper, separate package,
+or addition to the Brio browser core. Install it once from a shared layout's
+processed client script:
+
+```astro
+<script>
+  import { enhanceAstro, lazyApp } from 'briojs/astro';
+  import { createGreeting } from '../apps/greeting';
+
+  const integration = enhanceAstro({
+    apps: {
+      greeting: createGreeting,
+      counter: lazyApp(() => import('../apps/counter')),
+    },
+    onError(error, root) {
+      console.error('Unable to enhance island', root, error);
+      // Show an application-specific error message if appropriate.
+    },
+  });
+
+  if (import.meta.hot) {
+    import.meta.hot.dispose(() => integration.dispose());
+  }
+</script>
+```
+
+Declare roots by registered name; sibling instances may use the same name:
+
+```html
+<section b-app="counter" b-props="{ initial: 5 }">
+  <button b-on-click="$data.count++" b-text="$data.count">5</button>
+</section>
+```
+
+Each factory receives `(root, props)` and returns a **fresh, unmounted** Brio app.
+Factories may ignore either argument. Each island owns its entire app, including
+plugins; do not return an app shared with another island or an existing mount.
+Factories are synchronous; `lazyApp` explicitly marks asynchronous module loading.
+
+```ts
+// apps/counter.ts
+import { createApp } from 'briojs';
+import type { AstroAppFactory } from 'briojs/astro';
+
+const createCounter: AstroAppFactory = (_root, props) => {
+  const initial = props.initial ?? 0;
+  if (typeof initial !== 'number' || !Number.isFinite(initial)) {
+    throw new TypeError('Counter initial must be a finite number.');
+  }
+  return createApp({ state: () => ({ count: initial }) });
+};
+
+export default createCounter;
+```
+
+Registry entries are loaded code, not app instances. Eager entries are ordinary
+factory functions. `lazyApp(() => import(...))` loads a module only when a
+matching island is discovered; the module must default-export its factory.
+One loader promise is shared per lazy entry during an installation, while every
+root gets its own app. This is **code loading**, not visibility/idle/interaction
+scheduling. Authored server HTML remains until mounting; provide useful static
+content if desired. A module failure is cached without automatic retries.
+
+`b-app` and `b-props` are adapter metadata, not core directives:
+
+- Names are exact registered keys. Unknown names and nested `b-app` roots are
+  errors; use components for nested behavior. Independent siblings are supported.
+- `b-props` is an optional trusted JavaScript expression, evaluated once per new
+  root before code loading, with `$el` available and no app `$data`.
+- It must return a synchronous plain object with data properties, not accessors,
+  arrays, promises, or null. Absent props default to an empty object. Top-level
+  props are shallow-copied/read-only; nested values are not deeply frozen.
+- Props are passed to the factory, not automatically merged into app state.
+  Runtime HTML props require validation; TypeScript does not type-check the HTML.
+- Regular `b-bind-*` attributes keep their normal DOM-binding meaning.
+
+The expression uses Brio's trusted JavaScript evaluator, not a sandbox or JSON
+parser. Do not interpolate untrusted code into it. Astro frontmatter runs on the
+server; processed scripts run in the browser. For server data, use Astro's HTML
+attribute serialization and generate the expression as data, for example:
+
+```astro
+---
+const initial = 5;
+---
+<section b-app="counter" b-props={JSON.stringify({ initial })}>
+  <button b-on-click="$data.count++" b-text="$data.count">5</button>
+</section>
+```
+
+JSON object text is also a valid object expression here; Brio itself still uses
+JavaScript evaluation. Follow the host's safe serialization rules, and never
+use HTML string concatenation with untrusted content.
+
+With Astro ClientRouter, the adapter releases outgoing apps before swaps and
+discovers incoming roots on `astro:page-load`. Repeated events never remount
+existing roots. Roots at or inside a matching `transition:persist` boundary keep
+their actual app, DOM identity, and original props. Incoming props do not reset
+them. If the boundary disappears, their apps are disposed. Use unique Astro
+persistence names and leave Astro in charge of moving the preserved DOM.
+
+Pending lazy initialization survives when its actual root is preserved.
+Otherwise it is abandoned before the factory is called. Dynamic imports cannot
+be cancelled, but obsolete completions never mount outgoing islands. Live load,
+props, factory, mounting, and swap-cleanup errors go to the required
+`onError(error, root)` callback; other islands continue. Failed roots do not retry
+on repeated page-load events. Exceptions thrown by `onError` are surfaced as
+uncaught errors. Invalid configuration and duplicate active installation throw
+synchronously.
+
+`integration.dispose()` is idempotent: it unregisters host listeners, abandons
+pending initialization, and disposes every app, restoring its authored snapshot.
+Cleanup failures are thrown after releasing the other apps and installation
+lock. Reinstallation is allowed after disposal. Outgoing page swaps instead use
+`restore: false`. There is no document MutationObserver or public scan/retry API:
+DOM changes outside Astro navigation remain the host's responsibility.
+
+The adapter leaves back/forward-cached documents live. It is tested against
+Astro 5.18.2 and its generated `data-astro-transition-persist` marker; reverify
+when upgrading Astro or customizing its swap algorithm. The runnable
+[fixture registry](./tests/fixtures/astro/src/lifecycle.js) exercises eager/lazy
+apps and persistent ancestors. Pulse events in the fixture are test diagnostics
+for leaked listeners, not part of the adapter API.
+
+Run `npm run dev:astro` to explore the fixture. Run `npx playwright install chromium`
+once, then `npm run test:astro` for production-build browser tests of repeated
+navigation, actual DOM/state persistence, resource cancellation, cleanup counts,
+and browser back/forward restoration.
 
 ## Package and migration
 
@@ -1509,3 +1678,4 @@ The package exports:
 - `briojs/persistence`: scope-owned local/session/custom storage.
 - `briojs/router`: optional history router.
 - `briojs/devtools`: development-only instrumentation and inspector panel.
+- `briojs/astro`: optional named-island lifecycle integration and lazy code loading.

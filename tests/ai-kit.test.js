@@ -93,9 +93,13 @@ test('shipped widget recipe verifies ancestry, keyed updates, conditional state 
     assert.equal(document.querySelector('#dynamic').textContent, '');
     pulse();
     assert.equal(app.state.pulses, 1);
+    window.dispatchEvent(new window.PageTransitionEvent('pagehide', { persisted: true }));
+    window.dispatchEvent(new window.PageTransitionEvent('pageshow', { persisted: true }));
+    pulse();
+    assert.equal(app.state.pulses, 2);
     window.dispatchEvent(new window.Event('pagehide'));
     pulse();
-    assert.equal(app.state.pulses, 1);
+    assert.equal(app.state.pulses, 2);
     oldConditional.click();
     assert.equal(app.state.total, 2);
     assert.equal(document.querySelector('#host-button').textContent, 'Unaffected host control');
@@ -435,6 +439,8 @@ test('npm publication includes the complete developer kit', () => {
         assert.ok(published.has(relative(root, path)), `Kit file not published: ${path}`);
     assert.ok(published.has('dist/brio.min.js'));
     assert.ok(published.has('dist/brio.dev.min.js'));
+    for (const path of ['dist/astro-entry.js', 'dist/astro-entry.d.ts', 'dist/integrations/astro.d.ts'])
+        assert.ok(published.has(path), `Astro integration file not published: ${path}`);
     for (const plugin of ['router', 'persistence', 'http', 'forms', 'step', 'money-mask'])
         assert.ok(published.has(`dist/brio.${plugin}.min.js`));
     assert.equal(published.has('scripts/briojs.1.1.5.min.js'), false);

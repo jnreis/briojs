@@ -11,10 +11,13 @@ export type AppOptions<T extends Record<string, unknown> = Record<string, unknow
     router?: Router;
     plugins?: BrioPlugin[];
 };
+export type UnmountOptions = {
+    restore?: boolean;
+};
 export type MountHandle = {
     readonly root: Element;
     readonly unmounted: boolean;
-    unmount(): void;
+    unmount(options?: UnmountOptions): void;
 };
 export type InsertPlacement = 'before' | 'after' | 'prepend' | 'append' | 'replaceWith' | 'replaceChildren' | 'textContent';
 export type InsertOptions = {
@@ -36,6 +39,6 @@ export type BrioApp<T extends Record<string, unknown> = Record<string, unknown>,
     plugin(plugin: BrioPlugin): BrioApp<T, S>;
     mount(target: Element | string): MountHandle;
     insert: Insert;
-    unmount(): void;
-    dispose(): void;
+    unmount(options?: UnmountOptions): void;
+    dispose(options?: UnmountOptions): void;
 };

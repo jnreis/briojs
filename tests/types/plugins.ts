@@ -7,6 +7,17 @@ import type { ValidationSchema } from 'briojs/forms';
 import { createStepEngine } from 'briojs/step';
 import type { StepEngine } from 'briojs/step';
 import type { MaskFormatter as CoreFormatter } from 'briojs';
+import { createApp } from 'briojs';
+import type { UnmountOptions } from 'briojs';
+
+const teardown: UnmountOptions = { restore: false };
+const app = createApp();
+const mount = app.mount(document.createElement('main'));
+mount.unmount(teardown);
+app.unmount(teardown);
+app.dispose(teardown);
+// @ts-expect-error Restore must be a boolean.
+app.unmount({ restore: 'false' });
 
 const formatter: MaskFormatter = ({ value, inputType, selectionStart }: MaskContext): MaskResult => {
     const type: string | undefined = inputType;

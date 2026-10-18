@@ -9,6 +9,9 @@ lerna-debug.log*
 
 node_modules
 *.local
+test-results/
+tests/fixtures/astro/.astro/
+tests/fixtures/astro/build/
 
 # Editor directories and files
 !.vscode/extensions.json

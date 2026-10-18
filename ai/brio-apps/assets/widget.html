@@ -53,7 +53,9 @@
       }),
     });
     app.mount('#widget');
-    window.addEventListener('pagehide', () => app.dispose(), { once: true });
+    window.addEventListener('pagehide', event => {
+      if (!event.persisted) app.dispose({ restore: false });
+    });
   </script>
 </body>
 </html>

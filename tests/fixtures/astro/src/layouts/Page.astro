@@ -1,0 +1,28 @@
+---
+import { ClientRouter } from 'astro:transitions';
+const { title, player = true, playerCount = 0 } = Astro.props;
+---
+<!doctype html>
+<html lang="en">
+  <head><meta charset="utf-8" /><title>{title}</title><ClientRouter /></head>
+  <body>
+    <nav><a href="/">Home</a> <a href="/other">Other</a> <a href="/plain">Without player</a> <a href="/away" data-astro-reload>Full navigation</a></nav>
+    {player && <aside transition:persist="player"><section b-app="counter" b-props={`{ count: ${playerCount} }`} data-player>
+      <h2>Persistent counter</h2>
+      <button b-on-click="$data.count++" b-text="$data.count">0</button>
+    </section></aside>}
+    <main b-app="counter" b-props="{ count: 0 }" data-page>
+      <h1>{title}</h1>
+      <button b-on-click="$data.count++" b-text="$data.count">0</button>
+      <p>Pulse count: <span b-text="$data.pulses">0</span></p>
+    </main>
+    <slot />
+    <script>
+      import { enhance } from '../lifecycle.js';
+      const integration = enhance();
+      if (import.meta.hot) {
+        import.meta.hot.dispose(() => integration.dispose());
+      }
+    </script>
+  </body>
+</html>

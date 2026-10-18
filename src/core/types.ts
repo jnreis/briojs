@@ -16,10 +16,12 @@ export type AppOptions<
     plugins?: BrioPlugin[];
 };
 
+export type UnmountOptions = { restore?: boolean };
+
 export type MountHandle = {
     readonly root: Element;
     readonly unmounted: boolean;
-    unmount(): void;
+    unmount(options?: UnmountOptions): void;
 };
 
 export type InsertPlacement = 'before' | 'after' | 'prepend' | 'append' |
@@ -50,6 +52,6 @@ export type BrioApp<
     plugin(plugin: BrioPlugin): BrioApp<T, S>;
     mount(target: Element | string): MountHandle;
     insert: Insert;
-    unmount(): void;
-    dispose(): void;
+    unmount(options?: UnmountOptions): void;
+    dispose(options?: UnmountOptions): void;
 };

@@ -68,6 +68,10 @@
       "types": "./dist/money-mask-entry.d.ts",
       "import": "./dist/money-mask-entry.js"
     },
+    "./astro": {
+      "types": "./dist/astro-entry.d.ts",
+      "import": "./dist/astro-entry.js"
+    },
     "./package.json": "./package.json"
   },
   "sideEffects": [
@@ -78,10 +82,14 @@
     "dev": "vite",
     "build": "node scripts/build.js",
     "test": "npm run build && node --test",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "dev:astro": "astro dev --root tests/fixtures/astro --host 127.0.0.1 --port 4321",
+    "test:astro": "npm run build && playwright test --config tests/astro/playwright.config.js"
   },
   "devDependencies": {
+    "@playwright/test": "1.64.1",
     "@types/node": "^22.10.10",
+    "astro": "5.18.2",
     "jsdom": "^26.1.0",
     "typescript": "^5.7.3",
     "vite": "^5.0.8",

@@ -1,6 +1,8 @@
-import { f as isObjectType, b as createError, s as brioErrors, o as objectConstructor, g as getLength, d as deleteItem } from "./native-DNTl55LH.js";
+var __defProp = Object.defineProperty;
+var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "symbol" ? key + "" : key, value);
+import { f as isObjectType, b as createError, s as brioErrors, o as objectConstructor, d as deleteItem, j as isInstanceOf, g as getLength } from "./native-DNTl55LH.js";
 const located = /* @__PURE__ */ new WeakSet();
-const scopeNodes = /* @__PURE__ */ new WeakMap();
 const define = (error, name, value) => objectConstructor.defineProperty(error, name, { configurable: true, value });
 const errorText = (error) => error && isObjectType(error) && "message" in error ? `${error.name}: ${error.message}` : String(error);
 const elementOf = (node) => {
@@ -40,73 +42,94 @@ const locate = (error, node) => {
   }
   return error;
 };
-const setScopeNode = (scope, node) => node && scopeNodes.set(scope, node);
-const getScopeNode = (scope) => scope && scopeNodes.get(scope);
+const setScopeNode = (scope, node) => {
+  if (node) scope._node = node;
+};
+const getScopeNode = (scope) => scope == null ? void 0 : scope._node;
 function combinedError(message, errors) {
   const error = mark(createError(message + errors.map((item) => "\n  - " + errorText(item)).join("")));
   define(error, "errors", errors);
   return error;
 }
 let activeScope;
-const scopeCleanups = /* @__PURE__ */ new WeakMap();
-function createScope(parent = activeScope) {
-  let disposed = false;
-  const cleanups = /* @__PURE__ */ new Set();
-  let detachFromParent;
-  const scope = {
-    get disposed() {
-      return disposed;
-    },
-    run(fn) {
-      if (disposed) throw createError("Cannot run a disposed Brio scope.");
-      const previous = activeScope;
-      activeScope = scope;
-      try {
-        return fn();
-      } finally {
-        activeScope = previous;
-      }
-    },
-    dispose() {
-      if (disposed) return;
-      disposed = true;
-      detachFromParent == null ? void 0 : detachFromParent();
-      const errors = [];
-      for (const cleanup of [...cleanups]) {
-        try {
-          cleanup();
-        } catch (error) {
-          errors.push(error);
-        }
-      }
-      cleanups.clear();
-      if (getLength(errors)) throw combinedError("One or more Brio scope cleanups failed.", errors);
+const noop = () => {
+};
+class BrioScope {
+  constructor(parent) {
+    __publicField(this, "_disposed", false);
+    __publicField(this, "_cleanups");
+    __publicField(this, "_parent");
+    __publicField(this, "_node");
+    if (!parent) return;
+    this._node = parent._node;
+    if (parent._disposed) {
+      this._disposed = true;
+      return;
     }
-  };
-  scopeCleanups.set(scope, cleanups);
-  setScopeNode(scope, getScopeNode(parent));
-  if (parent) detachFromParent = onDispose(parent, () => scope.dispose());
-  return scope;
+    this._parent = parent;
+    (parent._cleanups ?? (parent._cleanups = /* @__PURE__ */ new Set())).add(this);
+  }
+  get disposed() {
+    return this._disposed;
+  }
+  run(fn) {
+    if (this._disposed) throw createError("Cannot run a disposed Brio scope.");
+    const previous = activeScope;
+    activeScope = this;
+    try {
+      return fn();
+    } finally {
+      activeScope = previous;
+    }
+  }
+  dispose() {
+    if (this._disposed) return;
+    this._disposed = true;
+    const parent = this._parent;
+    if (parent && !parent._disposed) deleteItem(parent._cleanups, this);
+    const cleanups = this._cleanups;
+    if (!cleanups) return;
+    let errors;
+    for (const cleanup of cleanups) {
+      try {
+        if (isInstanceOf(cleanup, BrioScope)) cleanup.dispose();
+        else cleanup();
+      } catch (error) {
+        (errors ?? (errors = [])).push(error);
+      }
+    }
+    cleanups.clear();
+    if (errors) throw combinedError("One or more Brio scope cleanups failed.", errors);
+  }
+}
+function createScope(parent = activeScope) {
+  return new BrioScope(parent);
 }
 function onDispose(scope, cleanup) {
-  var _a;
-  if (!scope) return () => {
-  };
-  if (scope.disposed) {
+  if (!scope) return noop;
+  const owner = scope;
+  if (owner._disposed) {
     cleanup();
-    return () => {
-    };
+    return noop;
   }
-  const originalCleanup = cleanup;
   let active = true;
   const wrapped = () => {
     if (!active) return;
     active = false;
-    deleteItem(scopeCleanups.get(scope), wrapped);
-    originalCleanup();
+    if (!owner._disposed) deleteItem(owner._cleanups, wrapped);
+    cleanup();
   };
-  (_a = scopeCleanups.get(scope)) == null ? void 0 : _a.add(wrapped);
+  (owner._cleanups ?? (owner._cleanups = /* @__PURE__ */ new Set())).add(wrapped);
   return wrapped;
+}
+function addDisposer(scope, cleanup) {
+  const owner = scope;
+  if (owner._disposed) cleanup();
+  else (owner._cleanups ?? (owner._cleanups = /* @__PURE__ */ new Set())).add(cleanup);
+}
+function removeDisposer(scope, cleanup) {
+  const owner = scope;
+  if (!owner._disposed) deleteItem(owner._cleanups, cleanup);
 }
 function onCleanup(cleanup) {
   if (!activeScope) throw createError("This operation requires an active Brio scope.");
@@ -199,24 +222,25 @@ const flush = () => {
   if (getLength(errors)) throw combinedError("One or more reactive effects failed.", errors);
 };
 function effect(fn, options = {}) {
+  const scope = getCurrentScope();
   const reactiveEffect = {
     fn,
     scheduler: options.scheduler,
-    scope: getCurrentScope(),
+    scope,
     deps: [],
     active: true,
     running: false
   };
   const stop = () => {
     if (!reactiveEffect.active) return;
-    reactiveEffect.active = false;
+    reactiveEffect.active = stop.active = false;
+    if (scope) removeDisposer(scope, stop);
     cleanupEffect(reactiveEffect);
     if (devtoolsEnabled) notifyEffectDisposed(Boolean(reactiveEffect.devtoolsTracked));
   };
-  objectConstructor.defineProperty(stop, "active", { get: () => reactiveEffect.active });
+  stop.active = true;
   stop.run = () => runEffect(reactiveEffect);
-  const currentScope = getCurrentScope();
-  if (currentScope) onDispose(currentScope, stop);
+  if (scope) addDisposer(scope, stop);
   if (devtoolsEnabled) reactiveEffect.devtoolsTracked = notifyEffectCreated();
   if (!options.lazy) {
     try {
@@ -228,6 +252,12 @@ function effect(fn, options = {}) {
   }
   return stop;
 }
+const enterBatch = () => {
+  batchDepth++;
+};
+const leaveBatch = () => {
+  if (!--batchDepth) flush();
+};
 function batch(fn) {
   batchDepth++;
   let result;
@@ -253,29 +283,33 @@ function batch(fn) {
   return result;
 }
 export {
+  setActiveScope as A,
+  getScopeNode as B,
   combinedError as a,
   batch as b,
   causedError as c,
-  describeNode as d,
+  enterBatch as d,
   effect as e,
-  directiveError as f,
+  describeNode as f,
   getActiveEffect as g,
-  getCurrentScope as h,
+  directiveError as h,
   installDevtoolsBridge as i,
-  onCleanup as j,
+  getCurrentScope as j,
   createScope as k,
-  errorText as l,
+  leaveBatch as l,
   mark as m,
-  locate as n,
-  onDispose as o,
-  notifyRootMounted as p,
+  onDispose as n,
+  onCleanup as o,
+  errorText as p,
   queueEffect as q,
-  flush as r,
+  locate as r,
   setScopeNode as s,
-  notifyAppDisposed as t,
-  notifyAppCreated as u,
-  notifyRootUnmounted as v,
-  setActiveScope as w,
-  getScopeNode as x
+  notifyRootMounted as t,
+  flush as u,
+  notifyAppDisposed as v,
+  notifyAppCreated as w,
+  notifyRootUnmounted as x,
+  addDisposer as y,
+  removeDisposer as z
 };
-//# sourceMappingURL=effect-CDJn2fHL.js.map
+//# sourceMappingURL=effect-BQLFOYeW.js.map

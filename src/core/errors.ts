@@ -1,7 +1,6 @@
 import { objectConstructor, createError, brioErrors, isObjectType } from './native';
 
 const located = new WeakSet<object>();
-const scopeNodes = new WeakMap<object, Node>();
 
 const define = (error: object, name: string, value: unknown) =>
     objectConstructor.defineProperty(error, name, { configurable: true, value });
@@ -56,8 +55,11 @@ export const locate = (error: unknown, node?: Node): unknown => {
     return error;
 };
 
-export const setScopeNode = (scope: object, node: Node | undefined) => node && scopeNodes.set(scope, node);
-export const getScopeNode = (scope: object | undefined): Node | undefined => scope && scopeNodes.get(scope);
+// Scopes carry the node they hydrate so effect failures can name it.
+export const setScopeNode = (scope: object, node: Node | undefined) => {
+    if (node) (scope as { _node?: Node })._node = node;
+};
+export const getScopeNode = (scope: object | undefined): Node | undefined => (scope as { _node?: Node } | undefined)?._node;
 
 export function combinedError(message: string, errors: unknown[]): Error {
     const error = mark(createError(message + errors.map(item => '\n  - ' + errorText(item)).join('')));

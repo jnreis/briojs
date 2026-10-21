@@ -38,6 +38,8 @@ export function createInsert(runtime: DomRuntime): Insert {
         const siblingPlacement = placement === 'before' || placement === 'after' || placement === 'replaceWith';
         if (siblingPlacement && node === root)
             throw createError('$insert cannot insert beside or replace a mount root.');
+        if ((placement === 'before' || placement === 'after') && targetOwner?.loopRow)
+            throw createError('$insert cannot insert beside a b-for row; insert inside the row or into the list container instead.');
         if (placement === 'replaceWith' && targetOwner?.structuralRoot)
             throw createError('$insert cannot replace a root managed by b-if or b-for; replace its enclosing container instead.');
         const container = siblingPlacement ? getParent(node) : node;

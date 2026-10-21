@@ -23,9 +23,9 @@ export function portalPosition({ target, placement }: PortalDestination): { pare
     };
 }
 
-export type DomRange = {
-    start: Comment;
-    end: Comment;
+export type DomRange<Anchor extends ChildNode = Comment> = {
+    start: Anchor;
+    end: Anchor;
     nodes(includeAnchors?: boolean): Node[];
     moveBefore(parent: Node, reference: Node | null): void;
     detach(): void;
@@ -147,6 +147,49 @@ export function createDomRange(document: Document, name: string): DomRange {
         },
     };
 }
+
+// A range that is exactly one element: no anchors, no portals. Used for simple b-for rows.
+class ElementRange implements DomRange<Element> {
+    readonly end: Element;
+    readonly detached = false;
+    readonly destination = undefined;
+
+    constructor(readonly start: Element) {
+        this.end = start;
+    }
+
+    nodes(): Node[] {
+        return getParent(this.start) ? [this.start] : [];
+    }
+
+    moveBefore(parent: Node, reference: Node | null): void {
+        const { start } = this;
+        if (reference === start) return;
+        if (getParent(start) !== parent || getNextSibling(start) !== reference) insertBefore(parent, start, reference);
+    }
+
+    detach(): void {
+        removeElement(this.start);
+    }
+
+    remove(): void {
+        removeElement(this.start);
+    }
+
+    addPortal(): void {
+        throw createError('Single-element Brio ranges cannot host portals.');
+    }
+
+    removePortal(): void {}
+
+    redirect(): void {
+        throw createError('Single-element Brio ranges cannot be redirected.');
+    }
+
+    onRedirect(): void {}
+}
+
+export const createElementRange = (element: Element): DomRange<Element> => new ElementRange(element);
 
 const outputs = new WeakMap<Element, DomRange>();
 

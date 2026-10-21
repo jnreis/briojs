@@ -61,8 +61,11 @@ export const setBoundValue = (element: Element, name: string, value: unknown, fo
                 if (enabled) className.split(/\s+/).filter(Boolean).forEach(name => currentDynamic.add(name));
         }
         const combined = new Set([...staticNames, ...currentDynamic]);
-        if (combined.size) element.setAttribute('class', arrayFrom(combined).join(' '));
-        else removeAttribute(element, 'class');
+        const current = getAttribute(element, 'class');
+        if (combined.size) {
+            const next = arrayFrom(combined).join(' ');
+            if (current !== next) element.setAttribute('class', next);
+        } else if (current !== null) removeAttribute(element, 'class');
         return;
     }
     if (name === 'style' && value && isObjectType(value)) {
@@ -121,8 +124,14 @@ export function handleBind(
 
     const forceProp = Boolean(modifiers.prop);
     const target = resolveBindTarget(element, rawTarget, forceProp);
+    let last: unknown;
+    let written = false;
     effect(() => {
         const value = evaluate(expression, context, attrName, element);
+        // Unchanged primitives skip the DOM write; objects may have been mutated in place, so they always apply.
+        if (written && objectConstructor.is(value, last) && (value === null || !isObjectType(value))) return;
         setBoundValue(element, target, value, forceProp);
+        last = value;
+        written = true;
     });
 }

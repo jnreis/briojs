@@ -8,9 +8,9 @@ export declare function portalPosition({ target, placement }: PortalDestination)
     parent: Node;
     reference: Node | null;
 };
-export type DomRange = {
-    start: Comment;
-    end: Comment;
+export type DomRange<Anchor extends ChildNode = Comment> = {
+    start: Anchor;
+    end: Anchor;
     nodes(includeAnchors?: boolean): Node[];
     moveBefore(parent: Node, reference: Node | null): void;
     detach(): void;
@@ -23,4 +23,5 @@ export type DomRange = {
     onRedirect(callback: () => void): void;
 };
 export declare function createDomRange(document: Document, name: string): DomRange;
+export declare const createElementRange: (element: Element) => DomRange<Element>;
 export declare function ownElementRange(element: Element, context: Record<PropertyKey, any>, runtime: DomRuntime): DomRange;

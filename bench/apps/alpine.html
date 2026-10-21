@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Bench: Alpine</title></head>
+<body>
+<div id="app" x-data>
+    <table><tbody id="tbody">
+        <template x-for="row in $store.bench.rows" :key="row.id">
+            <tr :class="{ danger: $store.bench.selected === row.id }">
+                <td x-text="row.id"></td>
+                <td><a @click="$store.bench.selected = row.id" x-text="row.label"></a></td>
+                <td><a @click="$store.bench.remove(row.id)">x</a></td>
+            </tr>
+        </template>
+    </tbody></table>
+</div>
+<script type="module">
+import Alpine from '../../node_modules/alpinejs/dist/module.esm.js';
+import { buildData } from './shared.js';
+
+Alpine.store('bench', {
+    rows: [],
+    selected: 0,
+    remove(id) {
+        this.rows.splice(this.rows.findIndex(row => row.id === id), 1);
+    },
+});
+Alpine.start();
+const data = Alpine.store('bench');
+
+window.bench = {
+    name: 'alpine',
+    run: count => { data.rows = buildData(count); data.selected = 0; },
+    add: count => { data.rows.push(...buildData(count)); },
+    update: () => { const rows = data.rows; for (let index = 0; index < rows.length; index += 10) rows[index].label += ' !!!'; },
+    select: index => { data.selected = data.rows[index].id; },
+    swap: () => { const rows = data.rows; const row = rows[1]; rows[1] = rows[998]; rows[998] = row; },
+    remove: index => { data.remove(data.rows[index].id); },
+    clear: () => { data.rows = []; },
+    settle: () => Alpine.nextTick(),
+};
+window.benchReady = true;
+</script>
+</body>
+</html>

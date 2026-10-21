@@ -1,6 +1,6 @@
-import { getLength, createError, arrayFrom, deleteItem, TELEPORT } from '../core/native';
+import { getLength, createError, arrayFrom, deleteItem, includesItem, TELEPORT } from '../core/native';
 import { getChildNodes } from './native';
-import { getCurrentScope, onDispose } from '../core/scope';
+import { getCurrentScope } from '../core/scope';
 import type { Scope } from '../core/scope';
 import type { ExpressionScope } from '../core/expression';
 import type { DomRuntime } from './types';
@@ -12,31 +12,50 @@ export type NodeOwner = {
     runtime: DomRuntime;
     controlsChildren?: boolean;
     structuralRoot?: boolean;
+    loopRow?: boolean;
     teleport?: { source: Node; end: Node };
 };
 
 const owners = new WeakMap<Node, NodeOwner>();
-const pendingHydration = new WeakMap<Node, Set<() => void>>();
+// Nodes currently hydrating, innermost last; callbacks are allocated only when a teleport waits on one.
+const hydratingNodes: Node[] = [];
+const hydratingCallbacks: (Set<() => void> | undefined)[] = [];
 
-export const getPendingHydration = (node: Node): Set<() => void> | undefined => pendingHydration.get(node);
+export const getPendingHydration = (node: Node): Set<() => void> | undefined => {
+    const index = hydratingNodes.lastIndexOf(node);
+    return index < 0 ? undefined : (hydratingCallbacks[index] ??= new Set());
+};
 
 export function withHydration(node: Node, hydrate: () => void): void {
-    if (pendingHydration.has(node)) {
+    if (includesItem(hydratingNodes, node)) {
         hydrate();
         return;
     }
-    const callbacks = new Set<() => void>();
-    pendingHydration.set(node, callbacks);
+    const depth = hydratingNodes.push(node) - 1;
+    hydratingCallbacks[depth] = undefined;
+    const pop = () => {
+        const callbacks = hydratingCallbacks[depth];
+        hydratingNodes.length = depth;
+        hydratingCallbacks.length = depth;
+        return callbacks;
+    };
     try {
         hydrate();
-    } finally {
-        deleteItem(pendingHydration, node);
+    } catch (error) {
+        pop();
+        throw error;
     }
-    callbacks.forEach(callback => callback());
+    pop()?.forEach(callback => callback());
 }
 
+// Owners are dropped lazily once their scope is disposed instead of registering a cleanup per node.
 export function getNodeOwner(node: Node): NodeOwner | undefined {
-    return owners.get(node);
+    const owner = owners.get(node);
+    if (owner?.scope.disposed) {
+        deleteItem(owners, node);
+        return undefined;
+    }
+    return owner;
 }
 
 export function ownNode(node: Node, context: ExpressionScope, runtime: DomRuntime): NodeOwner {
@@ -44,9 +63,6 @@ export function ownNode(node: Node, context: ExpressionScope, runtime: DomRuntim
     if (!scope) throw createError('DOM hydration requires an active Brio scope.');
     const owner: NodeOwner = { context, runtime, scope };
     owners.set(node, owner);
-    onDispose(scope, () => {
-        if (owners.get(node) === owner) deleteItem(owners, node);
-    });
     return owner;
 }
 
@@ -54,14 +70,14 @@ export function disposeNodes(nodes: readonly Node[]): void {
     const scopes = new Set<Scope>();
     const selected = (node: Node) => nodes.some(root => root === node || root.contains(node));
     const visit = (node: Node) => {
-        const owner = owners.get(node);
+        const owner = getNodeOwner(node);
         if (owner) scopes.add(owner.scope);
         visitChildren(arrayFrom(getChildNodes(node)));
     };
     const visitChildren = (children: readonly Node[]) => {
         for (let index = 0; index < getLength(children); index++) {
             const child = children[index];
-            const portal = owners.get(child)?.[TELEPORT];
+            const portal = getNodeOwner(child)?.[TELEPORT];
             if (portal && !selected(portal.source)) {
                 const end = children.indexOf(portal.end, index);
                 if (end !== -1) {

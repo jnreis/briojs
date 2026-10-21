@@ -8,6 +8,7 @@ export type NodeOwner = {
     runtime: DomRuntime;
     controlsChildren?: boolean;
     structuralRoot?: boolean;
+    loopRow?: boolean;
     teleport?: {
         source: Node;
         end: Node;

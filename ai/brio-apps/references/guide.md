@@ -98,6 +98,10 @@ There is no `with`, implicit state-name resolution, or sandbox.
 | `flush` | Apply pending updates now, e.g. `$data.open = true; flush(); $ref.panel.focus()`. |
 | `onCleanup` | Script cleanup helper; use synchronously in the active scope. |
 
+`$context` inherits from parent contexts: reads see everything, but
+`Object.keys($context)` lists only the element's own keys. Single-element `b-for`
+rows have no range comments; do not rely on `<!--brio:range-->` markers around them.
+
 The context is also accessible as `$context`, especially in contextual scripts.
 Helpers not supplied by the current context are undefined.
 Ordinary globals (`Math`, `JSON`, timers) and local variables resolve normally.
@@ -437,7 +441,9 @@ timers, and other external resources there.
 Signals and computed values use `.value`; effects run synchronously by default.
 `batch` groups synchronous writes. Event handlers run inside a batch, so DOM
 depending on their writes (new `b-if` branches, `$ref` entries) appears when the
-handler returns; call `flush()` first when the same handler needs that DOM. `createScope().run(...)` owns created effects;
+handler returns; call `flush()` first when the same handler needs that DOM. Wrap
+several writes made outside handlers (timers, fetch callbacks) in `batch` so lists
+update once. `createScope().run(...)` owns created effects;
 dispose that scope. The app's state factory alone is not a scope.
 ESM also exports `resource(fetcher)` from `briojs` and `briojs/reactivity`,
 not the browser global. It starts fetching and exposes `data.value`,
@@ -478,7 +484,7 @@ calling button's scope. Handles expose `nodes`, `removed`, and idempotent
 Root unmount invalidates old contextual insertion helpers.
 
 No sibling placement/replacement of mount roots; no direct replacement of
-`b-if`/`b-for` generated roots. Child insertion into `b-ignore`, `b-text`,
+`b-if`/`b-for` generated roots; no `before`/`after` placement beside a `b-for` row. Child insertion into `b-ignore`, `b-text`,
 `b-html`, or router-controlled containers is rejected. Replace an appropriate
 enclosing container instead. Replacement is destructive: hydration failure
 cleans the failed insertion, but does not restore old content.

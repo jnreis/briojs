@@ -1,20 +1,22 @@
-import { i as isFunction, c as createTypeError, o as objectConstructor, n as createSyntaxError, d as deleteItem, f as isObjectType, p as includesItem, q as objectKeys, R as ReflectApi, G as GET_OWN_PROPERTY_DESCRIPTOR, l as ownKeys } from "./native-DNTl55LH.js";
-import { m as mark, d as describeNode, f as directiveError, e as effect } from "./effect-CDJn2fHL.js";
-import { t as trigger, a as track } from "./state-DkCU-RSH.js";
+import { i as isFunction, c as createTypeError, g as getLength, o as objectConstructor, n as createSyntaxError, d as deleteItem, f as isObjectType, p as includesItem, q as objectKeys, R as ReflectApi, G as GET_OWN_PROPERTY_DESCRIPTOR, l as ownKeys } from "./native-DNTl55LH.js";
+import { m as mark, f as describeNode, h as directiveError, e as effect } from "./effect-BQLFOYeW.js";
+import { t as trigger, a as track } from "./state-BMDWKS-7.js";
 const valueExpressions = /* @__PURE__ */ new Map();
 const statementExpressions = /* @__PURE__ */ new Map();
 const assignmentExpressions = /* @__PURE__ */ new Map();
 const functionExpressions = /* @__PURE__ */ new Map();
 const $CONTEXT = "$context";
-const contextBindings = `
-"use strict";
-const { $data, $el, $event, $id, $ref, $for, $mutations, $size, $entry, $props, $emit, $insert, $stores, $provided, trustedHTML, flush, onCleanup } = ${$CONTEXT};
+const contextNames = ["$data", "$el", "$event", "$id", "$ref", "$for", "$mutations", "$size", "$entry", "$props", "$emit", "$insert", "$stores", "$provided", "trustedHTML", "flush", "onCleanup"];
+const contextBindings = (expression) => {
+  const names = contextNames.filter((name) => new RegExp(`(?<![\\w$])${name.replace("$", "\\$")}(?![\\w$])`).test(expression));
+  return `"use strict";${getLength(names) ? ` const { ${names.join(", ")} } = ${$CONTEXT};` : ""}
 `;
+};
 function evaluateFunction(source, context, node) {
   const fn = compile(
     functionExpressions,
     source,
-    (expression) => new Function($CONTEXT, `${contextBindings} return (${expression.replace(/;\s*$/, "")});`),
+    (expression) => new Function($CONTEXT, `${contextBindings(expression)} return (${expression.replace(/;\s*$/, "")});`),
     "b-script",
     node
   );
@@ -24,8 +26,11 @@ function evaluateFunction(source, context, node) {
   return result;
 }
 function createExpressionScope(...sources) {
-  if (sources.length === 2) return { __proto__: null, ...sources[1], ...sources[0] };
-  return objectConstructor.assign(objectConstructor.create(null), ...sources.reverse());
+  const last = getLength(sources) - 1;
+  let scope = last < 1 ? objectConstructor.assign(objectConstructor.create(null), sources[0]) : sources[last];
+  for (let index = last - 1; index >= 0; index--)
+    scope = objectConstructor.assign(objectConstructor.create(scope), sources[index]);
+  return scope;
 }
 const compile = (cache, source, make, directive, node) => {
   let fn = cache.get(source);
@@ -47,7 +52,7 @@ function evaluate(source, scope, directive, node = scope.$el) {
   const fn = compile(
     valueExpressions,
     source,
-    (expression) => new Function($CONTEXT, `${contextBindings} return (${expression});`),
+    (expression) => new Function($CONTEXT, `${contextBindings(expression)} return (${expression});`),
     directive,
     node
   );
@@ -61,7 +66,7 @@ function execute(source, scope, event, directive, node = scope.$el) {
   const fn = compile(
     statementExpressions,
     source,
-    (expression) => new Function($CONTEXT, `${contextBindings} ${expression}`),
+    (expression) => new Function($CONTEXT, `${contextBindings(expression)} ${expression}`),
     directive,
     node
   );
@@ -75,7 +80,7 @@ function assign(source, scope, value, directive, node = scope.$el) {
   const fn = compile(
     assignmentExpressions,
     source,
-    (expression) => new Function($CONTEXT, "$value", `${contextBindings} return (${expression} = $value);`),
+    (expression) => new Function($CONTEXT, "$value", `${contextBindings(expression)} return (${expression} = $value);`),
     directive,
     node
   );
@@ -149,4 +154,4 @@ export {
   createProvidedValues as g,
   evaluateFunction as h
 };
-//# sourceMappingURL=context-values-CYqaJ4Qw.js.map
+//# sourceMappingURL=context-values-BDHq3Msu.js.map

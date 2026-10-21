@@ -1,5 +1,5 @@
-import { getLength, createError, deleteItem } from './native';
-import { combinedError, setScopeNode, getScopeNode } from '../core/errors';
+import { createError, deleteItem, isInstanceOf } from './native';
+import { combinedError } from '../core/errors';
 
 export type Scope = {
     run<T>(fn: () => T): T;
@@ -7,65 +7,98 @@ export type Scope = {
     readonly disposed: boolean;
 };
 
-let activeScope: Scope | undefined;
-const scopeCleanups = new WeakMap<Scope, Set<() => void>>();
+type Cleanup = (() => void) | BrioScope;
+
+let activeScope: BrioScope | undefined;
+const noop = () => {};
+
+// Methods live on the prototype and cleanups are allocated lazily: one scope is created per hydrated node.
+class BrioScope implements Scope {
+    _disposed = false;
+    _cleanups: Set<Cleanup> | undefined;
+    _parent: BrioScope | undefined;
+    _node: Node | undefined;
+
+    constructor(parent: BrioScope | undefined) {
+        if (!parent) return;
+        this._node = parent._node;
+        if (parent._disposed) {
+            this._disposed = true;
+            return;
+        }
+        this._parent = parent;
+        (parent._cleanups ??= new Set()).add(this);
+    }
+
+    get disposed(): boolean {
+        return this._disposed;
+    }
+
+    run<T>(fn: () => T): T {
+        if (this._disposed) throw createError('Cannot run a disposed Brio scope.');
+        const previous = activeScope;
+        activeScope = this;
+        try {
+            return fn();
+        } finally {
+            activeScope = previous;
+        }
+    }
+
+    dispose(): void {
+        if (this._disposed) return;
+        this._disposed = true;
+        const parent = this._parent;
+        // A disposing parent clears its whole set afterwards, so skip the per-child removal.
+        if (parent && !parent._disposed) deleteItem(parent._cleanups, this);
+        const cleanups = this._cleanups;
+        if (!cleanups) return;
+        let errors: unknown[] | undefined;
+        for (const cleanup of cleanups) {
+            try {
+                if (isInstanceOf(cleanup, BrioScope)) cleanup.dispose();
+                else cleanup();
+            } catch (error) {
+                (errors ??= []).push(error);
+            }
+        }
+        cleanups.clear();
+        if (errors) throw combinedError('One or more Brio scope cleanups failed.', errors);
+    }
+}
 
 export function createScope(parent: Scope | undefined = activeScope): Scope {
-    let disposed = false;
-    const cleanups = new Set<() => void>();
-    let detachFromParent: (() => void) | undefined;
-    const scope: Scope = {
-        get disposed() {
-            return disposed;
-        },
-        run<T>(fn: () => T): T {
-            if (disposed) throw createError('Cannot run a disposed Brio scope.');
-            const previous = activeScope;
-            activeScope = scope;
-            try {
-                return fn();
-            } finally {
-                activeScope = previous;
-            }
-        },
-        dispose() {
-            if (disposed) return;
-            disposed = true;
-            detachFromParent?.();
-            const errors: unknown[] = [];
-            for (const cleanup of [...cleanups]) {
-                try {
-                    cleanup();
-                } catch (error) {
-                    errors.push(error);
-                }
-            }
-            cleanups.clear();
-            if (getLength(errors)) throw combinedError('One or more Brio scope cleanups failed.', errors);
-        },
-    };
-    scopeCleanups.set(scope, cleanups);
-    setScopeNode(scope, getScopeNode(parent));
-    if (parent) detachFromParent = onDispose(parent, () => scope.dispose());
-    return scope;
+    return new BrioScope(parent as BrioScope | undefined);
 }
 
 export function onDispose(scope: Scope | undefined, cleanup: () => void): () => void {
-    if (!scope) return () => {};
-    if (scope.disposed) {
+    if (!scope) return noop;
+    const owner = scope as BrioScope;
+    if (owner._disposed) {
         cleanup();
-        return () => {};
+        return noop;
     }
-    const originalCleanup = cleanup;
     let active = true;
     const wrapped = () => {
         if (!active) return;
         active = false;
-        deleteItem(scopeCleanups.get(scope), wrapped);
-        originalCleanup();
+        if (!owner._disposed) deleteItem(owner._cleanups, wrapped);
+        cleanup();
     };
-    scopeCleanups.get(scope)?.add(wrapped);
+    (owner._cleanups ??= new Set()).add(wrapped);
     return wrapped;
+}
+
+/** Registers an idempotent cleanup without a wrapper; pair with `removeDisposer` when it runs early. */
+export function addDisposer(scope: Scope, cleanup: () => void): void {
+    const owner = scope as BrioScope;
+    if (owner._disposed) cleanup();
+    else (owner._cleanups ??= new Set()).add(cleanup);
+}
+
+export function removeDisposer(scope: Scope, cleanup: () => void): void {
+    const owner = scope as BrioScope;
+    if (!owner._disposed) deleteItem(owner._cleanups, cleanup);
 }
 
 export function onCleanup(cleanup: () => void): () => void {
@@ -79,6 +112,6 @@ export function getCurrentScope(): Scope | undefined {
 
 export function setActiveScope(scope: Scope | undefined): Scope | undefined {
     const prev = activeScope;
-    activeScope = scope;
+    activeScope = scope as BrioScope | undefined;
     return prev;
 }

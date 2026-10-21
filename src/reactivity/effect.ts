@@ -1,8 +1,8 @@
-import { getLength, objectConstructor, deleteItem } from '../core/native';
+import { getLength, deleteItem } from '../core/native';
 import { combinedError, locate, getScopeNode } from '../core/errors';
 import { devtoolsEnabled, notifyEffectCreated, notifyEffectDisposed } from '../plugins/devtools-bridge';
 import type { EffectOptions, Scope, Stop } from './types';
-import { getCurrentScope, onDispose } from '../core/scope';
+import { getCurrentScope, addDisposer, removeDisposer } from '../core/scope';
 
 export type ReactiveEffect = {
     fn: () => unknown;
@@ -74,24 +74,25 @@ export const flush = (): void => {
 };
 
 export function effect<T>(fn: () => T, options: EffectOptions = {}): Stop {
+    const scope = getCurrentScope();
     const reactiveEffect: ReactiveEffect = {
         fn,
         scheduler: options.scheduler,
-        scope: getCurrentScope(),
+        scope,
         deps: [],
         active: true,
         running: false,
     };
     const stop = (() => {
         if (!reactiveEffect.active) return;
-        reactiveEffect.active = false;
+        reactiveEffect.active = (stop as { active: boolean }).active = false;
+        if (scope) removeDisposer(scope, stop);
         cleanupEffect(reactiveEffect);
         if (devtoolsEnabled) notifyEffectDisposed(Boolean(reactiveEffect.devtoolsTracked));
-    }) as Stop;
-    objectConstructor.defineProperty(stop, 'active', { get: () => reactiveEffect.active });
+    }) as Stop & { active: boolean };
+    stop.active = true;
     stop.run = () => runEffect(reactiveEffect);
-    const currentScope = getCurrentScope();
-    if (currentScope) onDispose(currentScope, stop);
+    if (scope) addDisposer(scope, stop);
     if (devtoolsEnabled) reactiveEffect.devtoolsTracked = notifyEffectCreated();
     if (!options.lazy) {
         try {
@@ -103,6 +104,15 @@ export function effect<T>(fn: () => T, options: EffectOptions = {}): Stop {
     }
     return stop;
 }
+
+/** Allocation-free batch bracket for hot internal paths; `leaveBatch` flushes at the outermost level. */
+export const enterBatch = (): void => {
+    batchDepth++;
+};
+
+export const leaveBatch = (): void => {
+    if (!--batchDepth) flush();
+};
 
 export function batch<T>(fn: () => T): T {
     batchDepth++;

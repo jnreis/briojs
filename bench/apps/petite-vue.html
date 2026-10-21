@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Bench: petite-vue</title></head>
+<body>
+<div id="app" v-scope>
+    <table><tbody id="tbody">
+        <tr v-for="row in rows" :key="row.id" :class="{ danger: selected === row.id }">
+            <td>{{ row.id }}</td>
+            <td><a @click="selected = row.id">{{ row.label }}</a></td>
+            <td><a @click="remove(row.id)">x</a></td>
+        </tr>
+    </tbody></table>
+</div>
+<script type="module">
+import { createApp, reactive, nextTick } from '../../node_modules/petite-vue/dist/petite-vue.es.js';
+import { buildData } from './shared.js';
+
+const data = reactive({
+    rows: [],
+    selected: 0,
+    remove(id) {
+        this.rows.splice(this.rows.findIndex(row => row.id === id), 1);
+    },
+});
+createApp(data).mount('#app');
+
+window.bench = {
+    name: 'petite-vue',
+    run: count => { data.rows = buildData(count); data.selected = 0; },
+    add: count => { data.rows.push(...buildData(count)); },
+    update: () => { const rows = data.rows; for (let index = 0; index < rows.length; index += 10) rows[index].label += ' !!!'; },
+    select: index => { data.selected = data.rows[index].id; },
+    swap: () => { const rows = data.rows; const row = rows[1]; rows[1] = rows[998]; rows[998] = row; },
+    remove: index => { data.remove(data.rows[index].id); },
+    clear: () => { data.rows = []; },
+    settle: () => nextTick(),
+};
+window.benchReady = true;
+</script>
+</body>
+</html>

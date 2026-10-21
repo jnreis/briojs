@@ -39,6 +39,30 @@ For existing applications, the separate
 actual legacy runtime, maps changed/removed APIs, and provides a staged
 migration workflow with a tested before/after example.
 
+## Measuring runtime performance
+
+The [benchmark runner](./bench/run.mjs) drives the keyed-table scenarios of the
+[js-framework-benchmark](https://krausest.github.io/js-framework-benchmark/current.html)
+(create/replace/append/clear rows, update every tenth row, select, swap, remove)
+in headless Chromium against [`bench/apps/brio.html`](./bench/apps/brio.html),
+and reports median milliseconds plus heap and DOM nodes per row for 10,000 rows.
+
+```sh
+npm run bench            # Brio only
+npm run bench:compare    # Brio, Vue, petite-vue, Alpine, React, Preact and Svelte side by side
+npm run bench:check      # fail if a metric regresses >15% (and >1 ms) vs the baseline
+node bench/run.mjs --save   # record a new bench/baseline.json after intentional changes
+```
+
+Each script rebuilds `dist` first. Vue, petite-vue and Alpine load their browser
+ESM builds directly. React, Preact (JSX) and Svelte (compiled components) are
+written in [`bench/src`](./bench/src) and compiled to the git-ignored `bench/dist`
+by [`bench/build.mjs`](./bench/build.mjs), which the runner calls automatically.
+Every page applies each change synchronously (`flushSync` for React and Svelte;
+Preact's render microtask completes before `settle()` resolves), so all
+frameworks are timed doing the same work. Timings include layout, depend on the
+machine, and are comparable only against a baseline recorded on the same machine.
+
 ## Measuring bundle size
 
 From a development checkout with dependencies installed:

@@ -1,4 +1,4 @@
-import { isFunction, objectConstructor, createTypeError, createSyntaxError, deleteItem } from './native';
+import { isFunction, objectConstructor, createTypeError, createSyntaxError, deleteItem, getLength } from './native';
 import { directiveError, describeNode, mark } from './errors';
 
 export type ExpressionScope = Record<PropertyKey, any>;
@@ -10,14 +10,17 @@ const functionExpressions = new Map<string, Function>();
 
 const $CONTEXT: '$context' = '$context';
 
-const contextBindings = `
-"use strict";
-const { $data, $el, $event, $id, $ref, $for, $mutations, $size, $entry, $props, $emit, $insert, $stores, $provided, trustedHTML, flush, onCleanup } = ${$CONTEXT};
-`;
+const contextNames = ['$data', '$el', '$event', '$id', '$ref', '$for', '$mutations', '$size', '$entry', '$props', '$emit', '$insert', '$stores', '$provided', 'trustedHTML', 'flush', 'onCleanup'];
+
+// Only names that appear in the source are destructured, so each evaluation reads just what it uses.
+const contextBindings = (expression: string): string => {
+    const names = contextNames.filter(name => new RegExp(`(?<![\\w$])${name.replace('$', '\\$')}(?![\\w$])`).test(expression));
+    return `"use strict";${getLength(names) ? ` const { ${names.join(', ')} } = ${$CONTEXT};` : ''}\n`;
+};
 
 export function evaluateFunction(source: string, context: ExpressionScope, node?: Node): ($context: ExpressionScope) => unknown {
     const fn = compile(functionExpressions, source, expression =>
-        new Function($CONTEXT, `${contextBindings} return (${expression.replace(/;\s*$/, '')});`), 'b-script', node,
+        new Function($CONTEXT, `${contextBindings(expression)} return (${expression.replace(/;\s*$/, '')});`), 'b-script', node,
     );
     const result = fn(context);
     if (!isFunction(result))
@@ -25,10 +28,18 @@ export function evaluateFunction(source: string, context: ExpressionScope, node?
     return result;
 }
 
+/**
+ * Earlier sources win. The last source becomes the prototype instead of being copied, so a child context costs
+ * only its own keys; `Object.keys($context)` therefore lists own keys while reads see the whole chain.
+ */
 export function createExpressionScope(...sources: ExpressionScope[]): ExpressionScope {
-    // Earlier sources win; the two-source form is the hot path for every hydrated element.
-    if (sources.length === 2) return { __proto__: null, ...sources[1], ...sources[0] } as ExpressionScope;
-    return objectConstructor.assign(objectConstructor.create(null), ...sources.reverse());
+    const last = getLength(sources) - 1;
+    let scope: ExpressionScope = last < 1
+        ? objectConstructor.assign(objectConstructor.create(null), sources[0])
+        : sources[last];
+    for (let index = last - 1; index >= 0; index--)
+        scope = objectConstructor.assign(objectConstructor.create(scope), sources[index]);
+    return scope;
 }
 
 const compile = (
@@ -60,7 +71,7 @@ const compile = (
  */
 export function evaluate(source: string, scope: ExpressionScope, directive?: string, node: Node = scope.$el): any {
     const fn = compile(valueExpressions, source, expression =>
-        new Function($CONTEXT, `${contextBindings} return (${expression});`), directive, node,
+        new Function($CONTEXT, `${contextBindings(expression)} return (${expression});`), directive, node,
     );
     try {
         return fn(scope);
@@ -71,7 +82,7 @@ export function evaluate(source: string, scope: ExpressionScope, directive?: str
 
 export function execute(source: string, scope: ExpressionScope, event?: Event, directive?: string, node: Node = scope.$el): void {
     const fn = compile(statementExpressions, source, expression =>
-        new Function($CONTEXT, `${contextBindings} ${expression}`), directive, node,
+        new Function($CONTEXT, `${contextBindings(expression)} ${expression}`), directive, node,
     );
     try {
         fn(event === undefined ? scope : createExpressionScope({ $event: event }, scope));
@@ -82,7 +93,7 @@ export function execute(source: string, scope: ExpressionScope, event?: Event, d
 
 export function assign(source: string, scope: ExpressionScope, value: unknown, directive?: string, node: Node = scope.$el): void {
     const fn = compile(assignmentExpressions, source, expression =>
-        new Function($CONTEXT, '$value', `${contextBindings} return (${expression} = $value);`), directive, node,
+        new Function($CONTEXT, '$value', `${contextBindings(expression)} return (${expression} = $value);`), directive, node,
     );
     try {
         fn(scope, value);

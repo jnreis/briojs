@@ -1,4 +1,6 @@
-export declare function extractModifiers(attrName: string): {
+type ParsedName = {
     baseName: string;
-    modifiers: Record<string, boolean>;
+    modifiers: Readonly<Record<string, boolean>>;
 };
+export declare function extractModifiers(attrName: string): ParsedName;
+export {};

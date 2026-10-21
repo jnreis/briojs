@@ -1,5 +1,9 @@
 export type ExpressionScope = Record<PropertyKey, any>;
 export declare function evaluateFunction(source: string, context: ExpressionScope, node?: Node): ($context: ExpressionScope) => unknown;
+/**
+ * Earlier sources win. The last source becomes the prototype instead of being copied, so a child context costs
+ * only its own keys; `Object.keys($context)` therefore lists own keys while reads see the whole chain.
+ */
 export declare function createExpressionScope(...sources: ExpressionScope[]): ExpressionScope;
 /**
  * `directive` names the attribute (e.g. `b-bind-href`) and `node` the element it sits on, so failures read

@@ -1,6 +1,6 @@
 import { getLength, createSyntaxError, startsWith } from '../../core/native';
 import { addEventListener, removeEventListener } from '../native';
-import { createExpressionScope, execute } from '../../core/expression';
+import { execute } from '../../core/expression';
 import { batch } from '../../reactivity/effect';
 import { onCleanup } from '../../core/scope';
 
@@ -31,7 +31,7 @@ export function handleOn(
         if (modifiers.outside && (element.contains(event.target as Node) || !element.isConnected)) return;
 
         const invoke = () => batch(() => {
-            execute(expression, createExpressionScope({ $event: event }, context), event, attrName, element);
+            execute(expression, context, event, attrName, element);
         });
 
         if (modifiers.debounce) {

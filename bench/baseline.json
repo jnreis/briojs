@@ -1,0 +1,13 @@
+{
+  "create 1k rows": 18.1,
+  "replace 1k rows": 26.4,
+  "update every 10th row": 2.45,
+  "select row": 1.55,
+  "swap rows": 1.4,
+  "remove row": 1.7,
+  "create 10k rows": 218.4,
+  "append 1k rows": 23.75,
+  "clear 1k rows": 2.65,
+  "heap per row (KB)": 5.27,
+  "tbody nodes per row": 1
+}

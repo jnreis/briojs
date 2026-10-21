@@ -12,8 +12,12 @@ import {
     removeElement,
     deleteItem,
     $PARENT,
+    ATTRIBUTES,
+    B_TELEPORT,
+    TELEPORT,
+    TEMPLATE,
 } from '../../core/native';
-import { getParent, getAttribute, removeAttribute, getOwnerDocument, insertBefore } from '../native';
+import { getParent, getAttribute, removeAttribute, getOwnerDocument, insertBefore, getChildNodes, getNextSibling } from '../native';
 import { createExpressionScope, evaluate } from '../../core/expression';
 import { effect } from '../../reactivity/effect';
 import { createScope, onCleanup } from '../../core/scope';
@@ -21,19 +25,22 @@ import { createScopedState } from '../../core/scoped-state';
 import type { Scope } from '../../core/scope';
 import type { DomRuntime } from '../types';
 import { getNodeOwner } from '../ownership';
-import { createDomRange, ownElementRange } from '../range';
+import { createDomRange, createElementRange, ownElementRange } from '../range';
+import { extractModifiers } from './modifier';
 import type { DomRange, PortalDestination } from '../range';
 import { combinedError } from '../../core/errors';
 import { cloneProjectedNode } from '../components';
-import { createRefs } from '../refs';
+import { defineLazyRefs } from '../refs';
 
 type LoopRow = {
     element: Element;
     context: Record<PropertyKey, any>;
     values: Record<string, unknown>;
+    item: unknown;
+    index: unknown;
     scope: Scope;
     key: string | number;
-    output: DomRange;
+    output: DomRange<ChildNode>;
 };
 
 /** Indexes of a longest strictly increasing run of non-negative positions (O(n log n)). */
@@ -94,6 +101,11 @@ export function handleFor(
     removeAttribute(template, 'b-for');
     removeAttribute(template, 'b-key');
     removeElement(element);
+    // Rows that cannot be teleported or expand into template content are their own range, without anchors.
+    const anchorless = template.localName !== TEMPLATE && !arrayFrom(template[ATTRIBUTES]).some(({ name }) => {
+        const { baseName } = extractModifiers(name);
+        return baseName === B_TELEPORT || baseName === TELEPORT || baseName === 'b-template';
+    });
 
     const rows = new Map<string | number, LoopRow>();
     const portals: { destination: PortalDestination; range: DomRange }[] = [];
@@ -142,6 +154,37 @@ export function handleFor(
         }
     };
 
+    // Emptying the loop: when the parent holds only this loop's anchors, its rows and blank text,
+    // one `textContent` write replaces a thousand individual removals.
+    const clearAll = () => {
+        const host = getParent(output.end)!;
+        const kept: ChildNode[] = [];
+        let blank = true;
+        for (let node = host.firstChild; node; node = getNextSibling(node)) {
+            if (node === output.start) node = output.end;
+            else if (node.nodeType !== Node.TEXT_NODE || (node.nodeValue ?? '').trim()) {
+                blank = false;
+                break;
+            }
+            kept.push(node);
+            if (getLength(kept) > 16) {
+                blank = false;
+                break;
+            }
+        }
+        if (!blank || getLength(getChildNodes(host)) !== rows.size + getLength(kept) + 1) return;
+        try {
+            for (const row of rows.values()) row.scope.dispose();
+        } finally {
+            rows.clear();
+            host.textContent = '';
+            for (const node of kept) {
+                if (node === output.end) host.appendChild(output.start);
+                host.appendChild(node);
+            }
+        }
+    };
+
     onCleanup(() => {
         const errors: unknown[] = [];
         for (const row of rows.values()) {
@@ -163,29 +206,45 @@ export function handleFor(
         try {
             const { items, keys } = enumerate(evaluate(collectionExpression, context, 'b-for', element));
             const nextKeys = new Set<string | number>();
-            ordered = [];
+            // Keys are read through one reusable probe so existing rows cost no per-row state or context.
+            const probe: Record<PropertyKey, unknown> = { $parent: context.$for };
+            const keyContext = keyExpression ? createExpressionScope({ $for: probe }, context) : undefined;
+            const rowKeys: (string | number)[] = [];
+            let survivors = 0;
             for (let position = 0; position < getLength(items); position++) {
-                const item = items[position];
-                const index = keys ? keys[position] : position;
-                const loopData = { [itemName]: item, [indexName]: index };
-                const rowState = createScopedState(loopData, context.$for);
-                const rowContext = createExpressionScope({ $for: rowState }, context);
-                const evaluatedKey = keyExpression ? evaluate(keyExpression, rowContext, 'b-key', element) : index;
+                let evaluatedKey: unknown = keys ? keys[position] : position;
+                if (keyContext) {
+                    probe[itemName] = items[position];
+                    probe[indexName] = evaluatedKey;
+                    evaluatedKey = evaluate(keyExpression!, keyContext, 'b-key', element);
+                }
                 if (!isString(evaluatedKey) && !isNumber(evaluatedKey))
                     throw createTypeError('b-key must evaluate to a string or number.');
                 if (nextKeys.has(evaluatedKey))
                     throw createError(`Duplicate b-for key "${evaluatedKey}" from b-key="${keyExpression}".`);
                 nextKeys.add(evaluatedKey);
-
+                rowKeys.push(evaluatedKey);
+                if (rows.has(evaluatedKey)) survivors++;
+            }
+            // Nothing survives (clear or full replace): drop every old row at once before building new ones.
+            if (!survivors && rows.size && anchorless && !getLength(portals)) clearAll();
+            ordered = [];
+            for (let position = 0; position < getLength(items); position++) {
+                const item = items[position];
+                const index = keys ? keys[position] : position;
+                const evaluatedKey = rowKeys[position];
                 let row = rows.get(evaluatedKey);
                 if (!row) {
-                    rowContext.$ref = createRefs();
+                    const rowState = createScopedState({ [itemName]: item, [indexName]: index }, context.$for);
+                    const rowContext = defineLazyRefs(createExpressionScope({ $for: rowState }, context));
                     const rowElement = cloneProjectedNode(template);
                     const rowScope = createScope();
                     insertBefore(getParent(output.end)!, rowElement, output.end);
-                    const range = rowScope.run(() => ownElementRange(rowElement, rowContext, runtime));
+                    const range: DomRange<ChildNode> = anchorless
+                        ? createElementRange(rowElement)
+                        : rowScope.run(() => ownElementRange(rowElement, rowContext, runtime));
                     range.onRedirect(reconcilePositions);
-                    row = { element: rowElement, context: rowContext, values: rowState, scope: rowScope, key: evaluatedKey, output: range };
+                    row = { element: rowElement, context: rowContext, values: rowState, item, index, scope: rowScope, key: evaluatedKey, output: range };
                     rows.set(evaluatedKey, row);
                     try {
                         rowScope.run(() => hydrateNodeFn(rowElement, rowContext, runtime));
@@ -195,14 +254,16 @@ export function handleFor(
                             rowScope.dispose();
                         } catch (cleanupError) {
                             throw combinedError('Loop hydration and cleanup both failed.', [error, cleanupError]);
+                        } finally {
+                            removeElement(range);
                         }
                         throw error;
                     }
                     const owner = getNodeOwner(rowElement);
-                    if (owner) owner.structuralRoot = true;
+                    if (owner) owner.structuralRoot = owner.loopRow = true;
                 } else {
-                    row.values[itemName] = item;
-                    row.values[indexName] = index;
+                    if (row.item !== item) row.values[itemName] = row.item = item;
+                    if (row.index !== index) row.values[indexName] = row.index = index;
                 }
                 ordered.push(row);
             }

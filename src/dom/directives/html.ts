@@ -40,9 +40,10 @@ export function handleText(
     expression: string,
     context: Record<PropertyKey, any>,
 ): void {
+    let last: string | undefined;
     effect(() => {
         const value = evaluate(expression, context, 'b-text', element);
         const text = value === null || value === undefined ? '' : String(value);
-        element.textContent = text;
+        if (text !== last) element.textContent = last = text;
     });
 }

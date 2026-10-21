@@ -132,6 +132,8 @@ Expressions run in strict mode without `with` or implicit state-name resolution.
 
 The context is also available as `$context`. Named bindings include `$data`, `$el`, `$id`, `$ref`, `$for`, `$props`, `$emit`, `$insert`, `$stores`, `$provided`, `trustedHTML`, and `flush`. Event handlers receive `$event`; observers supply `$mutations`, `$size`, or `$entry`. Contextual scripts supply `onCleanup`. Bindings are read-only references; mutate writable state properties (`$data.count++`), not the binding itself (`$data = {}`). `$ref` names are also read-only. Event statements can declare ordinary local variables.
 
+Each nested context inherits from its parent through the prototype chain and stores only what it adds (for example its own `$el`). Reads such as `$context.$data` see the whole chain, but `Object.keys($context)` and spreads list only the element's own keys.
+
 Data and loop ancestry are independent: `$data.$parent.$parent` accesses a grandparent data scope, while `$for.$parent.$parent` accesses a grandparent loop. Ordinary elements and loops do not add data ancestry levels; data scopes do not add loop ancestry levels. Component setup state creates a data scope. App state and outermost loops have `$parent === undefined`. An empty `b-data` attribute inherits data without adding a scope; `b-data="{}"` creates one.
 
 `$parent` is reserved, read-only metadata on scope-specific views, not a field added to user state. It is excluded from keys, spreads, and JSON serialization. The same underlying state object may have different parents in different scopes. Normal reads, writes, and methods remain reactive. Access ancestry through `$data.$parent` and `$for.$parent`, and use `$context` for other helpers.
@@ -282,6 +284,8 @@ Directive arguments use hyphens (`b-on-click`, `b-bind-href`); options use chain
 ```
 
 `b-for` uses `item in $data.items` or `item, index in $data.items`. These names declare properties of `$for`, so row expressions use `$for.item` and `$for.index`. Without `b-key`, the index is the key; provide a stable key when items can be inserted, removed, or reordered. Duplicate keys are errors. Keyed reorders move only rows whose relative order changed (swapping two rows moves two rows).
+
+A row whose repeated element is a single concrete element (not a `<template>`, `b-template`, or teleported row) is its own boundary: Brio adds no `<!--brio:range-->` comments around it. Template and teleported rows keep their range comments. Clearing a list, or replacing it with items that share no keys with the old ones, disposes every old row at once; when the loop is the only content of its parent (besides whitespace), the old rows are removed with a single DOM write.
 
 `b-bind-*` binds a DOM property when one exists; otherwise it sets or removes the corresponding attribute. `false`, `null`, and `undefined` remove attributes. `aria-*` bindings are the exception for booleans: ARIA states are enumerated strings, so `true`/`false` become `"true"`/`"false"` (`b-bind-aria-pressed="$data.on"` keeps a toggle button's state announced), while `null`/`undefined` still remove the attribute. `class` accepts a string, array, or object of class names and booleans. `style` accepts a style object. Read-only properties (SVG geometry such as `r`/`cx`, `input.form`/`list`) are bound as attributes. A writable property whose setter throws surfaces an error instead of silently falling back to an attribute.
 
@@ -1198,7 +1202,11 @@ scope.dispose(); // Stops effects and nested scopes created in the scope.
 - `flush()` runs pending effects immediately, including inside a batch or event handler; later writes in the batch are still applied when it ends.
 - `createScope()` owns nested scopes and effect cleanup. `onCleanup(fn)` registers cleanup in the current scope and errors if there is no active scope. A computed value created outside a scope can be stopped with `.dispose()`.
 
-Effects run synchronously by default. Explicit batches are synchronous too; there is no hidden next-tick scheduler.
+Effects run synchronously by default. Explicit batches are synchronous too; there is no hidden next-tick scheduler. Event handlers are already batched; wrap several writes made elsewhere (timers, fetch callbacks, scripts) in `batch()` so lists and bindings update once instead of after every write.
+
+Array methods that mutate (`push`, `splice`, `sort`, …) run on the underlying array and then notify only the indexes that changed, plus `length` when it changes. Values they return (`pop()`, `shift()`, `splice()` results) and the values passed to a `sort` comparator are the same reactive values that reads return.
+
+Bindings skip DOM writes when the value has not changed: `b-text`, `${…}` interpolation, and `b-bind-*` with primitive values compare against the last written value, and `b-bind-class` compares the resulting class string. Object values (for example a style object) are always reapplied, since they may have been mutated in place.
 
 A write invalidates every dependent computed before any effect re-runs, so effects never observe half-updated derived state, and a computed read later in the same batch or handler already reflects the write. A computed that reads itself, directly or through other computeds, throws `Circular Brio computed dependency.`; it recovers once the cycle is broken.
 
@@ -1594,7 +1602,9 @@ Mount roots cannot be replaced or used for sibling placements. Containers owned
 by `b-ignore`, `b-text`, `b-html`, or router outlets reject child insertion rather
 than competing with those directives. Roots generated by `b-if` and `b-for`
 cannot be replaced directly, since those controllers retain their identities;
-replace the enclosing container's children instead. Replacement is destructive: old content
+replace the enclosing container's children instead. `before`/`after` placements
+next to a `b-for` row throw, because the loop owns the space between its rows;
+insert into the row itself or outside the loop instead. Replacement is destructive: old content
 is disposed first; a hydration failure removes the failed insertion and throws,
 but does not restore the old content.
 

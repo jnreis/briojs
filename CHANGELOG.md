@@ -22,6 +22,30 @@ metadata on `main`, through commit `d868d43`.
 
 ## Unreleased
 
+### Performance
+- Rendering lists is roughly 2× faster and uses about 60% less memory per row. Measured with the new `npm run bench` harness (median ms in headless Chromium, keyed 1,000-row table):
+
+  | Operation | Before | After |
+  |---|---|---|
+  | create 1k rows | 35.3 | 19.1 |
+  | replace 1k rows | 53.5 | 26.8 |
+  | swap rows | 3.1 | 1.3 |
+  | remove row | 3.6 | 1.7 |
+  | create 10k rows | 467 | 226 |
+  | append 1k rows | 43.2 | 22.8 |
+  | clear 1k rows | 8.0 | 2.6 |
+  | heap per row | 14.2 KB | 5.3 KB |
+  | DOM nodes per row | 3 | 1 |
+
+- `npm run bench:compare` measures Brio against Vue, petite-vue, Alpine, React, Preact and Svelte on the same keyed-table operations.
+- `b-for` evaluates keys through one reusable probe, builds row state only for new rows, writes `$for` values only when they change, and clears or fully replaces lists in one pass (a single DOM write when the loop is its parent's only content).
+- Single-element `b-for` rows no longer get `<!--brio:range-->` comment anchors. Template and teleported rows keep them.
+- Contexts inherit from their parent through the prototype chain instead of copying every key; `Object.keys($context)` now lists only the element's own keys. Compiled expressions destructure only the context names they use.
+- Scopes, node ownership and effects allocate less: lazy cleanup sets, no per-node disposal callbacks, no per-effect property definitions, and static text/comment nodes are skipped during hydration. Loop rows create their `$ref` registry only when used.
+- Array mutators run on the raw array and notify only the changed indexes and `length`. Values they return, and values passed to `sort` comparators, are reactive.
+- `b-text`, `${…}` interpolation and primitive `b-bind-*` values skip DOM writes when unchanged; interpolation templates and attribute modifiers are parsed once.
+- `$insert` with `before`/`after` beside a `b-for` row now throws; insert inside the row or outside the loop.
+
 ### Changed
 - Hydration is cheaper per element: attributes are snapshotted and parsed once, `b-for` no longer allocates an `[index, item]` pair per row, and `arrayFrom` no longer goes through `Reflect.apply`. Creating 10,000 keyed rows is about 10% faster.
 

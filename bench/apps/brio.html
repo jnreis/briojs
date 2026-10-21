@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Bench: Brio</title></head>
+<body>
+<div id="app">
+    <table><tbody id="tbody">
+        <tr b-for="row in $data.rows" b-key="$for.row.id" b-bind-class="{ danger: $data.selected === $for.row.id }">
+            <td b-text="$for.row.id"></td>
+            <td><a b-on-click="$data.selected = $for.row.id" b-text="$for.row.label"></a></td>
+            <td><a b-on-click="$data.remove($for.row.id)">x</a></td>
+        </tr>
+    </tbody></table>
+</div>
+<script src="../../dist/brio.min.js"></script>
+<script type="module">
+import { buildData } from './shared.js';
+
+const app = brio.createApp({
+    state: () => ({
+        rows: [],
+        selected: 0,
+        remove(id) {
+            this.rows.splice(this.rows.findIndex(row => row.id === id), 1);
+        },
+    }),
+});
+app.mount('#app');
+const data = app.state;
+const run = action => brio.batch(action);
+
+window.bench = {
+    name: 'brio',
+    run: count => run(() => { data.rows = buildData(count); data.selected = 0; }),
+    add: count => run(() => { data.rows.push(...buildData(count)); }),
+    update: () => run(() => { const rows = data.rows; for (let index = 0; index < rows.length; index += 10) rows[index].label += ' !!!'; }),
+    select: index => run(() => { data.selected = data.rows[index].id; }),
+    swap: () => run(() => { const rows = data.rows; const row = rows[1]; rows[1] = rows[998]; rows[998] = row; }),
+    remove: index => run(() => { data.remove(data.rows[index].id); }),
+    clear: () => run(() => { data.rows = []; }),
+    settle: () => brio.flush(),
+};
+window.benchReady = true;
+</script>
+</body>
+</html>

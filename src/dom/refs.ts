@@ -39,6 +39,20 @@ export function createRefs(): RefMap {
     return refs;
 }
 
+/** Defines a `$ref` registry on `context` that is created on first read; most loop rows never use refs. */
+export function defineLazyRefs<T extends object>(context: T): T {
+    let refs: RefMap | undefined;
+    return objectConstructor.defineProperty(context, '$ref', {
+        enumerable: true,
+        configurable: true,
+        get: () => refs ??= createRefs(),
+        // Child scopes assigning their own `$ref` shadow this accessor instead of hitting a getter-only property.
+        set(this: object, value: RefMap) {
+            objectConstructor.defineProperty(this, '$ref', { value, writable: true, enumerable: true, configurable: true });
+        },
+    });
+}
+
 export function registerRef(refs: RefMap, name: string, element: Element): void {
     const values = registries.get(refs);
     if (!values) throw createTypeError('b-ref requires a Brio ref registry.');

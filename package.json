@@ -85,15 +85,26 @@
     "test": "npm run build && node --test",
     "typecheck": "tsc --noEmit",
     "dev:astro": "astro dev --root tests/fixtures/astro --host 127.0.0.1 --port 4321",
-    "test:astro": "npm run build && playwright test --config tests/astro/playwright.config.js"
+    "test:astro": "npm run build && playwright test --config tests/astro/playwright.config.js",
+    "bench": "npm run build && node bench/run.mjs",
+    "bench:compare": "npm run build && node bench/run.mjs --compare",
+    "bench:check": "npm run build && node bench/run.mjs --check"
   },
   "devDependencies": {
     "@playwright/test": "1.64.1",
     "@types/node": "^22.10.10",
+    "alpinejs": "^3.17.5",
     "astro": "5.18.2",
+    "esbuild": "0.21.5",
     "jsdom": "^26.1.0",
+    "petite-vue": "0.4.1",
+    "preact": "^10.29.8",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "svelte": "^5.57.2",
     "typescript": "^5.7.3",
     "vite": "^5.0.8",
-    "vite-plugin-dts": "^3.8.1"
+    "vite-plugin-dts": "^3.8.1",
+    "vue": "^3.5.44"
   }
 }

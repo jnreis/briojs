@@ -7,7 +7,8 @@ test('contexts merge named references with nearest precedence without copying re
     const parent = createExpressionScope({ $data: parentData });
     const local = state({ count: 2, $parent: parentData });
     const scope = createExpressionScope({ $data: local }, parent);
-    assert.equal(Object.getPrototypeOf(scope), null);
+    assert.equal(Object.getPrototypeOf(parent), null);
+    assert.equal(Object.getPrototypeOf(scope), parent);
     assert.deepEqual(Object.keys(scope), ['$data']);
     assert.equal(scope.$data, local);
     assert.equal(scope.$data.$parent, parentData);

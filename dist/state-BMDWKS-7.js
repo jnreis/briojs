@@ -1,5 +1,5 @@
-import { c as createTypeError, R as ReflectApi, G as GET_OWN_PROPERTY_DESCRIPTOR, k as isArray, i as isFunction, o as objectConstructor, l as ownKeys, f as isObjectType, m as isString } from "./native-DNTl55LH.js";
-import { b as batch, q as queueEffect, g as getActiveEffect } from "./effect-CDJn2fHL.js";
+import { c as createTypeError, R as ReflectApi, i as isFunction, k as isArray, g as getLength, G as GET_OWN_PROPERTY_DESCRIPTOR, o as objectConstructor, l as ownKeys, f as isObjectType, m as isString } from "./native-DNTl55LH.js";
+import { b as batch, d as enterBatch, l as leaveBatch, q as queueEffect, g as getActiveEffect } from "./effect-BQLFOYeW.js";
 const targetMap = /* @__PURE__ */ new WeakMap();
 const proxyCache = /* @__PURE__ */ new WeakMap();
 const rawCache = /* @__PURE__ */ new WeakMap();
@@ -33,27 +33,64 @@ const track = (target, key) => {
   effects.add(activeEffect);
   activeEffect.deps.push(effects);
 };
-const trigger = (target, key, type, newValue) => {
+const isArrayIndex = (key) => isString(key) && /^(0|[1-9]\d*)$/.test(key) && Number(key) < 4294967295;
+const queueDependency = (dependency, activeEffect) => {
+  if (dependency) {
+    for (const eff of dependency) if (eff !== activeEffect) queueEffect(eff);
+  }
+};
+const trigger = (target, key, type, newValue, oldValue) => {
   const dependencies = targetMap.get(target);
   if (!dependencies) return;
-  const effects = /* @__PURE__ */ new Set();
   const activeEffect = getActiveEffect();
-  const add = (dep) => dep == null ? void 0 : dep.forEach((eff) => {
-    if (eff !== activeEffect) effects.add(eff);
-  });
-  add(dependencies.get(key));
-  if (type !== "set") add(dependencies.get(ITERATE));
-  if (isArray(target) && key === "length") {
-    for (const [depKey, dep] of dependencies) {
-      if (isString(depKey) && /^(0|[1-9]\d*)$/.test(depKey) && Number(depKey) >= Number(newValue))
-        add(dep);
+  enterBatch();
+  try {
+    queueDependency(dependencies.get(key), activeEffect);
+    if (type !== "set") queueDependency(dependencies.get(ITERATE), activeEffect);
+    if (isArray(target) && key === "length") {
+      const length = Number(newValue);
+      if (!(Number(oldValue) <= length)) {
+        for (const [dependencyKey, dependency] of dependencies)
+          if (isArrayIndex(dependencyKey) && Number(dependencyKey) >= length)
+            queueDependency(dependency, activeEffect);
+      }
+    } else if (isArray(target) && type === "add" && isArrayIndex(key)) {
+      queueDependency(dependencies.get("length"), activeEffect);
     }
-  } else if (isArray(target) && type === "add" && isArrayIndex(key)) {
-    add(dependencies.get("length"));
+  } finally {
+    leaveBatch();
   }
-  batch(() => effects.forEach((eff) => queueEffect(eff)));
 };
-const isArrayIndex = (key) => isString(key) && /^(0|[1-9]\d*)$/.test(key) && Number(key) < 4294967295;
+const firstChangedIndex = (key, target, args) => {
+  const length = getLength(target);
+  if (key === "push") return length;
+  if (key === "pop") return length ? length - 1 : 0;
+  if (key !== "splice") return 0;
+  if (!getLength(args)) return length;
+  const relative = Math.trunc(Number(args[0])) || 0;
+  return relative < 0 ? Math.max(length + relative, 0) : Math.min(relative, length);
+};
+const triggerArrayChanges = (target, before, from, oldLength) => {
+  const dependencies = targetMap.get(target);
+  if (!dependencies) return;
+  const activeEffect = getActiveEffect();
+  const newLength = getLength(target);
+  enterBatch();
+  try {
+    for (let index = from, end = oldLength > newLength ? oldLength : newLength; index < end; index++) {
+      const previous = index - from;
+      if (!objectConstructor.is(before[previous], target[index]) || previous in before !== index in target)
+        queueDependency(dependencies.get(String(index)), activeEffect);
+    }
+    if (oldLength !== newLength) {
+      queueDependency(dependencies.get("length"), activeEffect);
+      queueDependency(dependencies.get(ITERATE), activeEffect);
+    }
+  } finally {
+    leaveBatch();
+  }
+};
+const observe = (value) => isObject(value) && canObserve(value) ? state(value) : value;
 const canObserve = (value) => {
   if (isArray(value)) return true;
   const prototype = objectConstructor.getPrototypeOf(value);
@@ -69,20 +106,30 @@ function state(target) {
     get(current, key, receiver) {
       track(current, key);
       const value = ReflectApi.get(current, key, receiver);
-      const descriptor = ReflectApi[GET_OWN_PROPERTY_DESCRIPTOR](current, key);
-      if (descriptor && !descriptor.configurable && !descriptor.writable && isObject(value))
-        return value;
-      if (isArray(current) && arrayMutators.has(key) && isFunction(value)) {
+      if (isFunction(value)) {
+        if (!isArray(current) || !arrayMutators.has(key)) return value;
         let methods = arrayMethodCache.get(current);
         if (!methods) arrayMethodCache.set(current, methods = /* @__PURE__ */ new Map());
         let method = methods.get(key);
         if (!method) {
-          method = (...args) => batch(() => ReflectApi.apply(value, receiver, args));
+          method = (...args) => batch(() => {
+            const oldLength = getLength(current);
+            const from = firstChangedIndex(key, current, args);
+            const before = current.slice(from);
+            const comparator = args[0];
+            const input = key === "sort" ? isFunction(comparator) ? [(a, b) => comparator(observe(a), observe(b))] : args : args.map(toRaw);
+            const result = ReflectApi.apply(value, current, input);
+            triggerArrayChanges(current, before, from, oldLength);
+            return result === current ? receiver : isArray(result) ? result.map(observe) : observe(result);
+          });
           methods.set(key, method);
         }
         return method;
       }
-      return isObject(value) && canObserve(value) ? state(value) : value;
+      if (!isObject(value)) return value;
+      const descriptor = ReflectApi[GET_OWN_PROPERTY_DESCRIPTOR](current, key);
+      if (descriptor && !descriptor.configurable && !descriptor.writable) return value;
+      return canObserve(value) ? state(value) : value;
     },
     has(current, key) {
       track(current, key);
@@ -101,19 +148,20 @@ function state(target) {
         settingDepth--;
       }
       if (succeeded)
-        trigger(current, key, hadKey ? "set" : "add", value);
+        trigger(current, key, hadKey ? "set" : "add", value, previous);
       return succeeded;
     },
     defineProperty(current, key, descriptor) {
+      if (settingDepth) return ReflectApi.defineProperty(current, key, descriptor);
       const previous = ReflectApi[GET_OWN_PROPERTY_DESCRIPTOR](current, key);
       const nextDescriptor = { ...descriptor };
       if ("value" in nextDescriptor) nextDescriptor.value = toRaw(nextDescriptor.value);
       const succeeded = ReflectApi.defineProperty(current, key, nextDescriptor);
-      if (!succeeded || settingDepth) return succeeded;
+      if (!succeeded) return succeeded;
       const next = ReflectApi[GET_OWN_PROPERTY_DESCRIPTOR](current, key);
       const type = previous ? "set" : "add";
       const changed = !previous || !next || !objectConstructor.is(toRaw(previous.value), toRaw(next.value)) || previous.enumerable !== next.enumerable || previous.configurable !== next.configurable || previous.writable !== next.writable;
-      if (changed) trigger(current, key, type, next == null ? void 0 : next.value);
+      if (changed) trigger(current, key, type, next == null ? void 0 : next.value, previous == null ? void 0 : previous.value);
       return succeeded;
     },
     deleteProperty(current, key) {
@@ -153,4 +201,4 @@ export {
   state as s,
   trigger as t
 };
-//# sourceMappingURL=state-DkCU-RSH.js.map
+//# sourceMappingURL=state-BMDWKS-7.js.map

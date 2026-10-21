@@ -57,6 +57,13 @@ export function mountRouterOutlet(
     });
 }
 
+const inserts = new WeakMap<DomRuntime, ReturnType<typeof createInsert>>();
+const getInsert = (runtime: DomRuntime) => {
+    let insert = inserts.get(runtime);
+    if (!insert) inserts.set(runtime, insert = createInsert(runtime));
+    return insert;
+};
+
 const componentNamePattern = /^[a-z][a-z0-9]*-[a-z0-9-]+$/;
 const conditionalNames = new Set(['b-if', 'b-else-if', 'b-else']);
 const childControllingNames = new Set(['b-text', 'text', 'b-html', 'html', 'b-router-outlet']);
@@ -105,8 +112,10 @@ export function hydrateTextNode(
     const raw = node.nodeValue ?? '';
     if (!raw.includes('${')) return;
 
+    let last: string | undefined;
     effect(() => {
-        node.nodeValue = interpolateText(raw, context);
+        const text = interpolateText(raw, context);
+        if (text !== last) node.nodeValue = last = text;
     });
 }
 
@@ -116,8 +125,11 @@ export function hydrateNode(
     runtime: DomRuntime,
 ): void {
     if (getNodeOwner(node)) throw createError('Cannot hydrate an already hydrated Brio node.');
+    // Static text, comments and other non-element nodes need no scope, owner or context.
+    const type = getNodeType(node);
+    if (type !== Node.ELEMENT_NODE && (type !== Node.TEXT_NODE || !(node.nodeValue ?? '').includes('${'))) return;
     parentContext = takeProjectedContext(node) ?? parentContext;
-    if (!parentContext.$ref) parentContext = createExpressionScope({ $ref: createRefs() }, parentContext);
+    if (!('$ref' in parentContext)) parentContext = createExpressionScope({ $ref: createRefs() }, parentContext);
     const scope = createScope();
     setScopeNode(scope, node);
     try {
@@ -128,6 +140,18 @@ export function hydrateNode(
     } catch (error) {
         throw locate(error, node);
     }
+}
+
+// Inherited values are only redefined when they differ, keeping each element context to its own `$el`.
+function elementContext(element: Element, parentContext: Record<PropertyKey, any>, runtime: DomRuntime): Record<PropertyKey, any> {
+    const own: Record<PropertyKey, any> = { $el: element };
+    if (!parentContext.$stores) own.$stores = emptyContextValues;
+    if (!parentContext.$provided) own.$provided = emptyContextValues;
+    if (runtime.root) {
+        const insert = getInsert(runtime);
+        if (parentContext.$insert !== insert) own.$insert = insert;
+    }
+    return createExpressionScope(own, parentContext);
 }
 
 function hydrateOwnedNode(
@@ -141,6 +165,13 @@ function hydrateOwnedNode(
     }
     if (getNodeType(node) !== Node.ELEMENT_NODE) return;
     const element = node as Element;
+    // Plain elements (no attributes, not a component or script) only need a context for their children.
+    if (!getLength(element[ATTRIBUTES]) && !element.localName.includes('-') && element.localName !== 'script') {
+        const context = elementContext(element, parentContext, runtime);
+        getNodeOwner(element)!.context = context;
+        hydrateChildren(element, context, runtime);
+        return;
+    }
     removeAttribute(element, 'b-cloak');
 
     // 1. b-ignore
@@ -163,12 +194,7 @@ function hydrateOwnedNode(
     if (ifAttr)
         throw createSyntaxError('b-else-if and b-else require an adjacent preceding b-if branch.');
 
-    let context = createExpressionScope({
-        $el: element,
-        $stores: parentContext.$stores ?? emptyContextValues,
-        $provided: parentContext.$provided ?? emptyContextValues,
-        ...(runtime.root ? { $insert: createInsert(runtime) } : {}),
-    }, parentContext);
+    let context = elementContext(element, parentContext, runtime);
 
     const dataAttr = getAttribute(element, 'b-data');
     if (dataAttr !== null) {

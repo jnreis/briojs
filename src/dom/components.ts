@@ -31,17 +31,23 @@ export function takeProjectedContext(node: Node): Record<PropertyKey, any> | und
     return context;
 }
 
+// Sources already walked and found free of projected content; loop and branch templates are cloned repeatedly.
+const projectionFree = new WeakSet<Node>();
+
+const copyProjected = (source: Node, target: Node): boolean => {
+    const context = projectedContexts.get(source);
+    let found = !!context;
+    if (context) projectedContexts.set(target, context);
+    for (let child = source.firstChild, copy = target.firstChild; child && copy; child = child.nextSibling, copy = copy.nextSibling)
+        found = copyProjected(child, copy) || found;
+    if (isInstanceOf(source, HTMLTemplateElement) && isInstanceOf(target, HTMLTemplateElement))
+        found = copyProjected(source.content, target.content) || found;
+    return found;
+};
+
 export function cloneProjectedNode<T extends Node>(node: T): T {
     const clone = node.cloneNode(true) as T;
-    const copy = (source: Node, target: Node) => {
-        const context = projectedContexts.get(source);
-        if (context) projectedContexts.set(target, context);
-        const children = arrayFrom(getChildNodes(target));
-        arrayFrom(getChildNodes(source)).forEach((child, index) => copy(child, children[index]));
-        if (isInstanceOf(source, HTMLTemplateElement) && isInstanceOf(target, HTMLTemplateElement))
-            copy(source.content, target.content);
-    };
-    copy(node, clone);
+    if (!projectionFree.has(node) && !copyProjected(node, clone)) projectionFree.add(node);
     return clone;
 }
 
@@ -121,7 +127,7 @@ export function mountComponent(
                     throw createSyntaxError(`Invalid component event directive "${attribute.name}".`);
                 const expression = attribute.value;
                 const handler = (event: Event) => batch(() =>
-                    execute(expression, createExpressionScope({ $event: event }, context), event, attribute.name, element));
+                    execute(expression, context, event, attribute.name, element));
                 addEventListener(element, eventPart, handler);
                 onCleanup(() => removeEventListener(element, eventPart, handler));
             } else if (startsWith(attribute.name, 'b-') && !startsWith(attribute.name, 'b-bind-')) {

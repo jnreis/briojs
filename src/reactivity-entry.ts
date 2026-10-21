@@ -1,6 +1,7 @@
 export {
     effect,
     batch,
+    flush,
     state,
     signal,
     computed,

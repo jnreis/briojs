@@ -62,7 +62,10 @@ export const setBoundValue = (element: Element, name: string, value: unknown, fo
         return;
     }
 
-    if (forceProp || (name in element && !startsWith(name, 'aria-') && !startsWith(name, 'data-'))) {
+    const aria = startsWith(name, 'aria-');
+    // ARIA states are enumerated strings: "" means false/undefined and a missing attribute drops the state.
+    if (aria && (value === true || value === false)) value = String(value);
+    if (forceProp || (name in element && !aria && !startsWith(name, 'data-'))) {
         try {
             (element as unknown as Record<string, unknown>)[name] = value;
             return;

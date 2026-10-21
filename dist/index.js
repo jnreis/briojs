@@ -1,10 +1,10 @@
 import { R as ReflectApi, $ as $PARENT, c as createTypeError, d as deleteItem, b as createError, g as getLength, T as TELEPORT, a as arrayFrom, l as ownKeys, G as GET_OWN_PROPERTY_DESCRIPTOR, o as objectConstructor, n as createSyntaxError, A as ATTRIBUTES, s as startsWith, t as TEMPLATE, j as isInstanceOf, f as isObjectType, p as includesItem, r as removeElement, B as B_TELEPORT, m as isString, k as isArray, e as objectEntries, q as objectKeys, h as isNumber, i as isFunction, u as isBoolean } from "./native-BSek5F0c.js";
 import { b as getChildNodes, a as addEventListener, r as removeEventListener, c as removeAttribute, g as getAttribute, d as removeChild, e as getParent, f as getOwnerDocument, h as getNextSibling, i as insertBefore, j as getNodeType } from "./native-PGRcyn9O.js";
-import { e as evaluate, a as emptyContextValues, b as createExpressionScope, d as execute, f as assign, g as createProvidedValues, h as evaluateFunction, c as copyContextValues } from "./context-values-BpjC5FcG.js";
-import { o as onDispose, a as combinedError, d as getCurrentScope, f as onCleanup, b as batch, h as createScope, e as effect, c as causedError, n as notifyRootMounted, j as notifyAppDisposed, k as notifyAppCreated, l as notifyRootUnmounted } from "./effect-DIImvjBh.js";
-import { s } from "./effect-DIImvjBh.js";
-import { s as state, a as track, t as trigger } from "./state-gsWplTCq.js";
-import { b } from "./state-gsWplTCq.js";
+import { e as evaluate, a as emptyContextValues, b as createExpressionScope, d as execute, f as assign, g as createProvidedValues, h as evaluateFunction, c as copyContextValues } from "./context-values-CoIMWShh.js";
+import { o as onDispose, a as combinedError, d as getCurrentScope, f as onCleanup, b as batch, h as createScope, e as effect, c as causedError, n as notifyRootMounted, j as flush, k as notifyAppDisposed, l as notifyAppCreated, m as notifyRootUnmounted } from "./effect-djFrH-wH.js";
+import { s } from "./effect-djFrH-wH.js";
+import { s as state, a as track, t as trigger } from "./state-Bg7Dcm4A.js";
+import { b } from "./state-Bg7Dcm4A.js";
 import { computed, resource } from "./reactivity.js";
 import { createRouter } from "./router-entry.js";
 import { persist } from "./persistence-entry.js";
@@ -12,7 +12,7 @@ import { createStepEngine } from "./step-entry.js";
 import { validate } from "./forms-entry.js";
 import { moneyMask } from "./money-mask-entry.js";
 import { HttpError, http } from "./http-entry.js";
-import { d, a, e, i } from "./devtools-9rkJho94.js";
+import { d, a, e, i } from "./devtools-BLfBvaeK.js";
 const sources = /* @__PURE__ */ new WeakMap();
 function createScopedState(source, parent) {
   const observed = state(sources.get(source) ?? source);
@@ -701,7 +701,9 @@ const setBoundValue = (element, name, value, forceProp = false) => {
     dynamicStyles.set(element, currentProperties);
     return;
   }
-  if (forceProp || name in element && !startsWith(name, "aria-") && !startsWith(name, "data-")) {
+  const aria = startsWith(name, "aria-");
+  if (aria && (value === true || value === false)) value = String(value);
+  if (forceProp || name in element && !aria && !startsWith(name, "data-")) {
     try {
       element[name] = value;
       return;
@@ -814,19 +816,23 @@ function handleModel(element, expression, modifiers, context) {
       const selected = new Set(value.map(String));
       for (const option of arrayFrom(element.options)) option.selected = selected.has(option.value);
     } else if (input.type === "checkbox") {
-      input.checked = isArray(value) ? includesItem(value, input.value) : Boolean(value);
+      input.checked = isArray(value) ? includesItem(value, formatValue(input.value)) : Boolean(value);
     } else if (input.type === "radio") {
-      input.checked = objectConstructor.is(value, input.value);
+      input.checked = objectConstructor.is(value, formatValue(input.value));
     } else if (element.value !== String(value ?? "")) {
       element.value = String(value ?? "");
     }
   };
-  effect(() => updateElement(evaluate(expression, context)));
+  const start = () => {
+    effect(() => updateElement(evaluate(expression, context)));
+  };
   if (isInstanceOf(element, HTMLSelectElement)) {
     const observer = new MutationObserver(() => updateElement(evaluate(expression, context)));
     observer.observe(element, { childList: true, subtree: true });
     onCleanup(() => observer.disconnect());
+    return start;
   }
+  start();
 }
 function extractModifiers(attrName) {
   const parts = attrName.split(".");
@@ -1005,6 +1011,26 @@ function handleIf(element, expression, modifiers, context, runtime, hydrateNodeF
     if (selected >= 0) active = activate(selected, !initial);
   });
 }
+const longestIncreasing = (positions) => {
+  const tails = [];
+  const previous = [];
+  positions.forEach((position, index) => {
+    if (position < 0) return;
+    let low = 0;
+    let high = getLength(tails);
+    while (low < high) {
+      const middle = low + high >> 1;
+      if (positions[tails[middle]] < position) low = middle + 1;
+      else high = middle;
+    }
+    previous[index] = low ? tails[low - 1] : -1;
+    tails[low] = index;
+  });
+  const stable = /* @__PURE__ */ new Set();
+  for (let index = getLength(tails) ? tails[getLength(tails) - 1] : -1; index >= 0; index = previous[index])
+    stable.add(index);
+  return stable;
+};
 const enumerate = (value) => {
   if (value === null || value === void 0) return [];
   if (isArray(value) || isObjectType(value) && Symbol.iterator in value)
@@ -1032,6 +1058,7 @@ function handleFor(element, expression, _modifiers, context, runtime, hydrateNod
   const rows = /* @__PURE__ */ new Map();
   const portals = [];
   let ordered = [];
+  let placed = /* @__PURE__ */ new Map();
   let reconciling = false;
   const reconcilePositions = () => {
     if (reconciling) return;
@@ -1053,11 +1080,16 @@ function handleFor(element, expression, _modifiers, context, runtime, hydrateNod
     }
     const references = /* @__PURE__ */ new Map([[output, output.end]]);
     for (const portal of portals) references.set(portal.range, portal.range.end);
-    for (const row of [...ordered].reverse()) {
+    const stable = longestIncreasing(ordered.map((row) => destinations.has(row) || row.output.detached ? -1 : placed.get(row) ?? -1));
+    for (let index = getLength(ordered) - 1; index >= 0; index--) {
+      const row = ordered[index];
       const destination = destinations.get(row) ?? output;
-      row.output.moveBefore(getParent(destination.end), references.get(destination) ?? null);
+      if (!stable.has(index))
+        row.output.moveBefore(getParent(destination.end), references.get(destination) ?? null);
       references.set(destination, row.output.start);
     }
+    placed = /* @__PURE__ */ new Map();
+    for (const row of ordered) if (!destinations.has(row)) placed.set(row, placed.size);
     for (let index = getLength(portals) - 1; index >= 0; index--) {
       if (!used.has(portals[index].range)) {
         output.removePortal(portals[index].range);
@@ -1764,6 +1796,7 @@ function hydrateOwnedNode(node, parentContext, runtime) {
   }
   let hasText = false;
   let hasHtml = false;
+  let startModel;
   const transitionAttr = arrayFrom(element[ATTRIBUTES]).find((attribute) => includesItem(["b-transition", "transition"], extractModifiers(attribute.name).baseName));
   if (transitionAttr) prepareTransition(element, transitionAttr.value);
   for (const attribute of arrayFrom(element[ATTRIBUTES])) {
@@ -1785,7 +1818,7 @@ function hydrateOwnedNode(node, parentContext, runtime) {
       handleBind(element, baseName, attrValue, modifiers, context);
       removeAttribute(element, attrName);
     } else if (baseName === "b-model" || baseName === "model") {
-      handleModel(element, attrValue, modifiers, context);
+      startModel = handleModel(element, attrValue, modifiers, context);
       removeAttribute(element, attrName);
     } else if (baseName === "b-text" || baseName === "text") {
       getNodeOwner(element).controlsChildren = true;
@@ -1822,6 +1855,7 @@ function hydrateOwnedNode(node, parentContext, runtime) {
   if (!hasText && !hasHtml && tagName !== "script") {
     hydrateChildren(element, context, runtime);
   }
+  startModel == null ? void 0 : startModel();
 }
 function hydrateRoot(root, context, runtime) {
   hydrateNode(root, context, runtime);
@@ -1939,7 +1973,7 @@ function createApp(options = {}) {
       activeMountRoots.add(root);
       notifyRootMounted(app, root);
       const context = createExpressionScope(
-        { $data: createScopedState(appState), $stores: stores, $provided: emptyContextValues, $ref: createRefs(), trustedHTML }
+        { $data: createScopedState(appState), $stores: stores, $provided: emptyContextValues, $ref: createRefs(), trustedHTML, flush }
       );
       try {
         scope.run(() => {
@@ -2047,6 +2081,7 @@ export {
   evaluate,
   evaluateFunction,
   execute,
+  flush,
   getCurrentScope,
   http,
   hydrateNode,

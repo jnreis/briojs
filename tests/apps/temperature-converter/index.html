@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Temperature Converter</title>
+    <link rel="stylesheet" href="../shared/app.css">
+    <style>
+        .converter { display: grid; gap: 4px; }
+        .unit-field { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 0; position: relative; }
+        .unit-field input { border-top-right-radius: 0 !important; border-bottom-right-radius: 0 !important; font-size: 1.25rem; font-variant-numeric: tabular-nums; }
+        .unit { display: grid; place-items: center; min-width: 56px; height: 100%; border: 1px solid #d1d5db; border-left: 0; border-radius: 0 10px 10px 0; background: #f9fafb; color: var(--muted); font-weight: 600; }
+        .field.is-source label::after { content: "editing"; margin-left: 8px; font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--brand); }
+        .field.is-stale input { color: var(--muted); }
+
+        .summary { display: grid; grid-template-columns: auto 1fr; gap: 20px; align-items: center; }
+        .thermometer { --level: 50%; position: relative; width: 22px; height: 140px; border-radius: 999px; background: #eef0f3; overflow: hidden; }
+        .thermometer::after { content: ""; position: absolute; inset: auto 0 0; height: var(--level); background: linear-gradient(to top, #2563eb, #22c55e 45%, #f59e0b 70%, #dc2626); transition: height 250ms ease; }
+        .reading { margin: 0; font-size: 2.6rem; font-weight: 800; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+        .condition { margin: 4px 0 0; font-weight: 600; }
+        .formula { margin: 12px 0 0; color: var(--muted); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.85rem; }
+
+        .presets { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+        .presets .button { min-height: 34px; padding: 0 12px; font-size: 0.85rem; font-weight: 500; }
+        .presets .button[aria-pressed="true"] { border-color: var(--brand); color: var(--brand); background: #eef2ff; }
+        .options { display: flex; justify-content: space-between; align-items: end; gap: 12px; margin-top: 8px; }
+        .options .field { margin: 0; width: 180px; }
+    </style>
+</head>
+<body>
+    <main id="temperature-app" class="app-shell"
+          b-effect="$data.persist({ celsius: $data.celsius, precision: $data.precision })">
+        <header class="app-header">
+            <h1>Temperature Converter</h1>
+            <p>Type in any scale. The others update instantly.</p>
+        </header>
+
+        <section class="panel" aria-label="Converter">
+            <form class="converter" novalidate b-on-submit.prevent="$data.commit()" b-id="['celsius', 'fahrenheit', 'kelvin']">
+                <div class="field" b-bind-class="$data.fieldClass('celsius')">
+                    <label b-bind-for="$id.celsius">Celsius</label>
+                    <div class="unit-field">
+                        <input type="text" inputmode="decimal" autocomplete="off" spellcheck="false" data-testid="celsius"
+                               b-bind-id="$id.celsius"
+                               b-model="$data.celsiusInput"
+                               b-on-blur="$data.commit()"
+                               b-bind-aria-invalid="$data.hasError('celsius')"
+                               b-bind-aria-describedby="$data.hasError('celsius') ? `${$id.celsius}-error` : null">
+                        <span class="unit" aria-hidden="true">°C</span>
+                    </div>
+                    <p class="error" role="alert" data-testid="celsius-error" b-if="$data.hasError('celsius')"
+                       b-bind-id="`${$id.celsius}-error`" b-text="$data.error"></p>
+                </div>
+
+                <div class="field" b-bind-class="$data.fieldClass('fahrenheit')">
+                    <label b-bind-for="$id.fahrenheit">Fahrenheit</label>
+                    <div class="unit-field">
+                        <input type="text" inputmode="decimal" autocomplete="off" spellcheck="false" data-testid="fahrenheit"
+                               b-bind-id="$id.fahrenheit"
+                               b-model="$data.fahrenheitInput"
+                               b-on-blur="$data.commit()"
+                               b-bind-aria-invalid="$data.hasError('fahrenheit')"
+                               b-bind-aria-describedby="$data.hasError('fahrenheit') ? `${$id.fahrenheit}-error` : null">
+                        <span class="unit" aria-hidden="true">°F</span>
+                    </div>
+                    <p class="error" role="alert" data-testid="fahrenheit-error" b-if="$data.hasError('fahrenheit')"
+                       b-bind-id="`${$id.fahrenheit}-error`" b-text="$data.error"></p>
+                </div>
+
+                <div class="field" b-bind-class="$data.fieldClass('kelvin')">
+                    <label b-bind-for="$id.kelvin">Kelvin</label>
+                    <div class="unit-field">
+                        <input type="text" inputmode="decimal" autocomplete="off" spellcheck="false" data-testid="kelvin"
+                               b-bind-id="$id.kelvin"
+                               b-model="$data.kelvinInput"
+                               b-on-blur="$data.commit()"
+                               b-bind-aria-invalid="$data.hasError('kelvin')"
+                               b-bind-aria-describedby="$data.hasError('kelvin') ? `${$id.kelvin}-error` : null">
+                        <span class="unit" aria-hidden="true">K</span>
+                    </div>
+                    <p class="error" role="alert" data-testid="kelvin-error" b-if="$data.hasError('kelvin')"
+                       b-bind-id="`${$id.kelvin}-error`" b-text="$data.error"></p>
+                </div>
+
+                <div class="options">
+                    <div class="field" b-id="['precision']">
+                        <label b-bind-for="$id.precision">Decimal places</label>
+                        <select data-testid="precision" b-bind-id="$id.precision" b-model.number="$data.precision">
+                            <option value="0">0 — whole degrees</option>
+                            <option value="1">1 — 21.5</option>
+                            <option value="2">2 — 21.55</option>
+                        </select>
+                    </div>
+                    <button type="button" class="button ghost" data-testid="reset"
+                            b-on-click="$data.reset()" b-bind-disabled="$data.isDefault">Reset</button>
+                </div>
+            </form>
+        </section>
+
+        <section class="panel" aria-label="Reading" aria-live="polite">
+            <div class="summary">
+                <div class="thermometer" aria-hidden="true" data-testid="thermometer"
+                     b-bind-style="{ '--level': `${$data.level}%` }"></div>
+                <div>
+                    <p class="reading" data-testid="reading" b-text="$data.reading"></p>
+                    <p class="condition" data-testid="condition" b-text="$data.condition"></p>
+                    <p class="formula" data-testid="formula" b-text="$data.formula"></p>
+                </div>
+            </div>
+
+            <div class="presets" role="group" aria-label="Common temperatures">
+                <button type="button" class="button" b-for="preset in $data.presets" b-key="$for.preset.label"
+                        b-bind-aria-pressed="$data.celsius === $for.preset.celsius && !$data.error"
+                        b-on-click="$data.usePreset($for.preset)"
+                        b-text="$for.preset.label"></button>
+            </div>
+        </section>
+    </main>
+
+    <script src="../../../dist/brio.min.js"></script>
+    <script src="./app.js"></script>
+</body>
+</html>

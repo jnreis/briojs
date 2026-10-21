@@ -44,18 +44,25 @@ export const runEffect = (eff: ReactiveEffect): unknown => {
 };
 
 export const queueEffect = (eff: ReactiveEffect) => {
+    // Schedulers (computed invalidation) run at trigger time so reads inside a batch are never stale and
+    // dirty-marking settles before any effect re-runs, which keeps dependency cycles from ping-ponging.
+    if (eff.scheduler) {
+        if (eff.active && !eff.scope?.disposed) eff.scheduler();
+        return;
+    }
     queuedEffects.add(eff);
-    if (!batchDepth) flushEffects();
+    if (!batchDepth) flush();
 };
 
-export const flushEffects = () => {
+/** Runs pending effects now, even inside a batch or event handler, so the DOM reflects earlier writes. */
+export const flush = (): void => {
     const errors: unknown[] = [];
     while (queuedEffects.size) {
         const current = [...queuedEffects];
         queuedEffects.clear();
         for (const eff of current) {
             try {
-                if (eff.active && !eff.scope?.disposed) eff.scheduler ? eff.scheduler() : runEffect(eff);
+                if (eff.active && !eff.scope?.disposed) runEffect(eff);
             } catch (error) {
                 errors.push(error);
             }
@@ -109,7 +116,7 @@ export function batch<T>(fn: () => T): T {
     batchDepth--;
     if (!batchDepth) {
         try {
-            flushEffects();
+            flush();
         } catch (error) {
             if (failed)
                 throw combinedError('A Brio batch operation and its reactive effects failed.', [failure, error]);

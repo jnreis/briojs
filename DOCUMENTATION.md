@@ -56,7 +56,7 @@ Load one of the standalone bundles, not both:
 ```
 
 Both expose `window.brio` with `createApp`, `state`, `signal`, `computed`,
-`effect`, `batch`, `createScope`, `onCleanup`, `getCurrentScope`,
+`effect`, `batch`, `flush`, `createScope`, `onCleanup`, `getCurrentScope`,
 and `trustedHTML`. Both dispatch the
 `brio` ready event after publishing the core API.
 
@@ -130,7 +130,7 @@ app.mount('#counter');
 
 Expressions run in strict mode without `with` or implicit state-name resolution. Use `$data` for the nearest state object (app state, component setup state, or `b-data`), `$data.$parent` for parent state, and `$for` for loop values. Bare state names such as `count` are not supported and unresolved identifiers throw `ReferenceError`. JavaScript globals such as `Math`, `JSON`, and `setTimeout` resolve normally.
 
-The context is also available as `$context`. Named bindings include `$data`, `$el`, `$id`, `$ref`, `$for`, `$props`, `$emit`, `$insert`, `$stores`, `$provided`, and `trustedHTML`. Event handlers receive `$event`; observers supply `$mutations`, `$size`, or `$entry`. Contextual scripts supply `onCleanup`. Bindings are read-only references; mutate writable state properties (`$data.count++`), not the binding itself (`$data = {}`). `$ref` names are also read-only. Event statements can declare ordinary local variables.
+The context is also available as `$context`. Named bindings include `$data`, `$el`, `$id`, `$ref`, `$for`, `$props`, `$emit`, `$insert`, `$stores`, `$provided`, `trustedHTML`, and `flush`. Event handlers receive `$event`; observers supply `$mutations`, `$size`, or `$entry`. Contextual scripts supply `onCleanup`. Bindings are read-only references; mutate writable state properties (`$data.count++`), not the binding itself (`$data = {}`). `$ref` names are also read-only. Event statements can declare ordinary local variables.
 
 Data and loop ancestry are independent: `$data.$parent.$parent` accesses a grandparent data scope, while `$for.$parent.$parent` accesses a grandparent loop. Ordinary elements and loops do not add data ancestry levels; data scopes do not add loop ancestry levels. Component setup state creates a data scope. App state and outermost loops have `$parent === undefined`. An empty `b-data` attribute inherits data without adding a scope; `b-data="{}"` creates one.
 
@@ -280,9 +280,9 @@ Directive arguments use hyphens (`b-on-click`, `b-bind-href`); options use chain
 </div>
 ```
 
-`b-for` uses `item in $data.items` or `item, index in $data.items`. These names declare properties of `$for`, so row expressions use `$for.item` and `$for.index`. Without `b-key`, the index is the key; provide a stable key when items can be inserted, removed, or reordered. Duplicate keys are errors.
+`b-for` uses `item in $data.items` or `item, index in $data.items`. These names declare properties of `$for`, so row expressions use `$for.item` and `$for.index`. Without `b-key`, the index is the key; provide a stable key when items can be inserted, removed, or reordered. Duplicate keys are errors. Keyed reorders move only rows whose relative order changed (swapping two rows moves two rows).
 
-`b-bind-*` binds a DOM property when one exists; otherwise it sets or removes the corresponding attribute. `false`, `null`, and `undefined` remove attributes. `class` accepts a string, array, or object of class names and booleans. `style` accepts a style object.
+`b-bind-*` binds a DOM property when one exists; otherwise it sets or removes the corresponding attribute. `false`, `null`, and `undefined` remove attributes. `aria-*` bindings are the exception for booleans: ARIA states are enumerated strings, so `true`/`false` become `"true"`/`"false"` (`b-bind-aria-pressed="$data.on"` keeps a toggle button's state announced), while `null`/`undefined` still remove the attribute. `class` accepts a string, array, or object of class names and booleans. `style` accepts a style object.
 
 `b-model` text inputs and textareas preserve strings by default, including
 whitespace and numeric-looking text. Supported model modifiers are `.lazy`
@@ -601,6 +601,20 @@ overwrite each other. Do not rely on attribute order to resolve competing owners
 | `b-if` + teleported children | Supported, but hiding an ancestor with `.hide` cannot hide descendants moved elsewhere. Their effects also stay live in preservation modes. Put visibility on the surviving teleported element when it must be controlled independently. |
 | Multiple bindings/effects writing the same attribute/property | No arbitration. Use one expression per target; do not combine prefixed/unprefixed aliases or different modifier spellings to install competing bindings. |
 
+`tests/directive-interactions.test.js` generates **465 pairwise co-mount tests**
+for all 30 directive forms in the reference table plus registered component
+hosts. Each pair is mounted in one app and root using a behavior probe for each
+directive; tests assert output, shared reactive updates, event/model behavior,
+observer cleanup, and disposal. Failure output names the pair and expected and
+actual results. This matrix verifies that distinct directives coexist across a
+shared app tree; it does not imply that every same-element combination is
+supported. Same-element precedence, conflicts, and placement rules are
+documented above and covered by focused integration tests. The matrix also
+checks that every directive listed in the reference table has a probe, so a
+newly documented directive cannot silently go untested. A higher-order
+regression composes `b-for`, `b-key`, `b-id`, and `b-provide` on keyed rows and
+checks row-local values and IDs through reorder and disposal.
+
 For ordinary DOM events, `.outside`, `.window`, and `.document` are alternative
 targets, not combinations: `.outside` wins over `.window`, which wins over
 `.document`. `.debounce` wins over `.throttle` if both are present; choose one.
@@ -608,6 +622,15 @@ Avoid `.passive.prevent` because a passive listener cannot cancel the default
 action. `.prevent`/`.stop` execute before `.self`/`.outside` filtering, so those
 filters do not prevent the cancellation/propagation side effect. These are
 ordinary-element event rules; component hosts use the separate contract below.
+
+Each event handler runs inside `batch()`: several writes produce one coherent
+update when the handler returns. Consequently, DOM that depends on those writes
+(a new `b-if` branch, its `$ref` entries, bound text/attributes) does not exist
+yet inside the same synchronous handler. Call `flush()` to apply pending updates
+first, for example
+`b-on-click="$data.editing = true; flush(); $ref.field.focus()"`. Methods can
+call the exported `flush()` (`brio.flush()` in browser bundles). Code after an
+`await` runs outside the batch and sees updates immediately.
 
 Observer `b-options` is specific to observer directives, not general directive
 configuration. An observer on an element whose attributes/children are updated
@@ -1149,9 +1172,12 @@ scope.dispose(); // Stops effects and nested scopes created in the scope.
 - `computed(fn)` is lazy, cached, and invalidated by the values it reads.
 - `effect(fn)` recollects its dependencies each run and returns an idempotent stop function.
 - `batch(fn)` runs affected effects once after a synchronous group of writes.
+- `flush()` runs pending effects immediately, including inside a batch or event handler; later writes in the batch are still applied when it ends.
 - `createScope()` owns nested scopes and effect cleanup. `onCleanup(fn)` registers cleanup in the current scope and errors if there is no active scope. A computed value created outside a scope can be stopped with `.dispose()`.
 
 Effects run synchronously by default. Explicit batches are synchronous too; there is no hidden next-tick scheduler.
+
+A write invalidates every dependent computed before any effect re-runs, so effects never observe half-updated derived state, and a computed read later in the same batch or handler already reflects the write. A computed that reads itself, directly or through other computeds, throws `Circular Brio computed dependency.`; it recovers once the cycle is broken.
 
 ### Async resources
 
@@ -1429,7 +1455,7 @@ createApp().component('preferences-panel', {
 }).mount('#preferences');
 ```
 
-Objects and arrays are reactive directly. Primitive values are returned as signals and use `.value`. The default adapter is `localStorage`; select `sessionStorage` or pass a `getItem`/`setItem` adapter with `{ storage }`. JSON serialization errors and storage errors are surfaced. Cross-tab updates are applied to the existing reactive value.
+Objects and arrays are reactive directly. Primitive values are returned as signals and use `.value`. The default adapter is `localStorage`; select `sessionStorage` or pass a `getItem`/`setItem` adapter with `{ storage }`. JSON serialization errors and storage errors are surfaced. Cross-tab updates are applied to the existing reactive value (array roots are replaced in place) and saving continues afterwards. A remote value whose shape differs from the local one (array vs. object, or a non-object for an object root) is ignored.
 
 ## Trusted HTML and expression security
 

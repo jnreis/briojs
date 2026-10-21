@@ -7,6 +7,7 @@ declare const brio: {
     computed: typeof computed;
     effect: typeof effect;
     batch: typeof batch;
+    flush: () => void;
     createScope: typeof createScope;
     onCleanup: typeof onCleanup;
     getCurrentScope: typeof getCurrentScope;

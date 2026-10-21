@@ -24,6 +24,20 @@ metadata on `main`, through commit `d868d43`.
 
 ### Changed
 
+- Added real-world test apps under `tests/apps/` (occupancy counter,
+  temperature converter, conditional registration form) with JSDOM user-flow
+  suites, and linked them from the manual test index.
+
+- Added `flush()` (root context, `brio.flush`, and `briojs/reactivity`) to apply
+  pending effects inside a batched event handler, e.g. to focus an element
+  rendered by a new `b-if` branch. Documented that `b-on-*` handlers are batched.
+
+- Added an automated directive interaction matrix with 465 pairwise co-mount
+  cases across every documented directive form and component hosts. Cases assert
+  observable behavior, shared reactivity, and lifecycle cleanup with pair-named
+  expected/actual diagnostics. Added a higher-order keyed-loop regression and
+  linked matrix coverage to the directive reference documentation.
+
 - Added a raw/gzip/Brotli size reporter, checked-in regression baseline, and
   main/subpath tree-shaking tests covering browser scripts, reachable static
   ESM graphs, and minified npm consumers. Shared native/DOM/error helpers applied
@@ -92,6 +106,28 @@ metadata on `main`, through commit `d868d43`.
   `trustedHTML()` value and owns activated template cleanup.
 - Explicit `$context` binding for compiled expressions and contextual scripts.
 
+### Fixed
+
+- `b-bind-aria-*` now serializes `true`/`false` as `"true"`/`"false"` instead of
+  an empty attribute and attribute removal.
+- `b-model.number` radios and checkbox groups now compare against the parsed
+  value, so numeric state checks the right control and clicks no longer uncheck
+  or skip values.
+- `b-model` on `<select>` now applies its value synchronously after `b-for`
+  options hydrate, including when a `b-if` branch re-renders.
+- Computed values read after a write in the same batch or event handler now
+  return the fresh value; invalidation is synchronous instead of queued.
+- A write now invalidates every dependent computed before any effect re-runs,
+  removing glitches where an effect observed half-updated derived state and
+  preventing mutually dependent computeds from looping forever.
+- Circular `computed` reads throw `Circular Brio computed dependency.` instead
+  of recursing; the computed recovers once the cycle is broken.
+- `persist()` keeps saving after applying a cross-tab update, replaces remote
+  array roots without leaving holes, and ignores remote values whose shape
+  (array vs. object) differs from the local value.
+- Keyed `b-for` reorders move only rows outside the longest stable run, so
+  swapping two rows of 1,000 moves 2 rows instead of nearly all of them.
+
 ### Added
 
 - Reactive `b-teleport` Element/ref and selector expressions with explicit
@@ -117,6 +153,9 @@ metadata on `main`, through commit `d868d43`.
   and installation instructions in [ai/](./ai/README.md).
 - Runnable widget, multi-page enhancement, and SPA examples, with regression
   tests covering their behavior and inclusion in the npm package.
+- Real-world test apps under `tests/apps/` (counter, temperature converter,
+  conditional form, TodoMVC, 7GUIs, large table), each with a JSDOM suite
+  that drives user flows end to end.
 
 ### Documentation
 

@@ -1,5 +1,5 @@
 import { c as createTypeError, R as ReflectApi, G as GET_OWN_PROPERTY_DESCRIPTOR, k as isArray, i as isFunction, o as objectConstructor, l as ownKeys, f as isObjectType, m as isString } from "./native-BSek5F0c.js";
-import { b as batch, q as queueEffect, g as getActiveEffect } from "./effect-DIImvjBh.js";
+import { b as batch, q as queueEffect, g as getActiveEffect } from "./effect-djFrH-wH.js";
 const targetMap = /* @__PURE__ */ new WeakMap();
 const proxyCache = /* @__PURE__ */ new WeakMap();
 const rawCache = /* @__PURE__ */ new WeakMap();
@@ -51,7 +51,7 @@ const trigger = (target, key, type, newValue) => {
   } else if (isArray(target) && type === "add" && isArrayIndex(key)) {
     add(dependencies.get("length"));
   }
-  effects.forEach((eff) => queueEffect(eff));
+  batch(() => effects.forEach((eff) => queueEffect(eff)));
 };
 const isArrayIndex = (key) => isString(key) && /^(0|[1-9]\d*)$/.test(key) && Number(key) < 4294967295;
 const canObserve = (value) => {
@@ -153,4 +153,4 @@ export {
   state as s,
   trigger as t
 };
-//# sourceMappingURL=state-gsWplTCq.js.map
+//# sourceMappingURL=state-Bg7Dcm4A.js.map

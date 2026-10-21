@@ -12,7 +12,7 @@ const $CONTEXT: '$context' = '$context';
 
 const contextBindings = `
 "use strict";
-const { $data, $el, $event, $id, $ref, $for, $mutations, $size, $entry, $props, $emit, $insert, $stores, $provided, trustedHTML, onCleanup } = ${$CONTEXT};
+const { $data, $el, $event, $id, $ref, $for, $mutations, $size, $entry, $props, $emit, $insert, $stores, $provided, trustedHTML, flush, onCleanup } = ${$CONTEXT};
 `;
 
 export function evaluateFunction(source: string, context: ExpressionScope): ($context: ExpressionScope) => unknown {

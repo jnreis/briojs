@@ -10,7 +10,7 @@ export function handleModel(
     expression: string,
     modifiers: Record<string, boolean>,
     context: Record<PropertyKey, any>,
-): void {
+): (() => void) | undefined {
     if (!(isInstanceOf(element, HTMLInputElement) || isInstanceOf(element, HTMLTextAreaElement) || isInstanceOf(element, HTMLSelectElement)))
         throw createTypeError('b-model can only be used on input, textarea, and select elements.');
 
@@ -65,19 +65,24 @@ export function handleModel(
             const selected = new Set(value.map(String));
             for (const option of arrayFrom(element.options)) option.selected = selected.has(option.value);
         } else if (input.type === 'checkbox') {
-            input.checked = isArray(value) ? includesItem(value, input.value) : Boolean(value);
+            input.checked = isArray(value) ? includesItem(value, formatValue(input.value)) : Boolean(value);
         } else if (input.type === 'radio') {
-            input.checked = objectConstructor.is(value, input.value);
+            input.checked = objectConstructor.is(value, formatValue(input.value));
         } else if (element.value !== String(value ?? '')) {
             element.value = String(value ?? '');
         }
     };
 
-    effect(() => updateElement(evaluate(expression, context)));
+    const start = () => {
+        effect(() => updateElement(evaluate(expression, context)));
+    };
 
     if (isInstanceOf(element, HTMLSelectElement)) {
         const observer = new MutationObserver(() => updateElement(evaluate(expression, context)));
         observer.observe(element, { childList: true, subtree: true });
         onCleanup(() => observer.disconnect());
+        // Options may be rendered by child directives, so selection starts after children hydrate.
+        return start;
     }
+    start();
 }

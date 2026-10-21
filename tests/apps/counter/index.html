@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Door Count · Occupancy</title>
+    <link rel="stylesheet" href="../shared/app.css">
+    <style>
+        .venue { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+        .venue h2 { margin: 0; font-size: 1.05rem; }
+        .status { background: #ecfdf5; color: var(--ok); }
+        .status.busy { background: #fffbeb; color: var(--warn); }
+        .status.full, .status.over { background: #fef2f2; color: var(--danger); }
+
+        .readout { text-align: center; margin: 28px 0 20px; }
+        .readout output { display: block; font-size: 4.5rem; font-weight: 800; letter-spacing: -0.04em; line-height: 1; font-variant-numeric: tabular-nums; }
+        .readout p { margin: 8px 0 0; color: var(--muted); }
+
+        .meter { height: 10px; border-radius: 999px; background: #eef0f3; overflow: hidden; }
+        .meter span { display: block; height: 100%; background: var(--ok); transition: width 200ms ease, background 200ms; }
+        .meter.busy span { background: var(--warn); }
+        .meter.full span, .meter.over span { background: var(--danger); }
+
+        .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 24px; }
+        .controls .button { min-height: 64px; font-size: 1.4rem; }
+
+        .toolbar { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 16px; margin-top: 20px; }
+        .steps { display: inline-flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+        .steps label { position: relative; }
+        .steps input { position: absolute; opacity: 0; inset: 0; }
+        .steps span { display: block; padding: 8px 14px; font-weight: 600; cursor: pointer; }
+        .steps input:checked + span { background: var(--brand); color: var(--brand-ink); }
+        .steps input:focus-visible + span { outline: 3px solid rgb(79 70 229 / 0.35); outline-offset: -3px; }
+        .capacity { width: 120px; margin: 0; }
+
+        .log { list-style: none; margin: 0; padding: 0; }
+        .log li { display: flex; justify-content: space-between; padding: 10px 0; border-top: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+        .log li:first-child { border-top: 0; }
+        .log .in { color: var(--ok); font-weight: 600; }
+        .log .out { color: var(--danger); font-weight: 600; }
+        .log time { color: var(--muted); }
+        .empty { color: var(--muted); margin: 0; }
+        .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .panel-header h2 { margin: 0; font-size: 1rem; }
+        kbd { border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 6px; padding: 0 6px; font-size: 0.8rem; }
+    </style>
+</head>
+<body>
+    <main id="occupancy-app" class="app-shell"
+          b-on-keydown.window="$data.handleShortcut($event)"
+          b-effect="document.title = `${$data.count}/${$data.validCapacity || '–'} · Door Count`">
+        <header class="app-header">
+            <h1>Door Count</h1>
+            <p>Track live occupancy at the entrance. Press <kbd>+</kbd> or <kbd>−</kbd> to count from the keyboard.</p>
+        </header>
+
+        <section class="panel" aria-labelledby="venue-name">
+            <div class="venue">
+                <h2 id="venue-name" b-text="$data.venue"></h2>
+                <span class="badge status" data-testid="status"
+                      b-bind-class="$data.status" b-text="$data.statusLabel"></span>
+            </div>
+
+            <div class="readout">
+                <output data-testid="count" aria-live="polite" b-text="$data.count"></output>
+                <p data-testid="remaining" b-text="$data.remainingLabel"></p>
+            </div>
+
+            <div class="meter" role="meter" aria-label="Occupancy" aria-valuemin="0"
+                 b-bind-class="$data.status"
+                 b-bind-aria-valuenow="$data.count"
+                 b-bind-aria-valuemax="$data.capacity"
+                 b-bind-aria-valuetext="`${$data.percent}% full`">
+                <span data-testid="meter-fill" b-bind-style="{ width: `${Math.min($data.percent, 100)}%` }"></span>
+            </div>
+
+            <div class="controls">
+                <button type="button" class="button" data-testid="decrement"
+                        b-bind-disabled="!$data.canRemove"
+                        b-bind-aria-label="`Remove ${$data.step} ${$data.step === 1 ? 'person' : 'people'}`"
+                        b-on-click="$data.remove()">−<span b-text="$data.step"></span></button>
+                <button type="button" class="button primary" data-testid="increment"
+                        b-bind-disabled="!$data.canAdd"
+                        b-bind-aria-label="`Add ${$data.step} ${$data.step === 1 ? 'person' : 'people'}`"
+                        b-on-click="$data.add()">+<span b-text="$data.step"></span></button>
+            </div>
+
+            <div class="toolbar">
+                <fieldset class="field" style="margin: 0">
+                    <legend>Step</legend>
+                    <div class="steps">
+                        <label><input type="radio" name="step" value="1" b-model.number="$data.step"><span>1</span></label>
+                        <label><input type="radio" name="step" value="5" b-model.number="$data.step"><span>5</span></label>
+                        <label><input type="radio" name="step" value="10" b-model.number="$data.step"><span>10</span></label>
+                    </div>
+                </fieldset>
+                <div class="field capacity" b-id="['capacity']">
+                    <label b-bind-for="$id.capacity">Capacity</label>
+                    <input type="number" min="1" inputmode="numeric" data-testid="capacity"
+                           b-bind-id="$id.capacity" b-model.number="$data.capacity">
+                </div>
+                <div>
+                    <button type="button" class="button ghost" data-testid="undo"
+                            b-bind-disabled="!$data.history.length" b-on-click="$data.undo()">Undo</button>
+                    <button type="button" class="button" data-testid="reset"
+                            b-bind-disabled="!$data.count && !$data.history.length" b-on-click="$data.reset()">Reset</button>
+                </div>
+            </div>
+        </section>
+
+        <section class="panel" aria-labelledby="activity-title">
+            <div class="panel-header">
+                <h2 id="activity-title">Recent activity</h2>
+                <span class="badge" data-testid="totals">${$data.totalIn} in · ${$data.totalOut} out</span>
+            </div>
+            <ol class="log" data-testid="activity" b-if="$data.history.length">
+                <li b-for="entry in $data.recent" b-key="$for.entry.id">
+                    <span b-bind-class="$for.entry.delta > 0 ? 'in' : 'out'"
+                          b-text="`${$for.entry.delta > 0 ? '+' : '−'}${Math.abs($for.entry.delta)}`"></span>
+                    <span>${$for.entry.total} inside</span>
+                    <time b-bind-datetime="$for.entry.at" b-text="$data.formatTime($for.entry.at)"></time>
+                </li>
+            </ol>
+            <p class="empty" data-testid="empty-activity" b-else>No one has been counted yet.</p>
+        </section>
+    </main>
+
+    <script src="../../../dist/brio.min.js"></script>
+    <script src="./app.js"></script>
+</body>
+</html>

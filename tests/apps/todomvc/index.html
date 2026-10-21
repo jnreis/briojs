@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Todos · Brio</title>
+    <link rel="stylesheet" href="../shared/app.css">
+    <style>
+        .todoapp { padding: 0; overflow: hidden; }
+        .new-todo-row { display: flex; align-items: center; gap: 4px; padding: 6px 16px 6px 8px; border-bottom: 1px solid var(--line); }
+        .toggle-all { position: relative; flex: 0 0 44px; height: 44px; }
+        .toggle-all input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
+        .toggle-all span { display: grid; place-items: center; height: 100%; color: #c4c8cf; font-size: 1.1rem; transform: rotate(90deg); pointer-events: none; }
+        .toggle-all input:checked + span { color: var(--ink); }
+        .toggle-all input:focus-visible + span { outline: 3px solid rgb(79 70 229 / 0.35); border-radius: 8px; }
+        .toggle-all.is-empty { visibility: hidden; }
+        .new-todo { flex: 1; min-height: 52px; border: 0; font: inherit; font-size: 1.15rem; background: transparent; outline: none; }
+        .new-todo::placeholder { color: #b6bac2; font-style: italic; }
+
+        .todo-list { list-style: none; margin: 0; padding: 0; }
+        .todo { position: relative; display: flex; align-items: center; gap: 4px; padding: 0 8px; min-height: 58px; border-bottom: 1px solid var(--line); }
+        .todo .check { position: relative; flex: 0 0 44px; height: 44px; display: grid; place-items: center; }
+        .todo .check input { appearance: none; width: 26px; height: 26px; margin: 0; border: 2px solid #d1d5db; border-radius: 50%; cursor: pointer; transition: border-color 0.15s, background-color 0.15s; }
+        .todo .check input:checked { border-color: var(--ok); background: var(--ok) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12l5 5 9-10'/%3E%3C/svg%3E") center / 16px no-repeat; }
+        .todo .check input:focus-visible { outline: 3px solid rgb(79 70 229 / 0.35); outline-offset: 2px; }
+        .todo label { flex: 1; padding: 14px 8px; font-size: 1.05rem; word-break: break-word; cursor: default; transition: color 0.2s; }
+        .todo.completed label { color: #a3a8b1; text-decoration: line-through; }
+        .todo .destroy { width: 36px; height: 36px; border: 0; border-radius: 8px; background: transparent; color: var(--danger); font-size: 1.4rem; line-height: 1; cursor: pointer; opacity: 0; transition: opacity 0.15s, background-color 0.15s; }
+        .todo:hover .destroy, .todo .destroy:focus-visible { opacity: 1; }
+        .todo .destroy:hover { background: #fef2f2; }
+        .todo .edit { flex: 1; min-height: 46px; margin: 6px 0 6px 48px; padding: 8px 12px; border: 1px solid var(--brand); border-radius: 8px; font: inherit; font-size: 1.05rem; box-shadow: inset 0 1px 3px rgb(0 0 0 / 0.08); outline: none; }
+        .todo.editing .check, .todo.editing label, .todo.editing .destroy { display: none; }
+
+        .footer { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 12px; padding: 10px 16px; color: var(--muted); font-size: 0.9rem; }
+        .todo-count strong { color: var(--ink); }
+        .filters { display: flex; gap: 4px; list-style: none; margin: 0; padding: 0; }
+        .filters a { display: block; padding: 3px 10px; border: 1px solid transparent; border-radius: 8px; color: inherit; text-decoration: none; }
+        .filters a:hover { border-color: var(--line); }
+        .filters a.selected { border-color: #c7d2fe; background: #eef2ff; color: var(--brand); font-weight: 600; }
+        .clear-completed { justify-self: end; border: 0; background: none; color: inherit; font: inherit; cursor: pointer; }
+        .clear-completed:hover { color: var(--ink); text-decoration: underline; }
+        .empty-filter { margin: 0; padding: 28px 16px; text-align: center; color: var(--muted); border-bottom: 1px solid var(--line); }
+        .info { margin-top: 18px; text-align: center; color: var(--muted); font-size: 0.82rem; }
+        .info p { margin: 2px 0; }
+        @media (max-width: 520px) { .footer { grid-template-columns: 1fr; justify-items: center; } .clear-completed { justify-self: center; } }
+    </style>
+</head>
+<body>
+    <main id="todo-app" class="app-shell" b-on-hashchange.window="$data.route(location.hash)">
+        <header class="app-header">
+            <h1>Todos</h1>
+            <p>Saved in this browser and synced across open tabs.</p>
+        </header>
+
+        <section class="panel todoapp" aria-label="Todo list">
+            <div class="new-todo-row">
+                <label class="toggle-all" b-bind-class="{ 'is-empty': !$data.todos.length }" title="Mark all as complete">
+                    <input type="checkbox" data-testid="toggle-all" aria-label="Mark all as complete"
+                           b-bind-disabled="!$data.todos.length" b-model="$data.allCompleted">
+                    <span aria-hidden="true">❯</span>
+                </label>
+                <input class="new-todo" data-testid="new-todo" placeholder="What needs to be done?" autofocus
+                       aria-label="New todo" autocomplete="off" maxlength="200"
+                       b-model="$data.newTitle" b-on-keydown="$event.key === 'Enter' && !$event.isComposing && $data.add()">
+            </div>
+
+            <div b-if="$data.todos.length" data-testid="main">
+                <ul class="todo-list" data-testid="todo-list" b-if="$data.visible.length">
+                    <li class="todo" b-for="todo in $data.visible" b-key="$for.todo.id"
+                        b-bind-data-id="$for.todo.id"
+                        b-bind-class="{ completed: $for.todo.completed, editing: $data.editingId === $for.todo.id }">
+                        <div class="check">
+                            <input type="checkbox" class="toggle" b-model="$for.todo.completed"
+                                   b-bind-aria-label="`Complete ${$for.todo.title}`">
+                        </div>
+                        <label b-text="$for.todo.title"
+                               b-on-dblclick="$data.edit($for.todo); flush(); $ref.editor.focus(); $ref.editor.select()"></label>
+                        <button type="button" class="destroy" b-bind-aria-label="`Delete ${$for.todo.title}`"
+                                b-on-click="$data.destroy($for.todo)">×</button>
+                        <input class="edit" b-ref="editor" b-if="$data.editingId === $for.todo.id"
+                               b-bind-aria-label="`Edit ${$for.todo.title}`" maxlength="200"
+                               b-model="$data.draft"
+                               b-on-keydown="$data.editKey($event, $for.todo)"
+                               b-on-blur="$data.save($for.todo)">
+                    </li>
+                </ul>
+                <p class="empty-filter" data-testid="empty-filter" b-else
+                   b-text="$data.filter === 'active' ? 'Nothing left to do. 🎉' : 'Nothing completed yet.'"></p>
+
+                <footer class="footer">
+                    <span class="todo-count" data-testid="count" aria-live="polite">
+                        <strong b-text="$data.remaining"></strong> <span b-text="$data.remaining === 1 ? 'item' : 'items'"></span> left
+                    </span>
+                    <ul class="filters" aria-label="Filter todos">
+                        <li b-for="option in $data.filters" b-key="$for.option.id">
+                            <a b-bind-href="`#/${$for.option.id === 'all' ? '' : $for.option.id}`"
+                               b-bind-data-testid="`filter-${$for.option.id}`"
+                               b-bind-class="{ selected: $data.filter === $for.option.id }"
+                               b-bind-aria-current="$data.filter === $for.option.id ? 'page' : null"
+                               b-text="$for.option.label"></a>
+                        </li>
+                    </ul>
+                    <button type="button" class="clear-completed" data-testid="clear-completed"
+                            b-bind-hidden="!$data.completed" b-on-click="$data.clearCompleted()">
+                        Clear completed (<span b-text="$data.completed"></span>)
+                    </button>
+                </footer>
+            </div>
+        </section>
+
+        <footer class="info">
+            <p>Double-click a todo to edit it. Enter saves, Escape cancels.</p>
+            <p>Inspired by <a href="https://todomvc.com" target="_blank" rel="noopener">TodoMVC</a>.</p>
+        </footer>
+    </main>
+
+    <script src="../../../dist/brio.min.js"></script>
+    <script src="../../../dist/brio.persistence.min.js"></script>
+    <script src="./app.js"></script>
+</body>
+</html>

@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Large table · Brio</title>
+    <link rel="stylesheet" href="../shared/app.css">
+    <style>
+        .app-shell.wide { width: min(100%, 960px); }
+        .toolbar { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+        @media (max-width: 560px) { .toolbar { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+        .toolbar .button { width: 100%; }
+        .stats { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 16px; margin: 16px 0 0; color: var(--muted); font-size: 0.9rem; }
+        .stats strong { color: var(--ink); font-variant-numeric: tabular-nums; }
+        .timings { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+        .timings li { padding: 2px 8px; border-radius: 999px; background: #f3f4f6; font-size: 0.8rem; font-variant-numeric: tabular-nums; }
+        .timings li:first-child { background: #eef2ff; color: var(--brand); font-weight: 600; }
+        .table-wrap { margin-top: 16px; max-height: 560px; overflow: auto; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+        table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+        thead th { position: sticky; top: 0; z-index: 1; padding: 10px 12px; background: #f9fafb; border-bottom: 1px solid var(--line); color: var(--muted); font-weight: 600; text-align: left; }
+        tbody td { padding: 8px 12px; border-bottom: 1px solid #f1f2f4; }
+        tbody tr:hover { background: #fafafa; }
+        tbody tr.danger { background: #fef2f2; }
+        tbody tr.danger .label { color: var(--danger); font-weight: 600; }
+        .col-id { width: 80px; color: var(--muted); font-variant-numeric: tabular-nums; }
+        .col-action { width: 56px; text-align: right; }
+        .label { color: var(--ink); text-decoration: none; }
+        .label:hover { text-decoration: underline; }
+        .remove { padding: 2px 8px; border: 0; border-radius: 6px; background: none; color: var(--muted); font-size: 1.1rem; line-height: 1; cursor: pointer; }
+        .remove:hover, .remove:focus-visible { background: #fee2e2; color: var(--danger); }
+        .empty-table { padding: 40px 16px; color: var(--muted); text-align: center; }
+    </style>
+</head>
+<body>
+    <main id="table-app" class="app-shell wide">
+        <header class="app-header">
+            <h1>Large table</h1>
+            <p>Thousands of keyed rows: creation, partial updates, selection, swaps, and removal, timed per operation.</p>
+        </header>
+
+        <section class="panel">
+            <div class="toolbar" role="toolbar" aria-label="Table operations">
+                <button type="button" class="button primary" data-testid="run" b-on-click="$data.measure('Create 1,000 rows', () => $data.run(1000))">Create 1,000 rows</button>
+                <button type="button" class="button" data-testid="run-lots" b-on-click="$data.measure('Create 10,000 rows', () => $data.run(10000))">Create 10,000 rows</button>
+                <button type="button" class="button" data-testid="add" b-on-click="$data.measure('Append 1,000 rows', () => $data.add(1000))">Append 1,000 rows</button>
+                <button type="button" class="button" data-testid="update" b-bind-disabled="!$data.rows.length" b-on-click="$data.measure('Update every 10th row', () => $data.update())">Update every 10th row</button>
+                <button type="button" class="button" data-testid="swap" b-bind-disabled="$data.rows.length < 999" b-on-click="$data.measure('Swap rows', () => $data.swap())">Swap rows 2 and 999</button>
+                <button type="button" class="button danger" data-testid="clear" b-bind-disabled="!$data.rows.length" b-on-click="$data.measure('Clear', () => $data.clear())">Clear</button>
+            </div>
+            <div class="stats">
+                <span><strong data-testid="row-count" b-text="$data.rows.length.toLocaleString('en-US')"></strong> rows
+                    <span b-if="$data.selectedRow">· selected <strong data-testid="selected-id" b-text="`#${$data.selectedRow.id}`"></strong></span></span>
+                <ol class="timings" aria-label="Recent operation timings" aria-live="polite" data-testid="timings">
+                    <li b-for="timing in $data.timings" b-key="$for.timing.id" b-text="`${$for.timing.name}: ${$for.timing.ms.toFixed(1)} ms`"></li>
+                </ol>
+            </div>
+        </section>
+
+        <div class="table-wrap">
+            <table aria-label="Generated rows" data-testid="table">
+                <thead>
+                    <tr><th class="col-id" scope="col">ID</th><th scope="col">Label</th><th class="col-action" scope="col"><span class="visually-hidden">Actions</span></th></tr>
+                </thead>
+                <tbody data-testid="rows">
+                    <tr b-for="row in $data.rows" b-key="$for.row.id" b-bind-class="{ danger: $for.row.selected }" b-bind-aria-selected="$for.row.selected">
+                        <td class="col-id" b-text="$for.row.id"></td>
+                        <td><a class="label" href="#" b-on-click.prevent="$data.select($for.row)" b-text="$for.row.label"></a></td>
+                        <td class="col-action"><button type="button" class="remove" b-bind-aria-label="`Remove row ${$for.row.id}`" b-on-click="$data.remove($for.row)">×</button></td>
+                    </tr>
+                </tbody>
+            </table>
+            <p class="empty-table" b-if="!$data.rows.length">No rows yet. Create some to get started.</p>
+        </div>
+    </main>
+
+    <script src="../../../dist/brio.min.js"></script>
+    <script src="./app.js"></script>
+</body>
+</html>

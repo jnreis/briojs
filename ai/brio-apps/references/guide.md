@@ -21,7 +21,7 @@ root markup are available. Bundle paths are application deployment paths,
 not automatically available `/dist/` URLs.
 
 The browser global contains `createApp`, `state`, `signal`, `computed`, `effect`,
-`batch`, `createScope`, `onCleanup`, `getCurrentScope`, and `trustedHTML`.
+`batch`, `flush`, `createScope`, `onCleanup`, `getCurrentScope`, and `trustedHTML`.
 All plugins are optional: load `brio.router.min.js`, `brio.persistence.min.js`,
 `brio.http.min.js`, `brio.forms.min.js`, `brio.step.min.js`, or
 `brio.money-mask.min.js` after the core as needed. They add createRouter, persist,
@@ -95,6 +95,7 @@ There is no `with`, implicit state-name resolution, or sandbox.
 | `$stores.name` | Registered app-wide store, independent of data/component boundaries. |
 | `$provided.name` | Live subtree value from the nearest provider of that name. |
 | `trustedHTML` | Explicit HTML trust assertion, not a sanitizer. |
+| `flush` | Apply pending updates now, e.g. `$data.open = true; flush(); $ref.panel.focus()`. |
 | `onCleanup` | Script cleanup helper; use synchronously in the active scope. |
 
 The context is also accessible as `$context`, especially in contextual scripts.
@@ -193,7 +194,7 @@ Escape HTML-significant characters in literal text/attribute values.
 | --- | --- |
 | `b-text="expr"` | Sets literal text; returned tags and `${...}` are never interpreted. |
 | `b-provide="{ name: expression }"` | Supplies live read-only names through `$provided` on this element and its subtree. |
-| `b-bind-href="expr"` | Binds a DOM property when available, otherwise an attribute. `null`, `undefined`, and `false` remove attributes. |
+| `b-bind-href="expr"` | Binds a DOM property when available, otherwise an attribute. `null`, `undefined`, and `false` remove attributes, except `aria-*` booleans, which become `"true"`/`"false"`. |
 | `b-bind-class="expr"` | Accepts strings, arrays, or class-name/boolean objects. |
 | `b-bind-style="expr"` | Supports style objects. |
 | `b-on-click="statements"` | Executes event statements; listeners are scope-owned. |
@@ -433,7 +434,9 @@ timers, and other external resources there.
 
 `state` observes plain objects/arrays, not arbitrary class instances.
 Signals and computed values use `.value`; effects run synchronously by default.
-`batch` groups synchronous writes. `createScope().run(...)` owns created effects;
+`batch` groups synchronous writes. Event handlers run inside a batch, so DOM
+depending on their writes (new `b-if` branches, `$ref` entries) appears when the
+handler returns; call `flush()` first when the same handler needs that DOM. `createScope().run(...)` owns created effects;
 dispose that scope. The app's state factory alone is not a scope.
 ESM also exports `resource(fetcher)` from `briojs` and `briojs/reactivity`,
 not the browser global. It starts fetching and exposes `data.value`,

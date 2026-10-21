@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>7GUIs · Brio</title>
+    <link rel="stylesheet" href="../shared/app.css">
+    <style>
+        .app-shell.wide { width: min(100%, 880px); }
+        [role="tabpanel"] > * { display: block; min-width: 0; }
+        .tabs { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 12px; padding: 4px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+        .tabs button { flex: 1 0 auto; padding: 8px 12px; border: 0; border-radius: 8px; background: transparent; color: var(--muted); font: inherit; font-weight: 600; font-size: 0.9rem; cursor: pointer; }
+        .tabs button:hover { color: var(--ink); background: #f9fafb; }
+        .tabs button[aria-selected="true"] { background: var(--brand); color: var(--brand-ink); }
+        .tabs button:focus-visible { outline: 3px solid rgb(79 70 229 / 0.35); outline-offset: 1px; }
+        .task-header { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 18px; }
+        .task-header h2 { margin: 0; font-size: 1.15rem; }
+        .task-header p { margin: 2px 0 0; color: var(--muted); font-size: 0.9rem; }
+        .task-header .badge { flex-shrink: 0; }
+        .row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+        .stack { display: grid; gap: 12px; max-width: 360px; }
+        .readout { min-width: 72px; padding: 8px 14px; border: 1px solid var(--line); border-radius: 10px; font-size: 1.4rem; font-weight: 700; text-align: center; font-variant-numeric: tabular-nums; }
+        .equals { color: var(--muted); font-weight: 700; }
+        .unit { display: grid; gap: 6px; }
+        .unit input { width: 150px; }
+        .notice { margin: 0; padding: 10px 14px; border-radius: 10px; background: #ecfdf5; color: #065f46; font-size: 0.92rem; }
+        .notice.error { background: #fef2f2; color: #991b1b; }
+
+        .gauge { position: relative; height: 14px; border-radius: 999px; background: #eef0f3; overflow: hidden; }
+        .gauge span { position: absolute; inset: 0 auto 0 0; background: linear-gradient(90deg, #818cf8, var(--brand)); border-radius: inherit; }
+        .gauge.done span { background: var(--ok); }
+        .elapsed { font-size: 2rem; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+        .slider { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 12px; }
+        .slider input { width: 100%; accent-color: var(--brand); }
+        .slider output { min-width: 48px; text-align: right; font-variant-numeric: tabular-nums; }
+
+        .crud { display: grid; grid-template-columns: 1fr 1fr; gap: 0 24px; }
+        .crud select[size] { width: 100%; height: 232px; padding: 4px; border: 1px solid #d1d5db; border-radius: 10px; font: inherit; }
+        .crud select[size] option { padding: 6px 8px; border-radius: 6px; }
+        .crud .actions { grid-column: 1 / -1; display: flex; gap: 8px; margin-top: 16px; }
+        @media (max-width: 640px) { .crud { grid-template-columns: 1fr; } }
+
+        .canvas-wrap { position: relative; }
+        .canvas { display: block; width: 100%; height: 340px; border: 1px solid var(--line); border-radius: 12px; background: #fcfcfd; background-image: radial-gradient(#e5e7eb 1px, transparent 1px); background-size: 20px 20px; cursor: crosshair; touch-action: none; }
+        .canvas circle { fill: rgb(255 255 255 / 0.6); stroke: var(--ink); stroke-width: 1.5; }
+        .canvas circle.selected { fill: #c7cbd3; }
+        .context-menu { position: absolute; z-index: 2; min-width: 180px; padding: 4px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); box-shadow: var(--shadow); }
+        .context-menu button { width: 100%; padding: 8px 10px; border: 0; border-radius: 6px; background: none; font: inherit; text-align: left; cursor: pointer; }
+        .context-menu button:hover, .context-menu button:focus-visible { background: #eef2ff; outline: none; }
+        .adjust { position: absolute; z-index: 3; left: 50%; bottom: 16px; transform: translateX(-50%); width: min(92%, 380px); padding: 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); box-shadow: var(--shadow); }
+        .adjust h3 { margin: 0 0 10px; font-size: 0.95rem; }
+
+        .sheet-wrap { overflow: auto; max-height: 460px; border: 1px solid var(--line); border-radius: 10px; }
+        .sheet { border-collapse: separate; border-spacing: 0; font-size: 0.85rem; font-variant-numeric: tabular-nums; }
+        .sheet th { position: sticky; top: 0; z-index: 1; min-width: 88px; padding: 4px; background: #f3f4f6; border-bottom: 1px solid var(--line); border-right: 1px solid var(--line); color: var(--muted); font-weight: 600; }
+        .sheet th.corner, .sheet tbody th { left: 0; min-width: 40px; z-index: 2; }
+        .sheet tbody th { position: sticky; z-index: 1; }
+        .sheet td { position: relative; height: 28px; max-width: 120px; padding: 0 6px; border-bottom: 1px solid var(--line); border-right: 1px solid var(--line); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: cell; }
+        .sheet td.number { text-align: right; }
+        .sheet td.error { color: var(--danger); font-weight: 600; }
+        .sheet td.active { outline: 2px solid var(--brand); outline-offset: -2px; }
+        .formula-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; font-size: 0.9rem; }
+        .formula-bar code { min-width: 48px; padding: 4px 8px; border-radius: 6px; background: #f3f4f6; font-weight: 700; text-align: center; }
+        .formula-bar input { flex: 1; min-width: 0; padding: 6px 10px; border: 1px solid #d1d5db; border-radius: 8px; font: 0.9rem ui-monospace, SFMono-Regular, Menlo, monospace; }
+        .formula-bar input:focus { outline: 2px solid var(--brand); outline-offset: -1px; }
+    </style>
+</head>
+<body>
+    <main id="guis-app" class="app-shell wide" b-on-hashchange.window="$data.route(location.hash)">
+        <header class="app-header">
+            <h1>7GUIs</h1>
+            <p>Seven classic GUI programming tasks, each built as a Brio component.</p>
+        </header>
+
+        <nav class="tabs" role="tablist" aria-label="Tasks" b-on-keydown="$data.tabKey($event)">
+            <button type="button" role="tab" b-for="task in $data.tasks" b-key="$for.task.id"
+                    b-bind-id="`tab-${$for.task.id}`" b-bind-data-testid="`tab-${$for.task.id}`"
+                    b-bind-aria-controls="`panel-${$for.task.id}`"
+                    b-bind-aria-selected="$data.tab === $for.task.id"
+                    b-bind-tabindex="$data.tab === $for.task.id ? 0 : -1"
+                    b-on-click="$data.select($for.task.id)" b-text="$for.task.label"></button>
+        </nav>
+
+        <section class="panel" id="panel-counter" role="tabpanel" aria-labelledby="tab-counter" b-if.hide="$data.tab === 'counter'">
+            <gui-counter></gui-counter>
+        </section>
+        <section class="panel" id="panel-temperature" role="tabpanel" aria-labelledby="tab-temperature" b-if.hide="$data.tab === 'temperature'">
+            <gui-temperature></gui-temperature>
+        </section>
+        <section class="panel" id="panel-flight" role="tabpanel" aria-labelledby="tab-flight" b-if.hide="$data.tab === 'flight'">
+            <gui-flight-booker></gui-flight-booker>
+        </section>
+        <section class="panel" id="panel-timer" role="tabpanel" aria-labelledby="tab-timer" b-if.hide="$data.tab === 'timer'">
+            <gui-timer></gui-timer>
+        </section>
+        <section class="panel" id="panel-crud" role="tabpanel" aria-labelledby="tab-crud" b-if.hide="$data.tab === 'crud'">
+            <gui-crud></gui-crud>
+        </section>
+        <section class="panel" id="panel-circles" role="tabpanel" aria-labelledby="tab-circles" b-if.hide="$data.tab === 'circles'">
+            <gui-circle-drawer></gui-circle-drawer>
+        </section>
+        <section class="panel" id="panel-cells" role="tabpanel" aria-labelledby="tab-cells" b-if.hide="$data.tab === 'cells'">
+            <gui-cells></gui-cells>
+        </section>
+    </main>
+
+    <template id="gui-counter">
+        <div class="task-header">
+            <div><h2>Counter</h2><p>Understanding the basic ideas of a language/toolkit.</p></div>
+        </div>
+        <div class="row">
+            <output class="readout" data-testid="counter-value" aria-live="polite" b-text="$data.count"></output>
+            <button type="button" class="button primary" data-testid="counter-button" b-on-click="$data.count++">Count</button>
+        </div>
+    </template>
+
+    <template id="gui-temperature">
+        <div class="task-header">
+            <div><h2>Temperature Converter</h2><p>Bidirectional data flow, user-provided text input.</p></div>
+        </div>
+        <div class="row" b-id="['celsius', 'fahrenheit']">
+            <div class="field unit" b-bind-class="{ 'is-invalid': !$data.valid('celsius') }">
+                <label b-bind-for="$id.celsius">Celsius</label>
+                <input inputmode="decimal" data-testid="temp-celsius" b-bind-id="$id.celsius"
+                       b-bind-aria-invalid="!$data.valid('celsius')" b-model="$data.celsiusText">
+            </div>
+            <span class="equals" aria-hidden="true">=</span>
+            <div class="field unit" b-bind-class="{ 'is-invalid': !$data.valid('fahrenheit') }">
+                <label b-bind-for="$id.fahrenheit">Fahrenheit</label>
+                <input inputmode="decimal" data-testid="temp-fahrenheit" b-bind-id="$id.fahrenheit"
+                       b-bind-aria-invalid="!$data.valid('fahrenheit')" b-model="$data.fahrenheitText">
+            </div>
+        </div>
+    </template>
+
+    <template id="gui-flight-booker">
+        <div class="task-header">
+            <div><h2>Flight Booker</h2><p>Constraints between widgets.</p></div>
+        </div>
+        <form class="stack" novalidate b-on-submit.prevent="$data.book()" b-id="['kind', 'departure', 'return']">
+            <div class="field" style="margin: 0">
+                <label b-bind-for="$id.kind">Flight</label>
+                <select data-testid="flight-kind" b-bind-id="$id.kind" b-model="$data.kind">
+                    <option value="one-way">One-way flight</option>
+                    <option value="return">Return flight</option>
+                </select>
+            </div>
+            <div class="field" style="margin: 0" b-bind-class="{ 'is-invalid': !$data.departureDate }">
+                <label b-bind-for="$id.departure">Departure (dd.mm.yyyy)</label>
+                <input data-testid="flight-departure" inputmode="numeric" b-bind-id="$id.departure"
+                       b-bind-aria-invalid="!$data.departureDate" b-model="$data.departure">
+            </div>
+            <div class="field" style="margin: 0" b-bind-class="{ 'is-invalid': $data.kind === 'return' && !$data.returnValid }">
+                <label b-bind-for="$id.return">Return (dd.mm.yyyy)</label>
+                <input data-testid="flight-return" inputmode="numeric" b-bind-id="$id.return"
+                       b-bind-disabled="$data.kind !== 'return'"
+                       b-bind-aria-invalid="$data.kind === 'return' && !$data.returnValid"
+                       b-bind-aria-describedby="$data.problem ? `${$id.return}-problem` : null"
+                       b-model="$data.returning">
+                <p class="error" b-if="$data.problem" b-bind-id="`${$id.return}-problem`" b-text="$data.problem"></p>
+            </div>
+            <div class="row">
+                <button class="button primary" data-testid="flight-book" b-bind-disabled="!$data.canBook">Book</button>
+            </div>
+            <p class="notice" role="status" data-testid="flight-message" b-if="$data.message" b-text="$data.message"></p>
+        </form>
+    </template>
+
+    <template id="gui-timer">
+        <div class="task-header">
+            <div><h2>Timer</h2><p>Concurrency, competing user/signal interactions, responsiveness.</p></div>
+        </div>
+        <div class="stack" style="max-width: none">
+            <div class="slider">
+                <span>Elapsed</span>
+                <div class="gauge" role="progressbar" aria-label="Elapsed time" aria-valuemin="0" data-testid="timer-gauge"
+                     b-bind-class="{ done: $data.finished }"
+                     b-bind-aria-valuemax="$data.duration"
+                     b-bind-aria-valuenow="$data.shown"
+                     b-bind-aria-valuetext="`${$data.shown} of ${$data.duration} seconds`">
+                    <span b-bind-style="{ width: `${$data.progress}%` }"></span>
+                </div>
+                <span></span>
+            </div>
+            <div class="elapsed" data-testid="timer-elapsed" b-text="`${$data.shown}s`"></div>
+            <div class="slider" b-id="['duration']">
+                <label b-bind-for="$id.duration">Duration</label>
+                <input type="range" min="1" max="30" step="0.5" data-testid="timer-duration"
+                       b-bind-id="$id.duration" b-model.number="$data.duration">
+                <output b-bind-for="$id.duration" b-text="`${$data.duration}s`"></output>
+            </div>
+            <div class="row">
+                <button type="button" class="button primary" data-testid="timer-reset" b-on-click="$data.reset()">Reset</button>
+                <span class="badge" b-text="$data.finished ? 'Finished' : 'Running'"></span>
+            </div>
+        </div>
+    </template>
+
+    <template id="gui-crud">
+        <div class="task-header">
+            <div><h2>CRUD</h2><p>Separating the domain and presentation logic, managing mutation, building a non-trivial layout.</p></div>
+            <span class="badge" b-text="`${$data.people.length} people`"></span>
+        </div>
+        <div class="crud" b-id="['prefix', 'list', 'name', 'surname']">
+            <div>
+                <div class="field">
+                    <label b-bind-for="$id.prefix">Filter by surname</label>
+                    <input data-testid="crud-prefix" type="search" placeholder="e.g. Em" b-bind-id="$id.prefix" b-model="$data.prefix">
+                </div>
+                <label class="visually-hidden" b-bind-for="$id.list">People</label>
+                <select size="8" data-testid="crud-list" b-bind-id="$id.list" b-model="$data.selection">
+                    <option b-for="person in $data.filtered" b-key="$for.person.id"
+                            b-bind-value="$for.person.id" b-text="`${$for.person.surname}, ${$for.person.name}`"></option>
+                </select>
+            </div>
+            <div>
+                <div class="field">
+                    <label b-bind-for="$id.name">Name</label>
+                    <input data-testid="crud-name" autocomplete="off" b-bind-id="$id.name" b-model="$data.name">
+                </div>
+                <div class="field">
+                    <label b-bind-for="$id.surname">Surname</label>
+                    <input data-testid="crud-surname" autocomplete="off" b-bind-id="$id.surname" b-model="$data.surname">
+                </div>
+            </div>
+            <div class="actions">
+                <button type="button" class="button primary" data-testid="crud-create"
+                        b-bind-disabled="!$data.complete" b-on-click="$data.create()">Create</button>
+                <button type="button" class="button" data-testid="crud-update"
+                        b-bind-disabled="!$data.selected || !$data.complete" b-on-click="$data.update()">Update</button>
+                <button type="button" class="button" data-testid="crud-delete"
+                        b-bind-disabled="!$data.selected" b-on-click="$data.remove()">Delete</button>
+            </div>
+        </div>
+    </template>
+
+    <template id="gui-circle-drawer">
+        <div b-on-keydown="$data.shortcut($event)">
+        <div class="task-header">
+            <div><h2>Circle Drawer</h2><p>Undo/redo, custom drawing, dialog control. Click to add; right-click a circle to resize it.</p></div>
+            <div class="row">
+                <button type="button" class="button" data-testid="circles-undo" aria-keyshortcuts="Control+Z Meta+Z"
+                        b-bind-disabled="!$data.canUndo" b-on-click="$data.undo()">Undo</button>
+                <button type="button" class="button" data-testid="circles-redo" aria-keyshortcuts="Control+Shift+Z Meta+Shift+Z"
+                        b-bind-disabled="!$data.canRedo" b-on-click="$data.redo()">Redo</button>
+            </div>
+        </div>
+        <div class="canvas-wrap">
+            <svg class="canvas" data-testid="circles-canvas" role="img" aria-label="Drawing canvas"
+                 b-ref="canvas"
+                 b-on-click="$data.click($event)"
+                 b-on-pointermove="$data.hover($event)"
+                 b-on-pointerleave="$data.adjusting || ($data.hovered = null)"
+                 b-on-contextmenu.prevent="$data.openMenu($event)">
+                <title b-text="`${$data.circles.length} circles`"></title>
+                <circle b-for="circle in $data.circles" b-key="$for.circle.id"
+                        b-bind-cx="$for.circle.x" b-bind-cy="$for.circle.y" b-bind-r="$for.circle.r"
+                        b-bind-class="{ selected: $data.hovered === $for.circle.id }"></circle>
+            </svg>
+            <div class="context-menu" role="menu" data-testid="circles-menu" b-if="$data.menu"
+                 b-bind-style="{ left: `${$data.menu.x}px`, top: `${$data.menu.y}px` }"
+                 b-on-keydown="$event.key === 'Escape' && $data.closeMenu()">
+                <button type="button" role="menuitem" b-ref="menuItem" data-testid="circles-adjust"
+                        b-on-click="$data.startAdjust()">Adjust diameter…</button>
+            </div>
+            <div class="adjust" role="dialog" aria-labelledby="adjust-title" data-testid="circles-dialog" b-if="$data.adjusting"
+                 b-on-keydown="$event.key === 'Escape' && $data.finishAdjust()">
+                <h3 id="adjust-title" b-text="`Adjust diameter of circle at (${$data.adjusting.x}, ${$data.adjusting.y})`"></h3>
+                <div class="slider">
+                    <label for="circle-diameter">Diameter</label>
+                    <input id="circle-diameter" type="range" min="10" max="200" b-ref="diameter" data-testid="circles-diameter"
+                           b-model.number="$data.diameter">
+                    <output for="circle-diameter" b-text="$data.diameter"></output>
+                </div>
+                <div class="row" style="justify-content: end; margin-top: 12px">
+                    <button type="button" class="button primary" data-testid="circles-done" b-on-click="$data.finishAdjust()">Done</button>
+                </div>
+            </div>
+        </div>
+        </div>
+    </template>
+
+    <template id="gui-cells">
+        <div class="task-header">
+            <div><h2>Cells</h2><p>Change propagation, widget customization, a more authentic/involved GUI application.</p></div>
+            <span class="badge">=A1+B2 · =SUM(A0:A9) · AVG · MIN · MAX · COUNT · PROD</span>
+        </div>
+        <div class="formula-bar">
+            <label class="visually-hidden" for="cells-editor">Formula for the active cell</label>
+            <code data-testid="cells-address" b-text="$data.active"></code>
+            <input id="cells-editor" data-testid="cells-editor" autocomplete="off" spellcheck="false"
+                   placeholder="Type a value or =formula, then press Enter"
+                   b-model="$data.draft"
+                   b-on-focus="$data.beginEdit()"
+                   b-on-keydown="$data.editorKey($event)"
+                   b-on-blur="$data.commit()">
+        </div>
+        <div class="sheet-wrap">
+            <table class="sheet" role="grid" data-testid="cells-sheet" aria-label="Spreadsheet"
+                   b-on-click="$data.activate($event)"
+                   b-on-dblclick="$data.activate($event) && $data.focusEditor()"
+                   b-on-keydown="$data.sheetKey($event)">
+                <thead>
+                    <tr>
+                        <th class="corner" scope="col"><span class="visually-hidden">Row</span></th>
+                        <th scope="col" b-for="column in $data.columns" b-key="$for.column" b-text="$for.column"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr b-for="row in $data.rows" b-key="$for.row.index">
+                        <th scope="row" b-text="$for.row.index"></th>
+                        <td b-for="cell in $for.row.cells" b-key="$for.cell.id"
+                            b-bind-data-cell="$for.cell.id"
+                            b-bind-tabindex="$data.flags[$for.cell.id] ? 0 : -1"
+                            b-bind-aria-selected="Boolean($data.flags[$for.cell.id])"
+                            b-bind-class="$data.classes($for.cell.id)"
+                            b-text="$data.display($for.cell.id)"></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </template>
+
+    <script src="../../../dist/brio.min.js"></script>
+    <script src="./app.js"></script>
+</body>
+</html>

@@ -1,5 +1,5 @@
 import {
-    isObjectType, objectConstructor, isFunction, isArray, createError, createTypeError, objectKeys,
+    isObjectType, objectConstructor, isFunction, isArray, createError, createTypeError, objectKeys, getLength,
 } from '../core/native';
 import { addEventListener, removeEventListener } from '../dom/native';
 import { getCurrentScope, onCleanup } from '../core/scope';
@@ -49,12 +49,12 @@ export function persist<T>(key: string, initialValue: T, options: PersistOptions
     const value: unknown = objectBacked ? state(initial) : signal(initial);
     let applyingRemoteUpdate = false;
     const encode = () => {
-        if (applyingRemoteUpdate) return;
+        // Always serialize so the effect keeps tracking; a remote update is already in storage.
         const current = objectBacked ? value : (value as Signal<T>).value;
         const serialized = JSON.stringify(current);
         if (serialized === undefined)
             throw createTypeError(`Brio state for key "${key}" cannot be serialized as JSON.`);
-        storage.setItem(key, serialized);
+        if (!applyingRemoteUpdate) storage.setItem(key, serialized);
     };
     const stop = effect(encode);
 
@@ -70,11 +70,15 @@ export function persist<T>(key: string, initialValue: T, options: PersistOptions
         try {
             batch(() => {
                 if (objectBacked && isPlainContainer(next)) {
-                    const target = value as Record<string, unknown>;
-                    for (const prop of objectKeys(target)) {
-                        if (!(prop in next)) delete target[prop];
+                    if (isArray(value)) {
+                        if (isArray(next)) value.splice(0, getLength(value), ...next);
+                    } else if (!isArray(next)) {
+                        const target = value as Record<string, unknown>;
+                        for (const prop of objectKeys(target)) {
+                            if (!(prop in next)) delete target[prop];
+                        }
+                        objectConstructor.assign(target, next);
                     }
-                    objectConstructor.assign(target, next);
                 } else if (!objectBacked) {
                     (value as Signal<T>).value = next as T;
                 }

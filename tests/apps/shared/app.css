@@ -1,0 +1,111 @@
+:root {
+    color-scheme: light;
+    --surface: #ffffff;
+    --canvas: #f4f5f7;
+    --ink: #111827;
+    --muted: #6b7280;
+    --line: #e5e7eb;
+    --brand: #4f46e5;
+    --brand-ink: #ffffff;
+    --ok: #059669;
+    --warn: #d97706;
+    --danger: #dc2626;
+    --radius: 14px;
+    --shadow: 0 1px 2px rgb(17 24 39 / 0.06), 0 8px 24px rgb(17 24 39 / 0.06);
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    place-items: start center;
+    padding: 48px 16px;
+    background: var(--canvas);
+    color: var(--ink);
+    line-height: 1.5;
+}
+
+.app-shell { width: min(100%, 560px); }
+
+.app-header { margin-bottom: 20px; }
+.app-header h1 { margin: 0; font-size: 1.6rem; letter-spacing: -0.02em; }
+.app-header p { margin: 4px 0 0; color: var(--muted); }
+
+.panel {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 24px;
+}
+
+.panel + .panel { margin-top: 16px; }
+
+.button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 40px;
+    padding: 0 16px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--surface);
+    color: var(--ink);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 120ms, border-color 120ms, opacity 120ms;
+}
+
+.button:hover:not(:disabled) { border-color: #c7cbd3; background: #f9fafb; }
+.button:focus-visible, .field input:focus-visible, .field select:focus-visible, .field textarea:focus-visible {
+    outline: 3px solid rgb(79 70 229 / 0.35);
+    outline-offset: 2px;
+}
+.button:disabled { opacity: 0.45; cursor: not-allowed; }
+.button.primary { background: var(--brand); border-color: var(--brand); color: var(--brand-ink); }
+.button.primary:hover:not(:disabled) { background: #4338ca; }
+.button.ghost { border-color: transparent; background: transparent; color: var(--muted); }
+
+/* align-content: start keeps label/input together when a grid row grows (e.g. a sibling shows an error). */
+.field { display: grid; align-content: start; gap: 6px; margin: 0 0 16px; padding: 0; border: 0; min-width: 0; }
+.field label, .field legend { font-weight: 600; font-size: 0.92rem; padding: 0; }
+/* A fieldset's legend is not a grid item, so it does not receive the grid gap. */
+.field > legend { margin-bottom: 8px; }
+.field input:not([type="radio"], [type="checkbox"]), .field select, .field textarea {
+    width: 100%;
+    min-height: 42px;
+    padding: 8px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 10px;
+    font: inherit;
+    background: var(--surface);
+}
+.field .hint { color: var(--muted); font-size: 0.85rem; margin: 0; }
+.field .error { color: var(--danger); font-size: 0.85rem; margin: 0; }
+.field.is-invalid input, .field.is-invalid select, .field.is-invalid textarea { border-color: var(--danger); }
+
+.badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 10px;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    background: #eef2ff;
+    color: var(--brand);
+}
+
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+}

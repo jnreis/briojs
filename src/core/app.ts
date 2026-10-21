@@ -20,6 +20,7 @@ import { trustedHTML } from '../dom/types';
 import type { ComponentDefinition, DomRuntime } from '../dom/types';
 import { createScope, onCleanup } from './scope';
 import { state } from '../reactivity/state';
+import { flush } from '../reactivity/effect';
 import { createScopedState } from './scoped-state';
 import { combinedError } from './errors';
 import { copyContextValues, emptyContextValues } from './context-values';
@@ -158,7 +159,7 @@ export function createApp<
             notifyRootMounted(app, root);
 
             const context = createExpressionScope(
-                { $data: createScopedState(appState), $stores: stores, $provided: emptyContextValues, $ref: createRefs(), trustedHTML },
+                { $data: createScopedState(appState), $stores: stores, $provided: emptyContextValues, $ref: createRefs(), trustedHTML, flush },
             );
             try {
                 scope.run(() => {

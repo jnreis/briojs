@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { createApp } from 'briojs';
-import { batch, computed, createScope, effect, onCleanup, signal, state } from 'briojs/reactivity';
+import { batch, computed, createScope, effect, flush, onCleanup, signal, state } from 'briojs/reactivity';
 import { persist } from 'briojs/persistence';
 import { createRouter } from 'briojs/router';
 
@@ -82,6 +82,97 @@ test('batch flushes dependent effects once after all writes', () => {
     });
 
     assert.deepEqual(values, [2, 5]);
+});
+
+test('flush applies pending effects inside a batch without ending it', () => {
+    const model = state({ first: 1, second: 1 });
+    const values = [];
+    effect(() => values.push(model.first + model.second));
+
+    batch(() => {
+        model.first = 2;
+        flush();
+        assert.deepEqual(values, [2, 3], 'earlier writes are visible after flush');
+        model.second = 3;
+        assert.deepEqual(values, [2, 3], 'later writes stay batched');
+    });
+
+    assert.deepEqual(values, [2, 3, 5]);
+    flush();
+    assert.deepEqual(values, [2, 3, 5], 'flush is a no-op without pending effects');
+});
+
+test('computed values reject circular reads and recover when the cycle is broken', () => {
+    const cells = state({ a: '=b', b: '=a' });
+    const values = {};
+    const evaluate = name => {
+        const formula = cells[name];
+        if (!formula.startsWith('=')) return Number(formula);
+        try {
+            return values[formula.slice(1)].value + 1;
+        } catch (error) {
+            return error.message;
+        }
+    };
+    values.a = computed(() => evaluate('a'));
+    values.b = computed(() => evaluate('b'));
+
+    assert.equal(values.b.value, 'Circular Brio computed dependency.1', 'the error surfaces instead of a stale undefined');
+    assert.equal(values.a.value, 'Circular Brio computed dependency.', 'the re-entered value reports the cycle');
+    cells.b = '1';
+    assert.equal(values.a.value, 2);
+    assert.equal(values.b.value, 1);
+    assert.throws(() => {
+        const self = computed(() => self.value);
+        return self.value;
+    }, /Circular Brio computed dependency/);
+});
+
+test('computed values read inside a batch reflect earlier writes', () => {
+    const source = state({ count: 1 });
+    const doubled = computed(() => source.count * 2);
+    const seen = [];
+    effect(() => seen.push(doubled.value));
+
+    batch(() => {
+        source.count = 2;
+        assert.equal(doubled.value, 4, 'no stale cached value inside the batch');
+        source.count = 3;
+    });
+    assert.deepEqual(seen, [2, 6], 'the effect still runs once per batch');
+});
+
+test('a dependency cycle formed under live effects settles instead of ping-ponging', () => {
+    const cells = state({ a: '', b: '' });
+    const values = {};
+    let evaluations = 0;
+    const evaluate = name => {
+        assert.ok(++evaluations < 50, 'evaluation must terminate');
+        const formula = cells[name];
+        if (!formula.startsWith('=')) return formula === '' ? 0 : Number(formula);
+        try {
+            const value = values[formula.slice(1)].value;
+            return typeof value === 'number' ? value + 1 : '#CYCLE!';
+        } catch {
+            return '#CYCLE!';
+        }
+    };
+    values.a = computed(() => evaluate('a'));
+    values.b = computed(() => evaluate('b'));
+    const rendered = { a: [], b: [] };
+    // Subscribe b's effects first so b is re-read before a would otherwise be invalidated.
+    for (const name of ['b', 'a']) for (let copy = 0; copy < 2; copy++) effect(() => rendered[name].push(values[name].value));
+
+    cells.a = '=b';
+    cells.b = '=a';
+    assert.equal(values.a.value, '#CYCLE!');
+    assert.equal(values.b.value, '#CYCLE!');
+    evaluations = 0;
+    cells.b = '10';
+    assert.equal(values.a.value, 11);
+    assert.equal(values.b.value, 10);
+    assert.ok(evaluations <= 2, `each cell re-evaluates once after the cycle breaks (${evaluations})`);
+    assert.deepEqual(rendered.a.slice(-1), [11]);
 });
 
 test('scopes dispose owned effects and nested scopes', () => {
@@ -180,6 +271,43 @@ test('persistence binds reactive objects and primitive signals to a scope', () =
 test('persistence requires a cleanup scope', () => {
     const storage = { getItem: () => null, setItem: () => {} };
     assert.throws(() => persist('outside', 1, { storage }), /inside an app/);
+});
+
+test('persistence applies cross-tab updates and keeps saving local changes afterwards', t => {
+    const values = new Map();
+    const storage = {
+        getItem(key) { return values.has(key) ? values.get(key) : null; },
+        setItem(key, value) { values.set(key, String(value)); },
+    };
+    const previousWindow = globalThis.window;
+    globalThis.window = new EventTarget();
+    const scope = createScope();
+    t.after(() => {
+        scope.dispose();
+        globalThis.window = previousWindow;
+    });
+    const remote = (key, value) => window.dispatchEvent(Object.assign(new Event('storage'), {
+        key, newValue: JSON.stringify(value), storageArea: storage,
+    }));
+    let list;
+    let profile;
+    scope.run(() => {
+        list = persist('list', ['a', 'b', 'c'], { storage });
+        profile = persist('profile', { name: 'Ada', role: 'admin' }, { storage });
+    });
+
+    remote('list', ['z']);
+    assert.deepEqual([...list], ['z'], 'a shorter remote array replaces contents without holes');
+    assert.equal(list.length, 1);
+    remote('profile', { name: 'Grace' });
+    assert.deepEqual({ ...profile }, { name: 'Grace' });
+    remote('profile', ['not', 'an', 'object']);
+    assert.deepEqual({ ...profile }, { name: 'Grace' }, 'a remote value of a different shape is ignored');
+
+    list.push('y');
+    profile.name = 'Hopper';
+    assert.equal(values.get('list'), '["z","y"]', 'local changes still persist after a remote update');
+    assert.equal(values.get('profile'), '{"name":"Hopper"}');
 });
 
 test('router matches static and parameterized paths without requiring a DOM', () => {

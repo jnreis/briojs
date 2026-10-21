@@ -612,6 +612,40 @@ test('explicit loop values update keyed rows and nested loop contexts without lo
     assert.equal(first.querySelector('i').textContent, 'c');
 });
 
+test('keyed b-for reorders with the minimum number of row moves', t => {
+    const ids = Array.from({ length: 200 }, (_, index) => index + 1);
+    const { app, root, window } = environment(t, `
+        <ul><li b-for="item in $data.items" b-key="$for.item" b-text="$for.item"></li></ul>`, { items: ids });
+    app.mount(root);
+    const list = root.querySelector('ul');
+    const rows = () => [...list.children];
+    const order = () => rows().map(row => Number(row.textContent));
+    const original = new Map(rows().map(row => [row.textContent, row]));
+    const insertBefore = window.Node.prototype.insertBefore;
+    let moved = new Set();
+    window.Node.prototype.insertBefore = function (node, reference) {
+        if (node.nodeType === 1 && node.parentNode === this) moved.add(node.textContent);
+        return insertBefore.call(this, node, reference);
+    };
+    t.after(() => { window.Node.prototype.insertBefore = insertBefore; });
+    const reorder = update => {
+        moved = new Set();
+        window.brio.batch(() => update(app.state.items));
+        return [...moved].map(Number).sort((a, b) => a - b);
+    };
+
+    assert.deepEqual(reorder(items => {
+        [items[1], items[198]] = [items[198], items[1]];
+    }), [2, 199], 'a swap moves only the two swapped rows');
+    assert.deepEqual(order().slice(0, 3), [1, 199, 3]);
+    assert.deepEqual(reorder(items => items.unshift(items.pop())), [200], 'moving the last row to the front moves one row');
+    assert.deepEqual(reorder(items => items.push(items.shift())), [200], 'and back again');
+    assert.deepEqual(reorder(items => items.splice(10, 0, ...items.splice(50, 3))), [51, 52, 53]);
+    assert.equal(reorder(items => items.reverse()).length, 199, 'a reversal keeps one row in place');
+    assert.deepEqual(order(), [...app.state.items]);
+    assert.ok(rows().every(row => original.get(row.textContent) === row), 'every row element is reused');
+});
+
 test('component setup exposes $data, $props and $emit while slots and events keep parent context', t => {
     const { window, app, root } = environment(t, `
         <count-widget b-bind-label="$data.label" on-change="$data.last = $event.detail">
@@ -1399,4 +1433,90 @@ test('initially inactive preserved branches do not animate; no-CSS leave complet
     assert.equal(clock.timers.size, 0);
     assert.equal(clock.frames.size, 0);
     assert.equal(section.isConnected, false);
+});
+
+test('b-bind serializes ARIA booleans as enumerated strings', t => {
+    const { app, root } = environment(t, `
+        <button id="toggle" b-bind-aria-pressed="$data.on" b-bind-aria-expanded="$data.on"
+                b-bind-aria-invalid="$data.missing ?? null" b-bind-hidden="!$data.on"></button>`, { on: false });
+    app.mount(root);
+    const button = root.querySelector('#toggle');
+
+    assert.equal(button.getAttribute('aria-pressed'), 'false', 'false is a meaningful ARIA state, not removal');
+    assert.equal(button.getAttribute('aria-expanded'), 'false');
+    assert.equal(button.hasAttribute('aria-invalid'), false, 'null still removes ARIA attributes');
+    assert.equal(button.hidden, true, 'non-ARIA booleans keep property/attribute semantics');
+    app.state.on = true;
+    assert.equal(button.getAttribute('aria-pressed'), 'true', 'true is not serialized as an empty string');
+    assert.equal(button.hidden, false);
+    app.state.missing = 'spelling';
+    assert.equal(button.getAttribute('aria-invalid'), 'spelling', 'token values pass through');
+});
+
+test('b-model.number checks radios and checkbox groups that hold numbers', t => {
+    const { app, root } = environment(t, `
+        <input type="radio" name="step" value="1" b-model.number="$data.step">
+        <input type="radio" name="step" value="5" b-model.number="$data.step">
+        <input type="checkbox" value="1" b-model.number="$data.ids">
+        <input type="checkbox" value="2" b-model.number="$data.ids">`, { step: 5, ids: [2] });
+    app.mount(root);
+    const [one, five] = root.querySelectorAll('[type="radio"]');
+    const [first, second] = root.querySelectorAll('[type="checkbox"]');
+
+    assert.deepEqual([one.checked, five.checked, first.checked, second.checked], [false, true, false, true]);
+    one.click();
+    first.click();
+    assert.equal(app.state.step, 1);
+    assert.deepEqual([...app.state.ids], [2, 1], 'clicking adds the number once');
+    assert.deepEqual([one.checked, five.checked, first.checked, second.checked], [true, false, true, true],
+        'clicked controls stay checked');
+    second.click();
+    assert.deepEqual([...app.state.ids], [1]);
+    assert.equal(second.checked, false);
+});
+
+test('b-model on select applies its value synchronously to options rendered by b-for', t => {
+    const { app, root } = environment(t, `
+        <div b-if="$data.visible">
+            <select id="size" b-model="$data.size">
+                <option value="">Choose</option>
+                <option b-for="size in $data.sizes" b-key="$for.size" b-bind-value="$for.size" b-text="$for.size"></option>
+            </select>
+        </div>
+        <select id="many" multiple b-model="$data.many">
+            <option b-for="size in $data.sizes" b-key="$for.size" b-bind-value="$for.size" b-text="$for.size"></option>
+        </select>`, { visible: true, size: 'L', many: ['S', 'L'], sizes: ['S', 'M', 'L'] });
+    app.mount(root);
+    const select = () => root.querySelector('#size');
+    const original = select();
+
+    assert.equal(select().value, 'L', 'no microtask gap before the bound option is selected');
+    assert.deepEqual([...root.querySelector('#many').selectedOptions].map(option => option.value), ['S', 'L']);
+    app.state.size = 'M';
+    assert.equal(select().value, 'M');
+    assert.equal(select(), original, 'model reads do not subscribe the enclosing branch');
+    app.state.visible = false;
+    app.state.size = 'S';
+    app.state.visible = true;
+    assert.equal(select().value, 'S', 'a re-rendered branch restores the selection');
+});
+
+test('event handlers are batched and flush() exposes the updated DOM inside the handler', t => {
+    const { app, root, window } = environment(t, `
+        <section b-data="{ open: false, seen: [] }">
+            <button id="batched" b-on-click="$data.open = true; $data.seen.push(Boolean($ref.panel))">Batched</button>
+            <button id="flushed" b-on-click="$data.open = true; flush(); $data.seen.push(Boolean($ref.panel)); $ref.panel.focus()">Flushed</button>
+            <button id="close" b-on-click="$data.open = false">Close</button>
+            <div tabindex="-1" b-ref="panel" b-if="$data.open">Panel</div>
+            <output b-text="$data.seen.join()"></output>
+        </section>`);
+    app.mount(root);
+
+    root.querySelector('#batched').click();
+    assert.equal(root.querySelector('output').textContent, 'false', 'writes are batched until the handler returns');
+    root.querySelector('#close').click();
+    root.querySelector('#flushed').click();
+    assert.equal(root.querySelector('output').textContent, 'false,true');
+    assert.equal(window.document.activeElement?.textContent, 'Panel');
+    assert.equal(typeof window.brio.flush, 'function', 'browser global exposes flush');
 });

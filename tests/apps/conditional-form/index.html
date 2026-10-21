@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register · Brio Conf 2026</title>
+    <link rel="stylesheet" href="../shared/app.css">
+    <style>
+        .app-shell { width: min(100%, 640px); }
+        fieldset.group { border: 0; padding: 0; margin: 0 0 20px; }
+        fieldset.group > legend { font-size: 1rem; font-weight: 700; margin-bottom: 12px; padding: 0; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; align-items: start; }
+        @media (max-width: 520px) { .grid-2 { grid-template-columns: 1fr; } }
+
+        .tickets { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+        .ticket { position: relative; display: grid; gap: 2px; padding: 14px; border: 1px solid var(--line); border-radius: 12px; cursor: pointer; }
+        .ticket input { position: absolute; opacity: 0; }
+        .ticket strong { font-size: 0.95rem; }
+        .ticket span { color: var(--muted); font-size: 0.85rem; }
+        .ticket.selected { border-color: var(--brand); box-shadow: 0 0 0 1px var(--brand); background: #f5f5ff; }
+        .ticket:has(input:focus-visible) { outline: 3px solid rgb(79 70 229 / 0.35); outline-offset: 2px; }
+
+        .conditional { border-left: 3px solid #e0e7ff; padding-left: 16px; margin: 0 0 20px; }
+        .sessions { display: grid; gap: 8px; }
+        .session { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 12px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); cursor: pointer; font-weight: 400; transition: border-color 0.15s, background-color 0.15s, box-shadow 0.15s; }
+        .session:hover:not(.sold-out) { border-color: #c7d2fe; background: #fafaff; }
+        .session:has(input:checked) { border-color: var(--brand); box-shadow: 0 0 0 1px var(--brand); background: #f5f5ff; }
+        .session:has(input:focus-visible) { outline: 3px solid rgb(79 70 229 / 0.35); outline-offset: 2px; }
+        .session input { appearance: none; display: grid; place-content: center; width: 20px; height: 20px; margin: 0; border: 2px solid #d1d5db; border-radius: 50%; background: var(--surface); cursor: inherit; transition: border-color 0.15s; }
+        .session input::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: var(--brand); transform: scale(0); transition: transform 0.15s; }
+        .session input:checked { border-color: var(--brand); }
+        .session input:checked::before { transform: scale(1); }
+        .session input:focus-visible { outline: none; }
+        .session-text { display: grid; gap: 2px; min-width: 0; }
+        .session-text strong { font-size: 0.95rem; font-weight: 600; }
+        .session-text span { color: var(--muted); font-size: 0.85rem; }
+        .seats { padding: 3px 10px; border-radius: 999px; background: #ecfdf5; color: var(--ok); font-size: 0.78rem; font-weight: 600; white-space: nowrap; }
+        .seats.low { background: #fffbeb; color: var(--warn); }
+        .session.sold-out { cursor: not-allowed; background: #f9fafb; }
+        .session.sold-out .session-text { opacity: 0.6; }
+        .session.sold-out .seats { background: #f3f4f6; color: var(--muted); }
+        .session.sold-out input { background: #f3f4f6; }
+        .field.is-invalid .session:not(.sold-out) { border-color: #fecaca; }
+        .check { display: flex; gap: 10px; align-items: flex-start; font-weight: 500; }
+        .check input { margin-top: 4px; }
+        .counter { justify-self: end; font-size: 0.8rem; color: var(--muted); }
+        .counter.near-limit { color: var(--warn); }
+        .counter.at-limit { color: var(--danger); }
+
+        .summary { border: 1px solid #fecaca; background: #fef2f2; border-radius: 12px; padding: 14px 16px; margin-bottom: 20px; }
+        .summary:focus { outline: 3px solid rgb(220 38 38 / 0.3); }
+        .summary h2 { margin: 0 0 6px; font-size: 0.95rem; color: var(--danger); }
+        .summary ul { margin: 0; padding-left: 18px; }
+        .summary a { color: var(--danger); }
+
+        .pricing { display: grid; gap: 6px; padding: 14px 16px; border-radius: 12px; background: #f9fafb; margin-bottom: 20px; font-variant-numeric: tabular-nums; }
+        .pricing div { display: flex; justify-content: space-between; }
+        .pricing .discount { color: var(--ok); }
+        .pricing .total { font-weight: 800; font-size: 1.1rem; border-top: 1px solid var(--line); padding-top: 8px; }
+        .actions { display: flex; justify-content: flex-end; gap: 12px; }
+        .alert { padding: 12px 14px; border-radius: 10px; background: #fef2f2; color: var(--danger); margin-bottom: 16px; }
+
+        .confirmation { text-align: center; }
+        .confirmation .check-icon { display: inline-grid; place-items: center; width: 56px; height: 56px; border-radius: 50%; background: #ecfdf5; color: var(--ok); font-size: 1.8rem; }
+        .confirmation dl { display: grid; grid-template-columns: auto 1fr; gap: 6px 16px; text-align: left; margin: 20px 0; }
+        .confirmation dt { color: var(--muted); }
+        .confirmation dd { margin: 0; font-weight: 600; }
+    </style>
+</head>
+<body>
+    <main id="registration-app" class="app-shell">
+        <header class="app-header">
+            <h1>Brio Conf 2026</h1>
+            <p>Lisbon · September 14–15 · Reserve your seat.</p>
+        </header>
+
+        <section class="panel confirmation" data-testid="confirmation" b-if="$data.confirmation"
+                 aria-labelledby="confirmation-title">
+            <span class="check-icon" aria-hidden="true">✓</span>
+            <h2 id="confirmation-title">You're registered, ${$data.confirmation.firstName}!</h2>
+            <p>We sent your ticket to <strong b-text="$data.confirmation.email"></strong>.</p>
+            <dl>
+                <dt>Confirmation</dt><dd data-testid="confirmation-id" b-text="$data.confirmation.id"></dd>
+                <dt>Ticket</dt><dd data-testid="confirmation-ticket" b-text="$data.confirmation.ticketLabel"></dd>
+                <dt b-if="$data.confirmation.session">Workshop</dt>
+                <dd b-if="$data.confirmation.session" b-text="$data.confirmation.session"></dd>
+                <dt>Total paid</dt><dd data-testid="confirmation-total" b-text="$data.confirmation.total"></dd>
+            </dl>
+            <button type="button" class="button" data-testid="register-another" b-on-click="$data.startOver()">Register someone else</button>
+        </section>
+
+        <form class="panel" data-testid="form" novalidate b-else
+              b-id="['name', 'email', 'size', 'diet', 'dietOther', 'timezone', 'company', 'vat', 'notes', 'promo', 'conduct', 'session']"
+              b-bind-aria-busy="$data.submitting"
+              b-on-focusout="$data.touch($event.target.name)"
+              b-on-submit.prevent="$data.submit($ref)">
+
+            <div class="summary" tabindex="-1" role="alert" data-testid="error-summary" b-ref="summary"
+                 b-if="$data.submitted && $data.errorList.length">
+                <h2 b-text="`Please fix ${$data.errorList.length} ${$data.errorList.length === 1 ? 'problem' : 'problems'}`"></h2>
+                <ul>
+                    <li b-for="item in $data.errorList" b-key="$for.item.field">
+                        <a b-bind-href="`#${$id[$for.item.field]}`" b-text="$for.item.message"></a>
+                    </li>
+                </ul>
+            </div>
+
+            <p class="alert" role="alert" data-testid="server-error" b-if="$data.serverError" b-text="$data.serverError"></p>
+
+            <fieldset class="group">
+                <legend>Attendee</legend>
+                <div class="grid-2">
+                    <div class="field" b-bind-class="{ 'is-invalid': $data.show('name') }">
+                        <label b-bind-for="$id.name">Full name</label>
+                        <input name="name" autocomplete="name" data-testid="name" required
+                               b-bind-id="$id.name" b-model.trim="$data.form.name"
+                               b-bind-aria-invalid="$data.show('name')"
+                               b-bind-aria-describedby="$data.show('name') ? `${$id.name}-error` : null">
+                        <p class="error" b-if="$data.show('name')" b-bind-id="`${$id.name}-error`" b-text="$data.errors.name"></p>
+                    </div>
+                    <div class="field" b-bind-class="{ 'is-invalid': $data.show('email') }">
+                        <label b-bind-for="$id.email">Work email</label>
+                        <input name="email" type="email" autocomplete="email" data-testid="email" required
+                               b-bind-id="$id.email" b-model.trim="$data.form.email"
+                               b-bind-aria-invalid="$data.show('email')"
+                               b-bind-aria-describedby="$data.show('email') ? `${$id.email}-error` : null">
+                        <p class="error" b-if="$data.show('email')" b-bind-id="`${$id.email}-error`" b-text="$data.errors.email"></p>
+                    </div>
+                </div>
+            </fieldset>
+
+            <fieldset class="group">
+                <legend>Ticket</legend>
+                <div class="tickets">
+                    <label class="ticket" b-for="ticket in $data.tickets" b-key="$for.ticket.id"
+                           b-bind-class="{ selected: $data.form.ticket === $for.ticket.id }">
+                        <input type="radio" name="ticket" b-bind-value="$for.ticket.id" b-model="$data.form.ticket"
+                               b-bind-data-testid="`ticket-${$for.ticket.id}`">
+                        <strong b-text="$for.ticket.label"></strong>
+                        <span b-text="$data.money($for.ticket.price)"></span>
+                    </label>
+                </div>
+            </fieldset>
+
+            <div class="conditional" data-testid="virtual-options" b-if="$data.form.ticket === 'virtual'">
+                <div class="field" b-bind-class="{ 'is-invalid': $data.show('timezone') }">
+                    <label b-bind-for="$id.timezone">Your time zone</label>
+                    <select name="timezone" data-testid="timezone" b-bind-id="$id.timezone" b-model="$data.form.timezone"
+                            b-bind-aria-invalid="$data.show('timezone')"
+                            b-bind-aria-describedby="$data.show('timezone') ? `${$id.timezone}-error` : null">
+                        <option value="">Choose…</option>
+                        <option b-for="zone in $data.timezones" b-key="$for.zone" b-bind-value="$for.zone" b-text="$for.zone"></option>
+                    </select>
+                    <p class="hint">We'll schedule live Q&amp;A reminders in your local time.</p>
+                    <p class="error" b-if="$data.show('timezone')" b-bind-id="`${$id.timezone}-error`" b-text="$data.errors.timezone"></p>
+                </div>
+            </div>
+
+            <div class="conditional" data-testid="in-person-options" b-else>
+                <div class="grid-2">
+                    <div class="field" b-bind-class="{ 'is-invalid': $data.show('size') }">
+                        <label b-bind-for="$id.size">T-shirt size</label>
+                        <select name="size" data-testid="size" b-bind-id="$id.size" b-model="$data.form.size"
+                                b-bind-aria-invalid="$data.show('size')"
+                                b-bind-aria-describedby="$data.show('size') ? `${$id.size}-error` : null">
+                            <option value="">Choose…</option>
+                            <option b-for="size in $data.sizes" b-key="$for.size" b-bind-value="$for.size" b-text="$for.size"></option>
+                        </select>
+                        <p class="error" b-if="$data.show('size')" b-bind-id="`${$id.size}-error`" b-text="$data.errors.size"></p>
+                    </div>
+                    <div class="field">
+                        <label b-bind-for="$id.diet">Dietary needs</label>
+                        <select name="diet" data-testid="diet" b-bind-id="$id.diet" b-model="$data.form.diet">
+                            <option value="none">No restrictions</option>
+                            <option value="vegetarian">Vegetarian</option>
+                            <option value="vegan">Vegan</option>
+                            <option value="gluten-free">Gluten-free</option>
+                            <option value="other">Other…</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="field" data-testid="diet-other-field" b-if="$data.form.diet === 'other'"
+                     b-bind-class="{ 'is-invalid': $data.show('dietOther') }">
+                    <label b-bind-for="$id.dietOther">Tell the catering team</label>
+                    <input name="dietOther" data-testid="diet-other" b-bind-id="$id.dietOther" b-model.trim="$data.form.dietOther"
+                           b-bind-aria-invalid="$data.show('dietOther')"
+                           b-bind-aria-describedby="$data.show('dietOther') ? `${$id.dietOther}-error` : null">
+                    <p class="error" b-if="$data.show('dietOther')" b-bind-id="`${$id.dietOther}-error`" b-text="$data.errors.dietOther"></p>
+                </div>
+
+                <fieldset class="field" data-testid="workshops" b-if="$data.form.ticket === 'workshop'"
+                          b-bind-id="$id.session"
+                          b-bind-class="{ 'is-invalid': $data.show('session') }"
+                          b-bind-aria-describedby="$data.show('session') ? `${$id.session}-error` : null">
+                    <legend>Pick a workshop</legend>
+                    <div class="sessions">
+                        <label class="session" b-for="session in $data.sessions" b-key="$for.session.id"
+                               b-bind-class="{ 'sold-out': !$for.session.seats }">
+                            <input type="radio" name="session" b-bind-value="$for.session.id" b-model="$data.form.session"
+                                   b-bind-disabled="!$for.session.seats"
+                                   b-bind-data-testid="`session-${$for.session.id}`">
+                            <span class="session-text">
+                                <strong b-text="$for.session.title"></strong>
+                                <span b-text="$for.session.details"></span>
+                            </span>
+                            <small class="seats" b-bind-class="{ low: $for.session.seats > 0 && $for.session.seats <= 5 }"
+                                   b-text="$for.session.seats ? `${$for.session.seats} seats left` : 'Sold out'"></small>
+                        </label>
+                    </div>
+                    <p class="error" b-if="$data.show('session')" b-bind-id="`${$id.session}-error`" b-text="$data.errors.session"></p>
+                </fieldset>
+            </div>
+
+            <fieldset class="group">
+                <legend>Billing</legend>
+                <label class="check field">
+                    <input type="checkbox" name="invoice" data-testid="invoice" b-model="$data.form.invoice">
+                    I need an invoice for my company
+                </label>
+                <div class="conditional grid-2" data-testid="company-fields" b-if.hide="$data.form.invoice">
+                    <div class="field" b-bind-class="{ 'is-invalid': $data.show('company') }">
+                        <label b-bind-for="$id.company">Company name</label>
+                        <input name="company" autocomplete="organization" data-testid="company"
+                               b-bind-id="$id.company" b-model.trim="$data.form.company"
+                               b-bind-required="$data.form.invoice"
+                               b-bind-aria-invalid="$data.show('company')"
+                               b-bind-aria-describedby="$data.show('company') ? `${$id.company}-error` : null">
+                        <p class="error" b-if="$data.show('company')" b-bind-id="`${$id.company}-error`" b-text="$data.errors.company"></p>
+                    </div>
+                    <div class="field" b-bind-class="{ 'is-invalid': $data.show('vat') }">
+                        <label b-bind-for="$id.vat">VAT number <span class="hint">(optional)</span></label>
+                        <input name="vat" data-testid="vat" placeholder="PT123456789"
+                               b-bind-id="$id.vat" b-model.trim="$data.form.vat"
+                               b-bind-aria-invalid="$data.show('vat')"
+                               b-bind-aria-describedby="$data.show('vat') ? `${$id.vat}-error` : null">
+                        <p class="error" b-if="$data.show('vat')" b-bind-id="`${$id.vat}-error`" b-text="$data.errors.vat"></p>
+                    </div>
+                </div>
+
+                <div class="field" b-bind-class="{ 'is-invalid': $data.show('promo') }">
+                    <label b-bind-for="$id.promo">Promo code <span class="hint">(optional)</span></label>
+                    <input name="promo" data-testid="promo" autocomplete="off"
+                           b-bind-id="$id.promo" b-model.trim="$data.form.promo"
+                           b-bind-aria-invalid="$data.show('promo')"
+                           b-bind-aria-describedby="$data.show('promo') ? `${$id.promo}-error` : null">
+                    <p class="error" b-if="$data.show('promo')" b-bind-id="`${$id.promo}-error`" b-text="$data.errors.promo"></p>
+                </div>
+            </fieldset>
+
+            <div class="field">
+                <label b-bind-for="$id.notes">Accessibility requests <span class="hint">(optional)</span></label>
+                <textarea name="notes" rows="3" data-testid="notes" b-bind-id="$id.notes"
+                          b-bind-maxlength="$data.notesLimit" b-model="$data.form.notes"></textarea>
+                <span class="counter" data-testid="notes-counter"
+                      b-bind-class="{ 'near-limit': $data.notesLeft <= 40 && $data.notesLeft > 0, 'at-limit': $data.notesLeft <= 0 }"
+                      b-text="`${$data.notesLeft} characters left`"></span>
+            </div>
+
+            <div class="field" b-bind-class="{ 'is-invalid': $data.show('conduct') }">
+                <label class="check">
+                    <input type="checkbox" name="conduct" data-testid="conduct" b-bind-id="$id.conduct" b-model="$data.form.conduct"
+                           b-bind-aria-invalid="$data.show('conduct')"
+                           b-bind-aria-describedby="$data.show('conduct') ? `${$id.conduct}-error` : null">
+                    I agree to the code of conduct.
+                </label>
+                <p class="error" b-if="$data.show('conduct')" b-bind-id="`${$id.conduct}-error`" b-text="$data.errors.conduct"></p>
+            </div>
+
+            <div class="pricing" data-testid="pricing" aria-live="polite">
+                <div><span b-text="$data.ticket.label"></span><span b-text="$data.money($data.ticket.price)"></span></div>
+                <div class="discount" data-testid="discount" b-if="$data.discount">
+                    <span>Promo ${$data.form.promo.toUpperCase()}</span><span b-text="`−${$data.money($data.discount)}`"></span>
+                </div>
+                <div class="total"><span>Total</span><span data-testid="total" b-text="$data.money($data.total)"></span></div>
+            </div>
+
+            <div class="actions">
+                <button type="submit" class="button primary" data-testid="submit"
+                        b-bind-disabled="$data.submitting"
+                        b-text="$data.submitting ? 'Registering…' : `Register · ${$data.money($data.total)}`"></button>
+            </div>
+        </form>
+    </main>
+
+    <script src="../../../dist/brio.min.js"></script>
+    <script src="./app.js"></script>
+</body>
+</html>

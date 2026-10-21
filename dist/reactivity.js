@@ -1,11 +1,12 @@
-import { e as effect, h as createScope, o as onDispose, b as batch } from "./effect-DIImvjBh.js";
-import { d, f } from "./effect-DIImvjBh.js";
-import { t as trigger, a as track, b as signal } from "./state-gsWplTCq.js";
-import { s } from "./state-gsWplTCq.js";
+import { e as effect, h as createScope, o as onDispose, b as batch } from "./effect-djFrH-wH.js";
+import { j, d, f } from "./effect-djFrH-wH.js";
+import { t as trigger, a as track, b as signal } from "./state-Bg7Dcm4A.js";
+import { s } from "./state-Bg7Dcm4A.js";
 import { b as createError } from "./native-BSek5F0c.js";
 import { persist } from "./persistence-entry.js";
 function computed(getter) {
   let dirty = true;
+  let computing = false;
   let cachedValue;
   const holder = {};
   const runner = effect(getter, {
@@ -26,8 +27,14 @@ function computed(getter) {
       if (!runner.active) throw createError("Cannot read a disposed Brio computed value.");
       track(holder, "value");
       if (dirty) {
-        cachedValue = runner.run();
-        dirty = false;
+        if (computing) throw createError("Circular Brio computed dependency.");
+        computing = true;
+        try {
+          cachedValue = runner.run();
+          dirty = false;
+        } finally {
+          computing = false;
+        }
       }
       return cachedValue;
     },
@@ -93,6 +100,7 @@ export {
   computed,
   createScope,
   effect,
+  j as flush,
   d as getCurrentScope,
   f as onCleanup,
   onDispose,

@@ -1,6 +1,6 @@
 import { i as isFunction, c as createTypeError, o as objectConstructor, n as createSyntaxError, d as deleteItem, f as isObjectType, p as includesItem, q as objectKeys, R as ReflectApi, G as GET_OWN_PROPERTY_DESCRIPTOR, l as ownKeys } from "./native-BSek5F0c.js";
-import { c as causedError, e as effect } from "./effect-DIImvjBh.js";
-import { t as trigger, a as track } from "./state-gsWplTCq.js";
+import { c as causedError, e as effect } from "./effect-djFrH-wH.js";
+import { t as trigger, a as track } from "./state-Bg7Dcm4A.js";
 const valueExpressions = /* @__PURE__ */ new Map();
 const statementExpressions = /* @__PURE__ */ new Map();
 const assignmentExpressions = /* @__PURE__ */ new Map();
@@ -8,7 +8,7 @@ const functionExpressions = /* @__PURE__ */ new Map();
 const $CONTEXT = "$context";
 const contextBindings = `
 "use strict";
-const { $data, $el, $event, $id, $ref, $for, $mutations, $size, $entry, $props, $emit, $insert, $stores, $provided, trustedHTML, onCleanup } = ${$CONTEXT};
+const { $data, $el, $event, $id, $ref, $for, $mutations, $size, $entry, $props, $emit, $insert, $stores, $provided, trustedHTML, flush, onCleanup } = ${$CONTEXT};
 `;
 function evaluateFunction(source, context) {
   const fn = compile(
@@ -138,4 +138,4 @@ export {
   createProvidedValues as g,
   evaluateFunction as h
 };
-//# sourceMappingURL=context-values-BpjC5FcG.js.map
+//# sourceMappingURL=context-values-CoIMWShh.js.map

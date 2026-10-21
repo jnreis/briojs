@@ -13,6 +13,7 @@ export declare const getActiveEffect: () => ReactiveEffect | undefined;
 export declare const cleanupEffect: (eff: ReactiveEffect) => void;
 export declare const runEffect: (eff: ReactiveEffect) => unknown;
 export declare const queueEffect: (eff: ReactiveEffect) => void;
-export declare const flushEffects: () => void;
+/** Runs pending effects now, even inside a batch or event handler, so the DOM reflects earlier writes. */
+export declare const flush: () => void;
 export declare function effect<T>(fn: () => T, options?: EffectOptions): Stop;
 export declare function batch<T>(fn: () => T): T;

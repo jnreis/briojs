@@ -15,6 +15,7 @@ declare const brio: {
     computed: typeof import('.').computed;
     effect: typeof import('.').effect;
     batch: typeof import('.').batch;
+    flush: () => void;
     createScope: typeof import('.').createScope;
     onCleanup: typeof import('.').onCleanup;
     getCurrentScope: typeof import('.').getCurrentScope;

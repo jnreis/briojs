@@ -36,6 +36,28 @@ type LoopRow = {
     output: DomRange;
 };
 
+/** Indexes of a longest strictly increasing run of non-negative positions (O(n log n)). */
+const longestIncreasing = (positions: number[]): Set<number> => {
+    const tails: number[] = [];
+    const previous: number[] = [];
+    positions.forEach((position, index) => {
+        if (position < 0) return;
+        let low = 0;
+        let high = getLength(tails);
+        while (low < high) {
+            const middle = (low + high) >> 1;
+            if (positions[tails[middle]] < position) low = middle + 1;
+            else high = middle;
+        }
+        previous[index] = low ? tails[low - 1] : -1;
+        tails[low] = index;
+    });
+    const stable = new Set<number>();
+    for (let index = getLength(tails) ? tails[getLength(tails) - 1] : -1; index >= 0; index = previous[index])
+        stable.add(index);
+    return stable;
+};
+
 const enumerate = (value: unknown): [unknown, unknown][] => {
     if (value === null || value === undefined) return [];
     if (isArray(value) || (isObjectType(value) && Symbol.iterator in value))
@@ -72,6 +94,8 @@ export function handleFor(
     const rows = new Map<string | number, LoopRow>();
     const portals: { destination: PortalDestination; range: DomRange }[] = [];
     let ordered: LoopRow[] = [];
+    // DOM order of rows rendered directly in the loop's own range after the last reconciliation.
+    let placed = new Map<LoopRow, number>();
     let reconciling = false;
     const reconcilePositions = () => {
         if (reconciling) return;
@@ -94,11 +118,18 @@ export function handleFor(
         }
         const references = new Map<DomRange, Node | null>([[output, output.end]]);
         for (const portal of portals) references.set(portal.range, portal.range.end);
-        for (const row of [...ordered].reverse()) {
+        // Rows forming the longest run already in relative order stay put; only the rest move.
+        const stable = longestIncreasing(ordered.map(row =>
+            destinations.has(row) || row.output.detached ? -1 : placed.get(row) ?? -1));
+        for (let index = getLength(ordered) - 1; index >= 0; index--) {
+            const row = ordered[index];
             const destination = destinations.get(row) ?? output;
-            row.output.moveBefore(getParent(destination.end)!, references.get(destination) ?? null);
+            if (!stable.has(index))
+                row.output.moveBefore(getParent(destination.end)!, references.get(destination) ?? null);
             references.set(destination, row.output.start);
         }
+        placed = new Map();
+        for (const row of ordered) if (!destinations.has(row)) placed.set(row, placed.size);
         for (let index = getLength(portals) - 1; index >= 0; index--) {
             if (!used.has(portals[index].range)) {
                 output.removePortal(portals[index].range);

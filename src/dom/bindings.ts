@@ -228,6 +228,7 @@ function hydrateOwnedNode(
 
     let hasText = false;
     let hasHtml = false;
+    let startModel: (() => void) | undefined;
     const transitionAttr = arrayFrom(element[ATTRIBUTES])
         .find(attribute => includesItem(['b-transition', 'transition'], extractModifiers(attribute.name).baseName));
     if (transitionAttr) prepareTransition(element, transitionAttr.value);
@@ -253,7 +254,7 @@ function hydrateOwnedNode(
             handleBind(element, baseName, attrValue, modifiers, context);
             removeAttribute(element, attrName);
         } else if (baseName === 'b-model' || baseName === 'model') {
-            handleModel(element, attrValue, modifiers, context);
+            startModel = handleModel(element, attrValue, modifiers, context);
             removeAttribute(element, attrName);
         } else if (baseName === 'b-text' || baseName === 'text') {
             getNodeOwner(element)!.controlsChildren = true;
@@ -291,4 +292,5 @@ function hydrateOwnedNode(
     if (!hasText && !hasHtml && tagName !== 'script') {
         hydrateChildren(element, context, runtime);
     }
+    startModel?.();
 }

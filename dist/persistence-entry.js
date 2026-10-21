@@ -1,7 +1,7 @@
-import { c as createTypeError, b as createError, i as isFunction, f as isObjectType, k as isArray, o as objectConstructor, q as objectKeys } from "./native-BSek5F0c.js";
+import { c as createTypeError, b as createError, i as isFunction, f as isObjectType, k as isArray, o as objectConstructor, g as getLength, q as objectKeys } from "./native-BSek5F0c.js";
 import { a as addEventListener, r as removeEventListener } from "./native-PGRcyn9O.js";
-import { d as getCurrentScope, e as effect, f as onCleanup, c as causedError, b as batch } from "./effect-DIImvjBh.js";
-import { s as state, b as signal } from "./state-gsWplTCq.js";
+import { d as getCurrentScope, e as effect, f as onCleanup, c as causedError, b as batch } from "./effect-djFrH-wH.js";
+import { s as state, b as signal } from "./state-Bg7Dcm4A.js";
 const isPlainContainer = (value) => {
   if (value === null || !isObjectType(value)) return false;
   if (isArray(value)) return true;
@@ -33,12 +33,11 @@ function persist(key, initialValue, options = {}) {
   const value = objectBacked ? state(initial) : signal(initial);
   let applyingRemoteUpdate = false;
   const encode = () => {
-    if (applyingRemoteUpdate) return;
     const current = objectBacked ? value : value.value;
     const serialized = JSON.stringify(current);
     if (serialized === void 0)
       throw createTypeError(`Brio state for key "${key}" cannot be serialized as JSON.`);
-    storage.setItem(key, serialized);
+    if (!applyingRemoteUpdate) storage.setItem(key, serialized);
   };
   const stop = effect(encode);
   const listener = (event) => {
@@ -53,11 +52,15 @@ function persist(key, initialValue, options = {}) {
     try {
       batch(() => {
         if (objectBacked && isPlainContainer(next)) {
-          const target = value;
-          for (const prop of objectKeys(target)) {
-            if (!(prop in next)) delete target[prop];
+          if (isArray(value)) {
+            if (isArray(next)) value.splice(0, getLength(value), ...next);
+          } else if (!isArray(next)) {
+            const target = value;
+            for (const prop of objectKeys(target)) {
+              if (!(prop in next)) delete target[prop];
+            }
+            objectConstructor.assign(target, next);
           }
-          objectConstructor.assign(target, next);
         } else if (!objectBacked) {
           value.value = next;
         }

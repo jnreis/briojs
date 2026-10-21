@@ -7,7 +7,7 @@ export * from './core/types';
 export type { ContextValues } from './core/context-values';
 export type { RefMap } from './dom/refs';
 export type { MaskContext, MaskResult, MaskFormatter } from './dom/directives/mask';
-export { effect, batch } from './reactivity/effect';
+export { effect, batch, flush } from './reactivity/effect';
 export { state, signal } from './reactivity/state';
 export { computed } from './reactivity/computed';
 export { resource } from './reactivity/resource';

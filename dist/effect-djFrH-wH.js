@@ -133,10 +133,15 @@ const runEffect = (eff) => {
   }
 };
 const queueEffect = (eff) => {
+  var _a;
+  if (eff.scheduler) {
+    if (eff.active && !((_a = eff.scope) == null ? void 0 : _a.disposed)) eff.scheduler();
+    return;
+  }
   queuedEffects.add(eff);
-  if (!batchDepth) flushEffects();
+  if (!batchDepth) flush();
 };
-const flushEffects = () => {
+const flush = () => {
   var _a;
   const errors = [];
   while (queuedEffects.size) {
@@ -144,7 +149,7 @@ const flushEffects = () => {
     queuedEffects.clear();
     for (const eff of current) {
       try {
-        if (eff.active && !((_a = eff.scope) == null ? void 0 : _a.disposed)) eff.scheduler ? eff.scheduler() : runEffect(eff);
+        if (eff.active && !((_a = eff.scope) == null ? void 0 : _a.disposed)) runEffect(eff);
       } catch (error) {
         errors.push(error);
       }
@@ -196,7 +201,7 @@ function batch(fn) {
   batchDepth--;
   if (!batchDepth) {
     try {
-      flushEffects();
+      flush();
     } catch (error) {
       if (failed)
         throw combinedError("A Brio batch operation and its reactive effects failed.", [failure, error]);
@@ -216,12 +221,13 @@ export {
   getActiveEffect as g,
   createScope as h,
   installDevtoolsBridge as i,
-  notifyAppDisposed as j,
-  notifyAppCreated as k,
-  notifyRootUnmounted as l,
+  flush as j,
+  notifyAppDisposed as k,
+  notifyAppCreated as l,
+  notifyRootUnmounted as m,
   notifyRootMounted as n,
   onDispose as o,
   queueEffect as q,
   setActiveScope as s
 };
-//# sourceMappingURL=effect-DIImvjBh.js.map
+//# sourceMappingURL=effect-djFrH-wH.js.map

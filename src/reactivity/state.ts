@@ -2,9 +2,8 @@ import {
     isObjectType, isString, objectConstructor, ReflectApi, isFunction, isArray, createTypeError, ownKeys,
     GET_OWN_PROPERTY_DESCRIPTOR,
 } from '../core/native';
-import { getActiveEffect, queueEffect } from './effect';
+import { batch, getActiveEffect, queueEffect } from './effect';
 import type { ReactiveEffect } from './effect';
-import { batch } from './effect';
 import type { Signal } from './types';
 
 const targetMap = new WeakMap<object, Map<PropertyKey, Set<ReactiveEffect>>>();
@@ -57,7 +56,8 @@ export const trigger = (target: object, key: PropertyKey, type: 'set' | 'add' | 
         add(dependencies.get('length'));
     }
 
-    effects.forEach(eff => queueEffect(eff));
+    // Invalidate every computed before any effect re-runs, so no effect observes a half-updated graph.
+    batch(() => effects.forEach(eff => queueEffect(eff)));
 };
 
 const isArrayIndex = (key: PropertyKey): boolean =>

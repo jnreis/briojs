@@ -8,7 +8,7 @@ import * as esm from 'briojs';
 const production = readFileSync(new URL('../dist/brio.min.js', import.meta.url), 'utf8');
 const development = readFileSync(new URL('../dist/brio.dev.min.js', import.meta.url), 'utf8');
 const coreAPI = [
-    'createApp', 'state', 'signal', 'computed', 'effect', 'batch',
+    'createApp', 'state', 'signal', 'computed', 'effect', 'batch', 'flush',
     'createScope', 'onCleanup', 'getCurrentScope', 'trustedHTML',
 ];
 const developmentAPI = ['devtools', 'inspectDevtools', 'devtoolsPanel', 'enableDevtools'];

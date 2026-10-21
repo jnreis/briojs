@@ -13,14 +13,14 @@
   },
   "browser": {
     "brio.min.js": {
-      "raw": 51854,
-      "gzip": 19536,
-      "brotli": 17676
+      "raw": 54251,
+      "gzip": 20342,
+      "brotli": 18438
     },
     "brio.dev.min.js": {
-      "raw": 53765,
-      "gzip": 20331,
-      "brotli": 18380
+      "raw": 56162,
+      "gzip": 21154,
+      "brotli": 19156
     },
     "brio.router.min.js": {
       "raw": 3788,
@@ -59,9 +59,9 @@
         "index.js",
         "native-DNTl55LH.js",
         "native-Di2Lf1wo.js",
-        "context-values-BDHq3Msu.js",
-        "effect-BQLFOYeW.js",
-        "state-BMDWKS-7.js",
+        "context-values-DGLwTbXl.js",
+        "effect-BTu8V88D.js",
+        "state-BKD4-QHU.js",
         "reactivity.js",
         "persistence-entry.js",
         "router-entry.js",
@@ -69,48 +69,48 @@
         "forms-entry.js",
         "money-mask-entry.js",
         "http-entry.js",
-        "devtools-M9YWgM-5.js"
+        "devtools-C1VZZZgY.js"
       ],
-      "raw": 154531,
-      "gzip": 41839,
-      "brotli": 36145
+      "raw": 158341,
+      "gzip": 42827,
+      "brotli": 36986
     },
     "reactivity": {
       "files": [
         "reactivity.js",
-        "effect-BQLFOYeW.js",
+        "effect-BTu8V88D.js",
         "native-DNTl55LH.js",
-        "state-BMDWKS-7.js",
+        "state-BKD4-QHU.js",
         "persistence-entry.js",
         "native-Di2Lf1wo.js"
       ],
-      "raw": 27756,
-      "gzip": 8767,
-      "brotli": 7675
+      "raw": 29526,
+      "gzip": 9110,
+      "brotli": 8004
     },
     "router": {
       "files": [
         "router-entry.js",
         "native-DNTl55LH.js",
         "native-Di2Lf1wo.js",
-        "state-BMDWKS-7.js",
-        "effect-BQLFOYeW.js"
+        "state-BKD4-QHU.js",
+        "effect-BTu8V88D.js"
       ],
-      "raw": 27905,
-      "gzip": 8705,
-      "brotli": 7628
+      "raw": 29656,
+      "gzip": 9042,
+      "brotli": 7951
     },
     "persistence": {
       "files": [
         "persistence-entry.js",
         "native-DNTl55LH.js",
         "native-Di2Lf1wo.js",
-        "effect-BQLFOYeW.js",
-        "state-BMDWKS-7.js"
+        "effect-BTu8V88D.js",
+        "state-BKD4-QHU.js"
       ],
-      "raw": 24971,
-      "gzip": 7811,
-      "brotli": 6823
+      "raw": 26722,
+      "gzip": 8145,
+      "brotli": 7146
     },
     "http": {
       "files": [
@@ -134,12 +134,12 @@
       "files": [
         "step-entry.js",
         "native-DNTl55LH.js",
-        "state-BMDWKS-7.js",
-        "effect-BQLFOYeW.js"
+        "state-BKD4-QHU.js",
+        "effect-BTu8V88D.js"
       ],
-      "raw": 24109,
-      "gzip": 7381,
-      "brotli": 6463
+      "raw": 25860,
+      "gzip": 7715,
+      "brotli": 6786
     },
     "money": {
       "files": [
@@ -155,74 +155,74 @@
         "astro-entry.js",
         "native-DNTl55LH.js",
         "native-Di2Lf1wo.js",
-        "context-values-BDHq3Msu.js",
-        "effect-BQLFOYeW.js",
-        "state-BMDWKS-7.js"
+        "context-values-DGLwTbXl.js",
+        "effect-BTu8V88D.js",
+        "state-BKD4-QHU.js"
       ],
-      "raw": 34724,
-      "gzip": 10620,
-      "brotli": 9287
+      "raw": 37272,
+      "gzip": 11254,
+      "brotli": 9876
     },
     "devtools": {
       "files": [
         "devtools-entry.js",
-        "devtools-M9YWgM-5.js",
+        "devtools-C1VZZZgY.js",
         "native-DNTl55LH.js",
-        "effect-BQLFOYeW.js"
+        "effect-BTu8V88D.js"
       ],
-      "raw": 15687,
-      "gzip": 5178,
-      "brotli": 4473
+      "raw": 17438,
+      "gzip": 5511,
+      "brotli": 4774
     },
     "all-entries-deduplicated": {
       "files": 16,
-      "raw": 161878,
-      "gzip": 44177,
-      "brotli": 38146
+      "raw": 165688,
+      "gzip": 45166,
+      "brotli": 38983
     }
   },
   "consumers": {
     "app-main": {
       "files": 1,
-      "raw": 51328,
-      "gzip": 19307,
-      "brotli": 17495
+      "raw": 53124,
+      "gzip": 19888,
+      "brotli": 18036
     },
     "signal-main": {
       "files": 1,
-      "raw": 5312,
-      "gzip": 2564,
-      "brotli": 2354
+      "raw": 5930,
+      "gzip": 2765,
+      "brotli": 2541
     },
     "signal-subpath": {
       "files": 1,
-      "raw": 5312,
-      "gzip": 2564,
-      "brotli": 2354
+      "raw": 5930,
+      "gzip": 2765,
+      "brotli": 2541
     },
     "resource-main": {
       "files": 1,
-      "raw": 7170,
-      "gzip": 3210,
-      "brotli": 2954
+      "raw": 7620,
+      "gzip": 3352,
+      "brotli": 3075
     },
     "resource-subpath": {
       "files": 1,
-      "raw": 7170,
-      "gzip": 3210,
-      "brotli": 2954
+      "raw": 7620,
+      "gzip": 3352,
+      "brotli": 3075
     },
     "router-main": {
       "files": 1,
-      "raw": 8314,
-      "gzip": 3794,
-      "brotli": 3432
+      "raw": 8675,
+      "gzip": 3919,
+      "brotli": 3557
     },
     "router-subpath": {
       "files": 1,
-      "raw": 8314,
-      "gzip": 3794,
-      "brotli": 3432
+      "raw": 8675,
+      "gzip": 3919,
+      "brotli": 3557
     },
     "http-main": {
       "files": 1,
@@ -250,15 +250,15 @@
     },
     "step-main": {
       "files": 1,
-      "raw": 6528,
-      "gzip": 3017,
-      "brotli": 2748
+      "raw": 6889,
+      "gzip": 3134,
+      "brotli": 2862
     },
     "step-subpath": {
       "files": 1,
-      "raw": 6528,
-      "gzip": 3017,
-      "brotli": 2748
+      "raw": 6889,
+      "gzip": 3134,
+      "brotli": 2862
     },
     "money-main": {
       "files": 1,
@@ -274,39 +274,39 @@
     },
     "persistence-main": {
       "files": 1,
-      "raw": 8162,
-      "gzip": 3622,
-      "brotli": 3307
+      "raw": 8807,
+      "gzip": 3838,
+      "brotli": 3496
     },
     "persistence-subpath": {
       "files": 1,
-      "raw": 8162,
-      "gzip": 3622,
-      "brotli": 3307
+      "raw": 8807,
+      "gzip": 3838,
+      "brotli": 3496
     },
     "devtools-main": {
       "files": 1,
-      "raw": 52583,
-      "gzip": 19797,
-      "brotli": 17968
+      "raw": 54379,
+      "gzip": 20382,
+      "brotli": 18464
     },
     "devtools-subpath": {
       "files": 1,
-      "raw": 52588,
-      "gzip": 19803,
-      "brotli": 17962
+      "raw": 54384,
+      "gzip": 20387,
+      "brotli": 18472
     },
     "astro-subpath": {
       "files": 1,
-      "raw": 5385,
-      "gzip": 2577,
-      "brotli": 2295
+      "raw": 5850,
+      "gzip": 2782,
+      "brotli": 2491
     },
     "app-with-tools": {
       "files": 1,
-      "raw": 57927,
-      "gzip": 21855,
-      "brotli": 19783
+      "raw": 59723,
+      "gzip": 22435,
+      "brotli": 20313
     }
   }
 }

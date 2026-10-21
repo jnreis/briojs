@@ -56,8 +56,8 @@ Load one of the standalone bundles, not both:
 ```
 
 Both expose `window.brio` with `createApp`, `state`, `signal`, `computed`,
-`effect`, `batch`, `flush`, `createScope`, `onCleanup`, `getCurrentScope`,
-and `trustedHTML`. Both dispatch the
+`effect`, `batch`, `flush`, `untrack`, `resource`, `createScope`, `onCleanup`,
+`getCurrentScope`, and `trustedHTML`. Both dispatch the
 `brio` ready event after publishing the core API.
 
 All plugins are optional browser scripts. Load only what you
@@ -128,7 +128,7 @@ app.mount('#counter');
 </section>
 ```
 
-Expressions run in strict mode without `with` or implicit state-name resolution. Use `$data` for the nearest state object (app state, component setup state, or `b-data`), `$data.$parent` for parent state, and `$for` for loop values. Bare state names such as `count` are not supported and unresolved identifiers throw `ReferenceError`. JavaScript globals such as `Math`, `JSON`, and `setTimeout` resolve normally.
+Expressions run in strict mode without `with` or implicit state-name resolution. Use `$data` for the nearest state object (app state, component setup state, or `b-data`), `$data.$parent` for parent state, and `$for` for loop values. Bare state names such as `count` are not supported and unresolved identifiers throw `ReferenceError`. When the bare name is a loop variable, state key, or prop, the error suggests the path to use, for example `item is not defined. Loop variables are read through $for: use $for.item.` or `count is not defined. Use $data.count.` JavaScript globals such as `Math`, `JSON`, and `setTimeout` resolve normally.
 
 The context is also available as `$context`. Named bindings include `$data`, `$el`, `$id`, `$ref`, `$for`, `$props`, `$emit`, `$insert`, `$stores`, `$provided`, `trustedHTML`, and `flush`. Event handlers receive `$event`; observers supply `$mutations`, `$size`, or `$entry`. Contextual scripts supply `onCleanup`. Bindings are read-only references; mutate writable state properties (`$data.count++`), not the binding itself (`$data = {}`). `$ref` names are also read-only. Event statements can declare ordinary local variables.
 
@@ -478,7 +478,9 @@ Brio replaces the marked element with paired anchor comments and its hydrated
 contents. Multiple top-level elements, text nodes, and comments are allowed.
 The example renders the heading and paragraph directly inside `#app`.
 A native `<template>` without `b-template` stays inert; Brio does not hydrate
-its `.content` automatically.
+its `.content` automatically. A `<template>` carrying `b-if`, `b-else-if`,
+`b-else`, or `b-for` without `b-template` would only render inert copies, so it
+is an error that names the element; add `b-template` or use a concrete element.
 
 - On `<template b-template>`, Brio clones the template's inert contents.
   On an ordinary container such as `<div b-template>`, it moves the existing
@@ -902,6 +904,20 @@ Static host attributes become string props; `b-bind-name` supplies a reactive pr
 Registered component tags do not use the ordinary-element directive pass.
 `b-bind-*` supplies props, not native host attribute/property bindings (so
 `b-bind-class` supplies a `class` prop; it does not style the host).
+Use `b-attr-*` to bind the host element itself, with the same behavior as
+`b-bind-*` on an ordinary element (class objects merge with static classes,
+style objects and custom properties, `aria-*`, `data-*`, booleans, and `.prop`).
+`b-attr-*` values are not passed as props:
+
+```html
+<kpi-card class="card" b-bind-value="$for.kpi.value"
+          b-attr-class="{ rising: $for.kpi.delta > 0 }"
+          b-attr-data-testid="'kpi-' + $for.kpi.key"></kpi-card>
+```
+
+Each bound prop is evaluated once at mount, before setup, and again only when
+its dependencies change. Component template markup is parsed once per
+definition and cloned for each instance in the host's own document.
 `b-on-*`/`on-*` installs host event listeners using the part before the first
 dot as the event name; ordinary DOM event modifiers are **not applied**.
 For example, `.prevent`, `.once`, and `.window` do not gain their usual
@@ -1200,7 +1216,22 @@ scope.dispose(); // Stops effects and nested scopes created in the scope.
 - `effect(fn)` recollects its dependencies each run and returns an idempotent stop function.
 - `batch(fn)` runs affected effects once after a synchronous group of writes.
 - `flush()` runs pending effects immediately, including inside a batch or event handler; later writes in the batch are still applied when it ends.
+- `untrack(fn)` runs `fn` and returns its result without subscribing the surrounding effect or computed to anything `fn` reads.
 - `createScope()` owns nested scopes and effect cleanup. `onCleanup(fn)` registers cleanup in the current scope and errors if there is no active scope. A computed value created outside a scope can be stopped with `.dispose()`.
+- Called directly in an effect body, `onCleanup(fn)` is **per run**: `fn` runs before the effect's next run and when the effect stops (or its scope is disposed). This works in unowned effects too. Cleanup registered inside a nested `scope.run()` keeps that scope's lifetime. Like scope cleanups, the returned function runs the cleanup early, at most once.
+
+```js
+effect(() => {
+  if (!settings.live) return;
+  const unsubscribe = feed.subscribe(onMessage);
+  onCleanup(unsubscribe); // Unsubscribes when live turns off, before re-subscribing, and on stop.
+});
+
+effect(() => {
+  const days = filters.days;          // Tracked: reloads when the range changes.
+  untrack(() => load(days, filters)); // Reads inside load() do not become dependencies.
+});
+```
 
 Effects run synchronously by default. Explicit batches are synchronous too; there is no hidden next-tick scheduler. Event handlers are already batched; wrap several writes made elsewhere (timers, fetch callbacks, scripts) in `batch()` so lists and bindings update once instead of after every write.
 
@@ -1212,8 +1243,8 @@ A write invalidates every dependent computed before any effect re-runs, so effec
 
 ### Async resources
 
-`resource(fetcher)` is an ESM utility exported from `briojs` and
-`briojs/reactivity`, not the browser global. It starts immediately and tracks
+`resource(fetcher)` is exported from `briojs` and `briojs/reactivity`, and is
+available as `brio.resource` in the browser bundles. It starts immediately and tracks
 reactive dependencies read synchronously by the fetcher (before its first await).
 It does not block mounting or provide server rendering.
 

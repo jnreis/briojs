@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { JSDOM } from 'jsdom';
-import { evaluateFunction, hydrateRoot, hydrateNode } from 'briojs';
+import { assign, evaluateFunction, execute, hydrateRoot, hydrateNode } from 'briojs';
 
 const bundle = readFileSync(new URL('../dist/brio.min.js', import.meta.url), 'utf8');
 
@@ -1679,4 +1679,81 @@ test('manual cloak page hides templates until its delayed bootstrap mounts them'
     document.getElementById('widget-mount').click();
     assert.equal(widget.hasAttribute('b-cloak'), false);
     assert.ok(widget.textContent.includes('0 clicks'));
+});
+
+test('native templates with structural directives but no b-template fail with a located fix', t => {
+    for (const markup of [
+        '<template b-for="item in $data.items"><i></i></template>',
+        '<template b-if="$data.on"><i></i></template>',
+        '<p b-if="$data.on"></p><template b-else><i></i></template>',
+    ]) {
+        const { app, root } = environment(t, markup, { items: [1], on: true });
+        assert.throws(() => app.mount(root), /<template b-(for|if|else)> would render inert template contents; add b-template/);
+    }
+    const { app, root } = environment(t,
+        '<template b-template b-for="item in $data.items"><i b-text="$for.item"></i></template>', { items: [1, 2] });
+    app.mount(root);
+    assert.equal(root.textContent, '12');
+});
+
+test('reference errors suggest $for, $data and $props paths for bare names', t => {
+    const cases = [
+        ['<ul><li b-for="item in $data.items" b-text="item"></li></ul>', /item is not defined\. Loop variables are read through \$for: use \$for\.item\./],
+        ['<div b-for="group in $data.groups"><i b-for="x in $for.group.items" b-text="group"></i></div>', /use \$for\.\$parent\.group\./],
+        ['<p b-text="items"></p>', /items is not defined\. Use \$data\.items\./],
+        ['<p b-text="missing"></p>', /missing is not defined$/],
+    ];
+    for (const [markup, message] of cases) {
+        const { app, root } = environment(t, markup, { items: [1], groups: [{ items: [1] }], count: 0 });
+        try {
+            app.mount(root);
+            assert.fail(`expected ${markup} to throw`);
+        } catch (error) {
+            assert.match(error.message, message);
+        }
+    }
+    const { app, root } = environment(t, '<name-tag b-bind-label="\'Ada\'"></name-tag>');
+    app.component('name-tag', { template: '<b b-text="label"></b>' });
+    assert.throws(() => app.mount(root), /label is not defined\. Use \$props\.label\./);
+    assert.throws(() => execute('count++', { $data: { count: 0 } }, undefined, 'b-on-click'),
+        /count is not defined\. Use \$data\.count\./);
+    assert.throws(() => assign('total', { $data: { total: 0 } }, 1, 'b-model'),
+        /total is not defined\. Use \$data\.total\./);
+});
+
+test('component hosts bind native attributes with b-attr-* and evaluate bound props once', t => {
+    const { app, root, window } = environment(t, `
+        <status-pill class="pill" b-attr-class="{ busy: $data.busy }" b-attr-data-testid="'pill-' + $data.id"
+            b-attr-aria-busy="$data.busy" b-attr-style="{ '--hue': $data.hue }"
+            b-bind-label="$data.read()"></status-pill>
+        <status-pill b-bind-label="'second'"></status-pill>`, { busy: false, id: 'a', hue: 10 });
+    let reads = 0;
+    app.state.read = () => { reads++; return app.state.id; };
+    let parses = 0;
+    const createElement = window.document.createElement;
+    window.document.createElement = function (name, ...rest) {
+        if (name === 'template') parses++;
+        return createElement.call(this, name, ...rest);
+    };
+    app.component('status-pill', { template: '<span b-text="$props.label"></span>' });
+    app.mount(root);
+    window.document.createElement = createElement;
+    const [first, second] = root.querySelectorAll('status-pill');
+    assert.equal(reads, 1, 'the bound prop expression ran once at mount');
+    assert.equal(first.textContent, 'a');
+    assert.equal(second.textContent, 'second');
+    assert.equal(first.className, 'pill');
+    assert.equal(first.getAttribute('data-testid'), 'pill-a');
+    assert.equal(first.getAttribute('aria-busy'), 'false');
+    assert.equal(first.style.getPropertyValue('--hue'), '10');
+    assert.ok(!first.hasAttribute('b-attr-class'));
+    app.state.busy = true;
+    app.state.id = 'b';
+    assert.equal(first.className, 'pill busy');
+    assert.equal(first.getAttribute('aria-busy'), 'true');
+    assert.equal(first.getAttribute('data-testid'), 'pill-b');
+    assert.equal(first.textContent, 'b');
+    assert.equal(reads, 2);
+    assert.equal(parses, 1, 'the template markup was parsed per definition, not per instance');
+    assert.ok(window.document.contains(first));
 });

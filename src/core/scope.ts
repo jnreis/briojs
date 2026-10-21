@@ -101,7 +101,42 @@ export function removeDisposer(scope: Scope, cleanup: () => void): void {
     if (!owner._disposed) deleteItem(owner._cleanups, cleanup);
 }
 
+/** The effect run currently executing directly in its own scope; its `onCleanup` calls are per run. */
+export type EffectFrame = { scope: Scope | undefined; cleanups: (() => void)[] | undefined };
+let effectFrame: EffectFrame | undefined;
+
+/** Runs `fn` with no active scope, so unowned effects never adopt whichever scope triggered them. */
+export function runUnscoped<T>(fn: () => T): T {
+    const previous = activeScope;
+    activeScope = undefined;
+    try {
+        return fn();
+    } finally {
+        activeScope = previous;
+    }
+}
+
+export function setEffectFrame(frame: EffectFrame | undefined): EffectFrame | undefined {
+    const previous = effectFrame;
+    effectFrame = frame;
+    return previous;
+}
+
 export function onCleanup(cleanup: () => void): () => void {
+    // Inside an effect body (not a nested scope.run), cleanup runs before the next run and when the effect stops.
+    if (effectFrame && effectFrame.scope === activeScope) {
+        const frame = effectFrame;
+        let active = true;
+        const wrapped = () => {
+            if (!active) return;
+            active = false;
+            const index = frame.cleanups ? frame.cleanups.indexOf(wrapped) : -1;
+            if (index !== -1) frame.cleanups!.splice(index, 1);
+            cleanup();
+        };
+        (frame.cleanups ??= []).push(wrapped);
+        return wrapped;
+    }
     if (!activeScope) throw createError('This operation requires an active Brio scope.');
     return onDispose(activeScope, cleanup);
 }

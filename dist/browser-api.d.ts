@@ -1,4 +1,4 @@
-import { createApp, state, signal, computed, effect, batch, createScope, onCleanup, getCurrentScope, trustedHTML } from './index';
+import { createApp, state, signal, computed, effect, batch, untrack, resource, createScope, onCleanup, getCurrentScope, trustedHTML } from './index';
 
 declare const brio: {
     createApp: typeof createApp;
@@ -8,6 +8,8 @@ declare const brio: {
     effect: typeof effect;
     batch: typeof batch;
     flush: () => void;
+    untrack: typeof untrack;
+    resource: typeof resource;
     createScope: typeof createScope;
     onCleanup: typeof onCleanup;
     getCurrentScope: typeof getCurrentScope;

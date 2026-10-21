@@ -47,6 +47,8 @@ export function handleIf(
             includesItem(['b-if', 'b-else-if', 'b-else'], extractModifiers(attribute.name).baseName));
         if (getLength(conditional) !== 1)
             throw createSyntaxError('An element can have only one conditional directive.');
+        if (node.localName === TEMPLATE && !node.hasAttribute('b-template'))
+            throw createSyntaxError(`<template ${extractModifiers(conditional[0].name).baseName}> would render inert template contents; add b-template to render them in place, or use a concrete element.`);
         if (node !== element && getLength(objectKeys(extractModifiers(conditional[0].name).modifiers)))
             throw createSyntaxError('Conditional modifiers belong only on the leading b-if, not b-else-if or b-else.');
         if (modifiers.hide && attributes.some(attribute =>

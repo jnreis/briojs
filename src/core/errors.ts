@@ -40,9 +40,9 @@ export function causedError(message: string, cause: unknown): Error {
 }
 
 /** Wraps a failure with the directive and element that triggered it, keeping the original as `cause`. */
-export const directiveError = (message: string, cause: unknown, directive?: string, node?: Node): Error =>
+export const directiveError = (message: string, cause: unknown, directive?: string, node?: Node, hint = ''): Error =>
     mark(causedError(
-        `${message}${directive ? ` in ${directive}` : ''}${node ? ` on ${describeNode(node)}` : ''}: ${errorText(cause)}`,
+        `${message}${directive ? ` in ${directive}` : ''}${node ? ` on ${describeNode(node)}` : ''}: ${errorText(cause)}${hint}`,
         cause,
     ), node, directive);
 

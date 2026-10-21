@@ -31,8 +31,8 @@ function causedError(message, cause) {
   define(error, "cause", cause);
   return error;
 }
-const directiveError = (message, cause, directive, node) => mark(causedError(
-  `${message}${directive ? ` in ${directive}` : ""}${node ? ` on ${describeNode(node)}` : ""}: ${errorText(cause)}`,
+const directiveError = (message, cause, directive, node, hint = "") => mark(causedError(
+  `${message}${directive ? ` in ${directive}` : ""}${node ? ` on ${describeNode(node)}` : ""}: ${errorText(cause)}${hint}`,
   cause
 ), node, directive);
 const locate = (error, node) => {
@@ -51,6 +51,31 @@ function combinedError(message, errors) {
   define(error, "errors", errors);
   return error;
 }
+const devtoolsEnabled = typeof __BRIO_DEVTOOLS__ === "undefined" || __BRIO_DEVTOOLS__;
+let bridge;
+function installDevtoolsBridge(next) {
+  bridge = next;
+}
+const notifyAppCreated = (app, state) => {
+  if (devtoolsEnabled) bridge == null ? void 0 : bridge.appCreated(app, state);
+};
+const notifyAppDisposed = (app) => {
+  if (devtoolsEnabled) bridge == null ? void 0 : bridge.appDisposed(app);
+};
+const notifyRootMounted = (app, root) => {
+  if (devtoolsEnabled) bridge == null ? void 0 : bridge.rootMounted(app, root);
+};
+const notifyRootUnmounted = (app, root) => {
+  if (devtoolsEnabled) bridge == null ? void 0 : bridge.rootUnmounted(app, root);
+};
+const notifyEffectCreated = () => {
+  if (!devtoolsEnabled || !bridge) return false;
+  bridge.effectCreated();
+  return true;
+};
+const notifyEffectDisposed = (tracked) => {
+  if (devtoolsEnabled && tracked) bridge == null ? void 0 : bridge.effectDisposed();
+};
 let activeScope;
 const noop = () => {
 };
@@ -131,7 +156,35 @@ function removeDisposer(scope, cleanup) {
   const owner = scope;
   if (!owner._disposed) deleteItem(owner._cleanups, cleanup);
 }
+let effectFrame;
+function runUnscoped(fn) {
+  const previous = activeScope;
+  activeScope = void 0;
+  try {
+    return fn();
+  } finally {
+    activeScope = previous;
+  }
+}
+function setEffectFrame(frame) {
+  const previous = effectFrame;
+  effectFrame = frame;
+  return previous;
+}
 function onCleanup(cleanup) {
+  if (effectFrame && effectFrame.scope === activeScope) {
+    const frame = effectFrame;
+    let active = true;
+    const wrapped = () => {
+      if (!active) return;
+      active = false;
+      const index = frame.cleanups ? frame.cleanups.indexOf(wrapped) : -1;
+      if (index !== -1) frame.cleanups.splice(index, 1);
+      cleanup();
+    };
+    (frame.cleanups ?? (frame.cleanups = [])).push(wrapped);
+    return wrapped;
+  }
   if (!activeScope) throw createError("This operation requires an active Brio scope.");
   return onDispose(activeScope, cleanup);
 }
@@ -143,31 +196,6 @@ function setActiveScope(scope) {
   activeScope = scope;
   return prev;
 }
-const devtoolsEnabled = typeof __BRIO_DEVTOOLS__ === "undefined" || __BRIO_DEVTOOLS__;
-let bridge;
-function installDevtoolsBridge(next) {
-  bridge = next;
-}
-const notifyAppCreated = (app, state) => {
-  if (devtoolsEnabled) bridge == null ? void 0 : bridge.appCreated(app, state);
-};
-const notifyAppDisposed = (app) => {
-  if (devtoolsEnabled) bridge == null ? void 0 : bridge.appDisposed(app);
-};
-const notifyRootMounted = (app, root) => {
-  if (devtoolsEnabled) bridge == null ? void 0 : bridge.rootMounted(app, root);
-};
-const notifyRootUnmounted = (app, root) => {
-  if (devtoolsEnabled) bridge == null ? void 0 : bridge.rootUnmounted(app, root);
-};
-const notifyEffectCreated = () => {
-  if (!devtoolsEnabled || !bridge) return false;
-  bridge.effectCreated();
-  return true;
-};
-const notifyEffectDisposed = (tracked) => {
-  if (devtoolsEnabled && tracked) bridge == null ? void 0 : bridge.effectDisposed();
-};
 let activeEffect;
 let batchDepth = 0;
 const queuedEffects = /* @__PURE__ */ new Set();
@@ -176,26 +204,55 @@ const cleanupEffect = (eff) => {
   for (const dep of eff.deps) deleteItem(dep, eff);
   eff.deps.length = 0;
 };
+const runCleanups = (eff) => {
+  const cleanups = eff.frame.cleanups;
+  if (!cleanups) return;
+  eff.frame.cleanups = void 0;
+  const previous = activeEffect;
+  activeEffect = void 0;
+  const errors = [];
+  for (const cleanup of cleanups) {
+    try {
+      cleanup();
+    } catch (error) {
+      errors.push(error);
+    }
+  }
+  activeEffect = previous;
+  if (getLength(errors)) return locate(combinedError("One or more effect cleanups failed.", errors), getScopeNode(eff.scope));
+};
 const runEffect = (eff) => {
   var _a;
   if (!eff.active || ((_a = eff.scope) == null ? void 0 : _a.disposed)) return;
   if (eff.running) return;
+  const cleanupFailure = runCleanups(eff);
   cleanupEffect(eff);
   const previous = activeEffect;
+  const previousFrame = setEffectFrame(eff.frame);
   activeEffect = eff;
   eff.running = true;
+  let result;
   try {
-    if (eff.scope) {
-      return eff.scope.run(() => eff.fn());
-    }
-    return eff.fn();
+    result = eff.scope ? eff.scope.run(eff.fn) : runUnscoped(eff.fn);
   } catch (error) {
     throw locate(error, getScopeNode(eff.scope));
   } finally {
     eff.running = false;
     activeEffect = previous;
+    setEffectFrame(previousFrame);
   }
+  if (cleanupFailure) throw cleanupFailure;
+  return result;
 };
+function untrack(fn) {
+  const previous = activeEffect;
+  activeEffect = void 0;
+  try {
+    return fn();
+  } finally {
+    activeEffect = previous;
+  }
+}
 const queueEffect = (eff) => {
   var _a;
   if (eff.scheduler) {
@@ -229,7 +286,8 @@ function effect(fn, options = {}) {
     scope,
     deps: [],
     active: true,
-    running: false
+    running: false,
+    frame: { scope, cleanups: void 0 }
   };
   const stop = () => {
     if (!reactiveEffect.active) return;
@@ -237,6 +295,8 @@ function effect(fn, options = {}) {
     if (scope) removeDisposer(scope, stop);
     cleanupEffect(reactiveEffect);
     if (devtoolsEnabled) notifyEffectDisposed(Boolean(reactiveEffect.devtoolsTracked));
+    const cleanupFailure = runCleanups(reactiveEffect);
+    if (cleanupFailure) throw cleanupFailure;
   };
   stop.active = true;
   stop.run = () => runEffect(reactiveEffect);
@@ -283,8 +343,11 @@ function batch(fn) {
   return result;
 }
 export {
-  setActiveScope as A,
-  getScopeNode as B,
+  removeDisposer as A,
+  runUnscoped as B,
+  setEffectFrame as C,
+  setActiveScope as D,
+  getScopeNode as E,
   combinedError as a,
   batch as b,
   causedError as c,
@@ -295,21 +358,21 @@ export {
   directiveError as h,
   installDevtoolsBridge as i,
   getCurrentScope as j,
-  createScope as k,
+  errorText as k,
   leaveBatch as l,
   mark as m,
-  onDispose as n,
+  createScope as n,
   onCleanup as o,
-  errorText as p,
+  onDispose as p,
   queueEffect as q,
   locate as r,
   setScopeNode as s,
   notifyRootMounted as t,
-  flush as u,
-  notifyAppDisposed as v,
-  notifyAppCreated as w,
-  notifyRootUnmounted as x,
-  addDisposer as y,
-  removeDisposer as z
+  untrack as u,
+  flush as v,
+  notifyAppDisposed as w,
+  notifyAppCreated as x,
+  notifyRootUnmounted as y,
+  addDisposer as z
 };
-//# sourceMappingURL=effect-BQLFOYeW.js.map
+//# sourceMappingURL=effect-BTu8V88D.js.map

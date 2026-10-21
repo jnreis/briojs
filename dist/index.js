@@ -1,13 +1,13 @@
 var __defProp = Object.defineProperty;
 var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
 var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "symbol" ? key + "" : key, value);
-import { R as ReflectApi, $ as $PARENT, c as createTypeError, p as includesItem, d as deleteItem, b as createError, g as getLength, T as TELEPORT, a as arrayFrom, l as ownKeys, G as GET_OWN_PROPERTY_DESCRIPTOR, o as objectConstructor, n as createSyntaxError, A as ATTRIBUTES, t as startsWith, u as TEMPLATE, j as isInstanceOf, f as isObjectType, B as B_TELEPORT, r as removeElement, m as isString, k as isArray, e as objectEntries, q as objectKeys, h as isNumber, i as isFunction, v as isBoolean, w as snapshotList } from "./native-DNTl55LH.js";
-import { b as getChildNodes, a as addEventListener, r as removeEventListener, c as removeAttribute, g as getAttribute, d as removeChild, e as getParent, f as getOwnerDocument, h as getNodeType, i as getNextSibling, j as insertBefore } from "./native-Di2Lf1wo.js";
-import { e as evaluate, a as emptyContextValues, b as createExpressionScope, d as execute, f as assign, g as createProvidedValues, h as evaluateFunction, c as copyContextValues } from "./context-values-BDHq3Msu.js";
-import { j as getCurrentScope, a as combinedError, o as onCleanup, b as batch, k as createScope, e as effect, n as onDispose, c as causedError, p as errorText, h as directiveError, s as setScopeNode, r as locate, t as notifyRootMounted, u as flush, v as notifyAppDisposed, w as notifyAppCreated, x as notifyRootUnmounted } from "./effect-BQLFOYeW.js";
-import { y, f, B, m, z, A } from "./effect-BQLFOYeW.js";
-import { s as state, a as track, t as trigger } from "./state-BMDWKS-7.js";
-import { b } from "./state-BMDWKS-7.js";
+import { R as ReflectApi, $ as $PARENT, c as createTypeError, p as includesItem, d as deleteItem, b as createError, g as getLength, T as TELEPORT, a as arrayFrom, l as ownKeys, G as GET_OWN_PROPERTY_DESCRIPTOR, o as objectConstructor, n as createSyntaxError, t as startsWith, m as isString, k as isArray, f as isObjectType, e as objectEntries, A as ATTRIBUTES, j as isInstanceOf, u as TEMPLATE, B as B_TELEPORT, r as removeElement, q as objectKeys, h as isNumber, i as isFunction, v as isBoolean, w as snapshotList } from "./native-DNTl55LH.js";
+import { b as getChildNodes, g as getAttribute, c as removeAttribute, a as addEventListener, r as removeEventListener, d as removeChild, e as getParent, f as getOwnerDocument, h as getNodeType, i as getNextSibling, j as insertBefore } from "./native-Di2Lf1wo.js";
+import { e as evaluate, a as emptyContextValues, b as createExpressionScope, d as execute, f as assign, g as createProvidedValues, h as evaluateFunction, c as copyContextValues } from "./context-values-DGLwTbXl.js";
+import { j as getCurrentScope, a as combinedError, o as onCleanup, b as batch, e as effect, c as causedError, k as errorText, n as createScope, p as onDispose, h as directiveError, s as setScopeNode, r as locate, t as notifyRootMounted, v as flush, w as notifyAppDisposed, x as notifyAppCreated, y as notifyRootUnmounted } from "./effect-BTu8V88D.js";
+import { z, f, E, m, A, B, D, C, u } from "./effect-BTu8V88D.js";
+import { s as state, a as track, t as trigger } from "./state-BKD4-QHU.js";
+import { b } from "./state-BKD4-QHU.js";
 import { computed, resource } from "./reactivity.js";
 import { createRouter } from "./router-entry.js";
 import { persist } from "./persistence-entry.js";
@@ -15,7 +15,7 @@ import { createStepEngine } from "./step-entry.js";
 import { validate } from "./forms-entry.js";
 import { moneyMask } from "./money-mask-entry.js";
 import { HttpError, http } from "./http-entry.js";
-import { d, a, e, i } from "./devtools-M9YWgM-5.js";
+import { d, a, e, i } from "./devtools-C1VZZZgY.js";
 const sources = /* @__PURE__ */ new WeakMap();
 function createScopedState(source, parent) {
   const observed = state(sources.get(source) ?? source);
@@ -188,6 +188,121 @@ function registerRef(refs, name, element) {
   });
   notify();
 }
+const staticClasses = /* @__PURE__ */ new WeakMap();
+const SVG_NAMESPACE = "http://www.w3.org/2000/svg";
+const svgAttributeNames = "attributeName attributeType baseFrequency calcMode clipPathUnits diffuseConstant edgeMode filterUnits gradientTransform gradientUnits kernelMatrix kernelUnitLength keyPoints keySplines keyTimes lengthAdjust limitingConeAngle markerHeight markerUnits markerWidth maskContentUnits maskUnits numOctaves pathLength patternContentUnits patternTransform patternUnits pointsAtX pointsAtY pointsAtZ preserveAlpha preserveAspectRatio primitiveUnits refX refY repeatCount repeatDur requiredExtensions specularConstant specularExponent spreadMethod startOffset stdDeviation stitchTiles surfaceScale systemLanguage tableValues targetX targetY textLength viewBox xChannelSelector yChannelSelector";
+let svgNames;
+const findProperty = (element, name) => {
+  for (let target = element; target; target = objectConstructor.getPrototypeOf(target)) {
+    const descriptor = objectConstructor[GET_OWN_PROPERTY_DESCRIPTOR](target, name);
+    if (descriptor) return descriptor;
+  }
+};
+const resolveBindTarget = (element, name, forceProp) => {
+  if (forceProp) {
+    if (name in element) return name;
+    for (let target = element; target; target = objectConstructor.getPrototypeOf(target))
+      for (const key of objectConstructor.getOwnPropertyNames(target))
+        if (key.toLowerCase() === name) return key;
+    return name;
+  }
+  if (element.namespaceURI !== SVG_NAMESPACE) return name;
+  svgNames ?? (svgNames = new Map(svgAttributeNames.split(" ").map((attribute) => [attribute.toLowerCase(), attribute])));
+  return svgNames.get(name) ?? name;
+};
+const dynamicStyles = /* @__PURE__ */ new WeakMap();
+const setBoundValue = (element, name, value, forceProp = false) => {
+  if (name === "class") {
+    let staticNames = staticClasses.get(element);
+    if (!staticNames) {
+      staticNames = new Set((getAttribute(element, "class") ?? "").split(/\s+/).filter(Boolean));
+      staticClasses.set(element, staticNames);
+    }
+    const currentDynamic = /* @__PURE__ */ new Set();
+    if (isString(value))
+      value.split(/\s+/).filter(Boolean).forEach((className) => currentDynamic.add(className));
+    else if (isArray(value))
+      value.filter(Boolean).forEach((className) => String(className).split(/\s+/).filter(Boolean).forEach((name2) => currentDynamic.add(name2)));
+    else if (value && isObjectType(value)) {
+      for (const [className, enabled] of objectEntries(value))
+        if (enabled) className.split(/\s+/).filter(Boolean).forEach((name2) => currentDynamic.add(name2));
+    }
+    const combined = /* @__PURE__ */ new Set([...staticNames, ...currentDynamic]);
+    const current = getAttribute(element, "class");
+    if (combined.size) {
+      const next = arrayFrom(combined).join(" ");
+      if (current !== next) element.setAttribute("class", next);
+    } else if (current !== null) removeAttribute(element, "class");
+    return;
+  }
+  if (name === "style" && value && isObjectType(value)) {
+    const style = element.style;
+    const previousProperties = dynamicStyles.get(element) ?? /* @__PURE__ */ new Set();
+    const currentProperties = /* @__PURE__ */ new Set();
+    const properties = objectEntries(value);
+    for (const [property] of properties) {
+      const normalized = property.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
+      currentProperties.add(normalized);
+      deleteItem(previousProperties, normalized);
+    }
+    for (const property of previousProperties) style.removeProperty(property);
+    for (const [property, propertyValue] of properties) {
+      const normalized = property.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
+      if (propertyValue === null || propertyValue === void 0 || propertyValue === false)
+        style.removeProperty(normalized);
+      else style.setProperty(
+        normalized,
+        String(propertyValue)
+      );
+    }
+    dynamicStyles.set(element, currentProperties);
+    return;
+  }
+  const aria = startsWith(name, "aria-");
+  if (aria && (value === true || value === false)) value = String(value);
+  const descriptor = forceProp || aria || startsWith(name, "data-") || !(name in element) ? void 0 : findProperty(element, name);
+  if (forceProp || (descriptor == null ? void 0 : descriptor.set) || (descriptor == null ? void 0 : descriptor.writable)) {
+    try {
+      element[name] = value;
+      return;
+    } catch (error) {
+      throw causedError(`Unable to bind property "${name}" on <${element.tagName.toLowerCase()}>: ${errorText(error)}`, error);
+    }
+  }
+  if (value === null || value === void 0 || value === false) removeAttribute(element, name);
+  else element.setAttribute(name, value === true ? "" : String(value));
+};
+function handleBind(element, attrName, expression, modifiers, context) {
+  const rawTarget = attrName.slice(getLength(startsWith(attrName, "b-bind-") ? "b-bind-" : startsWith(attrName, "b-attr-") ? "b-attr-" : "bind-"));
+  if (!rawTarget) throw createSyntaxError(`Brio binding directive "${attrName}" has no target.`);
+  const forceProp = Boolean(modifiers.prop);
+  const target = resolveBindTarget(element, rawTarget, forceProp);
+  let last;
+  let written = false;
+  effect(() => {
+    const value = evaluate(expression, context, attrName, element);
+    if (written && objectConstructor.is(value, last) && (value === null || !isObjectType(value))) return;
+    setBoundValue(element, target, value, forceProp);
+    last = value;
+    written = true;
+  });
+}
+const noModifiers = objectConstructor.freeze({});
+const parsedNames = /* @__PURE__ */ new Map();
+function extractModifiers(attrName) {
+  let parsed = parsedNames.get(attrName);
+  if (parsed) return parsed;
+  if (attrName.indexOf(".") === -1) parsed = { baseName: attrName, modifiers: noModifiers };
+  else {
+    const parts = attrName.split(".");
+    const modifiers = {};
+    for (let i2 = 1; i2 < getLength(parts); i2++) modifiers[parts[i2]] = true;
+    parsed = { baseName: parts[0], modifiers: objectConstructor.freeze(modifiers) };
+  }
+  if (parsedNames.size > 1e3) parsedNames.clear();
+  parsedNames.set(attrName, objectConstructor.freeze(parsed));
+  return parsed;
+}
 const projectedContexts = /* @__PURE__ */ new WeakMap();
 function takeProjectedContext(node) {
   const context = projectedContexts.get(node);
@@ -235,6 +350,17 @@ function fillSlots(host, template, context) {
   for (const remaining of slots.values())
     for (const node of remaining) removeChild(getParent(node), node);
 }
+const parsedTemplates$1 = /* @__PURE__ */ new WeakMap();
+const instantiateTemplate = (definition, host) => {
+  const ownerDocument = getOwnerDocument(host);
+  let parsed = parsedTemplates$1.get(definition);
+  if (!parsed || parsed.source !== definition.template || parsed.document !== ownerDocument) {
+    const template = ownerDocument.createElement(TEMPLATE);
+    template.innerHTML = definition.template;
+    parsedTemplates$1.set(definition, parsed = { source: definition.template, document: ownerDocument, template });
+  }
+  return parsed.template.content.cloneNode(true);
+};
 function mountComponent(element, definition, context, runtime, hydrateNodeFn) {
   const propsObject = {};
   for (const attribute of arrayFrom(element[ATTRIBUTES])) {
@@ -269,12 +395,23 @@ function mountComponent(element, definition, context, runtime, hydrateNodeFn) {
         const handler = (event) => batch(() => execute(expression, context, event, attribute.name, element));
         addEventListener(element, eventPart, handler);
         onCleanup(() => removeEventListener(element, eventPart, handler));
+      } else if (startsWith(attribute.name, "b-attr-")) {
+        handleBind(
+          element,
+          extractModifiers(attribute.name).baseName,
+          attribute.value,
+          extractModifiers(attribute.name).modifiers,
+          context
+        );
       } else if (startsWith(attribute.name, "b-") && !startsWith(attribute.name, "b-bind-")) {
         throw createError(`Directive "${attribute.name}" is not supported on component hosts.`);
       }
     }
-    for (const binding of propBindings)
-      $props[binding.name] = evaluate(binding.expression, context, binding.directive, element);
+    for (const binding of propBindings) {
+      effect(() => {
+        $props[binding.name] = evaluate(binding.expression, context, binding.directive, element);
+      });
+    }
     const setupResult = ((_a = definition.setup) == null ? void 0 : _a.call(definition, {
       el: element,
       $props,
@@ -295,15 +432,9 @@ function mountComponent(element, definition, context, runtime, hydrateNodeFn) {
     } else {
       ownNode(element, componentContext, runtime);
     }
-    for (const binding of propBindings) {
-      effect(() => {
-        $props[binding.name] = evaluate(binding.expression, context, binding.directive, element);
-      });
-    }
-    const template = document.createElement(TEMPLATE);
-    template.innerHTML = definition.template;
-    fillSlots(element, template.content, context);
-    element.replaceChildren(template.content);
+    const content = instantiateTemplate(definition, element);
+    fillSlots(element, content, context);
+    element.replaceChildren(content);
     withHydration(element, () => {
       for (const child of arrayFrom(getChildNodes(element))) {
         hydrateNodeFn(child, componentContext, runtime);
@@ -737,105 +868,6 @@ function interpolateText(text, context) {
   }
   return result;
 }
-const staticClasses = /* @__PURE__ */ new WeakMap();
-const SVG_NAMESPACE = "http://www.w3.org/2000/svg";
-const svgAttributeNames = "attributeName attributeType baseFrequency calcMode clipPathUnits diffuseConstant edgeMode filterUnits gradientTransform gradientUnits kernelMatrix kernelUnitLength keyPoints keySplines keyTimes lengthAdjust limitingConeAngle markerHeight markerUnits markerWidth maskContentUnits maskUnits numOctaves pathLength patternContentUnits patternTransform patternUnits pointsAtX pointsAtY pointsAtZ preserveAlpha preserveAspectRatio primitiveUnits refX refY repeatCount repeatDur requiredExtensions specularConstant specularExponent spreadMethod startOffset stdDeviation stitchTiles surfaceScale systemLanguage tableValues targetX targetY textLength viewBox xChannelSelector yChannelSelector";
-let svgNames;
-const findProperty = (element, name) => {
-  for (let target = element; target; target = objectConstructor.getPrototypeOf(target)) {
-    const descriptor = objectConstructor[GET_OWN_PROPERTY_DESCRIPTOR](target, name);
-    if (descriptor) return descriptor;
-  }
-};
-const resolveBindTarget = (element, name, forceProp) => {
-  if (forceProp) {
-    if (name in element) return name;
-    for (let target = element; target; target = objectConstructor.getPrototypeOf(target))
-      for (const key of objectConstructor.getOwnPropertyNames(target))
-        if (key.toLowerCase() === name) return key;
-    return name;
-  }
-  if (element.namespaceURI !== SVG_NAMESPACE) return name;
-  svgNames ?? (svgNames = new Map(svgAttributeNames.split(" ").map((attribute) => [attribute.toLowerCase(), attribute])));
-  return svgNames.get(name) ?? name;
-};
-const dynamicStyles = /* @__PURE__ */ new WeakMap();
-const setBoundValue = (element, name, value, forceProp = false) => {
-  if (name === "class") {
-    let staticNames = staticClasses.get(element);
-    if (!staticNames) {
-      staticNames = new Set((getAttribute(element, "class") ?? "").split(/\s+/).filter(Boolean));
-      staticClasses.set(element, staticNames);
-    }
-    const currentDynamic = /* @__PURE__ */ new Set();
-    if (isString(value))
-      value.split(/\s+/).filter(Boolean).forEach((className) => currentDynamic.add(className));
-    else if (isArray(value))
-      value.filter(Boolean).forEach((className) => String(className).split(/\s+/).filter(Boolean).forEach((name2) => currentDynamic.add(name2)));
-    else if (value && isObjectType(value)) {
-      for (const [className, enabled] of objectEntries(value))
-        if (enabled) className.split(/\s+/).filter(Boolean).forEach((name2) => currentDynamic.add(name2));
-    }
-    const combined = /* @__PURE__ */ new Set([...staticNames, ...currentDynamic]);
-    const current = getAttribute(element, "class");
-    if (combined.size) {
-      const next = arrayFrom(combined).join(" ");
-      if (current !== next) element.setAttribute("class", next);
-    } else if (current !== null) removeAttribute(element, "class");
-    return;
-  }
-  if (name === "style" && value && isObjectType(value)) {
-    const style = element.style;
-    const previousProperties = dynamicStyles.get(element) ?? /* @__PURE__ */ new Set();
-    const currentProperties = /* @__PURE__ */ new Set();
-    const properties = objectEntries(value);
-    for (const [property] of properties) {
-      const normalized = property.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
-      currentProperties.add(normalized);
-      deleteItem(previousProperties, normalized);
-    }
-    for (const property of previousProperties) style.removeProperty(property);
-    for (const [property, propertyValue] of properties) {
-      const normalized = property.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
-      if (propertyValue === null || propertyValue === void 0 || propertyValue === false)
-        style.removeProperty(normalized);
-      else style.setProperty(
-        normalized,
-        String(propertyValue)
-      );
-    }
-    dynamicStyles.set(element, currentProperties);
-    return;
-  }
-  const aria = startsWith(name, "aria-");
-  if (aria && (value === true || value === false)) value = String(value);
-  const descriptor = forceProp || aria || startsWith(name, "data-") || !(name in element) ? void 0 : findProperty(element, name);
-  if (forceProp || (descriptor == null ? void 0 : descriptor.set) || (descriptor == null ? void 0 : descriptor.writable)) {
-    try {
-      element[name] = value;
-      return;
-    } catch (error) {
-      throw causedError(`Unable to bind property "${name}" on <${element.tagName.toLowerCase()}>: ${errorText(error)}`, error);
-    }
-  }
-  if (value === null || value === void 0 || value === false) removeAttribute(element, name);
-  else element.setAttribute(name, value === true ? "" : String(value));
-};
-function handleBind(element, attrName, expression, modifiers, context) {
-  const rawTarget = startsWith(attrName, "b-bind-") ? attrName.slice(getLength("b-bind-")) : attrName.slice(getLength("bind-"));
-  if (!rawTarget) throw createSyntaxError(`Brio binding directive "${attrName}" has no target.`);
-  const forceProp = Boolean(modifiers.prop);
-  const target = resolveBindTarget(element, rawTarget, forceProp);
-  let last;
-  let written = false;
-  effect(() => {
-    const value = evaluate(expression, context, attrName, element);
-    if (written && objectConstructor.is(value, last) && (value === null || !isObjectType(value))) return;
-    setBoundValue(element, target, value, forceProp);
-    last = value;
-    written = true;
-  });
-}
 function handleOn(element, attrName, expression, modifiers, context) {
   const rawTarget = startsWith(attrName, "b-on-") ? attrName.slice(getLength("b-on-")) : attrName.slice(getLength("on-"));
   if (!rawTarget) throw createSyntaxError(`Brio event directive "${attrName}" has no event name.`);
@@ -947,22 +979,6 @@ function handleModel(element, expression, modifiers, context) {
   }
   start();
 }
-const noModifiers = objectConstructor.freeze({});
-const parsedNames = /* @__PURE__ */ new Map();
-function extractModifiers(attrName) {
-  let parsed = parsedNames.get(attrName);
-  if (parsed) return parsed;
-  if (attrName.indexOf(".") === -1) parsed = { baseName: attrName, modifiers: noModifiers };
-  else {
-    const parts = attrName.split(".");
-    const modifiers = {};
-    for (let i2 = 1; i2 < getLength(parts); i2++) modifiers[parts[i2]] = true;
-    parsed = { baseName: parts[0], modifiers: objectConstructor.freeze(modifiers) };
-  }
-  if (parsedNames.size > 1e3) parsedNames.clear();
-  parsedNames.set(attrName, objectConstructor.freeze(parsed));
-  return parsed;
-}
 function handleIf(element, expression, modifiers, context, runtime, hydrateNodeFn) {
   const parent = getParent(element);
   if (!parent) throw createError("b-if requires an element with a parent node.");
@@ -978,6 +994,8 @@ function handleIf(element, expression, modifiers, context, runtime, hydrateNodeF
     const conditional = attributes.filter((attribute) => includesItem(["b-if", "b-else-if", "b-else"], extractModifiers(attribute.name).baseName));
     if (getLength(conditional) !== 1)
       throw createSyntaxError("An element can have only one conditional directive.");
+    if (node.localName === TEMPLATE && !node.hasAttribute("b-template"))
+      throw createSyntaxError(`<template ${extractModifiers(conditional[0].name).baseName}> would render inert template contents; add b-template to render them in place, or use a concrete element.`);
     if (node !== element && getLength(objectKeys(extractModifiers(conditional[0].name).modifiers)))
       throw createSyntaxError("Conditional modifiers belong only on the leading b-if, not b-else-if or b-else.");
     if (modifiers.hide && attributes.some((attribute) => includesItem(["b-for", "b-template", TEMPLATE], extractModifiers(attribute.name).baseName)))
@@ -1166,6 +1184,8 @@ const enumerate = (value) => {
 function handleFor(element, expression, _modifiers, context, runtime, hydrateNodeFn) {
   const parent = getParent(element);
   if (!parent) throw createError("b-for requires an element with a parent node.");
+  if (element.localName === TEMPLATE && !element.hasAttribute("b-template"))
+    throw createSyntaxError("<template b-for> would render inert template contents; add b-template to render each row in place, or use a concrete element.");
   const parsed = /^\s*([A-Za-z_$][\w$]*)(?:\s*,\s*([A-Za-z_$][\w$]*))?\s+in\s+([\s\S]+)$/.exec(expression);
   if (!parsed) throw createSyntaxError(`Invalid b-for expression "${expression}". Use "item in $data.items".`);
   const [, itemName, indexName = "$index", collectionExpression] = parsed;
@@ -2270,7 +2290,7 @@ function flushQueue() {
 }
 export {
   HttpError,
-  y as addDisposer,
+  z as addDisposer,
   assign,
   batch,
   causedError,
@@ -2293,7 +2313,7 @@ export {
   execute,
   flush,
   getCurrentScope,
-  B as getScopeNode,
+  E as getScopeNode,
   http,
   hydrateNode,
   hydrateRoot,
@@ -2305,13 +2325,16 @@ export {
   onDispose,
   persist,
   queueTask,
-  z as removeDisposer,
+  A as removeDisposer,
   resource,
-  A as setActiveScope,
+  B as runUnscoped,
+  D as setActiveScope,
+  C as setEffectFrame,
   setScopeNode,
   b as signal,
   state,
   trustedHTML,
+  u as untrack,
   validate
 };
 //# sourceMappingURL=index.js.map

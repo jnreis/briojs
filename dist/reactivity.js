@@ -1,7 +1,7 @@
-import { e as effect, k as createScope, n as onDispose, b as batch } from "./effect-BQLFOYeW.js";
-import { u, j, o } from "./effect-BQLFOYeW.js";
-import { t as trigger, a as track, b as signal } from "./state-BMDWKS-7.js";
-import { s } from "./state-BMDWKS-7.js";
+import { e as effect, n as createScope, p as onDispose, b as batch } from "./effect-BTu8V88D.js";
+import { v, j, o, u } from "./effect-BTu8V88D.js";
+import { a as track, t as trigger, b as signal } from "./state-BKD4-QHU.js";
+import { s } from "./state-BKD4-QHU.js";
 import { b as createError } from "./native-DNTl55LH.js";
 import { persist } from "./persistence-entry.js";
 function computed(getter) {
@@ -100,13 +100,14 @@ export {
   computed,
   createScope,
   effect,
-  u as flush,
+  v as flush,
   j as getCurrentScope,
   o as onCleanup,
   onDispose,
   persist,
   resource,
   signal,
-  s as state
+  s as state,
+  u as untrack
 };
 //# sourceMappingURL=reactivity.js.map

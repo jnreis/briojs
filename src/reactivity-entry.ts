@@ -2,6 +2,7 @@ export {
     effect,
     batch,
     flush,
+    untrack,
     state,
     signal,
     computed,

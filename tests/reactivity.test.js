@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { createApp } from 'briojs';
-import { batch, computed, createScope, effect, flush, onCleanup, signal, state } from 'briojs/reactivity';
+import { batch, computed, createScope, effect, flush, onCleanup, signal, state, untrack } from 'briojs/reactivity';
 import { persist } from 'briojs/persistence';
 import { createRouter } from 'briojs/router';
 
@@ -369,4 +369,120 @@ test('plugins are idempotent and app initialization cleans up plugin scopes on f
     assert.deepEqual(values, [1, 2]);
     source.value = 3;
     assert.deepEqual(values, [1, 2]);
+});
+
+test('onCleanup in an effect body runs before each re-run and when the effect stops', () => {
+    const source = signal(1);
+    const log = [];
+    const stop = effect(() => {
+        const value = source.value;
+        log.push(`run ${value}`);
+        onCleanup(() => log.push(`cleanup ${value}`));
+    });
+    source.value = 2;
+    source.value = 3;
+    assert.deepEqual(log, ['run 1', 'cleanup 1', 'run 2', 'cleanup 2', 'run 3']);
+    stop();
+    stop();
+    assert.deepEqual(log.slice(-1), ['cleanup 3']);
+    assert.equal(log.length, 6);
+});
+
+test('per-run effect cleanups work in owned and unowned effects and never adopt the triggering scope', () => {
+    const source = signal(0);
+    let cleanups = 0;
+    const scope = createScope();
+    scope.run(() => effect(() => {
+        source.value;
+        onCleanup(() => cleanups++);
+    }));
+    const unrelated = createScope();
+    let unowned = 0;
+    const stopUnowned = effect(() => {
+        source.value;
+        onCleanup(() => unowned++);
+    });
+    unrelated.run(() => { source.value = 1; });
+    assert.equal(cleanups, 1);
+    assert.equal(unowned, 1);
+    unrelated.dispose();
+    assert.equal(unowned, 1, 'the unowned cleanup was not registered on the writing scope');
+    source.value = 2;
+    assert.equal(unowned, 2);
+    scope.dispose();
+    assert.equal(cleanups, 3);
+    stopUnowned();
+    assert.equal(unowned, 3);
+});
+
+test('onCleanup inside a nested scope created by an effect keeps that scope lifetime', () => {
+    const source = signal(0);
+    const log = [];
+    const outer = createScope();
+    outer.run(() => effect(() => {
+        const value = source.value;
+        const child = createScope();
+        child.run(() => onCleanup(() => log.push(`child ${value}`)));
+        onCleanup(() => child.dispose());
+    }));
+    assert.deepEqual(log, []);
+    source.value = 1;
+    assert.deepEqual(log, ['child 0']);
+    outer.dispose();
+    assert.deepEqual(log, ['child 0', 'child 1']);
+});
+
+test('a per-run cleanup handle runs it early once and failing cleanups surface after the run', () => {
+    const source = signal(0);
+    let calls = 0;
+    const stop = effect(() => {
+        source.value;
+        const runNow = onCleanup(() => calls++);
+        if (source.value === 1) {
+            runNow();
+            runNow();
+        }
+    });
+    source.value = 1;
+    assert.equal(calls, 2, 'run 0 cleaned up, then run 1 cleaned up early');
+    source.value = 2;
+    assert.equal(calls, 2, 'the early cleanup did not run again');
+    stop();
+    assert.equal(calls, 3);
+
+    const failing = signal(0);
+    let runs = 0;
+    const stopFailing = effect(() => {
+        failing.value;
+        runs++;
+        onCleanup(() => { throw new Error('cleanup broke'); });
+    });
+    assert.throws(() => { failing.value = 1; }, /effect cleanups failed|cleanup broke/);
+    assert.equal(runs, 2, 'the effect still re-ran after its cleanup failed');
+    assert.throws(() => stopFailing(), /effect cleanups failed|cleanup broke/);
+});
+
+test('untrack reads values without subscribing the current effect or computed', () => {
+    const tracked = signal(1);
+    const ignored = signal(10);
+    let runs = 0;
+    let seen;
+    const stop = effect(() => {
+        runs++;
+        seen = tracked.value + untrack(() => ignored.value);
+    });
+    ignored.value = 20;
+    assert.equal(runs, 1);
+    tracked.value = 2;
+    assert.equal(runs, 2);
+    assert.equal(seen, 22);
+    stop();
+
+    const sum = computed(() => tracked.value + untrack(() => ignored.value));
+    assert.equal(sum.value, 22);
+    ignored.value = 30;
+    assert.equal(sum.value, 22);
+    tracked.value = 3;
+    assert.equal(sum.value, 33);
+    assert.equal(untrack(() => 'plain'), 'plain');
 });

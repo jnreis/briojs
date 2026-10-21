@@ -12,6 +12,7 @@ import {
 } from '../core/native';
 import {
     getChildNodes, getAttribute, removeChild, getParent, addEventListener, removeEventListener, removeAttribute,
+    getOwnerDocument,
 } from './native';
 import { evaluate, execute, createExpressionScope } from '../core/expression';
 import { state } from '../reactivity/state';
@@ -22,6 +23,8 @@ import type { ComponentDefinition, DomRuntime } from './types';
 import { getNodeOwner, ownNode, withHydration } from './ownership';
 import { emptyContextValues } from '../core/context-values';
 import { createRefs } from './refs';
+import { handleBind } from './directives/bind';
+import { extractModifiers } from './directives/modifier';
 
 const projectedContexts = new WeakMap<Node, Record<PropertyKey, any>>();
 
@@ -83,6 +86,20 @@ export function fillSlots(
         for (const node of remaining) removeChild(getParent(node), node);
 }
 
+// Each definition's markup is parsed once per document and cloned for every instance.
+const parsedTemplates = new WeakMap<ComponentDefinition, { source: string; document: Document; template: HTMLTemplateElement }>();
+
+const instantiateTemplate = (definition: ComponentDefinition, host: Element): DocumentFragment => {
+    const ownerDocument = getOwnerDocument(host)!;
+    let parsed = parsedTemplates.get(definition);
+    if (!parsed || parsed.source !== definition.template || parsed.document !== ownerDocument) {
+        const template = ownerDocument.createElement(TEMPLATE) as HTMLTemplateElement;
+        template.innerHTML = definition.template;
+        parsedTemplates.set(definition, parsed = { source: definition.template, document: ownerDocument, template });
+    }
+    return parsed.template.content.cloneNode(true) as DocumentFragment;
+};
+
 export function mountComponent(
     element: Element,
     definition: ComponentDefinition,
@@ -130,13 +147,20 @@ export function mountComponent(
                     execute(expression, context, event, attribute.name, element));
                 addEventListener(element, eventPart, handler);
                 onCleanup(() => removeEventListener(element, eventPart, handler));
+            } else if (startsWith(attribute.name, 'b-attr-')) {
+                handleBind(element, extractModifiers(attribute.name).baseName, attribute.value,
+                    extractModifiers(attribute.name).modifiers, context);
             } else if (startsWith(attribute.name, 'b-') && !startsWith(attribute.name, 'b-bind-')) {
                 throw createError(`Directive "${attribute.name}" is not supported on component hosts.`);
             }
         }
 
-        for (const binding of propBindings)
-            $props[binding.name] = evaluate(binding.expression, context, binding.directive, element);
+        // Each bound prop is evaluated once here and re-evaluated only when its dependencies change.
+        for (const binding of propBindings) {
+            effect(() => {
+                $props[binding.name] = evaluate(binding.expression, context, binding.directive, element);
+            });
+        }
         const setupResult = definition.setup?.({
             el: element, $props, $emit, app: runtime.app,
             $stores: context.$stores ?? emptyContextValues,
@@ -155,17 +179,9 @@ export function mountComponent(
             ownNode(element, componentContext, runtime);
         }
 
-        for (const binding of propBindings) {
-            effect(() => {
-                $props[binding.name] = evaluate(binding.expression, context, binding.directive, element);
-            });
-        }
-
-        const template = document.createElement(TEMPLATE);
-        template.innerHTML = definition.template;
-
-        fillSlots(element, template.content, context);
-        element.replaceChildren(template.content);
+        const content = instantiateTemplate(definition, element);
+        fillSlots(element, content, context);
+        element.replaceChildren(content);
 
         withHydration(element, () => {
             for (const child of arrayFrom(getChildNodes(element))) {

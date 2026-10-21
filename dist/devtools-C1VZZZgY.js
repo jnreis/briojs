@@ -1,5 +1,5 @@
 import { d as deleteItem, r as removeElement, a as arrayFrom, g as getLength } from "./native-DNTl55LH.js";
-import { i as installDevtoolsBridge, e as effect, c as causedError } from "./effect-BQLFOYeW.js";
+import { i as installDevtoolsBridge, e as effect, c as causedError } from "./effect-BTu8V88D.js";
 let effectsCreated = 0;
 let activeEffects = 0;
 const apps = /* @__PURE__ */ new Map();
@@ -118,4 +118,4 @@ export {
   enableDevtools as e,
   inspectDevtools as i
 };
-//# sourceMappingURL=devtools-M9YWgM-5.js.map
+//# sourceMappingURL=devtools-C1VZZZgY.js.map

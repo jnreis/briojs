@@ -4,7 +4,7 @@ export declare const describeNode: (node: Node) => string;
 export declare const mark: <E extends object>(error: E, node?: Node, directive?: string) => E;
 export declare function causedError(message: string, cause: unknown): Error;
 /** Wraps a failure with the directive and element that triggered it, keeping the original as `cause`. */
-export declare const directiveError: (message: string, cause: unknown, directive?: string, node?: Node) => Error;
+export declare const directiveError: (message: string, cause: unknown, directive?: string, node?: Node, hint?: string) => Error;
 /** Appends the element being hydrated or updated to a Brio-raised error that has no location yet. */
 export declare const locate: (error: unknown, node?: Node) => unknown;
 export declare const setScopeNode: (scope: object, node: Node | undefined) => void;

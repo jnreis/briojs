@@ -1,6 +1,6 @@
 import { i as isFunction, c as createTypeError, g as getLength, o as objectConstructor, n as createSyntaxError, d as deleteItem, f as isObjectType, p as includesItem, q as objectKeys, R as ReflectApi, G as GET_OWN_PROPERTY_DESCRIPTOR, l as ownKeys } from "./native-DNTl55LH.js";
-import { m as mark, f as describeNode, h as directiveError, e as effect } from "./effect-BQLFOYeW.js";
-import { t as trigger, a as track } from "./state-BMDWKS-7.js";
+import { m as mark, f as describeNode, h as directiveError, u as untrack, e as effect } from "./effect-BTu8V88D.js";
+import { t as trigger, a as track } from "./state-BKD4-QHU.js";
 const valueExpressions = /* @__PURE__ */ new Map();
 const statementExpressions = /* @__PURE__ */ new Map();
 const assignmentExpressions = /* @__PURE__ */ new Map();
@@ -48,6 +48,22 @@ const compile = (cache, source, make, directive, node) => {
   }
   return fn;
 };
+const holds = (value, name) => value !== null && typeof value === "object" && name in value;
+const referenceHint = (error, scope) => {
+  var _a;
+  const name = error instanceof ReferenceError && ((_a = /^(\S+) is not defined$/.exec(error.message)) == null ? void 0 : _a[1]);
+  if (!name) return "";
+  return untrack(() => {
+    try {
+      for (let loop = scope.$for, path = "$for."; loop; loop = loop.$parent, path += "$parent.")
+        if (holds(loop, name)) return `. Loop variables are read through $for: use ${path}${name}.`;
+      for (const owner of ["$props", "$data"])
+        if (holds(scope[owner], name)) return `. Use ${owner}.${name}.`;
+    } catch {
+    }
+    return "";
+  });
+};
 function evaluate(source, scope, directive, node = scope.$el) {
   const fn = compile(
     valueExpressions,
@@ -59,7 +75,7 @@ function evaluate(source, scope, directive, node = scope.$el) {
   try {
     return fn(scope);
   } catch (error) {
-    throw directiveError(`Brio expression failed: "${source}"`, error, directive, node);
+    throw directiveError(`Brio expression failed: "${source}"`, error, directive, node, referenceHint(error, scope));
   }
 }
 function execute(source, scope, event, directive, node = scope.$el) {
@@ -73,7 +89,7 @@ function execute(source, scope, event, directive, node = scope.$el) {
   try {
     fn(event === void 0 ? scope : createExpressionScope({ $event: event }, scope));
   } catch (error) {
-    throw directiveError(`Brio event expression failed: "${source}"`, error, directive, node);
+    throw directiveError(`Brio event expression failed: "${source}"`, error, directive, node, referenceHint(error, scope));
   }
 }
 function assign(source, scope, value, directive, node = scope.$el) {
@@ -87,7 +103,7 @@ function assign(source, scope, value, directive, node = scope.$el) {
   try {
     fn(scope, value);
   } catch (error) {
-    throw directiveError(`Brio model expression failed: "${source}"`, error, directive, node);
+    throw directiveError(`Brio model expression failed: "${source}"`, error, directive, node, referenceHint(error, scope));
   }
 }
 function copyContextValues(value, label) {
@@ -154,4 +170,4 @@ export {
   createProvidedValues as g,
   evaluateFunction as h
 };
-//# sourceMappingURL=context-values-BDHq3Msu.js.map
+//# sourceMappingURL=context-values-DGLwTbXl.js.map

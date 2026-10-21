@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sales analytics · Brio</title>
+    <link rel="stylesheet" href="../shared/app.css">
+    <style>
+        .app-shell.wide { width: min(100%, 1180px); }
+        kpi-card, chart-card, line-chart, bar-chart, donut-chart, spark-line { display: block; }
+        trend-badge, relative-time { display: inline-block; }
+
+        .top { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
+        .top .app-header { margin: 0; }
+        .status-line { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin: 6px 0 0; color: var(--muted); font-size: 0.9rem; }
+        .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); display: inline-block; }
+        .dot.refreshing, .dot.loading { background: var(--warn); animation: pulse 1s infinite; }
+        .dot.error { background: var(--danger); }
+        @keyframes pulse { 50% { opacity: 0.35; } }
+
+        .controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+        .segmented { display: inline-flex; padding: 3px; border: 1px solid var(--line); border-radius: 11px; background: var(--surface); }
+        .segmented button { min-height: 32px; padding: 0 12px; border: 0; border-radius: 8px; background: transparent; color: var(--muted); font: inherit; font-weight: 600; cursor: pointer; }
+        .segmented button[aria-pressed="true"] { background: var(--brand); color: var(--brand-ink); }
+        .switch { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; font-size: 0.9rem; cursor: pointer; user-select: none; }
+        .switch input { width: 34px; height: 20px; appearance: none; margin: 0; border-radius: 999px; background: #d1d5db; position: relative; cursor: pointer; transition: background 120ms; }
+        .switch input::after { content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgb(0 0 0 / 0.2); transition: transform 120ms; }
+        .switch input:checked { background: var(--ok); }
+        .switch input:checked::after { transform: translateX(14px); }
+        .switch input:focus-visible { outline: 3px solid rgb(79 70 229 / 0.35); outline-offset: 2px; }
+
+        .filters { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 14px 16px; }
+        .filters select { min-height: 36px; padding: 0 10px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface); font: inherit; color: inherit; }
+        .filters label { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; font-size: 0.9rem; }
+        .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-left: auto; }
+        .chip { display: inline-flex; align-items: center; gap: 6px; min-height: 30px; padding: 0 6px 0 12px; border: 1px solid #c7d2fe; border-radius: 999px; background: #eef2ff; color: #3730a3; font: inherit; font-size: 0.85rem; font-weight: 600; cursor: pointer; }
+        .chip span[aria-hidden] { display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: #c7d2fe; }
+
+        .banner { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 16px; padding: 12px 16px; border: 1px solid #fecaca; border-radius: 12px; background: #fef2f2; color: #991b1b; }
+        .banner p { margin: 0; }
+
+        .grid { display: grid; gap: 16px; margin-top: 16px; }
+        .kpis { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+        .charts { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 0.9fr); }
+        @media (max-width: 960px) { .charts { grid-template-columns: minmax(0, 1fr); } }
+        .grid > .panel + .panel, .grid > * + * > .panel { margin-top: 0; }
+
+        .kpi { padding: 18px 20px 0; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); box-shadow: var(--shadow); overflow: hidden; }
+        .kpi-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+        .kpi-label { margin: 0; color: var(--muted); font-size: 0.9rem; font-weight: 600; }
+        .kpi-value { display: block; margin-top: 4px; font-size: 1.75rem; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+        .kpi-hint { margin: 0; color: var(--muted); font-size: 0.82rem; }
+        .kpi-spark { height: 44px; margin: 10px -20px 0; }
+        kpi-card.rising .kpi { border-top: 3px solid var(--ok); }
+        kpi-card.falling .kpi { border-top: 3px solid var(--danger); }
+
+        .trend { display: inline-flex; align-items: center; gap: 3px; padding: 2px 8px; border-radius: 999px; font-size: 0.78rem; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+        .trend.up { background: #d1fae5; color: #047857; }
+        .trend.down { background: #fee2e2; color: #b91c1c; }
+        .trend.flat, .trend.new { background: #f3f4f6; color: var(--muted); }
+
+        .spark { display: block; width: 100%; height: 100%; overflow: visible; }
+        .spark-area { fill: rgb(79 70 229 / 0.1); }
+        .spark-stroke { fill: none; stroke: var(--brand); stroke-width: 1.6; vector-effect: non-scaling-stroke; stroke-linejoin: round; }
+        td .spark { width: 110px; height: 28px; }
+
+        .chart-card { position: relative; height: 100%; }
+        .chart-card[aria-busy="true"] .chart-body { opacity: 0.55; transition: opacity 200ms; }
+        .chart-card[aria-busy="true"]::after { content: ""; position: absolute; inset: 0 0 auto; height: 3px; border-radius: var(--radius) var(--radius) 0 0; background: linear-gradient(90deg, transparent, var(--brand), transparent); background-size: 50% 100%; background-repeat: no-repeat; animation: sweep 1s linear infinite; }
+        @keyframes sweep { from { background-position: -50% 0; } to { background-position: 150% 0; } }
+        .chart-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+        .chart-head h2 { margin: 0; font-size: 1.05rem; }
+        .chart-caption { margin: 2px 0 0; color: var(--muted); font-size: 0.85rem; }
+        .chart-actions { display: flex; align-items: center; gap: 8px; }
+
+        .line-chart .plot { position: relative; border-radius: 10px; }
+        .line-chart .plot:focus-visible { outline: 3px solid rgb(79 70 229 / 0.35); outline-offset: 4px; }
+        .plot-svg { display: block; width: 100%; height: auto; }
+        .grid line { stroke: var(--line); }
+        .axis-y { fill: var(--muted); font-size: 11px; text-anchor: end; }
+        .axis-x { fill: var(--muted); font-size: 11px; text-anchor: middle; }
+        .series-area { fill: rgb(79 70 229 / 0.08); }
+        .series-current { fill: none; stroke: var(--brand); stroke-width: 2.5; stroke-linejoin: round; }
+        .series-previous { fill: none; stroke: #9ca3af; stroke-width: 1.5; stroke-dasharray: 5 4; }
+        .cursor line { stroke: #9ca3af; stroke-dasharray: 3 3; }
+        .cursor circle { fill: var(--surface); stroke: var(--brand); stroke-width: 2.5; }
+        .chart-tip { position: absolute; top: 8px; transform: translateX(12px); display: grid; gap: 2px; min-width: 150px; padding: 8px 12px; border-radius: 10px; background: #111827; color: #fff; font-size: 0.82rem; pointer-events: none; box-shadow: var(--shadow); }
+        .chart-tip.flip { transform: translateX(calc(-100% - 12px)); }
+        .chart-tip span { display: flex; align-items: center; gap: 6px; font-variant-numeric: tabular-nums; }
+        .key { width: 10px; height: 3px; border-radius: 2px; display: inline-block; }
+        .key.current { background: #a5b4fc; }
+        .key.previous { background: #9ca3af; }
+        .line-chart .hint { margin: 6px 0 0; color: var(--muted); font-size: 0.8rem; }
+
+        .bars { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+        .bar { display: grid; grid-template-columns: 110px minmax(0, 1fr) 64px; align-items: center; gap: 10px; width: 100%; min-height: 40px; padding: 0 10px; border: 1px solid transparent; border-radius: 10px; background: transparent; font: inherit; color: inherit; text-align: left; cursor: pointer; }
+        .bar:hover { background: #f9fafb; }
+        .bar.active { border-color: #c7d2fe; background: #eef2ff; }
+        .bar.dimmed { opacity: 0.5; }
+        .bar-label { font-weight: 600; font-size: 0.9rem; }
+        .bar-track { height: 10px; border-radius: 999px; background: #f3f4f6; overflow: hidden; }
+        .bar-fill { display: block; height: 100%; width: var(--size, 0%); border-radius: inherit; background: var(--brand); transition: width 300ms ease; }
+        .bar-value { text-align: right; font-variant-numeric: tabular-nums; font-size: 0.9rem; }
+
+        .donut { display: grid; justify-items: center; gap: 12px; }
+        .donut-svg { width: 160px; height: 160px; }
+        .donut .legend { width: 100%; }
+        .donut-ring { fill: none; stroke: #f3f4f6; stroke-width: 6; }
+        .donut-arc { fill: none; stroke-width: 6; transition: stroke-dasharray 300ms ease, stroke-dashoffset 300ms ease; }
+        .donut-total { font-size: 5.2px; font-weight: 700; text-anchor: middle; fill: var(--ink); }
+        .donut-caption { font-size: 3px; text-anchor: middle; fill: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+        .legend { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; }
+        .legend-item { display: grid; grid-template-columns: 12px minmax(0, 1fr) auto; align-items: center; gap: 8px; width: 100%; min-height: 34px; padding: 0 8px; border: 0; border-radius: 8px; background: transparent; font: inherit; font-size: 0.9rem; color: inherit; text-align: left; cursor: pointer; }
+        .legend-item:hover { background: #f9fafb; }
+        .legend-item.off { color: var(--muted); }
+        .legend-item.off .legend-label { text-decoration: line-through; }
+        .legend-item.off .swatch { opacity: 0.3; }
+        .swatch { width: 12px; height: 12px; border-radius: 4px; }
+        .legend-value { font-variant-numeric: tabular-nums; color: var(--muted); }
+
+        .side { display: grid; gap: 16px; align-content: start; }
+        .insights { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+        .insights li { padding: 10px 12px; border-left: 3px solid var(--brand); border-radius: 0 8px 8px 0; background: #f9fafb; font-size: 0.9rem; }
+        .insights li.up { border-color: var(--ok); }
+        .insights li.down { border-color: var(--danger); }
+        .feed { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+        .feed li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 8px; font-size: 0.88rem; }
+        .feed li small { color: var(--muted); }
+        .feed strong { font-variant-numeric: tabular-nums; }
+        .feed-new { animation: flash 1.2s ease; }
+        @keyframes flash { from { background: #fef3c7; } to { background: transparent; } }
+        .muted { color: var(--muted); }
+        .empty { margin: 0; color: var(--muted); font-size: 0.9rem; }
+
+        .table-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+        .table-head h2 { margin: 0; font-size: 1.05rem; }
+        .search { min-height: 38px; width: min(100%, 280px); padding: 0 12px; border: 1px solid var(--line); border-radius: 10px; font: inherit; }
+        .table-wrap { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+        th, td { padding: 8px 10px; border-bottom: 1px solid var(--line); text-align: left; white-space: nowrap; }
+        th { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+        th button { padding: 0; border: 0; background: none; font: inherit; color: inherit; text-transform: inherit; letter-spacing: inherit; cursor: pointer; }
+        th[aria-sort="ascending"] button::after { content: " ▲"; }
+        th[aria-sort="descending"] button::after { content: " ▼"; }
+        th[aria-sort]:not([aria-sort="none"]) { color: var(--ink); }
+        td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+        td small { display: block; color: var(--muted); }
+        .share { display: inline-grid; grid-template-columns: 60px auto; align-items: center; gap: 8px; }
+        .share i { height: 6px; border-radius: 999px; background: linear-gradient(90deg, var(--brand) var(--share), #f3f4f6 0); }
+
+        .skeleton { display: grid; gap: 16px; margin-top: 16px; }
+        .skeleton .row { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+        .skeleton .block { height: 132px; border-radius: var(--radius); background: linear-gradient(90deg, #eceef2 25%, #f6f7f9 50%, #eceef2 75%); background-size: 200% 100%; animation: shimmer 1.2s infinite linear; }
+        .skeleton .block.tall { height: 300px; }
+        @keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+
+        .devtools { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; margin-top: 16px; padding: 12px 16px; font-size: 0.88rem; color: var(--muted); }
+        .devtools strong { color: var(--ink); }
+        .devtools label { display: inline-flex; align-items: center; gap: 8px; }
+        .devtools select { min-height: 32px; border: 1px solid var(--line); border-radius: 8px; font: inherit; }
+    </style>
+</head>
+<body>
+    <main id="dashboard" class="app-shell wide" b-cloak b-provide="{ busy: $data.busy }">
+        <div class="top">
+            <header class="app-header">
+                <h1>Sales analytics</h1>
+                <p class="status-line" data-testid="status" aria-live="polite">
+                    <span class="dot" b-bind-class="$data.request.status" aria-hidden="true"></span>
+                    <span b-if="$data.request.status === 'loading'">Loading orders…</span>
+                    <span b-else-if="$data.request.status === 'refreshing'">Refreshing…</span>
+                    <span b-else-if="$data.request.status === 'error'">Last refresh failed</span>
+                    <span b-else>Updated <relative-time b-bind-time="$data.request.updatedAt"></relative-time></span>
+                    <span b-if="$data.periodLabel" data-testid="period">· ${$data.periodLabel}</span>
+                </p>
+            </header>
+            <div class="controls">
+                <div class="segmented" role="group" aria-label="Date range">
+                    <button type="button" b-for="days in $data.ranges" b-key="$for.days"
+                            b-bind-data-testid="'range-' + $for.days"
+                            b-bind-aria-pressed="$data.filters.days === $for.days"
+                            b-on-click="$data.setRange($for.days)">${$for.days}d</button>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" data-testid="live" b-bind-checked="$data.live.on"
+                           b-on-change="$data.setLive($event.target.checked)">
+                    Live
+                </label>
+                <button type="button" class="button" data-testid="refresh"
+                        b-bind-disabled="$data.request.status === 'loading' || $data.request.status === 'refreshing'"
+                        b-on-click="$data.refresh()">Refresh</button>
+            </div>
+        </div>
+
+        <section class="panel filters" aria-label="Filters">
+            <label>Region
+                <select data-testid="region" b-model="$data.filters.region">
+                    <option value="">All regions</option>
+                    <option b-for="region in $data.catalog.regions" b-key="$for.region.id" b-bind-value="$for.region.id">${$for.region.label}</option>
+                </select>
+            </label>
+            <label>Category
+                <select data-testid="category" b-model="$data.filters.category">
+                    <option value="">All categories</option>
+                    <option value="Audio">Audio</option>
+                    <option value="Wearables">Wearables</option>
+                    <option value="Home">Home</option>
+                    <option value="Accessories">Accessories</option>
+                </select>
+            </label>
+            <div class="chips" data-testid="chips">
+                <button type="button" class="chip" b-for="chip in $data.activeFilters" b-key="$for.chip.key"
+                        b-bind-aria-label="'Remove filter ' + $for.chip.label" b-on-click="$data.clearFilter($for.chip.key)">
+                    ${$for.chip.label} <span aria-hidden="true">×</span>
+                </button>
+            </div>
+        </section>
+
+        <div class="banner" role="alert" data-testid="error" b-if="$data.request.status === 'error'">
+            <p><strong>Couldn't load orders.</strong> ${$data.request.error}
+                <span b-if="$data.ready">Showing the last data that loaded.</span></p>
+            <button type="button" class="button" data-testid="retry" b-on-click="$data.refresh()">Try again</button>
+        </div>
+
+        <div class="skeleton" data-testid="skeleton" aria-hidden="true" b-if="!$data.ready">
+            <div class="row"><div class="block"></div><div class="block"></div><div class="block"></div><div class="block"></div></div>
+            <div class="block tall"></div>
+        </div>
+
+        <template b-else b-template>
+            <section class="grid kpis" aria-label="Key metrics" data-testid="kpis">
+                <kpi-card b-for="kpi in $data.kpis" b-key="$for.kpi.key"
+                          b-attr-data-testid="'kpi-' + $for.kpi.key" b-attr-class="{ rising: $for.kpi.delta > 0, falling: $for.kpi.delta < 0 }"
+                          b-bind-label="$for.kpi.label" b-bind-value="$for.kpi.value" b-bind-hint="$for.kpi.hint"
+                          b-bind-delta="$for.kpi.delta" b-bind-trend="$for.kpi.trend"></kpi-card>
+            </section>
+
+            <div class="grid" style="grid-template-columns: minmax(0, 1fr);">
+                <chart-card heading="Revenue over time" data-testid="revenue-card"
+                            b-bind-caption="$data.filters.compare ? 'Compared with the previous ' + $data.filters.days + ' days' : 'Daily revenue'">
+                    <label slot="actions" class="switch">
+                        <input type="checkbox" data-testid="compare" b-model="$data.filters.compare"> Compare
+                    </label>
+                    <line-chart label="Daily revenue chart" b-bind-points="$data.daily" b-bind-compare="$data.filters.compare"></line-chart>
+                </chart-card>
+            </div>
+
+            <div class="grid charts">
+                <chart-card heading="Revenue by region" caption="Select a region to filter the dashboard" data-testid="region-card">
+                    <bar-chart b-bind-items="$data.regions" b-bind-selected="$data.filters.region"
+                               b-on-drill="$data.drill($event.detail)"></bar-chart>
+                </chart-card>
+                <chart-card heading="Sales channels" caption="Click a channel to show or hide it" data-testid="channel-card">
+                    <donut-chart caption="revenue" b-bind-segments="$data.channels"
+                                 b-on-toggle="$data.toggleChannel($event.detail)"></donut-chart>
+                </chart-card>
+                <div class="side">
+                    <section class="panel" aria-labelledby="insights-title">
+                        <h2 id="insights-title" class="chart-head" style="margin: 0 0 12px; font-size: 1.05rem;">Insights</h2>
+                        <ul class="insights" data-testid="insights">
+                            <li b-for="note in $data.insights" b-key="$for.note.key" b-bind-class="$for.note.tone">${$for.note.text}</li>
+                        </ul>
+                        <p class="empty" b-if="!$data.insights.length">No sales match these filters.</p>
+                    </section>
+                    <section class="panel" aria-labelledby="feed-title">
+                        <h2 id="feed-title" style="margin: 0 0 12px; font-size: 1.05rem;">Live orders <small class="muted" b-if="$data.live.received">(${$data.live.received})</small></h2>
+                        <ul class="feed" data-testid="feed" aria-live="polite">
+                            <li b-for="order in $data.live.feed" b-key="$for.order.id" class="feed-new">
+                                <span>${$for.order.name} <small>× ${$for.order.units} · ${$for.order.region}</small></span>
+                                <strong>${$stores.format.currency($for.order.revenue)}</strong>
+                                <small><relative-time b-bind-time="$for.order.at"></relative-time></small>
+                            </li>
+                        </ul>
+                        <p class="empty" b-if="!$data.live.feed.length">${$data.live.on ? 'Waiting for new orders…' : 'Turn on Live to stream new orders.'}</p>
+                    </section>
+                </div>
+            </div>
+
+            <section class="panel" style="margin-top: 16px;" aria-labelledby="products-title">
+                <div class="table-head">
+                    <h2 id="products-title">Products <small class="muted" data-testid="product-count">${$data.products.length} of ${$data.productTotal}</small></h2>
+                    <input type="search" class="search" data-testid="search" placeholder="Search products or categories"
+                           aria-label="Search products" b-model="$data.filters.search">
+                </div>
+                <div class="table-wrap">
+                    <table data-testid="products">
+                        <thead>
+                            <tr>
+                                <th b-bind-aria-sort="$data.ariaSort('name')"><button type="button" b-on-click="$data.sortBy('name')">Product</button></th>
+                                <th class="num" b-bind-aria-sort="$data.ariaSort('units')"><button type="button" b-on-click="$data.sortBy('units')">Units</button></th>
+                                <th class="num" b-bind-aria-sort="$data.ariaSort('revenue')"><button type="button" b-on-click="$data.sortBy('revenue')">Revenue</button></th>
+                                <th b-bind-aria-sort="$data.ariaSort('share')"><button type="button" b-on-click="$data.sortBy('share')">Share</button></th>
+                                <th>Trend</th>
+                                <th b-bind-aria-sort="$data.ariaSort('delta')"><button type="button" b-on-click="$data.sortBy('delta')">vs previous</button></th>
+                            </tr>
+                        </thead>
+                        <tbody data-testid="product-rows">
+                            <tr b-for="row in $data.products" b-key="$for.row.id">
+                                <td>${$for.row.name} <small>${$for.row.category}</small></td>
+                                <td class="num">${$stores.format.number($for.row.units)}</td>
+                                <td class="num">${$stores.format.currency($for.row.revenue)}</td>
+                                <td><span class="share"><i b-bind-style="{ '--share': ($for.row.share * 100).toFixed(1) + '%' }"></i>${$stores.format.percent($for.row.share)}</span></td>
+                                <td><spark-line b-bind-values="$for.row.trend"></spark-line></td>
+                                <td><trend-badge b-bind-delta="$for.row.delta"></trend-badge></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <p class="empty" b-if="!$data.products.length" style="padding: 16px 10px;">No products match “${$data.filters.search}”.</p>
+                </div>
+            </section>
+        </template>
+
+        <section class="panel devtools" aria-label="Network simulation" b-if="$data.network">
+            <strong>Simulate network</strong>
+            <label>Latency
+                <select data-testid="latency" b-model.number="$data.network.latency">
+                    <option value="150">Fast (150 ms)</option>
+                    <option value="650">Normal (650 ms)</option>
+                    <option value="2000">Slow (2 s)</option>
+                </select>
+            </label>
+            <label><input type="checkbox" data-testid="fail-next" b-model="$data.network.failNext"> Fail the next request</label>
+        </section>
+    </main>
+
+    <script src="../../../dist/brio.min.js"></script>
+    <script src="./data.js"></script>
+    <script src="./components.js"></script>
+    <script src="./app.js"></script>
+</body>
+</html>

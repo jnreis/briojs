@@ -47,6 +47,10 @@ metadata on `main`, through commit `d868d43`.
 - `$insert` with `before`/`after` beside a `b-for` row now throws; insert inside the row or outside the loop.
 
 ### Changed
+- `onCleanup(fn)` called directly in an effect body now runs before the effect's next run and when it stops, instead of only when the owning scope is disposed. It also works in effects created outside a scope, which never adopt the scope that happened to trigger them. Cleanup registered inside a nested `scope.run()` keeps that scope's lifetime.
+- A `<template>` with `b-if`, `b-else-if`, `b-else`, or `b-for` but no `b-template` now throws a located error instead of silently rendering inert template copies.
+- Component templates are parsed once per definition and cloned for each instance, in the host's own document. Bound props are evaluated once at mount instead of twice.
+- Bare-name `ReferenceError`s in expressions now suggest the right path: `$for.item` (or `$for.$parent.group`) for loop variables, and `$data.count` or `$props.label` for state keys and props.
 - Hydration is cheaper per element: attributes are snapshotted and parsed once, `b-for` no longer allocates an `[index, item]` pair per row, and `arrayFrom` no longer goes through `Reflect.apply`. Creating 10,000 keyed rows is about 10% faster.
 
 - Added real-world test apps under `tests/apps/` (occupancy counter,
@@ -162,6 +166,9 @@ metadata on `main`, through commit `d868d43`.
   instead of silently becoming attributes.
 
 ### Added
+- `untrack(fn)` reads reactive values without subscribing the current effect or computed. It is exported from `briojs`, `briojs/reactivity`, and the browser global.
+- `brio.resource` and `brio.untrack` in the browser bundles.
+- `b-attr-*` on component hosts binds the host element's own attributes, classes, and styles (with `b-bind-*` semantics) without becoming a prop.
 
 - Reactive `b-teleport` Element/ref and selector expressions with explicit
   `[target, placement]` tuples, default `after`, and `before`/`prepend`/`append`.
@@ -193,7 +200,7 @@ metadata on `main`, through commit `d868d43`.
   Brio's structural errors name the element; aggregated effect failures list
   each failure.
 - Real-world test apps under `tests/apps/` (counter, temperature converter,
-  conditional form, TodoMVC, 7GUIs, large table), each with a JSDOM suite
+  conditional form, TodoMVC, 7GUIs, large table, data dashboard), each with a JSDOM suite
   that drives user flows end to end.
 
 ### Documentation

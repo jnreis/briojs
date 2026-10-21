@@ -117,9 +117,9 @@ export function handleBind(
     modifiers: Record<string, boolean>,
     context: Record<PropertyKey, any>,
 ): void {
-    const rawTarget = startsWith(attrName, 'b-bind-')
-        ? attrName.slice(getLength('b-bind-'))
-        : attrName.slice(getLength('bind-'));
+    // `b-attr-*` is the component-host form: it binds the host element itself instead of a prop.
+    const rawTarget = attrName.slice(getLength(startsWith(attrName, 'b-bind-') ? 'b-bind-'
+        : startsWith(attrName, 'b-attr-') ? 'b-attr-' : 'bind-'));
     if (!rawTarget) throw createSyntaxError(`Brio binding directive "${attrName}" has no target.`);
 
     const forceProp = Boolean(modifiers.prop);

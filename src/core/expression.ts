@@ -1,5 +1,6 @@
 import { isFunction, objectConstructor, createTypeError, createSyntaxError, deleteItem, getLength } from './native';
 import { directiveError, describeNode, mark } from './errors';
+import { untrack } from '../reactivity/effect';
 
 export type ExpressionScope = Record<PropertyKey, any>;
 
@@ -65,6 +66,24 @@ const compile = (
     return fn;
 };
 
+const holds = (value: unknown, name: string): boolean =>
+    value !== null && typeof value === 'object' && name in (value as object);
+
+/** Suggests the context path for a bare name that is a loop variable, state key, or prop. */
+const referenceHint = (error: unknown, scope: ExpressionScope): string => {
+    const name = error instanceof ReferenceError && /^(\S+) is not defined$/.exec(error.message)?.[1];
+    if (!name) return '';
+    return untrack(() => {
+        try {
+            for (let loop = scope.$for, path = '$for.'; loop; loop = loop.$parent, path += '$parent.')
+                if (holds(loop, name)) return `. Loop variables are read through $for: use ${path}${name}.`;
+            for (const owner of ['$props', '$data'])
+                if (holds(scope[owner], name)) return `. Use ${owner}.${name}.`;
+        } catch {}
+        return '';
+    });
+};
+
 /**
  * `directive` names the attribute (e.g. `b-bind-href`) and `node` the element it sits on, so failures read
  * `Brio expression failed: "…" in b-bind-href on <a.nav>: TypeError: …`. The node defaults to `$el`.
@@ -76,7 +95,7 @@ export function evaluate(source: string, scope: ExpressionScope, directive?: str
     try {
         return fn(scope);
     } catch (error) {
-        throw directiveError(`Brio expression failed: "${source}"`, error, directive, node);
+        throw directiveError(`Brio expression failed: "${source}"`, error, directive, node, referenceHint(error, scope));
     }
 }
 
@@ -87,7 +106,7 @@ export function execute(source: string, scope: ExpressionScope, event?: Event, d
     try {
         fn(event === undefined ? scope : createExpressionScope({ $event: event }, scope));
     } catch (error) {
-        throw directiveError(`Brio event expression failed: "${source}"`, error, directive, node);
+        throw directiveError(`Brio event expression failed: "${source}"`, error, directive, node, referenceHint(error, scope));
     }
 }
 
@@ -98,6 +117,6 @@ export function assign(source: string, scope: ExpressionScope, value: unknown, d
     try {
         fn(scope, value);
     } catch (error) {
-        throw directiveError(`Brio model expression failed: "${source}"`, error, directive, node);
+        throw directiveError(`Brio model expression failed: "${source}"`, error, directive, node, referenceHint(error, scope));
     }
 }

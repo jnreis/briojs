@@ -9,7 +9,7 @@ const production = readFileSync(new URL('../dist/brio.min.js', import.meta.url),
 const development = readFileSync(new URL('../dist/brio.dev.min.js', import.meta.url), 'utf8');
 const coreAPI = [
     'createApp', 'state', 'signal', 'computed', 'effect', 'batch', 'flush',
-    'createScope', 'onCleanup', 'getCurrentScope', 'trustedHTML',
+    'untrack', 'resource', 'createScope', 'onCleanup', 'getCurrentScope', 'trustedHTML',
 ];
 const developmentAPI = ['devtools', 'inspectDevtools', 'devtoolsPanel', 'enableDevtools'];
 const pluginAPI = {
@@ -247,7 +247,7 @@ test('npm main entry exposes every plugin and enables devtools only on explicit 
         import assert from 'node:assert/strict';
         import * as brio from 'briojs';
         for (const name of ['persist', 'createRouter', 'createStepEngine', 'validate',
-            'resource', 'trustedHTML', 'enableDevtools', 'inspectDevtools', 'devtoolsPanel'])
+            'resource', 'untrack', 'trustedHTML', 'enableDevtools', 'inspectDevtools', 'devtoolsPanel'])
             assert.equal(typeof brio[name], 'function', name);
         assert.equal(typeof brio.http.get, 'function');
         let reads = 0;

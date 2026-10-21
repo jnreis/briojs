@@ -21,7 +21,8 @@ root markup are available. Bundle paths are application deployment paths,
 not automatically available `/dist/` URLs.
 
 The browser global contains `createApp`, `state`, `signal`, `computed`, `effect`,
-`batch`, `flush`, `createScope`, `onCleanup`, `getCurrentScope`, and `trustedHTML`.
+`batch`, `flush`, `untrack`, `resource`, `createScope`, `onCleanup`,
+`getCurrentScope`, and `trustedHTML`.
 All plugins are optional: load `brio.router.min.js`, `brio.persistence.min.js`,
 `brio.http.min.js`, `brio.forms.min.js`, `brio.step.min.js`, or
 `brio.money-mask.min.js` after the core as needed. They add createRouter, persist,
@@ -213,7 +214,7 @@ Escape HTML-significant characters in literal text/attribute values.
 | `b-effect="$data.observe($data.count)"` | Reactive expression, not a block of event-style statements. Avoid feedback writes. |
 | `b-id="['input']"` | Creates `$id.input`; bind `id`/label `for` explicitly. |
 | `b-ref="input"` | Register a concrete DOM target by literal name. Read `$ref.input`; not `$refs`. |
-| `b-template` | Unwraps authored contents into an owned range of hydrated siblings. Supports keyed `b-for`, plain `b-if`, `.detach`, `b-id`, providers, teleport and effects; no template-name/expression sourcing. |
+| `b-template` | Required on any `<template>` that carries `b-if`/`b-else-if`/`b-else`/`b-for` (otherwise an error). Unwraps authored contents into an owned range of hydrated siblings. Supports keyed `b-for`, plain `b-if`, `.detach`, `b-id`, providers, teleport and effects; no template-name/expression sourcing. |
 | `b-teleport="$ref.panel"` | Reactive Element/ref or selector expression; defaults to `after`. Use `[$ref.panel, 'append']` to insert inside. |
 | `b-router-outlet` | Renders the router's matched registered component. |
 
@@ -381,7 +382,9 @@ app.component('counter-card', {
 ```
 
 Use hyphenated component names. Setup returns plain state, exposed as `$data`.
-Static host attributes become string props; `b-bind-label` gives a reactive prop. Prop names arrive lowercase (`b-bind-userName` → `$props.username`); use lowercase or dashed names.
+Static host attributes become string props; `b-bind-label` gives a reactive prop.
+`b-attr-*` binds the host element itself like `b-bind-*` on ordinary elements
+(`b-attr-class="{ active: $data.on }"`, `b-attr-data-testid="'card-' + $for.item.id"`) and is not a prop. Prop names arrive lowercase (`b-bind-userName` → `$props.username`); use lowercase or dashed names.
 Emits are bubbling CustomEvents; consume `$event.detail` in host handlers.
 Named slots use `slot="name"` and `<slot name="name">`. Projected content retains
 the caller's data context. Use ordinary `<style>@scope { ... }</style>` inside
@@ -443,10 +446,12 @@ Signals and computed values use `.value`; effects run synchronously by default.
 depending on their writes (new `b-if` branches, `$ref` entries) appears when the
 handler returns; call `flush()` first when the same handler needs that DOM. Wrap
 several writes made outside handlers (timers, fetch callbacks) in `batch` so lists
-update once. `createScope().run(...)` owns created effects;
+update once. `onCleanup(fn)` called directly in an effect body runs before the
+next run and on stop (e.g. `effect(() => { if (s.live) onCleanup(feed.subscribe(fn)); })`).
+`untrack(() => …)` reads without subscribing. `createScope().run(...)` owns created effects;
 dispose that scope. The app's state factory alone is not a scope.
-ESM also exports `resource(fetcher)` from `briojs` and `briojs/reactivity`,
-not the browser global. It starts fetching and exposes `data.value`,
+`resource(fetcher)` is exported from `briojs`, `briojs/reactivity`, and the
+browser global (`brio.resource`). It starts fetching and exposes `data.value`,
 `loading.value`, `error.value`, `refetch()`, and idempotent `dispose()`.
 The fetcher receives an AbortSignal; pass it to Fetch/cancellable work.
 New executions abort prior work; only the latest may publish, even if abort

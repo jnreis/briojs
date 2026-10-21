@@ -1,6 +1,7 @@
 var __defProp = Object.defineProperty;
 var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
 var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "symbol" ? key + "" : key, value);
+import { p as includesItem, c as createTypeError, j as isInstanceOf, f as isObjectType, e as objectEntries, m as isString, h as isNumber, u as isBoolean, k as isArray, o as objectConstructor, d as deleteItem } from "./native-BSek5F0c.js";
 class HttpError extends Error {
   constructor(response) {
     super(`HTTP ${response.status}: ${response.statusText}`);
@@ -12,19 +13,19 @@ class HttpError extends Error {
   }
 }
 function isPlainObject(value) {
-  const prototype = Object.getPrototypeOf(value);
-  return prototype === null || Object.getPrototypeOf(prototype) === null && Object.prototype.toString.call(value) === "[object Object]";
+  const prototype = objectConstructor.getPrototypeOf(value);
+  return prototype === null || objectConstructor.getPrototypeOf(prototype) === null && objectConstructor.prototype.toString.call(value) === "[object Object]";
 }
 function isDate(value) {
-  return Object.prototype.toString.call(value) === "[object Date]";
+  return objectConstructor.prototype.toString.call(value) === "[object Date]";
 }
 function appendQuery(url, query) {
   const target = new URL(url, typeof location !== "undefined" ? location.href : "http://localhost");
-  if (query instanceof URLSearchParams) {
+  if (isInstanceOf(query, URLSearchParams)) {
     query.forEach((value, key) => target.searchParams.append(key, value));
   } else {
-    if (query === null || typeof query !== "object" || !isPlainObject(query))
-      throw new TypeError("HTTP query must be a plain object or URLSearchParams.");
+    if (query === null || !isObjectType(query) || !isPlainObject(query))
+      throw createTypeError("HTTP query must be a plain object or URLSearchParams.");
     const ancestors = /* @__PURE__ */ new Set();
     const append = (key, value) => {
       if (value === void 0) return;
@@ -32,43 +33,43 @@ function appendQuery(url, query) {
         target.searchParams.append(key, "");
       } else if (isDate(value)) {
         target.searchParams.append(key, Date.prototype.toISOString.call(value));
-      } else if (typeof value === "string" || typeof value === "boolean" || typeof value === "number" && Number.isFinite(value)) {
+      } else if (isString(value) || isBoolean(value) || isNumber(value) && Number.isFinite(value)) {
         target.searchParams.append(key, String(value));
-      } else if (typeof value === "object" && (Array.isArray(value) || isPlainObject(value))) {
-        if (ancestors.has(value)) throw new TypeError(`Circular HTTP query at "${key}".`);
+      } else if (isObjectType(value) && (isArray(value) || isPlainObject(value))) {
+        if (ancestors.has(value)) throw createTypeError(`Circular HTTP query at "${key}".`);
         ancestors.add(value);
-        if (Array.isArray(value)) {
+        if (isArray(value)) {
           value.forEach((item, index) => {
-            const structured = item !== null && typeof item === "object" && !isDate(item);
+            const structured = item !== null && isObjectType(item) && !isDate(item);
             append(`${key}[${structured ? index : ""}]`, item);
           });
         } else {
-          for (const [name, item] of Object.entries(value)) append(`${key}[${name}]`, item);
+          for (const [name, item] of objectEntries(value)) append(`${key}[${name}]`, item);
         }
-        ancestors.delete(value);
+        deleteItem(ancestors, value);
       } else {
-        throw new TypeError(`Unsupported HTTP query value at "${key}".`);
+        throw createTypeError(`Unsupported HTTP query value at "${key}".`);
       }
     };
     ancestors.add(query);
-    for (const [key, value] of Object.entries(query)) append(key, value);
+    for (const [key, value] of objectEntries(query)) append(key, value);
   }
   return target.href;
 }
 function encodeBody(body, headers) {
-  if (typeof body === "string" || typeof FormData !== "undefined" && body instanceof FormData || typeof URLSearchParams !== "undefined" && body instanceof URLSearchParams || typeof Blob !== "undefined" && body instanceof Blob || body instanceof ArrayBuffer || ArrayBuffer.isView(body) || typeof ReadableStream !== "undefined" && body instanceof ReadableStream) return body;
-  if (body !== null && typeof body !== "number" && typeof body !== "boolean" && !(typeof body === "object" && (Array.isArray(body) || isPlainObject(body))))
-    throw new TypeError("HTTP body must be JSON data or a native Fetch body.");
+  if (isString(body) || typeof FormData !== "undefined" && isInstanceOf(body, FormData) || typeof URLSearchParams !== "undefined" && isInstanceOf(body, URLSearchParams) || typeof Blob !== "undefined" && isInstanceOf(body, Blob) || isInstanceOf(body, ArrayBuffer) || ArrayBuffer.isView(body) || typeof ReadableStream !== "undefined" && isInstanceOf(body, ReadableStream)) return body;
+  if (body !== null && !isNumber(body) && !isBoolean(body) && !(isObjectType(body) && (isArray(body) || isPlainObject(body))))
+    throw createTypeError("HTTP body must be JSON data or a native Fetch body.");
   const json = JSON.stringify(body);
-  if (json === void 0) throw new TypeError("HTTP body did not serialize to JSON.");
+  if (json === void 0) throw createTypeError("HTTP body did not serialize to JSON.");
   if (!headers.has("Content-Type")) headers.set("Content-Type", "application/json");
   return json;
 }
 function request(method) {
   async function send(url, input, options = {}) {
     const { parser, ...init } = options;
-    if (parser !== void 0 && !["json", "text", "blob", "arrayBuffer", "formData"].includes(parser))
-      throw new TypeError(`Unknown HTTP parser: "${parser}".`);
+    if (parser !== void 0 && !includesItem(["json", "text", "blob", "arrayBuffer", "formData"], parser))
+      throw createTypeError(`Unknown HTTP parser: "${parser}".`);
     const headers = new Headers(init.headers);
     let body;
     if (method === "GET" || method === "DELETE") {

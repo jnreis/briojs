@@ -1,3 +1,17 @@
+import {
+    isInstanceOf,
+    objectConstructor,
+    isObjectType,
+    isString,
+    isBoolean,
+    isNumber,
+    createTypeError,
+    isArray,
+    objectEntries,
+    deleteItem,
+    includesItem,
+} from '../core/native';
+
 export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 export type HttpParser = 'json' | 'text' | 'blob' | 'arrayBuffer' | 'formData';
 export type HttpOptions = Omit<RequestInit, 'method' | 'body'> & {
@@ -30,22 +44,22 @@ export class HttpError extends Error {
 }
 
 function isPlainObject(value: object): boolean {
-    const prototype = Object.getPrototypeOf(value);
+    const prototype = objectConstructor.getPrototypeOf(value);
     return prototype === null ||
-        (Object.getPrototypeOf(prototype) === null && Object.prototype.toString.call(value) === '[object Object]');
+        (objectConstructor.getPrototypeOf(prototype) === null && objectConstructor.prototype.toString.call(value) === '[object Object]');
 }
 
 function isDate(value: unknown): value is Date {
-    return Object.prototype.toString.call(value) === '[object Date]';
+    return objectConstructor.prototype.toString.call(value) === '[object Date]';
 }
 
 function appendQuery(url: string, query: unknown): string {
     const target = new URL(url, typeof location !== 'undefined' ? location.href : 'http://localhost');
-    if (query instanceof URLSearchParams) {
+    if (isInstanceOf(query, URLSearchParams)) {
         query.forEach((value, key) => target.searchParams.append(key, value));
     } else {
-        if (query === null || typeof query !== 'object' || !isPlainObject(query))
-            throw new TypeError('HTTP query must be a plain object or URLSearchParams.');
+        if (query === null || !isObjectType(query) || !isPlainObject(query))
+            throw createTypeError('HTTP query must be a plain object or URLSearchParams.');
         const ancestors = new Set<object>();
         const append = (key: string, value: unknown): void => {
             if (value === undefined) return;
@@ -53,43 +67,43 @@ function appendQuery(url: string, query: unknown): string {
                 target.searchParams.append(key, '');
             } else if (isDate(value)) {
                 target.searchParams.append(key, Date.prototype.toISOString.call(value));
-            } else if (typeof value === 'string' || typeof value === 'boolean' ||
-                (typeof value === 'number' && Number.isFinite(value))) {
+            } else if (isString(value) || isBoolean(value) ||
+                (isNumber(value) && Number.isFinite(value))) {
                 target.searchParams.append(key, String(value));
-            } else if (typeof value === 'object' && (Array.isArray(value) || isPlainObject(value))) {
-                if (ancestors.has(value)) throw new TypeError(`Circular HTTP query at "${key}".`);
+            } else if (isObjectType(value) && (isArray(value) || isPlainObject(value))) {
+                if (ancestors.has(value)) throw createTypeError(`Circular HTTP query at "${key}".`);
                 ancestors.add(value);
-                if (Array.isArray(value)) {
+                if (isArray(value)) {
                     value.forEach((item, index) => {
-                        const structured = item !== null && typeof item === 'object' && !isDate(item);
+                        const structured = item !== null && isObjectType(item) && !isDate(item);
                         append(`${key}[${structured ? index : ''}]`, item);
                     });
                 } else {
-                    for (const [name, item] of Object.entries(value)) append(`${key}[${name}]`, item);
+                    for (const [name, item] of objectEntries(value)) append(`${key}[${name}]`, item);
                 }
-                ancestors.delete(value);
+                deleteItem(ancestors, value);
             } else {
-                throw new TypeError(`Unsupported HTTP query value at "${key}".`);
+                throw createTypeError(`Unsupported HTTP query value at "${key}".`);
             }
         };
         ancestors.add(query);
-        for (const [key, value] of Object.entries(query)) append(key, value);
+        for (const [key, value] of objectEntries(query)) append(key, value);
     }
     return target.href;
 }
 
 function encodeBody(body: HttpBody, headers: Headers): BodyInit {
-    if (typeof body === 'string' ||
-        (typeof FormData !== 'undefined' && body instanceof FormData) ||
-        (typeof URLSearchParams !== 'undefined' && body instanceof URLSearchParams) ||
-        (typeof Blob !== 'undefined' && body instanceof Blob) ||
-        body instanceof ArrayBuffer || ArrayBuffer.isView(body) ||
-        (typeof ReadableStream !== 'undefined' && body instanceof ReadableStream)) return body;
-    if (body !== null && typeof body !== 'number' && typeof body !== 'boolean' &&
-        !(typeof body === 'object' && (Array.isArray(body) || isPlainObject(body))))
-        throw new TypeError('HTTP body must be JSON data or a native Fetch body.');
+    if (isString(body) ||
+        (typeof FormData !== 'undefined' && isInstanceOf(body, FormData)) ||
+        (typeof URLSearchParams !== 'undefined' && isInstanceOf(body, URLSearchParams)) ||
+        (typeof Blob !== 'undefined' && isInstanceOf(body, Blob)) ||
+        isInstanceOf(body, ArrayBuffer) || ArrayBuffer.isView(body) ||
+        (typeof ReadableStream !== 'undefined' && isInstanceOf(body, ReadableStream))) return body;
+    if (body !== null && !isNumber(body) && !isBoolean(body) &&
+        !(isObjectType(body) && (isArray(body) || isPlainObject(body))))
+        throw createTypeError('HTTP body must be JSON data or a native Fetch body.');
     const json = JSON.stringify(body);
-    if (json === undefined) throw new TypeError('HTTP body did not serialize to JSON.');
+    if (json === undefined) throw createTypeError('HTTP body did not serialize to JSON.');
     if (!headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
     return json;
 }
@@ -101,8 +115,8 @@ function request<Input extends HttpQuery | HttpBody>(method: HttpMethod) {
     function send(url: string, input?: Input, options?: HttpOptions): Promise<unknown>;
     async function send(url: string, input?: Input, options: HttpOptions = {}): Promise<unknown> {
         const { parser, ...init } = options;
-        if (parser !== undefined && !['json', 'text', 'blob', 'arrayBuffer', 'formData'].includes(parser))
-            throw new TypeError(`Unknown HTTP parser: "${parser}".`);
+        if (parser !== undefined && !includesItem(['json', 'text', 'blob', 'arrayBuffer', 'formData'], parser))
+            throw createTypeError(`Unknown HTTP parser: "${parser}".`);
         const headers = new Headers(init.headers);
         let body: BodyInit | undefined;
         if (method === 'GET' || method === 'DELETE') {

@@ -1,3 +1,5 @@
+import { getOwnerDocument, getParent, getChildNodes, insertBefore } from '../native';
+import { createError, arrayFrom, removeElement, TEMPLATE } from '../../core/native';
 import type { DomRuntime } from '../types';
 import { ownElementRange } from '../range';
 import { cloneProjectedNode } from '../components';
@@ -12,10 +14,10 @@ export function handleTemplate(
     hydrateNodeFn: (node: Node, context: Record<PropertyKey, any>, runtime: DomRuntime) => void,
 ): void {
     ownElementRange(element, context, runtime);
-    const isTemplateTag = element.tagName.toLowerCase() === 'template';
+    const isTemplateTag = element.tagName.toLowerCase() === TEMPLATE;
     const fragment = isTemplateTag
         ? cloneProjectedNode((element as HTMLTemplateElement).content)
-        : element.ownerDocument.createDocumentFragment();
+        : getOwnerDocument(element).createDocumentFragment();
 
     if (!isTemplateTag) {
         while (element.firstChild) {
@@ -23,16 +25,16 @@ export function handleTemplate(
         }
     }
 
-    const parent = element.parentNode;
-    if (!parent) throw new Error('b-template requires an element with a parent node.');
+    const parent = getParent(element);
+    if (!parent) throw createError('b-template requires an element with a parent node.');
 
-    const insertedNodes = Array.from(fragment.childNodes);
-    parent.insertBefore(fragment, element);
-    element.remove();
+    const insertedNodes = arrayFrom(getChildNodes(fragment));
+    insertBefore(parent, fragment, element);
+    removeElement(element);
 
     withHydration(parent, () => {
         for (const node of insertedNodes) {
-            if (node.parentNode === parent) hydrateNodeFn(node, context, runtime);
+            if (getParent(node) === parent) hydrateNodeFn(node, context, runtime);
         }
     });
 }

@@ -1,3 +1,4 @@
+import { isString, getLength, isArray, createTypeError, ATTRIBUTES } from '../../core/native';
 import { createExpressionScope, execute } from '../../core/expression';
 import { onCleanup } from '../../core/scope';
 import { observerOptions, observerTarget, observerBoolean, observerDelay } from './observer-options';
@@ -21,16 +22,16 @@ export function handleMutation(
     const delay = observerDelay(configured);
     const options: MutationObserverInit = {
         childList: isAdded || isRemoved || (!isAttrs && !isText),
-        attributes: isAttrs,
+        [ATTRIBUTES]: isAttrs,
         characterData: isText,
         subtree: observerBoolean(configured, 'subtree', true),
     };
     if (isAttrs) {
         options.attributeOldValue = observerBoolean(configured, 'attributeOldValue', false);
         if (configured.attributeFilter !== undefined) {
-            if (!Array.isArray(configured.attributeFilter) ||
-                !configured.attributeFilter.every(value => typeof value === 'string'))
-                throw new TypeError('Mutation attributeFilter must be an array of strings.');
+            if (!isArray(configured.attributeFilter) ||
+                !configured.attributeFilter.every(value => isString(value)))
+                throw createTypeError('Mutation attributeFilter must be an array of strings.');
             options.attributeFilter = configured.attributeFilter;
         }
     }
@@ -42,18 +43,18 @@ export function handleMutation(
     const observer = new MutationObserver((mutations) => {
         let matching: MutationRecord[] = [];
         if (isAdded) {
-            matching = mutations.filter(m => m.addedNodes.length > 0);
+            matching = mutations.filter(m => getLength(m.addedNodes) > 0);
         } else if (isRemoved) {
-            matching = mutations.filter(m => m.removedNodes.length > 0);
+            matching = mutations.filter(m => getLength(m.removedNodes) > 0);
         } else if (isAttrs) {
-            matching = mutations.filter(m => m.type === 'attributes');
+            matching = mutations.filter(m => m.type === ATTRIBUTES);
         } else if (isText) {
             matching = mutations.filter(m => m.type === 'characterData');
         } else {
             matching = mutations;
         }
 
-        if (matching.length) {
+        if (getLength(matching)) {
             const invoke = () => {
                 const records = pending;
                 pending = [];

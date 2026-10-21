@@ -1,3 +1,18 @@
+import {
+    getLength,
+    arrayFrom,
+    createTypeError,
+    createSyntaxError,
+    createError,
+    isInstanceOf,
+    deleteItem,
+    startsWith,
+    TEMPLATE,
+    ATTRIBUTES,
+} from '../core/native';
+import {
+    getChildNodes, getAttribute, removeChild, getParent, addEventListener, removeEventListener, removeAttribute,
+} from './native';
 import { evaluate, execute, createExpressionScope } from '../core/expression';
 import { state } from '../reactivity/state';
 import { createScopedState } from '../core/scoped-state';
@@ -12,7 +27,7 @@ const projectedContexts = new WeakMap<Node, Record<PropertyKey, any>>();
 
 export function takeProjectedContext(node: Node): Record<PropertyKey, any> | undefined {
     const context = projectedContexts.get(node);
-    projectedContexts.delete(node);
+    deleteItem(projectedContexts, node);
     return context;
 }
 
@@ -21,9 +36,9 @@ export function cloneProjectedNode<T extends Node>(node: T): T {
     const copy = (source: Node, target: Node) => {
         const context = projectedContexts.get(source);
         if (context) projectedContexts.set(target, context);
-        const children = Array.from(target.childNodes);
-        Array.from(source.childNodes).forEach((child, index) => copy(child, children[index]));
-        if (source instanceof HTMLTemplateElement && target instanceof HTMLTemplateElement)
+        const children = arrayFrom(getChildNodes(target));
+        arrayFrom(getChildNodes(source)).forEach((child, index) => copy(child, children[index]));
+        if (isInstanceOf(source, HTMLTemplateElement) && isInstanceOf(target, HTMLTemplateElement))
             copy(source.content, target.content);
     };
     copy(node, clone);
@@ -31,8 +46,8 @@ export function cloneProjectedNode<T extends Node>(node: T): T {
 }
 
 function findSlots(root: ParentNode): Element[] {
-    return Array.from(root.querySelectorAll('slot, template[b-template]')).flatMap(node =>
-        node instanceof HTMLTemplateElement ? findSlots(node.content) : [node]);
+    return arrayFrom(root.querySelectorAll('slot, template[b-template]')).flatMap(node =>
+        isInstanceOf(node, HTMLTemplateElement) ? findSlots(node.content) : [node]);
 }
 
 export function fillSlots(
@@ -41,25 +56,25 @@ export function fillSlots(
     context: Record<PropertyKey, any>,
 ): void {
     const slots = new Map<string, Node[]>();
-    for (const child of Array.from(host.childNodes)) {
-        const name = child instanceof Element ? child.getAttribute('slot') ?? '' : '';
+    for (const child of arrayFrom(getChildNodes(host))) {
+        const name = isInstanceOf(child, Element) ? getAttribute(child, 'slot') ?? '' : '';
         const content = slots.get(name) ?? [];
         content.push(child);
         slots.set(name, content);
     }
     for (const outlet of findSlots(template)) {
-        const name = outlet.getAttribute('name') ?? '';
+        const name = getAttribute(outlet, 'name') ?? '';
         const content = slots.get(name);
         if (!content?.length) {
-            outlet.replaceWith(...Array.from(outlet.childNodes));
+            outlet.replaceWith(...arrayFrom(getChildNodes(outlet)));
             continue;
         }
         for (const node of content) projectedContexts.set(node, context);
         outlet.replaceWith(...content);
-        slots.delete(name);
+        deleteItem(slots, name);
     }
     for (const remaining of slots.values())
-        for (const node of remaining) node.parentNode?.removeChild(node);
+        for (const node of remaining) removeChild(getParent(node), node);
 }
 
 export function mountComponent(
@@ -70,15 +85,15 @@ export function mountComponent(
     hydrateNodeFn: (node: Node, context: Record<PropertyKey, any>, runtime: DomRuntime) => void,
 ): void {
     const propsObject: Record<string, unknown> = {};
-    for (const attribute of Array.from(element.attributes)) {
-        if (!attribute.name.startsWith('b-')) propsObject[attribute.name] = attribute.value;
+    for (const attribute of arrayFrom(element[ATTRIBUTES])) {
+        if (!startsWith(attribute.name, 'b-')) propsObject[attribute.name] = attribute.value;
     }
-    const propBindings = Array.from(element.attributes)
-        .filter(attribute => attribute.name.startsWith('b-bind-') || attribute.name.startsWith('bind-'))
+    const propBindings = arrayFrom(element[ATTRIBUTES])
+        .filter(attribute => startsWith(attribute.name, 'b-bind-') || startsWith(attribute.name, 'bind-'))
         .map(attribute => {
-            const raw = attribute.name.startsWith('b-bind-')
-                ? attribute.name.slice('b-bind-'.length)
-                : attribute.name.slice('bind-'.length);
+            const raw = startsWith(attribute.name, 'b-bind-')
+                ? attribute.name.slice(getLength('b-bind-'))
+                : attribute.name.slice(getLength('bind-'));
             return {
                 name: raw.split('.')[0],
                 expression: attribute.value,
@@ -92,24 +107,24 @@ export function mountComponent(
 
     const $emit = (name: string, detail?: unknown) => {
         if (!/^[a-z][a-z0-9-]*$/.test(name))
-            throw new TypeError(`Invalid component event name "${name}".`);
+            throw createTypeError(`Invalid component event name "${name}".`);
         element.dispatchEvent(new CustomEvent(name, { detail, bubbles: true }));
     };
 
     componentScope.run(() => {
-        for (const attribute of Array.from(element.attributes)) {
-            if (attribute.name.startsWith('b-on-') || attribute.name.startsWith('on-')) {
-                const prefix = attribute.name.startsWith('b-on-') ? 'b-on-' : 'on-';
-                const eventPart = attribute.name.slice(prefix.length).split('.')[0];
+        for (const attribute of arrayFrom(element[ATTRIBUTES])) {
+            if (startsWith(attribute.name, 'b-on-') || startsWith(attribute.name, 'on-')) {
+                const prefix = startsWith(attribute.name, 'b-on-') ? 'b-on-' : 'on-';
+                const eventPart = attribute.name.slice(getLength(prefix)).split('.')[0];
                 if (!/^[a-z-]+$/.test(eventPart))
-                    throw new SyntaxError(`Invalid component event directive "${attribute.name}".`);
+                    throw createSyntaxError(`Invalid component event directive "${attribute.name}".`);
                 const expression = attribute.value;
                 const handler = (event: Event) => batch(() =>
                     execute(expression, createExpressionScope({ $event: event }, context), event));
-                element.addEventListener(eventPart, handler);
-                onCleanup(() => element.removeEventListener(eventPart, handler));
-            } else if (attribute.name.startsWith('b-') && !attribute.name.startsWith('b-bind-')) {
-                throw new Error(`Directive "${attribute.name}" is not supported on component hosts.`);
+                addEventListener(element, eventPart, handler);
+                onCleanup(() => removeEventListener(element, eventPart, handler));
+            } else if (startsWith(attribute.name, 'b-') && !startsWith(attribute.name, 'b-bind-')) {
+                throw createError(`Directive "${attribute.name}" is not supported on component hosts.`);
             }
         }
 
@@ -139,20 +154,20 @@ export function mountComponent(
             });
         }
 
-        const template = document.createElement('template');
+        const template = document.createElement(TEMPLATE);
         template.innerHTML = definition.template;
 
         fillSlots(element, template.content, context);
         element.replaceChildren(template.content);
 
         withHydration(element, () => {
-            for (const child of Array.from(element.childNodes)) {
+            for (const child of arrayFrom(getChildNodes(element))) {
                 hydrateNodeFn(child, componentContext, runtime);
             }
         });
 
-        for (const attribute of Array.from(element.attributes)) {
-            if (attribute.name.startsWith('b-')) element.removeAttribute(attribute.name);
+        for (const attribute of arrayFrom(element[ATTRIBUTES])) {
+            if (startsWith(attribute.name, 'b-')) removeAttribute(element, attribute.name);
         }
     });
 }

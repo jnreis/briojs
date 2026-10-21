@@ -1,3 +1,4 @@
+import { isObjectType } from '../core/native';
 import type { ContextValues } from '../core/context-values';
 import type { StoreMap } from '../core/types';
 import type { RefMap } from './refs';
@@ -34,7 +35,7 @@ export function trustedHTML(markup: string): TrustedMarkup {
 }
 
 export function isTrustedHTML(value: unknown): value is TrustedMarkup {
-    return value !== null && typeof value === 'object' && trustedMarkup in value;
+    return value !== null && isObjectType(value) && trustedMarkup in value;
 }
 
 export function getTrustedHTMLString(value: TrustedMarkup): string {

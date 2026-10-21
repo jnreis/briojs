@@ -1,3 +1,4 @@
+import { createError } from '../core/native';
 import { createScope, onDispose } from '../core/scope';
 import { batch, effect } from './effect';
 import { signal } from './state';
@@ -19,7 +20,7 @@ export function resource<T>(fetcher: (signal: AbortSignal) => Promise<T>): Resou
     });
 
     const run = async () => {
-        if (scope.disposed) throw new Error('Cannot refetch a disposed Brio resource.');
+        if (scope.disposed) throw createError('Cannot refetch a disposed Brio resource.');
         const previous = current;
         const controller = new AbortController();
         current = controller;

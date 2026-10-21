@@ -1,3 +1,4 @@
+import { isFunction, objectConstructor, createTypeError, createSyntaxError, deleteItem } from './native';
 import { causedError } from './errors';
 
 export type ExpressionScope = Record<PropertyKey, any>;
@@ -19,13 +20,13 @@ export function evaluateFunction(source: string, context: ExpressionScope): ($co
         new Function($CONTEXT, `${contextBindings} return (${expression.replace(/;\s*$/, '')});`)
     );
     const result = fn(context);
-    if (typeof result !== 'function')
-        throw new TypeError(`b-script must contain a function expression, such as (${$CONTEXT}) => { ... }.`);
+    if (!isFunction(result))
+        throw createTypeError(`b-script must contain a function expression, such as (${$CONTEXT}) => { ... }.`);
     return result;
 }
 
 export function createExpressionScope(...sources: ExpressionScope[]): ExpressionScope {
-    return Object.assign(Object.create(null), ...sources.reverse());
+    return objectConstructor.assign(objectConstructor.create(null), ...sources.reverse());
 }
 
 const compile = (cache: Map<string, Function>, source: string, make: (source: string) => Function): Function => {
@@ -34,11 +35,11 @@ const compile = (cache: Map<string, Function>, source: string, make: (source: st
         try {
             fn = make(source);
         } catch (error) {
-            throw new SyntaxError(`Invalid Brio expression "${source}": ${String(error)}`);
+            throw createSyntaxError(`Invalid Brio expression "${source}": ${String(error)}`);
         }
         cache.set(source, fn);
         if (cache.size > 500)
-            cache.delete(cache.keys().next().value!);
+            deleteItem(cache, cache.keys().next().value!);
     }
     return fn;
 };

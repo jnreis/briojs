@@ -1,7 +1,8 @@
-import { e as effect, h as createScope, o as onDispose, b as batch } from "./effect-DGhE0oQi.js";
-import { d, f } from "./effect-DGhE0oQi.js";
-import { t as trigger, a as track, b as signal } from "./state-FLvgaPZh.js";
-import { s } from "./state-FLvgaPZh.js";
+import { e as effect, h as createScope, o as onDispose, b as batch } from "./effect-DIImvjBh.js";
+import { d, f } from "./effect-DIImvjBh.js";
+import { t as trigger, a as track, b as signal } from "./state-gsWplTCq.js";
+import { s } from "./state-gsWplTCq.js";
+import { b as createError } from "./native-BSek5F0c.js";
 import { persist } from "./persistence-entry.js";
 function computed(getter) {
   let dirty = true;
@@ -22,7 +23,7 @@ function computed(getter) {
   };
   return {
     get value() {
-      if (!runner.active) throw new Error("Cannot read a disposed Brio computed value.");
+      if (!runner.active) throw createError("Cannot read a disposed Brio computed value.");
       track(holder, "value");
       if (dirty) {
         cachedValue = runner.run();
@@ -46,7 +47,7 @@ function resource(fetcher) {
     loading.value = false;
   });
   const run = async () => {
-    if (scope.disposed) throw new Error("Cannot refetch a disposed Brio resource.");
+    if (scope.disposed) throw createError("Cannot refetch a disposed Brio resource.");
     const previous = current;
     const controller = new AbortController();
     current = controller;

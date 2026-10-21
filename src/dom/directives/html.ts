@@ -1,3 +1,4 @@
+import { createTypeError, TEMPLATE } from '../../core/native';
 import { evaluate } from '../../core/expression';
 import { effect } from '../../reactivity/effect';
 import { createScope, onCleanup } from '../../core/scope';
@@ -18,13 +19,13 @@ export function handleHtml(
     effect(() => {
         const html = evaluate(expression, context);
         if (modifiers.hydrate && !isTrustedHTML(html))
-            throw new TypeError('b-html.hydrate requires a trustedHTML() value.');
+            throw createTypeError('b-html.hydrate requires a trustedHTML() value.');
         const htmlStr = isTrustedHTML(html)
             ? getTrustedHTMLString(html)
             : String(html ?? '');
         contentScope?.dispose();
         contentScope = undefined;
-        const template = document.createElement('template');
+        const template = document.createElement(TEMPLATE);
         template.innerHTML = htmlStr;
         element.replaceChildren(template.content);
         if (modifiers.hydrate) {

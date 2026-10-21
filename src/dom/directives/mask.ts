@@ -1,3 +1,6 @@
+import { isInstanceOf, getLength, isString, isObjectType, ReflectApi, isNumber, isFunction, createSyntaxError, createTypeError, objectKeys } from '../../core/native';
+
+import { getOwnerDocument, addEventListener, removeEventListener } from '../native';
 import { onCleanup } from '../../core/scope';
 import { evaluate } from '../../core/expression';
 import { effect } from '../../reactivity/effect';
@@ -21,10 +24,10 @@ type PatternPart = { literal: string } | { accepts: (character: string) => boole
 function compilePattern(pattern: string): PatternPart[] {
     const parts: PatternPart[] = [];
     const characters = [...pattern];
-    for (let index = 0; index < characters.length; index++) {
+    for (let index = 0; index < getLength(characters); index++) {
         const character = characters[index];
         if (character === '\\') {
-            if (++index === characters.length) throw new SyntaxError('Mask pattern cannot end with an escape.');
+            if (++index === getLength(characters)) throw createSyntaxError('Mask pattern cannot end with an escape.');
             parts.push({ literal: characters[index] });
         } else if (character === '*') parts.push({ accepts: () => true });
         else if (character === 'A') parts.push({ accepts: value => /[\p{L}\p{Nd}]/u.test(value) });
@@ -44,20 +47,20 @@ function patternFormatter(pattern: string): MaskFormatter {
         let index = 0;
         let offset = 0;
         for (const part of parts) {
-            if (index >= input.length) break;
+            if (index >= getLength(input)) break;
             if ('literal' in part) {
                 value += part.literal;
                 if (input[index] === part.literal) {
-                    offset += input[index++].length;
+                    offset += getLength(input[index++]);
                 }
             } else {
-                while (index < input.length && !part.accepts(input[index]))
-                    offset += input[index++].length;
-                if (index < input.length) {
+                while (index < getLength(input) && !part.accepts(input[index]))
+                    offset += getLength(input[index++]);
+                if (index < getLength(input)) {
                     const character = input[index++];
                     value += character;
-                    offset += character.length;
-                    positions.push({ input: offset, output: value.length });
+                    offset += getLength(character);
+                    positions.push({ input: offset, output: getLength(value) });
                 }
             }
         }
@@ -70,14 +73,14 @@ function patternFormatter(pattern: string): MaskFormatter {
 }
 
 function validateResult(result: unknown): asserts result is MaskResult {
-    if (typeof result === 'string') return;
-    if (result === null || typeof result !== 'object' || !('value' in result) || typeof result.value !== 'string')
-        throw new TypeError('Mask formatter must return a string or { value, selectionStart?, selectionEnd? }.');
+    if (isString(result)) return;
+    if (result === null || !isObjectType(result) || !('value' in result) || !isString(result.value))
+        throw createTypeError('Mask formatter must return a string or { value, selectionStart?, selectionEnd? }.');
     for (const key of ['selectionStart', 'selectionEnd'] as const) {
-        const position: unknown = key in result ? Reflect.get(result, key) : undefined;
-        if (position !== undefined && (typeof position !== 'number' || !Number.isInteger(position) ||
-            position < 0 || position > result.value.length))
-            throw new TypeError(`Mask formatter ${key} must be an integer within the formatted value.`);
+        const position: unknown = key in result ? ReflectApi.get(result, key) : undefined;
+        if (position !== undefined && (!isNumber(position) || !Number.isInteger(position) ||
+            position < 0 || position > getLength(result.value)))
+            throw createTypeError(`Mask formatter ${key} must be an integer within the formatted value.`);
     }
 }
 
@@ -87,35 +90,35 @@ export function handleMask(
     modifiers: Record<string, boolean>,
     context: Record<PropertyKey, any>,
 ): void {
-    if (!(element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement))
-        throw new TypeError('b-mask can only be used on input and textarea elements.');
-    if (Object.keys(modifiers).length) throw new TypeError('b-mask does not support modifiers; use a pattern or formatter function.');
+    if (!(isInstanceOf(element, HTMLInputElement) || isInstanceOf(element, HTMLTextAreaElement)))
+        throw createTypeError('b-mask can only be used on input and textarea elements.');
+    if (getLength(objectKeys(modifiers))) throw createTypeError('b-mask does not support modifiers; use a pattern or formatter function.');
 
     let formatter: MaskFormatter;
     let applying = false;
     let composing = false;
     const applyMask = (event?: Event) => {
-        if (applying || composing || (event instanceof InputEvent && event.isComposing)) return;
+        if (applying || composing || (isInstanceOf(event, InputEvent) && event.isComposing)) return;
         const current = element.value;
         const start = element.selectionStart;
         const end = element.selectionEnd;
         const direction = element.selectionDirection;
         const result = formatter({
             value: current, selectionStart: start, selectionEnd: end, selectionDirection: direction,
-            inputType: event instanceof InputEvent ? event.inputType : undefined,
+            inputType: isInstanceOf(event, InputEvent) ? event.inputType : undefined,
         });
         validateResult(result);
-        const value = typeof result === 'string' ? result : result.value;
-        const clamp = (position: number) => Math.min(position, value.length);
-        const mappedStart = typeof result === 'string' ? start : result.selectionStart ?? start;
-        const mappedEnd = typeof result === 'string' ? end : result.selectionEnd ?? end;
+        const value = isString(result) ? result : result.value;
+        const clamp = (position: number) => Math.min(position, getLength(value));
+        const mappedStart = isString(result) ? start : result.selectionStart ?? start;
+        const mappedEnd = isString(result) ? end : result.selectionEnd ?? end;
         applying = true;
         try {
             if (current !== value) {
                 element.value = value;
                 element.dispatchEvent(new Event('input', { bubbles: true }));
             }
-            if (element.ownerDocument.activeElement === element && mappedStart !== null && mappedEnd !== null)
+            if (getOwnerDocument(element).activeElement === element && mappedStart !== null && mappedEnd !== null)
                 element.setSelectionRange(clamp(mappedStart), clamp(mappedEnd), direction ?? 'none');
         } finally {
             applying = false;
@@ -123,19 +126,19 @@ export function handleMask(
     };
     const compositionStart = () => { composing = true; };
     const compositionEnd = () => { composing = false; applyMask(); };
-    element.addEventListener('input', applyMask, true);
-    element.addEventListener('compositionstart', compositionStart);
-    element.addEventListener('compositionend', compositionEnd);
+    addEventListener(element, 'input', applyMask, true);
+    addEventListener(element, 'compositionstart', compositionStart);
+    addEventListener(element, 'compositionend', compositionEnd);
     onCleanup(() => {
-        element.removeEventListener('input', applyMask, true);
-        element.removeEventListener('compositionstart', compositionStart);
-        element.removeEventListener('compositionend', compositionEnd);
+        removeEventListener(element, 'input', applyMask, true);
+        removeEventListener(element, 'compositionstart', compositionStart);
+        removeEventListener(element, 'compositionend', compositionEnd);
     });
     effect(() => {
         const value = evaluate(expression, context);
-        if (typeof value === 'string') formatter = patternFormatter(value);
-        else if (typeof value === 'function') formatter = value;
-        else throw new TypeError('b-mask must evaluate to a pattern string or formatter function.');
+        if (isString(value)) formatter = patternFormatter(value);
+        else if (isFunction(value)) formatter = value;
+        else throw createTypeError('b-mask must evaluate to a pattern string or formatter function.');
         applyMask();
     });
 }

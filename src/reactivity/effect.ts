@@ -1,3 +1,4 @@
+import { getLength, objectConstructor, deleteItem } from '../core/native';
 import { combinedError } from '../core/errors';
 import { devtoolsEnabled, notifyEffectCreated, notifyEffectDisposed } from '../plugins/devtools-bridge';
 import type { EffectOptions, Scope, Stop } from './types';
@@ -20,7 +21,7 @@ const queuedEffects = new Set<ReactiveEffect>();
 export const getActiveEffect = (): ReactiveEffect | undefined => activeEffect;
 
 export const cleanupEffect = (eff: ReactiveEffect) => {
-    for (const dep of eff.deps) dep.delete(eff);
+    for (const dep of eff.deps) deleteItem(dep, eff);
     eff.deps.length = 0;
 };
 
@@ -60,7 +61,7 @@ export const flushEffects = () => {
             }
         }
     }
-    if (errors.length) throw combinedError('One or more reactive effects failed.', errors);
+    if (getLength(errors)) throw combinedError('One or more reactive effects failed.', errors);
 };
 
 export function effect<T>(fn: () => T, options: EffectOptions = {}): Stop {
@@ -78,7 +79,7 @@ export function effect<T>(fn: () => T, options: EffectOptions = {}): Stop {
         cleanupEffect(reactiveEffect);
         if (devtoolsEnabled) notifyEffectDisposed(Boolean(reactiveEffect.devtoolsTracked));
     }) as Stop;
-    Object.defineProperty(stop, 'active', { get: () => reactiveEffect.active });
+    objectConstructor.defineProperty(stop, 'active', { get: () => reactiveEffect.active });
     stop.run = () => runEffect(reactiveEffect);
     const currentScope = getCurrentScope();
     if (currentScope) onDispose(currentScope, stop);

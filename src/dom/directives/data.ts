@@ -1,3 +1,4 @@
+import { isObjectType, createTypeError } from '../../core/native';
 import { evaluate, createExpressionScope } from '../../core/expression';
 import { createScopedState } from '../../core/scoped-state';
 
@@ -10,8 +11,8 @@ export function handleData(
     const context = createExpressionScope({ $el: element }, parentContext);
     if (!expression.trim()) return context;
     const data = evaluate(expression, context);
-    if (data === null || typeof data !== 'object')
-        throw new TypeError('b-data must evaluate to an object.');
+    if (data === null || !isObjectType(data))
+        throw createTypeError('b-data must evaluate to an object.');
     const reactiveData = createScopedState(data, parentContext.$data);
     const scopeObj = {
         $data: reactiveData,

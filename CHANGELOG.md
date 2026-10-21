@@ -24,6 +24,20 @@ metadata on `main`, through commit `d868d43`.
 
 ### Changed
 
+- Added a raw/gzip/Brotli size reporter, checked-in regression baseline, and
+  main/subpath tree-shaking tests covering browser scripts, reachable static
+  ESM graphs, and minified npm consumers. Shared native/DOM/error helpers applied
+  across the runtime, plus shared Object/Reflect aliases, typed typeof predicates,
+  a length helper, and a typed `isInstanceOf` wrapper used by all runtime checks,
+  `removeElement` calls for DOM elements/comments, `deleteItem` wrappers at
+  collection deletion sites, and `includesItem` wrappers at collection
+  membership checks, and a `startsWith` helper for runtime string-prefix tests,
+  reduce production core by 4,325 raw bytes overall (8.9%). Compared with the
+  original baseline, gzip is 18 bytes smaller and Brotli is 24 bytes smaller.
+  Prioritizes core and typical bundled apps, with documented small-tool and
+  unbundled-ESM tradeoffs. Public APIs, diagnostics, and browser targets remain
+  unchanged; helper behavior and type inference have dedicated regression tests.
+
 - Optional router supports normalized deployment bases and `href()` generation.
   App-relative navigation/route state is separated from browser URL matching,
   with segment-aware base boundaries, direct-load/history support, and preserved

@@ -1,3 +1,11 @@
+import {
+    getLength, createError, arrayFrom, createSyntaxError, createTypeError, removeElement, includesItem,
+    startsWith, TEMPLATE,
+    B_TELEPORT,
+    TELEPORT,
+    ATTRIBUTES,
+} from '../core/native';
+import { getChildNodes, getParent, getNodeType, getAttribute, removeAttribute } from './native';
 import { createExpressionScope } from '../core/expression';
 import { createScope, onCleanup } from '../core/scope';
 import type { Scope } from '../core/scope';
@@ -17,7 +25,7 @@ export function mountRouterOutlet(
     runtime: DomRuntime,
     hydrateNodeFn: (node: Node, context: Record<PropertyKey, any>, runtime: DomRuntime) => void,
 ): void {
-    if (!runtime.router) throw new Error('b-router-outlet requires a router on the Brio app.');
+    if (!runtime.router) throw createError('b-router-outlet requires a router on the Brio app.');
     const router = runtime.router;
     let childScope: Scope | undefined;
     let childElement: Element | undefined;
@@ -25,7 +33,7 @@ export function mountRouterOutlet(
         try {
             childScope?.dispose();
         } finally {
-            childElement?.remove();
+            removeElement(childElement);
         }
     });
     effect(() => {
@@ -33,13 +41,13 @@ export function mountRouterOutlet(
         try {
             childScope?.dispose();
         } finally {
-            childElement?.remove();
+            removeElement(childElement);
         }
         childScope = undefined;
         childElement = undefined;
         if (!route) return;
         const definition = runtime.components.get(route.component);
-        if (!definition) throw new Error(`No component registered for route "${route.component}".`);
+        if (!definition) throw createError(`No component registered for route "${route.component}".`);
         const el = document.createElement(route.component);
         childElement = el;
         childScope = createScope();
@@ -80,8 +88,8 @@ export function hydrateChildren(
     runtime: DomRuntime,
 ): void {
     withHydration(element, () => {
-        for (const child of Array.from(element.childNodes)) {
-            if (child.parentNode === element && !getNodeOwner(child)) hydrateNode(child, context, runtime);
+        for (const child of arrayFrom(getChildNodes(element))) {
+            if (getParent(child) === element && !getNodeOwner(child)) hydrateNode(child, context, runtime);
         }
     });
 }
@@ -103,7 +111,7 @@ export function hydrateNode(
     parentContext: Record<PropertyKey, any>,
     runtime: DomRuntime,
 ): void {
-    if (getNodeOwner(node)) throw new Error('Cannot hydrate an already hydrated Brio node.');
+    if (getNodeOwner(node)) throw createError('Cannot hydrate an already hydrated Brio node.');
     parentContext = takeProjectedContext(node) ?? parentContext;
     if (!parentContext.$ref) parentContext = createExpressionScope({ $ref: createRefs() }, parentContext);
     const scope = createScope();
@@ -118,11 +126,11 @@ function hydrateOwnedNode(
     parentContext: Record<PropertyKey, any>,
     runtime: DomRuntime,
 ): void {
-    if (node.nodeType === Node.TEXT_NODE) {
+    if (getNodeType(node) === Node.TEXT_NODE) {
         hydrateTextNode(node as Text, parentContext);
         return;
     }
-    if (node.nodeType !== Node.ELEMENT_NODE) return;
+    if (getNodeType(node) !== Node.ELEMENT_NODE) return;
     const element = node as Element;
 
     // 1. b-ignore
@@ -132,17 +140,17 @@ function hydrateOwnedNode(
         return;
     }
 
-    const conditionalAttributes = Array.from(element.attributes).filter(attribute =>
-        ['b-if', 'b-else-if', 'b-else'].includes(extractModifiers(attribute.name).baseName));
-    if (conditionalAttributes.length > 1)
-        throw new SyntaxError('An element can have only one conditional directive.');
+    const conditionalAttributes = arrayFrom(element[ATTRIBUTES]).filter(attribute =>
+        includesItem(['b-if', 'b-else-if', 'b-else'], extractModifiers(attribute.name).baseName));
+    if (getLength(conditionalAttributes) > 1)
+        throw createSyntaxError('An element can have only one conditional directive.');
     const ifAttr = conditionalAttributes[0];
     if (ifAttr && extractModifiers(ifAttr.name).baseName === 'b-if') {
         handleIf(element, ifAttr.value, extractModifiers(ifAttr.name).modifiers, parentContext, runtime, hydrateNode);
         return;
     }
     if (ifAttr)
-        throw new SyntaxError('b-else-if and b-else require an adjacent preceding b-if branch.');
+        throw createSyntaxError('b-else-if and b-else require an adjacent preceding b-if branch.');
 
     let context = createExpressionScope({
         $el: element,
@@ -151,57 +159,57 @@ function hydrateOwnedNode(
         ...(runtime.root ? { $insert: createInsert(runtime) } : {}),
     }, parentContext);
 
-    const dataAttr = element.getAttribute('b-data');
+    const dataAttr = getAttribute(element, 'b-data');
     if (dataAttr !== null) {
         context = handleData(element, dataAttr, {}, context);
         context = createExpressionScope({ $ref: createRefs() }, context);
-        element.removeAttribute('b-data');
+        removeAttribute(element, 'b-data');
     }
 
     getNodeOwner(element)!.context = context;
 
-    const forAttr = element.getAttribute('b-for');
+    const forAttr = getAttribute(element, 'b-for');
     if (forAttr !== null) {
         const { modifiers } = extractModifiers('b-for');
         handleFor(element, forAttr, modifiers, context, runtime, hydrateNode);
         return;
     }
 
-    const idAttr = element.getAttribute('b-id');
+    const idAttr = getAttribute(element, 'b-id');
     if (idAttr !== null) {
         context = handleId(element, idAttr, {}, context);
-        element.removeAttribute('b-id');
+        removeAttribute(element, 'b-id');
         getNodeOwner(element)!.context = context;
     }
 
-    const provideAttr = element.getAttribute('b-provide');
+    const provideAttr = getAttribute(element, 'b-provide');
     if (provideAttr !== null) {
         context = handleProvide(provideAttr, context);
-        element.removeAttribute('b-provide');
+        removeAttribute(element, 'b-provide');
         getNodeOwner(element)!.context = context;
     }
 
-    const templateAttr = element.getAttribute('b-template');
-    if (Array.from(element.attributes).some(attribute =>
-        ['b-text', 'text', 'b-html', 'html', 'b-router-outlet'].includes(extractModifiers(attribute.name).baseName)))
+    const templateAttr = getAttribute(element, 'b-template');
+    if (arrayFrom(element[ATTRIBUTES]).some(attribute =>
+        includesItem(['b-text', 'text', 'b-html', 'html', 'b-router-outlet'], extractModifiers(attribute.name).baseName)))
         getNodeOwner(element)!.controlsChildren = true;
-    const refAttributes = Array.from(element.attributes).filter(attribute =>
-        extractModifiers(attribute.name).baseName === 'b-ref' || attribute.name.startsWith('b-ref-'));
-    if (refAttributes.length) {
-        if (refAttributes.length !== 1 || refAttributes[0].name !== 'b-ref')
-            throw new SyntaxError('b-ref does not support arguments or modifiers.');
+    const refAttributes = arrayFrom(element[ATTRIBUTES]).filter(attribute =>
+        extractModifiers(attribute.name).baseName === 'b-ref' || startsWith(attribute.name, 'b-ref-'));
+    if (getLength(refAttributes)) {
+        if (getLength(refAttributes) !== 1 || refAttributes[0].name !== 'b-ref')
+            throw createSyntaxError('b-ref does not support arguments or modifiers.');
         const name = refAttributes[0].value.trim();
-        if (!name) throw new SyntaxError('b-ref requires a nonempty literal name.');
-        if (templateAttr !== null || element.tagName.toLowerCase() === 'template')
-            throw new TypeError('b-ref requires a concrete element, not a template wrapper.');
+        if (!name) throw createSyntaxError('b-ref requires a nonempty literal name.');
+        if (templateAttr !== null || element.tagName.toLowerCase() === TEMPLATE)
+            throw createTypeError('b-ref requires a concrete element, not a template wrapper.');
         registerRef(context.$ref, name, element);
-        element.removeAttribute('b-ref');
+        removeAttribute(element, 'b-ref');
     }
     if (templateAttr !== null) {
         handleTemplate(element, templateAttr, {}, context, runtime, hydrateNode);
-        for (const attribute of Array.from(element.attributes)) {
+        for (const attribute of arrayFrom(element[ATTRIBUTES])) {
             const { baseName, modifiers } = extractModifiers(attribute.name);
-            if (baseName === 'b-teleport' || baseName === 'teleport')
+            if (baseName === B_TELEPORT || baseName === TELEPORT)
                 handleTeleport(element, attribute.value, modifiers, context);
             else if (baseName === 'b-effect' || baseName === 'effect')
                 handleEffect(element, attribute.value, modifiers, context);
@@ -220,17 +228,17 @@ function hydrateOwnedNode(
 
     let hasText = false;
     let hasHtml = false;
-    const transitionAttr = Array.from(element.attributes)
-        .find(attribute => ['b-transition', 'transition'].includes(extractModifiers(attribute.name).baseName));
+    const transitionAttr = arrayFrom(element[ATTRIBUTES])
+        .find(attribute => includesItem(['b-transition', 'transition'], extractModifiers(attribute.name).baseName));
     if (transitionAttr) prepareTransition(element, transitionAttr.value);
 
     // Scan element attributes
-    for (const attribute of Array.from(element.attributes)) {
+    for (const attribute of arrayFrom(element[ATTRIBUTES])) {
         const attrName = attribute.name;
         const attrValue = attribute.value;
         const { baseName, modifiers } = extractModifiers(attrName);
 
-        if (baseName.startsWith('b-on-') || baseName.startsWith('on-')) {
+        if (startsWith(baseName, 'b-on-') || startsWith(baseName, 'on-')) {
             if (baseName.includes('-enter') || baseName.includes('-exit')) {
                 handleIntersection(element, attrName, attrValue, modifiers, context);
             } else if (baseName.includes('-addednodes') || baseName.includes('-removednodes') || baseName.includes('-attrs') || baseName.includes('-text')) {
@@ -240,42 +248,42 @@ function hydrateOwnedNode(
             } else {
                 handleOn(element, baseName, attrValue, modifiers, context);
             }
-            element.removeAttribute(attrName);
-        } else if (baseName.startsWith('b-bind-') || baseName.startsWith('bind-')) {
+            removeAttribute(element, attrName);
+        } else if (startsWith(baseName, 'b-bind-') || startsWith(baseName, 'bind-')) {
             handleBind(element, baseName, attrValue, modifiers, context);
-            element.removeAttribute(attrName);
+            removeAttribute(element, attrName);
         } else if (baseName === 'b-model' || baseName === 'model') {
             handleModel(element, attrValue, modifiers, context);
-            element.removeAttribute(attrName);
+            removeAttribute(element, attrName);
         } else if (baseName === 'b-text' || baseName === 'text') {
             getNodeOwner(element)!.controlsChildren = true;
             handleText(element, attrValue, context);
-            element.removeAttribute(attrName);
+            removeAttribute(element, attrName);
             hasText = true;
         } else if (baseName === 'b-html' || baseName === 'html') {
             getNodeOwner(element)!.controlsChildren = true;
             handleHtml(element, attrValue, modifiers, context, runtime, hydrateChildren);
-            element.removeAttribute(attrName);
+            removeAttribute(element, attrName);
             hasHtml = true;
         } else if (baseName === 'b-mask' || baseName === 'mask') {
             handleMask(element, attrValue, modifiers, context);
-            element.removeAttribute(attrName);
-        } else if (baseName === 'b-teleport' || baseName === 'teleport') {
+            removeAttribute(element, attrName);
+        } else if (baseName === B_TELEPORT || baseName === TELEPORT) {
             handleTeleport(element, attrValue, modifiers, context);
-            element.removeAttribute(attrName);
+            removeAttribute(element, attrName);
         } else if (baseName === 'b-transition' || baseName === 'transition') {
             handleTransition(element, attrValue, modifiers, context);
-            element.removeAttribute(attrName);
+            removeAttribute(element, attrName);
         } else if (baseName === 'b-effect' || baseName === 'effect') {
             handleEffect(element, attrValue, modifiers, context);
-            element.removeAttribute(attrName);
+            removeAttribute(element, attrName);
         } else if (baseName === 'b-script') {
             handleScript(element, attrValue, modifiers, context);
-            element.removeAttribute(attrName);
+            removeAttribute(element, attrName);
         } else if (baseName === 'b-router-outlet') {
             getNodeOwner(element)!.controlsChildren = true;
             mountRouterOutlet(element, context, runtime, hydrateNode);
-            element.removeAttribute(attrName);
+            removeAttribute(element, attrName);
             return;
         }
     }

@@ -1,8 +1,10 @@
-import { e as evaluate, a as emptyContextValues, b as createExpressionScope, d as execute, f as assign, g as createProvidedValues, h as evaluateFunction, c as copyContextValues } from "./context-values-BA09Z6wf.js";
-import { o as onDispose, a as combinedError, d as getCurrentScope, f as onCleanup, b as batch, h as createScope, e as effect, c as causedError, n as notifyRootMounted, j as notifyAppDisposed, k as notifyAppCreated, l as notifyRootUnmounted } from "./effect-DGhE0oQi.js";
-import { s } from "./effect-DGhE0oQi.js";
-import { s as state, a as track, t as trigger } from "./state-FLvgaPZh.js";
-import { b } from "./state-FLvgaPZh.js";
+import { R as ReflectApi, $ as $PARENT, c as createTypeError, d as deleteItem, b as createError, g as getLength, T as TELEPORT, a as arrayFrom, l as ownKeys, G as GET_OWN_PROPERTY_DESCRIPTOR, o as objectConstructor, n as createSyntaxError, A as ATTRIBUTES, s as startsWith, t as TEMPLATE, j as isInstanceOf, f as isObjectType, p as includesItem, r as removeElement, B as B_TELEPORT, m as isString, k as isArray, e as objectEntries, q as objectKeys, h as isNumber, i as isFunction, u as isBoolean } from "./native-BSek5F0c.js";
+import { b as getChildNodes, a as addEventListener, r as removeEventListener, c as removeAttribute, g as getAttribute, d as removeChild, e as getParent, f as getOwnerDocument, h as getNextSibling, i as insertBefore, j as getNodeType } from "./native-PGRcyn9O.js";
+import { e as evaluate, a as emptyContextValues, b as createExpressionScope, d as execute, f as assign, g as createProvidedValues, h as evaluateFunction, c as copyContextValues } from "./context-values-BpjC5FcG.js";
+import { o as onDispose, a as combinedError, d as getCurrentScope, f as onCleanup, b as batch, h as createScope, e as effect, c as causedError, n as notifyRootMounted, j as notifyAppDisposed, k as notifyAppCreated, l as notifyRootUnmounted } from "./effect-DIImvjBh.js";
+import { s } from "./effect-DIImvjBh.js";
+import { s as state, a as track, t as trigger } from "./state-gsWplTCq.js";
+import { b } from "./state-gsWplTCq.js";
 import { computed, resource } from "./reactivity.js";
 import { createRouter } from "./router-entry.js";
 import { persist } from "./persistence-entry.js";
@@ -10,33 +12,33 @@ import { createStepEngine } from "./step-entry.js";
 import { validate } from "./forms-entry.js";
 import { moneyMask } from "./money-mask-entry.js";
 import { HttpError, http } from "./http-entry.js";
-import { d, a, e, i } from "./devtools-CF9uSawU.js";
+import { d, a, e, i } from "./devtools-9rkJho94.js";
 const sources = /* @__PURE__ */ new WeakMap();
 function createScopedState(source, parent) {
   const observed = state(sources.get(source) ?? source);
-  if (Reflect.has(observed, "$parent"))
-    throw new TypeError("$parent is reserved for Brio scope ancestry.");
+  if (ReflectApi.has(observed, $PARENT))
+    throw createTypeError($PARENT + " is reserved for Brio scope ancestry.");
   const readOnly = () => {
-    throw new TypeError("Brio scope $parent is read-only.");
+    throw createTypeError("Brio scope $parent is read-only.");
   };
   const view = new Proxy(observed, {
     get(target, key, receiver) {
-      return key === "$parent" ? parent : Reflect.get(target, key, receiver);
+      return key === $PARENT ? parent : ReflectApi.get(target, key, receiver);
     },
     has(target, key) {
-      return key === "$parent" || Reflect.has(target, key);
+      return key === $PARENT || ReflectApi.has(target, key);
     },
     set(target, key, value, receiver) {
-      if (key === "$parent") return readOnly();
-      return Reflect.set(target, key, value, receiver);
+      if (key === $PARENT) return readOnly();
+      return ReflectApi.set(target, key, value, receiver);
     },
     deleteProperty(target, key) {
-      if (key === "$parent") return readOnly();
-      return Reflect.deleteProperty(target, key);
+      if (key === $PARENT) return readOnly();
+      return ReflectApi.deleteProperty(target, key);
     },
     defineProperty(target, key, descriptor) {
-      if (key === "$parent") return readOnly();
-      return Reflect.defineProperty(target, key, descriptor);
+      if (key === $PARENT) return readOnly();
+      return ReflectApi.defineProperty(target, key, descriptor);
     }
   });
   sources.set(view, observed);
@@ -55,7 +57,7 @@ function withHydration(node, hydrate) {
   try {
     hydrate();
   } finally {
-    pendingHydration.delete(node);
+    deleteItem(pendingHydration, node);
   }
   callbacks.forEach((callback) => callback());
 }
@@ -64,11 +66,11 @@ function getNodeOwner(node) {
 }
 function ownNode(node, context, runtime) {
   const scope = getCurrentScope();
-  if (!scope) throw new Error("DOM hydration requires an active Brio scope.");
+  if (!scope) throw createError("DOM hydration requires an active Brio scope.");
   const owner = { context, runtime, scope };
   owners.set(node, owner);
   onDispose(scope, () => {
-    if (owners.get(node) === owner) owners.delete(node);
+    if (owners.get(node) === owner) deleteItem(owners, node);
   });
   return owner;
 }
@@ -78,13 +80,13 @@ function disposeNodes(nodes) {
   const visit = (node) => {
     const owner = owners.get(node);
     if (owner) scopes.add(owner.scope);
-    visitChildren(Array.from(node.childNodes));
+    visitChildren(arrayFrom(getChildNodes(node)));
   };
   const visitChildren = (children) => {
     var _a;
-    for (let index = 0; index < children.length; index++) {
+    for (let index = 0; index < getLength(children); index++) {
       const child = children[index];
-      const portal = (_a = owners.get(child)) == null ? void 0 : _a.teleport;
+      const portal = (_a = owners.get(child)) == null ? void 0 : _a[TELEPORT];
       if (portal && !selected(portal.source)) {
         const end = children.indexOf(portal.end, index);
         if (end !== -1) {
@@ -104,31 +106,31 @@ function disposeNodes(nodes) {
       errors.push(error);
     }
   }
-  if (errors.length) throw combinedError("Brio DOM content cleanup failed.", errors);
+  if (getLength(errors)) throw combinedError("Brio DOM content cleanup failed.", errors);
 }
 const registries = /* @__PURE__ */ new WeakMap();
 const keys = Symbol("brio.refs");
 function createRefs() {
-  const values = /* @__PURE__ */ Object.create(null);
+  const values = objectConstructor.create(null);
   const readOnly = () => {
-    throw new TypeError("$ref names are read-only.");
+    throw createTypeError("$ref names are read-only.");
   };
   const refs = new Proxy(values, {
     get(target, key) {
       track(target, key);
-      return Reflect.get(target, key);
+      return ReflectApi.get(target, key);
     },
     has(target, key) {
       track(target, key);
-      return Reflect.has(target, key);
+      return ReflectApi.has(target, key);
     },
     ownKeys(target) {
       track(target, keys);
-      return Reflect.ownKeys(target);
+      return ownKeys(target);
     },
-    getOwnPropertyDescriptor(target, key) {
+    [GET_OWN_PROPERTY_DESCRIPTOR](target, key) {
       track(target, key);
-      const descriptor = Reflect.getOwnPropertyDescriptor(target, key);
+      const descriptor = ReflectApi[GET_OWN_PROPERTY_DESCRIPTOR](target, key);
       return descriptor && { ...descriptor, writable: false };
     },
     set: readOnly,
@@ -142,9 +144,9 @@ function createRefs() {
 }
 function registerRef(refs, name, element) {
   const values = registries.get(refs);
-  if (!values) throw new TypeError("b-ref requires a Brio ref registry.");
-  if (Object.prototype.hasOwnProperty.call(values, name))
-    throw new SyntaxError(`Duplicate b-ref name "${name}" in the same scope.`);
+  if (!values) throw createTypeError("b-ref requires a Brio ref registry.");
+  if (objectConstructor.prototype.hasOwnProperty.call(values, name))
+    throw createSyntaxError(`Duplicate b-ref name "${name}" in the same scope.`);
   const notify = () => batch(() => {
     trigger(values, name, "set");
     trigger(values, keys, "set");
@@ -160,7 +162,7 @@ function registerRef(refs, name, element) {
 const projectedContexts = /* @__PURE__ */ new WeakMap();
 function takeProjectedContext(node) {
   const context = projectedContexts.get(node);
-  projectedContexts.delete(node);
+  deleteItem(projectedContexts, node);
   return context;
 }
 function cloneProjectedNode(node) {
@@ -168,47 +170,46 @@ function cloneProjectedNode(node) {
   const copy = (source, target) => {
     const context = projectedContexts.get(source);
     if (context) projectedContexts.set(target, context);
-    const children = Array.from(target.childNodes);
-    Array.from(source.childNodes).forEach((child, index) => copy(child, children[index]));
-    if (source instanceof HTMLTemplateElement && target instanceof HTMLTemplateElement)
+    const children = arrayFrom(getChildNodes(target));
+    arrayFrom(getChildNodes(source)).forEach((child, index) => copy(child, children[index]));
+    if (isInstanceOf(source, HTMLTemplateElement) && isInstanceOf(target, HTMLTemplateElement))
       copy(source.content, target.content);
   };
   copy(node, clone);
   return clone;
 }
 function findSlots(root) {
-  return Array.from(root.querySelectorAll("slot, template[b-template]")).flatMap((node) => node instanceof HTMLTemplateElement ? findSlots(node.content) : [node]);
+  return arrayFrom(root.querySelectorAll("slot, template[b-template]")).flatMap((node) => isInstanceOf(node, HTMLTemplateElement) ? findSlots(node.content) : [node]);
 }
 function fillSlots(host, template, context) {
-  var _a;
   const slots = /* @__PURE__ */ new Map();
-  for (const child of Array.from(host.childNodes)) {
-    const name = child instanceof Element ? child.getAttribute("slot") ?? "" : "";
+  for (const child of arrayFrom(getChildNodes(host))) {
+    const name = isInstanceOf(child, Element) ? getAttribute(child, "slot") ?? "" : "";
     const content = slots.get(name) ?? [];
     content.push(child);
     slots.set(name, content);
   }
   for (const outlet of findSlots(template)) {
-    const name = outlet.getAttribute("name") ?? "";
+    const name = getAttribute(outlet, "name") ?? "";
     const content = slots.get(name);
     if (!(content == null ? void 0 : content.length)) {
-      outlet.replaceWith(...Array.from(outlet.childNodes));
+      outlet.replaceWith(...arrayFrom(getChildNodes(outlet)));
       continue;
     }
     for (const node of content) projectedContexts.set(node, context);
     outlet.replaceWith(...content);
-    slots.delete(name);
+    deleteItem(slots, name);
   }
   for (const remaining of slots.values())
-    for (const node of remaining) (_a = node.parentNode) == null ? void 0 : _a.removeChild(node);
+    for (const node of remaining) removeChild(getParent(node), node);
 }
 function mountComponent(element, definition, context, runtime, hydrateNodeFn) {
   const propsObject = {};
-  for (const attribute of Array.from(element.attributes)) {
-    if (!attribute.name.startsWith("b-")) propsObject[attribute.name] = attribute.value;
+  for (const attribute of arrayFrom(element[ATTRIBUTES])) {
+    if (!startsWith(attribute.name, "b-")) propsObject[attribute.name] = attribute.value;
   }
-  const propBindings = Array.from(element.attributes).filter((attribute) => attribute.name.startsWith("b-bind-") || attribute.name.startsWith("bind-")).map((attribute) => {
-    const raw = attribute.name.startsWith("b-bind-") ? attribute.name.slice("b-bind-".length) : attribute.name.slice("bind-".length);
+  const propBindings = arrayFrom(element[ATTRIBUTES]).filter((attribute) => startsWith(attribute.name, "b-bind-") || startsWith(attribute.name, "bind-")).map((attribute) => {
+    const raw = startsWith(attribute.name, "b-bind-") ? attribute.name.slice(getLength("b-bind-")) : attribute.name.slice(getLength("bind-"));
     return {
       name: raw.split(".")[0],
       expression: attribute.value
@@ -220,23 +221,23 @@ function mountComponent(element, definition, context, runtime, hydrateNodeFn) {
   onCleanup(() => componentScope.dispose());
   const $emit = (name, detail) => {
     if (!/^[a-z][a-z0-9-]*$/.test(name))
-      throw new TypeError(`Invalid component event name "${name}".`);
+      throw createTypeError(`Invalid component event name "${name}".`);
     element.dispatchEvent(new CustomEvent(name, { detail, bubbles: true }));
   };
   componentScope.run(() => {
     var _a;
-    for (const attribute of Array.from(element.attributes)) {
-      if (attribute.name.startsWith("b-on-") || attribute.name.startsWith("on-")) {
-        const prefix = attribute.name.startsWith("b-on-") ? "b-on-" : "on-";
-        const eventPart = attribute.name.slice(prefix.length).split(".")[0];
+    for (const attribute of arrayFrom(element[ATTRIBUTES])) {
+      if (startsWith(attribute.name, "b-on-") || startsWith(attribute.name, "on-")) {
+        const prefix = startsWith(attribute.name, "b-on-") ? "b-on-" : "on-";
+        const eventPart = attribute.name.slice(getLength(prefix)).split(".")[0];
         if (!/^[a-z-]+$/.test(eventPart))
-          throw new SyntaxError(`Invalid component event directive "${attribute.name}".`);
+          throw createSyntaxError(`Invalid component event directive "${attribute.name}".`);
         const expression = attribute.value;
         const handler = (event) => batch(() => execute(expression, createExpressionScope({ $event: event }, context), event));
-        element.addEventListener(eventPart, handler);
-        onCleanup(() => element.removeEventListener(eventPart, handler));
-      } else if (attribute.name.startsWith("b-") && !attribute.name.startsWith("b-bind-")) {
-        throw new Error(`Directive "${attribute.name}" is not supported on component hosts.`);
+        addEventListener(element, eventPart, handler);
+        onCleanup(() => removeEventListener(element, eventPart, handler));
+      } else if (startsWith(attribute.name, "b-") && !startsWith(attribute.name, "b-bind-")) {
+        throw createError(`Directive "${attribute.name}" is not supported on component hosts.`);
       }
     }
     for (const binding of propBindings)
@@ -266,17 +267,17 @@ function mountComponent(element, definition, context, runtime, hydrateNodeFn) {
         $props[binding.name] = evaluate(binding.expression, context);
       });
     }
-    const template = document.createElement("template");
+    const template = document.createElement(TEMPLATE);
     template.innerHTML = definition.template;
     fillSlots(element, template.content, context);
     element.replaceChildren(template.content);
     withHydration(element, () => {
-      for (const child of Array.from(element.childNodes)) {
+      for (const child of arrayFrom(getChildNodes(element))) {
         hydrateNodeFn(child, componentContext, runtime);
       }
     });
-    for (const attribute of Array.from(element.attributes)) {
-      if (attribute.name.startsWith("b-")) element.removeAttribute(attribute.name);
+    for (const attribute of arrayFrom(element[ATTRIBUTES])) {
+      if (startsWith(attribute.name, "b-")) removeAttribute(element, attribute.name);
     }
   });
 }
@@ -293,18 +294,18 @@ function cancelTransition(element) {
   (_a = running.get(element)) == null ? void 0 : _a();
 }
 function transitionTimeout(element) {
-  const style = element.ownerDocument.defaultView.getComputedStyle(element);
+  const style = getOwnerDocument(element).defaultView.getComputedStyle(element);
   const milliseconds = (value) => parseFloat(value) * (value.trim().endsWith("ms") ? 1 : 1e3);
   const durations = style.transitionDuration.split(",").map(milliseconds);
   const delays = style.transitionDelay.split(",").map(milliseconds);
   return Math.max(0, ...style.transitionProperty.split(",").map(
-    (property, index) => property.trim() === "none" ? 0 : durations[index % durations.length] + delays[index % delays.length]
+    (property, index) => property.trim() === "none" ? 0 : durations[index % getLength(durations)] + delays[index % getLength(delays)]
   ));
 }
 function runTransition(element, name, phase, onDone) {
   const interrupted = running.has(element);
   cancelTransition(element);
-  const view = element.ownerDocument.defaultView;
+  const view = getOwnerDocument(element).defaultView;
   const classes = [`${name}-${phase}`, `${name}-${phase}-active`, `${name}-${phase}-to`];
   const pending = /* @__PURE__ */ new Set();
   let started = false;
@@ -319,11 +320,11 @@ function runTransition(element, name, phase, onDone) {
     view.cancelAnimationFrame(frame);
     view.cancelAnimationFrame(completionFrame);
     clearTimeout(timer);
-    element.removeEventListener("transitionrun", onRun);
-    element.removeEventListener("transitionend", onEnd);
-    element.removeEventListener("transitioncancel", onEnd);
+    removeEventListener(element, "transitionrun", onRun);
+    removeEventListener(element, "transitionend", onEnd);
+    removeEventListener(element, "transitioncancel", onEnd);
     element.classList.remove(...classes);
-    if (running.get(element) === cleanup) running.delete(element);
+    if (running.get(element) === cleanup) deleteItem(running, element);
   };
   const finish = () => {
     if (settled) return;
@@ -340,7 +341,7 @@ function runTransition(element, name, phase, onDone) {
   const onEnd = (event) => {
     const transition = event;
     if (!activated || !isOwnEvent(transition)) return;
-    pending.delete(transition.propertyName);
+    deleteItem(pending, transition.propertyName);
     if (started && pending.size === 0) {
       view.cancelAnimationFrame(completionFrame);
       completionFrame = view.requestAnimationFrame(() => {
@@ -349,9 +350,9 @@ function runTransition(element, name, phase, onDone) {
     }
   };
   running.set(element, cleanup);
-  element.addEventListener("transitionrun", onRun);
-  element.addEventListener("transitionend", onEnd);
-  element.addEventListener("transitioncancel", onEnd);
+  addEventListener(element, "transitionrun", onRun);
+  addEventListener(element, "transitionend", onEnd);
+  addEventListener(element, "transitioncancel", onEnd);
   const activate = () => {
     activated = true;
     element.classList.remove(classes[0]);
@@ -380,7 +381,7 @@ function handleTransition(element, expression, _modifiers, _context) {
   prepareTransition(element, expression);
   onCleanup(() => {
     cancelTransition(element);
-    names.delete(element);
+    deleteItem(names, element);
   });
   if (element.isConnected) {
     for (let ancestor = element; ancestor; ancestor = ancestor.parentElement) {
@@ -394,19 +395,19 @@ function trustedHTML(markup) {
   return { [trustedMarkup]: markup };
 }
 function isTrustedHTML(value) {
-  return value !== null && typeof value === "object" && trustedMarkup in value;
+  return value !== null && isObjectType(value) && trustedMarkup in value;
 }
 function getTrustedHTMLString(value) {
   return value[trustedMarkup];
 }
 function portalPosition({ target, placement }) {
   const sibling = placement === "before" || placement === "after";
-  const parent = sibling ? target.parentNode : target;
-  if (!parent || parent.nodeType !== Node.ELEMENT_NODE && parent.nodeType !== Node.DOCUMENT_FRAGMENT_NODE)
-    throw new Error("b-teleport placement requires an element or fragment container.");
+  const parent = sibling ? getParent(target) : target;
+  if (!parent || getNodeType(parent) !== Node.ELEMENT_NODE && getNodeType(parent) !== Node.DOCUMENT_FRAGMENT_NODE)
+    throw createError(B_TELEPORT + " placement requires an element or fragment container.");
   return {
     parent,
-    reference: placement === "before" ? target : placement === "after" ? target.nextSibling : placement === "prepend" ? target.firstChild : null
+    reference: placement === "before" ? target : placement === "after" ? getNextSibling(target) : placement === "prepend" ? target.firstChild : null
   };
 }
 function createDomRange(document2, name) {
@@ -424,17 +425,17 @@ function createDomRange(document2, name) {
   let resume;
   const detachPortal = (portal) => {
     const home = document2.createComment("brio:portal");
-    portal.start.parentNode.insertBefore(home, portal.start);
+    insertBefore(getParent(portal.start), home, portal.start);
     homes.set(portal, home);
     portal.detach();
   };
   const nodes = (includeAnchors = false) => {
     const result = [];
-    if (start.parentNode && start.parentNode === end.parentNode) {
-      let current = includeAnchors ? start : start.nextSibling;
+    if (getParent(start) && getParent(start) === getParent(end)) {
+      let current = includeAnchors ? start : getNextSibling(start);
       while (current && current !== end) {
         result.push(current);
-        current = current.nextSibling;
+        current = getNextSibling(current);
       }
       if (includeAnchors) result.push(end);
     }
@@ -451,61 +452,59 @@ function createDomRange(document2, name) {
     },
     nodes,
     moveBefore(parent, reference) {
-      const resuming = detached && parent.nodeType !== Node.DOCUMENT_FRAGMENT_NODE;
+      const resuming = detached && getNodeType(parent) !== Node.DOCUMENT_FRAGMENT_NODE;
       if (resuming && pendingRedirect && source) {
         if (destination) ({ parent, reference } = portalPosition(destination));
-        else if (source.parentNode) {
-          parent = source.parentNode;
-          reference = source.nextSibling;
+        else if (getParent(source)) {
+          parent = getParent(source);
+          reference = getNextSibling(source);
         }
-      } else if (resuming && resume && (!resume.reference || resume.reference.parentNode === resume.parent)) {
+      } else if (resuming && resume && (!resume.reference || getParent(resume.reference) === resume.parent)) {
         ({ parent, reference } = resume);
       }
-      if (reference === start && parent === start.parentNode) return;
-      if (start.parentNode !== parent || end.nextSibling !== reference) {
+      if (reference === start && parent === getParent(start)) return;
+      if (getParent(start) !== parent || getNextSibling(end) !== reference) {
         const contents = nodes(true);
-        if (reference && contents.includes(reference))
-          throw new Error("Cannot move a Brio range inside itself.");
-        for (const node of contents) parent.insertBefore(node, reference);
+        if (reference && includesItem(contents, reference))
+          throw createError("Cannot move a Brio range inside itself.");
+        for (const node of contents) insertBefore(parent, node, reference);
       }
       if (resuming) {
         detached = false;
         pendingRedirect = false;
         resume = void 0;
         for (const [portal, home] of homes) {
-          if (home.parentNode) portal.moveBefore(home.parentNode, home);
-          home.remove();
+          if (getParent(home)) portal.moveBefore(getParent(home), home);
+          removeElement(home);
         }
         homes.clear();
       }
     },
     detach() {
       if (!detached) {
-        if (source && destination && start.parentNode)
-          resume = { parent: start.parentNode, reference: end.nextSibling };
+        if (source && destination && getParent(start))
+          resume = { parent: getParent(start), reference: getNextSibling(end) };
         detached = true;
         portals.forEach(detachPortal);
       }
       this.moveBefore(document2.createDocumentFragment(), null);
     },
     remove() {
-      var _a;
       resume = void 0;
-      portals.forEach((portal) => portal.remove());
-      homes.forEach((home) => home.remove());
+      portals.forEach(removeElement);
+      homes.forEach(removeElement);
       homes.clear();
-      for (const node of nodes(true)) (_a = node.parentNode) == null ? void 0 : _a.removeChild(node);
+      for (const node of nodes(true)) removeChild(getParent(node), node);
     },
     addPortal(portal) {
       portals.add(portal);
       if (detached) detachPortal(portal);
     },
     removePortal(portal) {
-      var _a;
-      portals.delete(portal);
-      (_a = homes.get(portal)) == null ? void 0 : _a.remove();
-      homes.delete(portal);
-      portal.remove();
+      deleteItem(portals, portal);
+      removeElement(homes.get(portal));
+      deleteItem(homes, portal);
+      removeElement(portal);
     },
     redirect(next, home) {
       destination = next;
@@ -516,7 +515,7 @@ function createDomRange(document2, name) {
         if (destination) {
           const { parent, reference } = portalPosition(destination);
           this.moveBefore(parent, reference);
-        } else if (source.parentNode) this.moveBefore(source.parentNode, source.nextSibling);
+        } else if (getParent(source)) this.moveBefore(getParent(source), getNextSibling(source));
       }
     },
     onRedirect(callback) {
@@ -528,17 +527,17 @@ const outputs = /* @__PURE__ */ new WeakMap();
 function ownElementRange(element, context, runtime) {
   const existing = outputs.get(element);
   if (existing) return existing;
-  const parent = element.parentNode;
-  if (!parent) throw new Error("Brio rendered output requires an element with a parent node.");
-  const range = createDomRange(element.ownerDocument, "range");
-  parent.insertBefore(range.start, element);
-  parent.insertBefore(range.end, element.nextSibling);
+  const parent = getParent(element);
+  if (!parent) throw createError("Brio rendered output requires an element with a parent node.");
+  const range = createDomRange(getOwnerDocument(element), "range");
+  insertBefore(parent, range.start, element);
+  insertBefore(parent, range.end, getNextSibling(element));
   outputs.set(element, range);
   ownNode(range.start, context, runtime);
   ownNode(range.end, context, runtime);
   onCleanup(() => {
-    outputs.delete(element);
-    range.remove();
+    deleteItem(outputs, element);
+    removeElement(range);
   });
   return range;
 }
@@ -548,55 +547,55 @@ function createInsert(runtime) {
     var _a, _b;
     const root = runtime.root;
     if (!root || ((_a = getNodeOwner(root)) == null ? void 0 : _a.runtime) !== runtime)
-      throw new Error("$insert requires an active mounted Brio root.");
-    const node = typeof target === "string" ? root.matches(target) ? root : root.querySelector(target) : target;
-    if (!(node instanceof Node) || !root.contains(node) && ((_b = getNodeOwner(node)) == null ? void 0 : _b.runtime.root) !== root)
-      throw new TypeError("$insert target must resolve to a node inside this app root.");
+      throw createError("$insert requires an active mounted Brio root.");
+    const node = isString(target) ? root.matches(target) ? root : root.querySelector(target) : target;
+    if (!isInstanceOf(node, Node) || !root.contains(node) && ((_b = getNodeOwner(node)) == null ? void 0 : _b.runtime.root) !== root)
+      throw createTypeError("$insert target must resolve to a node inside this app root.");
     const targetOwner = getNodeOwner(node);
     if (targetOwner && targetOwner.runtime.app !== runtime.app)
-      throw new Error("$insert cannot target content owned by another Brio app.");
-    if (!options || typeof options !== "object" || Array.isArray(options))
-      throw new TypeError("$insert options must be an object.");
+      throw createError("$insert cannot target content owned by another Brio app.");
+    if (!options || !isObjectType(options) || isArray(options))
+      throw createTypeError("$insert options must be an object.");
     if (!placements.has(placement))
-      throw new TypeError(`Invalid $insert placement "${placement}".`);
+      throw createTypeError(`Invalid $insert placement "${placement}".`);
     const siblingPlacement = placement === "before" || placement === "after" || placement === "replaceWith";
     if (siblingPlacement && node === root)
-      throw new Error("$insert cannot insert beside or replace a mount root.");
+      throw createError("$insert cannot insert beside or replace a mount root.");
     if (placement === "replaceWith" && (targetOwner == null ? void 0 : targetOwner.structuralRoot))
-      throw new Error("$insert cannot replace a root managed by b-if or b-for; replace its enclosing container instead.");
-    const container = siblingPlacement ? node.parentNode : node;
-    if (!(container instanceof Element))
-      throw new TypeError("This $insert placement requires an element container.");
+      throw createError("$insert cannot replace a root managed by b-if or b-for; replace its enclosing container instead.");
+    const container = siblingPlacement ? getParent(node) : node;
+    if (!isInstanceOf(container, Element))
+      throw createTypeError("This $insert placement requires an element container.");
     const containerOwner = getNodeOwner(container);
     if (!containerOwner || containerOwner.runtime.app !== runtime.app || containerOwner.scope.disposed)
-      throw new Error("$insert destination has no active context owned by this app.");
+      throw createError("$insert destination has no active context owned by this app.");
     if (containerOwner.controlsChildren)
-      throw new Error("$insert cannot modify a container whose content is controlled by a directive.");
-    if (typeof content !== "string" && !(content instanceof Node))
-      throw new TypeError("$insert content must be an HTML string or a node to clone.");
-    const document2 = container.ownerDocument;
+      throw createError("$insert cannot modify a container whose content is controlled by a directive.");
+    if (!isString(content) && !isInstanceOf(content, Node))
+      throw createTypeError("$insert content must be an HTML string or a node to clone.");
+    const document2 = getOwnerDocument(container);
     const fragment = document2.createDocumentFragment();
     if (placement === "textContent") {
-      fragment.append(document2.createTextNode(typeof content === "string" ? content : content.textContent ?? ""));
-    } else if (typeof content === "string") {
-      const template = document2.createElement("template");
+      fragment.append(document2.createTextNode(isString(content) ? content : content.textContent ?? ""));
+    } else if (isString(content)) {
+      const template = document2.createElement(TEMPLATE);
       template.innerHTML = getTrustedHTMLString(trustedHTML(content));
       fragment.append(template.content);
     } else {
       const supportedTypes = [Node.ELEMENT_NODE, Node.TEXT_NODE, Node.COMMENT_NODE, Node.DOCUMENT_FRAGMENT_NODE];
-      if (!supportedTypes.includes(content.nodeType))
-        throw new TypeError("$insert can clone elements, text, comments, or document fragments.");
+      if (!includesItem(supportedTypes, getNodeType(content)))
+        throw createTypeError("$insert can clone elements, text, comments, or document fragments.");
       fragment.append(document2.importNode(content, true));
     }
     const context = options.data === void 0 ? containerOwner.context : createExpressionScope({
       $data: createScopedState(options.data, containerOwner.context.$data)
     }, containerOwner.context);
-    const previous = placement === "replaceWith" ? [node] : placement === "replaceChildren" || placement === "textContent" ? Array.from(container.childNodes) : [];
-    const reference = placement === "before" ? node : placement === "after" || placement === "replaceWith" ? node.nextSibling : placement === "prepend" ? container.firstChild : null;
+    const previous = placement === "replaceWith" ? [node] : placement === "replaceChildren" || placement === "textContent" ? arrayFrom(getChildNodes(container)) : [];
+    const reference = placement === "before" ? node : placement === "after" || placement === "replaceWith" ? getNextSibling(node) : placement === "prepend" ? container.firstChild : null;
     disposeNodes(previous);
     const range = createDomRange(document2, "insert");
     const { start, end } = range;
-    const children = Array.from(fragment.childNodes);
+    const children = arrayFrom(getChildNodes(fragment));
     fragment.prepend(start);
     fragment.append(end);
     const scope = createScope(containerOwner.scope);
@@ -618,18 +617,15 @@ function createInsert(runtime) {
       try {
         disposeNodes(current);
       } finally {
-        range.remove();
+        removeElement(range);
       }
     });
     try {
       if (placement === "replaceChildren" || placement === "textContent") {
         container.replaceChildren(fragment);
       } else {
-        container.insertBefore(fragment, (reference == null ? void 0 : reference.parentNode) === container ? reference : null);
-        previous.forEach((child) => {
-          var _a2;
-          return (_a2 = child.parentNode) == null ? void 0 : _a2.removeChild(child);
-        });
+        insertBefore(container, fragment, (reference == null ? void 0 : reference.parentNode) === container ? reference : null);
+        previous.forEach((child) => removeChild(getParent(child), child));
       }
       scope.run(() => {
         ownNode(start, context, containerOwner.runtime);
@@ -637,13 +633,13 @@ function createInsert(runtime) {
         if (placement !== "textContent") {
           withHydration(container, () => {
             for (const child of children)
-              if (child.parentNode === container) hydrateNode(child, context, containerOwner.runtime);
+              if (getParent(child) === container) hydrateNode(child, context, containerOwner.runtime);
           });
         }
       });
     } catch (error) {
       try {
-        handle.remove();
+        removeElement(handle);
       } catch (cleanupError) {
         throw combinedError("Brio insertion and cleanup both failed.", [error, cleanupError]);
       }
@@ -665,32 +661,32 @@ const setBoundValue = (element, name, value, forceProp = false) => {
   if (name === "class") {
     let staticNames = staticClasses.get(element);
     if (!staticNames) {
-      staticNames = new Set((element.getAttribute("class") ?? "").split(/\s+/).filter(Boolean));
+      staticNames = new Set((getAttribute(element, "class") ?? "").split(/\s+/).filter(Boolean));
       staticClasses.set(element, staticNames);
     }
     const currentDynamic = /* @__PURE__ */ new Set();
-    if (typeof value === "string")
+    if (isString(value))
       value.split(/\s+/).filter(Boolean).forEach((className) => currentDynamic.add(className));
-    else if (Array.isArray(value))
+    else if (isArray(value))
       value.filter(Boolean).forEach((className) => String(className).split(/\s+/).filter(Boolean).forEach((name2) => currentDynamic.add(name2)));
-    else if (value && typeof value === "object") {
-      for (const [className, enabled] of Object.entries(value))
+    else if (value && isObjectType(value)) {
+      for (const [className, enabled] of objectEntries(value))
         if (enabled) className.split(/\s+/).filter(Boolean).forEach((name2) => currentDynamic.add(name2));
     }
     const combined = /* @__PURE__ */ new Set([...staticNames, ...currentDynamic]);
-    if (combined.size) element.setAttribute("class", Array.from(combined).join(" "));
-    else element.removeAttribute("class");
+    if (combined.size) element.setAttribute("class", arrayFrom(combined).join(" "));
+    else removeAttribute(element, "class");
     return;
   }
-  if (name === "style" && value && typeof value === "object") {
+  if (name === "style" && value && isObjectType(value)) {
     const style = element.style;
     const previousProperties = dynamicStyles.get(element) ?? /* @__PURE__ */ new Set();
     const currentProperties = /* @__PURE__ */ new Set();
-    const properties = Object.entries(value);
+    const properties = objectEntries(value);
     for (const [property] of properties) {
       const normalized = property.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
       currentProperties.add(normalized);
-      previousProperties.delete(normalized);
+      deleteItem(previousProperties, normalized);
     }
     for (const property of previousProperties) style.removeProperty(property);
     for (const [property, propertyValue] of properties) {
@@ -705,7 +701,7 @@ const setBoundValue = (element, name, value, forceProp = false) => {
     dynamicStyles.set(element, currentProperties);
     return;
   }
-  if (forceProp || name in element && !name.startsWith("aria-") && !name.startsWith("data-")) {
+  if (forceProp || name in element && !startsWith(name, "aria-") && !startsWith(name, "data-")) {
     try {
       element[name] = value;
       return;
@@ -713,12 +709,12 @@ const setBoundValue = (element, name, value, forceProp = false) => {
       if (forceProp) throw causedError(`Unable to bind property "${name}" on <${element.tagName.toLowerCase()}>.`, error);
     }
   }
-  if (value === null || value === void 0 || value === false) element.removeAttribute(name);
+  if (value === null || value === void 0 || value === false) removeAttribute(element, name);
   else element.setAttribute(name, value === true ? "" : String(value));
 };
 function handleBind(element, attrName, expression, modifiers, context) {
-  const rawTarget = attrName.startsWith("b-bind-") ? attrName.slice("b-bind-".length) : attrName.slice("bind-".length);
-  if (!rawTarget) throw new SyntaxError(`Brio binding directive "${attrName}" has no target.`);
+  const rawTarget = startsWith(attrName, "b-bind-") ? attrName.slice(getLength("b-bind-")) : attrName.slice(getLength("bind-"));
+  if (!rawTarget) throw createSyntaxError(`Brio binding directive "${attrName}" has no target.`);
   const forceProp = Boolean(modifiers.prop);
   effect(() => {
     const value = evaluate(expression, context);
@@ -726,8 +722,8 @@ function handleBind(element, attrName, expression, modifiers, context) {
   });
 }
 function handleOn(element, attrName, expression, modifiers, context) {
-  const rawTarget = attrName.startsWith("b-on-") ? attrName.slice("b-on-".length) : attrName.slice("on-".length);
-  if (!rawTarget) throw new SyntaxError(`Brio event directive "${attrName}" has no event name.`);
+  const rawTarget = startsWith(attrName, "b-on-") ? attrName.slice(getLength("b-on-")) : attrName.slice(getLength("on-"));
+  if (!rawTarget) throw createSyntaxError(`Brio event directive "${attrName}" has no event name.`);
   let target = element;
   if (modifiers.outside) target = document;
   else if (modifiers.window) target = window;
@@ -762,22 +758,22 @@ function handleOn(element, attrName, expression, modifiers, context) {
     passive: Boolean(modifiers.passive),
     once: Boolean(modifiers.once)
   };
-  target.addEventListener(rawTarget, handler, options);
+  addEventListener(target, rawTarget, handler, options);
   onCleanup(() => {
     clearTimeout(debounceTimer);
     clearTimeout(throttleTimer);
-    target.removeEventListener(rawTarget, handler, options);
+    removeEventListener(target, rawTarget, handler, options);
   });
 }
 function handleModel(element, expression, modifiers, context) {
-  if (!(element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement || element instanceof HTMLSelectElement))
-    throw new TypeError("b-model can only be used on input, textarea, and select elements.");
+  if (!(isInstanceOf(element, HTMLInputElement) || isInstanceOf(element, HTMLTextAreaElement) || isInstanceOf(element, HTMLSelectElement)))
+    throw createTypeError("b-model can only be used on input, textarea, and select elements.");
   const isLazy = Boolean(modifiers.lazy);
   const isTrim = Boolean(modifiers.trim);
-  const isNumber = Boolean(modifiers.number);
+  const isNumber2 = Boolean(modifiers.number);
   const formatValue = (val) => {
     let res = isTrim ? val.trim() : val;
-    if (isNumber) {
+    if (isNumber2) {
       const parsed = parseFloat(res);
       return isNaN(parsed) ? res : parsed;
     }
@@ -786,9 +782,9 @@ function handleModel(element, expression, modifiers, context) {
   const updateState = () => {
     const input = element;
     const current = evaluate(expression, context);
-    if (element instanceof HTMLSelectElement && element.multiple) {
-      assign(expression, context, Array.from(element.selectedOptions, (option) => formatValue(option.value)));
-    } else if (input.type === "checkbox" && Array.isArray(current)) {
+    if (isInstanceOf(element, HTMLSelectElement) && element.multiple) {
+      assign(expression, context, arrayFrom(element.selectedOptions, (option) => formatValue(option.value)));
+    } else if (input.type === "checkbox" && isArray(current)) {
       const values = current.slice();
       const formattedVal = formatValue(input.value);
       const index = values.indexOf(formattedVal);
@@ -804,29 +800,29 @@ function handleModel(element, expression, modifiers, context) {
     }
   };
   const eventName = isLazy ? "change" : "input";
-  element.addEventListener(eventName, updateState);
-  if (!isLazy && (element instanceof HTMLInputElement && (element.type === "checkbox" || element.type === "radio") || element instanceof HTMLSelectElement)) {
-    element.addEventListener("change", updateState);
+  addEventListener(element, eventName, updateState);
+  if (!isLazy && (isInstanceOf(element, HTMLInputElement) && (element.type === "checkbox" || element.type === "radio") || isInstanceOf(element, HTMLSelectElement))) {
+    addEventListener(element, "change", updateState);
   }
   onCleanup(() => {
-    element.removeEventListener(eventName, updateState);
-    element.removeEventListener("change", updateState);
+    removeEventListener(element, eventName, updateState);
+    removeEventListener(element, "change", updateState);
   });
   const updateElement = (value) => {
     const input = element;
-    if (element instanceof HTMLSelectElement && element.multiple && Array.isArray(value)) {
+    if (isInstanceOf(element, HTMLSelectElement) && element.multiple && isArray(value)) {
       const selected = new Set(value.map(String));
-      for (const option of Array.from(element.options)) option.selected = selected.has(option.value);
+      for (const option of arrayFrom(element.options)) option.selected = selected.has(option.value);
     } else if (input.type === "checkbox") {
-      input.checked = Array.isArray(value) ? value.includes(input.value) : Boolean(value);
+      input.checked = isArray(value) ? includesItem(value, input.value) : Boolean(value);
     } else if (input.type === "radio") {
-      input.checked = Object.is(value, input.value);
+      input.checked = objectConstructor.is(value, input.value);
     } else if (element.value !== String(value ?? "")) {
       element.value = String(value ?? "");
     }
   };
   effect(() => updateElement(evaluate(expression, context)));
-  if (element instanceof HTMLSelectElement) {
+  if (isInstanceOf(element, HTMLSelectElement)) {
     const observer = new MutationObserver(() => updateElement(evaluate(expression, context)));
     observer.observe(element, { childList: true, subtree: true });
     onCleanup(() => observer.disconnect());
@@ -836,57 +832,57 @@ function extractModifiers(attrName) {
   const parts = attrName.split(".");
   const baseName = parts[0];
   const modifiers = {};
-  for (let i2 = 1; i2 < parts.length; i2++) {
+  for (let i2 = 1; i2 < getLength(parts); i2++) {
     modifiers[parts[i2]] = true;
   }
   return { baseName, modifiers };
 }
 function handleIf(element, expression, modifiers, context, runtime, hydrateNodeFn) {
-  const parent = element.parentNode;
-  if (!parent) throw new Error("b-if requires an element with a parent node.");
-  if (Object.keys(modifiers).some((name) => !["hide", "detach"].includes(name)))
-    throw new SyntaxError("b-if supports only .hide and .detach modifiers.");
+  const parent = getParent(element);
+  if (!parent) throw createError("b-if requires an element with a parent node.");
+  if (objectKeys(modifiers).some((name) => !includesItem(["hide", "detach"], name)))
+    throw createSyntaxError("b-if supports only .hide and .detach modifiers.");
   if (modifiers.hide && modifiers.detach)
-    throw new SyntaxError("b-if.hide and b-if.detach cannot be combined.");
+    throw createSyntaxError("b-if.hide and b-if.detach cannot be combined.");
   const preserved = Boolean(modifiers.hide || modifiers.detach);
   const branches = [];
   const originals = [];
   const addBranch = (node, condition) => {
-    const attributes = Array.from(node.attributes);
-    const conditional = attributes.filter((attribute) => ["b-if", "b-else-if", "b-else"].includes(extractModifiers(attribute.name).baseName));
-    if (conditional.length !== 1)
-      throw new SyntaxError("An element can have only one conditional directive.");
-    if (node !== element && Object.keys(extractModifiers(conditional[0].name).modifiers).length)
-      throw new SyntaxError("Conditional modifiers belong only on the leading b-if, not b-else-if or b-else.");
-    if (modifiers.hide && attributes.some((attribute) => ["b-for", "b-template", "template"].includes(extractModifiers(attribute.name).baseName)))
-      throw new SyntaxError("b-if.hide requires a concrete branch element; wrap b-for or b-template in another element or use .detach.");
+    const attributes = arrayFrom(node[ATTRIBUTES]);
+    const conditional = attributes.filter((attribute) => includesItem(["b-if", "b-else-if", "b-else"], extractModifiers(attribute.name).baseName));
+    if (getLength(conditional) !== 1)
+      throw createSyntaxError("An element can have only one conditional directive.");
+    if (node !== element && getLength(objectKeys(extractModifiers(conditional[0].name).modifiers)))
+      throw createSyntaxError("Conditional modifiers belong only on the leading b-if, not b-else-if or b-else.");
+    if (modifiers.hide && attributes.some((attribute) => includesItem(["b-for", "b-template", TEMPLATE], extractModifiers(attribute.name).baseName)))
+      throw createSyntaxError("b-if.hide requires a concrete branch element; wrap b-for or b-template in another element or use .detach.");
     const template = cloneProjectedNode(node);
-    template.removeAttribute(conditional[0].name);
+    removeAttribute(template, conditional[0].name);
     originals.push(node);
     branches.push({ template, expression: condition });
   };
   addBranch(element, expression);
   const nextBranch = (node) => {
     var _a;
-    let next = node.nextSibling;
-    while (next && (next.nodeType === Node.COMMENT_NODE || next.nodeType === Node.TEXT_NODE && !((_a = next.textContent) == null ? void 0 : _a.trim()))) next = next.nextSibling;
+    let next = getNextSibling(node);
+    while (next && (getNodeType(next) === Node.COMMENT_NODE || getNodeType(next) === Node.TEXT_NODE && !((_a = next.textContent) == null ? void 0 : _a.trim()))) next = getNextSibling(next);
     return (next == null ? void 0 : next.nodeType) === Node.ELEMENT_NODE ? next : null;
   };
   let sibling = nextBranch(element);
   let ended = false;
   while (sibling) {
-    const conditional = Array.from(sibling.attributes).find((attribute) => ["b-else-if", "b-else"].includes(extractModifiers(attribute.name).baseName));
+    const conditional = arrayFrom(sibling[ATTRIBUTES]).find((attribute) => includesItem(["b-else-if", "b-else"], extractModifiers(attribute.name).baseName));
     if (!conditional) break;
     if (ended)
-      throw new SyntaxError("b-else must be the last branch of a b-if chain.");
+      throw createSyntaxError("b-else must be the last branch of a b-if chain.");
     ended = extractModifiers(conditional.name).baseName === "b-else";
     addBranch(sibling, ended ? void 0 : conditional.value);
     sibling = nextBranch(sibling);
   }
   const output = ownElementRange(element, context, runtime);
   const placeholder = output.start;
-  element.remove();
-  originals.slice(1).forEach((node) => node.remove());
+  removeElement(element);
+  originals.slice(1).forEach(removeElement);
   let stopCondition;
   onCleanup(() => stopCondition == null ? void 0 : stopCondition());
   const selectBranch = () => branches.findIndex((candidate) => candidate.expression === void 0 || Boolean(evaluate(candidate.expression, context)));
@@ -896,18 +892,18 @@ function handleIf(element, expression, modifiers, context, runtime, hydrateNodeF
   let activeBranch = -1;
   let initialized = false;
   const createAnchor = () => {
-    const anchor = element.ownerDocument.createComment("brio:if:branch");
+    const anchor = getOwnerDocument(element).createComment("brio:if:branch");
     ownNode(anchor, context, runtime);
     anchors.push(anchor);
     return anchor;
   };
   const destroy = (instance) => {
-    instances.delete(instance.index);
+    deleteItem(instances, instance.index);
     cancelTransition(instance.element);
     try {
       instance.scope.dispose();
     } finally {
-      instance.output.remove();
+      removeElement(instance.output);
     }
   };
   onCleanup(() => {
@@ -919,9 +915,9 @@ function handleIf(element, expression, modifiers, context, runtime, hydrateNodeF
         errors.push(error);
       }
     }
-    anchors.forEach((anchor) => anchor.remove());
-    placeholder.remove();
-    if (errors.length) throw combinedError("Conditional branch cleanup failed.", errors);
+    anchors.forEach(removeElement);
+    removeElement(placeholder);
+    if (getLength(errors)) throw combinedError("Conditional branch cleanup failed.", errors);
   });
   const deactivate = (instance, animate) => {
     const current = instance.element;
@@ -940,8 +936,8 @@ function handleIf(element, expression, modifiers, context, runtime, hydrateNodeF
   const createInstance = (index, visible, anchor = placeholder) => {
     const current = cloneProjectedNode(branches[index].template);
     const scope = createScope();
-    const destination = visible || modifiers.hide ? anchor.parentNode : element.ownerDocument.createDocumentFragment();
-    destination.insertBefore(current, destination === anchor.parentNode ? anchor.nextSibling : null);
+    const destination = visible || modifiers.hide ? getParent(anchor) : getOwnerDocument(element).createDocumentFragment();
+    insertBefore(destination, current, destination === getParent(anchor) ? getNextSibling(anchor) : null);
     const range = scope.run(() => ownElementRange(current, context, runtime));
     const instance = {
       index,
@@ -957,7 +953,7 @@ function handleIf(element, expression, modifiers, context, runtime, hydrateNodeF
       instance.scope.run(() => hydrateNodeFn(current, context, runtime));
       const owner = getNodeOwner(current);
       if (owner) owner.structuralRoot = true;
-      if (preserved && range.start.isConnected && !output.nodes().includes(range.start)) {
+      if (preserved && range.start.isConnected && !includesItem(output.nodes(), range.start)) {
         instance.anchor = createAnchor();
         range.start.before(instance.anchor);
       }
@@ -978,8 +974,8 @@ function handleIf(element, expression, modifiers, context, runtime, hydrateNodeF
     if (!instance) return createInstance(index, true);
     const current = instance.element;
     if (modifiers.hide) current.style.display = instance.display;
-    else if (((_a = instance.output.start.parentNode) == null ? void 0 : _a.nodeType) === Node.DOCUMENT_FRAGMENT_NODE && instance.anchor.parentNode)
-      instance.output.moveBefore(instance.anchor.parentNode, instance.anchor.nextSibling);
+    else if (((_a = getParent(instance.output.start)) == null ? void 0 : _a.nodeType) === Node.DOCUMENT_FRAGMENT_NODE && getParent(instance.anchor))
+      instance.output.moveBefore(getParent(instance.anchor), getNextSibling(instance.anchor));
     const name = getTransitionName(current);
     if (animate && name) enterTransition(current, name);
     else cancelTransition(current);
@@ -993,9 +989,9 @@ function handleIf(element, expression, modifiers, context, runtime, hydrateNodeF
       let cursor = placeholder;
       for (const index of branches.keys()) {
         const anchor = createAnchor();
-        parent.insertBefore(anchor, cursor.nextSibling);
+        insertBefore(parent, anchor, getNextSibling(cursor));
         const instance = createInstance(index, index === selected, anchor);
-        cursor = instance.output.end.parentNode === parent ? instance.output.end : anchor;
+        cursor = getParent(instance.output.end) === parent ? instance.output.end : anchor;
       }
       activeBranch = selected;
       active = instances.get(selected);
@@ -1011,28 +1007,28 @@ function handleIf(element, expression, modifiers, context, runtime, hydrateNodeF
 }
 const enumerate = (value) => {
   if (value === null || value === void 0) return [];
-  if (Array.isArray(value) || typeof value === "object" && Symbol.iterator in value)
-    return Array.from(value, (item, index) => [index, item]);
-  if (typeof value === "object") return Object.entries(value);
-  if (typeof value === "number" && Number.isInteger(value) && value >= 0)
-    return Array.from({ length: value }, (_, index) => [index, index + 1]);
-  throw new TypeError("b-for expects an array, iterable, object, or non-negative integer.");
+  if (isArray(value) || isObjectType(value) && Symbol.iterator in value)
+    return arrayFrom(value, (item, index) => [index, item]);
+  if (isObjectType(value)) return objectEntries(value);
+  if (isNumber(value) && Number.isInteger(value) && value >= 0)
+    return arrayFrom({ length: value }, (_, index) => [index, index + 1]);
+  throw createTypeError("b-for expects an array, iterable, object, or non-negative integer.");
 };
 function handleFor(element, expression, _modifiers, context, runtime, hydrateNodeFn) {
-  const parent = element.parentNode;
-  if (!parent) throw new Error("b-for requires an element with a parent node.");
+  const parent = getParent(element);
+  if (!parent) throw createError("b-for requires an element with a parent node.");
   const parsed = /^\s*([A-Za-z_$][\w$]*)(?:\s*,\s*([A-Za-z_$][\w$]*))?\s+in\s+([\s\S]+)$/.exec(expression);
-  if (!parsed) throw new SyntaxError(`Invalid b-for expression "${expression}". Use "item in $data.items".`);
+  if (!parsed) throw createSyntaxError(`Invalid b-for expression "${expression}". Use "item in $data.items".`);
   const [, itemName, indexName = "$index", collectionExpression] = parsed;
-  if (itemName === "$parent" || indexName === "$parent")
-    throw new SyntaxError("$parent is reserved for Brio loop ancestry.");
-  const keyExpression = element.getAttribute("b-key");
+  if (itemName === $PARENT || indexName === $PARENT)
+    throw createSyntaxError($PARENT + " is reserved for Brio loop ancestry.");
+  const keyExpression = getAttribute(element, "b-key");
   const output = ownElementRange(element, context, runtime);
   const placeholder = output.start;
   const template = cloneProjectedNode(element);
-  template.removeAttribute("b-for");
-  template.removeAttribute("b-key");
-  element.remove();
+  removeAttribute(template, "b-for");
+  removeAttribute(template, "b-key");
+  removeElement(element);
   const rows = /* @__PURE__ */ new Map();
   const portals = [];
   let ordered = [];
@@ -1046,7 +1042,7 @@ function handleFor(element, expression, _modifiers, context, runtime, hydrateNod
       if (!destination) continue;
       let portal = portals.find((candidate) => candidate.destination.target === destination.target && candidate.destination.placement === destination.placement);
       if (!portal) {
-        const range = createDomRange(element.ownerDocument, "for:portal");
+        const range = createDomRange(getOwnerDocument(element), "for:portal");
         range.redirect(destination, output.end);
         portal = { destination, range };
         portals.push(portal);
@@ -1059,10 +1055,10 @@ function handleFor(element, expression, _modifiers, context, runtime, hydrateNod
     for (const portal of portals) references.set(portal.range, portal.range.end);
     for (const row of [...ordered].reverse()) {
       const destination = destinations.get(row) ?? output;
-      row.output.moveBefore(destination.end.parentNode, references.get(destination) ?? null);
+      row.output.moveBefore(getParent(destination.end), references.get(destination) ?? null);
       references.set(destination, row.output.start);
     }
-    for (let index = portals.length - 1; index >= 0; index--) {
+    for (let index = getLength(portals) - 1; index >= 0; index--) {
       if (!used.has(portals[index].range)) {
         output.removePortal(portals[index].range);
         portals.splice(index, 1);
@@ -1077,12 +1073,12 @@ function handleFor(element, expression, _modifiers, context, runtime, hydrateNod
       } catch (error) {
         errors.push(error);
       } finally {
-        row.output.remove();
+        removeElement(row.output);
       }
     }
     rows.clear();
-    placeholder.remove();
-    if (errors.length) throw new AggregateError(errors, "One or more repeated items failed to dispose.");
+    removeElement(placeholder);
+    if (getLength(errors)) throw new AggregateError(errors, "One or more repeated items failed to dispose.");
   });
   effect(() => {
     reconciling = true;
@@ -1095,17 +1091,17 @@ function handleFor(element, expression, _modifiers, context, runtime, hydrateNod
         const rowState = createScopedState(loopData, context.$for);
         const rowContext = createExpressionScope({ $for: rowState }, context);
         const evaluatedKey = keyExpression ? evaluate(keyExpression, rowContext) : index;
-        if (typeof evaluatedKey !== "string" && typeof evaluatedKey !== "number")
-          throw new TypeError("b-key must evaluate to a string or number.");
+        if (!isString(evaluatedKey) && !isNumber(evaluatedKey))
+          throw createTypeError("b-key must evaluate to a string or number.");
         if (nextKeys.has(evaluatedKey))
-          throw new Error(`Duplicate b-for key "${evaluatedKey}".`);
+          throw createError(`Duplicate b-for key "${evaluatedKey}".`);
         nextKeys.add(evaluatedKey);
         let row = rows.get(evaluatedKey);
         if (!row) {
           rowContext.$ref = createRefs();
           const rowElement = cloneProjectedNode(template);
           const rowScope = createScope();
-          output.end.parentNode.insertBefore(rowElement, output.end);
+          insertBefore(getParent(output.end), rowElement, output.end);
           const range = rowScope.run(() => ownElementRange(rowElement, rowContext, runtime));
           range.onRedirect(reconcilePositions);
           row = { element: rowElement, context: rowContext, values: rowState, scope: rowScope, key: evaluatedKey, output: range };
@@ -1113,7 +1109,7 @@ function handleFor(element, expression, _modifiers, context, runtime, hydrateNod
           try {
             rowScope.run(() => hydrateNodeFn(rowElement, rowContext, runtime));
           } catch (error) {
-            rows.delete(evaluatedKey);
+            deleteItem(rows, evaluatedKey);
             try {
               rowScope.dispose();
             } catch (cleanupError) {
@@ -1134,8 +1130,8 @@ function handleFor(element, expression, _modifiers, context, runtime, hydrateNod
         try {
           row.scope.dispose();
         } finally {
-          row.output.remove();
-          rows.delete(key);
+          removeElement(row.output);
+          deleteItem(rows, key);
         }
       }
     } finally {
@@ -1150,11 +1146,11 @@ function handleHtml(element, expression, modifiers, context, runtime, hydrateChi
   effect(() => {
     const html = evaluate(expression, context);
     if (modifiers.hydrate && !isTrustedHTML(html))
-      throw new TypeError("b-html.hydrate requires a trustedHTML() value.");
+      throw createTypeError("b-html.hydrate requires a trustedHTML() value.");
     const htmlStr = isTrustedHTML(html) ? getTrustedHTMLString(html) : String(html ?? "");
     contentScope == null ? void 0 : contentScope.dispose();
     contentScope = void 0;
-    const template = document.createElement("template");
+    const template = document.createElement(TEMPLATE);
     template.innerHTML = htmlStr;
     element.replaceChildren(template.content);
     if (modifiers.hydrate) {
@@ -1174,8 +1170,8 @@ function handleData(element, expression, _modifiers, parentContext) {
   const context = createExpressionScope({ $el: element }, parentContext);
   if (!expression.trim()) return context;
   const data = evaluate(expression, context);
-  if (data === null || typeof data !== "object")
-    throw new TypeError("b-data must evaluate to an object.");
+  if (data === null || !isObjectType(data))
+    throw createTypeError("b-data must evaluate to an object.");
   const reactiveData = createScopedState(data, parentContext.$data);
   const scopeObj = {
     $data: reactiveData,
@@ -1194,7 +1190,7 @@ let idSeq = 0;
 const activeIds = /* @__PURE__ */ new Set();
 function handleId(_element, expression, _modifiers, context) {
   const evaluated = expression ? evaluate(expression, context) : ["id"];
-  const idList = Array.isArray(evaluated) ? evaluated : [String(evaluated)];
+  const idList = isArray(evaluated) ? evaluated : [String(evaluated)];
   const idMap = {};
   for (const name of idList) {
     const generated = `brio-${++idSeq}`;
@@ -1202,8 +1198,8 @@ function handleId(_element, expression, _modifiers, context) {
     idMap[name] = generated;
   }
   onCleanup(() => {
-    for (const val of Object.values(idMap)) {
-      activeIds.delete(val);
+    for (const val of objectConstructor.values(idMap)) {
+      deleteItem(activeIds, val);
     }
   });
   return createExpressionScope({ $id: idMap }, context);
@@ -1211,10 +1207,10 @@ function handleId(_element, expression, _modifiers, context) {
 function compilePattern(pattern) {
   const parts = [];
   const characters = [...pattern];
-  for (let index = 0; index < characters.length; index++) {
+  for (let index = 0; index < getLength(characters); index++) {
     const character = characters[index];
     if (character === "\\") {
-      if (++index === characters.length) throw new SyntaxError("Mask pattern cannot end with an escape.");
+      if (++index === getLength(characters)) throw createSyntaxError("Mask pattern cannot end with an escape.");
       parts.push({ literal: characters[index] });
     } else if (character === "*") parts.push({ accepts: () => true });
     else if (character === "A") parts.push({ accepts: (value) => /[\p{L}\p{Nd}]/u.test(value) });
@@ -1233,20 +1229,20 @@ function patternFormatter(pattern) {
     let index = 0;
     let offset = 0;
     for (const part of parts) {
-      if (index >= input.length) break;
+      if (index >= getLength(input)) break;
       if ("literal" in part) {
         value += part.literal;
         if (input[index] === part.literal) {
-          offset += input[index++].length;
+          offset += getLength(input[index++]);
         }
       } else {
-        while (index < input.length && !part.accepts(input[index]))
-          offset += input[index++].length;
-        if (index < input.length) {
+        while (index < getLength(input) && !part.accepts(input[index]))
+          offset += getLength(input[index++]);
+        if (index < getLength(input)) {
           const character = input[index++];
           value += character;
-          offset += character.length;
-          positions.push({ input: offset, output: value.length });
+          offset += getLength(character);
+          positions.push({ input: offset, output: getLength(value) });
         }
       }
     }
@@ -1259,24 +1255,24 @@ function patternFormatter(pattern) {
   };
 }
 function validateResult(result) {
-  if (typeof result === "string") return;
-  if (result === null || typeof result !== "object" || !("value" in result) || typeof result.value !== "string")
-    throw new TypeError("Mask formatter must return a string or { value, selectionStart?, selectionEnd? }.");
+  if (isString(result)) return;
+  if (result === null || !isObjectType(result) || !("value" in result) || !isString(result.value))
+    throw createTypeError("Mask formatter must return a string or { value, selectionStart?, selectionEnd? }.");
   for (const key of ["selectionStart", "selectionEnd"]) {
-    const position = key in result ? Reflect.get(result, key) : void 0;
-    if (position !== void 0 && (typeof position !== "number" || !Number.isInteger(position) || position < 0 || position > result.value.length))
-      throw new TypeError(`Mask formatter ${key} must be an integer within the formatted value.`);
+    const position = key in result ? ReflectApi.get(result, key) : void 0;
+    if (position !== void 0 && (!isNumber(position) || !Number.isInteger(position) || position < 0 || position > getLength(result.value)))
+      throw createTypeError(`Mask formatter ${key} must be an integer within the formatted value.`);
   }
 }
 function handleMask(element, expression, modifiers, context) {
-  if (!(element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement))
-    throw new TypeError("b-mask can only be used on input and textarea elements.");
-  if (Object.keys(modifiers).length) throw new TypeError("b-mask does not support modifiers; use a pattern or formatter function.");
+  if (!(isInstanceOf(element, HTMLInputElement) || isInstanceOf(element, HTMLTextAreaElement)))
+    throw createTypeError("b-mask can only be used on input and textarea elements.");
+  if (getLength(objectKeys(modifiers))) throw createTypeError("b-mask does not support modifiers; use a pattern or formatter function.");
   let formatter;
   let applying = false;
   let composing = false;
   const applyMask = (event) => {
-    if (applying || composing || event instanceof InputEvent && event.isComposing) return;
+    if (applying || composing || isInstanceOf(event, InputEvent) && event.isComposing) return;
     const current = element.value;
     const start = element.selectionStart;
     const end = element.selectionEnd;
@@ -1286,20 +1282,20 @@ function handleMask(element, expression, modifiers, context) {
       selectionStart: start,
       selectionEnd: end,
       selectionDirection: direction,
-      inputType: event instanceof InputEvent ? event.inputType : void 0
+      inputType: isInstanceOf(event, InputEvent) ? event.inputType : void 0
     });
     validateResult(result);
-    const value = typeof result === "string" ? result : result.value;
-    const clamp = (position) => Math.min(position, value.length);
-    const mappedStart = typeof result === "string" ? start : result.selectionStart ?? start;
-    const mappedEnd = typeof result === "string" ? end : result.selectionEnd ?? end;
+    const value = isString(result) ? result : result.value;
+    const clamp = (position) => Math.min(position, getLength(value));
+    const mappedStart = isString(result) ? start : result.selectionStart ?? start;
+    const mappedEnd = isString(result) ? end : result.selectionEnd ?? end;
     applying = true;
     try {
       if (current !== value) {
         element.value = value;
         element.dispatchEvent(new Event("input", { bubbles: true }));
       }
-      if (element.ownerDocument.activeElement === element && mappedStart !== null && mappedEnd !== null)
+      if (getOwnerDocument(element).activeElement === element && mappedStart !== null && mappedEnd !== null)
         element.setSelectionRange(clamp(mappedStart), clamp(mappedEnd), direction ?? "none");
     } finally {
       applying = false;
@@ -1312,39 +1308,39 @@ function handleMask(element, expression, modifiers, context) {
     composing = false;
     applyMask();
   };
-  element.addEventListener("input", applyMask, true);
-  element.addEventListener("compositionstart", compositionStart);
-  element.addEventListener("compositionend", compositionEnd);
+  addEventListener(element, "input", applyMask, true);
+  addEventListener(element, "compositionstart", compositionStart);
+  addEventListener(element, "compositionend", compositionEnd);
   onCleanup(() => {
-    element.removeEventListener("input", applyMask, true);
-    element.removeEventListener("compositionstart", compositionStart);
-    element.removeEventListener("compositionend", compositionEnd);
+    removeEventListener(element, "input", applyMask, true);
+    removeEventListener(element, "compositionstart", compositionStart);
+    removeEventListener(element, "compositionend", compositionEnd);
   });
   effect(() => {
     const value = evaluate(expression, context);
-    if (typeof value === "string") formatter = patternFormatter(value);
-    else if (typeof value === "function") formatter = value;
-    else throw new TypeError("b-mask must evaluate to a pattern string or formatter function.");
+    if (isString(value)) formatter = patternFormatter(value);
+    else if (isFunction(value)) formatter = value;
+    else throw createTypeError("b-mask must evaluate to a pattern string or formatter function.");
     applyMask();
   });
 }
 function handleTeleport(element, expression, modifiers, context) {
   var _a;
-  if (Object.keys(modifiers).length) throw new SyntaxError("b-teleport does not support modifiers.");
+  if (getLength(objectKeys(modifiers))) throw createSyntaxError(B_TELEPORT + " does not support modifiers.");
   const owner = getNodeOwner(element);
-  if (!owner) throw new Error("b-teleport requires an owned Brio element.");
+  if (!owner) throw createError(B_TELEPORT + " requires an owned Brio element.");
   const range = ownElementRange(element, context, owner.runtime);
-  const placeholder = element.ownerDocument.createComment("brio:teleport");
+  const placeholder = getOwnerDocument(element).createComment("brio:" + TELEPORT);
   ownNode(placeholder, owner.context, owner.runtime);
-  (_a = range.start.parentNode) == null ? void 0 : _a.insertBefore(placeholder, range.start);
-  getNodeOwner(range.start).teleport = { source: placeholder, end: range.end };
+  (_a = getParent(range.start)) == null ? void 0 : _a.insertBefore(placeholder, range.start);
+  getNodeOwner(range.start)[TELEPORT] = { source: placeholder, end: range.end };
   let stop;
   let cancelPending;
   onCleanup(() => {
     stop == null ? void 0 : stop();
     cancelPending == null ? void 0 : cancelPending();
-    range.remove();
-    placeholder.remove();
+    removeElement(range);
+    removeElement(placeholder);
   });
   let lastTarget;
   let lastPlacement;
@@ -1356,42 +1352,42 @@ function handleTeleport(element, expression, modifiers, context) {
     const value = evaluate(expression, context);
     let target = value;
     let placement = "after";
-    if (Array.isArray(value)) {
-      if (value.length !== 2) throw new TypeError("b-teleport expects a [target, placement] pair.");
+    if (isArray(value)) {
+      if (getLength(value) !== 2) throw createTypeError(B_TELEPORT + " expects a [target, placement] pair.");
       [target, placement] = value;
     }
     if (placement !== "before" && placement !== "after" && placement !== "prepend" && placement !== "append")
-      throw new TypeError("b-teleport placement must be before, after, prepend, or append.");
-    if (typeof target === "string") {
+      throw createTypeError(B_TELEPORT + " placement must be before, after, prepend, or append.");
+    if (isString(target)) {
       const selector = target;
-      target = element.ownerDocument.querySelector(selector);
+      target = getOwnerDocument(element).querySelector(selector);
       if (!target) {
-        if (missingSelector !== selector) console.warn(`b-teleport target "${selector}" not found.`);
+        if (missingSelector !== selector) console.warn(B_TELEPORT + ` target "${selector}" not found.`);
         missingSelector = selector;
       } else missingSelector = void 0;
     } else missingSelector = void 0;
-    if (target !== null && target !== void 0 && !(target instanceof element.ownerDocument.defaultView.Element))
-      throw new TypeError("b-teleport target must be an Element, selector string, null, or undefined.");
+    if (target !== null && target !== void 0 && !isInstanceOf(target, getOwnerDocument(element).defaultView.Element))
+      throw createTypeError(B_TELEPORT + " target must be an Element, selector string, null, or undefined.");
     const resolved = target;
     if (resolved) {
       if (range.nodes(true).some((node) => node === resolved || node.contains(resolved)))
-        throw new Error("b-teleport cannot target its own rendered output.");
-      if ((placement === "append" || placement === "prepend") && resolved.localName === "template")
-        throw new Error("b-teleport cannot insert children into a native template.");
+        throw createError(B_TELEPORT + " cannot target its own rendered output.");
+      if ((placement === "append" || placement === "prepend") && resolved.localName === TEMPLATE)
+        throw createError(B_TELEPORT + " cannot insert children into a native template.");
       const { parent } = portalPosition({ target: resolved, placement });
       if ((_a2 = getNodeOwner(parent)) == null ? void 0 : _a2.controlsChildren)
-        throw new Error("b-teleport cannot insert into a container whose content is controlled by a directive.");
+        throw createError(B_TELEPORT + " cannot insert into a container whose content is controlled by a directive.");
       const targetOwner = getNodeOwner(resolved);
       let pending = getPendingHydration(resolved);
       if (!targetOwner) {
-        for (let ancestor = resolved.parentNode; ancestor && !pending; ancestor = ancestor.parentNode)
+        for (let ancestor = getParent(resolved); ancestor && !pending; ancestor = getParent(ancestor))
           pending = getPendingHydration(ancestor);
       }
       if (pending) {
         const retry = () => stop == null ? void 0 : stop.run();
         pending.add(retry);
         cancelPending = () => {
-          pending.delete(retry);
+          deleteItem(pending, retry);
         };
         return;
       }
@@ -1404,59 +1400,59 @@ function handleTeleport(element, expression, modifiers, context) {
 }
 function handleTemplate(element, _expression, _modifiers, context, runtime, hydrateNodeFn) {
   ownElementRange(element, context, runtime);
-  const isTemplateTag = element.tagName.toLowerCase() === "template";
-  const fragment = isTemplateTag ? cloneProjectedNode(element.content) : element.ownerDocument.createDocumentFragment();
+  const isTemplateTag = element.tagName.toLowerCase() === TEMPLATE;
+  const fragment = isTemplateTag ? cloneProjectedNode(element.content) : getOwnerDocument(element).createDocumentFragment();
   if (!isTemplateTag) {
     while (element.firstChild) {
       fragment.appendChild(element.firstChild);
     }
   }
-  const parent = element.parentNode;
-  if (!parent) throw new Error("b-template requires an element with a parent node.");
-  const insertedNodes = Array.from(fragment.childNodes);
-  parent.insertBefore(fragment, element);
-  element.remove();
+  const parent = getParent(element);
+  if (!parent) throw createError("b-template requires an element with a parent node.");
+  const insertedNodes = arrayFrom(getChildNodes(fragment));
+  insertBefore(parent, fragment, element);
+  removeElement(element);
   withHydration(parent, () => {
     for (const node of insertedNodes) {
-      if (node.parentNode === parent) hydrateNodeFn(node, context, runtime);
+      if (getParent(node) === parent) hydrateNodeFn(node, context, runtime);
     }
   });
 }
 function observerOptions(element, attrName, modifiers, context) {
-  const expression = element.getAttribute("b-options");
+  const expression = getAttribute(element, "b-options");
   const mapping = expression === null ? {} : evaluate(expression, context);
-  if (!mapping || typeof mapping !== "object" || Array.isArray(mapping))
-    throw new TypeError("b-options must evaluate to an object keyed by directive name.");
+  if (!mapping || !isObjectType(mapping) || isArray(mapping))
+    throw createTypeError("b-options must evaluate to an object keyed by directive name.");
   const base = attrName.split(".")[0];
   const result = {};
   for (const name of /* @__PURE__ */ new Set([base, attrName])) {
-    const options = Object.prototype.hasOwnProperty.call(mapping, name) ? Reflect.get(mapping, name) : void 0;
+    const options = objectConstructor.prototype.hasOwnProperty.call(mapping, name) ? ReflectApi.get(mapping, name) : void 0;
     if (options === void 0) continue;
-    if (!options || typeof options !== "object" || Array.isArray(options))
-      throw new TypeError(`b-options["${name}"] must be an object.`);
-    Object.assign(result, options);
+    if (!options || !isObjectType(options) || isArray(options))
+      throw createTypeError(`b-options["${name}"] must be an object.`);
+    objectConstructor.assign(result, options);
   }
-  return Object.assign(result, modifiers);
+  return objectConstructor.assign(result, modifiers);
 }
 function observerTarget(value, element, label) {
-  const target = typeof value === "string" ? element.ownerDocument.querySelector(value) : value;
-  const view = element.ownerDocument.defaultView;
-  if (!(target instanceof view.Element) && !(target instanceof view.Document) && !(target instanceof view.Text))
-    throw new TypeError(`${label} must resolve to an element, document, or text node.`);
+  const target = isString(value) ? getOwnerDocument(element).querySelector(value) : value;
+  const view = getOwnerDocument(element).defaultView;
+  if (!isInstanceOf(target, view.Element) && !isInstanceOf(target, view.Document) && !isInstanceOf(target, view.Text))
+    throw createTypeError(`${label} must resolve to an element, document, or text node.`);
   return target;
 }
 function observerBoolean(options, name, fallback) {
   const value = options[name];
   if (value === void 0) return fallback;
-  if (typeof value !== "boolean") throw new TypeError(`Observer ${name} must be a boolean.`);
+  if (!isBoolean(value)) throw createTypeError(`Observer ${name} must be a boolean.`);
   return value;
 }
 function observerDelay(options) {
   const value = options.debounce;
   if (value === void 0 || value === false) return;
   if (value === true) return 100;
-  if (typeof value !== "number" || !Number.isFinite(value) || value < 0)
-    throw new TypeError("Observer debounce must be a boolean or non-negative finite milliseconds.");
+  if (!isNumber(value) || !Number.isFinite(value) || value < 0)
+    throw createTypeError("Observer debounce must be a boolean or non-negative finite milliseconds.");
   return value;
 }
 function handleIntersection(element, attrName, expression, modifiers, context) {
@@ -1465,12 +1461,12 @@ function handleIntersection(element, attrName, expression, modifiers, context) {
   const isOnce = observerBoolean(options, "once", false);
   const delay = observerDelay(options);
   const root = options.root === void 0 || options.root === null ? null : observerTarget(options.root, element, "Intersection root");
-  if ((root == null ? void 0 : root.nodeType) === 3) throw new TypeError("Intersection root cannot be a text node.");
-  if (options.rootMargin !== void 0 && typeof options.rootMargin !== "string")
-    throw new TypeError("Intersection rootMargin must be a string.");
+  if ((root == null ? void 0 : root.nodeType) === 3) throw createTypeError("Intersection root cannot be a text node.");
+  if (options.rootMargin !== void 0 && !isString(options.rootMargin))
+    throw createTypeError("Intersection rootMargin must be a string.");
   const threshold = options.threshold;
-  if (threshold !== void 0 && !(typeof threshold === "number" ? Number.isFinite(threshold) && threshold >= 0 && threshold <= 1 : Array.isArray(threshold) && threshold.every((value) => typeof value === "number" && Number.isFinite(value) && value >= 0 && value <= 1)))
-    throw new TypeError("Intersection threshold must be a number or array of numbers between 0 and 1.");
+  if (threshold !== void 0 && !(isNumber(threshold) ? Number.isFinite(threshold) && threshold >= 0 && threshold <= 1 : isArray(threshold) && threshold.every((value) => isNumber(value) && Number.isFinite(value) && value >= 0 && value <= 1)))
+    throw createTypeError("Intersection threshold must be a number or array of numbers between 0 and 1.");
   let debounceTimer;
   let stopped = false;
   const observer = new IntersectionObserver((entries) => {
@@ -1516,15 +1512,15 @@ function handleMutation(element, attrName, expression, modifiers, context) {
   const delay = observerDelay(configured);
   const options = {
     childList: isAdded || isRemoved || !isAttrs && !isText,
-    attributes: isAttrs,
+    [ATTRIBUTES]: isAttrs,
     characterData: isText,
     subtree: observerBoolean(configured, "subtree", true)
   };
   if (isAttrs) {
     options.attributeOldValue = observerBoolean(configured, "attributeOldValue", false);
     if (configured.attributeFilter !== void 0) {
-      if (!Array.isArray(configured.attributeFilter) || !configured.attributeFilter.every((value) => typeof value === "string"))
-        throw new TypeError("Mutation attributeFilter must be an array of strings.");
+      if (!isArray(configured.attributeFilter) || !configured.attributeFilter.every((value) => isString(value)))
+        throw createTypeError("Mutation attributeFilter must be an array of strings.");
       options.attributeFilter = configured.attributeFilter;
     }
   }
@@ -1534,17 +1530,17 @@ function handleMutation(element, attrName, expression, modifiers, context) {
   const observer = new MutationObserver((mutations) => {
     let matching = [];
     if (isAdded) {
-      matching = mutations.filter((m) => m.addedNodes.length > 0);
+      matching = mutations.filter((m) => getLength(m.addedNodes) > 0);
     } else if (isRemoved) {
-      matching = mutations.filter((m) => m.removedNodes.length > 0);
+      matching = mutations.filter((m) => getLength(m.removedNodes) > 0);
     } else if (isAttrs) {
-      matching = mutations.filter((m) => m.type === "attributes");
+      matching = mutations.filter((m) => m.type === ATTRIBUTES);
     } else if (isText) {
       matching = mutations.filter((m) => m.type === "characterData");
     } else {
       matching = mutations;
     }
-    if (matching.length) {
+    if (getLength(matching)) {
       const invoke = () => {
         const records = pending;
         pending = [];
@@ -1568,10 +1564,10 @@ function handleMutation(element, attrName, expression, modifiers, context) {
 }
 function handleResize(element, attrName, expression, modifiers, context) {
   const options = observerOptions(element, attrName, modifiers, context);
-  const target = observerBoolean(options, "document", false) ? element.ownerDocument.documentElement : element;
+  const target = observerBoolean(options, "document", false) ? getOwnerDocument(element).documentElement : element;
   const box = options.box ?? "content-box";
   if (box !== "content-box" && box !== "border-box" && box !== "device-pixel-content-box")
-    throw new TypeError("Resize box must be content-box, border-box, or device-pixel-content-box.");
+    throw createTypeError("Resize box must be content-box, border-box, or device-pixel-content-box.");
   const delay = observerDelay(options);
   let debounceTimer;
   const observer = new ResizeObserver((entries) => {
@@ -1581,9 +1577,9 @@ function handleResize(element, attrName, expression, modifiers, context) {
       const sizes = box === "border-box" ? entry.borderBoxSize : box === "device-pixel-content-box" ? entry.devicePixelContentBoxSize : entry.contentBoxSize;
       const measured = sizes == null ? void 0 : sizes[0];
       if (box !== "content-box" && !measured)
-        throw new Error(`ResizeObserver did not supply the requested ${box} measurement.`);
+        throw createError(`ResizeObserver did not supply the requested ${box} measurement.`);
       const vertical = /^(vertical|sideways)/.test(
-        element.ownerDocument.defaultView.getComputedStyle(entry.target).writingMode
+        getOwnerDocument(element).defaultView.getComputedStyle(entry.target).writingMode
       );
       const size = {
         width: measured ? vertical ? measured.blockSize : measured.inlineSize : entry.contentRect.width,
@@ -1611,13 +1607,13 @@ function handleEffect(_element, expression, _modifiers, context) {
 }
 function handleScript(element, _expression, _modifiers, context) {
   if (element.tagName.toLowerCase() !== "script")
-    throw new TypeError("b-script can only be used on script elements.");
+    throw createTypeError("b-script can only be used on script elements.");
   const raw = (element.textContent || "").trim();
-  if (!raw) throw new SyntaxError("b-script requires a function expression.");
+  if (!raw) throw createSyntaxError("b-script requires a function expression.");
   const $context = createExpressionScope({ onCleanup }, context);
   try {
     const result = evaluateFunction(raw, $context)($context);
-    if (result instanceof Promise)
+    if (isInstanceOf(result, Promise))
       return result.then(() => {
       }, (error) => {
         throw causedError("Brio b-script execution failed.", error);
@@ -1627,7 +1623,7 @@ function handleScript(element, _expression, _modifiers, context) {
   }
 }
 function mountRouterOutlet(element, context, runtime, hydrateNodeFn) {
-  if (!runtime.router) throw new Error("b-router-outlet requires a router on the Brio app.");
+  if (!runtime.router) throw createError("b-router-outlet requires a router on the Brio app.");
   const router = runtime.router;
   let childScope;
   let childElement;
@@ -1635,7 +1631,7 @@ function mountRouterOutlet(element, context, runtime, hydrateNodeFn) {
     try {
       childScope == null ? void 0 : childScope.dispose();
     } finally {
-      childElement == null ? void 0 : childElement.remove();
+      removeElement(childElement);
     }
   });
   effect(() => {
@@ -1643,13 +1639,13 @@ function mountRouterOutlet(element, context, runtime, hydrateNodeFn) {
     try {
       childScope == null ? void 0 : childScope.dispose();
     } finally {
-      childElement == null ? void 0 : childElement.remove();
+      removeElement(childElement);
     }
     childScope = void 0;
     childElement = void 0;
     if (!route) return;
     const definition = runtime.components.get(route.component);
-    if (!definition) throw new Error(`No component registered for route "${route.component}".`);
+    if (!definition) throw createError(`No component registered for route "${route.component}".`);
     const el = document.createElement(route.component);
     childElement = el;
     childScope = createScope();
@@ -1660,8 +1656,8 @@ function mountRouterOutlet(element, context, runtime, hydrateNodeFn) {
 const componentNamePattern$1 = /^[a-z][a-z0-9]*-[a-z0-9-]+$/;
 function hydrateChildren(element, context, runtime) {
   withHydration(element, () => {
-    for (const child of Array.from(element.childNodes)) {
-      if (child.parentNode === element && !getNodeOwner(child)) hydrateNode(child, context, runtime);
+    for (const child of arrayFrom(getChildNodes(element))) {
+      if (getParent(child) === element && !getNodeOwner(child)) hydrateNode(child, context, runtime);
     }
   });
 }
@@ -1673,7 +1669,7 @@ function hydrateTextNode(node, context) {
   });
 }
 function hydrateNode(node, parentContext, runtime) {
-  if (getNodeOwner(node)) throw new Error("Cannot hydrate an already hydrated Brio node.");
+  if (getNodeOwner(node)) throw createError("Cannot hydrate an already hydrated Brio node.");
   parentContext = takeProjectedContext(node) ?? parentContext;
   if (!parentContext.$ref) parentContext = createExpressionScope({ $ref: createRefs() }, parentContext);
   const scope = createScope();
@@ -1683,76 +1679,76 @@ function hydrateNode(node, parentContext, runtime) {
   }));
 }
 function hydrateOwnedNode(node, parentContext, runtime) {
-  if (node.nodeType === Node.TEXT_NODE) {
+  if (getNodeType(node) === Node.TEXT_NODE) {
     hydrateTextNode(node, parentContext);
     return;
   }
-  if (node.nodeType !== Node.ELEMENT_NODE) return;
+  if (getNodeType(node) !== Node.ELEMENT_NODE) return;
   const element = node;
   if (element.hasAttribute("b-ignore") || element.hasAttribute("ignore")) {
     getNodeOwner(element).controlsChildren = true;
     return;
   }
-  const conditionalAttributes = Array.from(element.attributes).filter((attribute) => ["b-if", "b-else-if", "b-else"].includes(extractModifiers(attribute.name).baseName));
-  if (conditionalAttributes.length > 1)
-    throw new SyntaxError("An element can have only one conditional directive.");
+  const conditionalAttributes = arrayFrom(element[ATTRIBUTES]).filter((attribute) => includesItem(["b-if", "b-else-if", "b-else"], extractModifiers(attribute.name).baseName));
+  if (getLength(conditionalAttributes) > 1)
+    throw createSyntaxError("An element can have only one conditional directive.");
   const ifAttr = conditionalAttributes[0];
   if (ifAttr && extractModifiers(ifAttr.name).baseName === "b-if") {
     handleIf(element, ifAttr.value, extractModifiers(ifAttr.name).modifiers, parentContext, runtime, hydrateNode);
     return;
   }
   if (ifAttr)
-    throw new SyntaxError("b-else-if and b-else require an adjacent preceding b-if branch.");
+    throw createSyntaxError("b-else-if and b-else require an adjacent preceding b-if branch.");
   let context = createExpressionScope({
     $el: element,
     $stores: parentContext.$stores ?? emptyContextValues,
     $provided: parentContext.$provided ?? emptyContextValues,
     ...runtime.root ? { $insert: createInsert(runtime) } : {}
   }, parentContext);
-  const dataAttr = element.getAttribute("b-data");
+  const dataAttr = getAttribute(element, "b-data");
   if (dataAttr !== null) {
     context = handleData(element, dataAttr, {}, context);
     context = createExpressionScope({ $ref: createRefs() }, context);
-    element.removeAttribute("b-data");
+    removeAttribute(element, "b-data");
   }
   getNodeOwner(element).context = context;
-  const forAttr = element.getAttribute("b-for");
+  const forAttr = getAttribute(element, "b-for");
   if (forAttr !== null) {
     const { modifiers } = extractModifiers("b-for");
     handleFor(element, forAttr, modifiers, context, runtime, hydrateNode);
     return;
   }
-  const idAttr = element.getAttribute("b-id");
+  const idAttr = getAttribute(element, "b-id");
   if (idAttr !== null) {
     context = handleId(element, idAttr, {}, context);
-    element.removeAttribute("b-id");
+    removeAttribute(element, "b-id");
     getNodeOwner(element).context = context;
   }
-  const provideAttr = element.getAttribute("b-provide");
+  const provideAttr = getAttribute(element, "b-provide");
   if (provideAttr !== null) {
     context = handleProvide(provideAttr, context);
-    element.removeAttribute("b-provide");
+    removeAttribute(element, "b-provide");
     getNodeOwner(element).context = context;
   }
-  const templateAttr = element.getAttribute("b-template");
-  if (Array.from(element.attributes).some((attribute) => ["b-text", "text", "b-html", "html", "b-router-outlet"].includes(extractModifiers(attribute.name).baseName)))
+  const templateAttr = getAttribute(element, "b-template");
+  if (arrayFrom(element[ATTRIBUTES]).some((attribute) => includesItem(["b-text", "text", "b-html", "html", "b-router-outlet"], extractModifiers(attribute.name).baseName)))
     getNodeOwner(element).controlsChildren = true;
-  const refAttributes = Array.from(element.attributes).filter((attribute) => extractModifiers(attribute.name).baseName === "b-ref" || attribute.name.startsWith("b-ref-"));
-  if (refAttributes.length) {
-    if (refAttributes.length !== 1 || refAttributes[0].name !== "b-ref")
-      throw new SyntaxError("b-ref does not support arguments or modifiers.");
+  const refAttributes = arrayFrom(element[ATTRIBUTES]).filter((attribute) => extractModifiers(attribute.name).baseName === "b-ref" || startsWith(attribute.name, "b-ref-"));
+  if (getLength(refAttributes)) {
+    if (getLength(refAttributes) !== 1 || refAttributes[0].name !== "b-ref")
+      throw createSyntaxError("b-ref does not support arguments or modifiers.");
     const name = refAttributes[0].value.trim();
-    if (!name) throw new SyntaxError("b-ref requires a nonempty literal name.");
-    if (templateAttr !== null || element.tagName.toLowerCase() === "template")
-      throw new TypeError("b-ref requires a concrete element, not a template wrapper.");
+    if (!name) throw createSyntaxError("b-ref requires a nonempty literal name.");
+    if (templateAttr !== null || element.tagName.toLowerCase() === TEMPLATE)
+      throw createTypeError("b-ref requires a concrete element, not a template wrapper.");
     registerRef(context.$ref, name, element);
-    element.removeAttribute("b-ref");
+    removeAttribute(element, "b-ref");
   }
   if (templateAttr !== null) {
     handleTemplate(element, templateAttr, {}, context, runtime, hydrateNode);
-    for (const attribute of Array.from(element.attributes)) {
+    for (const attribute of arrayFrom(element[ATTRIBUTES])) {
       const { baseName, modifiers } = extractModifiers(attribute.name);
-      if (baseName === "b-teleport" || baseName === "teleport")
+      if (baseName === B_TELEPORT || baseName === TELEPORT)
         handleTeleport(element, attribute.value, modifiers, context);
       else if (baseName === "b-effect" || baseName === "effect")
         handleEffect(element, attribute.value, modifiers, context);
@@ -1768,13 +1764,13 @@ function hydrateOwnedNode(node, parentContext, runtime) {
   }
   let hasText = false;
   let hasHtml = false;
-  const transitionAttr = Array.from(element.attributes).find((attribute) => ["b-transition", "transition"].includes(extractModifiers(attribute.name).baseName));
+  const transitionAttr = arrayFrom(element[ATTRIBUTES]).find((attribute) => includesItem(["b-transition", "transition"], extractModifiers(attribute.name).baseName));
   if (transitionAttr) prepareTransition(element, transitionAttr.value);
-  for (const attribute of Array.from(element.attributes)) {
+  for (const attribute of arrayFrom(element[ATTRIBUTES])) {
     const attrName = attribute.name;
     const attrValue = attribute.value;
     const { baseName, modifiers } = extractModifiers(attrName);
-    if (baseName.startsWith("b-on-") || baseName.startsWith("on-")) {
+    if (startsWith(baseName, "b-on-") || startsWith(baseName, "on-")) {
       if (baseName.includes("-enter") || baseName.includes("-exit")) {
         handleIntersection(element, attrName, attrValue, modifiers, context);
       } else if (baseName.includes("-addednodes") || baseName.includes("-removednodes") || baseName.includes("-attrs") || baseName.includes("-text")) {
@@ -1784,42 +1780,42 @@ function hydrateOwnedNode(node, parentContext, runtime) {
       } else {
         handleOn(element, baseName, attrValue, modifiers, context);
       }
-      element.removeAttribute(attrName);
-    } else if (baseName.startsWith("b-bind-") || baseName.startsWith("bind-")) {
+      removeAttribute(element, attrName);
+    } else if (startsWith(baseName, "b-bind-") || startsWith(baseName, "bind-")) {
       handleBind(element, baseName, attrValue, modifiers, context);
-      element.removeAttribute(attrName);
+      removeAttribute(element, attrName);
     } else if (baseName === "b-model" || baseName === "model") {
       handleModel(element, attrValue, modifiers, context);
-      element.removeAttribute(attrName);
+      removeAttribute(element, attrName);
     } else if (baseName === "b-text" || baseName === "text") {
       getNodeOwner(element).controlsChildren = true;
       handleText(element, attrValue, context);
-      element.removeAttribute(attrName);
+      removeAttribute(element, attrName);
       hasText = true;
     } else if (baseName === "b-html" || baseName === "html") {
       getNodeOwner(element).controlsChildren = true;
       handleHtml(element, attrValue, modifiers, context, runtime, hydrateChildren);
-      element.removeAttribute(attrName);
+      removeAttribute(element, attrName);
       hasHtml = true;
     } else if (baseName === "b-mask" || baseName === "mask") {
       handleMask(element, attrValue, modifiers, context);
-      element.removeAttribute(attrName);
-    } else if (baseName === "b-teleport" || baseName === "teleport") {
+      removeAttribute(element, attrName);
+    } else if (baseName === B_TELEPORT || baseName === TELEPORT) {
       handleTeleport(element, attrValue, modifiers, context);
-      element.removeAttribute(attrName);
+      removeAttribute(element, attrName);
     } else if (baseName === "b-transition" || baseName === "transition") {
       handleTransition(element, attrValue);
-      element.removeAttribute(attrName);
+      removeAttribute(element, attrName);
     } else if (baseName === "b-effect" || baseName === "effect") {
       handleEffect(element, attrValue, modifiers, context);
-      element.removeAttribute(attrName);
+      removeAttribute(element, attrName);
     } else if (baseName === "b-script") {
       handleScript(element, attrValue, modifiers, context);
-      element.removeAttribute(attrName);
+      removeAttribute(element, attrName);
     } else if (baseName === "b-router-outlet") {
       getNodeOwner(element).controlsChildren = true;
       mountRouterOutlet(element, context, runtime, hydrateNode);
-      element.removeAttribute(attrName);
+      removeAttribute(element, attrName);
       return;
     }
   }
@@ -1835,7 +1831,7 @@ const activeMountRoots = /* @__PURE__ */ new Set();
 function createApp(options = {}) {
   var _a;
   const appState = state(((_a = options.state) == null ? void 0 : _a.call(options)) ?? {});
-  const stores = Object.freeze(copyContextValues(
+  const stores = objectConstructor.freeze(copyContextValues(
     options.stores === void 0 ? {} : options.stores,
     "Brio stores"
   ));
@@ -1861,26 +1857,26 @@ function createApp(options = {}) {
       return roots;
     },
     component(name, definition) {
-      if (disposed) throw new Error("Cannot register a component on a disposed Brio app.");
+      if (disposed) throw createError("Cannot register a component on a disposed Brio app.");
       const normalized = name.toLowerCase();
       if (!componentNamePattern.test(normalized))
-        throw new TypeError(`Component name "${name}" must be a custom-element name such as "user-card".`);
+        throw createTypeError(`Component name "${name}" must be a custom-element name such as "user-card".`);
       if (components.has(normalized))
-        throw new Error(`Component "${normalized}" is already registered.`);
+        throw createError(`Component "${normalized}" is already registered.`);
       if (!definition.template.trim())
-        throw new TypeError(`Component "${normalized}" requires a non-empty template.`);
+        throw createTypeError(`Component "${normalized}" requires a non-empty template.`);
       components.set(normalized, definition);
       return app;
     },
     plugin(plugin) {
-      if (disposed) throw new Error("Cannot install a plugin on a disposed Brio app.");
+      if (disposed) throw createError("Cannot install a plugin on a disposed Brio app.");
       if (plugins.has(plugin)) return app;
       plugins.add(plugin);
       const scope = createScope(appScope);
       try {
         scope.run(() => plugin(app));
       } catch (error) {
-        plugins.delete(plugin);
+        deleteItem(plugins, plugin);
         try {
           scope.dispose();
         } catch (cleanupError) {
@@ -1891,28 +1887,28 @@ function createApp(options = {}) {
       return app;
     },
     insert(target, placement, content, insertOptions) {
-      if (disposed) throw new Error("Cannot insert into a disposed Brio app.");
+      if (disposed) throw createError("Cannot insert into a disposed Brio app.");
       const matches = [...roots].filter((handle) => {
         var _a2;
-        return typeof target === "string" ? handle.root.matches(target) || Boolean(handle.root.querySelector(target)) : target instanceof Node && (handle.root.contains(target) || ((_a2 = getNodeOwner(target)) == null ? void 0 : _a2.runtime.root) === handle.root);
+        return isString(target) ? handle.root.matches(target) || Boolean(handle.root.querySelector(target)) : isInstanceOf(target, Node) && (handle.root.contains(target) || ((_a2 = getNodeOwner(target)) == null ? void 0 : _a2.runtime.root) === handle.root);
       });
-      if (matches.length !== 1)
-        throw new Error("Brio insert target must belong to exactly one mounted root of this app.");
+      if (getLength(matches) !== 1)
+        throw createError("Brio insert target must belong to exactly one mounted root of this app.");
       const owner = getNodeOwner(matches[0].root);
-      if (!owner) throw new Error("Brio insert requires an active mounted Brio root.");
+      if (!owner) throw createError("Brio insert requires an active mounted Brio root.");
       return createInsert(owner.runtime)(target, placement, content, insertOptions);
     },
     mount(target) {
-      if (disposed) throw new Error("Cannot mount a disposed Brio app.");
-      const root = typeof target === "string" ? document.querySelector(target) : target;
-      if (!(root instanceof Element))
-        throw new TypeError(`Brio mount target "${String(target)}" did not resolve to an element.`);
+      if (disposed) throw createError("Cannot mount a disposed Brio app.");
+      const root = isString(target) ? document.querySelector(target) : target;
+      if (!isInstanceOf(root, Element))
+        throw createTypeError(`Brio mount target "${String(target)}" did not resolve to an element.`);
       if ([...activeMountRoots].some((mounted) => mounted.contains(root) || root.contains(mounted)))
-        throw new Error("Brio mount roots cannot be equal or nested; use one app root with child components.");
-      if (Array.from(root.attributes).some((attribute) => ["b-if", "b-for", "b-template"].includes(attribute.name.split(".")[0])))
-        throw new Error("b-if, b-for and b-template require a container root; wrap the structural directive in another element.");
-      const originalAttributes = Array.from(root.attributes).map((attribute) => [attribute.name, attribute.value]);
-      const originalChildren = Array.from(root.childNodes, (child) => child.cloneNode(true));
+        throw createError("Brio mount roots cannot be equal or nested; use one app root with child components.");
+      if (arrayFrom(root[ATTRIBUTES]).some((attribute) => includesItem(["b-if", "b-for", "b-template"], attribute.name.split(".")[0])))
+        throw createError("b-if, b-for and b-template require a container root; wrap the structural directive in another element.");
+      const originalAttributes = arrayFrom(root[ATTRIBUTES]).map((attribute) => [attribute.name, attribute.value]);
+      const originalChildren = arrayFrom(getChildNodes(root), (child) => child.cloneNode(true));
       const scope = createScope(appScope);
       let unmounted = false;
       const handle = {
@@ -1926,12 +1922,12 @@ function createApp(options = {}) {
           try {
             scope.dispose();
           } finally {
-            roots.delete(handle);
-            activeMountRoots.delete(root);
+            deleteItem(roots, handle);
+            deleteItem(activeMountRoots, root);
             notifyRootUnmounted(app, root);
             if (options2.restore !== false) {
-              for (const attribute of Array.from(root.attributes))
-                root.removeAttribute(attribute.name);
+              for (const attribute of arrayFrom(root.attributes))
+                removeAttribute(root, attribute.name);
               for (const [name, value] of originalAttributes)
                 root.setAttribute(name, value);
               root.replaceChildren(...originalChildren.map((child) => child.cloneNode(true)));
@@ -1972,7 +1968,7 @@ function createApp(options = {}) {
           errors.push(error);
         }
       }
-      if (errors.length) throw combinedError("One or more Brio app roots failed to unmount.", errors);
+      if (getLength(errors)) throw combinedError("One or more Brio app roots failed to unmount.", errors);
     },
     dispose(options2) {
       if (disposed) return;
@@ -1995,7 +1991,7 @@ function createApp(options = {}) {
   };
   runtime.app = app;
   try {
-    for (const [name, definition] of Object.entries(options.components ?? {}))
+    for (const [name, definition] of objectEntries(options.components ?? {}))
       app.component(name, definition);
     for (const plugin of options.plugins ?? []) app.plugin(plugin);
   } catch (error) {
@@ -2022,12 +2018,12 @@ function flushQueue() {
   try {
     const queue = scheduledQueue;
     scheduledQueue = [];
-    for (let i2 = 0; i2 < queue.length; i2++) {
+    for (let i2 = 0; i2 < getLength(queue); i2++) {
       queue[i2]();
     }
   } finally {
     isFlushing = false;
-    if (scheduledQueue.length) {
+    if (getLength(scheduledQueue)) {
       queueMicrotask(flushQueue);
     }
   }

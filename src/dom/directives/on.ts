@@ -1,3 +1,5 @@
+import { getLength, createSyntaxError, startsWith } from '../../core/native';
+import { addEventListener, removeEventListener } from '../native';
 import { createExpressionScope, execute } from '../../core/expression';
 import { batch } from '../../reactivity/effect';
 import { onCleanup } from '../../core/scope';
@@ -9,10 +11,10 @@ export function handleOn(
     modifiers: Record<string, boolean>,
     context: Record<PropertyKey, any>,
 ): void {
-    const rawTarget = attrName.startsWith('b-on-')
-        ? attrName.slice('b-on-'.length)
-        : attrName.slice('on-'.length);
-    if (!rawTarget) throw new SyntaxError(`Brio event directive "${attrName}" has no event name.`);
+    const rawTarget = startsWith(attrName, 'b-on-')
+        ? attrName.slice(getLength('b-on-'))
+        : attrName.slice(getLength('on-'));
+    if (!rawTarget) throw createSyntaxError(`Brio event directive "${attrName}" has no event name.`);
 
     let target: EventTarget = element;
     if (modifiers.outside) target = document;
@@ -56,10 +58,10 @@ export function handleOn(
         once: Boolean(modifiers.once),
     };
 
-    target.addEventListener(rawTarget, handler, options);
+    addEventListener(target, rawTarget, handler, options);
     onCleanup(() => {
         clearTimeout(debounceTimer);
         clearTimeout(throttleTimer);
-        target.removeEventListener(rawTarget, handler, options);
+        removeEventListener(target, rawTarget, handler, options);
     });
 }

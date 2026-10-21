@@ -1,3 +1,5 @@
+import { getLength, createError, arrayFrom, deleteItem, TELEPORT } from '../core/native';
+import { getChildNodes } from './native';
 import { getCurrentScope, onDispose } from '../core/scope';
 import type { Scope } from '../core/scope';
 import type { ExpressionScope } from '../core/expression';
@@ -28,7 +30,7 @@ export function withHydration(node: Node, hydrate: () => void): void {
     try {
         hydrate();
     } finally {
-        pendingHydration.delete(node);
+        deleteItem(pendingHydration, node);
     }
     callbacks.forEach(callback => callback());
 }
@@ -39,11 +41,11 @@ export function getNodeOwner(node: Node): NodeOwner | undefined {
 
 export function ownNode(node: Node, context: ExpressionScope, runtime: DomRuntime): NodeOwner {
     const scope = getCurrentScope();
-    if (!scope) throw new Error('DOM hydration requires an active Brio scope.');
+    if (!scope) throw createError('DOM hydration requires an active Brio scope.');
     const owner: NodeOwner = { context, runtime, scope };
     owners.set(node, owner);
     onDispose(scope, () => {
-        if (owners.get(node) === owner) owners.delete(node);
+        if (owners.get(node) === owner) deleteItem(owners, node);
     });
     return owner;
 }
@@ -54,12 +56,12 @@ export function disposeNodes(nodes: readonly Node[]): void {
     const visit = (node: Node) => {
         const owner = owners.get(node);
         if (owner) scopes.add(owner.scope);
-        visitChildren(Array.from(node.childNodes));
+        visitChildren(arrayFrom(getChildNodes(node)));
     };
     const visitChildren = (children: readonly Node[]) => {
-        for (let index = 0; index < children.length; index++) {
+        for (let index = 0; index < getLength(children); index++) {
             const child = children[index];
-            const portal = owners.get(child)?.teleport;
+            const portal = owners.get(child)?.[TELEPORT];
             if (portal && !selected(portal.source)) {
                 const end = children.indexOf(portal.end, index);
                 if (end !== -1) {
@@ -79,5 +81,5 @@ export function disposeNodes(nodes: readonly Node[]): void {
             errors.push(error);
         }
     }
-    if (errors.length) throw combinedError('Brio DOM content cleanup failed.', errors);
+    if (getLength(errors)) throw combinedError('Brio DOM content cleanup failed.', errors);
 }

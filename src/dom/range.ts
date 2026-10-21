@@ -1,4 +1,7 @@
+import { getParent, getNodeType, getNextSibling, insertBefore, removeChild, getOwnerDocument } from './native';
+import { createError, removeElement, deleteItem, includesItem, B_TELEPORT } from '../core/native';
 import { onCleanup } from '../core/scope';
+
 import { ownNode } from './ownership';
 import type { DomRuntime } from './types';
 
@@ -9,13 +12,13 @@ export type PortalDestination = {
 
 export function portalPosition({ target, placement }: PortalDestination): { parent: Node; reference: Node | null } {
     const sibling = placement === 'before' || placement === 'after';
-    const parent = sibling ? target.parentNode : target;
-    if (!parent || (parent.nodeType !== Node.ELEMENT_NODE && parent.nodeType !== Node.DOCUMENT_FRAGMENT_NODE))
-        throw new Error('b-teleport placement requires an element or fragment container.');
+    const parent = sibling ? getParent(target) : target;
+    if (!parent || (getNodeType(parent) !== Node.ELEMENT_NODE && getNodeType(parent) !== Node.DOCUMENT_FRAGMENT_NODE))
+        throw createError(B_TELEPORT + ' placement requires an element or fragment container.');
     return {
         parent,
         reference: placement === 'before' ? target :
-            placement === 'after' ? target.nextSibling :
+            placement === 'after' ? getNextSibling(target) :
                 placement === 'prepend' ? target.firstChild : null,
     };
 }
@@ -50,17 +53,17 @@ export function createDomRange(document: Document, name: string): DomRange {
     let resume: { parent: Node; reference: Node | null } | undefined;
     const detachPortal = (portal: DomRange) => {
         const home = document.createComment('brio:portal');
-        portal.start.parentNode!.insertBefore(home, portal.start);
+        insertBefore(getParent(portal.start)!, home, portal.start);
         homes.set(portal, home);
         portal.detach();
     };
     const nodes = (includeAnchors = false): Node[] => {
         const result: Node[] = [];
-        if (start.parentNode && start.parentNode === end.parentNode) {
-            let current: Node | null = includeAnchors ? start : start.nextSibling;
+        if (getParent(start) && getParent(start) === getParent(end)) {
+            let current: Node | null = includeAnchors ? start : getNextSibling(start);
             while (current && current !== end) {
                 result.push(current);
-                current = current.nextSibling;
+                current = getNextSibling(current);
             }
             if (includeAnchors) result.push(end);
         }
@@ -72,39 +75,39 @@ export function createDomRange(document: Document, name: string): DomRange {
         get destination() { return destination; },
         nodes,
         moveBefore(parent: Node, reference: Node | null) {
-            const resuming = detached && parent.nodeType !== Node.DOCUMENT_FRAGMENT_NODE;
+            const resuming = detached && getNodeType(parent) !== Node.DOCUMENT_FRAGMENT_NODE;
             if (resuming && pendingRedirect && source) {
                 if (destination) ({ parent, reference } = portalPosition(destination));
-                else if (source.parentNode) {
-                    parent = source.parentNode;
-                    reference = source.nextSibling;
+                else if (getParent(source)) {
+                    parent = getParent(source)!;
+                    reference = getNextSibling(source);
                 }
             } else if (resuming && resume &&
-                (!resume.reference || resume.reference.parentNode === resume.parent)) {
+                (!resume.reference || getParent(resume.reference) === resume.parent)) {
                 ({ parent, reference } = resume);
             }
-            if (reference === start && parent === start.parentNode) return;
-            if (start.parentNode !== parent || end.nextSibling !== reference) {
+            if (reference === start && parent === getParent(start)) return;
+            if (getParent(start) !== parent || getNextSibling(end) !== reference) {
                 const contents = nodes(true);
-                if (reference && contents.includes(reference))
-                    throw new Error('Cannot move a Brio range inside itself.');
-                for (const node of contents) parent.insertBefore(node, reference);
+                if (reference && includesItem(contents, reference))
+                    throw createError('Cannot move a Brio range inside itself.');
+                for (const node of contents) insertBefore(parent, node, reference);
             }
             if (resuming) {
                 detached = false;
                 pendingRedirect = false;
                 resume = undefined;
                 for (const [portal, home] of homes) {
-                    if (home.parentNode) portal.moveBefore(home.parentNode, home);
-                    home.remove();
+                    if (getParent(home)) portal.moveBefore(getParent(home)!, home);
+                    removeElement(home);
                 }
                 homes.clear();
             }
         },
         detach() {
             if (!detached) {
-                if (source && destination && start.parentNode)
-                    resume = { parent: start.parentNode, reference: end.nextSibling };
+                if (source && destination && getParent(start))
+                    resume = { parent: getParent(start)!, reference: getNextSibling(end) };
                 detached = true;
                 portals.forEach(detachPortal);
             }
@@ -112,20 +115,20 @@ export function createDomRange(document: Document, name: string): DomRange {
         },
         remove() {
             resume = undefined;
-            portals.forEach(portal => portal.remove());
-            homes.forEach(home => home.remove());
+            portals.forEach(removeElement);
+            homes.forEach(removeElement);
             homes.clear();
-            for (const node of nodes(true)) node.parentNode?.removeChild(node);
+            for (const node of nodes(true)) removeChild(getParent(node), node);
         },
         addPortal(portal: DomRange) {
             portals.add(portal);
             if (detached) detachPortal(portal);
         },
         removePortal(portal: DomRange) {
-            portals.delete(portal);
-            homes.get(portal)?.remove();
-            homes.delete(portal);
-            portal.remove();
+            deleteItem(portals, portal);
+            removeElement(homes.get(portal));
+            deleteItem(homes, portal);
+            removeElement(portal);
         },
         redirect(next: PortalDestination | undefined, home: Comment) {
             destination = next;
@@ -136,7 +139,7 @@ export function createDomRange(document: Document, name: string): DomRange {
                 if (destination) {
                     const { parent, reference } = portalPosition(destination);
                     this.moveBefore(parent, reference);
-                } else if (source.parentNode) this.moveBefore(source.parentNode, source.nextSibling);
+                } else if (getParent(source)) this.moveBefore(getParent(source)!, getNextSibling(source));
             }
         },
         onRedirect(callback: () => void) {
@@ -154,17 +157,17 @@ export function ownElementRange(
 ): DomRange {
     const existing = outputs.get(element);
     if (existing) return existing;
-    const parent = element.parentNode;
-    if (!parent) throw new Error('Brio rendered output requires an element with a parent node.');
-    const range = createDomRange(element.ownerDocument, 'range');
-    parent.insertBefore(range.start, element);
-    parent.insertBefore(range.end, element.nextSibling);
+    const parent = getParent(element);
+    if (!parent) throw createError('Brio rendered output requires an element with a parent node.');
+    const range = createDomRange(getOwnerDocument(element), 'range');
+    insertBefore(parent, range.start, element);
+    insertBefore(parent, range.end, getNextSibling(element));
     outputs.set(element, range);
     ownNode(range.start, context, runtime);
     ownNode(range.end, context, runtime);
     onCleanup(() => {
-        outputs.delete(element);
-        range.remove();
+        deleteItem(outputs, element);
+        removeElement(range);
     });
     return range;
 }

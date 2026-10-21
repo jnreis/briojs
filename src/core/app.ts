@@ -1,3 +1,17 @@
+import {
+    objectConstructor,
+    isString,
+    getLength,
+    createError,
+    createTypeError,
+    arrayFrom,
+    objectEntries,
+    isInstanceOf,
+    deleteItem,
+    includesItem,
+    ATTRIBUTES,
+} from './native';
+import { getChildNodes, removeAttribute } from '../dom/native';
 import { createExpressionScope } from './expression';
 import { hydrateRoot } from '../dom/mount';
 import { createInsert } from '../dom/insert';
@@ -34,7 +48,7 @@ export function createApp<
     options: AppOptions<T, S> = {},
 ): BrioApp<T, S> {
     const appState = state((options.state?.() ?? {}) as T);
-    const stores = Object.freeze(copyContextValues(
+    const stores = objectConstructor.freeze(copyContextValues(
         options.stores === undefined ? {} : options.stores, 'Brio stores',
     )) as Readonly<S>;
     const components = new Map<string, ComponentDefinition>();
@@ -58,26 +72,26 @@ export function createApp<
             return roots;
         },
         component(name, definition) {
-            if (disposed) throw new Error('Cannot register a component on a disposed Brio app.');
+            if (disposed) throw createError('Cannot register a component on a disposed Brio app.');
             const normalized = name.toLowerCase();
             if (!componentNamePattern.test(normalized))
-                throw new TypeError(`Component name "${name}" must be a custom-element name such as "user-card".`);
+                throw createTypeError(`Component name "${name}" must be a custom-element name such as "user-card".`);
             if (components.has(normalized))
-                throw new Error(`Component "${normalized}" is already registered.`);
+                throw createError(`Component "${normalized}" is already registered.`);
             if (!definition.template.trim())
-                throw new TypeError(`Component "${normalized}" requires a non-empty template.`);
+                throw createTypeError(`Component "${normalized}" requires a non-empty template.`);
             components.set(normalized, definition);
             return app;
         },
         plugin(plugin) {
-            if (disposed) throw new Error('Cannot install a plugin on a disposed Brio app.');
+            if (disposed) throw createError('Cannot install a plugin on a disposed Brio app.');
             if (plugins.has(plugin)) return app;
             plugins.add(plugin);
             const scope = createScope(appScope);
             try {
                 scope.run(() => plugin(app));
             } catch (error) {
-                plugins.delete(plugin);
+                deleteItem(plugins, plugin);
                 try {
                     scope.dispose();
                 } catch (cleanupError) {
@@ -88,30 +102,30 @@ export function createApp<
             return app;
         },
         insert(target, placement, content, insertOptions) {
-            if (disposed) throw new Error('Cannot insert into a disposed Brio app.');
-            const matches = [...roots].filter(handle => typeof target === 'string'
+            if (disposed) throw createError('Cannot insert into a disposed Brio app.');
+            const matches = [...roots].filter(handle => isString(target)
                 ? handle.root.matches(target) || Boolean(handle.root.querySelector(target))
-                : target instanceof Node && (handle.root.contains(target) || getNodeOwner(target)?.runtime.root === handle.root));
-            if (matches.length !== 1)
-                throw new Error('Brio insert target must belong to exactly one mounted root of this app.');
+                : isInstanceOf(target, Node) && (handle.root.contains(target) || getNodeOwner(target)?.runtime.root === handle.root));
+            if (getLength(matches) !== 1)
+                throw createError('Brio insert target must belong to exactly one mounted root of this app.');
             const owner = getNodeOwner(matches[0].root);
-            if (!owner) throw new Error('Brio insert requires an active mounted Brio root.');
+            if (!owner) throw createError('Brio insert requires an active mounted Brio root.');
             return createInsert(owner.runtime)(target, placement, content, insertOptions);
         },
         mount(target) {
-            if (disposed) throw new Error('Cannot mount a disposed Brio app.');
-            const root = typeof target === 'string' ? document.querySelector(target) : target;
-            if (!(root instanceof Element))
-                throw new TypeError(`Brio mount target "${String(target)}" did not resolve to an element.`);
+            if (disposed) throw createError('Cannot mount a disposed Brio app.');
+            const root = isString(target) ? document.querySelector(target) : target;
+            if (!isInstanceOf(root, Element))
+                throw createTypeError(`Brio mount target "${String(target)}" did not resolve to an element.`);
             if ([...activeMountRoots].some(mounted => mounted.contains(root) || root.contains(mounted)))
-                throw new Error('Brio mount roots cannot be equal or nested; use one app root with child components.');
-            if (Array.from(root.attributes).some(attribute =>
-                ['b-if', 'b-for', 'b-template'].includes(attribute.name.split('.')[0])))
-                throw new Error('b-if, b-for and b-template require a container root; wrap the structural directive in another element.');
+                throw createError('Brio mount roots cannot be equal or nested; use one app root with child components.');
+            if (arrayFrom(root[ATTRIBUTES]).some(attribute =>
+                includesItem(['b-if', 'b-for', 'b-template'], attribute.name.split('.')[0])))
+                throw createError('b-if, b-for and b-template require a container root; wrap the structural directive in another element.');
 
-            const originalAttributes = Array.from(root.attributes)
+            const originalAttributes = arrayFrom(root[ATTRIBUTES])
                 .map(attribute => [attribute.name, attribute.value] as const);
-            const originalChildren = Array.from(root.childNodes, child => child.cloneNode(true));
+            const originalChildren = arrayFrom(getChildNodes(root), child => child.cloneNode(true));
 
             const scope = createScope(appScope);
             let unmounted = false;
@@ -126,12 +140,12 @@ export function createApp<
                     try {
                         scope.dispose();
                     } finally {
-                        roots.delete(handle);
-                        activeMountRoots.delete(root);
+                        deleteItem(roots, handle);
+                        deleteItem(activeMountRoots, root);
                         notifyRootUnmounted(app, root);
                         if (options.restore !== false) {
-                            for (const attribute of Array.from(root.attributes))
-                                root.removeAttribute(attribute.name);
+                            for (const attribute of arrayFrom(root.attributes))
+                                removeAttribute(root, attribute.name);
                             for (const [name, value] of originalAttributes)
                                 root.setAttribute(name, value);
                             root.replaceChildren(...originalChildren.map(child => child.cloneNode(true)));
@@ -173,7 +187,7 @@ export function createApp<
                     errors.push(error);
                 }
             }
-            if (errors.length) throw combinedError('One or more Brio app roots failed to unmount.', errors);
+            if (getLength(errors)) throw combinedError('One or more Brio app roots failed to unmount.', errors);
         },
         dispose(options) {
             if (disposed) return;
@@ -198,7 +212,7 @@ export function createApp<
     };
     runtime.app = app;
     try {
-        for (const [name, definition] of Object.entries(options.components ?? {}))
+        for (const [name, definition] of objectEntries(options.components ?? {}))
             app.component(name, definition);
         for (const plugin of options.plugins ?? []) app.plugin(plugin);
     } catch (error) {

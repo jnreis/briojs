@@ -1,4 +1,5 @@
-import { b as batch, q as queueEffect, g as getActiveEffect } from "./effect-DGhE0oQi.js";
+import { c as createTypeError, R as ReflectApi, G as GET_OWN_PROPERTY_DESCRIPTOR, k as isArray, i as isFunction, o as objectConstructor, l as ownKeys, f as isObjectType, m as isString } from "./native-BSek5F0c.js";
+import { b as batch, q as queueEffect, g as getActiveEffect } from "./effect-DIImvjBh.js";
 const targetMap = /* @__PURE__ */ new WeakMap();
 const proxyCache = /* @__PURE__ */ new WeakMap();
 const rawCache = /* @__PURE__ */ new WeakMap();
@@ -16,7 +17,7 @@ const arrayMutators = /* @__PURE__ */ new Set([
 ]);
 const arrayMethodCache = /* @__PURE__ */ new WeakMap();
 let settingDepth = 0;
-const isObject = (value) => value !== null && typeof value === "object";
+const isObject = (value) => value !== null && isObjectType(value);
 const toRaw = (value) => {
   if (!isObject(value)) return value;
   return rawCache.get(value) ?? value;
@@ -42,41 +43,41 @@ const trigger = (target, key, type, newValue) => {
   });
   add(dependencies.get(key));
   if (type !== "set") add(dependencies.get(ITERATE));
-  if (Array.isArray(target) && key === "length") {
+  if (isArray(target) && key === "length") {
     for (const [depKey, dep] of dependencies) {
-      if (typeof depKey === "string" && /^(0|[1-9]\d*)$/.test(depKey) && Number(depKey) >= Number(newValue))
+      if (isString(depKey) && /^(0|[1-9]\d*)$/.test(depKey) && Number(depKey) >= Number(newValue))
         add(dep);
     }
-  } else if (Array.isArray(target) && type === "add" && isArrayIndex(key)) {
+  } else if (isArray(target) && type === "add" && isArrayIndex(key)) {
     add(dependencies.get("length"));
   }
   effects.forEach((eff) => queueEffect(eff));
 };
-const isArrayIndex = (key) => typeof key === "string" && /^(0|[1-9]\d*)$/.test(key) && Number(key) < 4294967295;
+const isArrayIndex = (key) => isString(key) && /^(0|[1-9]\d*)$/.test(key) && Number(key) < 4294967295;
 const canObserve = (value) => {
-  if (Array.isArray(value)) return true;
-  const prototype = Object.getPrototypeOf(value);
-  return prototype === Object.prototype || prototype === null;
+  if (isArray(value)) return true;
+  const prototype = objectConstructor.getPrototypeOf(value);
+  return prototype === objectConstructor.prototype || prototype === null;
 };
 function state(target) {
-  if (!isObject(target)) throw new TypeError("Brio state() requires a plain object or array.");
-  if (!canObserve(target)) throw new TypeError("Brio state() only observes plain objects and arrays.");
+  if (!isObject(target)) throw createTypeError("Brio state() requires a plain object or array.");
+  if (!canObserve(target)) throw createTypeError("Brio state() only observes plain objects and arrays.");
   const raw = toRaw(target);
   const existing = proxyCache.get(raw);
   if (existing) return existing;
   const proxy = new Proxy(raw, {
     get(current, key, receiver) {
       track(current, key);
-      const value = Reflect.get(current, key, receiver);
-      const descriptor = Reflect.getOwnPropertyDescriptor(current, key);
+      const value = ReflectApi.get(current, key, receiver);
+      const descriptor = ReflectApi[GET_OWN_PROPERTY_DESCRIPTOR](current, key);
       if (descriptor && !descriptor.configurable && !descriptor.writable && isObject(value))
         return value;
-      if (Array.isArray(current) && arrayMutators.has(key) && typeof value === "function") {
+      if (isArray(current) && arrayMutators.has(key) && isFunction(value)) {
         let methods = arrayMethodCache.get(current);
         if (!methods) arrayMethodCache.set(current, methods = /* @__PURE__ */ new Map());
         let method = methods.get(key);
         if (!method) {
-          method = (...args) => batch(() => Reflect.apply(value, receiver, args));
+          method = (...args) => batch(() => ReflectApi.apply(value, receiver, args));
           methods.set(key, method);
         }
         return method;
@@ -85,17 +86,17 @@ function state(target) {
     },
     has(current, key) {
       track(current, key);
-      return Reflect.has(current, key);
+      return ReflectApi.has(current, key);
     },
     set(current, key, incoming, receiver) {
       const value = toRaw(incoming);
-      const hadKey = Object.prototype.hasOwnProperty.call(current, key);
-      const previous = Reflect.get(current, key, receiver);
-      if (Object.is(toRaw(previous), value)) return true;
+      const hadKey = objectConstructor.prototype.hasOwnProperty.call(current, key);
+      const previous = ReflectApi.get(current, key, receiver);
+      if (objectConstructor.is(toRaw(previous), value)) return true;
       settingDepth++;
       let succeeded;
       try {
-        succeeded = Reflect.set(current, key, value, receiver);
+        succeeded = ReflectApi.set(current, key, value, receiver);
       } finally {
         settingDepth--;
       }
@@ -104,26 +105,26 @@ function state(target) {
       return succeeded;
     },
     defineProperty(current, key, descriptor) {
-      const previous = Reflect.getOwnPropertyDescriptor(current, key);
+      const previous = ReflectApi[GET_OWN_PROPERTY_DESCRIPTOR](current, key);
       const nextDescriptor = { ...descriptor };
       if ("value" in nextDescriptor) nextDescriptor.value = toRaw(nextDescriptor.value);
-      const succeeded = Reflect.defineProperty(current, key, nextDescriptor);
+      const succeeded = ReflectApi.defineProperty(current, key, nextDescriptor);
       if (!succeeded || settingDepth) return succeeded;
-      const next = Reflect.getOwnPropertyDescriptor(current, key);
+      const next = ReflectApi[GET_OWN_PROPERTY_DESCRIPTOR](current, key);
       const type = previous ? "set" : "add";
-      const changed = !previous || !next || !Object.is(toRaw(previous.value), toRaw(next.value)) || previous.enumerable !== next.enumerable || previous.configurable !== next.configurable || previous.writable !== next.writable;
+      const changed = !previous || !next || !objectConstructor.is(toRaw(previous.value), toRaw(next.value)) || previous.enumerable !== next.enumerable || previous.configurable !== next.configurable || previous.writable !== next.writable;
       if (changed) trigger(current, key, type, next == null ? void 0 : next.value);
       return succeeded;
     },
     deleteProperty(current, key) {
-      const hadKey = Object.prototype.hasOwnProperty.call(current, key);
-      const succeeded = Reflect.deleteProperty(current, key);
+      const hadKey = objectConstructor.prototype.hasOwnProperty.call(current, key);
+      const succeeded = ReflectApi.deleteProperty(current, key);
       if (succeeded && hadKey) trigger(current, key, "delete");
       return succeeded;
     },
     ownKeys(current) {
       track(current, ITERATE);
-      return Reflect.ownKeys(current);
+      return ownKeys(current);
     }
   });
   const cached = proxy;
@@ -140,7 +141,7 @@ function signal(initialValue) {
       return isObject(value) && canObserve(value) ? state(value) : value;
     },
     set value(next) {
-      if (Object.is(toRaw(value), toRaw(next))) return;
+      if (objectConstructor.is(toRaw(value), toRaw(next))) return;
       value = next;
       trigger(holder, "value", "set");
     }
@@ -152,4 +153,4 @@ export {
   state as s,
   trigger as t
 };
-//# sourceMappingURL=state-FLvgaPZh.js.map
+//# sourceMappingURL=state-gsWplTCq.js.map

@@ -1,3 +1,4 @@
+import { getLength, arrayFrom, removeElement, deleteItem } from '../core/native';
 import { effect } from '../reactivity/effect';
 import { causedError } from '../core/errors';
 import { installDevtoolsBridge } from './devtools-bridge';
@@ -31,18 +32,18 @@ const notifySubscribers = () => {
 };
 
 const getSnapshot = (): DevtoolsSnapshot => {
-    const appSnapshots = Array.from(apps, ([app, record]) => ({
+    const appSnapshots = arrayFrom(apps, ([app, record]) => ({
         app,
-        roots: Array.from(record.roots, root => {
+        roots: arrayFrom(record.roots, root => {
             const id = root.id ? `#${root.id}` : '';
-            const classes = root.classList.length ? `.${Array.from(root.classList).join('.')}` : '';
+            const classes = getLength(root.classList) ? `.${arrayFrom(root.classList).join('.')}` : '';
             return `${root.tagName.toLowerCase()}${id}${classes}`;
         }),
         state: record.state,
     }));
     return {
         appCount: apps.size,
-        mountedRoots: appSnapshots.reduce((total, record) => total + record.roots.length, 0),
+        mountedRoots: appSnapshots.reduce((total, record) => total + getLength(record.roots), 0),
         effectsCreated,
         activeEffects,
         apps: appSnapshots,
@@ -68,7 +69,7 @@ const bridge: DevtoolsBridge = {
     appDisposed(app) {
         const record = apps.get(app);
         record?.snapshot();
-        apps.delete(app);
+        deleteItem(apps, app);
         notifySubscribers();
     },
     rootMounted(app, root) {
@@ -80,7 +81,7 @@ const bridge: DevtoolsBridge = {
     rootUnmounted(app, root) {
         const record = apps.get(app);
         if (!record) return;
-        record.roots.delete(root);
+        deleteItem(record.roots, root);
         notifySubscribers();
     },
     effectCreated() {
@@ -104,7 +105,7 @@ export const devtools = {
     subscribe(callback: () => void): () => void {
         subscribers.add(callback);
         callback();
-        return () => subscribers.delete(callback);
+        return () => deleteItem(subscribers, callback);
     },
     getSnapshot,
     reset(): void {
@@ -136,7 +137,7 @@ export function devtoolsPanel(container: Element): () => void {
     subscribers.add(update);
     update();
     return () => {
-        subscribers.delete(update);
-        panel.remove();
+        deleteItem(subscribers, update);
+        removeElement(panel);
     };
 }

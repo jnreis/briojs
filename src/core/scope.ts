@@ -1,3 +1,4 @@
+import { getLength, createError, deleteItem } from './native';
 import { combinedError } from '../core/errors';
 
 export type Scope = {
@@ -18,7 +19,7 @@ export function createScope(parent: Scope | undefined = activeScope): Scope {
             return disposed;
         },
         run<T>(fn: () => T): T {
-            if (disposed) throw new Error('Cannot run a disposed Brio scope.');
+            if (disposed) throw createError('Cannot run a disposed Brio scope.');
             const previous = activeScope;
             activeScope = scope;
             try {
@@ -40,7 +41,7 @@ export function createScope(parent: Scope | undefined = activeScope): Scope {
                 }
             }
             cleanups.clear();
-            if (errors.length) throw combinedError('One or more Brio scope cleanups failed.', errors);
+            if (getLength(errors)) throw combinedError('One or more Brio scope cleanups failed.', errors);
         },
     };
     scopeCleanups.set(scope, cleanups);
@@ -59,7 +60,7 @@ export function onDispose(scope: Scope | undefined, cleanup: () => void): () => 
     const wrapped = () => {
         if (!active) return;
         active = false;
-        scopeCleanups.get(scope)?.delete(wrapped);
+        deleteItem(scopeCleanups.get(scope), wrapped);
         originalCleanup();
     };
     scopeCleanups.get(scope)?.add(wrapped);
@@ -67,7 +68,7 @@ export function onDispose(scope: Scope | undefined, cleanup: () => void): () => 
 }
 
 export function onCleanup(cleanup: () => void): () => void {
-    if (!activeScope) throw new Error('This operation requires an active Brio scope.');
+    if (!activeScope) throw createError('This operation requires an active Brio scope.');
     return onDispose(activeScope, cleanup);
 }
 

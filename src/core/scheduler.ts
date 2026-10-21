@@ -1,3 +1,4 @@
+import { getLength } from './native';
 export type SchedulerTask = () => void;
 
 let scheduledQueue: SchedulerTask[] = [];
@@ -15,12 +16,12 @@ function flushQueue(): void {
     try {
         const queue = scheduledQueue;
         scheduledQueue = [];
-        for (let i = 0; i < queue.length; i++) {
+        for (let i = 0; i < getLength(queue); i++) {
             queue[i]();
         }
     } finally {
         isFlushing = false;
-        if (scheduledQueue.length) {
+        if (getLength(scheduledQueue)) {
             queueMicrotask(flushQueue);
         }
     }

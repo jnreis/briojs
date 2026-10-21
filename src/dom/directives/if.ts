@@ -1,3 +1,16 @@
+import {
+    getLength,
+    createError,
+    objectKeys,
+    createSyntaxError,
+    arrayFrom,
+    removeElement,
+    deleteItem,
+    includesItem,
+    TEMPLATE,
+    ATTRIBUTES,
+} from '../../core/native';
+import { getParent, removeAttribute, getNextSibling, getNodeType, getOwnerDocument, insertBefore } from '../native';
 import { evaluate } from '../../core/expression';
 import { effect } from '../../reactivity/effect';
 import { createScope, onCleanup } from '../../core/scope';
@@ -19,46 +32,46 @@ export function handleIf(
     runtime: DomRuntime,
     hydrateNodeFn: (node: Node, context: Record<PropertyKey, any>, runtime: DomRuntime) => void,
 ): void {
-    const parent = element.parentNode;
-    if (!parent) throw new Error('b-if requires an element with a parent node.');
-    if (Object.keys(modifiers).some(name => !['hide', 'detach'].includes(name)))
-        throw new SyntaxError('b-if supports only .hide and .detach modifiers.');
+    const parent = getParent(element);
+    if (!parent) throw createError('b-if requires an element with a parent node.');
+    if (objectKeys(modifiers).some(name => !includesItem(['hide', 'detach'], name)))
+        throw createSyntaxError('b-if supports only .hide and .detach modifiers.');
     if (modifiers.hide && modifiers.detach)
-        throw new SyntaxError('b-if.hide and b-if.detach cannot be combined.');
+        throw createSyntaxError('b-if.hide and b-if.detach cannot be combined.');
     const preserved = Boolean(modifiers.hide || modifiers.detach);
     const branches: { template: Element; expression?: string }[] = [];
     const originals: Element[] = [];
     const addBranch = (node: Element, condition?: string) => {
-        const attributes = Array.from(node.attributes);
+        const attributes = arrayFrom(node[ATTRIBUTES]);
         const conditional = attributes.filter(attribute =>
-            ['b-if', 'b-else-if', 'b-else'].includes(extractModifiers(attribute.name).baseName));
-        if (conditional.length !== 1)
-            throw new SyntaxError('An element can have only one conditional directive.');
-        if (node !== element && Object.keys(extractModifiers(conditional[0].name).modifiers).length)
-            throw new SyntaxError('Conditional modifiers belong only on the leading b-if, not b-else-if or b-else.');
+            includesItem(['b-if', 'b-else-if', 'b-else'], extractModifiers(attribute.name).baseName));
+        if (getLength(conditional) !== 1)
+            throw createSyntaxError('An element can have only one conditional directive.');
+        if (node !== element && getLength(objectKeys(extractModifiers(conditional[0].name).modifiers)))
+            throw createSyntaxError('Conditional modifiers belong only on the leading b-if, not b-else-if or b-else.');
         if (modifiers.hide && attributes.some(attribute =>
-            ['b-for', 'b-template', 'template'].includes(extractModifiers(attribute.name).baseName)))
-            throw new SyntaxError('b-if.hide requires a concrete branch element; wrap b-for or b-template in another element or use .detach.');
+            includesItem(['b-for', 'b-template', TEMPLATE], extractModifiers(attribute.name).baseName)))
+            throw createSyntaxError('b-if.hide requires a concrete branch element; wrap b-for or b-template in another element or use .detach.');
         const template = cloneProjectedNode(node);
-        template.removeAttribute(conditional[0].name);
+        removeAttribute(template, conditional[0].name);
         originals.push(node);
         branches.push({ template, expression: condition });
     };
     addBranch(element, expression);
     const nextBranch = (node: Element): Element | null => {
-        let next = node.nextSibling;
-        while (next && (next.nodeType === Node.COMMENT_NODE ||
-            (next.nodeType === Node.TEXT_NODE && !next.textContent?.trim()))) next = next.nextSibling;
+        let next = getNextSibling(node);
+        while (next && (getNodeType(next) === Node.COMMENT_NODE ||
+            (getNodeType(next) === Node.TEXT_NODE && !next.textContent?.trim()))) next = getNextSibling(next);
         return next?.nodeType === Node.ELEMENT_NODE ? next as Element : null;
     };
     let sibling = nextBranch(element);
     let ended = false;
     while (sibling) {
-        const conditional = Array.from(sibling.attributes).find(attribute =>
-            ['b-else-if', 'b-else'].includes(extractModifiers(attribute.name).baseName));
+        const conditional = arrayFrom(sibling[ATTRIBUTES]).find(attribute =>
+            includesItem(['b-else-if', 'b-else'], extractModifiers(attribute.name).baseName));
         if (!conditional) break;
         if (ended)
-            throw new SyntaxError('b-else must be the last branch of a b-if chain.');
+            throw createSyntaxError('b-else must be the last branch of a b-if chain.');
         ended = extractModifiers(conditional.name).baseName === 'b-else';
         addBranch(sibling, ended ? undefined : conditional.value);
         sibling = nextBranch(sibling);
@@ -66,8 +79,8 @@ export function handleIf(
 
     const output = ownElementRange(element, context, runtime);
     const placeholder = output.start;
-    element.remove();
-    originals.slice(1).forEach(node => node.remove());
+    removeElement(element);
+    originals.slice(1).forEach(removeElement);
     let stopCondition: ReturnType<typeof effect> | undefined;
     onCleanup(() => stopCondition?.());
     const selectBranch = () => branches.findIndex(candidate =>
@@ -80,18 +93,18 @@ export function handleIf(
     let activeBranch = -1;
     let initialized = false;
     const createAnchor = () => {
-        const anchor = element.ownerDocument.createComment('brio:if:branch');
+        const anchor = getOwnerDocument(element).createComment('brio:if:branch');
         ownNode(anchor, context, runtime);
         anchors.push(anchor);
         return anchor;
     };
     const destroy = (instance: Instance) => {
-        instances.delete(instance.index);
+        deleteItem(instances, instance.index);
         cancelTransition(instance.element);
         try {
             instance.scope.dispose();
         } finally {
-            instance.output.remove();
+            removeElement(instance.output);
         }
     };
     onCleanup(() => {
@@ -103,9 +116,9 @@ export function handleIf(
                 errors.push(error);
             }
         }
-        anchors.forEach(anchor => anchor.remove());
-        placeholder.remove();
-        if (errors.length) throw combinedError('Conditional branch cleanup failed.', errors);
+        anchors.forEach(removeElement);
+        removeElement(placeholder);
+        if (getLength(errors)) throw combinedError('Conditional branch cleanup failed.', errors);
     });
 
     const deactivate = (instance: Instance, animate: boolean) => {
@@ -125,9 +138,9 @@ export function handleIf(
     const createInstance = (index: number, visible: boolean, anchor = placeholder): Instance => {
         const current = cloneProjectedNode(branches[index].template) as HTMLElement;
         const scope = createScope();
-        const destination = visible || modifiers.hide ? anchor.parentNode! :
-            element.ownerDocument.createDocumentFragment();
-        destination.insertBefore(current, destination === anchor.parentNode ? anchor.nextSibling : null);
+        const destination = visible || modifiers.hide ? getParent(anchor)! :
+            getOwnerDocument(element).createDocumentFragment();
+        insertBefore(destination, current, destination === getParent(anchor) ? getNextSibling(anchor) : null);
         const range = scope.run(() => ownElementRange(current, context, runtime));
         const instance = {
             index, element: current, scope, anchor, output: range,
@@ -139,7 +152,7 @@ export function handleIf(
             instance.scope.run(() => hydrateNodeFn(current, context, runtime));
             const owner = getNodeOwner(current);
             if (owner) owner.structuralRoot = true;
-            if (preserved && range.start.isConnected && !output.nodes().includes(range.start)) {
+            if (preserved && range.start.isConnected && !includesItem(output.nodes(), range.start)) {
                 instance.anchor = createAnchor();
                 range.start.before(instance.anchor);
             }
@@ -159,8 +172,8 @@ export function handleIf(
         if (!instance) return createInstance(index, true);
         const current = instance.element;
         if (modifiers.hide) current.style.display = instance.display;
-        else if (instance.output.start.parentNode?.nodeType === Node.DOCUMENT_FRAGMENT_NODE && instance.anchor.parentNode)
-            instance.output.moveBefore(instance.anchor.parentNode, instance.anchor.nextSibling);
+        else if (getParent(instance.output.start)?.nodeType === Node.DOCUMENT_FRAGMENT_NODE && getParent(instance.anchor))
+            instance.output.moveBefore(getParent(instance.anchor)!, getNextSibling(instance.anchor));
         const name = getTransitionName(current);
         if (animate && name) enterTransition(current, name);
         else cancelTransition(current);
@@ -174,9 +187,9 @@ export function handleIf(
             let cursor: Node = placeholder;
             for (const index of branches.keys()) {
                 const anchor = createAnchor();
-                parent.insertBefore(anchor, cursor.nextSibling);
+                insertBefore(parent, anchor, getNextSibling(cursor));
                 const instance = createInstance(index, index === selected, anchor);
-                cursor = instance.output.end.parentNode === parent ? instance.output.end : anchor;
+                cursor = getParent(instance.output.end) === parent ? instance.output.end : anchor;
             }
             activeBranch = selected;
             active = instances.get(selected);

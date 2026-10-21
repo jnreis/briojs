@@ -1,3 +1,4 @@
+import { isString, isNumber, createTypeError, isArray } from '../../core/native';
 import { createExpressionScope, execute } from '../../core/expression';
 import { onCleanup } from '../../core/scope';
 import { observerOptions, observerTarget, observerBoolean, observerDelay } from './observer-options';
@@ -15,15 +16,15 @@ export function handleIntersection(
     const delay = observerDelay(options);
     const root = options.root === undefined || options.root === null ? null :
         observerTarget(options.root, element, 'Intersection root');
-    if (root?.nodeType === 3) throw new TypeError('Intersection root cannot be a text node.');
-    if (options.rootMargin !== undefined && typeof options.rootMargin !== 'string')
-        throw new TypeError('Intersection rootMargin must be a string.');
+    if (root?.nodeType === 3) throw createTypeError('Intersection root cannot be a text node.');
+    if (options.rootMargin !== undefined && !isString(options.rootMargin))
+        throw createTypeError('Intersection rootMargin must be a string.');
     const threshold = options.threshold;
-    if (threshold !== undefined && !(typeof threshold === 'number'
+    if (threshold !== undefined && !(isNumber(threshold)
         ? Number.isFinite(threshold) && threshold >= 0 && threshold <= 1
-        : Array.isArray(threshold) && threshold.every(value =>
-            typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= 1)))
-        throw new TypeError('Intersection threshold must be a number or array of numbers between 0 and 1.');
+        : isArray(threshold) && threshold.every(value =>
+            isNumber(value) && Number.isFinite(value) && value >= 0 && value <= 1)))
+        throw createTypeError('Intersection threshold must be a number or array of numbers between 0 and 1.');
 
     let debounceTimer: ReturnType<typeof setTimeout> | undefined;
     let stopped = false;

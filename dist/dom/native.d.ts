@@ -1,0 +1,13 @@
+export declare const getParent: (node: Node) => ParentNode | null;
+export declare const getNextSibling: (node: Node) => ChildNode | null;
+export declare const getOwnerDocument: <T extends Node>(node: T) => T["ownerDocument"];
+export declare const getChildNodes: <T extends Node>(node: T) => T["childNodes"];
+export declare const getNodeType: (node: Node) => number;
+export declare const removeAttribute: (element: Element, name: string) => void;
+export declare const getAttribute: (element: Element, name: string) => string | null;
+export declare const insertBefore: <T extends Node>(parent: Node, node: T, reference: Node | null) => T;
+export declare const removeChild: <T extends Node>(parent: Node | null | undefined, node: T) => T | undefined;
+export declare function addEventListener<K extends keyof WindowEventMap>(target: Window, type: K, listener: (event: WindowEventMap[K]) => void, options?: boolean | AddEventListenerOptions): void;
+export declare function addEventListener(target: EventTarget, type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
+export declare function removeEventListener<K extends keyof WindowEventMap>(target: Window, type: K, listener: (event: WindowEventMap[K]) => void, options?: boolean | EventListenerOptions): void;
+export declare function removeEventListener(target: EventTarget, type: string, listener: EventListenerOrEventListenerObject, options?: boolean | EventListenerOptions): void;

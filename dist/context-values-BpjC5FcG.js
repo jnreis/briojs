@@ -1,5 +1,6 @@
-import { c as causedError, e as effect } from "./effect-DGhE0oQi.js";
-import { t as trigger, a as track } from "./state-FLvgaPZh.js";
+import { i as isFunction, c as createTypeError, o as objectConstructor, n as createSyntaxError, d as deleteItem, f as isObjectType, p as includesItem, q as objectKeys, R as ReflectApi, G as GET_OWN_PROPERTY_DESCRIPTOR, l as ownKeys } from "./native-BSek5F0c.js";
+import { c as causedError, e as effect } from "./effect-DIImvjBh.js";
+import { t as trigger, a as track } from "./state-gsWplTCq.js";
 const valueExpressions = /* @__PURE__ */ new Map();
 const statementExpressions = /* @__PURE__ */ new Map();
 const assignmentExpressions = /* @__PURE__ */ new Map();
@@ -16,12 +17,12 @@ function evaluateFunction(source, context) {
     (expression) => new Function($CONTEXT, `${contextBindings} return (${expression.replace(/;\s*$/, "")});`)
   );
   const result = fn(context);
-  if (typeof result !== "function")
-    throw new TypeError(`b-script must contain a function expression, such as (${$CONTEXT}) => { ... }.`);
+  if (!isFunction(result))
+    throw createTypeError(`b-script must contain a function expression, such as (${$CONTEXT}) => { ... }.`);
   return result;
 }
 function createExpressionScope(...sources) {
-  return Object.assign(/* @__PURE__ */ Object.create(null), ...sources.reverse());
+  return objectConstructor.assign(objectConstructor.create(null), ...sources.reverse());
 }
 const compile = (cache, source, make) => {
   let fn = cache.get(source);
@@ -29,11 +30,11 @@ const compile = (cache, source, make) => {
     try {
       fn = make(source);
     } catch (error) {
-      throw new SyntaxError(`Invalid Brio expression "${source}": ${String(error)}`);
+      throw createSyntaxError(`Invalid Brio expression "${source}": ${String(error)}`);
     }
     cache.set(source, fn);
     if (cache.size > 500)
-      cache.delete(cache.keys().next().value);
+      deleteItem(cache, cache.keys().next().value);
   }
   return fn;
 };
@@ -74,50 +75,50 @@ function assign(source, scope, value) {
   }
 }
 function copyContextValues(value, label) {
-  if (value === null || typeof value !== "object" || ![Object.prototype, null].includes(Object.getPrototypeOf(value)))
-    throw new TypeError(`${label} must be a synchronous plain object.`);
-  const result = /* @__PURE__ */ Object.create(null);
-  for (const key of Object.keys(value)) {
-    const descriptor = Object.getOwnPropertyDescriptor(value, key);
+  if (value === null || !isObjectType(value) || !includesItem([objectConstructor.prototype, null], objectConstructor.getPrototypeOf(value)))
+    throw createTypeError(`${label} must be a synchronous plain object.`);
+  const result = objectConstructor.create(null);
+  for (const key of objectKeys(value)) {
+    const descriptor = objectConstructor[GET_OWN_PROPERTY_DESCRIPTOR](value, key);
     if (!("value" in descriptor))
-      throw new TypeError(`${label} must contain data properties, not accessors.`);
-    result[key] = Reflect.get(value, key);
+      throw createTypeError(`${label} must contain data properties, not accessors.`);
+    result[key] = ReflectApi.get(value, key);
   }
   return result;
 }
-const emptyContextValues = Object.freeze(/* @__PURE__ */ Object.create(null));
+const emptyContextValues = objectConstructor.freeze(objectConstructor.create(null));
 function createProvidedValues(getValues, parent = emptyContextValues) {
-  let values = /* @__PURE__ */ Object.create(null);
+  let values = objectConstructor.create(null);
   const holder = {};
   effect(() => {
     values = copyContextValues(getValues(), "b-provide");
     trigger(holder, "values", "set");
   });
   const readOnly = () => {
-    throw new TypeError("$provided names are read-only.");
+    throw createTypeError("$provided names are read-only.");
   };
-  const hasOwn = (key) => Object.prototype.hasOwnProperty.call(values, key);
-  return new Proxy(/* @__PURE__ */ Object.create(null), {
+  const hasOwn = (key) => objectConstructor.prototype.hasOwnProperty.call(values, key);
+  return new Proxy(objectConstructor.create(null), {
     get(_target, key) {
       track(holder, "values");
-      return hasOwn(key) ? Reflect.get(values, key) : Reflect.get(parent, key);
+      return hasOwn(key) ? ReflectApi.get(values, key) : ReflectApi.get(parent, key);
     },
     has(_target, key) {
       track(holder, "values");
-      return hasOwn(key) || Reflect.has(parent, key);
+      return hasOwn(key) || ReflectApi.has(parent, key);
     },
     ownKeys() {
       track(holder, "values");
-      return [.../* @__PURE__ */ new Set([...Reflect.ownKeys(parent), ...Reflect.ownKeys(values)])];
+      return [.../* @__PURE__ */ new Set([...ownKeys(parent), ...ownKeys(values)])];
     },
-    getOwnPropertyDescriptor(_target, key) {
+    [GET_OWN_PROPERTY_DESCRIPTOR](_target, key) {
       track(holder, "values");
-      if (!hasOwn(key) && !Object.prototype.hasOwnProperty.call(parent, key)) return;
+      if (!hasOwn(key) && !objectConstructor.prototype.hasOwnProperty.call(parent, key)) return;
       return {
         configurable: true,
         enumerable: true,
         writable: false,
-        value: hasOwn(key) ? Reflect.get(values, key) : Reflect.get(parent, key)
+        value: hasOwn(key) ? ReflectApi.get(values, key) : ReflectApi.get(parent, key)
       };
     },
     set: readOnly,
@@ -137,4 +138,4 @@ export {
   createProvidedValues as g,
   evaluateFunction as h
 };
-//# sourceMappingURL=context-values-BA09Z6wf.js.map
+//# sourceMappingURL=context-values-BpjC5FcG.js.map

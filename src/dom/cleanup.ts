@@ -1,3 +1,4 @@
+import { deleteItem } from '../core/native';
 export type CleanupFn = () => void;
 
 const nodeCleanups = new WeakMap<Node, Set<CleanupFn>>();
@@ -22,6 +23,6 @@ export function cleanupNode(node: Node): void {
             }
         }
         cleanups.clear();
-        nodeCleanups.delete(node);
+        deleteItem(nodeCleanups, node);
     }
 }

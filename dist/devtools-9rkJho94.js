@@ -1,4 +1,5 @@
-import { i as installDevtoolsBridge, e as effect, c as causedError } from "./effect-DGhE0oQi.js";
+import { d as deleteItem, r as removeElement, a as arrayFrom, g as getLength } from "./native-BSek5F0c.js";
+import { i as installDevtoolsBridge, e as effect, c as causedError } from "./effect-DIImvjBh.js";
 let effectsCreated = 0;
 let activeEffects = 0;
 const apps = /* @__PURE__ */ new Map();
@@ -7,18 +8,18 @@ const notifySubscribers = () => {
   for (const subscriber of [...subscribers]) subscriber();
 };
 const getSnapshot = () => {
-  const appSnapshots = Array.from(apps, ([app, record]) => ({
+  const appSnapshots = arrayFrom(apps, ([app, record]) => ({
     app,
-    roots: Array.from(record.roots, (root) => {
+    roots: arrayFrom(record.roots, (root) => {
       const id = root.id ? `#${root.id}` : "";
-      const classes = root.classList.length ? `.${Array.from(root.classList).join(".")}` : "";
+      const classes = getLength(root.classList) ? `.${arrayFrom(root.classList).join(".")}` : "";
       return `${root.tagName.toLowerCase()}${id}${classes}`;
     }),
     state: record.state
   }));
   return {
     appCount: apps.size,
-    mountedRoots: appSnapshots.reduce((total, record) => total + record.roots.length, 0),
+    mountedRoots: appSnapshots.reduce((total, record) => total + getLength(record.roots), 0),
     effectsCreated,
     activeEffects,
     apps: appSnapshots
@@ -43,7 +44,7 @@ const bridge = {
   appDisposed(app) {
     const record = apps.get(app);
     record == null ? void 0 : record.snapshot();
-    apps.delete(app);
+    deleteItem(apps, app);
     notifySubscribers();
   },
   rootMounted(app, root) {
@@ -55,7 +56,7 @@ const bridge = {
   rootUnmounted(app, root) {
     const record = apps.get(app);
     if (!record) return;
-    record.roots.delete(root);
+    deleteItem(record.roots, root);
     notifySubscribers();
   },
   effectCreated() {
@@ -77,7 +78,7 @@ const devtools = {
   subscribe(callback) {
     subscribers.add(callback);
     callback();
-    return () => subscribers.delete(callback);
+    return () => deleteItem(subscribers, callback);
   },
   getSnapshot,
   reset() {
@@ -107,8 +108,8 @@ ${JSON.stringify(appState, null, 2)}`)
   subscribers.add(update);
   update();
   return () => {
-    subscribers.delete(update);
-    panel.remove();
+    deleteItem(subscribers, update);
+    removeElement(panel);
   };
 }
 export {
@@ -117,4 +118,4 @@ export {
   enableDevtools as e,
   inspectDevtools as i
 };
-//# sourceMappingURL=devtools-CF9uSawU.js.map
+//# sourceMappingURL=devtools-9rkJho94.js.map

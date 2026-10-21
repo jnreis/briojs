@@ -1,3 +1,5 @@
+import { getLength, deleteItem } from '../../core/native';
+import { getOwnerDocument, removeEventListener, addEventListener } from '../native';
 import { onCleanup } from '../../core/scope';
 
 const names = new WeakMap<Element, string>();
@@ -16,21 +18,21 @@ export function cancelTransition(element: Element): void {
 }
 
 function transitionTimeout(element: Element): number {
-    const style = element.ownerDocument.defaultView!.getComputedStyle(element);
+    const style = getOwnerDocument(element).defaultView!.getComputedStyle(element);
     const milliseconds = (value: string) =>
         parseFloat(value) * (value.trim().endsWith('ms') ? 1 : 1000);
     const durations = style.transitionDuration.split(',').map(milliseconds);
     const delays = style.transitionDelay.split(',').map(milliseconds);
     return Math.max(0, ...style.transitionProperty.split(',').map((property, index) =>
         property.trim() === 'none' ? 0 :
-            durations[index % durations.length] + delays[index % delays.length]
+            durations[index % getLength(durations)] + delays[index % getLength(delays)]
     ));
 }
 
 function runTransition(element: Element, name: string, phase: 'enter' | 'leave', onDone?: () => void): void {
     const interrupted = running.has(element);
     cancelTransition(element);
-    const view = element.ownerDocument.defaultView!;
+    const view = getOwnerDocument(element).defaultView!;
     const classes = [`${name}-${phase}`, `${name}-${phase}-active`, `${name}-${phase}-to`];
     const pending = new Set<string>();
     let started = false;
@@ -46,11 +48,11 @@ function runTransition(element: Element, name: string, phase: 'enter' | 'leave',
         view.cancelAnimationFrame(frame);
         view.cancelAnimationFrame(completionFrame);
         clearTimeout(timer);
-        element.removeEventListener('transitionrun', onRun);
-        element.removeEventListener('transitionend', onEnd);
-        element.removeEventListener('transitioncancel', onEnd);
+        removeEventListener(element, 'transitionrun', onRun);
+        removeEventListener(element, 'transitionend', onEnd);
+        removeEventListener(element, 'transitioncancel', onEnd);
         element.classList.remove(...classes);
-        if (running.get(element) === cleanup) running.delete(element);
+        if (running.get(element) === cleanup) deleteItem(running, element);
     };
     const finish = () => {
         if (settled) return;
@@ -67,7 +69,7 @@ function runTransition(element: Element, name: string, phase: 'enter' | 'leave',
     const onEnd = (event: Event) => {
         const transition = event as TransitionEvent;
         if (!activated || !isOwnEvent(transition)) return;
-        pending.delete(transition.propertyName);
+        deleteItem(pending, transition.propertyName);
         if (started && pending.size === 0) {
             view.cancelAnimationFrame(completionFrame);
             completionFrame = view.requestAnimationFrame(() => {
@@ -77,9 +79,9 @@ function runTransition(element: Element, name: string, phase: 'enter' | 'leave',
     };
 
     running.set(element, cleanup);
-    element.addEventListener('transitionrun', onRun);
-    element.addEventListener('transitionend', onEnd);
-    element.addEventListener('transitioncancel', onEnd);
+    addEventListener(element, 'transitionrun', onRun);
+    addEventListener(element, 'transitionend', onEnd);
+    addEventListener(element, 'transitioncancel', onEnd);
     const activate = () => {
         activated = true;
         element.classList.remove(classes[0]);
@@ -116,7 +118,7 @@ export function handleTransition(
     prepareTransition(element, expression);
     onCleanup(() => {
         cancelTransition(element);
-        names.delete(element);
+        deleteItem(names, element);
     });
     if (element.isConnected) {
         for (let ancestor: Element | null = element; ancestor; ancestor = ancestor.parentElement) {

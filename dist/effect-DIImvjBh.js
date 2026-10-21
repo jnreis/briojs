@@ -1,11 +1,12 @@
+import { o as objectConstructor, b as createError, g as getLength, d as deleteItem } from "./native-BSek5F0c.js";
 function causedError(message, cause) {
-  const error = new Error(message);
-  Object.defineProperty(error, "cause", { configurable: true, value: cause });
+  const error = createError(message);
+  objectConstructor.defineProperty(error, "cause", { configurable: true, value: cause });
   return error;
 }
 function combinedError(message, errors) {
-  const error = new Error(message);
-  Object.defineProperty(error, "errors", { configurable: true, value: errors });
+  const error = createError(message);
+  objectConstructor.defineProperty(error, "errors", { configurable: true, value: errors });
   return error;
 }
 let activeScope;
@@ -19,7 +20,7 @@ function createScope(parent = activeScope) {
       return disposed;
     },
     run(fn) {
-      if (disposed) throw new Error("Cannot run a disposed Brio scope.");
+      if (disposed) throw createError("Cannot run a disposed Brio scope.");
       const previous = activeScope;
       activeScope = scope;
       try {
@@ -41,7 +42,7 @@ function createScope(parent = activeScope) {
         }
       }
       cleanups.clear();
-      if (errors.length) throw combinedError("One or more Brio scope cleanups failed.", errors);
+      if (getLength(errors)) throw combinedError("One or more Brio scope cleanups failed.", errors);
     }
   };
   scopeCleanups.set(scope, cleanups);
@@ -60,17 +61,16 @@ function onDispose(scope, cleanup) {
   const originalCleanup = cleanup;
   let active = true;
   const wrapped = () => {
-    var _a2;
     if (!active) return;
     active = false;
-    (_a2 = scopeCleanups.get(scope)) == null ? void 0 : _a2.delete(wrapped);
+    deleteItem(scopeCleanups.get(scope), wrapped);
     originalCleanup();
   };
   (_a = scopeCleanups.get(scope)) == null ? void 0 : _a.add(wrapped);
   return wrapped;
 }
 function onCleanup(cleanup) {
-  if (!activeScope) throw new Error("This operation requires an active Brio scope.");
+  if (!activeScope) throw createError("This operation requires an active Brio scope.");
   return onDispose(activeScope, cleanup);
 }
 function getCurrentScope() {
@@ -111,7 +111,7 @@ let batchDepth = 0;
 const queuedEffects = /* @__PURE__ */ new Set();
 const getActiveEffect = () => activeEffect;
 const cleanupEffect = (eff) => {
-  for (const dep of eff.deps) dep.delete(eff);
+  for (const dep of eff.deps) deleteItem(dep, eff);
   eff.deps.length = 0;
 };
 const runEffect = (eff) => {
@@ -150,7 +150,7 @@ const flushEffects = () => {
       }
     }
   }
-  if (errors.length) throw combinedError("One or more reactive effects failed.", errors);
+  if (getLength(errors)) throw combinedError("One or more reactive effects failed.", errors);
 };
 function effect(fn, options = {}) {
   const reactiveEffect = {
@@ -167,7 +167,7 @@ function effect(fn, options = {}) {
     cleanupEffect(reactiveEffect);
     if (devtoolsEnabled) notifyEffectDisposed(Boolean(reactiveEffect.devtoolsTracked));
   };
-  Object.defineProperty(stop, "active", { get: () => reactiveEffect.active });
+  objectConstructor.defineProperty(stop, "active", { get: () => reactiveEffect.active });
   stop.run = () => runEffect(reactiveEffect);
   const currentScope = getCurrentScope();
   if (currentScope) onDispose(currentScope, stop);
@@ -224,4 +224,4 @@ export {
   queueEffect as q,
   setActiveScope as s
 };
-//# sourceMappingURL=effect-DGhE0oQi.js.map
+//# sourceMappingURL=effect-DIImvjBh.js.map

@@ -1,3 +1,5 @@
+import { isInstanceOf, createTypeError, createSyntaxError } from '../../core/native';
+
 import { evaluateFunction, createExpressionScope } from '../../core/expression';
 import { causedError } from '../../core/errors';
 import { onCleanup } from '../../core/scope';
@@ -9,13 +11,13 @@ export function handleScript(
     context: Record<PropertyKey, any>,
 ): void | Promise<void> {
     if (element.tagName.toLowerCase() !== 'script')
-        throw new TypeError('b-script can only be used on script elements.');
+        throw createTypeError('b-script can only be used on script elements.');
     const raw = (element.textContent || '').trim();
-    if (!raw) throw new SyntaxError('b-script requires a function expression.');
+    if (!raw) throw createSyntaxError('b-script requires a function expression.');
     const $context = createExpressionScope({ onCleanup }, context);
     try {
         const result = evaluateFunction(raw, $context)($context);
-        if (result instanceof Promise)
+        if (isInstanceOf(result, Promise))
             return result.then(() => {}, error => {
                 throw causedError('Brio b-script execution failed.', error);
             });

@@ -14,7 +14,7 @@ for (const word of words) {
 }
 
 const wordRepeats = [...counts]
-    .filter(([, count]) => count > 10)
+    .filter(([, count]) => count > 5)
     .sort((a, b) => b[1] - a[1]);
 
 console.log(`

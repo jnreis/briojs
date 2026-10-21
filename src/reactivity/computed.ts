@@ -1,3 +1,4 @@
+import { createError } from '../core/native';
 import { effect } from './effect';
 import { track, trigger } from './state';
 
@@ -20,7 +21,7 @@ export function computed<T>(getter: () => T) {
     };
     return {
         get value(): T {
-            if (!runner.active) throw new Error('Cannot read a disposed Brio computed value.');
+            if (!runner.active) throw createError('Cannot read a disposed Brio computed value.');
             track(holder, 'value');
             if (dirty) {
                 cachedValue = runner.run() as T;

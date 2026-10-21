@@ -1,3 +1,4 @@
+import { objectConstructor, isArray, deleteItem } from '../../core/native';
 import { evaluate, createExpressionScope } from '../../core/expression';
 import { onCleanup } from '../../core/scope';
 
@@ -11,7 +12,7 @@ export function handleId(
     context: Record<PropertyKey, any>,
 ): Record<PropertyKey, any> {
     const evaluated = expression ? evaluate(expression, context) : ['id'];
-    const idList = Array.isArray(evaluated) ? evaluated : [String(evaluated)];
+    const idList = isArray(evaluated) ? evaluated : [String(evaluated)];
 
     const idMap: Record<string, string> = {};
     for (const name of idList) {
@@ -21,8 +22,8 @@ export function handleId(
     }
 
     onCleanup(() => {
-        for (const val of Object.values(idMap)) {
-            activeIds.delete(val);
+        for (const val of objectConstructor.values(idMap)) {
+            deleteItem(activeIds, val);
         }
     });
 

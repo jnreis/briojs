@@ -11,7 +11,7 @@ export function observerOptions(
     context: ExpressionScope,
 ): Record<string, unknown> {
     const expression = getAttribute(element, 'b-options');
-    const mapping: unknown = expression === null ? {} : evaluate(expression, context);
+    const mapping: unknown = expression === null ? {} : evaluate(expression, context, 'b-options', element);
     if (!mapping || !isObjectType(mapping) || isArray(mapping))
         throw createTypeError('b-options must evaluate to an object keyed by directive name.');
     const base = attrName.split('.')[0];

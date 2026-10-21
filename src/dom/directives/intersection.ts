@@ -39,7 +39,7 @@ export function handleIntersection(
                         stopped = true;
                         observer.disconnect();
                     }
-                    execute(expression, createExpressionScope({ $entry: entry }, context));
+                    execute(expression, createExpressionScope({ $entry: entry }, context), undefined, attrName, element);
                 };
 
                 if (delay !== undefined) {

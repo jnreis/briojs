@@ -1,1 +1,1 @@
-export declare function handleEffect(_element: Element, expression: string, _modifiers: Record<string, boolean>, context: Record<PropertyKey, any>): void;
+export declare function handleEffect(element: Element, expression: string, _modifiers: Record<string, boolean>, context: Record<PropertyKey, any>): void;

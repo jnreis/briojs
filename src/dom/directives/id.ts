@@ -11,7 +11,7 @@ export function handleId(
     _modifiers: Record<string, boolean>,
     context: Record<PropertyKey, any>,
 ): Record<PropertyKey, any> {
-    const evaluated = expression ? evaluate(expression, context) : ['id'];
+    const evaluated = expression ? evaluate(expression, context, 'b-id') : ['id'];
     const idList = isArray(evaluated) ? evaluated : [String(evaluated)];
 
     const idMap: Record<string, string> = {};

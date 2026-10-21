@@ -256,6 +256,7 @@ Directive arguments use hyphens (`b-on-click`, `b-bind-href`); options use chain
 | `b-template` | Unwrap an element or instantiate a `<template>`'s contents in place, hydrating them without a rendered wrapper. |
 | `b-html` | Insert markup without activating Brio; `.hydrate` activates templates explicitly marked with `trustedHTML()`. |
 | `b-ignore` | Skip hydration for this element and its descendants. |
+| `b-cloak` | Removed when Brio hydrates the element; pair with `[b-cloak] { display: none; }` to hide raw templates until mount. |
 | `b-teleport` | Reactively move an element or template range relative to an Element/ref or document selector. Default placement: `after`. |
 | `b-effect` | Run a reactive expression for side effects in the element's owned scope. |
 | `b-router-outlet` | Render the component matching the current optional route. |
@@ -282,7 +283,9 @@ Directive arguments use hyphens (`b-on-click`, `b-bind-href`); options use chain
 
 `b-for` uses `item in $data.items` or `item, index in $data.items`. These names declare properties of `$for`, so row expressions use `$for.item` and `$for.index`. Without `b-key`, the index is the key; provide a stable key when items can be inserted, removed, or reordered. Duplicate keys are errors. Keyed reorders move only rows whose relative order changed (swapping two rows moves two rows).
 
-`b-bind-*` binds a DOM property when one exists; otherwise it sets or removes the corresponding attribute. `false`, `null`, and `undefined` remove attributes. `aria-*` bindings are the exception for booleans: ARIA states are enumerated strings, so `true`/`false` become `"true"`/`"false"` (`b-bind-aria-pressed="$data.on"` keeps a toggle button's state announced), while `null`/`undefined` still remove the attribute. `class` accepts a string, array, or object of class names and booleans. `style` accepts a style object.
+`b-bind-*` binds a DOM property when one exists; otherwise it sets or removes the corresponding attribute. `false`, `null`, and `undefined` remove attributes. `aria-*` bindings are the exception for booleans: ARIA states are enumerated strings, so `true`/`false` become `"true"`/`"false"` (`b-bind-aria-pressed="$data.on"` keeps a toggle button's state announced), while `null`/`undefined` still remove the attribute. `class` accepts a string, array, or object of class names and booleans. `style` accepts a style object. Read-only properties (SVG geometry such as `r`/`cx`, `input.form`/`list`) are bound as attributes. A writable property whose setter throws surfaces an error instead of silently falling back to an attribute.
+
+HTML parsing lowercases attribute names, so `b-bind-viewBox` reaches Brio as `b-bind-viewbox`. On SVG elements Brio restores the spec's mixed-case attribute names (`viewBox`, `preserveAspectRatio`, `gradientUnits`, `stdDeviation`, …). The `.prop` modifier always assigns a DOM property and resolves its casing against the element (`b-bind-tabIndex.prop`, `b-bind-scrollTop.prop`).
 
 `b-model` text inputs and textareas preserve strings by default, including
 whitespace and numeric-looking text. Supported model modifiers are `.lazy`
@@ -888,7 +891,7 @@ app.mount('#widgets');
 </main>
 ```
 
-Static host attributes become string props; `b-bind-name` supplies a reactive prop through `$props`. Setup receives `$props`, `$emit`, `$stores`, `$provided`, the private `$ref` registry, the host element as `el`, and `app`. Templates and contextual scripts also access `$props` and `$emit`. Component events are bubbling `CustomEvent`s emitted with `$emit(name, detail)`. Named slots use `slot="name"` on projected content and `<slot name="name">` in the template. Component setup runs in an owned scope; effects, persistence, and listeners registered during setup are disposed when the component is removed.
+Static host attributes become string props; `b-bind-name` supplies a reactive prop through `$props`. HTML lowercases attribute names, so `b-bind-userName` arrives as `$props.username`; use lowercase or dashed prop names (`$props['user-name']`). Setup receives `$props`, `$emit`, `$stores`, `$provided`, the private `$ref` registry, the host element as `el`, and `app`. Templates and contextual scripts also access `$props` and `$emit`. Component events are bubbling `CustomEvent`s emitted with `$emit(name, detail)`. Named slots use `slot="name"` on projected content and `<slot name="name">` in the template. Component setup runs in an owned scope; effects, persistence, and listeners registered during setup are disposed when the component is removed.
 
 ### Directives on component hosts
 
@@ -916,6 +919,26 @@ Use a surviving wrapper or put the directive inside the component.
 Use ordinary stylesheets and native CSS. Brio does not compile, relocate,
 namespace, or restrict your CSS. Prefer shared external styles for global
 design tokens, resets, layers, and reusable classes.
+
+### Hiding templates until mount with `b-cloak`
+
+Before Brio runs, the browser paints templates as authored: `${…}` text,
+every `b-if` branch, and unpopulated lists. Add `b-cloak` to the mount root or
+any region, and put this rule in `<head>` so it applies before first paint:
+
+```html
+<style>[b-cloak] { display: none !important; }</style>
+<main id="app" b-cloak>…</main>
+```
+
+Brio removes `b-cloak` from each element as it hydrates it (the mount root,
+rows, branches, and component templates); `b-ignore` content is never
+hydrated, so a cloak inside it stays. Unmounting restores the root's original
+attributes, including `b-cloak`. Brio does not inject the rule itself: a
+deferred or module script would inject it after first paint. Cloaked content
+stays hidden if JavaScript fails or is disabled, so cloak only regions that
+are meaningless without Brio, and prefer server-rendered or static markup for
+content that must remain readable.
 
 ### Native scoped styles
 
@@ -1496,6 +1519,27 @@ createApp({ state: () => ({ content: '<em>Trusted</em>' }) }).mount('#content');
 Only call `trustedHTML()` with templates you trust as application code. It is a
 trust assertion, not sanitization or a security boundary. Sanitizing ordinary
 HTML does not necessarily make it safe to execute as a Brio template.
+
+## Errors
+
+Brio errors say where they happened. Expression failures name the expression,
+the directive, the element (tag, id, and up to two classes), the nearest
+enclosing custom element, and the original error:
+
+```text
+Brio expression failed: "$data.user.name" in b-text on <span.name> inside <user-card>: TypeError: Cannot read properties of undefined (reading 'name')
+```
+
+- `error.cause` is the original error, `error.directive` the attribute name,
+  and `error.element` the element, which you can inspect in devtools.
+- Brio's own structural errors gain the element being hydrated or updated,
+  e.g. `b-ref requires a nonempty literal name. (at <p.note>)`.
+- Effects that fail when state changes are reported together from the write:
+  `One or more reactive effects failed.` lists every failure on its own line
+  and keeps them in `error.errors`.
+- Errors thrown by your own code (component `setup`, store methods, computed
+  getters) are not rewritten; Brio wraps them only when they surface through a
+  template expression, keeping the original as `cause`.
 
 ## Devtools
 

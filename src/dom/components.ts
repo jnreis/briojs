@@ -96,6 +96,7 @@ export function mountComponent(
                 : attribute.name.slice(getLength('bind-'));
             return {
                 name: raw.split('.')[0],
+                directive: attribute.name,
                 expression: attribute.value,
             };
         });
@@ -120,7 +121,7 @@ export function mountComponent(
                     throw createSyntaxError(`Invalid component event directive "${attribute.name}".`);
                 const expression = attribute.value;
                 const handler = (event: Event) => batch(() =>
-                    execute(expression, createExpressionScope({ $event: event }, context), event));
+                    execute(expression, createExpressionScope({ $event: event }, context), event, attribute.name, element));
                 addEventListener(element, eventPart, handler);
                 onCleanup(() => removeEventListener(element, eventPart, handler));
             } else if (startsWith(attribute.name, 'b-') && !startsWith(attribute.name, 'b-bind-')) {
@@ -129,7 +130,7 @@ export function mountComponent(
         }
 
         for (const binding of propBindings)
-            $props[binding.name] = evaluate(binding.expression, context);
+            $props[binding.name] = evaluate(binding.expression, context, binding.directive, element);
         const setupResult = definition.setup?.({
             el: element, $props, $emit, app: runtime.app,
             $stores: context.$stores ?? emptyContextValues,
@@ -150,7 +151,7 @@ export function mountComponent(
 
         for (const binding of propBindings) {
             effect(() => {
-                $props[binding.name] = evaluate(binding.expression, context);
+                $props[binding.name] = evaluate(binding.expression, context, binding.directive, element);
             });
         }
 

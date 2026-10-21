@@ -84,7 +84,8 @@ export function handleIf(
     let stopCondition: ReturnType<typeof effect> | undefined;
     onCleanup(() => stopCondition?.());
     const selectBranch = () => branches.findIndex(candidate =>
-        candidate.expression === undefined || Boolean(evaluate(candidate.expression, context)));
+        candidate.expression === undefined
+        || Boolean(evaluate(candidate.expression, context, candidate === branches[0] ? 'b-if' : 'b-else-if', candidate.template)));
 
     type Instance = { index: number; element: HTMLElement; scope: Scope; anchor: Comment; display: string; output: DomRange };
     const instances = new Map<number, Instance>();

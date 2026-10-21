@@ -1,10 +1,10 @@
-import { R as ReflectApi, $ as $PARENT, c as createTypeError, d as deleteItem, b as createError, g as getLength, T as TELEPORT, a as arrayFrom, l as ownKeys, G as GET_OWN_PROPERTY_DESCRIPTOR, o as objectConstructor, n as createSyntaxError, A as ATTRIBUTES, s as startsWith, t as TEMPLATE, j as isInstanceOf, f as isObjectType, p as includesItem, r as removeElement, B as B_TELEPORT, m as isString, k as isArray, e as objectEntries, q as objectKeys, h as isNumber, i as isFunction, u as isBoolean } from "./native-BSek5F0c.js";
-import { b as getChildNodes, a as addEventListener, r as removeEventListener, c as removeAttribute, g as getAttribute, d as removeChild, e as getParent, f as getOwnerDocument, h as getNextSibling, i as insertBefore, j as getNodeType } from "./native-PGRcyn9O.js";
-import { e as evaluate, a as emptyContextValues, b as createExpressionScope, d as execute, f as assign, g as createProvidedValues, h as evaluateFunction, c as copyContextValues } from "./context-values-CoIMWShh.js";
-import { o as onDispose, a as combinedError, d as getCurrentScope, f as onCleanup, b as batch, h as createScope, e as effect, c as causedError, n as notifyRootMounted, j as flush, k as notifyAppDisposed, l as notifyAppCreated, m as notifyRootUnmounted } from "./effect-djFrH-wH.js";
-import { s } from "./effect-djFrH-wH.js";
-import { s as state, a as track, t as trigger } from "./state-Bg7Dcm4A.js";
-import { b } from "./state-Bg7Dcm4A.js";
+import { R as ReflectApi, $ as $PARENT, c as createTypeError, d as deleteItem, b as createError, g as getLength, T as TELEPORT, a as arrayFrom, l as ownKeys, G as GET_OWN_PROPERTY_DESCRIPTOR, o as objectConstructor, n as createSyntaxError, A as ATTRIBUTES, t as startsWith, u as TEMPLATE, j as isInstanceOf, f as isObjectType, B as B_TELEPORT, p as includesItem, r as removeElement, m as isString, k as isArray, e as objectEntries, q as objectKeys, h as isNumber, i as isFunction, v as isBoolean } from "./native-CjaBWh7p.js";
+import { b as getChildNodes, a as addEventListener, r as removeEventListener, c as removeAttribute, g as getAttribute, d as removeChild, e as getParent, f as getOwnerDocument, h as getNodeType, i as getNextSibling, j as insertBefore } from "./native-Di2Lf1wo.js";
+import { e as evaluate, a as emptyContextValues, b as createExpressionScope, d as execute, f as assign, g as createProvidedValues, h as evaluateFunction, c as copyContextValues } from "./context-values-BEiXJGAH.js";
+import { o as onDispose, h as getCurrentScope, a as combinedError, j as onCleanup, b as batch, k as createScope, e as effect, c as causedError, l as errorText, f as directiveError, s as setScopeNode, n as locate, p as notifyRootMounted, r as flush, t as notifyAppDisposed, u as notifyAppCreated, v as notifyRootUnmounted } from "./effect-CdkoKvuz.js";
+import { d, x, m, w } from "./effect-CdkoKvuz.js";
+import { s as state, a as track, t as trigger } from "./state-C_G-YNBL.js";
+import { b } from "./state-C_G-YNBL.js";
 import { computed, resource } from "./reactivity.js";
 import { createRouter } from "./router-entry.js";
 import { persist } from "./persistence-entry.js";
@@ -12,7 +12,7 @@ import { createStepEngine } from "./step-entry.js";
 import { validate } from "./forms-entry.js";
 import { moneyMask } from "./money-mask-entry.js";
 import { HttpError, http } from "./http-entry.js";
-import { d, a, e, i } from "./devtools-BLfBvaeK.js";
+import { d as d2, a, e, i } from "./devtools-CR2Bel5O.js";
 const sources = /* @__PURE__ */ new WeakMap();
 function createScopedState(source, parent) {
   const observed = state(sources.get(source) ?? source);
@@ -212,6 +212,7 @@ function mountComponent(element, definition, context, runtime, hydrateNodeFn) {
     const raw = startsWith(attribute.name, "b-bind-") ? attribute.name.slice(getLength("b-bind-")) : attribute.name.slice(getLength("bind-"));
     return {
       name: raw.split(".")[0],
+      directive: attribute.name,
       expression: attribute.value
     };
   });
@@ -233,7 +234,7 @@ function mountComponent(element, definition, context, runtime, hydrateNodeFn) {
         if (!/^[a-z-]+$/.test(eventPart))
           throw createSyntaxError(`Invalid component event directive "${attribute.name}".`);
         const expression = attribute.value;
-        const handler = (event) => batch(() => execute(expression, createExpressionScope({ $event: event }, context), event));
+        const handler = (event) => batch(() => execute(expression, createExpressionScope({ $event: event }, context), event, attribute.name, element));
         addEventListener(element, eventPart, handler);
         onCleanup(() => removeEventListener(element, eventPart, handler));
       } else if (startsWith(attribute.name, "b-") && !startsWith(attribute.name, "b-bind-")) {
@@ -241,7 +242,7 @@ function mountComponent(element, definition, context, runtime, hydrateNodeFn) {
       }
     }
     for (const binding of propBindings)
-      $props[binding.name] = evaluate(binding.expression, context);
+      $props[binding.name] = evaluate(binding.expression, context, binding.directive, element);
     const setupResult = ((_a = definition.setup) == null ? void 0 : _a.call(definition, {
       el: element,
       $props,
@@ -264,7 +265,7 @@ function mountComponent(element, definition, context, runtime, hydrateNodeFn) {
     }
     for (const binding of propBindings) {
       effect(() => {
-        $props[binding.name] = evaluate(binding.expression, context);
+        $props[binding.name] = evaluate(binding.expression, context, binding.directive, element);
       });
     }
     const template = document.createElement(TEMPLATE);
@@ -651,11 +652,32 @@ function createInsert(runtime) {
 const interpolationRegex = /\$\{([^}]+)\}/g;
 function interpolateText(text, context) {
   return text.replace(interpolationRegex, (_, expression) => {
-    const value = evaluate(expression, context);
+    const value = evaluate(expression, context, "text interpolation");
     return value === null || value === void 0 ? "" : String(value);
   });
 }
 const staticClasses = /* @__PURE__ */ new WeakMap();
+const SVG_NAMESPACE = "http://www.w3.org/2000/svg";
+const svgAttributeNames = "attributeName attributeType baseFrequency calcMode clipPathUnits diffuseConstant edgeMode filterUnits gradientTransform gradientUnits kernelMatrix kernelUnitLength keyPoints keySplines keyTimes lengthAdjust limitingConeAngle markerHeight markerUnits markerWidth maskContentUnits maskUnits numOctaves pathLength patternContentUnits patternTransform patternUnits pointsAtX pointsAtY pointsAtZ preserveAlpha preserveAspectRatio primitiveUnits refX refY repeatCount repeatDur requiredExtensions specularConstant specularExponent spreadMethod startOffset stdDeviation stitchTiles surfaceScale systemLanguage tableValues targetX targetY textLength viewBox xChannelSelector yChannelSelector";
+let svgNames;
+const findProperty = (element, name) => {
+  for (let target = element; target; target = objectConstructor.getPrototypeOf(target)) {
+    const descriptor = objectConstructor[GET_OWN_PROPERTY_DESCRIPTOR](target, name);
+    if (descriptor) return descriptor;
+  }
+};
+const resolveBindTarget = (element, name, forceProp) => {
+  if (forceProp) {
+    if (name in element) return name;
+    for (let target = element; target; target = objectConstructor.getPrototypeOf(target))
+      for (const key of objectConstructor.getOwnPropertyNames(target))
+        if (key.toLowerCase() === name) return key;
+    return name;
+  }
+  if (element.namespaceURI !== SVG_NAMESPACE) return name;
+  svgNames ?? (svgNames = new Map(svgAttributeNames.split(" ").map((attribute) => [attribute.toLowerCase(), attribute])));
+  return svgNames.get(name) ?? name;
+};
 const dynamicStyles = /* @__PURE__ */ new WeakMap();
 const setBoundValue = (element, name, value, forceProp = false) => {
   if (name === "class") {
@@ -703,12 +725,13 @@ const setBoundValue = (element, name, value, forceProp = false) => {
   }
   const aria = startsWith(name, "aria-");
   if (aria && (value === true || value === false)) value = String(value);
-  if (forceProp || name in element && !aria && !startsWith(name, "data-")) {
+  const descriptor = forceProp || aria || startsWith(name, "data-") || !(name in element) ? void 0 : findProperty(element, name);
+  if (forceProp || (descriptor == null ? void 0 : descriptor.set) || (descriptor == null ? void 0 : descriptor.writable)) {
     try {
       element[name] = value;
       return;
     } catch (error) {
-      if (forceProp) throw causedError(`Unable to bind property "${name}" on <${element.tagName.toLowerCase()}>.`, error);
+      throw causedError(`Unable to bind property "${name}" on <${element.tagName.toLowerCase()}>: ${errorText(error)}`, error);
     }
   }
   if (value === null || value === void 0 || value === false) removeAttribute(element, name);
@@ -718,9 +741,10 @@ function handleBind(element, attrName, expression, modifiers, context) {
   const rawTarget = startsWith(attrName, "b-bind-") ? attrName.slice(getLength("b-bind-")) : attrName.slice(getLength("bind-"));
   if (!rawTarget) throw createSyntaxError(`Brio binding directive "${attrName}" has no target.`);
   const forceProp = Boolean(modifiers.prop);
+  const target = resolveBindTarget(element, rawTarget, forceProp);
   effect(() => {
-    const value = evaluate(expression, context);
-    setBoundValue(element, rawTarget, value, forceProp);
+    const value = evaluate(expression, context, attrName, element);
+    setBoundValue(element, target, value, forceProp);
   });
 }
 function handleOn(element, attrName, expression, modifiers, context) {
@@ -738,7 +762,7 @@ function handleOn(element, attrName, expression, modifiers, context) {
     if (modifiers.self && event.target !== element) return;
     if (modifiers.outside && (element.contains(event.target) || !element.isConnected)) return;
     const invoke = () => batch(() => {
-      execute(expression, createExpressionScope({ $event: event }, context), event);
+      execute(expression, createExpressionScope({ $event: event }, context), event, attrName, element);
     });
     if (modifiers.debounce) {
       clearTimeout(debounceTimer);
@@ -783,22 +807,22 @@ function handleModel(element, expression, modifiers, context) {
   };
   const updateState = () => {
     const input = element;
-    const current = evaluate(expression, context);
+    const current = evaluate(expression, context, "b-model", element);
     if (isInstanceOf(element, HTMLSelectElement) && element.multiple) {
-      assign(expression, context, arrayFrom(element.selectedOptions, (option) => formatValue(option.value)));
+      assign(expression, context, arrayFrom(element.selectedOptions, (option) => formatValue(option.value)), "b-model", element);
     } else if (input.type === "checkbox" && isArray(current)) {
       const values = current.slice();
       const formattedVal = formatValue(input.value);
       const index = values.indexOf(formattedVal);
       if (input.checked && index < 0) values.push(formattedVal);
       else if (!input.checked && index >= 0) values.splice(index, 1);
-      assign(expression, context, values);
+      assign(expression, context, values, "b-model", element);
     } else if (input.type === "checkbox") {
-      assign(expression, context, input.checked);
+      assign(expression, context, input.checked, "b-model", element);
     } else if (input.type === "radio") {
-      if (input.checked) assign(expression, context, formatValue(input.value));
+      if (input.checked) assign(expression, context, formatValue(input.value), "b-model", element);
     } else {
-      assign(expression, context, formatValue(element.value));
+      assign(expression, context, formatValue(element.value), "b-model", element);
     }
   };
   const eventName = isLazy ? "change" : "input";
@@ -824,10 +848,10 @@ function handleModel(element, expression, modifiers, context) {
     }
   };
   const start = () => {
-    effect(() => updateElement(evaluate(expression, context)));
+    effect(() => updateElement(evaluate(expression, context, "b-model", element)));
   };
   if (isInstanceOf(element, HTMLSelectElement)) {
-    const observer = new MutationObserver(() => updateElement(evaluate(expression, context)));
+    const observer = new MutationObserver(() => updateElement(evaluate(expression, context, "b-model", element)));
     observer.observe(element, { childList: true, subtree: true });
     onCleanup(() => observer.disconnect());
     return start;
@@ -891,7 +915,7 @@ function handleIf(element, expression, modifiers, context, runtime, hydrateNodeF
   originals.slice(1).forEach(removeElement);
   let stopCondition;
   onCleanup(() => stopCondition == null ? void 0 : stopCondition());
-  const selectBranch = () => branches.findIndex((candidate) => candidate.expression === void 0 || Boolean(evaluate(candidate.expression, context)));
+  const selectBranch = () => branches.findIndex((candidate) => candidate.expression === void 0 || Boolean(evaluate(candidate.expression, context, candidate === branches[0] ? "b-if" : "b-else-if", candidate.template)));
   const instances = /* @__PURE__ */ new Map();
   const anchors = [];
   let active;
@@ -1115,18 +1139,18 @@ function handleFor(element, expression, _modifiers, context, runtime, hydrateNod
   effect(() => {
     reconciling = true;
     try {
-      const entries = enumerate(evaluate(collectionExpression, context));
+      const entries = enumerate(evaluate(collectionExpression, context, "b-for", element));
       const nextKeys = /* @__PURE__ */ new Set();
       ordered = [];
       for (const [index, item] of entries) {
         const loopData = { [itemName]: item, [indexName]: index };
         const rowState = createScopedState(loopData, context.$for);
         const rowContext = createExpressionScope({ $for: rowState }, context);
-        const evaluatedKey = keyExpression ? evaluate(keyExpression, rowContext) : index;
+        const evaluatedKey = keyExpression ? evaluate(keyExpression, rowContext, "b-key", element) : index;
         if (!isString(evaluatedKey) && !isNumber(evaluatedKey))
           throw createTypeError("b-key must evaluate to a string or number.");
         if (nextKeys.has(evaluatedKey))
-          throw createError(`Duplicate b-for key "${evaluatedKey}".`);
+          throw createError(`Duplicate b-for key "${evaluatedKey}" from b-key="${keyExpression}".`);
         nextKeys.add(evaluatedKey);
         let row = rows.get(evaluatedKey);
         if (!row) {
@@ -1176,7 +1200,7 @@ function handleHtml(element, expression, modifiers, context, runtime, hydrateChi
   let contentScope;
   onCleanup(() => contentScope == null ? void 0 : contentScope.dispose());
   effect(() => {
-    const html = evaluate(expression, context);
+    const html = evaluate(expression, context, "b-html", element);
     if (modifiers.hydrate && !isTrustedHTML(html))
       throw createTypeError("b-html.hydrate requires a trustedHTML() value.");
     const htmlStr = isTrustedHTML(html) ? getTrustedHTMLString(html) : String(html ?? "");
@@ -1193,7 +1217,7 @@ function handleHtml(element, expression, modifiers, context, runtime, hydrateChi
 }
 function handleText(element, expression, context) {
   effect(() => {
-    const value = evaluate(expression, context);
+    const value = evaluate(expression, context, "b-text", element);
     const text = value === null || value === void 0 ? "" : String(value);
     element.textContent = text;
   });
@@ -1201,7 +1225,7 @@ function handleText(element, expression, context) {
 function handleData(element, expression, _modifiers, parentContext) {
   const context = createExpressionScope({ $el: element }, parentContext);
   if (!expression.trim()) return context;
-  const data = evaluate(expression, context);
+  const data = evaluate(expression, context, "b-data", element);
   if (data === null || !isObjectType(data))
     throw createTypeError("b-data must evaluate to an object.");
   const reactiveData = createScopedState(data, parentContext.$data);
@@ -1215,13 +1239,13 @@ function handleData(element, expression, _modifiers, parentContext) {
   );
 }
 function handleProvide(expression, context) {
-  const $provided = createProvidedValues(() => evaluate(expression, context), context.$provided);
+  const $provided = createProvidedValues(() => evaluate(expression, context, "b-provide"), context.$provided);
   return createExpressionScope({ $provided }, context);
 }
 let idSeq = 0;
 const activeIds = /* @__PURE__ */ new Set();
 function handleId(_element, expression, _modifiers, context) {
-  const evaluated = expression ? evaluate(expression, context) : ["id"];
+  const evaluated = expression ? evaluate(expression, context, "b-id") : ["id"];
   const idList = isArray(evaluated) ? evaluated : [String(evaluated)];
   const idMap = {};
   for (const name of idList) {
@@ -1349,7 +1373,7 @@ function handleMask(element, expression, modifiers, context) {
     removeEventListener(element, "compositionend", compositionEnd);
   });
   effect(() => {
-    const value = evaluate(expression, context);
+    const value = evaluate(expression, context, "b-mask", element);
     if (isString(value)) formatter = patternFormatter(value);
     else if (isFunction(value)) formatter = value;
     else throw createTypeError("b-mask must evaluate to a pattern string or formatter function.");
@@ -1381,7 +1405,7 @@ function handleTeleport(element, expression, modifiers, context) {
     var _a2;
     cancelPending == null ? void 0 : cancelPending();
     cancelPending = void 0;
-    const value = evaluate(expression, context);
+    const value = evaluate(expression, context, B_TELEPORT, element);
     let target = value;
     let placement = "after";
     if (isArray(value)) {
@@ -1452,7 +1476,7 @@ function handleTemplate(element, _expression, _modifiers, context, runtime, hydr
 }
 function observerOptions(element, attrName, modifiers, context) {
   const expression = getAttribute(element, "b-options");
-  const mapping = expression === null ? {} : evaluate(expression, context);
+  const mapping = expression === null ? {} : evaluate(expression, context, "b-options", element);
   if (!mapping || !isObjectType(mapping) || isArray(mapping))
     throw createTypeError("b-options must evaluate to an object keyed by directive name.");
   const base = attrName.split(".")[0];
@@ -1511,7 +1535,7 @@ function handleIntersection(element, attrName, expression, modifiers, context) {
             stopped = true;
             observer.disconnect();
           }
-          execute(expression, createExpressionScope({ $entry: entry }, context));
+          execute(expression, createExpressionScope({ $entry: entry }, context), void 0, attrName, element);
         };
         if (delay !== void 0) {
           clearTimeout(debounceTimer);
@@ -1562,13 +1586,13 @@ function handleMutation(element, attrName, expression, modifiers, context) {
   const observer = new MutationObserver((mutations) => {
     let matching = [];
     if (isAdded) {
-      matching = mutations.filter((m) => getLength(m.addedNodes) > 0);
+      matching = mutations.filter((m2) => getLength(m2.addedNodes) > 0);
     } else if (isRemoved) {
-      matching = mutations.filter((m) => getLength(m.removedNodes) > 0);
+      matching = mutations.filter((m2) => getLength(m2.removedNodes) > 0);
     } else if (isAttrs) {
-      matching = mutations.filter((m) => m.type === ATTRIBUTES);
+      matching = mutations.filter((m2) => m2.type === ATTRIBUTES);
     } else if (isText) {
-      matching = mutations.filter((m) => m.type === "characterData");
+      matching = mutations.filter((m2) => m2.type === "characterData");
     } else {
       matching = mutations;
     }
@@ -1576,7 +1600,7 @@ function handleMutation(element, attrName, expression, modifiers, context) {
       const invoke = () => {
         const records = pending;
         pending = [];
-        execute(expression, createExpressionScope({ $mutations: records }, context));
+        execute(expression, createExpressionScope({ $mutations: records }, context), void 0, attrName, element);
       };
       pending.push(...matching);
       if (delay !== void 0) {
@@ -1617,7 +1641,7 @@ function handleResize(element, attrName, expression, modifiers, context) {
         width: measured ? vertical ? measured.blockSize : measured.inlineSize : entry.contentRect.width,
         height: measured ? vertical ? measured.inlineSize : measured.blockSize : entry.contentRect.height
       };
-      execute(expression, createExpressionScope({ $size: size, $entry: entry }, context));
+      execute(expression, createExpressionScope({ $size: size, $entry: entry }, context), void 0, attrName, element);
     };
     if (delay !== void 0) {
       clearTimeout(debounceTimer);
@@ -1632,9 +1656,9 @@ function handleResize(element, attrName, expression, modifiers, context) {
   });
   observer.observe(target, { box });
 }
-function handleEffect(_element, expression, _modifiers, context) {
+function handleEffect(element, expression, _modifiers, context) {
   effect(() => {
-    evaluate(expression, context);
+    evaluate(expression, context, "b-effect", element);
   });
 }
 function handleScript(element, _expression, _modifiers, context) {
@@ -1644,14 +1668,14 @@ function handleScript(element, _expression, _modifiers, context) {
   if (!raw) throw createSyntaxError("b-script requires a function expression.");
   const $context = createExpressionScope({ onCleanup }, context);
   try {
-    const result = evaluateFunction(raw, $context)($context);
+    const result = evaluateFunction(raw, $context, element)($context);
     if (isInstanceOf(result, Promise))
       return result.then(() => {
       }, (error) => {
-        throw causedError("Brio b-script execution failed.", error);
+        throw directiveError("Brio b-script execution failed", error, "b-script", element);
       });
   } catch (error) {
-    throw causedError("Brio b-script execution failed.", error);
+    throw directiveError("Brio b-script execution failed", error, "b-script", element);
   }
 }
 function mountRouterOutlet(element, context, runtime, hydrateNodeFn) {
@@ -1705,10 +1729,15 @@ function hydrateNode(node, parentContext, runtime) {
   parentContext = takeProjectedContext(node) ?? parentContext;
   if (!parentContext.$ref) parentContext = createExpressionScope({ $ref: createRefs() }, parentContext);
   const scope = createScope();
-  withHydration(node, () => scope.run(() => {
-    ownNode(node, parentContext, runtime);
-    hydrateOwnedNode(node, parentContext, runtime);
-  }));
+  setScopeNode(scope, node);
+  try {
+    withHydration(node, () => scope.run(() => {
+      ownNode(node, parentContext, runtime);
+      hydrateOwnedNode(node, parentContext, runtime);
+    }));
+  } catch (error) {
+    throw locate(error, node);
+  }
 }
 function hydrateOwnedNode(node, parentContext, runtime) {
   if (getNodeType(node) === Node.TEXT_NODE) {
@@ -1717,6 +1746,7 @@ function hydrateOwnedNode(node, parentContext, runtime) {
   }
   if (getNodeType(node) !== Node.ELEMENT_NODE) return;
   const element = node;
+  removeAttribute(element, "b-cloak");
   if (element.hasAttribute("b-ignore") || element.hasAttribute("ignore")) {
     getNodeOwner(element).controlsChildren = true;
     return;
@@ -2074,26 +2104,33 @@ export {
   createRouter,
   createScope,
   createStepEngine,
-  d as devtools,
+  d as describeNode,
+  d2 as devtools,
   a as devtoolsPanel,
+  directiveError,
   effect,
   e as enableDevtools,
+  errorText,
   evaluate,
   evaluateFunction,
   execute,
   flush,
   getCurrentScope,
+  x as getScopeNode,
   http,
   hydrateNode,
   hydrateRoot,
   i as inspectDevtools,
+  locate,
+  m as mark,
   moneyMask,
   onCleanup,
   onDispose,
   persist,
   queueTask,
   resource,
-  s as setActiveScope,
+  w as setActiveScope,
+  setScopeNode,
   b as signal,
   state,
   trustedHTML,

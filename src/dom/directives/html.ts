@@ -17,7 +17,7 @@ export function handleHtml(
     let contentScope: Scope | undefined;
     onCleanup(() => contentScope?.dispose());
     effect(() => {
-        const html = evaluate(expression, context);
+        const html = evaluate(expression, context, 'b-html', element);
         if (modifiers.hydrate && !isTrustedHTML(html))
             throw createTypeError('b-html.hydrate requires a trustedHTML() value.');
         const htmlStr = isTrustedHTML(html)
@@ -41,7 +41,7 @@ export function handleText(
     context: Record<PropertyKey, any>,
 ): void {
     effect(() => {
-        const value = evaluate(expression, context);
+        const value = evaluate(expression, context, 'b-text', element);
         const text = value === null || value === undefined ? '' : String(value);
         element.textContent = text;
     });

@@ -1,4 +1,4 @@
-import { f as isObjectType, k as isArray, c as createTypeError, m as isString, s as startsWith, g as getLength } from "./native-BSek5F0c.js";
+import { f as isObjectType, k as isArray, c as createTypeError, m as isString, t as startsWith, g as getLength } from "./native-CjaBWh7p.js";
 function moneyMask(options = {}) {
   if (options === null || !isObjectType(options) || isArray(options))
     throw createTypeError("Money mask options must be an object.");

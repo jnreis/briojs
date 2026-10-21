@@ -1520,3 +1520,163 @@ test('event handlers are batched and flush() exposes the updated DOM inside the 
     assert.equal(window.document.activeElement?.textContent, 'Panel');
     assert.equal(typeof window.brio.flush, 'function', 'browser global exposes flush');
 });
+
+test('b-bind restores SVG attribute casing, binds getter-only properties as attributes, and resolves .prop casing', t => {
+    const { app, root } = environment(t, `
+        <svg id="chart" b-bind-viewBox="'0 0 ' + $data.width + ' 10'" b-bind-preserveAspectRatio="'none'">
+            <circle id="dot" cy="5" b-bind-r="$data.radius" b-bind-cx="$data.radius"></circle>
+        </svg>
+        <input id="field" b-bind-form="$data.form" b-bind-list="'choices'">
+        <div id="focusable" b-bind-tabIndex.prop="$data.tab"></div>`, { width: 40, radius: 3, form: 'signup', tab: 2 });
+    app.mount(root);
+    const svg = root.querySelector('#chart');
+    const dot = root.querySelector('#dot');
+    const field = root.querySelector('#field');
+
+    assert.equal(svg.getAttribute('viewBox'), '0 0 40 10', 'the parser lowercases b-bind-viewBox; Brio restores the SVG name');
+    assert.equal(svg.getAttribute('preserveAspectRatio'), 'none');
+    assert.equal(svg.hasAttribute('viewbox'), false, 'no inert lowercase attribute is written');
+    assert.equal(dot.getAttribute('r'), '3');
+    assert.equal(field.getAttribute('form'), 'signup', 'getter-only input.form is bound as an attribute');
+    assert.equal(field.getAttribute('list'), 'choices');
+    assert.equal(root.querySelector('#focusable').tabIndex, 2, '.prop resolves tabindex to the tabIndex property');
+
+    app.state.width = 80;
+    app.state.radius = 6;
+    app.state.form = null;
+    app.state.tab = 5;
+    assert.equal(svg.getAttribute('viewBox'), '0 0 80 10');
+    assert.equal(dot.getAttribute('cx'), '6');
+    assert.equal(field.hasAttribute('form'), false);
+    assert.equal(root.querySelector('#focusable').getAttribute('tabindex'), '5');
+});
+
+test('b-bind surfaces failing property setters instead of silently writing an attribute', t => {
+    const { app, root } = environment(t, `<input id="upload" type="file" b-bind-value="'C:/fake.txt'">`);
+    assert.throws(() => app.mount(root), error => {
+        assert.match(error.message, /Unable to bind property "value" on <input>: .*\(at <input#upload>\)/);
+        assert.equal(error.element.id, 'upload');
+        return true;
+    });
+});
+
+test('b-cloak is removed as each element hydrates and restored with the root on unmount', t => {
+    const { app, root, window } = environment(t, `
+        <section id="panel" b-cloak>
+            <p id="hidden" b-cloak b-if="$data.show">Shown later</p>
+            <ul><li b-for="item in $data.items" b-cloak b-text="$for.item"></li></ul>
+            <div b-ignore><span id="ignored" b-cloak></span></div>
+        </section>`, { show: false, items: ['a', 'b'] });
+    root.setAttribute('b-cloak', '');
+    const handle = app.mount(root);
+    assert.equal(root.hasAttribute('b-cloak'), false, 'the mount root is revealed');
+    assert.equal(root.querySelector('#panel').hasAttribute('b-cloak'), false);
+    assert.equal(root.querySelectorAll('li[b-cloak]').length, 0, 'rows hydrate without the attribute');
+    assert.equal(root.querySelector('#ignored').hasAttribute('b-cloak'), true, 'b-ignore content is never hydrated');
+    app.state.show = true;
+    assert.equal(root.querySelector('#hidden').hasAttribute('b-cloak'), false, 'conditional branches hydrate without it');
+    app.unmount();
+    assert.equal(root.hasAttribute('b-cloak'), true, 'unmount restores the original attributes');
+    assert.ok(handle && window);
+});
+
+test('error messages name the expression, directive, element, enclosing component, and original error', t => {
+    const dom = new JSDOM(`
+        <main id="app">
+            <section><user-card></user-card></section>
+            <b class="total" b-text="$data.order.total.toFixed(2)"></b>
+            <i b-bind-title="$data.order.label.trim()"></i>
+            <button id="pay" b-on-click="$data.gateway.charge()">Pay</button>
+        </main>`, { runScripts: 'outside-only' });
+    const { window } = dom;
+    window.eval(bundle);
+    t.after(() => window.close());
+    const errors = [];
+    window.addEventListener('error', event => { errors.push(event.error); event.preventDefault(); });
+    const app = window.eval(`brio.createApp({
+        state: () => ({ order: { total: 2, label: ' A ' }, gateway: {} }),
+        components: { 'user-card': { template: '<p class="name" b-text="$data.user.profile.name"></p>', setup: () => ({ user: { profile: {} } }) } },
+    })`);
+    t.after(() => app.dispose());
+    app.mount('#app');
+
+    window.document.querySelector('#pay').click();
+    assert.equal(errors.length, 1);
+    assert.equal(errors[0].message,
+        `Brio event expression failed: "$data.gateway.charge()" in b-on-click on <button#pay>: TypeError: $data.gateway.charge is not a function`);
+    assert.equal(errors[0].directive, 'b-on-click');
+    assert.equal(errors[0].element.id, 'pay');
+    assert.equal(errors[0].cause.name, 'TypeError');
+
+    assert.throws(() => { app.state.order = null; }, error => {
+        assert.match(error.message, /^One or more reactive effects failed\.\n  - Error: Brio expression failed: "\$data\.order\.total\.toFixed\(2\)" in b-text on <b\.total>: TypeError: .*\n  - Error: Brio expression failed: "\$data\.order\.label\.trim\(\)" in b-bind-title on <i>: TypeError: /);
+        assert.equal(error.errors.length, 2);
+        assert.equal(error.errors[0].element.className, 'total');
+        return true;
+    });
+
+    const broken = new JSDOM(`<main id="app"><section><user-card></user-card></section><p b-ref=""></p></main>`, { runScripts: 'outside-only' }).window;
+    t.after(() => broken.close());
+    broken.eval(bundle);
+    assert.throws(() => broken.eval(`brio.createApp({ components: { 'user-card': {
+        template: '<span class="name" b-text="$data.user.name"></span>', setup: () => ({}) } } }).mount('#app')`),
+    error => {
+        assert.match(error.message, /in b-text on <span\.name> inside <user-card>: TypeError: Cannot read properties of undefined \(reading 'name'\)$/);
+        return true;
+    });
+    const structural = new JSDOM(`<main id="app"><p class="note" b-ref=""></p></main>`, { runScripts: 'outside-only' }).window;
+    t.after(() => structural.close());
+    structural.eval(bundle);
+    assert.throws(() => structural.eval(`brio.createApp().mount('#app')`),
+        error => error.message === 'b-ref requires a nonempty literal name. (at <p.note>)' && error.element.className === 'note');
+    assert.throws(() => structural.eval(`brio.createApp().mount(Object.assign(document.createElement('div'), { innerHTML: '<span b-text="$data.(x"></span>' }))`),
+        error => error.name === 'SyntaxError' && /^Invalid Brio expression "\$data\.\(x" in b-text on <span>: SyntaxError: /.test(error.message));
+});
+
+test('manual cloak page hides templates until its delayed bootstrap mounts them', async t => {
+    const markup = readFileSync(new URL('./directives/cloak.html', import.meta.url), 'utf8');
+    const bootstrap = [...markup.matchAll(/<script>([\s\S]*?)<\/script>/g)].at(-1)[1];
+    const dom = new JSDOM(markup.replace(/<script\b[\s\S]*?<\/script>/g, ''), {
+        runScripts: 'outside-only',
+        pretendToBeVisual: true,
+        url: 'http://localhost/tests/directives/cloak.html?delay=20',
+    });
+    const { window } = dom;
+    const { document } = window;
+    t.after(() => {
+        try { window.teardown(); } finally { window.close(); }
+    });
+    window.eval(bundle);
+    window.eval(`${bootstrap}\nwindow.teardown = () => { cloakObserver.disconnect(); app.dispose(); };`);
+    const cloaked = () => document.querySelectorAll('[b-cloak]').length;
+    assert.equal(cloaked(), 7);
+    assert.equal(document.getElementById('cloaked').textContent, '7');
+    assert.equal(document.getElementById('status').dataset.phase, 'waiting');
+    assert.ok(document.querySelector('#demo [b-cloak]').textContent.includes('${$data.user.name}'));
+
+    await new Promise(resolve => setTimeout(resolve, 60));
+    assert.equal(document.getElementById('status').dataset.phase, 'mounted');
+    assert.deepEqual([...document.querySelectorAll('[b-cloak]')].map(element => element.id), ['ignored-cloak']);
+    assert.equal(document.getElementById('cloaked').textContent, '1');
+    assert.ok(document.querySelector('#demo .stage + .stage').textContent.includes('Signed in as Ada Lovelace (Pro)'));
+    const rows = () => [...document.querySelectorAll('[data-cloak-row]')];
+    assert.deepEqual(rows().map(row => row.textContent), ['1. Review pull request', '2. Write release notes', '3. Ship 1.0']);
+
+    const buttons = [...document.querySelectorAll('#demo button')];
+    buttons.find(button => button.textContent === 'Add task').click();
+    assert.equal(rows().length, 4);
+    assert.ok(rows().every(row => !row.hasAttribute('b-cloak')));
+    assert.ok(document.querySelector('#demo').textContent.includes('More than three tasks: 4'));
+    assert.equal(cloaked(), 1);
+
+    const widget = document.getElementById('widget');
+    widget.querySelector('button').click();
+    assert.ok(widget.textContent.includes('1 clicks'));
+    document.getElementById('widget-unmount').click();
+    assert.ok(widget.hasAttribute('b-cloak'));
+    assert.ok(widget.textContent.includes('${$data.clicks}'));
+    assert.equal(document.getElementById('widget-mount').disabled, false);
+    document.getElementById('widget-mount').click();
+    assert.equal(widget.hasAttribute('b-cloak'), false);
+    assert.ok(widget.textContent.includes('0 clicks'));
+});

@@ -19,6 +19,16 @@ const directives = [
         equal(pair, 'b-ignore', 'retains skipped child directive', node.getAttribute('b-text'), '$data.value');
         equal(pair, 'b-ignore', 'leaves skipped child output inert', node.textContent, '');
     }),
+    probe('b-cloak', `
+        <div data-probe="cloak" b-cloak><span data-probe="cloak-text" b-cloak b-text="$data.value"></span></div>`,
+    ({ pair, root }) => {
+        equal(pair, 'b-cloak', 'removes the cloak from hydrated elements',
+            root.querySelectorAll('[data-probe^="cloak"][b-cloak]').length, 0);
+        equal(pair, 'b-cloak', 'hydrates cloaked content',
+            root.querySelector('[data-probe="cloak-text"]')?.textContent, 'ready');
+    },
+    ({ pair, root }) => equal(pair, 'b-cloak', 'keeps cloaked content reactive',
+        root.querySelector('[data-probe="cloak-text"]')?.textContent, 'updated')),
     probe('b-if', `
         <div b-if="$data.visible"><span data-probe="if" b-text="$data.value"></span></div>`,
     ({ pair, root }) => equal(pair, 'b-if', 'renders its true branch',

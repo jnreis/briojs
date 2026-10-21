@@ -10,7 +10,7 @@ export function handleData(
 ): Record<PropertyKey, any> {
     const context = createExpressionScope({ $el: element }, parentContext);
     if (!expression.trim()) return context;
-    const data = evaluate(expression, context);
+    const data = evaluate(expression, context, 'b-data', element);
     if (data === null || !isObjectType(data))
         throw createTypeError('b-data must evaluate to an object.');
     const reactiveData = createScopedState(data, parentContext.$data);

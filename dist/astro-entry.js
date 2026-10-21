@@ -1,7 +1,7 @@
-import { i as isFunction, c as createTypeError, o as objectConstructor, b as createError, e as objectEntries, d as deleteItem, g as getLength, f as isObjectType, a as arrayFrom, h as isNumber, j as isInstanceOf } from "./native-BSek5F0c.js";
-import { a as addEventListener, r as removeEventListener, g as getAttribute } from "./native-PGRcyn9O.js";
-import { c as copyContextValues, e as evaluate } from "./context-values-CoIMWShh.js";
-import { a as combinedError } from "./effect-djFrH-wH.js";
+import { i as isFunction, c as createTypeError, o as objectConstructor, b as createError, e as objectEntries, d as deleteItem, g as getLength, f as isObjectType, a as arrayFrom, h as isNumber, j as isInstanceOf } from "./native-CjaBWh7p.js";
+import { a as addEventListener, r as removeEventListener, g as getAttribute } from "./native-Di2Lf1wo.js";
+import { c as copyContextValues, e as evaluate } from "./context-values-BEiXJGAH.js";
+import { a as combinedError } from "./effect-CdkoKvuz.js";
 const lazyMarker = Symbol("brio.astro.lazy");
 function lazyApp(load) {
   if (!isFunction(load)) throw createTypeError("lazyApp requires a module loader.");

@@ -58,7 +58,7 @@ export function handleMutation(
             const invoke = () => {
                 const records = pending;
                 pending = [];
-                execute(expression, createExpressionScope({ $mutations: records }, context));
+                execute(expression, createExpressionScope({ $mutations: records }, context), undefined, attrName, element);
             };
             pending.push(...matching);
 

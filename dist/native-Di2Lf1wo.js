@@ -21,9 +21,9 @@ export {
   getParent as e,
   getOwnerDocument as f,
   getAttribute as g,
-  getNextSibling as h,
-  insertBefore as i,
-  getNodeType as j,
+  getNodeType as h,
+  getNextSibling as i,
+  insertBefore as j,
   removeEventListener as r
 };
-//# sourceMappingURL=native-PGRcyn9O.js.map
+//# sourceMappingURL=native-Di2Lf1wo.js.map

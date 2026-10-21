@@ -127,6 +127,14 @@ metadata on `main`, through commit `d868d43`.
   (array vs. object) differs from the local value.
 - Keyed `b-for` reorders move only rows outside the longest stable run, so
   swapping two rows of 1,000 moves 2 rows instead of nearly all of them.
+- `b-bind-viewBox`, `b-bind-preserveAspectRatio`, and other mixed-case SVG
+  attributes now work; the HTML parser lowercases them and SVG ignores the
+  lowercase names. `.prop` bindings resolve the property's casing
+  (`b-bind-tabIndex.prop`).
+- `b-bind` no longer assigns getter-only properties (SVG `r`/`cx`/`href`,
+  `input.form`/`list`), which threw and was caught on every update; they are
+  bound as attributes directly. Real setter failures now raise an error
+  instead of silently becoming attributes.
 
 ### Added
 
@@ -153,6 +161,12 @@ metadata on `main`, through commit `d868d43`.
   and installation instructions in [ai/](./ai/README.md).
 - Runnable widget, multi-page enhancement, and SPA examples, with regression
   tests covering their behavior and inclusion in the npm package.
+- `b-cloak`, removed as each element hydrates, for hiding raw templates until
+  mount with a `[b-cloak] { display: none }` rule.
+- Located errors: expression failures name the directive, element, enclosing
+  component, and original error and expose `error.element`/`error.directive`;
+  Brio's structural errors name the element; aggregated effect failures list
+  each failure.
 - Real-world test apps under `tests/apps/` (counter, temperature converter,
   conditional form, TodoMVC, 7GUIs, large table), each with a JSDOM suite
   that drives user flows end to end.

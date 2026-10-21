@@ -8,6 +8,7 @@ import {
 import { getChildNodes, getParent, getNodeType, getAttribute, removeAttribute } from './native';
 import { createExpressionScope } from '../core/expression';
 import { createScope, onCleanup } from '../core/scope';
+import { locate, setScopeNode } from '../core/errors';
 import type { Scope } from '../core/scope';
 import { effect } from '../reactivity/effect';
 import type { DomRuntime } from './types';
@@ -115,10 +116,15 @@ export function hydrateNode(
     parentContext = takeProjectedContext(node) ?? parentContext;
     if (!parentContext.$ref) parentContext = createExpressionScope({ $ref: createRefs() }, parentContext);
     const scope = createScope();
-    withHydration(node, () => scope.run(() => {
-        ownNode(node, parentContext, runtime);
-        hydrateOwnedNode(node, parentContext, runtime);
-    }));
+    setScopeNode(scope, node);
+    try {
+        withHydration(node, () => scope.run(() => {
+            ownNode(node, parentContext, runtime);
+            hydrateOwnedNode(node, parentContext, runtime);
+        }));
+    } catch (error) {
+        throw locate(error, node);
+    }
 }
 
 function hydrateOwnedNode(
@@ -132,6 +138,7 @@ function hydrateOwnedNode(
     }
     if (getNodeType(node) !== Node.ELEMENT_NODE) return;
     const element = node as Element;
+    removeAttribute(element, 'b-cloak');
 
     // 1. b-ignore
     if (element.hasAttribute('b-ignore') || element.hasAttribute('ignore')) {

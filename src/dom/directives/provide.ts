@@ -3,6 +3,6 @@ import type { ExpressionScope } from '../../core/expression';
 import { createProvidedValues } from '../../core/context-values';
 
 export function handleProvide(expression: string, context: ExpressionScope): ExpressionScope {
-    const $provided = createProvidedValues(() => evaluate(expression, context), context.$provided);
+    const $provided = createProvidedValues(() => evaluate(expression, context, 'b-provide'), context.$provided);
     return createExpressionScope({ $provided }, context);
 }

@@ -31,7 +31,7 @@ export function handleOn(
         if (modifiers.outside && (element.contains(event.target as Node) || !element.isConnected)) return;
 
         const invoke = () => batch(() => {
-            execute(expression, createExpressionScope({ $event: event }, context), event);
+            execute(expression, createExpressionScope({ $event: event }, context), event, attrName, element);
         });
 
         if (modifiers.debounce) {

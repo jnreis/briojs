@@ -1,6 +1,6 @@
-import { i as isFunction, c as createTypeError, o as objectConstructor, n as createSyntaxError, d as deleteItem, f as isObjectType, p as includesItem, q as objectKeys, R as ReflectApi, G as GET_OWN_PROPERTY_DESCRIPTOR, l as ownKeys } from "./native-BSek5F0c.js";
-import { c as causedError, e as effect } from "./effect-djFrH-wH.js";
-import { t as trigger, a as track } from "./state-Bg7Dcm4A.js";
+import { i as isFunction, c as createTypeError, o as objectConstructor, n as createSyntaxError, d as deleteItem, f as isObjectType, p as includesItem, q as objectKeys, R as ReflectApi, G as GET_OWN_PROPERTY_DESCRIPTOR, l as ownKeys } from "./native-CjaBWh7p.js";
+import { m as mark, d as describeNode, f as directiveError, e as effect } from "./effect-CdkoKvuz.js";
+import { t as trigger, a as track } from "./state-C_G-YNBL.js";
 const valueExpressions = /* @__PURE__ */ new Map();
 const statementExpressions = /* @__PURE__ */ new Map();
 const assignmentExpressions = /* @__PURE__ */ new Map();
@@ -10,11 +10,13 @@ const contextBindings = `
 "use strict";
 const { $data, $el, $event, $id, $ref, $for, $mutations, $size, $entry, $props, $emit, $insert, $stores, $provided, trustedHTML, flush, onCleanup } = ${$CONTEXT};
 `;
-function evaluateFunction(source, context) {
+function evaluateFunction(source, context, node) {
   const fn = compile(
     functionExpressions,
     source,
-    (expression) => new Function($CONTEXT, `${contextBindings} return (${expression.replace(/;\s*$/, "")});`)
+    (expression) => new Function($CONTEXT, `${contextBindings} return (${expression.replace(/;\s*$/, "")});`),
+    "b-script",
+    node
   );
   const result = fn(context);
   if (!isFunction(result))
@@ -24,13 +26,15 @@ function evaluateFunction(source, context) {
 function createExpressionScope(...sources) {
   return objectConstructor.assign(objectConstructor.create(null), ...sources.reverse());
 }
-const compile = (cache, source, make) => {
+const compile = (cache, source, make, directive, node) => {
   let fn = cache.get(source);
   if (!fn) {
     try {
       fn = make(source);
     } catch (error) {
-      throw createSyntaxError(`Invalid Brio expression "${source}": ${String(error)}`);
+      throw mark(createSyntaxError(
+        `Invalid Brio expression "${source}"${directive ? ` in ${directive}` : ""}${node ? ` on ${describeNode(node)}` : ""}: ${String(error)}`
+      ), node, directive);
     }
     cache.set(source, fn);
     if (cache.size > 500)
@@ -38,40 +42,46 @@ const compile = (cache, source, make) => {
   }
   return fn;
 };
-function evaluate(source, scope) {
+function evaluate(source, scope, directive, node = scope.$el) {
   const fn = compile(
     valueExpressions,
     source,
-    (expression) => new Function($CONTEXT, `${contextBindings} return (${expression});`)
+    (expression) => new Function($CONTEXT, `${contextBindings} return (${expression});`),
+    directive,
+    node
   );
   try {
     return fn(scope);
   } catch (error) {
-    throw causedError(`Brio expression failed: "${source}"`, error);
+    throw directiveError(`Brio expression failed: "${source}"`, error, directive, node);
   }
 }
-function execute(source, scope, event) {
+function execute(source, scope, event, directive, node = scope.$el) {
   const fn = compile(
     statementExpressions,
     source,
-    (expression) => new Function($CONTEXT, `${contextBindings} ${expression}`)
+    (expression) => new Function($CONTEXT, `${contextBindings} ${expression}`),
+    directive,
+    node
   );
   try {
     fn(event === void 0 ? scope : createExpressionScope({ $event: event }, scope));
   } catch (error) {
-    throw causedError(`Brio event expression failed: "${source}"`, error);
+    throw directiveError(`Brio event expression failed: "${source}"`, error, directive, node);
   }
 }
-function assign(source, scope, value) {
+function assign(source, scope, value, directive, node = scope.$el) {
   const fn = compile(
     assignmentExpressions,
     source,
-    (expression) => new Function($CONTEXT, "$value", `${contextBindings} return (${expression} = $value);`)
+    (expression) => new Function($CONTEXT, "$value", `${contextBindings} return (${expression} = $value);`),
+    directive,
+    node
   );
   try {
     fn(scope, value);
   } catch (error) {
-    throw causedError(`Brio model expression failed: "${source}"`, error);
+    throw directiveError(`Brio model expression failed: "${source}"`, error, directive, node);
   }
 }
 function copyContextValues(value, label) {
@@ -138,4 +148,4 @@ export {
   createProvidedValues as g,
   evaluateFunction as h
 };
-//# sourceMappingURL=context-values-CoIMWShh.js.map
+//# sourceMappingURL=context-values-BEiXJGAH.js.map

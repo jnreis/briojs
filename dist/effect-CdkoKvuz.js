@@ -1,12 +1,50 @@
-import { o as objectConstructor, b as createError, g as getLength, d as deleteItem } from "./native-BSek5F0c.js";
+import { f as isObjectType, b as createError, s as brioErrors, o as objectConstructor, g as getLength, d as deleteItem } from "./native-CjaBWh7p.js";
+const located = /* @__PURE__ */ new WeakSet();
+const scopeNodes = /* @__PURE__ */ new WeakMap();
+const define = (error, name, value) => objectConstructor.defineProperty(error, name, { configurable: true, value });
+const errorText = (error) => error && isObjectType(error) && "message" in error ? `${error.name}: ${error.message}` : String(error);
+const elementOf = (node) => {
+  const element = node.nodeType === 1 ? node : node.parentNode;
+  return (element == null ? void 0 : element.nodeType) === 1 ? element : null;
+};
+const describeNode = (node) => {
+  const element = elementOf(node);
+  if (!element) return "a detached node";
+  const tag = (el) => el.tagName.toLowerCase();
+  const classes = (element.getAttribute("class") ?? "").trim().split(/\s+/).filter(Boolean).slice(0, 2);
+  let text = `<${tag(element)}${element.id ? "#" + element.id : ""}${classes.map((name) => "." + name).join("")}>`;
+  for (let parent = element.parentElement; parent; parent = parent.parentElement)
+    if (tag(parent).includes("-")) return `${text} inside <${tag(parent)}>`;
+  return text;
+};
+const mark = (error, node, directive) => {
+  located.add(error);
+  const element = node && elementOf(node);
+  if (element) define(error, "element", element);
+  if (directive) define(error, "directive", directive);
+  return error;
+};
 function causedError(message, cause) {
   const error = createError(message);
-  objectConstructor.defineProperty(error, "cause", { configurable: true, value: cause });
+  define(error, "cause", cause);
   return error;
 }
+const directiveError = (message, cause, directive, node) => mark(causedError(
+  `${message}${directive ? ` in ${directive}` : ""}${node ? ` on ${describeNode(node)}` : ""}: ${errorText(cause)}`,
+  cause
+), node, directive);
+const locate = (error, node) => {
+  if (node && brioErrors.has(error) && !located.has(error)) {
+    error.message += ` (at ${describeNode(node)})`;
+    mark(error, node);
+  }
+  return error;
+};
+const setScopeNode = (scope, node) => node && scopeNodes.set(scope, node);
+const getScopeNode = (scope) => scope && scopeNodes.get(scope);
 function combinedError(message, errors) {
-  const error = createError(message);
-  objectConstructor.defineProperty(error, "errors", { configurable: true, value: errors });
+  const error = mark(createError(message + errors.map((item) => "\n  - " + errorText(item)).join("")));
+  define(error, "errors", errors);
   return error;
 }
 let activeScope;
@@ -46,6 +84,7 @@ function createScope(parent = activeScope) {
     }
   };
   scopeCleanups.set(scope, cleanups);
+  setScopeNode(scope, getScopeNode(parent));
   if (parent) detachFromParent = onDispose(parent, () => scope.dispose());
   return scope;
 }
@@ -127,6 +166,8 @@ const runEffect = (eff) => {
       return eff.scope.run(() => eff.fn());
     }
     return eff.fn();
+  } catch (error) {
+    throw locate(error, getScopeNode(eff.scope));
   } finally {
     eff.running = false;
     activeEffect = previous;
@@ -215,19 +256,26 @@ export {
   combinedError as a,
   batch as b,
   causedError as c,
-  getCurrentScope as d,
+  describeNode as d,
   effect as e,
-  onCleanup as f,
+  directiveError as f,
   getActiveEffect as g,
-  createScope as h,
+  getCurrentScope as h,
   installDevtoolsBridge as i,
-  flush as j,
-  notifyAppDisposed as k,
-  notifyAppCreated as l,
-  notifyRootUnmounted as m,
-  notifyRootMounted as n,
+  onCleanup as j,
+  createScope as k,
+  errorText as l,
+  mark as m,
+  locate as n,
   onDispose as o,
+  notifyRootMounted as p,
   queueEffect as q,
-  setActiveScope as s
+  flush as r,
+  setScopeNode as s,
+  notifyAppDisposed as t,
+  notifyAppCreated as u,
+  notifyRootUnmounted as v,
+  setActiveScope as w,
+  getScopeNode as x
 };
-//# sourceMappingURL=effect-djFrH-wH.js.map
+//# sourceMappingURL=effect-CdkoKvuz.js.map

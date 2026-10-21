@@ -194,7 +194,7 @@ Escape HTML-significant characters in literal text/attribute values.
 | --- | --- |
 | `b-text="expr"` | Sets literal text; returned tags and `${...}` are never interpreted. |
 | `b-provide="{ name: expression }"` | Supplies live read-only names through `$provided` on this element and its subtree. |
-| `b-bind-href="expr"` | Binds a DOM property when available, otherwise an attribute. `null`, `undefined`, and `false` remove attributes, except `aria-*` booleans, which become `"true"`/`"false"`. |
+| `b-bind-href="expr"` | Binds a DOM property when available, otherwise an attribute. `null`, `undefined`, and `false` remove attributes, except `aria-*` booleans, which become `"true"`/`"false"`. Read-only properties (SVG `r`/`cx`) bind as attributes; mixed-case SVG names (`b-bind-viewBox`) are restored; `.prop` forces a property and resolves its casing. |
 | `b-bind-class="expr"` | Accepts strings, arrays, or class-name/boolean objects. |
 | `b-bind-style="expr"` | Supports style objects. |
 | `b-on-click="statements"` | Executes event statements; listeners are scope-owned. |
@@ -204,6 +204,7 @@ Escape HTML-significant characters in literal text/attribute values.
 | `b-key="$for.item.id"` | Stable string/number identity; duplicate keys throw. Index is the default key. |
 | `b-html="$data.markup"` | Inserts markup without Brio activation. `b-html.hydrate="trustedHTML($data.markup)"` explicitly activates executable authored templates with owned cleanup. |
 | `b-ignore` | Skips hydration of the element and descendants. |
+| `b-cloak` | Removed when the element hydrates; needs `[b-cloak] { display: none !important; }` in `<head>`. |
 | `b-script` | Only on a script element; see required writing style below. |
 | `b-effect="$data.observe($data.count)"` | Reactive expression, not a block of event-style statements. Avoid feedback writes. |
 | `b-id="['input']"` | Creates `$id.input`; bind `id`/label `for` explicitly. |
@@ -376,7 +377,7 @@ app.component('counter-card', {
 ```
 
 Use hyphenated component names. Setup returns plain state, exposed as `$data`.
-Static host attributes become string props; `b-bind-label` gives a reactive prop.
+Static host attributes become string props; `b-bind-label` gives a reactive prop. Prop names arrive lowercase (`b-bind-userName` → `$props.username`); use lowercase or dashed names.
 Emits are bubbling CustomEvents; consume `$event.detail` in host handlers.
 Named slots use `slot="name"` and `<slot name="name">`. Projected content retains
 the caller's data context. Use ordinary `<style>@scope { ... }</style>` inside

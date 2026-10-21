@@ -35,7 +35,7 @@ export function handleResize(
                 width: measured ? (vertical ? measured.blockSize : measured.inlineSize) : entry.contentRect.width,
                 height: measured ? (vertical ? measured.inlineSize : measured.blockSize) : entry.contentRect.height,
             };
-            execute(expression, createExpressionScope({ $size: size, $entry: entry }, context));
+            execute(expression, createExpressionScope({ $size: size, $entry: entry }, context), undefined, attrName, element);
         };
 
         if (delay !== undefined) {

@@ -157,18 +157,18 @@ export function handleFor(
     effect(() => {
         reconciling = true;
         try {
-            const entries = enumerate(evaluate(collectionExpression, context));
+            const entries = enumerate(evaluate(collectionExpression, context, 'b-for', element));
             const nextKeys = new Set<string | number>();
             ordered = [];
             for (const [index, item] of entries) {
                 const loopData = { [itemName]: item, [indexName]: index };
                 const rowState = createScopedState(loopData, context.$for);
                 const rowContext = createExpressionScope({ $for: rowState }, context);
-                const evaluatedKey = keyExpression ? evaluate(keyExpression, rowContext) : index;
+                const evaluatedKey = keyExpression ? evaluate(keyExpression, rowContext, 'b-key', element) : index;
                 if (!isString(evaluatedKey) && !isNumber(evaluatedKey))
                     throw createTypeError('b-key must evaluate to a string or number.');
                 if (nextKeys.has(evaluatedKey))
-                    throw createError(`Duplicate b-for key "${evaluatedKey}".`);
+                    throw createError(`Duplicate b-for key "${evaluatedKey}" from b-key="${keyExpression}".`);
                 nextKeys.add(evaluatedKey);
 
                 let row = rows.get(evaluatedKey);

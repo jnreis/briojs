@@ -50,7 +50,7 @@ export function handleTeleport(
     stop = effect(() => {
         cancelPending?.();
         cancelPending = undefined;
-        const value: unknown = evaluate(expression, context);
+        const value: unknown = evaluate(expression, context, B_TELEPORT, element);
         let target: unknown = value;
         let placement: unknown = 'after';
         if (isArray(value)) {

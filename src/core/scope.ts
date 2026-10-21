@@ -1,5 +1,5 @@
 import { getLength, createError, deleteItem } from './native';
-import { combinedError } from '../core/errors';
+import { combinedError, setScopeNode, getScopeNode } from '../core/errors';
 
 export type Scope = {
     run<T>(fn: () => T): T;
@@ -45,6 +45,7 @@ export function createScope(parent: Scope | undefined = activeScope): Scope {
         },
     };
     scopeCleanups.set(scope, cleanups);
+    setScopeNode(scope, getScopeNode(parent));
     if (parent) detachFromParent = onDispose(parent, () => scope.dispose());
     return scope;
 }

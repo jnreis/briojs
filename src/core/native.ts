@@ -23,9 +23,12 @@ export function arrayFrom(...args: unknown[]): unknown[] {
     return ReflectApi.apply(Array.from, Array, args);
 }
 
-export const createError = (message: string): Error => new Error(message);
-export const createTypeError = (message: string): TypeError => new TypeError(message);
-export const createSyntaxError = (message: string): SyntaxError => new SyntaxError(message);
+/** Errors Brio raised itself; only these get DOM locations appended, never errors thrown by application code. */
+export const brioErrors = new WeakSet<object>();
+const ownError = <E extends Error>(error: E): E => (brioErrors.add(error), error);
+export const createError = (message: string): Error => ownError(new Error(message));
+export const createTypeError = (message: string): TypeError => ownError(new TypeError(message));
+export const createSyntaxError = (message: string): SyntaxError => ownError(new SyntaxError(message));
 export const isString = (value: unknown): value is string => typeof value === 'string';
 export const isObjectType = <T>(value: T): value is T & (object | null) => typeof value === 'object';
 export const isNumber = (value: unknown): value is number => typeof value === 'number';

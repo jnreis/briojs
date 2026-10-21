@@ -29,22 +29,22 @@ export function handleModel(
 
     const updateState = () => {
         const input = element as HTMLInputElement;
-        const current = evaluate(expression, context);
+        const current = evaluate(expression, context, 'b-model', element);
         if (isInstanceOf(element, HTMLSelectElement) && element.multiple) {
-            assign(expression, context, arrayFrom(element.selectedOptions, option => formatValue(option.value)));
+            assign(expression, context, arrayFrom(element.selectedOptions, option => formatValue(option.value)), 'b-model', element);
         } else if (input.type === 'checkbox' && isArray(current)) {
             const values = current.slice() as unknown[];
             const formattedVal = formatValue(input.value);
             const index = values.indexOf(formattedVal);
             if (input.checked && index < 0) values.push(formattedVal);
             else if (!input.checked && index >= 0) values.splice(index, 1);
-            assign(expression, context, values);
+            assign(expression, context, values, 'b-model', element);
         } else if (input.type === 'checkbox') {
-            assign(expression, context, input.checked);
+            assign(expression, context, input.checked, 'b-model', element);
         } else if (input.type === 'radio') {
-            if (input.checked) assign(expression, context, formatValue(input.value));
+            if (input.checked) assign(expression, context, formatValue(input.value), 'b-model', element);
         } else {
-            assign(expression, context, formatValue(element.value));
+            assign(expression, context, formatValue(element.value), 'b-model', element);
         }
     };
 
@@ -74,11 +74,11 @@ export function handleModel(
     };
 
     const start = () => {
-        effect(() => updateElement(evaluate(expression, context)));
+        effect(() => updateElement(evaluate(expression, context, 'b-model', element)));
     };
 
     if (isInstanceOf(element, HTMLSelectElement)) {
-        const observer = new MutationObserver(() => updateElement(evaluate(expression, context)));
+        const observer = new MutationObserver(() => updateElement(evaluate(expression, context, 'b-model', element)));
         observer.observe(element, { childList: true, subtree: true });
         onCleanup(() => observer.disconnect());
         // Options may be rendered by child directives, so selection starts after children hydrate.

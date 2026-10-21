@@ -1,7 +1,7 @@
 import { isInstanceOf, createTypeError, createSyntaxError } from '../../core/native';
 
 import { evaluateFunction, createExpressionScope } from '../../core/expression';
-import { causedError } from '../../core/errors';
+import { directiveError } from '../../core/errors';
 import { onCleanup } from '../../core/scope';
 
 export function handleScript(
@@ -16,12 +16,12 @@ export function handleScript(
     if (!raw) throw createSyntaxError('b-script requires a function expression.');
     const $context = createExpressionScope({ onCleanup }, context);
     try {
-        const result = evaluateFunction(raw, $context)($context);
+        const result = evaluateFunction(raw, $context, element)($context);
         if (isInstanceOf(result, Promise))
             return result.then(() => {}, error => {
-                throw causedError('Brio b-script execution failed.', error);
+                throw directiveError('Brio b-script execution failed', error, 'b-script', element);
             });
     } catch (error) {
-        throw causedError('Brio b-script execution failed.', error);
+        throw directiveError('Brio b-script execution failed', error, 'b-script', element);
     }
 }

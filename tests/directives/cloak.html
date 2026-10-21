@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual Test: cloak directive</title>
+    <style>
+        /* The rule Brio users author in <head> so it applies before first paint. */
+        [b-cloak] { display: none !important; }
+        /* Optional variant: keep the cloaked element's space to avoid layout shift. */
+        .reserve[b-cloak] { display: revert !important; visibility: hidden; }
+
+        body { font-family: system-ui, -apple-system, sans-serif; margin: 20px; background: #f8fafc; color: #1e293b; }
+        h1 { font-size: 1.5rem; }
+        h3 { margin-top: 0; color: #0f172a; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; }
+        .card { background: white; border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; }
+        .status { position: sticky; top: 0; z-index: 1; display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; padding: 10px 14px; margin-bottom: 16px; border-radius: 8px; background: #0f172a; color: white; }
+        .status strong { font-variant-numeric: tabular-nums; }
+        .status a { color: #93c5fd; }
+        .status[data-phase="mounted"] { background: #166534; }
+        .split { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+        .stage { min-height: 150px; padding: 12px; border: 1px dashed #94a3b8; border-radius: 6px; }
+        .stage h4 { margin: 0 0 8px; font-size: .8rem; text-transform: uppercase; letter-spacing: .05em; color: #64748b; }
+        .placeholder { display: none; color: #64748b; }
+        [b-cloak] ~ .placeholder { display: block; }
+        .skeleton { height: 12px; margin: 8px 0; border-radius: 4px; background: linear-gradient(90deg, #e2e8f0, #f1f5f9, #e2e8f0); background-size: 200% 100%; animation: shimmer 1.2s infinite linear; }
+        @keyframes shimmer { to { background-position: -200% 0; } }
+        .expect { margin: 8px 0 0; font-size: .9rem; color: #475569; }
+        .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; background: #dbeafe; color: #1e40af; font-size: .85rem; }
+        .controls { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+        button { padding: 6px 12px; border: 1px solid #cbd5e1; border-radius: 6px; background: white; cursor: pointer; }
+        button:disabled { opacity: .5; cursor: default; }
+    </style>
+</head>
+<body>
+
+    <h1>b-cloak Directive Manual Tests</h1>
+    <p>Brio is mounted after a deliberate delay to simulate a slow network or a deferred script. Watch each example before and after the mount.</p>
+
+    <div class="status" id="status" data-phase="waiting">
+        <span id="phase">Brio mounts in <strong id="countdown">…</strong></span>
+        <span>Cloaked elements: <strong id="cloaked">…</strong></span>
+        <span>Replay with delay:
+            <a href="?delay=1000">1 s</a> ·
+            <a href="?delay=3000">3 s</a> ·
+            <a href="?delay=6000">6 s</a> ·
+            <a href="?delay=600000">never</a>
+        </span>
+    </div>
+
+    <main id="demo" b-data="{
+        user: { name: 'Ada Lovelace', plan: 'Pro', online: true },
+        tasks: ['Review pull request', 'Write release notes', 'Ship 1.0'],
+        unread: 7,
+    }">
+
+        <div class="card">
+            <h3>1. Flash of raw template vs cloaked</h3>
+            <div class="split">
+                <div class="stage">
+                    <h4>Without b-cloak</h4>
+                    <p>Signed in as <strong>${$data.user.name}</strong> (${$data.user.plan})</p>
+                    <p b-if="$data.user.online">🟢 Online</p>
+                    <p b-else>⚪ Offline</p>
+                    <ul><li b-for="task in $data.tasks" b-key="$for.task">${$for.task}</li></ul>
+                </div>
+                <div class="stage">
+                    <h4>With b-cloak + placeholder</h4>
+                    <div b-cloak>
+                        <p>Signed in as <strong>${$data.user.name}</strong> (${$data.user.plan})</p>
+                        <p b-if="$data.user.online">🟢 Online</p>
+                        <p b-else>⚪ Offline</p>
+                        <ul><li b-for="task in $data.tasks" b-key="$for.task">${$for.task}</li></ul>
+                    </div>
+                    <div class="placeholder">
+                        Loading profile…
+                        <div class="skeleton"></div><div class="skeleton" style="width: 70%"></div><div class="skeleton" style="width: 85%"></div>
+                    </div>
+                </div>
+            </div>
+            <p class="expect"><strong>Expected before mount:</strong> the left side shows raw <code b-ignore>${…}</code> text, both Online and Offline, and a single raw list row. The right side shows only the shimmering placeholder.<br>
+            <strong>Expected after mount:</strong> both sides are identical, and the placeholder disappears because no <code>[b-cloak]</code> sibling remains.</p>
+        </div>
+
+        <div class="card">
+            <h3>2. Granular cloaks: readable page, hidden values</h3>
+            <p>This static text is readable immediately. Inbox: <span class="badge" b-cloak>${$data.unread} unread</span></p>
+            <p>Keeping its space (<code>.reserve</code>): <span class="badge reserve" b-cloak>${$data.unread} unread</span> ← space is reserved, so this text does not shift.</p>
+            <p class="expect"><strong>Expected before mount:</strong> the first badge is missing and the text closes up around it. The second badge is invisible but its gap remains.<br>
+            <strong>Expected after mount:</strong> both badges read "7 unread". Only the first line shifts.</p>
+        </div>
+
+        <div class="card">
+            <h3>3. Cloaks inside rows and branches</h3>
+            <ul>
+                <li b-for="task, index in $data.tasks" b-key="$for.task" b-cloak data-cloak-row>${$for.index + 1}. ${$for.task}</li>
+            </ul>
+            <p b-if="$data.tasks.length > 3" b-cloak>More than three tasks: <strong>${$data.tasks.length}</strong></p>
+            <div class="controls">
+                <button b-on-click="$data.tasks.push('Follow-up #' + ($data.tasks.length + 1))">Add task</button>
+                <button b-on-click="$data.tasks.pop()">Remove last</button>
+            </div>
+            <p class="expect"><strong>Expected:</strong> nothing in this list is visible before mount. Afterwards every row is visible, including rows added later. The "More than three tasks" line appears once there are four tasks, with no <code>b-cloak</code> left on it.</p>
+        </div>
+
+        <div class="card">
+            <h3>4. Cloak inside b-ignore stays hidden</h3>
+            <div b-ignore>
+                <p>Brio skips this subtree, so it never removes the cloak below.</p>
+                <p b-cloak id="ignored-cloak" style="color: #b91c1c">If you can read this, b-cloak was wrongly removed inside b-ignore.</p>
+            </div>
+            <p class="expect"><strong>Expected:</strong> the red sentence never appears, so the cloaked-element counter settles at 1 after mount.</p>
+        </div>
+    </main>
+
+    <div class="card">
+        <h3>5. Unmount restores the cloak</h3>
+        <div class="stage">
+            <section id="widget" b-cloak b-data="{ clicks: 0 }">
+                <p>Independent widget: <strong>${$data.clicks}</strong> clicks</p>
+                <button b-on-click="$data.clicks++">Click me</button>
+            </section>
+            <div class="placeholder">Widget not mounted (its root carries <code>b-cloak</code>).</div>
+        </div>
+        <div class="controls">
+            <button id="widget-unmount" disabled>Unmount widget</button>
+            <button id="widget-mount" disabled>Mount widget</button>
+        </div>
+        <p class="expect"><strong>Expected:</strong> the widget mounts with the rest of the page. "Unmount widget" restores the root's authored attributes, including <code>b-cloak</code>, so the widget hides and the placeholder returns. "Mount widget" shows it again with a fresh count of 0.</p>
+    </div>
+
+    <script src="/tests/source-viewer.js"></script>
+    <script src="/dist/brio.min.js"></script>
+    <script>
+        const delay = Math.max(0, Number(new URLSearchParams(location.search).get('delay') ?? 3000) || 0);
+        const status = document.getElementById('status');
+        const countdown = document.getElementById('countdown');
+        const cloaked = document.getElementById('cloaked');
+        const mountButton = document.getElementById('widget-mount');
+        const unmountButton = document.getElementById('widget-unmount');
+
+        // Write only on change: updating the counter is itself an observed mutation.
+        const countCloaks = () => {
+            const count = String(document.querySelectorAll('[b-cloak]').length);
+            if (cloaked.textContent !== count) cloaked.textContent = count;
+        };
+        const cloakObserver = new MutationObserver(countCloaks);
+        cloakObserver.observe(document.body, {
+            subtree: true, childList: true, attributes: true, attributeFilter: ['b-cloak'],
+        });
+        countCloaks();
+
+        const startedAt = performance.now();
+        const tick = () => {
+            if (status.dataset.phase !== 'waiting') return;
+            countdown.textContent = `${(Math.max(0, delay - (performance.now() - startedAt)) / 1000).toFixed(1)} s`;
+            requestAnimationFrame(tick);
+        };
+        tick();
+
+        const app = brio.createApp();
+        let widget = null;
+        const syncWidgetButtons = () => {
+            mountButton.disabled = Boolean(widget);
+            unmountButton.disabled = !widget;
+        };
+        mountButton.addEventListener('click', () => { widget = app.mount('#widget'); syncWidgetButtons(); });
+        unmountButton.addEventListener('click', () => { widget.unmount(); widget = null; syncWidgetButtons(); });
+
+        setTimeout(() => {
+            app.mount('#demo');
+            widget = app.mount('#widget');
+            syncWidgetButtons();
+            status.dataset.phase = 'mounted';
+            document.getElementById('phase').textContent = `Mounted after ${(delay / 1000).toFixed(1)} s`;
+            console.log('cloak.html hydrated successfully');
+        }, delay);
+    </script>
+</body>
+</html>

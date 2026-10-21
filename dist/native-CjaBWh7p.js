@@ -13,9 +13,11 @@ const ownKeys = (value) => ReflectApi.ownKeys(value);
 function arrayFrom(...args) {
   return ReflectApi.apply(Array.from, Array, args);
 }
-const createError = (message) => new Error(message);
-const createTypeError = (message) => new TypeError(message);
-const createSyntaxError = (message) => new SyntaxError(message);
+const brioErrors = /* @__PURE__ */ new WeakSet();
+const ownError = (error) => (brioErrors.add(error), error);
+const createError = (message) => ownError(new Error(message));
+const createTypeError = (message) => ownError(new TypeError(message));
+const createSyntaxError = (message) => ownError(new SyntaxError(message));
 const isString = (value) => typeof value === "string";
 const isObjectType = (value) => typeof value === "object";
 const isNumber = (value) => typeof value === "number";
@@ -52,8 +54,9 @@ export {
   includesItem as p,
   objectKeys as q,
   removeElement as r,
-  startsWith as s,
-  TEMPLATE as t,
-  isBoolean as u
+  brioErrors as s,
+  startsWith as t,
+  TEMPLATE as u,
+  isBoolean as v
 };
-//# sourceMappingURL=native-BSek5F0c.js.map
+//# sourceMappingURL=native-CjaBWh7p.js.map

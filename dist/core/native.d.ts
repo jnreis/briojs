@@ -12,6 +12,8 @@ export declare const objectEntries: typeof Object.entries;
 export declare const ownKeys: typeof Reflect.ownKeys;
 export declare function arrayFrom<T>(items: Iterable<T> | ArrayLike<T>): T[];
 export declare function arrayFrom<T, U>(items: Iterable<T> | ArrayLike<T>, map: (value: T, index: number) => U, thisArg?: unknown): U[];
+/** Errors Brio raised itself; only these get DOM locations appended, never errors thrown by application code. */
+export declare const brioErrors: WeakSet<object>;
 export declare const createError: (message: string) => Error;
 export declare const createTypeError: (message: string) => TypeError;
 export declare const createSyntaxError: (message: string) => SyntaxError;

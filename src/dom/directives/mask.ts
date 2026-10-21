@@ -135,7 +135,7 @@ export function handleMask(
         removeEventListener(element, 'compositionend', compositionEnd);
     });
     effect(() => {
-        const value = evaluate(expression, context);
+        const value = evaluate(expression, context, 'b-mask', element);
         if (isString(value)) formatter = patternFormatter(value);
         else if (isFunction(value)) formatter = value;
         else throw createTypeError('b-mask must evaluate to a pattern string or formatter function.');

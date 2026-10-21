@@ -1,5 +1,5 @@
 import { getLength, objectConstructor, deleteItem } from '../core/native';
-import { combinedError } from '../core/errors';
+import { combinedError, locate, getScopeNode } from '../core/errors';
 import { devtoolsEnabled, notifyEffectCreated, notifyEffectDisposed } from '../plugins/devtools-bridge';
 import type { EffectOptions, Scope, Stop } from './types';
 import { getCurrentScope, onDispose } from '../core/scope';
@@ -37,6 +37,8 @@ export const runEffect = (eff: ReactiveEffect): unknown => {
             return eff.scope.run(() => eff.fn());
         }
         return eff.fn();
+    } catch (error) {
+        throw locate(error, getScopeNode(eff.scope));
     } finally {
         eff.running = false;
         activeEffect = previous;

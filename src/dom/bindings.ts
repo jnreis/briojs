@@ -1,5 +1,5 @@
 import {
-    getLength, createError, arrayFrom, createSyntaxError, createTypeError, removeElement, includesItem,
+    getLength, createError, arrayFrom, snapshotList, createSyntaxError, createTypeError, removeElement,
     startsWith, TEMPLATE,
     B_TELEPORT,
     TELEPORT,
@@ -58,6 +58,9 @@ export function mountRouterOutlet(
 }
 
 const componentNamePattern = /^[a-z][a-z0-9]*-[a-z0-9-]+$/;
+const conditionalNames = new Set(['b-if', 'b-else-if', 'b-else']);
+const childControllingNames = new Set(['b-text', 'text', 'b-html', 'html', 'b-router-outlet']);
+const transitionNames = new Set(['b-transition', 'transition']);
 
 import {
     handleBind,
@@ -89,7 +92,7 @@ export function hydrateChildren(
     runtime: DomRuntime,
 ): void {
     withHydration(element, () => {
-        for (const child of arrayFrom(getChildNodes(element))) {
+        for (const child of snapshotList(getChildNodes(element))) {
             if (getParent(child) === element && !getNodeOwner(child)) hydrateNode(child, context, runtime);
         }
     });
@@ -147,8 +150,9 @@ function hydrateOwnedNode(
         return;
     }
 
-    const conditionalAttributes = arrayFrom(element[ATTRIBUTES]).filter(attribute =>
-        includesItem(['b-if', 'b-else-if', 'b-else'], extractModifiers(attribute.name).baseName));
+    const attributes = snapshotList(element[ATTRIBUTES]);
+    const parsed = attributes.map(attribute => extractModifiers(attribute.name));
+    const conditionalAttributes = attributes.filter((_, index) => conditionalNames.has(parsed[index].baseName));
     if (getLength(conditionalAttributes) > 1)
         throw createSyntaxError('An element can have only one conditional directive.');
     const ifAttr = conditionalAttributes[0];
@@ -197,11 +201,10 @@ function hydrateOwnedNode(
     }
 
     const templateAttr = getAttribute(element, 'b-template');
-    if (arrayFrom(element[ATTRIBUTES]).some(attribute =>
-        includesItem(['b-text', 'text', 'b-html', 'html', 'b-router-outlet'], extractModifiers(attribute.name).baseName)))
+    if (parsed.some(({ baseName }) => childControllingNames.has(baseName)))
         getNodeOwner(element)!.controlsChildren = true;
-    const refAttributes = arrayFrom(element[ATTRIBUTES]).filter(attribute =>
-        extractModifiers(attribute.name).baseName === 'b-ref' || startsWith(attribute.name, 'b-ref-'));
+    const refAttributes = attributes.filter((attribute, index) =>
+        parsed[index].baseName === 'b-ref' || startsWith(attribute.name, 'b-ref-'));
     if (getLength(refAttributes)) {
         if (getLength(refAttributes) !== 1 || refAttributes[0].name !== 'b-ref')
             throw createSyntaxError('b-ref does not support arguments or modifiers.');
@@ -236,15 +239,15 @@ function hydrateOwnedNode(
     let hasText = false;
     let hasHtml = false;
     let startModel: (() => void) | undefined;
-    const transitionAttr = arrayFrom(element[ATTRIBUTES])
-        .find(attribute => includesItem(['b-transition', 'transition'], extractModifiers(attribute.name).baseName));
+    const transitionAttr = attributes.find((_, index) => transitionNames.has(parsed[index].baseName));
     if (transitionAttr) prepareTransition(element, transitionAttr.value);
 
     // Scan element attributes
-    for (const attribute of arrayFrom(element[ATTRIBUTES])) {
+    for (let index = 0; index < attributes.length; index++) {
+        const attribute = attributes[index];
         const attrName = attribute.name;
         const attrValue = attribute.value;
-        const { baseName, modifiers } = extractModifiers(attrName);
+        const { baseName, modifiers } = parsed[index];
 
         if (startsWith(baseName, 'b-on-') || startsWith(baseName, 'on-')) {
             if (baseName.includes('-enter') || baseName.includes('-exit')) {

@@ -23,6 +23,7 @@ metadata on `main`, through commit `d868d43`.
 ## Unreleased
 
 ### Changed
+- Hydration is cheaper per element: attributes are snapshotted and parsed once, `b-for` no longer allocates an `[index, item]` pair per row, and `arrayFrom` no longer goes through `Reflect.apply`. Creating 10,000 keyed rows is about 10% faster.
 
 - Added real-world test apps under `tests/apps/` (occupancy counter,
   temperature converter, conditional registration form) with JSDOM user-flow

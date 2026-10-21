@@ -1,10 +1,10 @@
-import { R as ReflectApi, $ as $PARENT, c as createTypeError, d as deleteItem, b as createError, g as getLength, T as TELEPORT, a as arrayFrom, l as ownKeys, G as GET_OWN_PROPERTY_DESCRIPTOR, o as objectConstructor, n as createSyntaxError, A as ATTRIBUTES, t as startsWith, u as TEMPLATE, j as isInstanceOf, f as isObjectType, B as B_TELEPORT, p as includesItem, r as removeElement, m as isString, k as isArray, e as objectEntries, q as objectKeys, h as isNumber, i as isFunction, v as isBoolean } from "./native-CjaBWh7p.js";
+import { R as ReflectApi, $ as $PARENT, c as createTypeError, d as deleteItem, b as createError, g as getLength, T as TELEPORT, a as arrayFrom, l as ownKeys, G as GET_OWN_PROPERTY_DESCRIPTOR, o as objectConstructor, n as createSyntaxError, A as ATTRIBUTES, t as startsWith, u as TEMPLATE, j as isInstanceOf, f as isObjectType, B as B_TELEPORT, p as includesItem, r as removeElement, m as isString, k as isArray, e as objectEntries, q as objectKeys, h as isNumber, i as isFunction, v as isBoolean, w as snapshotList } from "./native-DNTl55LH.js";
 import { b as getChildNodes, a as addEventListener, r as removeEventListener, c as removeAttribute, g as getAttribute, d as removeChild, e as getParent, f as getOwnerDocument, h as getNodeType, i as getNextSibling, j as insertBefore } from "./native-Di2Lf1wo.js";
-import { e as evaluate, a as emptyContextValues, b as createExpressionScope, d as execute, f as assign, g as createProvidedValues, h as evaluateFunction, c as copyContextValues } from "./context-values-BEiXJGAH.js";
-import { o as onDispose, h as getCurrentScope, a as combinedError, j as onCleanup, b as batch, k as createScope, e as effect, c as causedError, l as errorText, f as directiveError, s as setScopeNode, n as locate, p as notifyRootMounted, r as flush, t as notifyAppDisposed, u as notifyAppCreated, v as notifyRootUnmounted } from "./effect-CdkoKvuz.js";
-import { d, x, m, w } from "./effect-CdkoKvuz.js";
-import { s as state, a as track, t as trigger } from "./state-C_G-YNBL.js";
-import { b } from "./state-C_G-YNBL.js";
+import { e as evaluate, a as emptyContextValues, b as createExpressionScope, d as execute, f as assign, g as createProvidedValues, h as evaluateFunction, c as copyContextValues } from "./context-values-CYqaJ4Qw.js";
+import { o as onDispose, h as getCurrentScope, a as combinedError, j as onCleanup, b as batch, k as createScope, e as effect, c as causedError, l as errorText, f as directiveError, s as setScopeNode, n as locate, p as notifyRootMounted, r as flush, t as notifyAppDisposed, u as notifyAppCreated, v as notifyRootUnmounted } from "./effect-CDJn2fHL.js";
+import { d, x, m, w } from "./effect-CDJn2fHL.js";
+import { s as state, a as track, t as trigger } from "./state-DkCU-RSH.js";
+import { b } from "./state-DkCU-RSH.js";
 import { computed, resource } from "./reactivity.js";
 import { createRouter } from "./router-entry.js";
 import { persist } from "./persistence-entry.js";
@@ -12,7 +12,7 @@ import { createStepEngine } from "./step-entry.js";
 import { validate } from "./forms-entry.js";
 import { moneyMask } from "./money-mask-entry.js";
 import { HttpError, http } from "./http-entry.js";
-import { d as d2, a, e, i } from "./devtools-CR2Bel5O.js";
+import { d as d2, a, e, i } from "./devtools-DNVDgqxZ.js";
 const sources = /* @__PURE__ */ new WeakMap();
 function createScopedState(source, parent) {
   const observed = state(sources.get(source) ?? source);
@@ -859,6 +859,7 @@ function handleModel(element, expression, modifiers, context) {
   start();
 }
 function extractModifiers(attrName) {
+  if (attrName.indexOf(".") === -1) return { baseName: attrName, modifiers: {} };
   const parts = attrName.split(".");
   const baseName = parts[0];
   const modifiers = {};
@@ -1056,12 +1057,15 @@ const longestIncreasing = (positions) => {
   return stable;
 };
 const enumerate = (value) => {
-  if (value === null || value === void 0) return [];
+  if (value === null || value === void 0) return { items: [] };
   if (isArray(value) || isObjectType(value) && Symbol.iterator in value)
-    return arrayFrom(value, (item, index) => [index, item]);
-  if (isObjectType(value)) return objectEntries(value);
+    return { items: arrayFrom(value) };
+  if (isObjectType(value)) {
+    const entries = objectEntries(value);
+    return { keys: entries.map((entry) => entry[0]), items: entries.map((entry) => entry[1]) };
+  }
   if (isNumber(value) && Number.isInteger(value) && value >= 0)
-    return arrayFrom({ length: value }, (_, index) => [index, index + 1]);
+    return { items: arrayFrom({ length: value }, (_, index) => index + 1) };
   throw createTypeError("b-for expects an array, iterable, object, or non-negative integer.");
 };
 function handleFor(element, expression, _modifiers, context, runtime, hydrateNodeFn) {
@@ -1139,10 +1143,12 @@ function handleFor(element, expression, _modifiers, context, runtime, hydrateNod
   effect(() => {
     reconciling = true;
     try {
-      const entries = enumerate(evaluate(collectionExpression, context, "b-for", element));
+      const { items, keys: keys2 } = enumerate(evaluate(collectionExpression, context, "b-for", element));
       const nextKeys = /* @__PURE__ */ new Set();
       ordered = [];
-      for (const [index, item] of entries) {
+      for (let position = 0; position < getLength(items); position++) {
+        const item = items[position];
+        const index = keys2 ? keys2[position] : position;
         const loopData = { [itemName]: item, [indexName]: index };
         const rowState = createScopedState(loopData, context.$for);
         const rowContext = createExpressionScope({ $for: rowState }, context);
@@ -1710,9 +1716,12 @@ function mountRouterOutlet(element, context, runtime, hydrateNodeFn) {
   });
 }
 const componentNamePattern$1 = /^[a-z][a-z0-9]*-[a-z0-9-]+$/;
+const conditionalNames = /* @__PURE__ */ new Set(["b-if", "b-else-if", "b-else"]);
+const childControllingNames = /* @__PURE__ */ new Set(["b-text", "text", "b-html", "html", "b-router-outlet"]);
+const transitionNames = /* @__PURE__ */ new Set(["b-transition", "transition"]);
 function hydrateChildren(element, context, runtime) {
   withHydration(element, () => {
-    for (const child of arrayFrom(getChildNodes(element))) {
+    for (const child of snapshotList(getChildNodes(element))) {
       if (getParent(child) === element && !getNodeOwner(child)) hydrateNode(child, context, runtime);
     }
   });
@@ -1751,7 +1760,9 @@ function hydrateOwnedNode(node, parentContext, runtime) {
     getNodeOwner(element).controlsChildren = true;
     return;
   }
-  const conditionalAttributes = arrayFrom(element[ATTRIBUTES]).filter((attribute) => includesItem(["b-if", "b-else-if", "b-else"], extractModifiers(attribute.name).baseName));
+  const attributes = snapshotList(element[ATTRIBUTES]);
+  const parsed = attributes.map((attribute) => extractModifiers(attribute.name));
+  const conditionalAttributes = attributes.filter((_, index) => conditionalNames.has(parsed[index].baseName));
   if (getLength(conditionalAttributes) > 1)
     throw createSyntaxError("An element can have only one conditional directive.");
   const ifAttr = conditionalAttributes[0];
@@ -1793,9 +1804,9 @@ function hydrateOwnedNode(node, parentContext, runtime) {
     getNodeOwner(element).context = context;
   }
   const templateAttr = getAttribute(element, "b-template");
-  if (arrayFrom(element[ATTRIBUTES]).some((attribute) => includesItem(["b-text", "text", "b-html", "html", "b-router-outlet"], extractModifiers(attribute.name).baseName)))
+  if (parsed.some(({ baseName }) => childControllingNames.has(baseName)))
     getNodeOwner(element).controlsChildren = true;
-  const refAttributes = arrayFrom(element[ATTRIBUTES]).filter((attribute) => extractModifiers(attribute.name).baseName === "b-ref" || startsWith(attribute.name, "b-ref-"));
+  const refAttributes = attributes.filter((attribute, index) => parsed[index].baseName === "b-ref" || startsWith(attribute.name, "b-ref-"));
   if (getLength(refAttributes)) {
     if (getLength(refAttributes) !== 1 || refAttributes[0].name !== "b-ref")
       throw createSyntaxError("b-ref does not support arguments or modifiers.");
@@ -1827,12 +1838,13 @@ function hydrateOwnedNode(node, parentContext, runtime) {
   let hasText = false;
   let hasHtml = false;
   let startModel;
-  const transitionAttr = arrayFrom(element[ATTRIBUTES]).find((attribute) => includesItem(["b-transition", "transition"], extractModifiers(attribute.name).baseName));
+  const transitionAttr = attributes.find((_, index) => transitionNames.has(parsed[index].baseName));
   if (transitionAttr) prepareTransition(element, transitionAttr.value);
-  for (const attribute of arrayFrom(element[ATTRIBUTES])) {
+  for (let index = 0; index < attributes.length; index++) {
+    const attribute = attributes[index];
     const attrName = attribute.name;
     const attrValue = attribute.value;
-    const { baseName, modifiers } = extractModifiers(attrName);
+    const { baseName, modifiers } = parsed[index];
     if (startsWith(baseName, "b-on-") || startsWith(baseName, "on-")) {
       if (baseName.includes("-enter") || baseName.includes("-exit")) {
         handleIntersection(element, attrName, attrValue, modifiers, context);

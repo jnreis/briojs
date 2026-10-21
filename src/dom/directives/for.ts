@@ -58,13 +58,17 @@ const longestIncreasing = (positions: number[]): Set<number> => {
     return stable;
 };
 
-const enumerate = (value: unknown): [unknown, unknown][] => {
-    if (value === null || value === undefined) return [];
+// Indexed sources omit `keys`; object entries supply them.
+const enumerate = (value: unknown): { items: unknown[]; keys?: unknown[] } => {
+    if (value === null || value === undefined) return { items: [] };
     if (isArray(value) || (isObjectType(value) && Symbol.iterator in value))
-        return arrayFrom(value as Iterable<unknown>, (item, index) => [index, item]);
-    if (isObjectType(value)) return objectEntries(value);
+        return { items: arrayFrom(value as Iterable<unknown>) };
+    if (isObjectType(value)) {
+        const entries = objectEntries(value);
+        return { keys: entries.map(entry => entry[0]), items: entries.map(entry => entry[1]) };
+    }
     if (isNumber(value) && Number.isInteger(value) && value >= 0)
-        return arrayFrom({ length: value }, (_, index) => [index, index + 1]);
+        return { items: arrayFrom({ length: value }, (_, index) => index + 1) };
     throw createTypeError('b-for expects an array, iterable, object, or non-negative integer.');
 };
 
@@ -157,10 +161,12 @@ export function handleFor(
     effect(() => {
         reconciling = true;
         try {
-            const entries = enumerate(evaluate(collectionExpression, context, 'b-for', element));
+            const { items, keys } = enumerate(evaluate(collectionExpression, context, 'b-for', element));
             const nextKeys = new Set<string | number>();
             ordered = [];
-            for (const [index, item] of entries) {
+            for (let position = 0; position < getLength(items); position++) {
+                const item = items[position];
+                const index = keys ? keys[position] : position;
                 const loopData = { [itemName]: item, [indexName]: index };
                 const rowState = createScopedState(loopData, context.$for);
                 const rowContext = createExpressionScope({ $for: rowState }, context);

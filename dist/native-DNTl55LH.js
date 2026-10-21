@@ -10,9 +10,15 @@ const isArray = (value) => Array.isArray(value);
 const objectKeys = (value) => objectConstructor.keys(value);
 const objectEntries = (value) => objectConstructor.entries(value);
 const ownKeys = (value) => ReflectApi.ownKeys(value);
-function arrayFrom(...args) {
-  return ReflectApi.apply(Array.from, Array, args);
+function arrayFrom(items, map, thisArg) {
+  return arguments.length === 1 ? Array.from(items) : Array.from(items, map, thisArg);
 }
+const snapshotList = (list) => {
+  const length = list.length;
+  const copy = new Array(length);
+  for (let index = 0; index < length; index++) copy[index] = list[index];
+  return copy;
+};
 const brioErrors = /* @__PURE__ */ new WeakSet();
 const ownError = (error) => (brioErrors.add(error), error);
 const createError = (message) => ownError(new Error(message));
@@ -57,6 +63,7 @@ export {
   brioErrors as s,
   startsWith as t,
   TEMPLATE as u,
-  isBoolean as v
+  isBoolean as v,
+  snapshotList as w
 };
-//# sourceMappingURL=native-CjaBWh7p.js.map
+//# sourceMappingURL=native-DNTl55LH.js.map

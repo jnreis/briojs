@@ -1,5 +1,5 @@
-import { q as objectKeys, c as createTypeError, g as getLength, o as objectConstructor, m as isString, f as isObjectType, p as includesItem, l as ownKeys, G as GET_OWN_PROPERTY_DESCRIPTOR } from "./native-CjaBWh7p.js";
-import { b as signal } from "./state-C_G-YNBL.js";
+import { q as objectKeys, c as createTypeError, g as getLength, o as objectConstructor, m as isString, f as isObjectType, p as includesItem, l as ownKeys, G as GET_OWN_PROPERTY_DESCRIPTOR } from "./native-DNTl55LH.js";
+import { b as signal } from "./state-DkCU-RSH.js";
 function properties(value, label) {
   if (!value || !isObjectType(value) || !includesItem([objectConstructor.prototype, null], objectConstructor.getPrototypeOf(value)))
     throw createTypeError(`${label} must be a plain object.`);

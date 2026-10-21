@@ -1,5 +1,5 @@
-import { c as createTypeError, R as ReflectApi, G as GET_OWN_PROPERTY_DESCRIPTOR, k as isArray, i as isFunction, o as objectConstructor, l as ownKeys, f as isObjectType, m as isString } from "./native-CjaBWh7p.js";
-import { b as batch, q as queueEffect, g as getActiveEffect } from "./effect-CdkoKvuz.js";
+import { c as createTypeError, R as ReflectApi, G as GET_OWN_PROPERTY_DESCRIPTOR, k as isArray, i as isFunction, o as objectConstructor, l as ownKeys, f as isObjectType, m as isString } from "./native-DNTl55LH.js";
+import { b as batch, q as queueEffect, g as getActiveEffect } from "./effect-CDJn2fHL.js";
 const targetMap = /* @__PURE__ */ new WeakMap();
 const proxyCache = /* @__PURE__ */ new WeakMap();
 const rawCache = /* @__PURE__ */ new WeakMap();
@@ -153,4 +153,4 @@ export {
   state as s,
   trigger as t
 };
-//# sourceMappingURL=state-C_G-YNBL.js.map
+//# sourceMappingURL=state-DkCU-RSH.js.map

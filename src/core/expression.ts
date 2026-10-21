@@ -26,6 +26,8 @@ export function evaluateFunction(source: string, context: ExpressionScope, node?
 }
 
 export function createExpressionScope(...sources: ExpressionScope[]): ExpressionScope {
+    // Earlier sources win; the two-source form is the hot path for every hydrated element.
+    if (sources.length === 2) return { __proto__: null, ...sources[1], ...sources[0] } as ExpressionScope;
     return objectConstructor.assign(objectConstructor.create(null), ...sources.reverse());
 }
 

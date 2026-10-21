@@ -1,6 +1,6 @@
-import { i as isFunction, c as createTypeError, o as objectConstructor, n as createSyntaxError, d as deleteItem, f as isObjectType, p as includesItem, q as objectKeys, R as ReflectApi, G as GET_OWN_PROPERTY_DESCRIPTOR, l as ownKeys } from "./native-CjaBWh7p.js";
-import { m as mark, d as describeNode, f as directiveError, e as effect } from "./effect-CdkoKvuz.js";
-import { t as trigger, a as track } from "./state-C_G-YNBL.js";
+import { i as isFunction, c as createTypeError, o as objectConstructor, n as createSyntaxError, d as deleteItem, f as isObjectType, p as includesItem, q as objectKeys, R as ReflectApi, G as GET_OWN_PROPERTY_DESCRIPTOR, l as ownKeys } from "./native-DNTl55LH.js";
+import { m as mark, d as describeNode, f as directiveError, e as effect } from "./effect-CDJn2fHL.js";
+import { t as trigger, a as track } from "./state-DkCU-RSH.js";
 const valueExpressions = /* @__PURE__ */ new Map();
 const statementExpressions = /* @__PURE__ */ new Map();
 const assignmentExpressions = /* @__PURE__ */ new Map();
@@ -24,6 +24,7 @@ function evaluateFunction(source, context, node) {
   return result;
 }
 function createExpressionScope(...sources) {
+  if (sources.length === 2) return { __proto__: null, ...sources[1], ...sources[0] };
   return objectConstructor.assign(objectConstructor.create(null), ...sources.reverse());
 }
 const compile = (cache, source, make, directive, node) => {
@@ -148,4 +149,4 @@ export {
   createProvidedValues as g,
   evaluateFunction as h
 };
-//# sourceMappingURL=context-values-BEiXJGAH.js.map
+//# sourceMappingURL=context-values-CYqaJ4Qw.js.map

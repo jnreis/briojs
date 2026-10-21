@@ -19,9 +19,18 @@ export function arrayFrom<T, U>(
     map: (value: T, index: number) => U,
     thisArg?: unknown,
 ): U[];
-export function arrayFrom(...args: unknown[]): unknown[] {
-    return ReflectApi.apply(Array.from, Array, args);
+export function arrayFrom(items: Iterable<unknown> | ArrayLike<unknown>, map?: (value: unknown, index: number) => unknown, thisArg?: unknown): unknown[] {
+    // Forward only the arguments given so a replaced Array.from sees the original call shape.
+    return arguments.length === 1 ? Array.from(items) : Array.from(items, map as (value: unknown, index: number) => unknown, thisArg);
 }
+
+/** Indexed copy of a live list (attributes, child nodes); far cheaper than iterating a NodeList or NamedNodeMap. */
+export const snapshotList = <T>(list: ArrayLike<T>): T[] => {
+    const length = list.length;
+    const copy = new Array<T>(length);
+    for (let index = 0; index < length; index++) copy[index] = list[index];
+    return copy;
+};
 
 /** Errors Brio raised itself; only these get DOM locations appended, never errors thrown by application code. */
 export const brioErrors = new WeakSet<object>();

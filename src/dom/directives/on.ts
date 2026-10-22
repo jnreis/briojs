@@ -1,8 +1,17 @@
-import { getLength, createSyntaxError, startsWith } from '../../core/native';
+import { getLength, createSyntaxError, startsWith, objectKeys, includesItem } from '../../core/native';
 import { addEventListener, removeEventListener } from '../native';
 import { execute } from '../../core/expression';
 import { batch } from '../../reactivity/effect';
 import { onCleanup } from '../../core/scope';
+
+const keyNames: Record<string, string> = {
+    enter: 'Enter', esc: 'Escape', space: ' ', tab: 'Tab',
+    up: 'ArrowUp', down: 'ArrowDown', left: 'ArrowLeft', right: 'ArrowRight', delete: 'Delete Backspace',
+};
+const systemKeys = ['ctrl', 'alt', 'shift', 'meta'];
+const eventModifiers = ['prevent', 'stop', 'self', 'outside', 'window', 'document', 'debounce', 'throttle',
+    'capture', 'passive', 'once', 'ctrl', 'alt', 'shift', 'meta',
+    'enter', 'esc', 'space', 'tab', 'up', 'down', 'left', 'right', 'delete'];
 
 export function handleOn(
     element: Element,
@@ -15,6 +24,12 @@ export function handleOn(
         ? attrName.slice(getLength('b-on-'))
         : attrName.slice(getLength('on-'));
     if (!rawTarget) throw createSyntaxError(`Brio event directive "${attrName}" has no event name.`);
+    const names = objectKeys(modifiers);
+    for (const name of names)
+        if (!includesItem(eventModifiers, name))
+            throw createSyntaxError(`Unknown event modifier ".${name}" on "${attrName}". Supported: .${eventModifiers.join(', .')}.`);
+    const keys = names.flatMap(name => keyNames[name]?.split(' ') ?? []);
+    const required = systemKeys.filter(name => modifiers[name]);
 
     let target: EventTarget = element;
     if (modifiers.outside) target = document;
@@ -25,10 +40,14 @@ export function handleOn(
     let throttleTimer: any;
 
     const handler = (event: Event) => {
+        if (getLength(keys) && !includesItem(keys, (event as KeyboardEvent).key)) return;
+        if (required.some(name => !(event as any)[`${name}Key`])) return;
         if (modifiers.prevent) event.preventDefault();
         if (modifiers.stop) event.stopPropagation();
         if (modifiers.self && event.target !== element) return;
         if (modifiers.outside && (element.contains(event.target as Node) || !element.isConnected)) return;
+        // Applied after the filters, so `.enter.once` waits for Enter rather than the first key.
+        if (modifiers.once) removeEventListener(target, rawTarget, handler, options);
 
         const invoke = () => batch(() => {
             execute(expression, context, event, attrName, element);
@@ -55,7 +74,6 @@ export function handleOn(
     const options: AddEventListenerOptions = {
         capture: Boolean(modifiers.capture),
         passive: Boolean(modifiers.passive),
-        once: Boolean(modifiers.once),
     };
 
     addEventListener(target, rawTarget, handler, options);

@@ -81,7 +81,7 @@ the ordinary link destination.
 
 The router matches `/` and `/items/:id`. Home projects caller-context content
 into a counter component, binds its label prop, and handles emitted counts.
-The item page reads parameters from `app.router.current.value`.
+The item page reads parameters from `$route.params` (or `route` in setup).
 
 Try a counter update, navigate to Item 42, change to another item through
 `app.router.navigate`, and use back/forward. Returning home creates fresh

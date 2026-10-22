@@ -1,13 +1,13 @@
 var __defProp = Object.defineProperty;
 var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
 var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "symbol" ? key + "" : key, value);
-import { R as ReflectApi, $ as $PARENT, c as createTypeError, p as includesItem, d as deleteItem, b as createError, g as getLength, T as TELEPORT, a as arrayFrom, l as ownKeys, G as GET_OWN_PROPERTY_DESCRIPTOR, o as objectConstructor, n as createSyntaxError, t as startsWith, m as isString, k as isArray, f as isObjectType, e as objectEntries, u as TEMPLATE, A as ATTRIBUTES, j as isInstanceOf, B as B_TELEPORT, r as removeElement, q as objectKeys, h as isNumber, i as isFunction, v as isBoolean, w as snapshotList } from "./native-DNTl55LH.js";
+import { R as ReflectApi, $ as $PARENT, c as createTypeError, p as includesItem, d as deleteItem, b as createError, g as getLength, T as TELEPORT, a as arrayFrom, l as ownKeys, G as GET_OWN_PROPERTY_DESCRIPTOR, o as objectConstructor, n as createSyntaxError, t as startsWith, m as isString, k as isArray, f as isObjectType, e as objectEntries, q as objectKeys, u as TEMPLATE, A as ATTRIBUTES, j as isInstanceOf, B as B_TELEPORT, r as removeElement, h as isNumber, i as isFunction, v as isBoolean, w as snapshotList } from "./native-DNTl55LH.js";
 import { b as getChildNodes, g as getAttribute, c as removeAttribute, a as addEventListener, r as removeEventListener, d as removeChild, e as getParent, f as getOwnerDocument, h as getNodeType, i as getNextSibling, j as insertBefore } from "./native-Di2Lf1wo.js";
-import { e as evaluate, a as emptyContextValues, b as createExpressionScope, d as execute, f as assign, g as createProvidedValues, h as evaluateFunction, c as copyContextValues } from "./context-values-DGLwTbXl.js";
-import { j as getCurrentScope, a as combinedError, o as onCleanup, b as batch, e as effect, c as causedError, k as errorText, n as createScope, p as onDispose, h as directiveError, s as setScopeNode, r as locate, t as notifyRootMounted, v as flush, w as notifyAppDisposed, x as notifyAppCreated, y as notifyRootUnmounted } from "./effect-BTu8V88D.js";
-import { z, f, E, m, A, B, D, C, u } from "./effect-BTu8V88D.js";
-import { s as state, a as track, t as trigger } from "./state-BKD4-QHU.js";
-import { b } from "./state-BKD4-QHU.js";
+import { e as evaluate, a as execute, b as emptyContextValues, d as createExpressionScope, f as assign, g as createProvidedValues, h as evaluateFunction, c as copyContextValues } from "./context-values-BXAsS55z.js";
+import { j as getCurrentScope, a as combinedError, o as onCleanup, b as batch, e as effect, c as causedError, k as errorText, n as createScope, p as onDispose, h as directiveError, s as setScopeNode, r as locate, u as untrack, t as notifyRootMounted, v as flush, w as notifyAppDisposed, x as notifyAppCreated, y as notifyRootUnmounted } from "./effect-Hm6a3OX7.js";
+import { z, f, E, m, A, B, D, C } from "./effect-Hm6a3OX7.js";
+import { s as state, a as track, t as trigger } from "./state-TMgcg8XY.js";
+import { b } from "./state-TMgcg8XY.js";
 import { computed, resource } from "./reactivity.js";
 import { createRouter } from "./router-entry.js";
 import { persist } from "./persistence-entry.js";
@@ -15,7 +15,7 @@ import { createStepEngine } from "./step-entry.js";
 import { validate } from "./forms-entry.js";
 import { moneyMask } from "./money-mask-entry.js";
 import { HttpError, http } from "./http-entry.js";
-import { d, a, e, i } from "./devtools-C1VZZZgY.js";
+import { d, a, e, i } from "./devtools-DxlDsvKn.js";
 const sources = /* @__PURE__ */ new WeakMap();
 function createScopedState(source, parent) {
   const observed = state(sources.get(source) ?? source);
@@ -303,6 +303,99 @@ function extractModifiers(attrName) {
   parsedNames.set(attrName, objectConstructor.freeze(parsed));
   return parsed;
 }
+const keyNames = {
+  enter: "Enter",
+  esc: "Escape",
+  space: " ",
+  tab: "Tab",
+  up: "ArrowUp",
+  down: "ArrowDown",
+  left: "ArrowLeft",
+  right: "ArrowRight",
+  delete: "Delete Backspace"
+};
+const systemKeys = ["ctrl", "alt", "shift", "meta"];
+const eventModifiers = [
+  "prevent",
+  "stop",
+  "self",
+  "outside",
+  "window",
+  "document",
+  "debounce",
+  "throttle",
+  "capture",
+  "passive",
+  "once",
+  "ctrl",
+  "alt",
+  "shift",
+  "meta",
+  "enter",
+  "esc",
+  "space",
+  "tab",
+  "up",
+  "down",
+  "left",
+  "right",
+  "delete"
+];
+function handleOn(element, attrName, expression, modifiers, context) {
+  const rawTarget = startsWith(attrName, "b-on-") ? attrName.slice(getLength("b-on-")) : attrName.slice(getLength("on-"));
+  if (!rawTarget) throw createSyntaxError(`Brio event directive "${attrName}" has no event name.`);
+  const names2 = objectKeys(modifiers);
+  for (const name of names2)
+    if (!includesItem(eventModifiers, name))
+      throw createSyntaxError(`Unknown event modifier ".${name}" on "${attrName}". Supported: .${eventModifiers.join(", .")}.`);
+  const keys2 = names2.flatMap((name) => {
+    var _a;
+    return ((_a = keyNames[name]) == null ? void 0 : _a.split(" ")) ?? [];
+  });
+  const required = systemKeys.filter((name) => modifiers[name]);
+  let target = element;
+  if (modifiers.outside) target = document;
+  else if (modifiers.window) target = window;
+  else if (modifiers.document) target = document;
+  let debounceTimer;
+  let throttleTimer;
+  const handler = (event) => {
+    if (getLength(keys2) && !includesItem(keys2, event.key)) return;
+    if (required.some((name) => !event[`${name}Key`])) return;
+    if (modifiers.prevent) event.preventDefault();
+    if (modifiers.stop) event.stopPropagation();
+    if (modifiers.self && event.target !== element) return;
+    if (modifiers.outside && (element.contains(event.target) || !element.isConnected)) return;
+    if (modifiers.once) removeEventListener(target, rawTarget, handler, options);
+    const invoke = () => batch(() => {
+      execute(expression, context, event, attrName, element);
+    });
+    if (modifiers.debounce) {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(invoke, 150);
+      return;
+    }
+    if (modifiers.throttle) {
+      if (throttleTimer) return;
+      throttleTimer = setTimeout(() => {
+        throttleTimer = null;
+      }, 150);
+      invoke();
+      return;
+    }
+    invoke();
+  };
+  const options = {
+    capture: Boolean(modifiers.capture),
+    passive: Boolean(modifiers.passive)
+  };
+  addEventListener(target, rawTarget, handler, options);
+  onCleanup(() => {
+    clearTimeout(debounceTimer);
+    clearTimeout(throttleTimer);
+    removeEventListener(target, rawTarget, handler, options);
+  });
+}
 const projectedContexts = /* @__PURE__ */ new WeakMap();
 function takeProjectedContext(node) {
   const context = projectedContexts.get(node);
@@ -352,20 +445,36 @@ function fillSlots(host, template, context) {
     for (const node of remaining) removeChild(getParent(node), node);
 }
 const parsedTemplates$1 = /* @__PURE__ */ new WeakMap();
+const templateSelector = /^#[A-Za-z][\w-]*$/;
 const instantiateTemplate = (definition, host) => {
   const ownerDocument = getOwnerDocument(host);
+  const source = definition.template;
   let parsed = parsedTemplates$1.get(definition);
-  if (!parsed || parsed.source !== definition.template || parsed.document !== ownerDocument) {
-    const template = ownerDocument.createElement(TEMPLATE);
-    template.innerHTML = definition.template;
-    parsedTemplates$1.set(definition, parsed = { source: definition.template, document: ownerDocument, template });
+  if (!parsed || parsed.document !== ownerDocument) {
+    let template = source;
+    if (isString(source)) {
+      if (templateSelector.test(source)) {
+        template = ownerDocument.getElementById(source.slice(1));
+        if ((template == null ? void 0 : template.localName) !== TEMPLATE)
+          throw createError(`Component <${host.localName}> template "${source}" does not match a <template> element.`);
+      } else {
+        template = ownerDocument.createElement(TEMPLATE);
+        template.innerHTML = source;
+      }
+    }
+    parsedTemplates$1.set(definition, parsed = { document: ownerDocument, template });
   }
   return parsed.template.content.cloneNode(true);
 };
 function mountComponent(element, definition, context, runtime, hydrateNodeFn) {
   const propsObject = {};
+  const declared = definition.props ?? {};
+  for (const [name, type] of objectEntries(declared)) if (type === Boolean) propsObject[name] = false;
   for (const attribute of arrayFrom(element[ATTRIBUTES])) {
-    if (!startsWith(attribute.name, "b-")) propsObject[attribute.name] = attribute.value;
+    const { name, value } = attribute;
+    if (startsWith(name, "b-")) continue;
+    const type = declared[name];
+    propsObject[name] = type === Boolean ? value !== "false" : type === Number ? Number(value) : value;
   }
   const propBindings = arrayFrom(element[ATTRIBUTES]).filter((attribute) => startsWith(attribute.name, "b-bind-") || startsWith(attribute.name, "bind-")).map((attribute) => {
     const raw = startsWith(attribute.name, "b-bind-") ? attribute.name.slice(getLength("b-bind-")) : attribute.name.slice(getLength("bind-"));
@@ -385,17 +494,13 @@ function mountComponent(element, definition, context, runtime, hydrateNodeFn) {
     element.dispatchEvent(new CustomEvent(name, { detail, bubbles: true }));
   };
   componentScope.run(() => {
-    var _a;
+    var _a, _b;
     for (const attribute of arrayFrom(element[ATTRIBUTES])) {
       if (startsWith(attribute.name, "b-on-") || startsWith(attribute.name, "on-")) {
-        const prefix = startsWith(attribute.name, "b-on-") ? "b-on-" : "on-";
-        const eventPart = attribute.name.slice(getLength(prefix)).split(".")[0];
-        if (!/^[a-z-]+$/.test(eventPart))
+        const { baseName, modifiers } = extractModifiers(attribute.name);
+        if (!/^(b-)?on-[a-z-]+$/.test(baseName))
           throw createSyntaxError(`Invalid component event directive "${attribute.name}".`);
-        const expression = attribute.value;
-        const handler = (event) => batch(() => execute(expression, context, event, attribute.name, element));
-        addEventListener(element, eventPart, handler);
-        onCleanup(() => removeEventListener(element, eventPart, handler));
+        handleOn(element, baseName, attribute.value, modifiers, context);
       } else if (startsWith(attribute.name, "b-attr-")) {
         handleBind(
           element,
@@ -413,14 +518,15 @@ function mountComponent(element, definition, context, runtime, hydrateNodeFn) {
         $props[binding.name] = evaluate(binding.expression, context, binding.directive, element);
       });
     }
-    const setupResult = ((_a = definition.setup) == null ? void 0 : _a.call(definition, {
+    const setupResult = ((_b = definition.setup) == null ? void 0 : _b.call(definition, {
       el: element,
       $props,
       $emit,
       app: runtime.app,
       $stores: context.$stores ?? emptyContextValues,
       $provided: context.$provided ?? emptyContextValues,
-      $ref
+      $ref,
+      route: (_a = runtime.router) == null ? void 0 : _a.route
     })) ?? {};
     const local = createScopedState(setupResult, context.$data);
     const componentContext = createExpressionScope(
@@ -868,50 +974,6 @@ function interpolateText(text, context) {
     result += (value === null || value === void 0 ? "" : String(value)) + parts[index + 1];
   }
   return result;
-}
-function handleOn(element, attrName, expression, modifiers, context) {
-  const rawTarget = startsWith(attrName, "b-on-") ? attrName.slice(getLength("b-on-")) : attrName.slice(getLength("on-"));
-  if (!rawTarget) throw createSyntaxError(`Brio event directive "${attrName}" has no event name.`);
-  let target = element;
-  if (modifiers.outside) target = document;
-  else if (modifiers.window) target = window;
-  else if (modifiers.document) target = document;
-  let debounceTimer;
-  let throttleTimer;
-  const handler = (event) => {
-    if (modifiers.prevent) event.preventDefault();
-    if (modifiers.stop) event.stopPropagation();
-    if (modifiers.self && event.target !== element) return;
-    if (modifiers.outside && (element.contains(event.target) || !element.isConnected)) return;
-    const invoke = () => batch(() => {
-      execute(expression, context, event, attrName, element);
-    });
-    if (modifiers.debounce) {
-      clearTimeout(debounceTimer);
-      debounceTimer = setTimeout(invoke, 150);
-      return;
-    }
-    if (modifiers.throttle) {
-      if (throttleTimer) return;
-      throttleTimer = setTimeout(() => {
-        throttleTimer = null;
-      }, 150);
-      invoke();
-      return;
-    }
-    invoke();
-  };
-  const options = {
-    capture: Boolean(modifiers.capture),
-    passive: Boolean(modifiers.passive),
-    once: Boolean(modifiers.once)
-  };
-  addEventListener(target, rawTarget, handler, options);
-  onCleanup(() => {
-    clearTimeout(debounceTimer);
-    clearTimeout(throttleTimer);
-    removeEventListener(target, rawTarget, handler, options);
-  });
 }
 function handleModel(element, expression, modifiers, context) {
   if (!(isInstanceOf(element, HTMLInputElement) || isInstanceOf(element, HTMLTextAreaElement) || isInstanceOf(element, HTMLSelectElement)))
@@ -1851,30 +1913,30 @@ function mountRouterOutlet(element, context, runtime, hydrateNodeFn) {
   const router = runtime.router;
   let childScope;
   let childElement;
-  onCleanup(() => {
+  let mountedKey;
+  const clear = () => {
     try {
       childScope == null ? void 0 : childScope.dispose();
     } finally {
       removeElement(childElement);
+      childScope = childElement = mountedKey = void 0;
     }
-  });
+  };
+  onCleanup(clear);
   effect(() => {
     const route = router.current.value;
-    try {
-      childScope == null ? void 0 : childScope.dispose();
-    } finally {
-      removeElement(childElement);
-    }
-    childScope = void 0;
-    childElement = void 0;
+    const key = route && `${route.component} ${route.path}`;
+    if (key === mountedKey) return;
+    clear();
     if (!route) return;
     const definition = runtime.components.get(route.component);
     if (!definition) throw createError(`No component registered for route "${route.component}".`);
-    const el = document.createElement(route.component);
+    const el = getOwnerDocument(element).createElement(route.component);
     childElement = el;
     childScope = createScope();
+    mountedKey = key;
     element.append(el);
-    childScope.run(() => mountComponent(el, definition, context, runtime, hydrateNodeFn));
+    untrack(() => childScope.run(() => mountComponent(el, definition, context, runtime, hydrateNodeFn)));
   });
 }
 const inserts = /* @__PURE__ */ new WeakMap();
@@ -2131,8 +2193,12 @@ function createApp(options = {}) {
         throw createTypeError(`Component name "${name}" must be a custom-element name such as "user-card".`);
       if (components.has(normalized))
         throw createError(`Component "${normalized}" is already registered.`);
-      if (!definition.template.trim())
-        throw createTypeError(`Component "${normalized}" requires a non-empty template.`);
+      const template = definition.template;
+      if (isString(template) ? !template.trim() : (template == null ? void 0 : template.localName) !== "template")
+        throw createTypeError(`Component "${normalized}" requires a non-empty template string, "#id" selector, or <template> element.`);
+      for (const [prop, type] of objectEntries(definition.props ?? {}))
+        if (!includesItem([Boolean, Number, String], type))
+          throw createTypeError(`Component "${normalized}" prop "${prop}" must be declared as Boolean, Number, or String.`);
       components.set(normalized, definition);
       return app;
     },
@@ -2167,6 +2233,7 @@ function createApp(options = {}) {
       return createInsert(owner.runtime)(target, placement, content, insertOptions);
     },
     mount(target) {
+      var _a2;
       if (disposed) throw createError("Cannot mount a disposed Brio app.");
       const root = isString(target) ? document.querySelector(target) : target;
       if (!isInstanceOf(root, Element))
@@ -2207,7 +2274,7 @@ function createApp(options = {}) {
       activeMountRoots.add(root);
       notifyRootMounted(app, root);
       const context = createExpressionScope(
-        { $data: createScopedState(appState), $stores: stores, $provided: emptyContextValues, $ref: createRefs(), trustedHTML, flush }
+        { $data: createScopedState(appState), $stores: stores, $provided: emptyContextValues, $ref: createRefs(), $route: (_a2 = options.router) == null ? void 0 : _a2.route, trustedHTML, flush }
       );
       try {
         scope.run(() => {
@@ -2342,7 +2409,7 @@ export {
   b as signal,
   state,
   trustedHTML,
-  u as untrack,
+  untrack,
   validate
 };
 //# sourceMappingURL=index.js.map

@@ -52,15 +52,15 @@
     });
     app.component('recipe-item', {
       template: `
-        <h1>Item <span id="item-id" b-text="$data.route.value.params.id"></span></h1>
+        <h1>Item <span id="item-id" b-text="$route.params.id"></span></h1>
         <p id="item-pulses" b-text="$data.pulses.value"></p>
       `,
-      setup({ app }) {
+      setup() {
         const pulses = brio.signal(0);
         const pulse = () => { pulses.value++; };
         window.addEventListener('brio-recipe-pulse', pulse);
         brio.onCleanup(() => window.removeEventListener('brio-recipe-pulse', pulse));
-        return { route: app.router.current, pulses };
+        return { pulses };
       },
     });
     app.mount('#spa');

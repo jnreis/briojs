@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conduit · Brio</title>
+    <style>
+        :root {
+            --green: #5cb85c; --green-dark: #3d8b3d; --ink: #373a3c; --muted: #818a91; --line: #e5e5e5;
+            --danger: #b85c5c; --surface: #f3f3f3;
+            font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: var(--ink);
+        }
+        * { box-sizing: border-box; }
+        body { margin: 0; line-height: 1.5; background: #fff; }
+        a { color: var(--green); text-decoration: none; }
+        a:hover { color: var(--green-dark); text-decoration: underline; }
+        [b-cloak] { display: none; }
+        .container { width: min(100% - 32px, 1140px); margin-inline: auto; }
+        .page { padding-block: 24px 48px; }
+        .muted { color: var(--muted); }
+        .logo-font { font-family: Georgia, "Times New Roman", serif; font-weight: 700; }
+
+        /* Navigation */
+        .navbar { border-bottom: 1px solid var(--line); }
+        .navbar .container { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; min-height: 56px; }
+        .brand { font-family: Georgia, serif; font-weight: 700; font-size: 1.5rem; color: var(--green); }
+        .brand:hover { text-decoration: none; }
+        .nav { list-style: none; display: flex; gap: 4px; padding: 0; margin: 0; flex-wrap: wrap; }
+        .nav a { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; color: rgba(0,0,0,.4); }
+        .nav a:hover { color: rgba(0,0,0,.7); text-decoration: none; }
+        .nav a.active, .nav a[aria-current="page"] { color: rgba(0,0,0,.85); }
+        .nav .avatar { width: 22px; height: 22px; }
+        .notice { background: #fff7e6; border-bottom: 1px solid #f3d19e; }
+        .notice .container { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-block: 8px; }
+        .notice button { border: 0; background: none; font-size: 1.2rem; cursor: pointer; color: var(--muted); }
+
+        /* Banner */
+        .banner { background: var(--green); color: #fff; padding: 32px 0; text-align: center; box-shadow: inset 0 8px 8px -8px rgba(0,0,0,.3), inset 0 -8px 8px -8px rgba(0,0,0,.3); }
+        .banner h1 { margin: 0 0 8px; font-size: 3.5rem; text-shadow: 0 1px 3px rgba(0,0,0,.3); }
+        .banner p { margin: 0; font-size: 1.4rem; font-weight: 300; }
+        .article-page .banner { background: #333; text-align: left; padding: 32px 0; }
+        .article-page .banner h1 { font-size: 2.6rem; font-family: inherit; text-shadow: none; margin-bottom: 24px; }
+
+        /* Layout */
+        .row { display: grid; grid-template-columns: minmax(0, 3fr) minmax(220px, 1fr); gap: 32px; }
+        @media (max-width: 760px) { .row { grid-template-columns: 1fr; } }
+        .sidebar { background: var(--surface); border-radius: 4px; padding: 6px 10px 10px; }
+        .sidebar p { margin: 4px 0 8px; }
+
+        /* Feed tabs */
+        .feed-toggle { border-bottom: 1px solid var(--line); margin-bottom: -1px; }
+        .tabs { list-style: none; display: flex; gap: 0; margin: 0; padding: 0; }
+        .tabs a { display: block; padding: 8px 16px; color: #aaa; border-bottom: 2px solid transparent; }
+        .tabs a:hover { text-decoration: none; color: #555; }
+        .tabs a.active { color: var(--green); border-bottom-color: var(--green); }
+
+        /* Article previews */
+        .article-preview { border-top: 1px solid var(--line); padding: 24px 0; }
+        .article-preview.status { color: var(--muted); }
+        .article-preview.status button { margin-left: 8px; }
+        .preview-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+        .preview-link { display: block; color: inherit; }
+        .preview-link:hover { text-decoration: none; }
+        .preview-link h2 { font-size: 1.5rem; font-weight: 600; margin: 0 0 4px; }
+        .preview-link p { margin: 0 0 12px; color: #999; font-weight: 300; }
+        .preview-foot { display: flex; justify-content: space-between; align-items: center; gap: 12px; color: #bbb; font-size: .8rem; }
+
+        /* Meta */
+        .article-meta { display: flex; align-items: center; gap: 8px; }
+        .avatar { width: 32px; height: 32px; border-radius: 50%; display: block; object-fit: cover; }
+        .info { display: flex; flex-direction: column; line-height: 1.2; }
+        .info .author { font-weight: 500; }
+        .info .date { color: #bbb; font-size: .8rem; }
+        .banner .info .author { color: #fff; }
+        .meta-row { display: flex; align-items: center; flex-wrap: wrap; gap: 16px; }
+        .meta-row .controls { display: flex; gap: 6px; flex-wrap: wrap; }
+
+        /* Tags */
+        .tag-list { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 4px; }
+        .tag-pill { display: inline-block; padding: 2px 8px; border-radius: 10rem; font-size: .8rem; background: #818a91; color: #fff; }
+        a.tag-pill:hover { background: #687077; color: #fff; text-decoration: none; }
+        .tag-outline { background: transparent; color: #aaa; border: 1px solid #ddd; }
+        .tag-pill button { border: 0; background: none; color: inherit; cursor: pointer; padding: 0 2px 0 0; }
+
+        /* Buttons & forms */
+        .btn { display: inline-flex; align-items: center; gap: 4px; border: 1px solid transparent; border-radius: 4px; padding: 8px 20px; font: inherit; cursor: pointer; background: none; line-height: 1.25; }
+        .btn:hover { text-decoration: none; }
+        .btn:disabled { opacity: .65; cursor: progress; }
+        .btn-sm { padding: 3px 8px; font-size: .875rem; border-radius: 3px; }
+        .btn-lg { padding: 12px 24px; font-size: 1.25rem; }
+        .btn-primary { background: var(--green); border-color: var(--green); color: #fff; }
+        .btn-primary:hover:not(:disabled) { background: #449d44; color: #fff; }
+        .btn-outline-primary { border-color: var(--green); color: var(--green); }
+        .btn-outline-primary:hover:not(:disabled) { background: var(--green); color: #fff; }
+        .btn-outline-secondary { border-color: #ccc; color: #999; }
+        .btn-outline-secondary:hover:not(:disabled) { background: #ccc; color: #fff; }
+        .btn-secondary { background: #999; border-color: #999; color: #fff; }
+        .btn-outline-danger { border-color: var(--danger); color: var(--danger); }
+        .btn-outline-danger:hover:not(:disabled) { background: var(--danger); color: #fff; }
+        .banner .btn-outline-secondary { color: #ccc; }
+        .form { display: grid; gap: 16px; border: 0; padding: 0; margin: 0; min-width: 0; }
+        .control { width: 100%; padding: 12px 20px; font: inherit; font-size: 1.1rem; color: #55595c; border: 1px solid rgba(0,0,0,.15); border-radius: 4px; }
+        .control-sm { padding: 8px 12px; font-size: 1rem; }
+        .control:focus { outline: 2px solid rgba(92,184,92,.4); border-color: var(--green); }
+        textarea.control { resize: vertical; }
+        .form-actions { display: flex; justify-content: flex-end; gap: 8px; }
+        .error-messages { color: var(--danger); font-weight: 700; margin: 0 0 16px; padding-left: 20px; }
+        .auth-col, .editor-col, .settings-col { width: min(100%, 560px); margin-inline: auto; }
+        .editor-col { width: min(100%, 820px); }
+        .text-center { text-align: center; }
+        .auth-col h1, .settings-col h1 { font-size: 2.5rem; font-weight: 400; margin: 0; }
+        hr { border: 0; border-top: 1px solid var(--line); margin: 32px 0; }
+
+        /* Article */
+        .article-content { font-size: 1.15rem; line-height: 1.7; font-family: Georgia, serif; }
+        .article-content h2, .article-content h3 { font-family: system-ui, sans-serif; }
+        .article-content code { background: var(--surface); padding: 0 4px; border-radius: 3px; font-size: .9em; }
+        .article-actions { display: flex; justify-content: center; }
+        .comments { width: min(100%, 720px); margin-inline: auto; display: grid; gap: 12px; }
+        .card { border: 1px solid var(--line); border-radius: 4px; overflow: hidden; }
+        .card-block { padding: 20px; }
+        .card-block p { margin: 0; white-space: pre-wrap; }
+        .card-block textarea { border: 0; padding: 0; width: 100%; font: inherit; resize: vertical; outline: none; }
+        .card-footer { display: flex; align-items: center; gap: 8px; padding: 10px 20px; background: #f5f5f5; border-top: 1px solid var(--line); font-size: .8rem; color: #bbb; }
+        .card-footer .avatar { width: 20px; height: 20px; }
+        .card-footer .spacer { flex: 1; }
+        .card-footer button.icon { border: 0; background: none; cursor: pointer; color: #999; font-size: 1rem; }
+
+        /* Profile */
+        .user-info { background: var(--surface); padding: 32px 0 16px; text-align: center; }
+        .user-info .user-img { width: 100px; height: 100px; margin: 0 auto 16px; }
+        .user-info h1 { font-size: 1.6rem; margin: 0; }
+        .user-info p { color: #aaa; margin: 4px auto 12px; max-width: 450px; font-weight: 300; }
+        .user-info .actions { display: flex; justify-content: flex-end; }
+
+        /* Pagination */
+        .pagination { list-style: none; display: flex; flex-wrap: wrap; padding: 0; margin: 16px 0 0; }
+        .pagination a { display: block; padding: 6px 12px; border: 1px solid #ddd; margin-left: -1px; }
+        .pagination li:first-child a { border-radius: 4px 0 0 4px; margin-left: 0; }
+        .pagination li:last-child a { border-radius: 0 4px 4px 0; }
+        .pagination a:hover { background: #eceeef; text-decoration: none; }
+        .pagination a[aria-current="page"] { background: var(--green); border-color: var(--green); color: #fff; }
+
+        footer { background: var(--surface); padding: 16px 0; margin-top: 32px; font-size: .8rem; color: #bbb; }
+        footer .logo-font { color: var(--green); margin-right: 8px; }
+        .not-found { text-align: center; }
+        .not-found h1 { font-size: 3rem; margin-bottom: 0; }
+    </style>
+</head>
+<body>
+    <div id="app" b-cloak>
+        <nav class="navbar" aria-label="Main">
+            <div class="container">
+                <a class="brand" b-bind-href="$stores.link('/')">conduit</a>
+                <ul class="nav" data-testid="nav">
+                    <li><a b-bind-href="$stores.link('/')" b-bind-aria-current="$route.path === '/' ? 'page' : null">Home</a></li>
+                    <template b-if="$stores.session.user">
+                        <li><a b-bind-href="$stores.link('/editor')" b-bind-aria-current="$route.path === '/editor' ? 'page' : null" data-testid="nav-editor">✎ New Article</a></li>
+                        <li><a b-bind-href="$stores.link('/settings')" b-bind-aria-current="$route.path === '/settings' ? 'page' : null" data-testid="nav-settings">⚙ Settings</a></li>
+                        <li>
+                            <a b-bind-href="$stores.to.profile($stores.session.user.username)" data-testid="nav-profile"
+                               b-bind-aria-current="$route.params.username === $stores.session.user.username ? 'page' : null">
+                                <img class="avatar" b-bind-src="$stores.format.avatar($stores.session.user)" alt="">
+                                <span b-text="$stores.session.user.username"></span>
+                            </a>
+                        </li>
+                    </template>
+                    <li b-else-if="$stores.session.status === 'checking'" class="muted" aria-live="polite"><a>Signing in…</a></li>
+                    <template b-else>
+                        <li><a b-bind-href="$stores.link('/login')" b-bind-aria-current="$route.path === '/login' ? 'page' : null" data-testid="nav-login">Sign in</a></li>
+                        <li><a b-bind-href="$stores.link('/register')" b-bind-aria-current="$route.path === '/register' ? 'page' : null" data-testid="nav-register">Sign up</a></li>
+                    </template>
+                </ul>
+            </div>
+        </nav>
+
+        <div class="notice" role="alert" b-if="$stores.session.notice" data-testid="notice">
+            <div class="container">
+                <span b-text="$stores.session.notice"></span>
+                <button type="button" aria-label="Dismiss" b-on-click="$stores.actions.dismiss()">×</button>
+            </div>
+        </div>
+
+        <main>
+            <div b-router-outlet data-testid="outlet"></div>
+        </main>
+
+        <footer>
+            <div class="container">
+                <a class="logo-font" b-bind-href="$stores.link('/')">conduit</a>
+                An interactive learning project from <a href="https://realworld-docs.netlify.app">RealWorld</a>, built with Brio. © ${$data.year}
+            </div>
+        </footer>
+    </div>
+
+    <!-- Component templates. Inert until registered by app.js. -->
+
+    <template id="tpl-error-list">
+        <ul class="error-messages" role="alert" b-if="$props.errors && $props.errors.length" data-testid="errors">
+            <li b-for="message in $props.errors" b-text="$for.message"></li>
+        </ul>
+    </template>
+
+    <template id="tpl-article-meta">
+        <div class="article-meta">
+            <a b-bind-href="$stores.to.profile($props.article.author.username)" tabindex="-1">
+                <img class="avatar" b-bind-src="$stores.format.avatar($props.article.author)" alt="">
+            </a>
+            <div class="info">
+                <a class="author" b-bind-href="$stores.to.profile($props.article.author.username)" b-text="$props.article.author.username"></a>
+                <time class="date" b-bind-datetime="$props.article.createdAt" b-text="$stores.format.date($props.article.createdAt)"></time>
+            </div>
+        </div>
+    </template>
+
+    <template id="tpl-not-found-page">
+        <section class="container page not-found" data-testid="no-route">
+            <h1 class="logo-font">404</h1>
+            <p>We couldn't find that page. <a b-bind-href="$stores.link('/')">Go to the home page</a>.</p>
+        </section>
+    </template>
+
+    <template id="tpl-favorite-button">
+        <button type="button" class="btn btn-sm" data-testid="favorite"
+                b-bind-class="$props.article.favorited ? 'btn-primary' : 'btn-outline-primary'"
+                b-bind-aria-pressed="$props.article.favorited"
+                b-bind-disabled="$stores.actions.isPending('favorite:' + $props.article.slug)"
+                b-on-click="$stores.actions.toggleFavorite($props.article)">
+            <span aria-hidden="true">♥</span>
+            <span b-if="$props.compact" b-text="$props.article.favoritesCount" data-testid="favorites-count"></span>
+            <span b-else>${$props.article.favorited ? 'Unfavorite' : 'Favorite'} Article <span class="counter" data-testid="favorites-count">(${$props.article.favoritesCount})</span></span>
+        </button>
+    </template>
+
+    <template id="tpl-follow-button">
+        <button type="button" class="btn btn-sm" data-testid="follow"
+                b-if="!$stores.actions.isMine($props.profile)"
+                b-bind-class="$props.profile.following ? 'btn-secondary' : 'btn-outline-secondary'"
+                b-bind-aria-pressed="$props.profile.following"
+                b-bind-disabled="$stores.actions.isPending('follow:' + $props.profile.username)"
+                b-on-click="$stores.actions.toggleFollow($props.profile)">
+            ${$props.profile.following ? '✓ Unfollow' : '+ Follow'} ${$props.profile.username}
+        </button>
+    </template>
+
+    <template id="tpl-article-actions">
+        <div class="meta-row">
+            <article-meta b-bind-article="$props.article"></article-meta>
+            <div class="controls" b-if="$stores.actions.isMine($props.article.author)">
+                <a class="btn btn-sm btn-outline-secondary" b-bind-href="$stores.to.editor($props.article.slug)" data-testid="edit-article">✎ Edit Article</a>
+                <button type="button" class="btn btn-sm btn-outline-danger" b-bind-disabled="$props.busy" b-on-click="$emit('delete')" data-testid="delete-article">🗑 Delete Article</button>
+            </div>
+            <div class="controls" b-else>
+                <follow-button b-bind-profile="$props.article.author"></follow-button>
+                <favorite-button b-bind-article="$props.article"></favorite-button>
+            </div>
+        </div>
+    </template>
+
+    <template id="tpl-article-list">
+        <div b-bind-aria-busy="$data.loading" data-testid="article-list">
+            <p class="article-preview status" b-if="$data.loading && !$data.articles.length" data-testid="list-loading">Loading articles…</p>
+            <div class="article-preview status" role="alert" b-else-if="$data.error" data-testid="list-error">
+                <span b-text="$data.error"></span>
+                <button type="button" class="btn btn-sm btn-outline-secondary" b-on-click="$data.retry()">Try again</button>
+            </div>
+            <p class="article-preview status" b-else-if="!$data.articles.length" data-testid="list-empty">No articles are here… yet.</p>
+            <template b-else>
+                <article class="article-preview" b-for="article in $data.articles" b-key="$for.article.slug" data-testid="preview">
+                    <div class="preview-head">
+                        <article-meta b-bind-article="$for.article"></article-meta>
+                        <favorite-button compact b-bind-article="$for.article"></favorite-button>
+                    </div>
+                    <a class="preview-link" b-bind-href="$stores.to.article($for.article.slug)" data-testid="preview-link">
+                        <h2 b-text="$for.article.title"></h2>
+                        <p b-text="$for.article.description"></p>
+                        <div class="preview-foot">
+                            <span>Read more…</span>
+                            <ul class="tag-list"><li class="tag-pill tag-outline" b-for="tag in $for.article.tagList" b-text="$for.tag"></li></ul>
+                        </div>
+                    </a>
+                </article>
+                <nav b-if="$data.pages > 1" aria-label="Pages">
+                    <ul class="pagination" data-testid="pagination">
+                        <li b-for="number in $data.pages">
+                            <a b-bind-href="$data.pageHref($for.number)" b-text="$for.number"
+                               b-bind-aria-current="$for.number === $data.page ? 'page' : null"></a>
+                        </li>
+                    </ul>
+                </nav>
+            </template>
+        </div>
+    </template>
+
+    <template id="tpl-home-page">
+        <div class="home-page">
+            <div class="banner" b-if="!$stores.session.user">
+                <div class="container">
+                    <h1 class="logo-font">conduit</h1>
+                    <p>A place to share your knowledge.</p>
+                </div>
+            </div>
+            <div class="container page">
+                <div class="row">
+                    <div>
+                        <div class="feed-toggle">
+                            <ul class="tabs" data-testid="tabs">
+                                <li b-if="$stores.session.user"><a b-bind-href="$stores.link('/', { feed: 'you' })" b-bind-class="{ active: $data.tab === 'feed' }" data-testid="tab-feed">Your Feed</a></li>
+                                <li><a b-bind-href="$stores.link('/')" b-bind-class="{ active: $data.tab === 'global' }" data-testid="tab-global">Global Feed</a></li>
+                                <li b-if="$data.tag"><a class="active" b-bind-href="$stores.link('/', { tag: $data.tag })" data-testid="tab-tag"># ${$data.tag}</a></li>
+                            </ul>
+                        </div>
+                        <article-list b-bind-source="$data.source" b-bind-page="$data.page"></article-list>
+                    </div>
+                    <aside>
+                        <div class="sidebar">
+                            <p>Popular Tags</p>
+                            <p class="muted" b-if="$data.tagsLoading">Loading tags…</p>
+                            <p class="muted" b-else-if="$data.tagsError" b-text="$data.tagsError"></p>
+                            <div class="tag-list" b-else data-testid="tags">
+                                <a class="tag-pill" b-for="tag in $data.tags" b-key="$for.tag" b-bind-href="$stores.link('/', { tag: $for.tag })" b-text="$for.tag"></a>
+                            </div>
+                        </div>
+                    </aside>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <template id="tpl-auth-page">
+        <div class="container page">
+            <div class="auth-col">
+                <h1 class="text-center" b-text="$data.title"></h1>
+                <p class="text-center"><a b-bind-href="$data.switchHref" b-text="$data.switchText" data-testid="auth-switch"></a></p>
+                <error-list b-bind-errors="$data.form.errors"></error-list>
+                <form novalidate b-on-submit.prevent="$data.submit()" data-testid="auth-form">
+                    <fieldset class="form" b-bind-disabled="$data.form.submitting">
+                        <input class="control" b-if="$data.register" b-model="$data.form.username" placeholder="Username" aria-label="Username" autocomplete="username" data-testid="username">
+                        <input class="control" type="email" b-model="$data.form.email" placeholder="Email" aria-label="Email" autocomplete="email" data-testid="email">
+                        <input class="control" type="password" b-model="$data.form.password" placeholder="Password" aria-label="Password"
+                               b-bind-autocomplete="$data.register ? 'new-password' : 'current-password'" data-testid="password">
+                        <div class="form-actions">
+                            <button class="btn btn-lg btn-primary" data-testid="submit">${$data.form.submitting ? 'Please wait…' : $data.title}</button>
+                        </div>
+                    </fieldset>
+                </form>
+            </div>
+        </div>
+    </template>
+
+    <template id="tpl-settings-page">
+        <div class="container page">
+            <div class="settings-col">
+                <h1 class="text-center">Your Settings</h1>
+                <error-list b-bind-errors="$data.form.errors"></error-list>
+                <form novalidate b-on-submit.prevent="$data.submit()" data-testid="settings-form">
+                    <fieldset class="form" b-bind-disabled="$data.form.submitting || !$stores.session.user">
+                        <input class="control control-sm" type="url" b-model="$data.form.image" placeholder="URL of profile picture" aria-label="Profile picture URL" data-testid="image">
+                        <input class="control" b-model="$data.form.username" placeholder="Username" aria-label="Username" data-testid="username">
+                        <textarea class="control" rows="8" b-model="$data.form.bio" placeholder="Short bio about you" aria-label="Bio" data-testid="bio"></textarea>
+                        <input class="control" type="email" b-model="$data.form.email" placeholder="Email" aria-label="Email" data-testid="email">
+                        <input class="control" type="password" b-model="$data.form.password" placeholder="New Password" aria-label="New password" autocomplete="new-password" data-testid="password">
+                        <div class="form-actions">
+                            <button class="btn btn-lg btn-primary" data-testid="submit">Update Settings</button>
+                        </div>
+                    </fieldset>
+                </form>
+                <hr>
+                <button type="button" class="btn btn-outline-danger" b-on-click="$data.signOut()" data-testid="logout">Or click here to logout.</button>
+            </div>
+        </div>
+    </template>
+
+    <template id="tpl-editor-page">
+        <div class="container page">
+            <div class="editor-col">
+                <p class="muted" b-if="$data.loading" data-testid="editor-loading">Loading article…</p>
+                <p role="alert" b-else-if="$data.loadError" b-text="$data.loadError" data-testid="editor-error"></p>
+                <p role="alert" b-else-if="$data.forbidden" data-testid="editor-forbidden">You can only edit your own articles.</p>
+                <template b-else>
+                    <error-list b-bind-errors="$data.form.errors"></error-list>
+                    <form novalidate b-on-submit.prevent="$data.submit()" data-testid="editor-form">
+                        <fieldset class="form" b-bind-disabled="$data.form.submitting">
+                            <input class="control" b-model="$data.form.title" placeholder="Article Title" aria-label="Title" data-testid="title">
+                            <input class="control control-sm" b-model="$data.form.description" placeholder="What's this article about?" aria-label="Description" data-testid="description">
+                            <textarea class="control control-sm" rows="8" b-model="$data.form.body" placeholder="Write your article (in markdown)" aria-label="Body" data-testid="body"></textarea>
+                            <div>
+                                <input class="control control-sm" b-model="$data.form.tagInput" b-on-keydown.enter.prevent="$data.addTag()" placeholder="Enter tags" aria-label="Tags" data-testid="tag-input">
+                                <ul class="tag-list" style="margin-top: 6px" data-testid="tag-list">
+                                    <li class="tag-pill" b-for="tag in $data.form.tagList" b-key="$for.tag">
+                                        <button type="button" b-bind-aria-label="'Remove tag ' + $for.tag" b-on-click="$data.removeTag($for.tag)">×</button>${$for.tag}
+                                    </li>
+                                </ul>
+                            </div>
+                            <div class="form-actions">
+                                <button class="btn btn-lg btn-primary" data-testid="publish">${$data.editing ? 'Update Article' : 'Publish Article'}</button>
+                            </div>
+                        </fieldset>
+                    </form>
+                </template>
+            </div>
+        </div>
+    </template>
+
+    <template id="tpl-article-page">
+        <div class="article-page">
+            <section class="container page not-found" b-if="$data.notFound" data-testid="article-missing">
+                <h1 class="logo-font">404</h1>
+                <p>This article doesn't exist or was deleted. <a b-bind-href="$stores.link('/')">Back to the feed</a>.</p>
+            </section>
+            <p class="container page" role="alert" b-else-if="$data.error && !$data.article" b-text="$data.error.message" data-testid="article-error"></p>
+            <p class="container page muted" b-else-if="!$data.article" data-testid="article-loading">Loading article…</p>
+            <template b-else>
+                <div class="banner">
+                    <div class="container">
+                        <h1 b-text="$data.article.title" data-testid="article-title"></h1>
+                        <article-actions b-bind-article="$data.article" b-bind-busy="$data.deleting" b-on-delete="$data.remove()"></article-actions>
+                    </div>
+                </div>
+                <div class="container page">
+                    <div class="article-content" b-if="$data.hasBody" b-html="$stores.format.markdown($data.article.body)" data-testid="article-body"></div>
+                    <p class="muted" b-else>Loading article…</p>
+                    <ul class="tag-list" data-testid="article-tags">
+                        <li class="tag-pill tag-outline" b-for="tag in $data.article.tagList" b-text="$for.tag"></li>
+                    </ul>
+                    <hr>
+                    <div class="article-actions">
+                        <article-actions b-bind-article="$data.article" b-bind-busy="$data.deleting" b-on-delete="$data.remove()"></article-actions>
+                    </div>
+                    <section class="comments" aria-label="Comments" style="margin-top: 32px">
+                        <form class="card" b-if="$stores.session.user" novalidate b-on-submit.prevent="$data.post()" data-testid="comment-form">
+                            <div class="card-block">
+                                <error-list b-bind-errors="$data.comments.errors"></error-list>
+                                <textarea rows="3" b-model="$data.comments.draft" placeholder="Write a comment..." aria-label="Comment" data-testid="comment-input"></textarea>
+                            </div>
+                            <div class="card-footer">
+                                <img class="avatar" b-bind-src="$stores.format.avatar($stores.session.user)" alt="">
+                                <span class="spacer"></span>
+                                <button class="btn btn-sm btn-primary" b-bind-disabled="$data.comments.posting" data-testid="post-comment">Post Comment</button>
+                            </div>
+                        </form>
+                        <p b-else data-testid="comment-signin">
+                            <a b-bind-href="$stores.link('/login', { redirect: $route.path })">Sign in</a> or
+                            <a b-bind-href="$stores.link('/register', { redirect: $route.path })">sign up</a> to add comments on this article.
+                        </p>
+                        <p class="muted" b-if="$data.commentsLoading">Loading comments…</p>
+                        <div class="card" b-for="comment in $data.comments.list" b-key="$for.comment.id" data-testid="comment">
+                            <div class="card-block"><p b-text="$for.comment.body"></p></div>
+                            <div class="card-footer">
+                                <img class="avatar" b-bind-src="$stores.format.avatar($for.comment.author)" alt="">
+                                <a b-bind-href="$stores.to.profile($for.comment.author.username)" b-text="$for.comment.author.username"></a>
+                                <time b-bind-datetime="$for.comment.createdAt" b-text="$stores.format.date($for.comment.createdAt)"></time>
+                                <span class="spacer"></span>
+                                <button type="button" class="icon" b-if="$stores.actions.isMine($for.comment.author)" aria-label="Delete comment"
+                                        b-on-click="$data.removeComment($for.comment)" data-testid="delete-comment">🗑</button>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </template>
+        </div>
+    </template>
+
+    <template id="tpl-profile-page">
+        <div class="profile-page">
+            <section class="container page not-found" b-if="$data.notFound" data-testid="profile-missing">
+                <h1 class="logo-font">404</h1>
+                <p>No one here goes by that name. <a b-bind-href="$stores.link('/')">Back to the feed</a>.</p>
+            </section>
+            <template b-else>
+                <div class="user-info">
+                    <div class="container">
+                        <template b-if="$data.profile">
+                            <img class="avatar user-img" b-bind-src="$stores.format.avatar($data.profile)" alt="">
+                            <h1 b-text="$data.profile.username" data-testid="profile-name"></h1>
+                            <p b-text="$data.profile.bio" data-testid="profile-bio"></p>
+                            <div class="actions">
+                                <a class="btn btn-sm btn-outline-secondary" b-if="$data.mine" b-bind-href="$stores.link('/settings')" data-testid="edit-profile">⚙ Edit Profile Settings</a>
+                                <follow-button b-else b-bind-profile="$data.profile"></follow-button>
+                            </div>
+                        </template>
+                        <p class="muted" b-else-if="$data.loading">Loading profile…</p>
+                        <p role="alert" b-else b-text="$data.error"></p>
+                    </div>
+                </div>
+                <div class="container page">
+                    <div class="feed-toggle">
+                        <ul class="tabs">
+                            <li><a b-bind-href="$data.myHref" b-bind-class="{ active: !$data.favorites }" data-testid="tab-mine">My Articles</a></li>
+                            <li><a b-bind-href="$data.favoritesHref" b-bind-class="{ active: $data.favorites }" data-testid="tab-favorites">Favorited Articles</a></li>
+                        </ul>
+                    </div>
+                    <article-list b-bind-source="$data.source" b-bind-page="$data.page"></article-list>
+                </div>
+            </template>
+        </div>
+    </template>
+
+    <script src="../../../dist/brio.min.js"></script>
+    <script src="../../../dist/brio.router.min.js"></script>
+    <script src="../../../dist/brio.http.min.js"></script>
+    <script src="../../../dist/brio.persistence.min.js"></script>
+    <script src="../../../dist/brio.forms.min.js"></script>
+    <script src="./server.js"></script>
+    <script src="./app.js"></script>
+</body>
+</html>

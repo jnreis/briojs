@@ -47,6 +47,13 @@ metadata on `main`, through commit `d868d43`.
 - `$insert` with `before`/`after` beside a `b-for` row now throws; insert inside the row or outside the loop.
 
 ### Changed
+- **Breaking:** an unknown event modifier (`b-on-click.prevnt`) throws a `SyntaxError` listing the supported modifiers instead of being ignored.
+- **Breaking:** `validate()` throws a `TypeError` for an unknown rule name instead of warning and skipping it.
+- `b-router-outlet` keeps the mounted page when only the query or hash changes (`?page=2`); a different component or path still remounts. Pages are mounted untracked, so setup reads never remount the outlet.
+- `RouteMatch` (`router.current.value`) gains `query`, `hash`, and `fullPath`.
+- Event modifiers on component hosts (`<row-actions b-on-remove.stop.once>`) now behave as on ordinary elements; previously they were ignored.
+- `persist()` works outside a reactive scope; the value then lives for the page instead of throwing.
+- `.once` removes its listener after the first event that passes the other filters, so `.enter.once`, `.self.once`, and `.outside.once` no longer expire on a filtered-out event.
 - `onCleanup(fn)` called directly in an effect body now runs before the effect's next run and when it stops, instead of only when the owning scope is disposed. It also works in effects created outside a scope, which never adopt the scope that happened to trigger them. Cleanup registered inside a nested `scope.run()` keeps that scope's lifetime.
 - A native `<template>` carrying any `b-` directive (`b-if`/`b-else-if`/`b-else`, `b-for`, `b-data`, `b-id`, `b-provide`, `b-teleport`, `b-effect`) now renders its contents in place as if it had `b-template`; previously it silently rendered inert template copies or nothing. Templates with no `b-` directive, or with `b-ignore`, stay inert.
 - Directives that need a concrete element (`b-bind-*`, `b-on-*`, `b-text`, `b-html`, `b-model`, `b-mask`, `b-transition`, `b-router-outlet`, unknown `b-*`) on a `b-template` wrapper or directive-bearing `<template>` now throw instead of being silently skipped. `<template b-bind-*>` no longer binds attributes on the inert element.
@@ -138,6 +145,16 @@ metadata on `main`, through commit `d868d43`.
 
 ### Fixed
 
+- A write that re-triggers an effect while it is running (for example a route
+  guard calling `router.navigate()` while the outlet mounts the guarded page)
+  re-runs the effect after the current run instead of being dropped; the outlet
+  previously kept showing the old page under the new URL. A runaway self-trigger
+  throws after 100 consecutive runs.
+- Pending effects run in creation order, so an owner (router outlet, `b-if`,
+  component) disposes stale child effects before they run. Previously children
+  subscribed through a shared computed could run first against the new values,
+  for example refetching a list for a page that was being torn down.
+
 - `b-bind-aria-*` now serializes `true`/`false` as `"true"`/`"false"` instead of
   an empty attribute and attribute removal.
 - `b-model.number` radios and checkbox groups now compare against the parsed
@@ -167,6 +184,14 @@ metadata on `main`, through commit `d868d43`.
   instead of silently becoming attributes.
 
 ### Added
+- Router route state: `router.route` (reactive `matched`, `component`, `path`, `params`, `query`, `hash`, `fullPath`), `$route` in templates, and `route` in component setup.
+- Router guards (`guard` per route and as a global option) returning `true`, `false`, or a redirect path. Guards are reactive: they re-run when state they read changes, e.g. on sign-out.
+- Redirect routes (`{ path, redirect: '/x' | to => path }`), a single `{ path: '*' }` fallback route, and a 10-hop redirect-loop error.
+- Router hash mode (`createRouter(routes, { mode: 'hash' })`) for static hosting.
+- In history mode, `base + 'index.html'` is treated as the `/` route and the URL is canonicalized.
+- Event key modifiers `.enter`, `.esc`, `.space`, `.tab`, `.up`, `.down`, `.left`, `.right`, `.delete` and system-key modifiers `.ctrl`, `.alt`, `.shift`, `.meta`.
+- Component `template` accepts a `<template>` element or an `#id` selector for a `<template>` in the page.
+- Component `props` declarations (`{ compact: Boolean, count: Number }`) coerce static host attributes; declared Boolean props default to `false`.
 - `untrack(fn)` reads reactive values without subscribing the current effect or computed. It is exported from `briojs`, `briojs/reactivity`, and the browser global.
 - `brio.resource` and `brio.untrack` in the browser bundles.
 - `b-attr-*` on component hosts binds the host element's own attributes, classes, and styles (with `b-bind-*` semantics) without becoming a prop.
@@ -201,7 +226,7 @@ metadata on `main`, through commit `d868d43`.
   Brio's structural errors name the element; aggregated effect failures list
   each failure.
 - Real-world test apps under `tests/apps/` (counter, temperature converter,
-  conditional form, TodoMVC, 7GUIs, large table, data dashboard), each with a JSDOM suite
+  conditional form, TodoMVC, 7GUIs, large table, data dashboard, RealWorld/Conduit), each with a JSDOM suite
   that drives user flows end to end.
 
 ### Documentation

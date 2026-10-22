@@ -4,6 +4,7 @@ import { createApp } from 'briojs';
 import { batch, computed, createScope, effect, flush, onCleanup, signal, state, untrack } from 'briojs/reactivity';
 import { persist } from 'briojs/persistence';
 import { createRouter } from 'briojs/router';
+import { validate } from 'briojs/forms';
 
 test('state preserves cycles, shared references, and raw identity', () => {
     const shared = { value: 1 };
@@ -268,9 +269,14 @@ test('persistence binds reactive objects and primitive signals to a scope', () =
     assert.equal(values.get('count'), '2');
 });
 
-test('persistence requires a cleanup scope', () => {
-    const storage = { getItem: () => null, setItem: () => {} };
-    assert.throws(() => persist('outside', 1, { storage }), /inside an app/);
+test('persistence outside a scope lives for the page (module-level state)', () => {
+    const values = new Map();
+    const storage = { getItem: key => values.get(key) ?? null, setItem: (key, value) => values.set(key, value) };
+    const token = persist('outside', '', { storage });
+    assert.equal(values.get('outside'), '""');
+    token.value = 'jwt.ada';
+    assert.equal(values.get('outside'), '"jwt.ada"');
+    assert.equal(persist('outside', '', { storage }).value, 'jwt.ada', 'a later read restores the stored value');
 });
 
 test('persistence applies cross-tab updates and keeps saving local changes afterwards', t => {
@@ -321,6 +327,9 @@ test('router matches static and parameterized paths without requiring a DOM', ()
     assert.deepEqual(router.match('/items/abc'), {
         path: '/items/abc',
         params: { id: 'abc' },
+        query: {},
+        hash: '',
+        fullPath: '/items/abc',
         component: 'item-page',
     });
     assert.equal(router.match('/items/new').component, 'new-item-page');
@@ -485,4 +494,67 @@ test('untrack reads values without subscribing the current effect or computed', 
     tracked.value = 3;
     assert.equal(sum.value, 33);
     assert.equal(untrack(() => 'plain'), 'plain');
+});
+
+test('an effect re-runs when a nested effect or untracked code changes what it read during the run', () => {
+    const route = signal('/settings');
+    const seen = [];
+    const scope = createScope();
+    scope.run(() => effect(() => {
+        const path = route.value;
+        seen.push(path);
+        // A guard created by the rendered "page" redirects while the outer effect is still running.
+        if (path === '/settings') effect(() => untrack(() => { route.value = '/login'; }));
+    }));
+    assert.deepEqual(seen, ['/settings', '/login']);
+    assert.equal(route.value, '/login');
+
+    const count = signal(0);
+    const runs = [];
+    effect(() => {
+        runs.push(count.value);
+        if (count.value < 3) untrack(() => count.value++);
+    });
+    assert.deepEqual(runs, [0, 1, 2, 3]);
+
+    const loop = signal(0);
+    assert.throws(() => effect(() => {
+        loop.value;
+        untrack(() => loop.value++);
+    }), /keeps re-triggering itself/);
+    scope.dispose();
+});
+
+test('effects run in creation order so an owner disposes stale child effects before they run', () => {
+    const source = signal({ page: 1, items: ['a'] });
+    // A computed first read by an unrelated, earlier effect subscribes ahead of the owner below.
+    const page = computed(() => source.value.page);
+    const header = [];
+    effect(() => header.push(page.value));
+    const childRuns = [];
+    let mounts = 0;
+    const scope = createScope();
+    // Like a router outlet or b-if: each run mounts a child scope and disposes the previous one.
+    scope.run(() => effect(() => {
+        source.value;
+        const mount = ++mounts;
+        const child = createScope();
+        onCleanup(() => child.dispose());
+        child.run(() => effect(() => childRuns.push(`${mount}:${page.value}`)));
+    }));
+    source.value = { page: 2, items: ['b'] };
+    assert.deepEqual(childRuns, ['1:1', '2:2'], 'the old child never runs with the new page');
+    assert.deepEqual(header, [1, 2]);
+
+    // Re-subscribing on every run used to move the owner behind its children in the dependency set.
+    source.value = { page: 3, items: ['c'] };
+    assert.deepEqual(childRuns, ['1:1', '2:2', '3:3']);
+    scope.dispose();
+});
+
+test('validate throws on an unknown rule name instead of silently passing', () => {
+    assert.equal(validate({ name: 'Ada' }, { name: [{ name: 'required' }] }), true);
+    assert.throws(() => validate({ name: '' }, { name: [{ name: 'requird' }] }),
+        /Unknown validation rule "requird" for field "name"\. Known rules: required, min/);
+    assert.equal(validate({ age: 4 }, { age: [{ name: 'even' }] }, { even: value => value % 2 === 0 }), true);
 });

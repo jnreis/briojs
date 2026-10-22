@@ -1795,3 +1795,99 @@ test('component hosts bind native attributes with b-attr-* and evaluate bound pr
     assert.equal(parses, 1, 'the template markup was parsed per definition, not per instance');
     assert.ok(window.document.contains(first));
 });
+
+test('component templates resolve "#id" selectors and <template> elements; props declarations coerce static attributes', t => {
+    const { window, app, root } = environment(t, `
+        <fav-button compact count="3" label="Likes" title=""></fav-button>
+        <fav-button count="x" compact="false"></fav-button>
+        <plain-card></plain-card>`);
+    const page = window.document.createElement('template');
+    page.id = 'tpl-fav';
+    page.innerHTML = '<b b-text="[$props.compact, $props.count, $props.label, $props.title, $props.missing].join(\'|\')"></b>';
+    window.document.body.append(page);
+    const element = window.document.createElement('template');
+    element.innerHTML = '<i>plain</i>';
+    app.component('fav-button', { template: '#tpl-fav', props: { compact: window.Boolean, count: window.Number, missing: window.Boolean } });
+    app.component('plain-card', { template: element });
+    app.mount(root);
+    const [first, second] = root.querySelectorAll('b');
+    assert.equal(first.textContent, 'true|3|Likes||false', 'valueless Boolean is true, Number coerces, undeclared stay strings');
+    assert.equal(second.textContent, 'false|NaN|||false', '"false" is false for declared Boolean props');
+    assert.equal(root.querySelector('i').textContent, 'plain');
+    assert.throws(() => app.component('bad-props', { template: '<b></b>', props: { x: window.Date } }), /Boolean, Number, or String/);
+    assert.throws(() => app.component('bad-template', { template: window.document.createElement('div') }), /template/);
+});
+
+test('a missing "#id" component template is a clear error', t => {
+    const { app, root } = environment(t, '<missing-tpl></missing-tpl>');
+    app.component('missing-tpl', { template: '#nope' });
+    assert.throws(() => app.mount(root), /<missing-tpl> template "#nope" does not match a <template> element/);
+});
+
+test('key and system modifiers filter keyboard and mouse events; unknown modifiers throw', t => {
+    const { window, app, root } = environment(t, `
+        <input b-on-keydown.enter.prevent="$data.log.push('enter')"
+               b-on-keydown.esc="$data.log.push('esc')"
+               b-on-keydown.up.down="$data.log.push($event.key)"
+               b-on-keydown.delete="$data.log.push('delete')"
+               b-on-keydown.ctrl.enter="$data.log.push('ctrl+enter')">
+        <button b-on-click.shift="$data.log.push('shift-click')"></button>`, { log: [] });
+    app.mount(root);
+    const input = root.querySelector('input');
+    const key = (key, options = {}) => {
+        const event = new window.KeyboardEvent('keydown', { key, bubbles: true, cancelable: true, ...options });
+        input.dispatchEvent(event);
+        return event.defaultPrevented;
+    };
+    assert.equal(key('Enter'), true, '.prevent applies only after the key filter matches');
+    assert.equal(key('a'), false);
+    key('Escape');
+    key('ArrowUp');
+    key('ArrowDown');
+    key('Backspace');
+    key('Enter', { ctrlKey: true });
+    root.querySelector('button').click();
+    root.querySelector('button').dispatchEvent(new window.MouseEvent('click', { bubbles: true, shiftKey: true }));
+    assert.deepEqual([...app.state.log], ['enter', 'esc', 'ArrowUp', 'ArrowDown', 'delete', 'enter', 'ctrl+enter', 'shift-click']);
+
+    const typo = environment(t, '<button b-on-click.prevnt="$data.x = 1"></button>');
+    assert.throws(() => typo.app.mount(typo.root), /Unknown event modifier "\.prevnt" on "b-on-click"/);
+});
+
+test('component host listeners honor event modifiers', t => {
+    const { window, app, root } = environment(t, `
+        <section b-on-remove="$data.log.push('bubbled')">
+            <row-actions b-on-remove.stop.once="$data.log.push('host:' + $event.detail)"
+                         b-on-keydown.enter="$data.log.push('host-enter')"></row-actions>
+        </section>`, { log: [] });
+    app.component('row-actions', {
+        template: '<button b-on-click="$emit(\'remove\', 7)">Delete</button>',
+    });
+    app.mount(root);
+    const button = root.querySelector('button');
+    button.click();
+    button.click();
+    button.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    button.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'x', bubbles: true }));
+    assert.deepEqual([...app.state.log], ['host:7', 'bubbled', 'host-enter'],
+        '.stop keeps the first emit from bubbling; .once lets the second bubble past');
+    const typo = environment(t, '<row-x b-on-remove.sotp="0"></row-x>');
+    typo.app.component('row-x', { template: '<b></b>' });
+    assert.throws(() => typo.app.mount(typo.root), /Unknown event modifier "\.sotp"/);
+});
+
+test('.once waits for an event that passes key and target filters', t => {
+    const { window, app, root } = environment(t, `
+        <input b-on-keydown.enter.once="$data.log.push('enter')">
+        <div b-on-click.self.once="$data.log.push('self')"><span>child</span></div>`, { log: [] });
+    app.mount(root);
+    const input = root.querySelector('input');
+    const press = key => input.dispatchEvent(new window.KeyboardEvent('keydown', { key, bubbles: true }));
+    press('a');
+    press('Enter');
+    press('Enter');
+    root.querySelector('span').click();
+    root.querySelector('div').click();
+    root.querySelector('div').click();
+    assert.deepEqual([...app.state.log], ['enter', 'self']);
+});

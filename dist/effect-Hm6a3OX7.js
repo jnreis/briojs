@@ -198,7 +198,11 @@ function setActiveScope(scope) {
 }
 let activeEffect;
 let batchDepth = 0;
+let nextEffectId = 0;
 const queuedEffects = /* @__PURE__ */ new Set();
+let lastQueuedId = -1;
+let queueInOrder = true;
+const MAX_RUNS = 100;
 const getActiveEffect = () => activeEffect;
 const cleanupEffect = (eff) => {
   for (const dep of eff.deps) deleteItem(dep, eff);
@@ -222,26 +226,36 @@ const runCleanups = (eff) => {
   if (getLength(errors)) return locate(combinedError("One or more effect cleanups failed.", errors), getScopeNode(eff.scope));
 };
 const runEffect = (eff) => {
-  var _a;
+  var _a, _b;
   if (!eff.active || ((_a = eff.scope) == null ? void 0 : _a.disposed)) return;
-  if (eff.running) return;
-  const cleanupFailure = runCleanups(eff);
-  cleanupEffect(eff);
-  const previous = activeEffect;
-  const previousFrame = setEffectFrame(eff.frame);
-  activeEffect = eff;
-  eff.running = true;
+  if (eff.running) return void (eff.dirty = true);
   let result;
+  let runs = 0;
   try {
-    result = eff.scope ? eff.scope.run(eff.fn) : runUnscoped(eff.fn);
-  } catch (error) {
-    throw locate(error, getScopeNode(eff.scope));
+    do {
+      if (++runs > MAX_RUNS)
+        throw locate(createError("A Brio effect keeps re-triggering itself."), getScopeNode(eff.scope));
+      eff.dirty = false;
+      const cleanupFailure = runCleanups(eff);
+      cleanupEffect(eff);
+      const previous = activeEffect;
+      const previousFrame = setEffectFrame(eff.frame);
+      activeEffect = eff;
+      eff.running = true;
+      try {
+        result = eff.scope ? eff.scope.run(eff.fn) : runUnscoped(eff.fn);
+      } catch (error) {
+        throw locate(error, getScopeNode(eff.scope));
+      } finally {
+        eff.running = false;
+        activeEffect = previous;
+        setEffectFrame(previousFrame);
+      }
+      if (cleanupFailure) throw cleanupFailure;
+    } while (eff.dirty && eff.active && !((_b = eff.scope) == null ? void 0 : _b.disposed));
   } finally {
-    eff.running = false;
-    activeEffect = previous;
-    setEffectFrame(previousFrame);
+    eff.dirty = false;
   }
-  if (cleanupFailure) throw cleanupFailure;
   return result;
 };
 function untrack(fn) {
@@ -259,6 +273,8 @@ const queueEffect = (eff) => {
     if (eff.active && !((_a = eff.scope) == null ? void 0 : _a.disposed)) eff.scheduler();
     return;
   }
+  if (eff.id < lastQueuedId) queueInOrder = false;
+  lastQueuedId = eff.id;
   queuedEffects.add(eff);
   if (!batchDepth) flush();
 };
@@ -267,7 +283,10 @@ const flush = () => {
   const errors = [];
   while (queuedEffects.size) {
     const current = [...queuedEffects];
+    if (!queueInOrder) current.sort((left, right) => left.id - right.id);
     queuedEffects.clear();
+    lastQueuedId = -1;
+    queueInOrder = true;
     for (const eff of current) {
       try {
         if (eff.active && !((_a = eff.scope) == null ? void 0 : _a.disposed)) runEffect(eff);
@@ -287,6 +306,8 @@ function effect(fn, options = {}) {
     deps: [],
     active: true,
     running: false,
+    id: nextEffectId++,
+    dirty: false,
     frame: { scope, cleanups: void 0 }
   };
   const stop = () => {
@@ -375,4 +396,4 @@ export {
   notifyRootUnmounted as y,
   addDisposer as z
 };
-//# sourceMappingURL=effect-BTu8V88D.js.map
+//# sourceMappingURL=effect-Hm6a3OX7.js.map

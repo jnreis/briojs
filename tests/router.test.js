@@ -20,7 +20,8 @@ test('router base normalization, app URL generation and browser URL matching wor
         for (const root of ['/my-app', '/my-app/'])
             assert.equal(router.match(root).path, '/');
         assert.deepEqual(router.match('/my-app/users/ada?sort=name#details'), {
-            path: '/users/ada', params: { username: 'ada' }, component: 'user-page',
+            path: '/users/ada', params: { username: 'ada' }, query: { sort: 'name' }, hash: '#details',
+            fullPath: '/users/ada?sort=name#details', component: 'user-page',
         });
         assert.equal(router.match('http://localhost/my-app/users/%E4%B8%AD').params.username, '中');
         for (const outside of ['/users/ada', '/my-app-other/users/ada', '/my-application',
@@ -183,5 +184,181 @@ for (const core of ['brio.min.js', 'brio.dev.min.js']) {
             assert.match(text('navigation-result'), /returned false/);
             assert.equal(text('current-path'), '/about');
         }
+    });
+}
+
+for (const core of ['brio.min.js', 'brio.dev.min.js']) {
+    function routedApp(t, url, routeList, options = {}, markup = '<nav><a id="link"></a></nav><div b-router-outlet></div><p id="status" b-text="$route.matched ? $route.fullPath : \'none\'"></p>') {
+        const dom = new JSDOM(`<main id="app">${markup}</main>`, { url, runScripts: 'outside-only' });
+        t.after(() => dom.window.close());
+        const { window } = dom;
+        window.eval(readFileSync(new URL(`../dist/${core}`, import.meta.url), 'utf8'));
+        window.eval(readFileSync(new URL('../dist/brio.router.min.js', import.meta.url), 'utf8'));
+        const router = window.brio.createRouter(routeList(window), options);
+        const app = window.brio.createApp({ router });
+        const mounts = [];
+        const page = (name, template) => app.component(name, {
+            template,
+            setup({ route }) {
+                mounts.push(name);
+                return Object.assign(window.eval('({})'), { route });
+            },
+        });
+        const text = selector => window.document.querySelector(selector)?.textContent;
+        return { window, router, app, page, mounts, text, start: () => app.mount('#app') };
+    }
+    const click = (window, href) => {
+        const anchor = window.document.getElementById('link');
+        anchor.setAttribute('href', href);
+        let prevented;
+        window.document.addEventListener('click', event => {
+            prevented = event.defaultPrevented;
+            event.preventDefault();
+        }, { once: true });
+        anchor.dispatchEvent(new window.MouseEvent('click', { bubbles: true, cancelable: true }));
+        return prevented;
+    };
+
+    test(`${core}: query and hash are part of the match; $route and setup route are reactive; the outlet keeps the page on query-only changes`, t => {
+        const { window, router, page, mounts, text, start } = routedApp(t, 'https://brio.test/app/users/ada?tab=posts#top',
+            () => [{ path: '/users/:name', component: 'user-page' }, { path: '/', component: 'home-page' }], { base: '/app' });
+        page('user-page', '<h1 b-text="$route.params.name + \':\' + ($data.route.query.tab ?? \'-\') + $route.hash"></h1><input id="draft">');
+        page('home-page', '<h1>home</h1>');
+        start();
+        assert.deepEqual(JSON.parse(JSON.stringify(router.current.value)), {
+            path: '/users/ada', params: { name: 'ada' }, query: { tab: 'posts' }, hash: '#top',
+            fullPath: '/users/ada?tab=posts#top', component: 'user-page',
+        });
+        assert.equal(text('h1'), 'ada:posts#top');
+        assert.equal(text('#status'), '/users/ada?tab=posts#top');
+        window.document.getElementById('draft').value = 'kept';
+        const params = router.route.params;
+        router.navigate('/users/ada?tab=favorites');
+        assert.equal(text('h1'), 'ada:favorites');
+        assert.equal(router.route.params, params, 'unchanged params keep their identity so readers do not re-run');
+        assert.equal(window.document.getElementById('draft').value, 'kept', 'query-only navigation keeps the mounted page');
+        assert.equal(click(window, '/app/users/ada?tab=posts&tab=last'), true);
+        assert.equal(text('h1'), 'ada:last', 'a repeated query key keeps its last value');
+        assert.deepEqual(mounts, ['user-page']);
+        router.navigate('/users/grace');
+        assert.equal(text('h1'), 'grace:-');
+        assert.equal(window.document.getElementById('draft').value, '', 'a different path remounts the page');
+        router.navigate('/');
+        assert.deepEqual(mounts, ['user-page', 'user-page', 'home-page']);
+        assert.equal(router.route.matched, true);
+        assert.deepEqual({ ...router.route.query }, {});
+    });
+
+    test(`${core}: the outlet does not track reads made during page setup`, t => {
+        const { window, app, text, start } = routedApp(t, 'https://brio.test/', () => [{ path: '/', component: 'home-page' }]);
+        const flag = window.brio.signal(1);
+        let setups = 0;
+        app.component('home-page', {
+            template: '<b b-text="$data.initial"></b>',
+            setup() {
+                setups++;
+                return Object.assign(window.eval('({})'), { initial: flag.value });
+            },
+        });
+        start();
+        assert.equal(text('b'), '1');
+        flag.value = 2;
+        assert.equal(setups, 1, 'a signal read synchronously in setup does not remount the page');
+        assert.equal(text('b'), '1');
+    });
+
+    test(`${core}: reactive guards block, redirect, and re-check when their data changes`, t => {
+        let session;
+        const { window, router, page, text, start, mounts } = routedApp(t, 'https://brio.test/settings',
+            window => {
+                session = window.brio.state(window.eval('({ user: null, locked: false })'));
+                return [
+                    { path: '/', component: 'home-page' },
+                    { path: '/login', component: 'login-page' },
+                    { path: '/settings', component: 'settings-page',
+                        guard: to => session.user ? true : `/login?redirect=${encodeURIComponent(to.fullPath)}` },
+                    { path: '/old-settings', redirect: '/settings' },
+                    { path: '/legacy/:id', redirect: to => `/item/${to.params.id}` },
+                    { path: '/item/:id', component: 'home-page' },
+                    { path: '/loop', redirect: '/loop-back' },
+                    { path: '/loop-back', redirect: '/loop' },
+                ];
+            }, { guard: () => !session.locked });
+        page('home-page', '<b>home</b>');
+        page('login-page', '<b>login</b>');
+        page('settings-page', '<b>settings</b>');
+        start();
+        assert.equal(window.location.pathname + window.location.search, '/login?redirect=%2Fsettings', 'a deep link to a guarded page redirects');
+        assert.equal(text('b'), 'login');
+        const length = window.history.length;
+        session.user = 'ada';
+        assert.equal(router.navigate('/settings'), true);
+        assert.equal(text('b'), 'settings');
+        session.user = null;
+        assert.equal(window.location.pathname + window.location.search, '/login?redirect=%2Fsettings', 'signing out re-runs the guard');
+        assert.equal(window.history.length, length + 1, 'guard redirects replace the guarded entry');
+        assert.equal(router.navigate('/old-settings'), true);
+        assert.equal(window.location.search, '?redirect=%2Fsettings', 'redirect routes chain into guards');
+        assert.equal(router.navigate('/legacy/9'), true);
+        assert.equal(window.location.pathname, '/item/9');
+        session.locked = true;
+        assert.equal(text('#status'), 'none', 'a global guard returning false on the current page shows nothing');
+        assert.equal(router.navigate('/'), false, 'false blocks navigation');
+        assert.equal(window.location.pathname, '/item/9');
+        session.locked = false;
+        assert.throws(() => router.navigate('/loop'), /redirected more than 10 times/);
+        assert.equal(mounts.filter(name => name === 'settings-page').length, 1);
+    });
+
+    test(`${core}: "*" catches every other in-base path and intercepts its links; without it unmatched links fall through`, t => {
+        const { window, router, page, text, start } = routedApp(t, 'https://brio.test/app/nowhere',
+            () => [{ path: '/', component: 'home-page' }, { path: '*', component: 'missing-page' }], { base: '/app' });
+        page('home-page', '<b>home</b>');
+        page('missing-page', '<b b-text="\'missing \' + $route.path"></b>');
+        start();
+        assert.equal(text('b'), 'missing /nowhere');
+        assert.equal(click(window, '/app/also/missing'), true);
+        assert.equal(text('b'), 'missing /also/missing');
+        assert.equal(click(window, '/elsewhere'), false, 'outside the base still belongs to the server');
+        assert.equal(router.match('/app/x').component, 'missing-page');
+        assert.throws(() => window.brio.createRouter([{ path: '*', component: 'a-b' }, { path: '*', component: 'c-d' }]), /Duplicate/);
+        assert.throws(() => window.brio.createRouter([{ path: '/x' }]), /component name or a redirect/);
+    });
+
+    test(`${core}: hash mode routes through the fragment and leaves in-page anchors alone`, async t => {
+        const { window, router, page, text, start } = routedApp(t, 'https://brio.test/docs/index.html#/users/ada?tab=1',
+            () => [{ path: '/', component: 'home-page' }, { path: '/users/:name', component: 'user-page' }], { mode: 'hash' });
+        page('home-page', '<b>home</b>');
+        page('user-page', '<b b-text="$route.params.name + $route.query.tab"></b>');
+        start();
+        assert.equal(router.mode, 'hash');
+        assert.equal(text('b'), 'ada1');
+        assert.equal(router.href('/users/grace?tab=2'), '#/users/grace?tab=2');
+        assert.equal(router.match('#/users/zed').params.name, 'zed');
+        assert.equal(router.match('/users/zed').params.name, 'zed');
+        assert.equal(click(window, '#/users/grace?tab=2'), true);
+        assert.equal(window.location.pathname + window.location.hash, '/docs/index.html#/users/grace?tab=2');
+        assert.equal(text('b'), 'grace2');
+        router.navigate('/');
+        assert.equal(window.location.hash, '#/');
+        assert.equal(text('b'), 'home');
+        assert.equal(click(window, '#section'), false, 'a plain fragment is an in-page anchor');
+        window.location.hash = '#section';
+        await new Promise(resolve => window.addEventListener('hashchange', resolve, { once: true }));
+        assert.equal(text('b'), 'home', 'the page stays mounted for in-page anchors');
+        window.location.hash = '#/users/typed?tab=3';
+        await new Promise(resolve => window.addEventListener('hashchange', resolve, { once: true }));
+        assert.equal(text('b'), 'typed3', 'typing a route into the address bar navigates');
+        assert.throws(() => window.brio.createRouter([], { mode: 'memory' }), /history" or "hash/);
+    });
+
+    test(`${core}: base + index.html loads the root route and is normalized`, t => {
+        const { window, router, page, text, start } = routedApp(t, 'https://brio.test/app/index.html?ref=mail#intro',
+            () => [{ path: '/', component: 'home-page' }], { base: '/app' });
+        page('home-page', '<b>home</b>');
+        start();
+        assert.equal(text('b'), 'home');
+        assert.equal(window.location.pathname + window.location.search + window.location.hash, '/app/?ref=mail#intro');
+        assert.equal(router.current.value.query.ref, 'mail');
     });
 }

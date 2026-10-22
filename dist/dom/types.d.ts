@@ -1,6 +1,7 @@
 import { ContextValues } from '../core/context-values';
 import { StoreMap } from '../core/types';
 import { RefMap } from './refs';
+import { RouteState } from '../plugins/router';
 
 export type ComponentContext = {
     el: Element;
@@ -9,10 +10,16 @@ export type ComponentContext = {
     $stores: Readonly<StoreMap>;
     $provided: ContextValues;
     $ref: RefMap;
+    /** The router's reactive route, when the app has a router. */
+    route?: RouteState;
     app: unknown;
 };
+export type PropType = BooleanConstructor | NumberConstructor | StringConstructor;
 export type ComponentDefinition = {
-    template: string;
+    /** Markup, a `#id` selector for a `<template>` in the page, or a `<template>` element. */
+    template: string | HTMLTemplateElement;
+    /** Coerces static host attributes; undeclared props stay strings. */
+    props?: Record<string, PropType>;
     setup?: (context: ComponentContext) => Record<string, unknown> | void;
 };
 export type DomRuntime = {

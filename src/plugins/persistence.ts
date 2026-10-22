@@ -41,8 +41,6 @@ const readInitial = (storage: StorageAdapter, key: string, fallback: unknown): u
 
 export function persist<T>(key: string, initialValue: T, options: PersistOptions = {}): Persisted<T> {
     if (!key.trim()) throw createTypeError('A non-empty persistence key is required.');
-    if (!getCurrentScope())
-        throw createError('persist() must be called inside an app, component setup, or explicit reactive scope.');
     const storage = resolveStorage(options.storage);
     const initial = readInitial(storage, key, initialValue) as T;
     const objectBacked = isPlainContainer(initial);
@@ -88,15 +86,13 @@ export function persist<T>(key: string, initialValue: T, options: PersistOptions
         }
     };
 
-    if (typeof window !== 'undefined' && isFunction(window.addEventListener)) {
-        addEventListener(window, 'storage', listener);
-        onCleanup(() => {
-            removeEventListener(window, 'storage', listener);
-            stop();
-        });
-    } else {
-        onCleanup(stop);
-    }
+    const listening = typeof window !== 'undefined' && isFunction(window.addEventListener);
+    if (listening) addEventListener(window, 'storage', listener);
+    // Outside a scope (module-level state) the value lives as long as the page.
+    if (getCurrentScope()) onCleanup(() => {
+        if (listening) removeEventListener(window, 'storage', listener);
+        stop();
+    });
 
     return value as Persisted<T>;
 }

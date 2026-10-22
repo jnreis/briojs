@@ -5,12 +5,12 @@ import {
     TELEPORT,
     ATTRIBUTES,
 } from '../core/native';
-import { getChildNodes, getParent, getNodeType, getAttribute, removeAttribute } from './native';
+import { getChildNodes, getParent, getNodeType, getAttribute, removeAttribute, getOwnerDocument } from './native';
 import { createExpressionScope } from '../core/expression';
 import { createScope, onCleanup } from '../core/scope';
 import { locate, setScopeNode } from '../core/errors';
 import type { Scope } from '../core/scope';
-import { effect } from '../reactivity/effect';
+import { effect, untrack } from '../reactivity/effect';
 import type { DomRuntime } from './types';
 import { isFragmentTemplate, mountComponent, takeProjectedContext } from './components';
 import { prepareTransition } from './directives/transition';
@@ -30,30 +30,31 @@ export function mountRouterOutlet(
     const router = runtime.router;
     let childScope: Scope | undefined;
     let childElement: Element | undefined;
-    onCleanup(() => {
+    let mountedKey: string | undefined;
+    const clear = () => {
         try {
             childScope?.dispose();
         } finally {
             removeElement(childElement);
+            childScope = childElement = mountedKey = undefined;
         }
-    });
+    };
+    onCleanup(clear);
     effect(() => {
         const route = router.current.value;
-        try {
-            childScope?.dispose();
-        } finally {
-            removeElement(childElement);
-        }
-        childScope = undefined;
-        childElement = undefined;
+        // Only the query or hash changed: keep the page and its state; it reads them through $route.
+        const key = route && `${route.component} ${route.path}`;
+        if (key === mountedKey) return;
+        clear();
         if (!route) return;
         const definition = runtime.components.get(route.component);
         if (!definition) throw createError(`No component registered for route "${route.component}".`);
-        const el = document.createElement(route.component);
+        const el = getOwnerDocument(element)!.createElement(route.component);
         childElement = el;
         childScope = createScope();
+        mountedKey = key!;
         element.append(el);
-        childScope.run(() => mountComponent(el, definition, context, runtime, hydrateNodeFn));
+        untrack(() => childScope!.run(() => mountComponent(el, definition, context, runtime, hydrateNodeFn)));
     });
 }
 

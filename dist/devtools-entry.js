@@ -1,5 +1,5 @@
-import { e as enableDevtools } from "./devtools-C1VZZZgY.js";
-import { d, a, i } from "./devtools-C1VZZZgY.js";
+import { e as enableDevtools } from "./devtools-DxlDsvKn.js";
+import { d, a, i } from "./devtools-DxlDsvKn.js";
 enableDevtools();
 export {
   d as devtools,

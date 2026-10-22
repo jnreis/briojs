@@ -8,6 +8,10 @@ export type ReactiveEffect = {
     deps: Set<ReactiveEffect>[];
     active: boolean;
     running: boolean;
+    /** Creation order: an owner is always created before the effects it creates. */
+    id: number;
+    /** Re-triggered by a nested write while running; re-runs once the current run ends. */
+    dirty: boolean;
     frame: EffectFrame;
     devtoolsTracked?: boolean;
 };

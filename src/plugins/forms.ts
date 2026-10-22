@@ -1,4 +1,4 @@
-import { isString, getLength, isObjectType, isNumber, isArray, objectKeys, objectEntries, includesItem } from '../core/native';
+import { createTypeError, isString, getLength, isObjectType, isNumber, isArray, objectKeys, objectEntries, includesItem } from '../core/native';
 export type ValidationRule = (value: unknown, ruleValue: unknown, allData: Record<string, unknown>) => boolean;
 export type ValidationSchema = Record<string, Array<{ name: string; value?: unknown; message?: string }>>;
 export type ValidationResult = true | Record<string, string[]>;
@@ -41,14 +41,11 @@ export function validate(
         const val = data[prop];
         for (const rule of propRules) {
             const ruleFn = rules[rule.name];
-            if (ruleFn) {
-                const passed = ruleFn(val, rule.value, data);
-                if (!passed) {
-                    if (!errors[prop]) errors[prop] = [];
-                    errors[prop].push(rule.message || `${prop} failed ${rule.name} validation`);
-                }
-            } else {
-                console.warn(`Unknown validation rule: ${rule.name}`);
+            if (!ruleFn)
+                throw createTypeError(`Unknown validation rule "${rule.name}" for field "${prop}". Known rules: ${objectKeys(rules).join(', ')}.`);
+            if (!ruleFn(val, rule.value, data)) {
+                if (!errors[prop]) errors[prop] = [];
+                errors[prop].push(rule.message || `${prop} failed ${rule.name} validation`);
             }
         }
     }

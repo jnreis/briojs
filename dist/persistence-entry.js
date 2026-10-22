@@ -1,7 +1,7 @@
-import { c as createTypeError, b as createError, i as isFunction, f as isObjectType, k as isArray, o as objectConstructor, g as getLength, q as objectKeys } from "./native-DNTl55LH.js";
+import { c as createTypeError, f as isObjectType, b as createError, i as isFunction, k as isArray, o as objectConstructor, g as getLength, q as objectKeys } from "./native-DNTl55LH.js";
 import { a as addEventListener, r as removeEventListener } from "./native-Di2Lf1wo.js";
-import { j as getCurrentScope, e as effect, o as onCleanup, c as causedError, b as batch } from "./effect-BTu8V88D.js";
-import { s as state, b as signal } from "./state-BKD4-QHU.js";
+import { e as effect, j as getCurrentScope, o as onCleanup, c as causedError, b as batch } from "./effect-Hm6a3OX7.js";
+import { s as state, b as signal } from "./state-TMgcg8XY.js";
 const isPlainContainer = (value) => {
   if (value === null || !isObjectType(value)) return false;
   if (isArray(value)) return true;
@@ -25,8 +25,6 @@ const readInitial = (storage, key, fallback) => {
 };
 function persist(key, initialValue, options = {}) {
   if (!key.trim()) throw createTypeError("A non-empty persistence key is required.");
-  if (!getCurrentScope())
-    throw createError("persist() must be called inside an app, component setup, or explicit reactive scope.");
   const storage = resolveStorage(options.storage);
   const initial = readInitial(storage, key, initialValue);
   const objectBacked = isPlainContainer(initial);
@@ -69,15 +67,12 @@ function persist(key, initialValue, options = {}) {
       applyingRemoteUpdate = false;
     }
   };
-  if (typeof window !== "undefined" && isFunction(window.addEventListener)) {
-    addEventListener(window, "storage", listener);
-    onCleanup(() => {
-      removeEventListener(window, "storage", listener);
-      stop();
-    });
-  } else {
-    onCleanup(stop);
-  }
+  const listening = typeof window !== "undefined" && isFunction(window.addEventListener);
+  if (listening) addEventListener(window, "storage", listener);
+  if (getCurrentScope()) onCleanup(() => {
+    if (listening) removeEventListener(window, "storage", listener);
+    stop();
+  });
   return value;
 }
 export {

@@ -297,7 +297,11 @@ normal nested boundaries apply, and disposal/unmount clears registrations.
 Use onCleanup for integration resources; do not assign/delete ref entries.
 
 Events support `.prevent`, `.stop`, `.self`, `.outside`, `.window`, `.document`,
-`.capture`, `.passive`, `.once`, `.debounce`, and `.throttle`.
+`.capture`, `.passive`, `.once`, `.debounce`, and `.throttle`, plus key filters
+`.enter`, `.esc`, `.space`, `.tab`, `.up`, `.down`, `.left`, `.right`, `.delete`
+(Delete or Backspace) and system keys `.ctrl`, `.alt`, `.shift`, `.meta`
+(`b-on-keydown.ctrl.enter.prevent`). Filters run before `.prevent`/`.stop`/`.once`.
+Unknown modifiers throw a SyntaxError. Component hosts accept the same modifiers.
 Event debounce/throttle is fixed at 150ms; do not invent `.debounce.500`.
 Do not combine passive listeners with preventDefault.
 Model modifiers: `.lazy` (change), `.trim`, `.number` (parseFloat, retaining
@@ -382,7 +386,12 @@ app.component('counter-card', {
 ```
 
 Use hyphenated component names. Setup returns plain state, exposed as `$data`.
+`template` is markup, a `<template>` element, or an `#id` selector for a
+`<template>` in the page (`template: '#tpl-counter-card'`).
 Static host attributes become string props; `b-bind-label` gives a reactive prop.
+Declare `props: { compact: Boolean, count: Number }` to coerce static attributes
+(a declared Boolean is false when absent, true when present unless `"false"`).
+Setup also receives `route` (the router's reactive route) when a router exists.
 `b-attr-*` binds the host element itself like `b-bind-*` on ordinary elements
 (`b-attr-class="{ active: $data.on }"`, `b-attr-data-testid="'card-' + $for.item.id"`) and is not a prop. Prop names arrive lowercase (`b-bind-userName` → `$props.username`); use lowercase or dashed names.
 Emits are bubbling CustomEvents; consume `$event.detail` in host handlers.
@@ -498,7 +507,15 @@ cleans the failed insertion, but does not restore old content.
 
 - Router: `createRouter([{ path: '/', component: 'home-page' }])`; assign to
   `createApp({ router })`, register components, use `b-router-outlet`. Dynamic
-  path segments use `:id`; route state is `router.current.value`.
+  path segments use `:id`. Read route state from `$route` in templates,
+  `route` in component setup, or `router.route`: reactive `matched`, `component`,
+  `path`, `params`, `query`, `hash`, `fullPath`. The outlet keeps the page on
+  query/hash-only changes, so read `route.query` reactively (getters/effects).
+  Routes may use `redirect: '/x'` or `redirect: to => ...`; `guard: to => true |
+  false | '/login'` per route or as the `guard` option; guards are reactive
+  (re-run when state they read changes) and must be pure. `{ path: '*' }` is the
+  single fallback route. `{ mode: 'hash' }` routes in `#/path` for static hosting.
+  `router.current.value` is the same data as a plain RouteMatch signal.
   `navigate(path, { replace })` returns a boolean; unmatched paths return false.
   Optional second argument `{ base: '/my-app/' }` (default `/`) normalizes the
   deployment prefix. Definitions, navigate and href use app-relative paths.
@@ -512,15 +529,15 @@ cleans the failed insertion, but does not restore old content.
   Render deployment-aware anchor hrefs on the server for no-JS use; configure
   server fallback for direct SPA URLs under the base. For MPAs, retain normal links.
 - Persistence: `persist(key, initial, { storage })` inside component setup,
-  a plugin, or explicit scope. Never call it in the app state factory unless
-  an explicit owner scope surrounds that operation. Plain containers are
+  a plugin, or explicit scope is disposed with that owner. Outside any scope
+  (e.g. a module-level session token shared by components) it lives for the page. Plain containers are
   reactive directly; primitives are signals. Default storage is localStorage;
   use `'session'` or a getItem/setItem adapter. JSON/storage failures can throw.
   Choose application-specific keys and never persist secrets.
 - Forms: `validate(data, schema, customRules?)` returns `true` or a field-to-
   error-message-array object. Schema entries are arrays of
   `{ name, value?, message? }`; built-ins are required/min/max/email/same/in.
-  Unknown rules warn and are skipped; verify schema names. Client validation
+  Unknown rule names throw a TypeError listing the known rules. Client validation
   does not replace server validation.
 - HTTP: `http.get/post/put/patch/delete(url, bodyOrQuery?, options?)`.
   GET/DELETE accept plain query objects (nested brackets, scalar arrays `[]`,

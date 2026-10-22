@@ -184,7 +184,9 @@ for (const [name, bundle] of [['production', production], ['development', develo
         scope.dispose();
         preferences.theme = 'stopped';
         assert.equal(window.localStorage.getItem('test'), '{"theme":"light"}');
-        assert.throws(() => core.persist('outside', 0), /scope/);
+        const unscoped = core.persist('outside', 0);
+        unscoped.value = 4;
+        assert.equal(window.localStorage.getItem('outside'), '4', 'module-level persist lives for the page');
         const router = core.createRouter(window.eval('[{ path: "/", component: "home-page" }]'));
         const aside = window.document.createElement('aside');
         aside.innerHTML = '<div b-router-outlet></div>';

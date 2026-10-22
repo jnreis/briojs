@@ -643,13 +643,35 @@ newly documented directive cannot silently go untested. A higher-order
 regression composes `b-for`, `b-key`, `b-id`, and `b-provide` on keyed rows and
 checks row-local values and IDs through reorder and disposal.
 
+#### Event modifiers
+
+| Modifier | Effect |
+|---|---|
+| `.prevent`, `.stop` | Call `preventDefault()` / `stopPropagation()`. |
+| `.self`, `.outside` | Run only for events targeting the element itself / outside it. |
+| `.window`, `.document` | Listen on `window` / `document`. |
+| `.once` | Remove the listener after the first event that passes the other filters. |
+| `.capture`, `.passive` | Native listener options. |
+| `.debounce`, `.throttle` | Rate-limit the handler (150ms). |
+| `.enter`, `.esc`, `.space`, `.tab`, `.up`, `.down`, `.left`, `.right`, `.delete` | Run only for that key (`.delete` matches Delete and Backspace). Several keys mean any of them. |
+| `.ctrl`, `.alt`, `.shift`, `.meta` | Run only while every listed system key is held. |
+
+```html
+<input b-on-keydown.enter.prevent="$data.addTag()" b-on-keydown.esc="$data.cancel()">
+<div b-on-keydown.ctrl.enter.window="$data.save()"></div>
+```
+
+Key and system-key filters run first, so `.enter.prevent` cancels only Enter.
+An unknown modifier (for example the typo `b-on-click.prevnt`) throws a
+`SyntaxError` listing the supported names instead of being ignored.
+
 For ordinary DOM events, `.outside`, `.window`, and `.document` are alternative
 targets, not combinations: `.outside` wins over `.window`, which wins over
 `.document`. `.debounce` wins over `.throttle` if both are present; choose one.
 Avoid `.passive.prevent` because a passive listener cannot cancel the default
 action. `.prevent`/`.stop` execute before `.self`/`.outside` filtering, so those
-filters do not prevent the cancellation/propagation side effect. These are
-ordinary-element event rules; component hosts use the separate contract below.
+filters do not prevent the cancellation/propagation side effect. Component
+hosts accept the same modifiers.
 
 Each event handler runs inside `batch()`: several writes produce one coherent
 update when the handler returns. Consequently, DOM that depends on those writes
@@ -916,7 +938,22 @@ app.mount('#widgets');
 </main>
 ```
 
-Static host attributes become string props; `b-bind-name` supplies a reactive prop through `$props`. HTML lowercases attribute names, so `b-bind-userName` arrives as `$props.username`; use lowercase or dashed prop names (`$props['user-name']`). Setup receives `$props`, `$emit`, `$stores`, `$provided`, the private `$ref` registry, the host element as `el`, and `app`. Templates and contextual scripts also access `$props` and `$emit`. Component events are bubbling `CustomEvent`s emitted with `$emit(name, detail)`. Named slots use `slot="name"` on projected content and `<slot name="name">` in the template. Component setup runs in an owned scope; effects, persistence, and listeners registered during setup are disposed when the component is removed.
+`template` is a markup string, a `<template>` element, or an `#id` selector naming a `<template>` in the host's document (`template: '#tpl-click-counter'`). Selector and element templates keep markup in the page where editors highlight it; a selector that does not match a `<template>` throws when the first instance mounts.
+
+Static host attributes become string props; `b-bind-name` supplies a reactive prop through `$props`. Declare `props` to coerce static attributes:
+
+```js
+app.component('favorite-button', {
+  props: { compact: Boolean, count: Number },
+  template: '<button><span b-if="!$props.compact">Favorite </span><span b-text="$props.count"></span></button>',
+});
+```
+
+```html
+<favorite-button compact count="3"></favorite-button>
+```
+
+A declared `Boolean` prop is `false` when absent and `true` when present (any value except `"false"`); `Number` props pass through `Number()`; `String` is the default. Only `Boolean`, `Number`, and `String` are accepted. Bound props (`b-bind-*`) are never coerced. HTML lowercases attribute names, so `b-bind-userName` arrives as `$props.username`; use lowercase or dashed prop names (`$props['user-name']`). Setup receives `$props`, `$emit`, `$stores`, `$provided`, the private `$ref` registry, the host element as `el`, `app`, and `route` (the router's reactive route, when a router is installed). Templates and contextual scripts also access `$props` and `$emit`. Component events are bubbling `CustomEvent`s emitted with `$emit(name, detail)`. Named slots use `slot="name"` on projected content and `<slot name="name">` in the template. Component setup runs in an owned scope; effects, persistence, and listeners registered during setup are disposed when the component is removed.
 
 ### Directives on component hosts
 
@@ -937,12 +974,11 @@ style objects and custom properties, `aria-*`, `data-*`, booleans, and `.prop`).
 Each bound prop is evaluated once at mount, before setup, and again only when
 its dependencies change. Component template markup is parsed once per
 definition and cloned for each instance in the host's own document.
-`b-on-*`/`on-*` installs host event listeners using the part before the first
-dot as the event name; ordinary DOM event modifiers are **not applied**.
-For example, `.prevent`, `.once`, and `.window` do not gain their usual
-ordinary-element behavior here. Observer-style names are host event names,
-not observer installation. Put native modifiers/observers on a concrete
-wrapper or inside the component template.
+`b-on-*`/`on-*` installs host event listeners with the same event modifiers
+as ordinary elements (`<row-actions b-on-remove.stop.once="…">`,
+`b-on-keydown.enter`). Observer-style names are host event names, not
+observer installation; put observers on a concrete wrapper or inside the
+component template.
 
 Earlier structural/context steps still apply: `b-if`, `b-for` with `b-key`,
 `b-data`, `b-id`, `b-provide`, and `b-ref` can be handled before component setup, subject
@@ -1126,9 +1162,9 @@ const router = createRouter([
 createApp({ router })
   .component('home-page', { template: '<h1>Home</h1>' })
   .component('item-page', {
-    template: '<h1>Item <span b-text="$data.route.value.params.id"></span></h1>',
-    setup({ app }) {
-      return { route: app.router.current };
+    template: '<h1>Item <span b-text="$route.params.id"></span></h1>',
+    setup({ route }) {
+      return { get tab() { return route.query.tab ?? 'details'; } };
     },
   })
   .mount('#app');
@@ -1145,6 +1181,71 @@ createApp({ router })
 ```
 
 `createRouter()` supports static paths and `:parameter` segments. It uses the History API for same-origin matches, responds to back/forward, and leaves modified clicks, external links, downloads, and unmatched routes to normal browser navigation.
+
+#### Route state
+
+`router.route` is a reactive, read-only object describing the current location.
+Templates read it as `$route`, and component setup receives it as `route`:
+
+| Field | Example for `/items/42?tab=reviews#top` |
+|---|---|
+| `matched` | `true` (false when nothing matched or a guard blocked) |
+| `component` | `'item-page'` |
+| `path` | `'/items/42'` (app-relative, no query or fragment) |
+| `params` | `{ id: '42' }` |
+| `query` | `{ tab: 'reviews' }` (the last value wins for repeated keys) |
+| `hash` | `'#top'` (always `''` in hash mode) |
+| `fullPath` | `'/items/42?tab=reviews#top'`: pass it back to `navigate()` to return here |
+
+Fields are tracked individually, so an effect reading `$route.query.tab` does
+not rerun for an unrelated hash change; `params` and `query` keep their object
+identity when their contents are unchanged. `router.current` remains available
+as a signal holding the same data as a plain `RouteMatch` (or `null`).
+
+Read route state inside effects, getters, or templates rather than copying it
+once in setup: `b-router-outlet` **keeps the mounted page when only the query
+or hash changes**, so pagination such as `?page=2` updates the existing page
+instead of remounting it. A different component or path remounts the page.
+
+#### Guards, redirects, and the fallback route
+
+```js
+const signedIn = () => session.user ? true : `/login?redirect=${encodeURIComponent(router.route.fullPath)}`;
+
+const router = createRouter([
+  { path: '/', component: 'home-page' },
+  { path: '/home', redirect: '/' },
+  { path: '/old-items/:id', redirect: to => `/items/${to.params.id}` },
+  { path: '/settings', component: 'settings-page', guard: signedIn },
+  { path: '*', component: 'not-found-page' },
+], { guard: to => to.path !== '/maintenance' });
+```
+
+- A route needs a `component`, a `redirect`, or both (`redirect` wins).
+  `redirect` is a path or a function of the attempted `RouteMatch`.
+- A `guard(to)` returns `true` to allow, `false` to block, or a path to
+  redirect to. The global `guard` option runs first, then the route's own guard.
+  Blocked links/`navigate()` calls leave history unchanged and return `false`;
+  a blocked initial load or back/forward renders nothing (`$route.matched` is false).
+  Redirects replace the history entry.
+- **Guards are reactive.** After navigation, Brio re-runs the current route's
+  guards whenever state they read changes; signing out on `/settings` redirects
+  immediately. Guards may run more than once per navigation, so keep them pure.
+- `path: '*'` matches anything else inside the base, including links, which are
+  then intercepted. Only one `*` route is allowed. Without it, unmatched URLs
+  use normal browser navigation.
+- More than 10 consecutive redirects throw, to surface redirect loops.
+
+#### Hash mode
+
+Use `createRouter(routes, { mode: 'hash' })` when the server cannot rewrite
+URLs to the SPA entry (static hosting, `file:` previews). Routes live in the
+fragment (`/my-app/#/items/42?tab=reviews`); `href('/items/42')` returns
+`'#/items/42'`. Fragments that do not start with `/` (`#section`) remain
+ordinary in-page anchors and keep the current page.
+
+In history mode, opening `base + 'index.html'` directly is treated as the `/`
+route and the address bar is replaced with the base.
 
 #### Deploying under a base path
 
@@ -1257,6 +1358,10 @@ Effects run synchronously by default. Explicit batches are synchronous too; ther
 Array methods that mutate (`push`, `splice`, `sort`, …) run on the underlying array and then notify only the indexes that changed, plus `length` when it changes. Values they return (`pop()`, `shift()`, `splice()` results) and the values passed to a `sort` comparator are the same reactive values that reads return.
 
 Bindings skip DOM writes when the value has not changed: `b-text`, `${…}` interpolation, and `b-bind-*` with primitive values compare against the last written value, and `b-bind-class` compares the resulting class string. Object values (for example a style object) are always reapplied, since they may have been mutated in place.
+
+Pending effects run in creation order. An owner (a router outlet, a `b-if` branch, a component, any effect that mounts children in a child scope) is always created before the effects it creates, so when one write affects both, the owner re-renders and disposes its stale children before they could run against the new values.
+
+An effect never re-triggers itself by writing a value it read in the same run. When something else writes a value the effect already read *while that effect is still running* (a nested effect, or `untrack`ed code such as an auth guard calling `router.navigate()` during route setup), the effect runs again as soon as the current run ends, so the write is never lost. An effect that keeps re-triggering itself this way throws `A Brio effect keeps re-triggering itself.` after 100 consecutive runs.
 
 A write invalidates every dependent computed before any effect re-runs, so effects never observe half-updated derived state, and a computed read later in the same batch or handler already reflects the write. A computed that reads itself, directly or through other computeds, throws `Circular Brio computed dependency.`; it recovers once the cycle is broken.
 
@@ -1512,7 +1617,7 @@ Explicit non-JSON parsers infer their native result types. npm also exports
 
 ## Persistence
 
-Import persistence where needed. Create persistent values inside component setup, an app plugin, or an explicit reactive scope so disposal removes both its effect and cross-tab listener. The app's `state` factory does not itself run in an owned scope:
+Import persistence where needed. Inside component setup, an app plugin, or an explicit reactive scope, disposal removes the value's save effect and cross-tab listener. Outside any scope (for example a module-level `const token = persist('token', '')` shared by several components), the value lives for the life of the page:
 
 ```js
 import { createApp } from 'briojs';

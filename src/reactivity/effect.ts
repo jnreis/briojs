@@ -1,4 +1,4 @@
-import { getLength, deleteItem } from '../core/native';
+import { getLength, deleteItem, createError } from '../core/native';
 import { combinedError, locate, getScopeNode } from '../core/errors';
 import { devtoolsEnabled, notifyEffectCreated, notifyEffectDisposed } from '../plugins/devtools-bridge';
 import type { EffectOptions, Scope, Stop } from './types';
@@ -12,13 +12,21 @@ export type ReactiveEffect = {
     deps: Set<ReactiveEffect>[];
     active: boolean;
     running: boolean;
+    /** Creation order: an owner is always created before the effects it creates. */
+    id: number;
+    /** Re-triggered by a nested write while running; re-runs once the current run ends. */
+    dirty: boolean;
     frame: EffectFrame;
     devtoolsTracked?: boolean;
 };
 
 let activeEffect: ReactiveEffect | undefined;
 let batchDepth = 0;
+let nextEffectId = 0;
 const queuedEffects = new Set<ReactiveEffect>();
+let lastQueuedId = -1;
+let queueInOrder = true;
+const MAX_RUNS = 100;
 
 export const getActiveEffect = (): ReactiveEffect | undefined => activeEffect;
 
@@ -48,24 +56,36 @@ const runCleanups = (eff: ReactiveEffect): unknown => {
 
 export const runEffect = (eff: ReactiveEffect): unknown => {
     if (!eff.active || eff.scope?.disposed) return;
-    if (eff.running) return;
-    const cleanupFailure = runCleanups(eff);
-    cleanupEffect(eff);
-    const previous = activeEffect;
-    const previousFrame = setEffectFrame(eff.frame);
-    activeEffect = eff;
-    eff.running = true;
+    // Self-writes are filtered when triggering, so this is a nested write (a child effect or untracked code)
+    // changing something this run already read: its result is stale, so it runs again afterwards.
+    if (eff.running) return void (eff.dirty = true);
     let result: unknown;
+    let runs = 0;
     try {
-        result = eff.scope ? eff.scope.run(eff.fn) : runUnscoped(eff.fn);
-    } catch (error) {
-        throw locate(error, getScopeNode(eff.scope));
+        do {
+            if (++runs > MAX_RUNS)
+                throw locate(createError('A Brio effect keeps re-triggering itself.'), getScopeNode(eff.scope));
+            eff.dirty = false;
+            const cleanupFailure = runCleanups(eff);
+            cleanupEffect(eff);
+            const previous = activeEffect;
+            const previousFrame = setEffectFrame(eff.frame);
+            activeEffect = eff;
+            eff.running = true;
+            try {
+                result = eff.scope ? eff.scope.run(eff.fn) : runUnscoped(eff.fn);
+            } catch (error) {
+                throw locate(error, getScopeNode(eff.scope));
+            } finally {
+                eff.running = false;
+                activeEffect = previous;
+                setEffectFrame(previousFrame);
+            }
+            if (cleanupFailure) throw cleanupFailure;
+        } while (eff.dirty && eff.active && !eff.scope?.disposed);
     } finally {
-        eff.running = false;
-        activeEffect = previous;
-        setEffectFrame(previousFrame);
+        eff.dirty = false;
     }
-    if (cleanupFailure) throw cleanupFailure;
     return result;
 };
 
@@ -87,6 +107,8 @@ export const queueEffect = (eff: ReactiveEffect) => {
         if (eff.active && !eff.scope?.disposed) eff.scheduler();
         return;
     }
+    if (eff.id < lastQueuedId) queueInOrder = false;
+    lastQueuedId = eff.id;
     queuedEffects.add(eff);
     if (!batchDepth) flush();
 };
@@ -96,7 +118,11 @@ export const flush = (): void => {
     const errors: unknown[] = [];
     while (queuedEffects.size) {
         const current = [...queuedEffects];
+        // Owners run before the effects they created, so a re-rendering owner disposes stale children first.
+        if (!queueInOrder) current.sort((left, right) => left.id - right.id);
         queuedEffects.clear();
+        lastQueuedId = -1;
+        queueInOrder = true;
         for (const eff of current) {
             try {
                 if (eff.active && !eff.scope?.disposed) runEffect(eff);
@@ -117,6 +143,8 @@ export function effect<T>(fn: () => T, options: EffectOptions = {}): Stop {
         deps: [],
         active: true,
         running: false,
+        id: nextEffectId++,
+        dirty: false,
         frame: { scope, cleanups: undefined },
     };
     const stop = (() => {

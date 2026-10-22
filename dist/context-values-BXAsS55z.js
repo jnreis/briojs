@@ -1,12 +1,12 @@
 import { i as isFunction, c as createTypeError, g as getLength, o as objectConstructor, n as createSyntaxError, d as deleteItem, f as isObjectType, p as includesItem, q as objectKeys, R as ReflectApi, G as GET_OWN_PROPERTY_DESCRIPTOR, l as ownKeys } from "./native-DNTl55LH.js";
-import { m as mark, f as describeNode, h as directiveError, u as untrack, e as effect } from "./effect-BTu8V88D.js";
-import { t as trigger, a as track } from "./state-BKD4-QHU.js";
+import { m as mark, f as describeNode, h as directiveError, u as untrack, e as effect } from "./effect-Hm6a3OX7.js";
+import { t as trigger, a as track } from "./state-TMgcg8XY.js";
 const valueExpressions = /* @__PURE__ */ new Map();
 const statementExpressions = /* @__PURE__ */ new Map();
 const assignmentExpressions = /* @__PURE__ */ new Map();
 const functionExpressions = /* @__PURE__ */ new Map();
 const $CONTEXT = "$context";
-const contextNames = ["$data", "$el", "$event", "$id", "$ref", "$for", "$mutations", "$size", "$entry", "$props", "$emit", "$insert", "$stores", "$provided", "trustedHTML", "flush", "onCleanup"];
+const contextNames = ["$data", "$el", "$event", "$id", "$ref", "$for", "$mutations", "$size", "$entry", "$props", "$emit", "$insert", "$stores", "$provided", "$route", "trustedHTML", "flush", "onCleanup"];
 const contextBindings = (expression) => {
   const names = contextNames.filter((name) => new RegExp(`(?<![\\w$])${name.replace("$", "\\$")}(?![\\w$])`).test(expression));
   return `"use strict";${getLength(names) ? ` const { ${names.join(", ")} } = ${$CONTEXT};` : ""}
@@ -161,13 +161,13 @@ function createProvidedValues(getValues, parent = emptyContextValues) {
   });
 }
 export {
-  emptyContextValues as a,
-  createExpressionScope as b,
+  execute as a,
+  emptyContextValues as b,
   copyContextValues as c,
-  execute as d,
+  createExpressionScope as d,
   evaluate as e,
   assign as f,
   createProvidedValues as g,
   evaluateFunction as h
 };
-//# sourceMappingURL=context-values-DGLwTbXl.js.map
+//# sourceMappingURL=context-values-BXAsS55z.js.map

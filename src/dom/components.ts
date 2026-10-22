@@ -9,15 +9,17 @@ import {
     startsWith,
     TEMPLATE,
     ATTRIBUTES,
+    isString,
+    objectEntries,
 } from '../core/native';
 import {
-    getChildNodes, getAttribute, removeChild, getParent, addEventListener, removeEventListener, removeAttribute,
+    getChildNodes, getAttribute, removeChild, getParent, removeAttribute,
     getOwnerDocument,
 } from './native';
-import { evaluate, execute, createExpressionScope } from '../core/expression';
+import { evaluate, createExpressionScope } from '../core/expression';
 import { state } from '../reactivity/state';
 import { createScopedState } from '../core/scoped-state';
-import { effect, batch } from '../reactivity/effect';
+import { effect } from '../reactivity/effect';
 import { createScope, onCleanup } from '../core/scope';
 import type { ComponentDefinition, DomRuntime } from './types';
 import { getNodeOwner, ownNode, withHydration } from './ownership';
@@ -25,6 +27,7 @@ import { emptyContextValues } from '../core/context-values';
 import { createRefs } from './refs';
 import { handleBind } from './directives/bind';
 import { extractModifiers } from './directives/modifier';
+import { handleOn } from './directives/on';
 
 const projectedContexts = new WeakMap<Node, Record<PropertyKey, any>>();
 
@@ -92,15 +95,26 @@ export function fillSlots(
 }
 
 // Each definition's markup is parsed once per document and cloned for every instance.
-const parsedTemplates = new WeakMap<ComponentDefinition, { source: string; document: Document; template: HTMLTemplateElement }>();
+const parsedTemplates = new WeakMap<ComponentDefinition, { document: Document; template: HTMLTemplateElement }>();
+const templateSelector = /^#[A-Za-z][\w-]*$/;
 
 const instantiateTemplate = (definition: ComponentDefinition, host: Element): DocumentFragment => {
     const ownerDocument = getOwnerDocument(host)!;
+    const source = definition.template;
     let parsed = parsedTemplates.get(definition);
-    if (!parsed || parsed.source !== definition.template || parsed.document !== ownerDocument) {
-        const template = ownerDocument.createElement(TEMPLATE) as HTMLTemplateElement;
-        template.innerHTML = definition.template;
-        parsedTemplates.set(definition, parsed = { source: definition.template, document: ownerDocument, template });
+    if (!parsed || parsed.document !== ownerDocument) {
+        let template = source as HTMLTemplateElement;
+        if (isString(source)) {
+            if (templateSelector.test(source)) {
+                template = ownerDocument.getElementById(source.slice(1)) as HTMLTemplateElement;
+                if (template?.localName !== TEMPLATE)
+                    throw createError(`Component <${host.localName}> template "${source}" does not match a <template> element.`);
+            } else {
+                template = ownerDocument.createElement(TEMPLATE) as HTMLTemplateElement;
+                template.innerHTML = source;
+            }
+        }
+        parsedTemplates.set(definition, parsed = { document: ownerDocument, template });
     }
     return parsed.template.content.cloneNode(true) as DocumentFragment;
 };
@@ -113,8 +127,13 @@ export function mountComponent(
     hydrateNodeFn: (node: Node, context: Record<PropertyKey, any>, runtime: DomRuntime) => void,
 ): void {
     const propsObject: Record<string, unknown> = {};
+    const declared = definition.props ?? {};
+    for (const [name, type] of objectEntries(declared)) if (type === Boolean) propsObject[name] = false;
     for (const attribute of arrayFrom(element[ATTRIBUTES])) {
-        if (!startsWith(attribute.name, 'b-')) propsObject[attribute.name] = attribute.value;
+        const { name, value } = attribute;
+        if (startsWith(name, 'b-')) continue;
+        const type = declared[name];
+        propsObject[name] = type === Boolean ? value !== 'false' : type === Number ? Number(value) : value;
     }
     const propBindings = arrayFrom(element[ATTRIBUTES])
         .filter(attribute => startsWith(attribute.name, 'b-bind-') || startsWith(attribute.name, 'bind-'))
@@ -143,15 +162,10 @@ export function mountComponent(
     componentScope.run(() => {
         for (const attribute of arrayFrom(element[ATTRIBUTES])) {
             if (startsWith(attribute.name, 'b-on-') || startsWith(attribute.name, 'on-')) {
-                const prefix = startsWith(attribute.name, 'b-on-') ? 'b-on-' : 'on-';
-                const eventPart = attribute.name.slice(getLength(prefix)).split('.')[0];
-                if (!/^[a-z-]+$/.test(eventPart))
+                const { baseName, modifiers } = extractModifiers(attribute.name);
+                if (!/^(b-)?on-[a-z-]+$/.test(baseName))
                     throw createSyntaxError(`Invalid component event directive "${attribute.name}".`);
-                const expression = attribute.value;
-                const handler = (event: Event) => batch(() =>
-                    execute(expression, context, event, attribute.name, element));
-                addEventListener(element, eventPart, handler);
-                onCleanup(() => removeEventListener(element, eventPart, handler));
+                handleOn(element, baseName, attribute.value, modifiers, context);
             } else if (startsWith(attribute.name, 'b-attr-')) {
                 handleBind(element, extractModifiers(attribute.name).baseName, attribute.value,
                     extractModifiers(attribute.name).modifiers, context);
@@ -171,6 +185,7 @@ export function mountComponent(
             $stores: context.$stores ?? emptyContextValues,
             $provided: context.$provided ?? emptyContextValues,
             $ref,
+            route: runtime.router?.route,
         }) ?? {};
         const local = createScopedState(setupResult, context.$data);
         const componentContext = createExpressionScope(

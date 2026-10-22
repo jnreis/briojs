@@ -1,4 +1,4 @@
-import { m as isString, g as getLength, k as isArray, f as isObjectType, h as isNumber, p as includesItem, e as objectEntries, q as objectKeys } from "./native-DNTl55LH.js";
+import { m as isString, g as getLength, k as isArray, f as isObjectType, h as isNumber, p as includesItem, e as objectEntries, c as createTypeError, q as objectKeys } from "./native-DNTl55LH.js";
 const defaultRules = {
   required: (val) => {
     if (val === null || val === void 0 || val === false || val === "") return false;
@@ -31,14 +31,11 @@ function validate(data, schema, customRules = {}) {
     const val = data[prop];
     for (const rule of propRules) {
       const ruleFn = rules[rule.name];
-      if (ruleFn) {
-        const passed = ruleFn(val, rule.value, data);
-        if (!passed) {
-          if (!errors[prop]) errors[prop] = [];
-          errors[prop].push(rule.message || `${prop} failed ${rule.name} validation`);
-        }
-      } else {
-        console.warn(`Unknown validation rule: ${rule.name}`);
+      if (!ruleFn)
+        throw createTypeError(`Unknown validation rule "${rule.name}" for field "${prop}". Known rules: ${objectKeys(rules).join(", ")}.`);
+      if (!ruleFn(val, rule.value, data)) {
+        if (!errors[prop]) errors[prop] = [];
+        errors[prop].push(rule.message || `${prop} failed ${rule.name} validation`);
       }
     }
   }

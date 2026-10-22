@@ -79,8 +79,12 @@ export function createApp<
                 throw createTypeError(`Component name "${name}" must be a custom-element name such as "user-card".`);
             if (components.has(normalized))
                 throw createError(`Component "${normalized}" is already registered.`);
-            if (!definition.template.trim())
-                throw createTypeError(`Component "${normalized}" requires a non-empty template.`);
+            const template = definition.template;
+            if (isString(template) ? !template.trim() : (template as Element)?.localName !== 'template')
+                throw createTypeError(`Component "${normalized}" requires a non-empty template string, "#id" selector, or <template> element.`);
+            for (const [prop, type] of objectEntries(definition.props ?? {}))
+                if (!includesItem([Boolean, Number, String], type))
+                    throw createTypeError(`Component "${normalized}" prop "${prop}" must be declared as Boolean, Number, or String.`);
             components.set(normalized, definition);
             return app;
         },
@@ -159,7 +163,7 @@ export function createApp<
             notifyRootMounted(app, root);
 
             const context = createExpressionScope(
-                { $data: createScopedState(appState), $stores: stores, $provided: emptyContextValues, $ref: createRefs(), trustedHTML, flush },
+                { $data: createScopedState(appState), $stores: stores, $provided: emptyContextValues, $ref: createRefs(), $route: options.router?.route, trustedHTML, flush },
             );
             try {
                 scope.run(() => {

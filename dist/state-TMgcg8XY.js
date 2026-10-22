@@ -1,5 +1,5 @@
 import { c as createTypeError, R as ReflectApi, i as isFunction, k as isArray, g as getLength, G as GET_OWN_PROPERTY_DESCRIPTOR, o as objectConstructor, l as ownKeys, f as isObjectType, m as isString } from "./native-DNTl55LH.js";
-import { b as batch, d as enterBatch, l as leaveBatch, g as getActiveEffect, q as queueEffect } from "./effect-BTu8V88D.js";
+import { b as batch, d as enterBatch, l as leaveBatch, g as getActiveEffect, q as queueEffect } from "./effect-Hm6a3OX7.js";
 const targetMap = /* @__PURE__ */ new WeakMap();
 const proxyCache = /* @__PURE__ */ new WeakMap();
 const rawCache = /* @__PURE__ */ new WeakMap();
@@ -201,4 +201,4 @@ export {
   state as s,
   trigger as t
 };
-//# sourceMappingURL=state-BKD4-QHU.js.map
+//# sourceMappingURL=state-TMgcg8XY.js.map

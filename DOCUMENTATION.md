@@ -24,6 +24,11 @@ iterations, not npm releases.
 
 ## Install
 
+Choose the setup that fits your page: an npm import for bundled apps, or a
+script tag for a quick start without a build step.
+
+### Install with npm
+
 ```sh
 npm install @jnreis/briojs
 ```
@@ -44,6 +49,8 @@ import { validate } from '@jnreis/briojs/forms';
 import { createStepEngine } from '@jnreis/briojs/step';
 import { moneyMask } from '@jnreis/briojs/money-mask';
 ```
+
+### Add development tools when you need them
 
 The development tools are deliberately separate:
 
@@ -83,6 +90,8 @@ Both expose `window.brio` with `createApp`, `state`, `signal`, `computed`,
 `getCurrentScope`, and `trustedHTML`. Both dispatch the
 `brio` ready event after publishing the core API.
 
+#### Add only the browser plugins you use
+
 All plugins are optional browser scripts. Load only what you
 need, **after** the core and **before** application bootstrap:
 
@@ -97,24 +106,35 @@ need, **after** the core and **before** application bootstrap:
 <script src="/app.js"></script>
 ```
 
-The optional scripts extend the existing `window.brio`, use its reactive engine
-and cleanup scopes, and do not dispatch another `brio` ready event. For deferred
-loading, bootstrap after the needed scripts finish, not at the core's ready
-event. Loading a plugin before the core throws. The same scripts work with the
-development core. No plugin above is included in either core bundle. Pattern
-masks and custom formatter support remain core; money formatting is optional.
-The npm main entry retains tree-shakable named exports for convenience; each
-plugin also has the dedicated subpath shown above. Importing a plugin has no
-implicit application registration in ESM.
+- **Load order:** core first, needed plugins second, application bootstrap last.
+  Loading a plugin before the core throws. For deferred loading, wait for the
+  needed scripts to finish, not just the core's `brio` ready event.
+- **Shared runtime:** plugins extend the existing `window.brio` and use its
+  reactive engine and cleanup scopes. They do not dispatch another ready event,
+  and work with the development core too.
+- **Optional features:** no plugin above is included in either core bundle.
+  Pattern masks and custom formatters remain core; money formatting is optional.
+- **ESM imports:** the npm main entry retains tree-shakable named exports for
+  convenience; each plugin also has the dedicated subpath shown above.
+  Importing a plugin has no implicit application registration in ESM.
 
-The development bundle additionally exposes `devtools`, `inspectDevtools`,
-`devtoolsPanel`, and `enableDevtools`, with tracking enabled automatically. The production bundle compiles out devtools tracking hooks and
-does not include the inspector or reactive state snapshotting.
-Low-level `hydrateRoot` and `hydrateNode` are ESM-only APIs.
-Use `app.insert()` for managed dynamic content and `createStepEngine()` for
-step navigation.
+#### Choose the right core bundle
+
+| Bundle | Development tooling |
+| --- | --- |
+| `brio.min.js` | Compiles out devtools tracking hooks; no inspector or reactive state snapshotting. |
+| `brio.dev.min.js` | Adds `devtools`, `inspectDevtools`, `devtoolsPanel`, and `enableDevtools`, with tracking enabled automatically. |
+
+For dynamic content, start with `app.insert()`; for step navigation, use
+`createStepEngine()`. The lower-level `hydrateRoot` and `hydrateNode` APIs are
+ESM-only.
 
 ## AI-assisted application development
+
+Want a coding assistant to help with your app? Start with the portable kit,
+then review and test its output just as you would any other application code.
+
+### Use the application kit
 
 The [portable AI developer kit](./ai/README.md) includes a tool-neutral
 [Brio v4 application guide](./ai/brio-apps/references/guide.md), an on-demand
@@ -124,6 +144,8 @@ copying the entire skill folder to a supported assistant location; npm
 installation does not activate it. These resources guide app development, not
 framework maintenance, and generated code still requires review and testing.
 
+### Migrating an older app?
+
 Applications running 1.1.5 should use the separate
 [migration skill](./ai/brio-migrate-1-1-5/SKILL.md) and
 [migration guide](./ai/brio-migrate-1-1-5/references/migration.md). V4 is not a
@@ -131,6 +153,13 @@ drop-in replacement; the kit documents legacy contracts, unsupported surfaces,
 behavioral decisions, and verification before production rollout.
 
 ## First app
+
+Start with a little state and a place to use it. This counter needs just two
+pieces: JavaScript to mount the app, and HTML to describe the interaction.
+
+### Give the counter some state
+
+Run this JavaScript after the counter's HTML exists:
 
 ```js
 import { createApp } from '@jnreis/briojs';
@@ -142,6 +171,8 @@ const app = createApp({
 app.mount('#counter');
 ```
 
+### Connect it to your HTML
+
 ```html
 <section id="counter">
   <button b-on-click="$data.count++">
@@ -151,15 +182,78 @@ app.mount('#counter');
 </section>
 ```
 
-Expressions run in strict mode without `with` or implicit state-name resolution. Use `$data` for the nearest state object (app state, component setup state, or `b-data`), `$data.$parent` for parent state, and `$for` for loop values. Bare state names such as `count` are not supported and unresolved identifiers throw `ReferenceError`. When the bare name is a loop variable, state key, or prop, the error suggests the path to use, for example `item is not defined. Loop variables are read through $for: use $for.item.` or `count is not defined. Use $data.count.` JavaScript globals such as `Math`, `JSON`, and `setTimeout` resolve normally.
+Click the button and both numbers update. Here's all that's happening:
 
-The context is also available as `$context`. Named bindings include `$data`, `$el`, `$id`, `$ref`, `$for`, `$props`, `$emit`, `$insert`, `$stores`, `$provided`, `trustedHTML`, and `flush`. Event handlers receive `$event`; observers supply `$mutations`, `$size`, or `$entry`. Contextual scripts supply `onCleanup`. Bindings are read-only references; mutate writable state properties (`$data.count++`), not the binding itself (`$data = {}`). `$ref` names are also read-only. Event statements can declare ordinary local variables.
+- `state` creates the app's starting data: `{ count: 0 }`.
+- `mount` connects Brio to `#counter`, leaving the rest of the page alone.
+- `b-on-click` changes the count; `b-text` keeps the displayed text in sync.
+- `$data.count` reads the count from the current state.
+
+That's enough to start. The sections below explain the expression helpers and
+scope rules you'll encounter as your app grows.
+
+### Reading state in expressions
+
+Brio uses explicit paths, so it's clear where a value comes from:
+
+| To read... | Use |
+| --- | --- |
+| The nearest state (app state, component setup state, or `b-data`) | `$data` |
+| Parent state | `$data.$parent` |
+| Loop values | `$for` |
+| JavaScript globals | `Math`, `JSON`, `setTimeout`, and other globals as usual |
+
+Use `$data.count`, rather than bare `count`. Expressions run in strict mode,
+without `with` or implicit state-name resolution. Unresolved identifiers throw
+`ReferenceError`; when a bare name matches a loop variable, state key, or prop,
+the error suggests the path to use. For example:
+
+```text
+count is not defined. Use $data.count.
+item is not defined. Loop variables are read through $for: use $for.item.
+```
+
+### Helpers available to your HTML
+
+The expression context is also available as `$context`.
+
+| Where | Available bindings |
+| --- | --- |
+| Every expression | `$data`, `$el`, `$id`, `$ref`, `$for`, `$props`, `$emit`, `$insert`, `$stores`, `$provided`, `trustedHTML`, `flush` |
+| Event handlers | `$event` |
+| Observers | `$mutations`, `$size`, or `$entry` |
+| Contextual scripts | `onCleanup` |
+
+Bindings are read-only references. Change writable state properties, not the
+reference itself:
+
+```js
+$data.count++; // Update a state property.
+// Don't reassign the binding: $data = {};
+```
+
+`$ref` names are also read-only. Event statements can declare ordinary local
+variables.
+
+### When you add nested scopes
 
 Each nested context inherits from its parent through the prototype chain and stores only what it adds (for example its own `$el`). Reads such as `$context.$data` see the whole chain, but `Object.keys($context)` and spreads list only the element's own keys.
 
-Data and loop ancestry are independent: `$data.$parent.$parent` accesses a grandparent data scope, while `$for.$parent.$parent` accesses a grandparent loop. Ordinary elements and loops do not add data ancestry levels; data scopes do not add loop ancestry levels. Component setup state creates a data scope. App state and outermost loops have `$parent === undefined`. An empty `b-data` attribute inherits data without adding a scope; `b-data="{}"` creates one.
+Data and loop ancestry are independent:
+
+| Scope | Grandparent access | What adds a level? |
+| --- | --- | --- |
+| Data | `$data.$parent.$parent` | `b-data` with an expression, or component setup state |
+| Loop | `$for.$parent.$parent` | A nested loop |
+
+Ordinary elements and loops do not add data ancestry levels; data scopes do
+not add loop ancestry levels. App state and outermost loops have
+`$parent === undefined`. An empty `b-data` attribute inherits data without
+adding a scope; `b-data="{}"` creates one.
 
 `$parent` is reserved, read-only metadata on scope-specific views, not a field added to user state. It is excluded from keys, spreads, and JSON serialization. The same underlying state object may have different parents in different scopes. Normal reads, writes, and methods remain reactive. Access ancestry through `$data.$parent` and `$for.$parent`, and use `$context` for other helpers.
+
+### A note on authored HTML
 
 `trustedHTML` remains public for JavaScript-authored values, for example
 `app.state.markup = brio.trustedHTML('<em>Authored content</em>')` with
@@ -168,6 +262,12 @@ It marks trust intent, not sanitization; managed insertion uses it internally.
 Default `b-html` also accepts unmarked strings but never activates Brio.
 
 ## Shared stores
+
+Use a store when several parts of your page need the same data, such as a cart
+or signed-in session. Sharing is explicit: you choose the values and the apps
+that receive them.
+
+### Register and read a store
 
 One app's mounted roots share `app.state`. For named stores that must be
 accessible regardless of local data or component boundaries, register them
@@ -195,25 +295,43 @@ widget.mount('#cart-widget');
 </section>
 ```
 
-`$stores` is available in every app expression and as `$context.$stores` in scripts.
-Component setup receives `$stores` directly; plugins can use `app.stores`.
+### Where stores are available
+
+| Where | Access |
+| --- | --- |
+| App expressions | `$stores` |
+| Contextual scripts | `$context.$stores` |
+| Component setup | `$stores` in the setup arguments |
+| Plugins and application code | `app.stores` |
+
+### Choose reactive values deliberately
+
 Registration preserves the supplied values and identities and **does not make
 them reactive**. Explicitly use `state()` for reactive objects/arrays or
 `signal()` for primitive values (read signals through `.value`). Mutating a plain
 store does not notify bindings, although another dependency may cause a later
 read to see the new value.
 
-`app.stores` is a shallow read-only, null-prototype snapshot of the registration
-object. Names cannot be added, replaced, or deleted after app creation; store
-contents remain mutable. Missing names return `undefined`. Registration must
-be a plain object of enumerable own data properties, not an accessor registry.
-No stores produces an empty mapping. Shared stores are not reset or disposed
-when an app unmounts/disposes. Own store effects/resources explicitly; registration
-does not create a resource scope or persistence. Normal stores last only for
-the current page; use scoped `persist()` or an explicit backend/storage adapter
-for reloads and multi-page navigation.
+### Registration and store lifetime
+
+- `app.stores` is a shallow read-only, null-prototype snapshot. Names cannot be
+  added, replaced, or deleted after app creation; store contents remain mutable.
+- Missing names return `undefined`. No stores produces an empty mapping.
+- Registration must be a plain object of enumerable own data properties, not
+  an accessor registry.
+- Unmounting or disposing an app does not reset or dispose shared stores. Own
+  store effects/resources explicitly; registration creates neither a resource
+  scope nor persistence.
+- Normal stores last only for the current page. Use scoped `persist()` or an
+  explicit backend/storage adapter for reloads and multi-page navigation.
 
 ## Subtree-provided values
+
+Providers are useful for values that belong to one region of your app, such
+as its theme or a shared cart. Children can use them without passing the same
+prop through every level.
+
+### Provide once, read below
 
 Use `b-provide` to expose values on an element and throughout its Brio subtree.
 Read them directly through `$provided`; no separate inject directive is needed:
@@ -230,11 +348,17 @@ Read them directly through `$provided`; no separate inject directive is needed:
 </section>
 ```
 
-Provider expressions stay reactive: changing the outer theme updates its
-consumers without remounting children. Nested providers override their own names
-and inherit others. An explicitly provided `undefined` shadows a parent value;
-removing the local key reveals the parent's value. Missing names return
-`undefined`; outside a provider, `$provided` is an empty read-only mapping.
+### How inheritance works
+
+- Provider expressions stay reactive: changing the outer theme updates
+  consumers without remounting children.
+- Nested providers override their own names and inherit others.
+- An explicitly provided `undefined` shadows a parent value; removing the
+  local key reveals the parent's value.
+- Missing names return `undefined`. Outside a provider, `$provided` is an
+  empty read-only mapping.
+
+### Names are read-only; referenced state can change
 
 Provided names are read-only: `$provided.theme = 'light'` throws. Referenced
 objects are not frozen, so `$provided.cart.items.push(product)` can update the
@@ -243,24 +367,33 @@ of enumerable own data properties. Invalid initial or updated results throw;
 they are not silently accepted. `$provided` in the provider expression refers
 to the inherited values, not its own result.
 
+### Provider timing and scope
+
 Providers run after same-element `b-data` and, on repeated elements, after row
 `$for` exists. Other bindings on that element see its provided values.
 `b-if` conditions still use their parent context before branch-local providers.
 Providers do not add `$data.$parent` or `$for.$parent` levels.
 
-Component setup receives `$provided`; templates, scripts, routed views, and
-managed inserted content inherit the applicable context. A provider on a
-component host applies before setup. Slot content keeps its caller/authoring
-context, not providers inside the component's template. Teleports preserve
-their original context rather than inheriting from the physical destination.
-Child insertion inherits destination providers; sibling insertion inherits the
-parent container's providers. Provider effects stop when their owning scope is
-disposed; `b-if.hide` and `b-if.detach` keep them active, while a false
-unmodified `b-if` disposes them.
+| Consumer | Provider context |
+| --- | --- |
+| Component setup | Receives `$provided`; a host provider applies before setup. |
+| Templates, scripts, routed views, managed inserted content | Inherit the applicable context. |
+| Projected slots | Keep their caller/authoring context, not providers inside the component template. |
+| Teleports | Keep their original context, not the physical destination's. |
+| Child insertion | Inherits destination providers. |
+| Sibling insertion | Inherits the parent container's providers. |
+
+Provider effects stop when their owning scope is disposed. `b-if.hide` and
+`b-if.detach` keep them active; a false unmodified `b-if` disposes them.
 
 ## HTML directives
 
+Directives connect your HTML to state and behavior. Start with `b-text`,
+`b-on-click`, and `b-model`, then reach for the others as you need them.
+
 Directive arguments use hyphens (`b-on-click`, `b-bind-href`); options use chained dot modifiers (`on-click.prevent.stop`, `b-if.hide`). `b-mask` takes a pattern or formatter, not modifiers.
+
+### Directive quick reference
 
 | Directive | Purpose |
 | --- | --- |
@@ -290,6 +423,8 @@ Directive arguments use hyphens (`b-on-click`, `b-bind-href`); options use chain
 | `b-on-resize` | Observe element or document size changes. |
 | `b-options` | Configure observer directives on the same element; see Observer options. |
 
+### A few directives working together
+
 ```html
 <div b-data="{ query: '', visible: true, results: ['Brio', 'HTML'] }">
   <label>
@@ -306,7 +441,18 @@ Directive arguments use hyphens (`b-on-click`, `b-bind-href`); options use chain
 </div>
 ```
 
-`b-for` uses `item in $data.items` or `item, index in $data.items`. These names declare properties of `$for`, so row expressions use `$for.item` and `$for.index`. Without `b-key`, the index is the key; provide a stable key when items can be inserted, removed, or reordered. Duplicate keys are errors. Keyed reorders move only rows whose relative order changed (swapping two rows moves two rows). A moved row keeps its element, state, focus, and text selection: Brio uses the browser's state-preserving `moveBefore()` where available and otherwise restores focus and selection after the move.
+### Lists and stable keys
+
+`b-for` uses `item in $data.items` or `item, index in $data.items`. Those names
+declare properties of `$for`: read `$for.item` and `$for.index` in the row.
+
+- **Choose a stable key** when items can be inserted, removed, or reordered.
+  Without `b-key`, the index is the key. Duplicate keys are errors.
+- **Retained rows keep their identity.** Keyed reorders move only rows whose
+  relative order changed; swapping two rows moves two rows.
+- **Focus and selection stay with a moved row.** Brio uses the browser's
+  state-preserving `moveBefore()` where available, otherwise it restores focus
+  and selection after the move. The element and local state are retained too.
 
 A row that moves to a *different* `b-for` (a card dragged to another list) is a new element in the destination loop, so focus cannot follow it automatically. Flush, then focus the new row by key:
 
@@ -316,17 +462,41 @@ brio.flush();
 document.querySelector(`[data-card-id="${card.id}"]`)?.focus();
 ```
 
-A row whose repeated element is a single concrete element (not a `<template>`, `b-template`, or teleported row) is its own boundary: Brio adds no `<!--brio:range-->` comments around it. Template and teleported rows keep their range comments. Clearing a list, or replacing it with items that share no keys with the old ones, disposes every old row at once; when the loop is the only content of its parent (besides whitespace), the old rows are removed with a single DOM write.
+#### Row boundaries and clearing a list
 
-`b-bind-*` binds a DOM property when one exists; otherwise it sets or removes the corresponding attribute. `false`, `null`, and `undefined` remove attributes. `aria-*` bindings are the exception for booleans: ARIA states are enumerated strings, so `true`/`false` become `"true"`/`"false"` (`b-bind-aria-pressed="$data.on"` keeps a toggle button's state announced), while `null`/`undefined` still remove the attribute. `class` accepts a string, an object of class names and booleans, or an array mixing both (nested freely: `['card ' + $data.kind, { active: $data.on }]`). `style` accepts a style object. Read-only properties (SVG geometry such as `r`/`cx`, `input.form`/`list`) are bound as attributes. A writable property whose setter throws surfaces an error instead of silently falling back to an attribute.
+A single concrete repeated element is its own boundary: Brio adds no
+`<!--brio:range-->` comments around it. Template, `b-template`, and teleported
+rows keep their range comments.
+
+Clearing a list, or replacing it with items that share no old keys, disposes
+every old row at once. If the loop is its parent's only content besides
+whitespace, the old rows are removed with a single DOM write.
+
+### Binding attributes, classes, and styles
+
+`b-bind-*` binds a DOM property when one exists; otherwise it sets or removes
+the corresponding attribute.
+
+| Binding value or target | Behavior |
+| --- | --- |
+| Attribute value `false`, `null`, or `undefined` | Removes the attribute. |
+| `aria-*` boolean | Writes `"true"` or `"false"`; null/undefined still remove the attribute. For example, `b-bind-aria-pressed="$data.on"` announces a toggle's state. |
+| `class` | Accepts a string, an object of class names and booleans, or freely nested arrays mixing both: `['card ' + $data.kind, { active: $data.on }]`. |
+| `style` | Accepts a style object. |
+| Read-only property | Binds as an attribute, including SVG geometry (`r`/`cx`) and `input.form`/`list`. |
+| Writable property whose setter throws | Surfaces the error; does not silently fall back to an attribute. |
 
 HTML parsing lowercases attribute names, so `b-bind-viewBox` reaches Brio as `b-bind-viewbox`. On SVG elements Brio restores the spec's mixed-case attribute names (`viewBox`, `preserveAspectRatio`, `gradientUnits`, `stdDeviation`, …). The `.prop` modifier always assigns a DOM property and resolves its casing against the element (`b-bind-tabIndex.prop`, `b-bind-scrollTop.prop`).
+
+### Two-way input with `b-model`
 
 `b-model` text inputs and textareas preserve strings by default, including
 whitespace and numeric-looking text. Supported model modifiers are `.lazy`
 (update on change instead of input), `.trim` (trim whitespace), and `.number`
 (`parseFloat`, keeping nonnumeric text unchanged). Text is literal by default;
 `b-html.hydrate` opts into content hydration.
+
+#### Cursor, selection, and composition
 
 When state changes the value of a focused text input or textarea (through
 `b-model` or `b-bind-value`), Brio keeps the cursor and selection on the same
@@ -358,7 +528,7 @@ scrolling, media controls, measurement, or third-party integrations.
 `$el` is still the current element; `b-id` still creates unique **strings** for
 IDs, label associations, ARIA relationships, or selectors. Refs do not set IDs.
 
-**Names and scope**
+#### Ref names and local boundaries
 
 - The name is literal, trimmed, and nonempty: `b-ref="search"` does not evaluate
   JavaScript. Use `$ref['search-input']` for names requiring bracket access.
@@ -384,7 +554,7 @@ IDs, label associations, ARIA relationships, or selectors. Refs do not set IDs.
   no surviving rendered element represents that fragment. Put refs on concrete
   children. `b-ignore` skips registration along with all other hydration.
 
-**Timing, reactivity, and lifetime**
+#### When refs become available
 
 Refs register as their targets hydrate, before their ordinary effects/children.
 There is no pre-scan or descendant-ready guarantee during component setup or
@@ -413,6 +583,8 @@ hook. Names cannot be assigned, deleted, or redefined by application code.
 The npm `RefMap` type exposes `Element | undefined`; narrow the element type
 before using specialized methods.
 
+#### Ref lifetime and cleanup
+
 - Plain `b-if` retains refs through live leave transitions, then unregisters on
   disposal. Reversal keeps the same ref; activation after completed removal
   registers a new element.
@@ -433,6 +605,9 @@ unconditionally from effects that observe those writes. Dispose integration
 listeners/widgets through `onCleanup`, not by deleting registry entries.
 
 ### Teleport targets and placement
+
+Use teleport when an element belongs to one part of your app but needs to appear
+elsewhere in the page, such as a modal or floating panel.
 
 `b-teleport` evaluates a reactive expression. Supply an actual `Element` (including
 a `$ref` value), a CSS selector string, or a `[target, placement]` pair:
@@ -460,6 +635,8 @@ a `$ref` value), a CSS selector string, or a `[target, placement]` pair:
 | `prepend` | Before the target's existing children. |
 | `append` | After the target's existing children. |
 
+#### Choosing a teleport target
+
 Strings **always** mean selectors: `'panel'` selects a `<panel>` tag, even if a
 ref named `panel` exists. Write `$ref.panel` or `$ref['panel-name']` for refs;
 there is no bare-name lookup, `.ref` modifier, or unquoted-selector shorthand.
@@ -470,6 +647,8 @@ Sibling placements require an element or fragment parent. Child placements
 cannot insert into an inert native `<template>` or a Brio container whose
 children are controlled by another directive, such as `b-text` or `b-html`.
 You may still place output beside such a container.
+
+#### Targets that appear or change later
 
 Refs retain their normal **local-only** lookup. A ref may be declared later in
 hydration: teleport waits for that target's hydration to finish before inserting
@@ -487,12 +666,16 @@ An unchanged target/placement does not repeatedly move output. DOM connectivity,
 native reparenting, and sibling changes are not tracked. A retained ref can target
 a disconnected Element; sibling placement still requires a parent.
 
+#### What moves, and what stays the same
+
 Teleport preserves source data, providers, ref ownership, component/slot context,
 listeners, and node identity. It changes physical CSS ancestry and native event
 bubbling. Template ranges move together; keyed rows retain their order within
 each loop's bounded target/placement group. Reactive retargeting while a
 same-element conditional or conditional loop is detached does not reconnect its
 output; activation uses the latest requested destination.
+
+#### Cleaning up teleported content
 
 Removing a ref target through Brio returns independently owned teleported output
 to its source. Removing the teleport's original owner disposes that output
@@ -501,6 +684,9 @@ dispose the source owner before removing those destinations, or switch the targe
 expression first. Native DOM removal alone never unregisters a ref.
 
 ### Wrapperless content with `b-template`
+
+Want several elements to behave as one branch or row, without adding a wrapper
+to the rendered HTML? Use a directive-bearing `<template>`.
 
 `b-template` is an **in-place, one-time unwrap**, not a component definition,
 named template registry, HTML expression, or reactive template selector.
@@ -541,6 +727,8 @@ The example renders the heading and paragraph directly inside `#app`.
 A native `<template>` with no `b-` directive stays inert; Brio does not hydrate
 its `.content` automatically.
 
+#### Unwrapping and inherited context
+
 - On `<template b-template>`, Brio clones the template's inert contents.
   On an ordinary container such as `<div b-template>`, it moves the existing
   children out and removes the container. Use a non-void element with children.
@@ -563,6 +751,8 @@ its `.content` automatically.
 
   The label and input survive; the template does not. Context-creating
   expressions on the wrapper see that wrapper as `$el`, not a rendered child.
+#### Template companions and limits
+
 - Same-element `b-effect` runs in the template's owned scope, after its contents
   hydrate. `b-teleport` moves the whole rendered range to its destination,
   including text, nested structural output, and boundary comments. Its selector
@@ -576,6 +766,8 @@ its `.content` automatically.
 - Wrapper attributes are not forwarded: `class`, `style`, `id`, accessibility
   attributes, and the wrapper's layout/semantics disappear. Native CSS `@scope`
   follows the style element's new physical parent.
+#### Template branches and keyed rows
+
 - Keep a stable, concrete mount root; `b-template` **inside** it is supported,
   but putting it on the element passed to `app.mount()` is an error.
 - Plain `b-if` / `b-else-if` / `b-else` and `b-if.detach` support template
@@ -620,8 +812,14 @@ are reflected on reinsertion. As with concrete wrappers, teleporting a
 
 ### Directive combinations and conflicts
 
-Directives are not an unordered set of independent behaviors. Structural
-directives can replace a host or return before the ordinary directive pass.
+Most directives work naturally together. The useful rule of thumb is to give
+each DOM resource one owner: children, input value, display, or structural host.
+
+Structural directives can replace a host or return before the ordinary directive
+pass, so they are not an unordered set of independent behaviors.
+
+#### The order Brio follows
+
 **Changing attribute order does not change structural precedence:**
 
 1. `b-ignore` skips the entire element and its subtree, including other directives.
@@ -638,9 +836,12 @@ directives can replace a host or return before the ordinary directive pass.
    afterward unless a directive owns their content. `b-router-outlet` returns
    immediately when encountered.
 
-Use one owner per DOM resource (children, input value, display, or structural
-host). Not every conflict throws: some skip a directive or let reactive effects
+#### Same-element combinations at a glance
+
+Not every conflict throws: some skip a directive or let reactive effects
 overwrite each other. Do not rely on attribute order to resolve competing owners.
+
+**Context and structural ownership**
 
 | Combination | Behavior / recommended pattern |
 | --- | --- |
@@ -655,6 +856,11 @@ overwrite each other. Do not rely on attribute order to resolve competing owners
 | `b-ref` + `b-data` / `b-for` / component host | Normal data elements register in their data-local registry; rows register in their row-local registry. Component hosts register in the caller's applicable registry; component internals are private. |
 | Reused ref name across live conditional branches | Duplicate error, including inactive preserved branches and transition-overlapping branches. Use distinct names or explicit `b-data` boundaries. |
 | Multiple conditional directives on one element | An error. Use one of `b-if`, `b-else-if`, or `b-else` per branch; only the leading `b-if` accepts mode modifiers. |
+
+**Content and input ownership**
+
+| Combination | Behavior / recommended pattern |
+| --- | --- |
 | `b-text` + `b-html` (including `.hydrate`) | Both replace the same children. Do not combine them. Existing child markup is replaced, not used as fallback or an additional hydrated template. |
 | `b-bind-*` targeting `textContent` / `innerHTML` or `b-effect` mutating children + hydrated content | Direct DOM writes are not a substitute for owned content replacement and may remove nodes without disposing their bindings. Use `b-text` / `b-html` instead; keep third-party-managed subtrees under `b-ignore`. |
 | `b-html` + child directives | Default HTML leaves inserted directives/interpolation inert. `.hydrate` requires `trustedHTML()`, hydrates replacements in an owned content scope, and disposes the previous one. In either mode, do not separately manage those same children with an outlet, insertion API, or another content writer. |
@@ -662,12 +868,19 @@ overwrite each other. Do not rely on attribute order to resolve competing owners
 | `b-model` + `b-bind-value` / `b-bind-checked` / manual value-writing effects | Competing state-to-control writers. Let `b-model` own the control's value/selection; ordinary event handlers may perform additional actions but should not establish another independent value binding. |
 | `b-model` + `b-mask` | Supported on text-like inputs/textareas: the mask formats input before model listeners read it. Masked values are formatted strings; `.number` uses `parseFloat`, not locale-aware money parsing. Initialize model values in the expected format; changing model state alone does not cause an input event or guarantee reformatting by the mask. |
 | `b-model` on non-form elements; `b-mask` on non-input/textarea elements; `b-script` on non-script elements | Errors when processed. A component host does not acquire native input/script capabilities by using one of these directives. |
+
+**Visibility, movement, and competing bindings**
+
+| Combination | Behavior / recommended pattern |
+| --- | --- |
 | `b-if.hide` + `b-bind-style` / effects writing `display` on the branch | Competing display owners; a reactive style write can reveal an inactive branch or override activation. Let the conditional own branch display; style a child or use `.detach` when appropriate. |
 | `b-transition` + dynamic class/style bindings | Class bindings add and remove only the names they own, so transition classes survive. Do not let a binding toggle a transition class itself, and avoid styles that overwrite animated properties while a transition runs; put those on a child when possible. Keyed `b-for` rows with `b-transition` animate position changes through `<name>-move` and briefly own the row's inline `transform`; do not bind `style.transform` on that row. `b-transition` does not provide leave animation for removed `b-for` rows, or animate every descendant when an ancestor is removed. |
 | `b-for` + same-row `b-teleport` | Supported for concrete or template rows. Keyed reconciliation moves the complete row range at its destination. Each loop owns bounded groups per target/placement, preserving unrelated surrounding content through retargeting. |
 | `b-teleport` + a destination controlled by `b-text` / `b-html` / `b-router-outlet` / `b-ignore` | Child placements are errors; use `before` / `after` beside the controlled container, or choose an independently managed destination. |
 | `b-if` + teleported children | Supported, but hiding an ancestor with `.hide` cannot hide descendants moved elsewhere. Their effects also stay live in preservation modes. Put visibility on the surviving teleported element when it must be controlled independently. |
 | Multiple bindings/effects writing the same attribute/property | No arbitration. Use one expression per target; do not combine prefixed/unprefixed aliases or different modifier spellings to install competing bindings. |
+
+#### How combinations are tested
 
 `tests/directive-interactions.test.js` generates **465 pairwise co-mount tests**
 for all 30 directive forms in the reference table plus registered component
@@ -683,7 +896,10 @@ newly documented directive cannot silently go untested. A higher-order
 regression composes `b-for`, `b-key`, `b-id`, and `b-provide` on keyed rows and
 checks row-local values and IDs through reorder and disposal.
 
-#### Event modifiers
+### Event modifiers
+
+Add modifiers when an event needs a little more control, such as handling only
+Enter or preventing a form's default submit behavior.
 
 | Modifier | Effect |
 |---|---|
@@ -705,6 +921,8 @@ Key and system-key filters run first, so `.enter.prevent` cancels only Enter.
 An unknown modifier (for example the typo `b-on-click.prevnt`) throws a
 `SyntaxError` listing the supported names instead of being ignored.
 
+#### Combining event modifiers
+
 For ordinary DOM events, `.outside`, `.window`, and `.document` are alternative
 targets, not combinations: `.outside` wins over `.window`, which wins over
 `.document`. `.debounce` wins over `.throttle` if both are present; choose one.
@@ -722,6 +940,8 @@ bubbling up to `document`:
 <div role="menu" b-if="$data.open" b-on-click.outside="$data.open = false">…</div>
 ```
 
+#### Reading updated DOM inside a handler
+
 Each event handler runs inside `batch()`: several writes produce one coherent
 update when the handler returns. Consequently, DOM that depends on those writes
 (a new `b-if` branch, its `$ref` entries, bound text/attributes) does not exist
@@ -731,6 +951,8 @@ first, for example
 call the exported `flush()` (`brio.flush()` in browser bundles). Code after an
 `await` runs outside the batch and sees updates immediately.
 
+#### Avoiding observer feedback loops
+
 Observer `b-options` is specific to observer directives, not general directive
 configuration. An observer on an element whose attributes/children are updated
 by bindings or `b-html` can observe those framework writes too. Do not write the
@@ -738,6 +960,9 @@ same observed state/DOM back unconditionally from its callback or `b-effect`:
 that can create feedback loops.
 
 ### Conditional lifecycle
+
+Use a conditional to show the first matching branch. Start with plain `b-if`;
+choose a preservation mode only when inactive content needs to keep its state.
 
 `b-else-if` and `b-else` follow an adjacent `b-if` branch (whitespace and comments are allowed between branches). The first matching branch is selected; `b-else` is the final fallback. In every mode, conditions run in the parent scope before branch-local `b-data` or providers.
 
@@ -749,11 +974,21 @@ that can create feedback loops.
 <p b-else>Please log in.</p>
 ```
 
+#### Default: remove inactive branches
+
 With unmodified `b-if`, an inactive branch is removed and dehydrated after its
 leave transition completes, or immediately when no transition runs. Its bindings
 and listeners remain live during leave. Reversing before completion reuses the
 same element and local state; after a completed leave, activation creates fresh
 branch-local `b-data` and component state. Parent/app state is not reset.
+
+#### Keep local state with a preservation mode
+
+| Mode | Inactive content |
+| --- | --- |
+| `b-if` | Removed and dehydrated after leave; later activation creates fresh local state. |
+| `b-if.hide` | Kept in the DOM with `display: none`; activation restores authored visible display. |
+| `b-if.detach` | Disconnected without dehydration; activation reinserts the same nodes. |
 
 Set a preservation mode **only on the leading `b-if`**; it applies to every
 branch in that chain:
@@ -770,10 +1005,8 @@ branch in that chain:
 </aside>
 ```
 
-- `.hide` keeps every branch in the DOM and sets inactive branches to
-  `display: none`; activation restores their authored visible display.
-- `.detach` removes inactive branches without dehydration and reinserts the
-  same nodes when selected.
+#### Preservation timing and limits
+
 - Both modes hydrate **all branches once at initial mount**, even initially
   inactive branches. Component setup and contextual scripts run immediately;
   local state, bindings, listeners, and effects remain live while inactive.
@@ -790,7 +1023,11 @@ branch in that chain:
 
 ### Contextual scripts
 
-Only `<script b-script>` is processed. Write an unassigned arrow expression so the browser does not execute its body:
+Use a contextual script for initialization that belongs to a particular piece
+of HTML. Its cleanup belongs to that piece too.
+
+Only `<script b-script>` is processed. Write an unassigned arrow expression so
+the browser does not execute its body:
 
 ```html
 <script b-script>
@@ -802,9 +1039,24 @@ Only `<script b-script>` is processed. Write an unassigned arrow expression so t
 </script>
 ```
 
-Brio constructs a function factory with an explicit context parameter, then invokes the returned function with that context; scripts do not use `with`. Context includes `$data`, `$el`, `$id`, `$for`, and `$event` when supplied by the caller. Parent state is accessed with `$data.$parent`. `$el` is the script element. The same helpers are available as lexical bindings, so `() => { $data.ready = true; }` also works. Async arrows and destructured parameters are supported; errors are surfaced without retrying the script. Async initialization does not block mounting; initialize values used by the template before the first `await`. Register timer/listener cleanup synchronously through `$context.onCleanup`.
+#### Script context and cleanup
+
+- Brio constructs a function factory with an explicit context parameter, then
+  invokes the returned function with that context. Scripts do not use `with`.
+- Context includes `$data`, `$el`, `$id`, `$for`, and `$event` when supplied by
+  the caller. `$el` is the script element; use `$data.$parent` for parent state.
+- The helpers are also lexical bindings, so `() => { $data.ready = true; }`
+  works too.
+- Async arrows and destructured parameters are supported. Errors surface
+  without retrying the script.
+- Async initialization does not block mounting: initialize values used by the
+  template before the first `await`.
+- Register timer/listener cleanup **synchronously** through `$context.onCleanup`.
 
 ### Input masks
+
+Use a pattern for familiar formats such as phone numbers, or provide a function
+when your formatting needs custom logic.
 
 ```html
 <input b-mask="'(###) ###-####'">
@@ -827,6 +1079,8 @@ Tokens skip nonmatching input; literals are inserted and consume matching input
 when present. Matching uses code points, not grapheme clusters: combining marks
 do not independently match `a`/`A`, and emoji sequences can span several `*`
 tokens. Native input restrictions still apply.
+
+#### Custom input formatters
 
 The expression can instead evaluate to a synchronous `MaskFormatter`:
 
@@ -877,19 +1131,45 @@ const app = createApp({
 <input b-model="$data.amount" b-mask="$data.amountMask">
 ```
 
-Options default to `thousands: ','`, `decimal: '.'`, `precision: 2`.
-Precision is an integer from 0 to 100. Money intentionally retains ASCII-digit,
-fixed-minor-unit entry: `123456` becomes `1,234.56`. It is not a locale-aware
-number parser or Unicode digit converter. Options are copied at factory time;
-use `b-mask="brio.moneyMask($data.options)"` to rebuild reactively.
+| Option | Default | Meaning |
+| --- | --- | --- |
+| `thousands` | `','` | Thousands separator. |
+| `decimal` | `'.'` | Decimal separator. |
+| `precision` | `2` | Integer from 0 to 100. |
+
+Money uses ASCII-digit, fixed-minor-unit entry: `123456` becomes `1,234.56`.
+It is not a locale-aware number parser or Unicode digit converter.
+
+Options are copied at factory time. Use
+`b-mask="brio.moneyMask($data.options)"` to rebuild reactively.
 npm exports the formatter types
 from both `@jnreis/briojs` and `@jnreis/briojs/money-mask`.
 
 ### CSS transitions
 
-`b-transition="'fade'"` uses `fade-enter`, `fade-enter-active`, `fade-enter-to`, and the corresponding `fade-leave*` classes. The default name is `brio`. Define CSS `transition` properties on the active classes and starting/ending styles on the other classes.
+Add `b-transition` when a branch should ease into or out of view. You write the
+CSS; Brio handles the enter/leave classes and waits before removing content.
 
-Brio tracks the element's own `transitionrun`, `transitionend`, and `transitioncancel` events for every running property, ignoring descendant events. Removal waits for all properties, including delays. A fallback uses computed CSS duration plus delay, not a fixed timeout. No-duration/reduced-motion styles complete without waiting for an event; unmount cancels pending frames, listeners, and timers. This directive handles CSS transitions, not keyframe animations.
+For `b-transition="'fade'"`:
+
+| Phase | Classes |
+| --- | --- |
+| Enter | `fade-enter`, `fade-enter-active`, `fade-enter-to` |
+| Leave | `fade-leave`, `fade-leave-active`, `fade-leave-to` |
+
+The default name is `brio`. Put CSS `transition` properties on the active
+classes, and starting/ending styles on the other classes. This directive
+handles CSS transitions, not keyframe animations.
+
+#### Transition completion and reversal
+
+- Brio tracks the element's own `transitionrun`, `transitionend`, and
+  `transitioncancel` events for every running property, ignoring descendant
+  events.
+- Removal waits for all properties, including delays. The fallback uses
+  computed CSS duration plus delay, not a fixed timeout.
+- No-duration/reduced-motion styles complete without waiting for an event.
+- Unmount cancels pending frames, listeners, and timers.
 
 Reversing a running transition in **any `b-if` mode** retargets the same element's
 CSS properties from their current interpolated values without replaying the
@@ -911,9 +1191,21 @@ A keyed `b-for` row with `b-transition` also animates when it changes position, 
 @media (prefers-reduced-motion: reduce) { .task-move { transition: none; } }
 ```
 
-The class is removed on the row's own `transform` `transitionend`, or after the computed duration. Interrupting a move restarts it from the row's current visual position. New rows play the enter transition, and rows that did not shift are untouched. Loops without `b-transition` never read layout. `b-transition` also works on component hosts, so a `b-for` of components can animate. Moves between different loops create a new element and cannot slide.
+The class is removed on the row's own `transform` `transitionend`, or after the
+computed duration.
+
+- Interrupting a move restarts it from the row's current visual position.
+- New rows play the enter transition; rows that did not shift are untouched.
+- Loops without `b-transition` never read layout.
+- Component hosts support `b-transition`, so a `b-for` of components can animate.
+- Moves between different loops create a new element and cannot slide.
 
 ## Observer options
+
+Observe visibility, DOM mutations, or size when an interaction needs information
+from the browser. Configure only the observers you use on that element.
+
+### Configure an observer
 
 Observer directives support `b-options`, a synchronous object keyed by their
 attribute name. Base-name options apply first, then full-name options, then
@@ -937,30 +1229,53 @@ for model/event/mask directives.
      b-on-resize.document="console.log($size, $entry)"></div>
 ```
 
-- **Intersection:** `root` accepts an Element/Document reference, selector, or
-  null (viewport, the default). `rootMargin` uses native CSS length/percentage
-  syntax; `threshold` accepts a number or array between 0 and 1. `.once` stops
-  after the first delivered matching callback. Enter/exit still follow
-  `isIntersecting`; thresholds control native notification boundaries, not an
-  additional percentage filter.
-- **Mutation:** `target` accepts an Element/Document/Text reference or selector;
-  default is the directive element. `subtree` defaults to true for existing v4
-  behavior; set false explicitly for direct-only observation. `.subtree` forces
-  true. Attribute observers also support `attributeFilter` / `attributeOldValue`;
-  text observers support `characterDataOldValue`. Old-value flags default false.
-  Added/removed observers filter childList records; text observes characterData,
-  not arbitrary `textContent` replacements.
-- **Resize:** `.document` or `document: true` observes the owner document's
-  documentElement. `box` is `content-box` (default), `border-box`, or
-  `device-pixel-content-box`, passed to `observe`. `$size.width/height` use the
-  selected measurement, accounting for vertical writing modes; `$entry` is the
-  native entry. Device-pixel units are physical pixels. Missing nondefault box
-  measurements report an error instead of silently supplying a different box.
-- **Debounce:** `.debounce` / true means 100ms; numeric `debounce` selects a
-  non-negative delay; false/absent runs immediately. A dot modifier overrides
-  numeric configuration. Mutation debounce accumulates every matching record;
-  intersection/resize use the latest matching entry. Disposal disconnects
-  observers and cancels pending callbacks.
+### Visibility: intersection options
+
+| Option | Meaning |
+| --- | --- |
+| `root` | Element/Document reference, selector, or null for the viewport (default). |
+| `rootMargin` | Native CSS length/percentage syntax. |
+| `threshold` | Number or array between 0 and 1. |
+| `.once` | Stop after the first delivered matching callback. |
+
+Enter/exit follow `isIntersecting`. Thresholds control native notification
+boundaries, not an additional percentage filter.
+
+### DOM changes: mutation options
+
+| Option | Meaning |
+| --- | --- |
+| `target` | Element/Document/Text reference or selector; defaults to the directive element. |
+| `subtree` | Defaults to true for existing v4 behavior; set false for direct-only observation. `.subtree` forces true. |
+| `attributeFilter`, `attributeOldValue` | Attribute-observer options; the old-value flag defaults to false. |
+| `characterDataOldValue` | Text-observer option; defaults to false. |
+
+Added/removed observers filter `childList` records. Text observers watch
+`characterData`, not arbitrary `textContent` replacements.
+
+### Size changes: resize options
+
+| Option or binding | Meaning |
+| --- | --- |
+| `.document` or `document: true` | Observe the owner document's `documentElement`. |
+| `box` | `content-box` (default), `border-box`, or `device-pixel-content-box`; passed to `observe`. |
+| `$size.width`, `$size.height` | The selected measurement, accounting for vertical writing modes. Device-pixel units are physical pixels. |
+| `$entry` | Native resize entry. |
+
+Missing nondefault box measurements report an error instead of silently
+supplying a different box.
+
+### Debounce and observer cleanup
+
+| Debounce setting | Delay |
+| --- | --- |
+| `.debounce` or `debounce: true` | 100ms. |
+| Numeric `debounce` | A non-negative delay. |
+| False or absent | Run immediately. |
+
+A dot modifier overrides numeric configuration. Mutation debounce accumulates
+every matching record; intersection/resize use the latest matching entry.
+Disposal disconnects observers and cancels pending callbacks.
 
 Selectors must resolve when hydrated. Invalid options throw explicitly.
 Intersection/ResizeObserver require native browser support or an application
@@ -968,7 +1283,13 @@ polyfill; native constructor validation governs CSS margins and platform support
 
 ## Components
 
-Components are a first-party feature. Define them with a hyphenated custom-element name, an HTML template, and an optional setup function:
+When a piece of UI is ready to reuse, give it a name and a template.
+Components are a first-party feature: no extra plugin is needed.
+
+### Define and use a component
+
+Use a hyphenated custom-element name, an HTML template, and an optional setup
+function:
 
 ```js
 import { createApp } from '@jnreis/briojs';
@@ -1002,7 +1323,18 @@ app.mount('#widgets');
 </main>
 ```
 
-`template` is a markup string, a `<template>` element, or an `#id` selector naming a `<template>` in the host's document (`template: '#tpl-click-counter'`). Selector and element templates keep markup in the page where editors highlight it; a selector that does not match a `<template>` throws when the first instance mounts.
+### Choose where the template lives
+
+| `template` value | Use |
+| --- | --- |
+| Markup string | Keep the HTML in your component definition. |
+| A `<template>` element | Keep markup in the page, where editors highlight it. |
+| An `#id` selector, such as `'#tpl-click-counter'` | Find a `<template>` in the host's document. |
+
+A selector that does not match a `<template>` throws when the first instance
+mounts.
+
+### Pass values through props
 
 Static host attributes become string props; `b-bind-name` supplies a reactive prop through `$props`. Declare `props` to coerce static attributes:
 
@@ -1017,7 +1349,33 @@ app.component('favorite-button', {
 <favorite-button compact count="3"></favorite-button>
 ```
 
-A declared `Boolean` prop is `false` when absent and `true` when present (any value except `"false"`); `Number` props pass through `Number()`; `String` is the default. Only `Boolean`, `Number`, and `String` are accepted. Bound props (`b-bind-*`) are never coerced. HTML lowercases attribute names, so `b-bind-userName` arrives as `$props.username`; use lowercase or dashed prop names (`$props['user-name']`). Setup receives `$props`, `$emit`, `$stores`, `$provided`, the private `$ref` registry, the host element as `el`, `app`, and `route` (the router's reactive route, when a router is installed). Templates and contextual scripts also access `$props` and `$emit`. Component events are bubbling `CustomEvent`s emitted with `$emit(name, detail)`. Named slots use `slot="name"` on projected content and `<slot name="name">` in the template. Component setup runs in an owned scope; effects, persistence, and listeners registered during setup are disposed when the component is removed.
+| Declared type | Static attribute conversion |
+| --- | --- |
+| `Boolean` | `false` when absent; `true` when present with any value except `"false"`. |
+| `Number` | Passed through `Number()`. |
+| `String` (default) | Kept as a string. |
+
+Only these three types are accepted. Bound props (`b-bind-*`) are **never
+coerced**.
+
+HTML lowercases attribute names: `b-bind-userName` arrives as `$props.username`.
+Use lowercase or dashed names (`$props['user-name']`).
+
+### Setup, events, and slots
+
+| Setup argument | Value |
+| --- | --- |
+| `$props`, `$emit` | Props and component event emitter; also available in templates and contextual scripts. |
+| `$stores`, `$provided` | Registered stores and inherited provided values. |
+| `$ref` | The component's private DOM-ref registry. |
+| `el`, `app` | Host element and owning app. |
+| `route` | The router's reactive route, when a router is installed. |
+
+- Emit bubbling `CustomEvent`s with `$emit(name, detail)`.
+- Project named slots with `slot="name"` on content and
+  `<slot name="name">` in the template.
+- Setup runs in an owned scope. Effects, persistence, and listeners registered
+  during setup are disposed when the component is removed.
 
 ### Directives on component hosts
 
@@ -1035,6 +1393,8 @@ style objects and custom properties, `aria-*`, `data-*`, booleans, and `.prop`).
           b-attr-data-testid="'kpi-' + $for.kpi.key"></kpi-card>
 ```
 
+#### Prop evaluation and host events
+
 Each bound prop is evaluated once at mount, before setup, and again only when
 its dependencies change. Component template markup is parsed once per
 definition and cloned for each instance in the host's own document.
@@ -1043,6 +1403,8 @@ as ordinary elements (`<row-actions b-on-remove.stop.once="…">`,
 `b-on-keydown.enter`). Observer-style names are host event names, not
 observer installation; put observers on a concrete wrapper or inside the
 component template.
+
+#### Structural directives on a component
 
 Earlier structural/context steps still apply: `b-if`, `b-for` with `b-key`,
 `b-data`, `b-id`, `b-provide`, and `b-ref` can be handled before component setup, subject
@@ -1055,6 +1417,9 @@ restriction; they do not install ordinary host behaviors either.
 Use a surviving wrapper or put the directive inside the component.
 
 ## Recommended CSS
+
+Keep styling familiar: write native CSS alongside your HTML, and use bindings
+only for values that need to change.
 
 Use ordinary stylesheets and native CSS. Brio does not compile, relocate,
 namespace, or restrict your CSS. Prefer shared external styles for global
@@ -1071,14 +1436,16 @@ any region, and put this rule in `<head>` so it applies before first paint:
 <main id="app" b-cloak>…</main>
 ```
 
-Brio removes `b-cloak` from each element as it hydrates it (the mount root,
-rows, branches, and component templates); `b-ignore` content is never
-hydrated, so a cloak inside it stays. Unmounting restores the root's original
-attributes, including `b-cloak`. Brio does not inject the rule itself: a
-deferred or module script would inject it after first paint. Cloaked content
-stays hidden if JavaScript fails or is disabled, so cloak only regions that
-are meaningless without Brio, and prefer server-rendered or static markup for
-content that must remain readable.
+- **Hydration removes the cloak** from each element: mount roots, rows, branches,
+  and component templates. `b-ignore` content is never hydrated, so its cloak
+  stays.
+- **Unmount restores the original attributes**, including `b-cloak`.
+- **Include the CSS yourself**, before first paint. Brio does not inject it;
+  deferred or module scripts would inject it too late.
+
+> Cloaked content stays hidden if JavaScript fails or is disabled. Cloak only
+> regions that are meaningless without Brio; keep essential content
+> server-rendered or static.
 
 ### Native scoped styles
 
@@ -1193,6 +1560,15 @@ text without secondary interpolation.
 
 ## Three ways to use Brio
 
+Start at the scale your project needs. The same mounting and cleanup model
+works for a single widget, an enhanced server page, or a client-side app.
+
+| Shape | Start with |
+| --- | --- |
+| Widget | One small mount root inside an existing page. |
+| Multi-page site | Server navigation, with interactive roots on each page. |
+| Single-page app | The optional router and a dedicated route outlet. |
+
 ### A widget in an existing app
 
 Mount a small root without taking over its host page. Non-overlapping roots can share app state; separate apps have isolated app state unless stores are explicitly shared:
@@ -1205,7 +1581,15 @@ const handle = widget.mount('#account-menu');
 handle.unmount();
 ```
 
-Unmount restores the mount root's original attributes and child markup by default. `app.unmount()` unmounts all roots but leaves the app reusable. `app.dispose()` unmounts every root and permanently closes the app. All three teardown methods accept `{ restore: false }` when the host is about to discard the DOM; see [page lifecycle](#server-rendered-pages-and-page-swaps).
+| Cleanup | Result |
+| --- | --- |
+| `handle.unmount()` | Releases this root. |
+| `app.unmount()` | Releases all roots; the app stays reusable. |
+| `app.dispose()` | Releases all roots and permanently closes the app. |
+
+By default, unmount restores the root's original attributes and child markup.
+All three methods accept `{ restore: false }` when the host is about to discard
+the DOM; see [page lifecycle](#server-rendered-pages-and-page-swaps).
 
 ### Multi-page site
 
@@ -1376,6 +1760,11 @@ asset paths, or server rendering.
 
 ## Reactive primitives
 
+Use reactivity on its own when you need observable data without mounting any
+HTML. Start with state, derive a value, and react to changes.
+
+### State, derived values, and effects
+
 The standalone reactivity entry works without a DOM:
 
 ```js
@@ -1398,15 +1787,29 @@ scope.run(() => {
 scope.dispose(); // Stops effects and nested scopes created in the scope.
 ```
 
-- `state(value)` observes plain objects and arrays and preserves cycles/shared references.
-- `signal(value)` provides a reactive `.value` for primitives and replaceable values.
-- `computed(fn)` is lazy, cached, and invalidated by the values it reads.
-- `effect(fn)` recollects its dependencies each run and returns an idempotent stop function.
-- `batch(fn)` runs affected effects once after a synchronous group of writes.
-- `flush()` runs pending effects immediately, including inside a batch or event handler; later writes in the batch are still applied when it ends.
-- `untrack(fn)` runs `fn` and returns its result without subscribing the surrounding effect or computed to anything `fn` reads.
-- `createScope()` owns nested scopes and effect cleanup. `onCleanup(fn)` registers cleanup in the current scope and errors if there is no active scope. A computed value created outside a scope can be stopped with `.dispose()`.
-- Called directly in an effect body, `onCleanup(fn)` is **per run**: `fn` runs before the effect's next run and when the effect stops (or its scope is disposed). This works in unowned effects too. Cleanup registered inside a nested `scope.run()` keeps that scope's lifetime. Like scope cleanups, the returned function runs the cleanup early, at most once.
+| Primitive | Purpose |
+| --- | --- |
+| `state(value)` | Observe plain objects and arrays; preserve cycles and shared references. |
+| `signal(value)` | A reactive `.value` for primitives and replaceable values. |
+| `computed(fn)` | Lazy, cached derived value, invalidated by the values it reads. |
+| `effect(fn)` | Recollect dependencies each run; return an idempotent stop function. |
+| `batch(fn)` | Run affected effects once after a synchronous group of writes. |
+| `flush()` | Run pending effects immediately, even inside a batch or event handler. Later writes still apply when the batch ends. |
+| `untrack(fn)` | Return `fn`'s result without subscribing the surrounding effect/computed to its reads. |
+
+### Give reactive work a lifetime
+
+`createScope()` owns nested scopes and effect cleanup. `onCleanup(fn)` registers
+cleanup in the current scope and errors if there is no active scope. A computed
+created outside a scope can be stopped with `.dispose()`.
+
+When called directly in an effect body, `onCleanup(fn)` is **per run**:
+
+- It runs before the effect's next run and when the effect stops or its scope
+  is disposed. This works in unowned effects too.
+- Cleanup inside a nested `scope.run()` keeps that scope's lifetime.
+- As with scope cleanups, the returned function runs the cleanup early, at most
+  once.
 
 ```js
 effect(() => {
@@ -1421,19 +1824,55 @@ effect(() => {
 });
 ```
 
-Effects run synchronously by default. Explicit batches are synchronous too; there is no hidden next-tick scheduler. Event handlers are already batched; wrap several writes made elsewhere (timers, fetch callbacks, scripts) in `batch()` so lists and bindings update once instead of after every write.
+### Group related changes with `batch`
 
-Array methods that mutate (`push`, `splice`, `sort`, …) run on the underlying array and then notify only the indexes that changed, plus `length` when it changes. Values they return (`pop()`, `shift()`, `splice()` results) and the values passed to a `sort` comparator are the same reactive values that reads return.
+Effects run synchronously by default. Explicit batches are synchronous too;
+there is no hidden next-tick scheduler.
 
-Bindings skip DOM writes when the value has not changed: `b-text`, `${…}` interpolation, and `b-bind-*` with primitive values compare against the last written value, and `b-bind-class` adds or removes only class names that changed, leaving classes added by other code in place. Object values (for example a style object) are always reapplied, since they may have been mutated in place.
+Event handlers are already batched. Wrap several writes made elsewhere
+(timers, fetch callbacks, scripts) in `batch()` so lists and bindings update
+once instead of after every write.
 
-Pending effects run in creation order. An owner (a router outlet, a `b-if` branch, a component, any effect that mounts children in a child scope) is always created before the effects it creates, so when one write affects both, the owner re-renders and disposes its stale children before they could run against the new values.
+### Arrays and efficient DOM updates
 
-An effect never re-triggers itself by writing a value it read in the same run. When something else writes a value the effect already read *while that effect is still running* (a nested effect, or `untrack`ed code such as an auth guard calling `router.navigate()` during route setup), the effect runs again as soon as the current run ends, so the write is never lost. An effect that keeps re-triggering itself this way throws `A Brio effect keeps re-triggering itself.` after 100 consecutive runs.
+Mutating array methods (`push`, `splice`, `sort`, …) run on the underlying array,
+then notify only changed indexes and `length` when it changes. Returned values
+(`pop()`, `shift()`, `splice()` results) and `sort` comparator arguments are the
+same reactive values that reads return.
 
-A write invalidates every dependent computed before any effect re-runs, so effects never observe half-updated derived state, and a computed read later in the same batch or handler already reflects the write. A computed that reads itself, directly or through other computeds, throws `Circular Brio computed dependency.`; it recovers once the cycle is broken.
+| Binding | When Brio writes to the DOM |
+| --- | --- |
+| `b-text`, `${…}`, primitive `b-bind-*` | Only when the value differs from the last written value. |
+| `b-bind-class` | Only changed class names are added/removed; classes added by other code stay. |
+| Object values, such as a style object | Always reapplied, since they may have changed in place. |
+
+### Update ordering and reactive cycles
+
+- **Owners update before their children.** Pending effects run in creation
+  order. An owner (outlet, branch, component, or effect mounting child scopes)
+  is created before its child effects, so it disposes stale children before
+  they can run against new values.
+- **An effect does not trigger itself** by writing a value it read in the same
+  run.
+- **Writes from other code are not lost.** If a nested effect or `untrack`ed
+  code writes an already-read value while an effect is still running, the
+  effect runs again immediately after its current run. One example is an auth
+  guard calling `router.navigate()` during route setup.
+- **Repeated reruns are bounded.** After 100 consecutive such runs, Brio throws
+  `A Brio effect keeps re-triggering itself.`
+- **Derived values stay coherent.** A write invalidates every dependent
+  computed before any effect reruns. A computed read later in the same batch
+  or handler already reflects the write; effects never see half-updated
+  derived state.
+- **Computed cycles surface explicitly.** A computed reading itself directly
+  or through other computeds throws `Circular Brio computed dependency.` It
+  recovers once the cycle is broken.
 
 ### Async resources
+
+Use a resource for data that follows reactive inputs, such as search results.
+It keeps loading, data, and error state together and prevents stale requests
+from overwriting newer results.
 
 `resource(fetcher)` is exported from `@jnreis/briojs` and `@jnreis/briojs/reactivity`, and is
 available as `brio.resource` in the browser bundles. It starts immediately and tracks
@@ -1458,12 +1897,16 @@ await results.refetch(); // Explicit refresh using the current query.
 scope.dispose(); // Stops dependency tracking and aborts pending work.
 ```
 
+#### Requests and cancellation
+
 - The fetcher receives a fresh `AbortSignal` on every execution. Existing
   zero-argument fetchers still work.
 - Starting a new execution aborts the previous one. Only the latest execution
   may publish data, error, or completion, even if a fetcher ignores cancellation.
   An obsolete `refetch()` promise still waits for its own fetcher to settle;
   aborting does not forcibly terminate arbitrary asynchronous work.
+#### Resource data, loading, and errors
+
 - Refreshing retains existing data, clears the previous error, and sets loading
   true. A latest successful execution replaces data (including with undefined).
   A latest failure retains data, records the original error, and clears loading.
@@ -1472,6 +1915,8 @@ scope.dispose(); // Stops dependency tracking and aborts pending work.
   `refetch()` resolves after recording them, rather than rethrowing them.
   Render errors visibly. Aborted superseded/disposed executions do not publish
   errors; other fetcher errors are not silently discarded.
+#### Owning and disposing a resource
+
 - A resource belongs to the scope active at construction. Component setup,
   scoped plugins, or an explicit `scope.run()` can own it; the app's state factory
   alone does not provide an owner scope.
@@ -1481,12 +1926,19 @@ scope.dispose(); // Stops dependency tracking and aborts pending work.
   data/error. No late completion publishes after disposal. Subsequent
   `refetch()` calls reject with a disposed-resource error.
 
+#### Resource boundaries
+
 The utility does not cache, deduplicate, retry, or impose timeouts. Actual
 cancellation requires the fetcher to pass its signal to a cancellable operation.
 Signals expose mutable values; application code should treat resource outputs
 as read-only and perform refreshes through `refetch()`.
 
 ## Step navigation
+
+For a wizard or guided flow, use a small step engine rather than a full router.
+It keeps one current step and lets Back follow the path the user actually took.
+
+### Create a flow and connect the buttons
 
 The optional `@jnreis/briojs/step` entry (browser: `brio.step.min.js`) provides
 `createStepEngine({ initial, steps })`, a small synchronous navigation engine
@@ -1528,6 +1980,8 @@ Keep the engine in `$data` for local use. For intentional sharing, pass the same
 instance through `createApp({ stores: { wizard } })` and read `$stores.wizard`.
 Neither pattern requires wrapping the definitions or engine in `state()`.
 
+### Step engine API
+
 | API | Behavior |
 |-----|----------|
 | `current` | Read-only reactive name of the current step. |
@@ -1539,6 +1993,8 @@ Neither pattern requires wrapping the definitions or engine in `state()`.
 | `back()` | Pop history, without pushing another entry; return `false` without warning when empty. |
 | `reset()` | Restore initial and clear history; return `true` if current or history changed, otherwise `false`. |
 
+### History, cycles, and reset
+
 Back follows the **actual path**, not a configured reverse link. For example,
 Intro → Review → Back returns directly to Intro. After Back, further navigation
 records a new path; there is no Forward stack. History is private and unlimited
@@ -1549,15 +2005,23 @@ no history entry or reactive notification. A self-linked step still has
 `canGoNext === true`. Returning to the initial step through `go()` or a configured
 link **preserves history**; only `reset()` clears it.
 
-Configuration is validated and copied once. Require a nonempty plain-object
-steps record and an explicit registered initial name. Each definition accepts
-only an optional nonempty `next` string naming a registered step; `{}` is terminal.
-Forward references, cycles, and exact literal names are supported. Unknown
-fields, accessors, malformed values, and dangling links throw. Step definitions
-cannot contain `active`, `keep`, `back`, `origin`, or business metadata; keep
-labels/form data separately. Later changes to the input objects do not change
-the engine. npm exports `StepOptions`, `StepDefinition`, `StepRecord`, and
-`StepEngine`.
+### Step configuration rules
+
+Configuration is validated and copied once:
+
+- Supply a nonempty plain-object `steps` record and an explicit registered
+  initial name.
+- Each definition accepts only an optional nonempty `next` string naming a
+  registered step. `{}` is terminal.
+- Forward references, cycles, and exact literal names are supported.
+- Unknown fields, accessors, malformed values, and dangling links throw.
+- Keep labels/form data separately: definitions cannot contain `active`,
+  `keep`, `back`, `origin`, or business metadata.
+- Later changes to the input objects do not change the engine.
+
+npm exports `StepOptions`, `StepDefinition`, `StepRecord`, and `StepEngine`.
+
+### Ownership and application workflow
 
 The facade and its methods are read-only. Navigation publishes a coherent final
 state even when called directly from JavaScript. Constructing an engine creates
@@ -1570,6 +2034,12 @@ guards, or hooks. Validate/await application work before navigating; manage
 loading, errors, and competing requests in that application workflow.
 
 ## HTTP
+
+Use the HTTP helper for common Fetch requests, with query serialization,
+response parsing, and explicit HTTP errors. Keep loading and error presentation
+in your application.
+
+### Make a request and handle its result
 
 Load `brio.http.min.js` after the core for `brio.http` and `brio.HttpError`,
 or import `http` and `HttpError` from `@jnreis/briojs/http` (also exported by `@jnreis/briojs`).
@@ -1597,8 +2067,14 @@ try {
 }
 ```
 
-All five methods use `(url, bodyOrQuery?, options?)`. There is no HEAD helper.
-GET and DELETE accept query parameters; POST, PUT, and PATCH accept bodies.
+All five methods use `(url, bodyOrQuery?, options?)`:
+
+| Method | Second argument |
+| --- | --- |
+| GET, DELETE | Query parameters. |
+| POST, PUT, PATCH | Request body. |
+
+There is no HEAD helper.
 To supply options alone, pass `undefined` as the second argument.
 
 ### Query parameters
@@ -1630,6 +2106,8 @@ DELETE has no body; use native Fetch if an endpoint requires one.
 
 ### Request bodies and options
 
+#### JSON bodies
+
 Plain objects, arrays, numbers, booleans, and null are JSON-serialized for
 POST/PUT/PATCH. Nested values follow native `JSON.stringify` semantics, including
 its omissions and errors; this is not a schema validator. Unsupported top-level
@@ -1637,12 +2115,16 @@ values and serialization yielding undefined reject. An omitted body stays absent
 Brio adds `Content-Type: application/json` only when no content-type was supplied.
 Caller headers are copied, never mutated.
 
+#### Native Fetch bodies
+
 Strings and native Fetch bodies (`FormData`, `URLSearchParams`, `Blob`/`File`,
 `ArrayBuffer`, typed arrays/DataView, and `ReadableStream`) pass through unchanged.
 Buffer-view offsets/lengths are preserved. Brio does not set their content-type:
 Fetch derives it when appropriate. Do not set a multipart content-type manually;
 the browser must generate its boundary. Build form bodies explicitly; a supplied
 content-type does not change how a plain object is serialized.
+
+#### Fetch options and request lifetime
 
 Options accept Fetch's `RequestInit` fields except `method` and `body`, plus
 `parser` and optional `duplex: 'half'` for platforms requiring it for streams.
@@ -1666,15 +2148,21 @@ Media types are case-insensitive and may include parameters. Whitespace-only
 JSON and malformed nonempty JSON reject; Brio does not silently return their text.
 JSON `null` remains null, distinct from an absent response.
 
+#### Choosing a response parser
+
 An explicit `parser: 'json' | 'text' | 'blob' | 'arrayBuffer' | 'formData'`
 always calls the corresponding native Response method, even for 204/205.
 Consequently explicit JSON parsing rejects an empty body. Other native parser
 failures propagate unchanged.
 
+#### HTTP errors versus other failures
+
 Non-OK responses reject with `HttpError` **before parsing**, exposing read-only
 `response` and numeric `status`. The body remains unread so the caller chooses
 how to consume it. Network/abort, serialization, and parsing failures retain
 their original error types; they are not wrapped as HTTP status errors.
+
+#### HTTP response types
 
 TypeScript defaults to unknown response data. `http.get<Item>(url)` returns
 `Promise<Item | undefined>`; explicit `{ parser: 'json' }` returns `Promise<Item>`.
@@ -1684,6 +2172,11 @@ Explicit non-JSON parsers infer their native result types. npm also exports
 `HttpQueryValue`.
 
 ## Form validation
+
+Describe your rules, validate your data, then show the messages in your own UI.
+The helper leaves you in control of when validation runs and how errors appear.
+
+### Validate a set of fields
 
 `validate(data, schema, customRules?)` is a synchronous helper, not a form
 controller. Import it from `@jnreis/briojs/forms` or `@jnreis/briojs`; the optional
@@ -1713,11 +2206,20 @@ if (result !== true) {
 }
 ```
 
-Success is exactly `true`; failure is a field-to-message-array object. Do not
-test the result's truthiness: an error object is also truthy. All declared rules
-run in order, so one field can have several messages. Each rule accepts
+### Read the validation result
+
+| Result | Meaning |
+| --- | --- |
+| `true` | All rules passed. |
+| Field-to-message-array object | Validation failed; each field may have several messages. |
+
+> Check `result !== true`, not truthiness: an error object is truthy too.
+
+All declared rules run in order. Each rule accepts
 `{ name, value?, message? }`. Without a custom message, the fallback is
 `"<field> failed <rule> validation"`.
+
+### Built-in validation rules
 
 | Rule | Meaning |
 | --- | --- |
@@ -1726,6 +2228,8 @@ run in order, so one field can have several messages. Each rule accepts
 | `email` | A basic string email-format check, not verification that an address exists or can receive mail. |
 | `same` | Strict equality with another top-level field named by `value`. |
 | `in` | Membership in the array supplied as `value`, using native `includes` semantics. |
+
+### Add your own rules
 
 Custom rules receive `(value, ruleValue, allData)` and return a boolean. They
 can add rules or override built-ins:
@@ -1738,6 +2242,8 @@ const result = validate({ age: 24 }, {
 });
 ```
 
+### Connecting validation to a form
+
 Unknown rule names throw a `TypeError`; they are not skipped. There is no
 implicit trimming, type coercion of field values, nested-path traversal, async
 validation, or automatic DOM error rendering. For an optional field, omit
@@ -1749,7 +2255,12 @@ Server-side validation is still required.
 
 ## Persistence
 
-Import persistence where needed. Inside component setup, an app plugin, or an explicit reactive scope, disposal removes the value's save effect and cross-tab listener. Outside any scope (for example a module-level `const token = persist('token', '')` shared by several components), the value lives for the life of the page:
+Keep a preference or draft across reloads with `persist()`. It returns reactive
+data you can use in bindings just like other state.
+
+### Persist a component's preferences
+
+Import persistence where needed:
 
 ```js
 import { createApp } from '@jnreis/briojs';
@@ -1773,16 +2284,51 @@ createApp().component('preferences-panel', {
 }).mount('#preferences');
 ```
 
-Objects and arrays are reactive directly. Primitive values are returned as signals and use `.value`. The default adapter is `localStorage`; select `sessionStorage` or pass a `getItem`/`setItem` adapter with `{ storage }`. JSON serialization errors and storage errors are surfaced. Cross-tab updates are applied to the existing reactive value (array roots are replaced in place) and saving continues afterwards. A remote value whose shape differs from the local one (array vs. object, or a non-object for an object root) is ignored.
+### Values and storage adapters
 
-Use `{ storage: 'session' }` for session storage, `{ storage: 'local' }` for
-explicit local storage, or `{ storage: adapter }` for a custom adapter. Persistence
-uses JSON, not encryption; do not treat browser storage as a secure credential
-vault or an authoritative server-side data store.
+| Value | How to use it |
+| --- | --- |
+| Object or array | Reactive directly; read/write its properties or items. |
+| Primitive | Returned as a signal; use `.value`. |
+
+| Storage option | Adapter |
+| --- | --- |
+| Omitted, or `{ storage: 'local' }` | `localStorage` (default). |
+| `{ storage: 'session' }` | `sessionStorage`. |
+| `{ storage: adapter }` | Your `getItem`/`setItem` adapter. |
+
+JSON serialization errors and storage errors are surfaced.
+
+### Persistence lifetime and cross-tab updates
+
+- Inside component setup, an app plugin, or an explicit reactive scope,
+  disposal removes the save effect and cross-tab listener.
+- Outside any scope, a value lives for the life of the page. For example,
+  a module-level `const token = persist('token', '')` may be shared by several
+  components.
+- Cross-tab updates apply to the existing reactive value; array roots are
+  replaced in place. Saving continues afterwards.
+- A remote value with a different shape is ignored: array versus object, or a
+  non-object for an object root.
+
+> Persistence uses JSON, not encryption. Browser storage is not a secure
+> credential vault or an authoritative server-side data store.
 
 ## Trusted HTML and expression security
 
-Directive expressions are ordinary strict-mode JavaScript compiled and cached at runtime with `new Function`, without `with`. They are authored application code, **not a sandbox**; the approach is incompatible with a strict CSP that disallows `unsafe-eval`. Never render untrusted content as a Brio template or directive expression.
+The simplest safe default is to display user content as text and keep Brio
+templates under your application's control.
+
+### Treat expressions as application code
+
+Directive expressions are ordinary strict-mode JavaScript, compiled and cached
+at runtime with `new Function`, without `with`.
+
+> Expressions are **not a sandbox**. Never render untrusted content as a Brio
+> template or directive expression. Runtime compilation is incompatible with
+> a strict CSP that disallows `unsafe-eval`.
+
+### Choose text or markup deliberately
 
 `b-text` evaluates its source expression and writes the result as literal text.
 Tags and `${...}` inside returned values are never interpreted. Authored HTML
@@ -1798,6 +2344,14 @@ contextual scripts. Both sources remain reactive:
 
 Use **`b-text` for untrusted/user-provided text**. Inert HTML is not sanitized:
 HTML attributes and other browser behavior can still be dangerous.
+
+| Content | Brio behavior |
+| --- | --- |
+| `b-text` or the value returned by authored `${...}` interpolation | Literal text; tags and `${...}` in the returned value are not interpreted. |
+| `b-html` | Parses HTML, but leaves Brio directives, interpolation, and contextual scripts inactive. Not sanitization. |
+| `b-html.hydrate` | Activates a Brio template only when explicitly marked with `trustedHTML()`. |
+
+### Activate only trusted dynamic templates
 
 To activate a dynamic Brio template, explicitly use `b-html.hydrate` with a
 `trustedHTML()` value. Ordinary strings, null, and undefined are rejected in this
@@ -1822,6 +2376,11 @@ HTML does not necessarily make it safe to execute as a Brio template.
 
 ## Errors
 
+When something goes wrong, start with the error message: it points back to the
+HTML or JavaScript that needs attention.
+
+### Find the failing expression
+
 Brio errors say where they happened. Expression failures name the expression,
 the directive, the element (tag, id, and up to two classes), the nearest
 enclosing custom element, and the original error:
@@ -1830,8 +2389,16 @@ enclosing custom element, and the original error:
 Brio expression failed: "$data.user.name" in b-text on <span.name> inside <user-card>: TypeError: Cannot read properties of undefined (reading 'name')
 ```
 
-- `error.cause` is the original error, `error.directive` the attribute name,
-  and `error.element` the element, which you can inspect in devtools.
+### Inspect the error details
+
+| Property | Contains |
+| --- | --- |
+| `error.cause` | Original expression error. |
+| `error.directive` | Attribute name. |
+| `error.element` | Element to inspect in devtools. |
+
+### Structural errors and effect failures
+
 - Brio's own structural errors gain the element being hydrated or updated,
   e.g. `b-ref requires a nonempty literal name. (at <p.note>)`.
 - Effects that fail when state changes are reported together from the write:
@@ -1843,6 +2410,11 @@ Brio expression failed: "$data.user.name" in b-text on <span.name> inside <user-
 
 ## Devtools
 
+Use the development inspector to see app state, mounted roots, and effect
+counts while you build. Keep it out of production.
+
+### Open the inspector
+
 Import the separate development entry before creating apps, then mount its inspector:
 
 ```js
@@ -1851,14 +2423,26 @@ import { devtoolsPanel } from '@jnreis/briojs/devtools';
 const stopInspector = devtoolsPanel(document.querySelector('#brio-tools'));
 ```
 
-The inspector tracks app state snapshots, mounted roots, and reactive effect counts. Call the returned function to remove the panel and its subscription. The main entry also exports devtools functions, but does not activate tracking automatically; unused tooling can be tree-shaken.
+### Inspector cleanup and activation
+
+- The inspector tracks app state snapshots, mounted roots, and reactive effect
+  counts.
+- Call the returned function to remove the panel and its subscription.
+- The main entry also exports devtools functions, but does not activate tracking
+  automatically. Unused tooling can be tree-shaken.
 
 With the development browser bundle, use
 `brio.devtoolsPanel(document.querySelector('#brio-tools'))` directly.
 
 ## App and lifecycle API
 
+Mount behavior where you need it, and release it before its host removes the
+DOM. Brio's lifecycle APIs keep those two steps explicit.
+
 ### Managed dynamic insertion
+
+Use `app.insert()` when new content needs Brio bindings and owned cleanup,
+rather than writing HTML into a managed subtree yourself.
 
 ```js
 const handle = app.insert('#items', 'append',
@@ -1867,12 +2451,20 @@ const handle = app.insert('#items', 'append',
 handle.remove();
 ```
 
-`app.insert(target, placement, content, options?)` accepts a node or selector;
-placements are `before`, `after`, `prepend`, `append`, `replaceWith`,
-`replaceChildren`, and `textContent`. HTML strings are automatically trusted
-and hydrated. Nodes and document fragments are cloned, leaving the originals
-untouched. Multiple top-level nodes and structural directives are supported.
-`textContent` inserts literal text without parsing HTML or evaluating interpolation.
+`app.insert(target, placement, content, options?)` accepts a node or selector.
+
+| Placement | Result |
+| --- | --- |
+| `before`, `after` | Insert beside the target. |
+| `prepend`, `append` | Insert inside the target. |
+| `replaceWith`, `replaceChildren` | Replace the target or its children. |
+| `textContent` | Insert literal text; no HTML parsing or interpolation evaluation. |
+
+HTML strings are automatically trusted and hydrated. Nodes and document
+fragments are cloned, leaving originals untouched. Multiple top-level nodes
+and structural directives are supported.
+
+#### Insertion targets and expression helpers
 
 The app method is `insert` (without `$`); the matching `$insert` helper is available in directive expressions and `$context.$insert`
 in scripts. Its selectors are restricted to the originating mount root.
@@ -1882,6 +2474,8 @@ also work for child placements on managed detached `b-if.detach` elements and te
 elements. A contextual helper expires when its mount is unmounted, even if the
 same root element is mounted again.
 
+#### Inserted context, handles, and cleanup
+
 Child placements inherit the target's context; sibling placements inherit its
 parent's context. `{ data }` creates local reactive state with inherited state
 accessible through `$data.$parent`; loop context remains available through `$for`.
@@ -1889,6 +2483,8 @@ Inserted content is owned by the destination scope, not the calling button/scrip
 The handle exposes current `nodes`, `removed`, and an idempotent `remove()`.
 Removal, replacement, enclosing scope disposal, and unmount clean up bindings,
 listeners, and nested insertions. Raw DOM removal does not trigger cleanup.
+
+#### Insertion ownership rules
 
 Mount roots cannot be replaced or used for sibling placements. Containers owned
 by `b-ignore`, `b-text`, `b-html`, or router outlets reject child insertion rather
@@ -1900,13 +2496,27 @@ insert into the row itself or outside the loop instead. Replacement is destructi
 is disposed first; a hydration failure removes the failed insertion and throws,
 but does not restore the old content.
 
+#### Trust and insertion
+
 Use only templates you trust as application code. Automatic `trustedHTML` is an
 ergonomic trust assertion, not sanitization; inserted expressions and scripts
 execute code. Sanitizing HTML alone does not make it a trusted Brio template.
 
 ### Low-level dynamic hydration
 
-ESM imports expose the low-level APIs `hydrateRoot(element, context, runtime)` and `hydrateNode(node, context, runtime)`: supply an explicit context (including `$data`), a runtime with `app`, `state`, and `components`, and invoke hydration inside `createScope().run(...)`. Dispose that scope before removing or replacing the hydrated content; raw DOM removal does not dispose bindings or listeners. Hydrate only new content, not an already hydrated subtree. Prefer `app.mount()` for independent roots, since it manages runtime and cleanup automatically.
+Prefer `app.mount()` for independent roots: it manages runtime and cleanup
+automatically. For integrations needing direct control, ESM imports expose
+`hydrateRoot(element, context, runtime)` and `hydrateNode(node, context, runtime)`.
+
+1. Supply an explicit context, including `$data`.
+2. Supply a runtime with `app`, `state`, and `components`.
+3. Invoke hydration inside `createScope().run(...)`.
+4. Dispose that scope before removing or replacing the hydrated content.
+
+Hydrate only new content, not an already hydrated subtree. Raw DOM removal does
+not dispose bindings or listeners.
+
+### App configuration and methods
 
 ```ts
 createApp({
@@ -1918,13 +2528,15 @@ createApp({
 })
 ```
 
-- `app.component(name, definition)` registers a reusable component; names must be valid hyphenated custom-element names.
-- `app.plugin(plugin)` installs a plugin once per app.
-- `app.mount(elementOrSelector)` mounts one independently disposable root and returns `{ root, unmounted, unmount() }`.
-- `app.unmount(options?)` unmounts all roots; the app remains mountable.
-- `app.dispose(options?)` permanently disposes the app and its scopes.
-- `app.state` is shared by roots mounted from that app.
-- `app.stores` is a fixed read-only mapping of explicitly supplied stores; no automatic reactivity or persistence.
+| API | Purpose |
+| --- | --- |
+| `app.component(name, definition)` | Register a reusable component with a valid hyphenated custom-element name. |
+| `app.plugin(plugin)` | Install a plugin once per app. |
+| `app.mount(elementOrSelector)` | Mount one independently disposable root; returns `{ root, unmounted, unmount() }`. |
+| `app.unmount(options?)` | Unmount all roots; leave the app mountable. |
+| `app.dispose(options?)` | Permanently dispose the app and its scopes. |
+| `app.state` | State shared by this app's mounted roots. |
+| `app.stores` | Fixed read-only mapping of explicitly supplied stores; no automatic reactivity or persistence. |
 
 The mount root is owned by Brio: unmount restores its original attributes and children by default. Put `b-if` and `b-for` on descendants, not on the mount root.
 
@@ -1946,6 +2558,8 @@ app.unmount({ restore: false });   // Cleanup all roots; app remains reusable.
 app.dispose({ restore: false });   // Cleanup all roots and permanently close the app.
 ```
 
+#### What cleanup releases
+
 Root-owned cleanup always runs, including listeners, effects, observers, refs,
 and resources. App plugins and their resources live until app disposal, not
 individual root unmounting. `{ restore: false }` skips original-attribute/child restoration;
@@ -1954,11 +2568,15 @@ The resulting DOM is not a reusable template. Mount fresh server markup for
 the next page. Teardown is idempotent; all roots are released even when cleanup
 reports errors. Failed mounting still restores its original markup.
 
+#### Page swaps and persistent roots
+
 Before a client-side swap, dispose apps belonging to outgoing roots. After the
 swap, mount fresh roots. For a persistent island, preserve the actual root
 element and its existing mount; do not dispose or mount it again. DOM IDs do not
 transfer state. Keep persistent and page-local apps separate when they need
 independent app/plugin lifetimes.
+
+#### Browser back/forward cache
 
 For ordinary document navigation, no pagehide handler is required. Do not
 unconditionally dispose on `pagehide`: `event.persisted === true` means the
@@ -1969,10 +2587,17 @@ for non-cached navigation, guard `!event.persisted` and do not use `{ once: true
 
 ### Astro islands
 
+Use the optional adapter when Astro owns page navigation and Brio owns the
+interactive islands. Register app factories once; the adapter handles discovery
+and page-swap cleanup.
+
 `@jnreis/briojs/astro` is an optional **client integration**, exported from the same
 package. It requires no Astro server plugin, component wrapper, separate package,
-or addition to the Brio browser core. Install it once from a shared layout's
-processed client script:
+or addition to the Brio browser core.
+
+#### Register island factories
+
+Install the adapter once from a shared layout's processed client script:
 
 ```astro
 <script>
@@ -1996,6 +2621,8 @@ processed client script:
 </script>
 ```
 
+#### Mark the island roots
+
 Declare roots by registered name; sibling instances may use the same name:
 
 ```html
@@ -2003,6 +2630,8 @@ Declare roots by registered name; sibling instances may use the same name:
   <button b-on-click="$data.count++" b-text="$data.count">5</button>
 </section>
 ```
+
+#### Return one fresh app per island
 
 Each factory receives `(root, props)` and returns a **fresh, unmounted** Brio app.
 Factories may ignore either argument. Each island owns its entire app, including
@@ -2025,13 +2654,23 @@ const createCounter: AstroAppFactory = (_root, props) => {
 export default createCounter;
 ```
 
-Registry entries are loaded code, not app instances. Eager entries are ordinary
-factory functions. `lazyApp(() => import(...))` loads a module only when a
-matching island is discovered; the module must default-export its factory.
-One loader promise is shared per lazy entry during an installation, while every
-root gets its own app. This is **code loading**, not visibility/idle/interaction
-scheduling. Authored server HTML remains until mounting; provide useful static
-content if desired. A module failure is cached without automatic retries.
+#### Eager and lazy code loading
+
+Registry entries are loaded code, not app instances.
+
+| Entry | Loading behavior |
+| --- | --- |
+| Ordinary factory function | Eager: the factory code is already loaded. |
+| `lazyApp(() => import(...))` | Loads when a matching island is discovered; the module must default-export its factory. |
+
+One loader promise is shared per lazy entry during an installation, but every
+root gets its own app. This is **code loading**, not visibility, idle, or
+interaction scheduling.
+
+Authored server HTML remains until mounting; provide useful static content if
+desired. A module failure is cached without automatic retries.
+
+#### Island metadata and props
 
 `b-app` and `b-props` are adapter metadata, not core directives:
 
@@ -2045,6 +2684,8 @@ content if desired. A module failure is cached without automatic retries.
 - Props are passed to the factory, not automatically merged into app state.
   Runtime HTML props require validation; TypeScript does not type-check the HTML.
 - Regular `b-bind-*` attributes keep their normal DOM-binding meaning.
+
+#### Passing server data safely
 
 The expression uses Brio's trusted JavaScript evaluator, not a sandbox or JSON
 parser. Do not interpolate untrusted code into it. Astro frontmatter runs on the
@@ -2064,12 +2705,16 @@ JSON object text is also a valid object expression here; Brio itself still uses
 JavaScript evaluation. Follow the host's safe serialization rules, and never
 use HTML string concatenation with untrusted content.
 
+#### Astro navigation and persistent islands
+
 With Astro ClientRouter, the adapter releases outgoing apps before swaps and
 discovers incoming roots on `astro:page-load`. Repeated events never remount
 existing roots. Roots at or inside a matching `transition:persist` boundary keep
 their actual app, DOM identity, and original props. Incoming props do not reset
 them. If the boundary disappears, their apps are disposed. Use unique Astro
 persistence names and leave Astro in charge of moving the preserved DOM.
+
+#### Pending loads and island errors
 
 Pending lazy initialization survives when its actual root is preserved.
 Otherwise it is abandoned before the factory is called. Dynamic imports cannot
@@ -2080,12 +2725,16 @@ on repeated page-load events. Exceptions thrown by `onError` are surfaced as
 uncaught errors. Invalid configuration and duplicate active installation throw
 synchronously.
 
+#### Disposing the Astro integration
+
 `integration.dispose()` is idempotent: it unregisters host listeners, abandons
 pending initialization, and disposes every app, restoring its authored snapshot.
 Cleanup failures are thrown after releasing the other apps and installation
 lock. Reinstallation is allowed after disposal. Outgoing page swaps instead use
 `restore: false`. There is no document MutationObserver or public scan/retry API:
 DOM changes outside Astro navigation remain the host's responsibility.
+
+#### Compatibility and the runnable fixture
 
 The adapter leaves back/forward-cached documents live. It is tested against
 Astro 5.18.2 and its generated `data-astro-transition-persist` marker; reverify
@@ -2101,25 +2750,34 @@ and browser back/forward restoration.
 
 ## Package entry points
 
-The package exports:
+Import the capabilities your app needs. Optional tools have dedicated entries,
+and the reactivity entry works without a DOM.
 
-- `@jnreis/briojs`: app, components, DOM enhancement, trusted HTML, and core types.
-- `@jnreis/briojs/reactivity`: DOM-independent state, signals, effects, computed values, batching, async resources, and scopes.
-- `@jnreis/briojs/persistence`: local/session/custom storage, with scope cleanup where owned.
-- `@jnreis/briojs/router`: optional history or hash router.
-- `@jnreis/briojs/http`: Fetch helpers and `HttpError`.
-- `@jnreis/briojs/forms`: validation rules and `validate`.
-- `@jnreis/briojs/step`: step navigation.
-- `@jnreis/briojs/money-mask`: the optional `moneyMask` formatter.
-- `@jnreis/briojs/devtools`: development-only instrumentation and inspector panel.
-- `@jnreis/briojs/astro`: optional named-island lifecycle integration and lazy code loading.
-- `@jnreis/briojs/dist/*`: built files for self-hosted standalone browser scripts.
+### Import map
+
+| Entry | Includes |
+| --- | --- |
+| `@jnreis/briojs` | App, components, DOM enhancement, trusted HTML, and core types. |
+| `@jnreis/briojs/reactivity` | DOM-independent state, signals, effects, computed values, batching, async resources, and scopes. |
+| `@jnreis/briojs/persistence` | Local/session/custom storage, with scope cleanup where owned. |
+| `@jnreis/briojs/router` | Optional history or hash router. |
+| `@jnreis/briojs/http` | Fetch helpers and `HttpError`. |
+| `@jnreis/briojs/forms` | Validation rules and `validate`. |
+| `@jnreis/briojs/step` | Step navigation. |
+| `@jnreis/briojs/money-mask` | Optional `moneyMask` formatter. |
+| `@jnreis/briojs/devtools` | Development-only instrumentation and inspector panel. |
+| `@jnreis/briojs/astro` | Optional named-island lifecycle integration and lazy code loading. |
+| `@jnreis/briojs/dist/*` | Built files for self-hosted standalone browser scripts. |
+
+### Runtime and browser requirements
 
 All JavaScript entry points are ES modules; there is no CommonJS build. Runtime
 dependencies are not required. Brio enhances client-rendered DOM rather than
 providing server-side rendering or hydration of framework-generated server output.
 Its reactivity entry can run without a DOM. Modern browsers are required; optional
 observer directives and native CSS features depend on browser support.
+
+### References for older applications
 
 For a private application built with an older Brio runtime, use the
 [legacy migration kit](./ai/brio-migrate-1-1-5/references/migration.md).

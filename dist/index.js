@@ -1,7 +1,7 @@
 var __defProp = Object.defineProperty;
 var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
 var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "symbol" ? key + "" : key, value);
-import { R as ReflectApi, $ as $PARENT, c as createTypeError, p as includesItem, d as deleteItem, b as createError, g as getLength, T as TELEPORT, a as arrayFrom, l as ownKeys, G as GET_OWN_PROPERTY_DESCRIPTOR, o as objectConstructor, n as createSyntaxError, t as startsWith, m as isString, k as isArray, f as isObjectType, e as objectEntries, q as objectKeys, u as TEMPLATE, A as ATTRIBUTES, j as isInstanceOf, B as B_TELEPORT, r as removeElement, h as isNumber, i as isFunction, v as isBoolean, w as snapshotList } from "./native-DNTl55LH.js";
+import { R as ReflectApi, $ as $PARENT, c as createTypeError, p as includesItem, d as deleteItem, b as createError, g as getLength, T as TELEPORT, a as arrayFrom, l as ownKeys, G as GET_OWN_PROPERTY_DESCRIPTOR, o as objectConstructor, n as createSyntaxError, t as startsWith, j as isInstanceOf, m as isString, k as isArray, f as isObjectType, e as objectEntries, q as objectKeys, u as TEMPLATE, A as ATTRIBUTES, B as B_TELEPORT, r as removeElement, h as isNumber, i as isFunction, v as isBoolean, w as snapshotList } from "./native-DNTl55LH.js";
 import { b as getChildNodes, g as getAttribute, c as removeAttribute, a as addEventListener, r as removeEventListener, d as removeChild, e as getParent, f as getOwnerDocument, h as getNodeType, i as getNextSibling, j as insertBefore } from "./native-Di2Lf1wo.js";
 import { e as evaluate, a as execute, b as emptyContextValues, d as createExpressionScope, f as assign, g as createProvidedValues, h as evaluateFunction, c as copyContextValues } from "./context-values-BXAsS55z.js";
 import { j as getCurrentScope, a as combinedError, o as onCleanup, b as batch, e as effect, c as causedError, k as errorText, n as createScope, p as onDispose, h as directiveError, s as setScopeNode, r as locate, u as untrack, t as notifyRootMounted, v as flush, w as notifyAppDisposed, x as notifyAppCreated, y as notifyRootUnmounted } from "./effect-Hm6a3OX7.js";
@@ -279,13 +279,20 @@ function handleBind(element, attrName, expression, modifiers, context) {
   const target = resolveBindTarget(element, rawTarget, forceProp);
   let last;
   let written = false;
-  effect(() => {
+  const start = () => effect(() => {
     const value = evaluate(expression, context, attrName, element);
     if (written && objectConstructor.is(value, last) && (value === null || !isObjectType(value))) return;
     setBoundValue(element, target, value, forceProp);
     last = value;
     written = true;
   });
+  if (target === "value" && isInstanceOf(element, HTMLSelectElement)) {
+    const observer = new MutationObserver(() => written && setBoundValue(element, target, last, forceProp));
+    observer.observe(element, { childList: true, subtree: true });
+    onCleanup(() => observer.disconnect());
+    return start;
+  }
+  start();
 }
 const noModifiers = objectConstructor.freeze({});
 const parsedNames = /* @__PURE__ */ new Map();
@@ -312,9 +319,10 @@ const keyNames = {
   down: "ArrowDown",
   left: "ArrowLeft",
   right: "ArrowRight",
-  delete: "Delete Backspace"
+  delete: "Delete,Backspace"
 };
 const systemKeys = ["ctrl", "alt", "shift", "meta"];
+let dispatching;
 const eventModifiers = [
   "prevent",
   "stop",
@@ -350,10 +358,11 @@ function handleOn(element, attrName, expression, modifiers, context) {
       throw createSyntaxError(`Unknown event modifier ".${name}" on "${attrName}". Supported: .${eventModifiers.join(", .")}.`);
   const keys2 = names2.flatMap((name) => {
     var _a;
-    return ((_a = keyNames[name]) == null ? void 0 : _a.split(" ")) ?? [];
+    return ((_a = keyNames[name]) == null ? void 0 : _a.split(",")) ?? [];
   });
   const required = systemKeys.filter((name) => modifiers[name]);
   let target = element;
+  const opener = modifiers.outside ? dispatching ?? globalThis.event : void 0;
   if (modifiers.outside) target = document;
   else if (modifiers.window) target = window;
   else if (modifiers.document) target = document;
@@ -365,11 +374,17 @@ function handleOn(element, attrName, expression, modifiers, context) {
     if (modifiers.prevent) event.preventDefault();
     if (modifiers.stop) event.stopPropagation();
     if (modifiers.self && event.target !== element) return;
-    if (modifiers.outside && (element.contains(event.target) || !element.isConnected)) return;
+    if (modifiers.outside && (event === opener || element.contains(event.target) || !element.isConnected)) return;
     if (modifiers.once) removeEventListener(target, rawTarget, handler, options);
-    const invoke = () => batch(() => {
-      execute(expression, context, event, attrName, element);
-    });
+    const invoke = () => {
+      const previous = dispatching;
+      dispatching = event;
+      try {
+        batch(() => execute(expression, context, event, attrName, element));
+      } finally {
+        dispatching = previous;
+      }
+    };
     if (modifiers.debounce) {
       clearTimeout(debounceTimer);
       debounceTimer = setTimeout(invoke, 150);
@@ -1928,7 +1943,7 @@ function mountRouterOutlet(element, context, runtime, hydrateNodeFn) {
     const key = route && `${route.component} ${route.path}`;
     if (key === mountedKey) return;
     clear();
-    if (!route) return;
+    if (!(route == null ? void 0 : route.component)) return;
     const definition = runtime.components.get(route.component);
     if (!definition) throw createError(`No component registered for route "${route.component}".`);
     const el = getOwnerDocument(element).createElement(route.component);
@@ -2091,7 +2106,7 @@ function hydrateOwnedNode(node, parentContext, runtime) {
   }
   let hasText = false;
   let hasHtml = false;
-  let startModel;
+  const afterChildren = [];
   const transitionAttr = attributes.find((_, index) => transitionNames.has(parsed[index].baseName));
   if (transitionAttr) prepareTransition(element, transitionAttr.value);
   for (let index = 0; index < attributes.length; index++) {
@@ -2111,10 +2126,12 @@ function hydrateOwnedNode(node, parentContext, runtime) {
       }
       removeAttribute(element, attrName);
     } else if (startsWith(baseName, "b-bind-") || startsWith(baseName, "bind-")) {
-      handleBind(element, baseName, attrValue, modifiers, context);
+      const start = handleBind(element, baseName, attrValue, modifiers, context);
+      if (start) afterChildren.push(start);
       removeAttribute(element, attrName);
     } else if (baseName === "b-model" || baseName === "model") {
-      startModel = handleModel(element, attrValue, modifiers, context);
+      const start = handleModel(element, attrValue, modifiers, context);
+      if (start) afterChildren.push(start);
       removeAttribute(element, attrName);
     } else if (baseName === "b-text" || baseName === "text") {
       getNodeOwner(element).controlsChildren = true;
@@ -2151,7 +2168,7 @@ function hydrateOwnedNode(node, parentContext, runtime) {
   if (!hasText && !hasHtml && tagName !== "script") {
     hydrateChildren(element, context, runtime);
   }
-  startModel == null ? void 0 : startModel();
+  afterChildren.forEach((start) => start());
 }
 function hydrateRoot(root, context, runtime) {
   hydrateNode(root, context, runtime);

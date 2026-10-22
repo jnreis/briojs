@@ -673,6 +673,15 @@ action. `.prevent`/`.stop` execute before `.self`/`.outside` filtering, so those
 filters do not prevent the cancellation/propagation side effect. Component
 hosts accept the same modifiers.
 
+`.outside` ignores the event that was being dispatched when its element was
+created, so a menu opened by a click is not closed by that same click
+bubbling up to `document`:
+
+```html
+<button b-on-click="$data.open = !$data.open">Menu</button>
+<div role="menu" b-if="$data.open" b-on-click.outside="$data.open = false">…</div>
+```
+
 Each event handler runs inside `batch()`: several writes produce one coherent
 update when the handler returns. Consequently, DOM that depends on those writes
 (a new `b-if` branch, its `$ref` entries, bound text/attributes) does not exist
@@ -1221,8 +1230,11 @@ const router = createRouter([
 ], { guard: to => to.path !== '/maintenance' });
 ```
 
-- A route needs a `component`, a `redirect`, or both (`redirect` wins).
-  `redirect` is a path or a function of the attempted `RouteMatch`.
+- A route may have a `component`, a `redirect` (which wins), or neither.
+  `redirect` is a path or a function of the attempted `RouteMatch`. A route with
+  neither still matches, updates `$route`, and intercepts links, but leaves the
+  outlet empty: useful when the page is permanent markup and only some URLs add
+  something, such as `{ path: '/' }` next to `{ path: '/card/:id', component: 'card-dialog' }`.
 - A `guard(to)` returns `true` to allow, `false` to block, or a path to
   redirect to. The global `guard` option runs first, then the route's own guard.
   Blocked links/`navigate()` calls leave history unchanged and return `false`;

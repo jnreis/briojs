@@ -145,6 +145,10 @@ metadata on `main`, through commit `d868d43`.
 
 ### Fixed
 
+- The `.space` key modifier never matched: key lists were split on spaces, so `" "` became two empty names.
+- `.outside` no longer fires for the event that created its element, so a menu opened by a click is not closed by that click reaching `document`.
+- `b-bind-value` on a `<select>` whose options come from `b-for` selects the bound option: it applies after the
+  children render and re-applies when options change, like `b-model`. It used to select the first option.
 - A write that re-triggers an effect while it is running (for example a route
   guard calling `router.navigate()` while the outlet mounts the guarded page)
   re-runs the effect after the current run instead of being dropped; the outlet
@@ -184,6 +188,7 @@ metadata on `main`, through commit `d868d43`.
   instead of silently becoming attributes.
 
 ### Added
+- Routes without a `component` or `redirect`: they match, update `$route`, and leave the outlet empty (for permanent page content with URL-addressable overlays).
 - Router route state: `router.route` (reactive `matched`, `component`, `path`, `params`, `query`, `hash`, `fullPath`), `$route` in templates, and `route` in component setup.
 - Router guards (`guard` per route and as a global option) returning `true`, `false`, or a redirect path. Guards are reactive: they re-run when state they read changes, e.g. on sign-out.
 - Redirect routes (`{ path, redirect: '/x' | to => path }`), a single `{ path: '*' }` fallback route, and a 10-hop redirect-loop error.
@@ -226,7 +231,7 @@ metadata on `main`, through commit `d868d43`.
   Brio's structural errors name the element; aggregated effect failures list
   each failure.
 - Real-world test apps under `tests/apps/` (counter, temperature converter,
-  conditional form, TodoMVC, 7GUIs, large table, data dashboard, RealWorld/Conduit), each with a JSDOM suite
+  conditional form, TodoMVC, 7GUIs, large table, data dashboard, RealWorld/Conduit, Kanban board), each with a JSDOM suite
   that drives user flows end to end.
 
 ### Documentation

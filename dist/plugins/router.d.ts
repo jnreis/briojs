@@ -17,6 +17,7 @@ export type RouteGuard = (to: RouteMatch) => boolean | string;
 export type RouteDefinition = {
     /** `/static`, `/items/:id`, or `*` for a fallback that matches every other path. */
     path: string;
+    /** Rendered by `b-router-outlet`; without one (and no redirect) the route matches and the outlet stays empty. */
     component?: string;
     redirect?: string | ((to: RouteMatch) => string);
     guard?: RouteGuard;

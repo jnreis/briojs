@@ -322,7 +322,21 @@ for (const core of ['brio.min.js', 'brio.dev.min.js']) {
         assert.equal(click(window, '/elsewhere'), false, 'outside the base still belongs to the server');
         assert.equal(router.match('/app/x').component, 'missing-page');
         assert.throws(() => window.brio.createRouter([{ path: '*', component: 'a-b' }, { path: '*', component: 'c-d' }]), /Duplicate/);
-        assert.throws(() => window.brio.createRouter([{ path: '/x' }]), /component name or a redirect/);
+        assert.throws(() => window.brio.createRouter([{ path: '/x', component: '' }]), /non-empty component name/);
+    });
+
+    test(`${core}: a route without a component matches, updates $route, and leaves the outlet empty`, t => {
+        const { window, router, page, text, start } = routedApp(t, 'https://brio.test/board',
+            () => [{ path: '/board' }, { path: '/board/card/:id', component: 'card-page' }]);
+        page('card-page', '<b b-text="\'card \' + $route.params.id"></b>');
+        start();
+        const outlet = window.document.querySelector('nav').nextElementSibling;
+        assert.equal(outlet.children.length, 0);
+        assert.equal(router.match('/board').component, '');
+        assert.equal(click(window, '/board/card/7'), true);
+        assert.equal(text('b'), 'card 7');
+        assert.equal(click(window, '/board'), true, 'component-less routes intercept links too');
+        assert.equal(outlet.children.length, 0, 'leaving the component route clears the outlet');
     });
 
     test(`${core}: hash mode routes through the fragment and leaves in-page anchors alone`, async t => {

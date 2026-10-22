@@ -13,19 +13,19 @@
   },
   "browser": {
     "brio.min.js": {
-      "raw": 56099,
-      "gzip": 21217,
-      "brotli": 19221
+      "raw": 56445,
+      "gzip": 21329,
+      "brotli": 19300
     },
     "brio.dev.min.js": {
-      "raw": 58011,
-      "gzip": 22032,
-      "brotli": 19944
+      "raw": 58357,
+      "gzip": 22148,
+      "brotli": 20042
     },
     "brio.router.min.js": {
-      "raw": 6320,
-      "gzip": 2802,
-      "brotli": 2538
+      "raw": 6345,
+      "gzip": 2807,
+      "brotli": 2551
     },
     "brio.persistence.min.js": {
       "raw": 1896,
@@ -71,9 +71,9 @@
         "http-entry.js",
         "devtools-DxlDsvKn.js"
       ],
-      "raw": 167196,
-      "gzip": 45307,
-      "brotli": 39167
+      "raw": 167980,
+      "gzip": 45480,
+      "brotli": 39325
     },
     "reactivity": {
       "files": [
@@ -96,9 +96,9 @@
         "state-TMgcg8XY.js",
         "effect-Hm6a3OX7.js"
       ],
-      "raw": 35662,
-      "gzip": 10664,
-      "brotli": 9404
+      "raw": 35701,
+      "gzip": 10671,
+      "brotli": 9413
     },
     "persistence": {
       "files": [
@@ -176,17 +176,17 @@
     },
     "all-entries-deduplicated": {
       "files": 16,
-      "raw": 174543,
-      "gzip": 47644,
-      "brotli": 41168
+      "raw": 175327,
+      "gzip": 47817,
+      "brotli": 41326
     }
   },
   "consumers": {
     "app-main": {
       "files": 1,
-      "raw": 54974,
-      "gzip": 20758,
-      "brotli": 18811
+      "raw": 55320,
+      "gzip": 20878,
+      "brotli": 18902
     },
     "signal-main": {
       "files": 1,
@@ -214,15 +214,15 @@
     },
     "router-main": {
       "files": 1,
-      "raw": 12248,
-      "gzip": 5331,
-      "brotli": 4886
+      "raw": 12273,
+      "gzip": 5342,
+      "brotli": 4888
     },
     "router-subpath": {
       "files": 1,
-      "raw": 12248,
-      "gzip": 5331,
-      "brotli": 4886
+      "raw": 12273,
+      "gzip": 5342,
+      "brotli": 4888
     },
     "http-main": {
       "files": 1,
@@ -286,15 +286,15 @@
     },
     "devtools-main": {
       "files": 1,
-      "raw": 56229,
-      "gzip": 21247,
-      "brotli": 19294
+      "raw": 56575,
+      "gzip": 21370,
+      "brotli": 19383
     },
     "devtools-subpath": {
       "files": 1,
-      "raw": 56234,
-      "gzip": 21256,
-      "brotli": 19270
+      "raw": 56580,
+      "gzip": 21371,
+      "brotli": 19328
     },
     "astro-subpath": {
       "files": 1,
@@ -304,9 +304,9 @@
     },
     "app-with-tools": {
       "files": 1,
-      "raw": 64137,
-      "gzip": 24282,
-      "brotli": 22013
+      "raw": 64508,
+      "gzip": 24399,
+      "brotli": 22105
     }
   }
 }

@@ -27,6 +27,7 @@ export type RouteGuard = (to: RouteMatch) => boolean | string;
 export type RouteDefinition = {
     /** `/static`, `/items/:id`, or `*` for a fallback that matches every other path. */
     path: string;
+    /** Rendered by `b-router-outlet`; without one (and no redirect) the route matches and the outlet stays empty. */
     component?: string;
     redirect?: string | ((to: RouteMatch) => string);
     guard?: RouteGuard;
@@ -113,8 +114,8 @@ export function createRouter(routes: RouteDefinition[], options: RouterOptions =
     let fallback: Compiled | undefined;
     const compiled: Compiled[] = [];
     for (const route of routes) {
-        if (!route.component && route.redirect === undefined)
-            throw createTypeError(`Route "${route.path}" requires a component name or a redirect.`);
+        if (route.component !== undefined && (!isString(route.component) || !route.component))
+            throw createTypeError(`Route "${route.path}" component must be a non-empty component name.`);
         if (route.path === FALLBACK) {
             if (fallback) throw createError('Duplicate route pattern "*".');
             fallback = { route, segments: [] };

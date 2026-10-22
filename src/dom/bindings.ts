@@ -46,7 +46,7 @@ export function mountRouterOutlet(
         const key = route && `${route.component} ${route.path}`;
         if (key === mountedKey) return;
         clear();
-        if (!route) return;
+        if (!route?.component) return;
         const definition = runtime.components.get(route.component);
         if (!definition) throw createError(`No component registered for route "${route.component}".`);
         const el = getOwnerDocument(element)!.createElement(route.component);
@@ -277,7 +277,8 @@ function hydrateOwnedNode(
 
     let hasText = false;
     let hasHtml = false;
-    let startModel: (() => void) | undefined;
+    // Form controls whose value depends on child options start after the children hydrate.
+    const afterChildren: (() => void)[] = [];
     const transitionAttr = attributes.find((_, index) => transitionNames.has(parsed[index].baseName));
     if (transitionAttr) prepareTransition(element, transitionAttr.value);
 
@@ -300,10 +301,12 @@ function hydrateOwnedNode(
             }
             removeAttribute(element, attrName);
         } else if (startsWith(baseName, 'b-bind-') || startsWith(baseName, 'bind-')) {
-            handleBind(element, baseName, attrValue, modifiers, context);
+            const start = handleBind(element, baseName, attrValue, modifiers, context);
+            if (start) afterChildren.push(start);
             removeAttribute(element, attrName);
         } else if (baseName === 'b-model' || baseName === 'model') {
-            startModel = handleModel(element, attrValue, modifiers, context);
+            const start = handleModel(element, attrValue, modifiers, context);
+            if (start) afterChildren.push(start);
             removeAttribute(element, attrName);
         } else if (baseName === 'b-text' || baseName === 'text') {
             getNodeOwner(element)!.controlsChildren = true;
@@ -341,5 +344,5 @@ function hydrateOwnedNode(
     if (!hasText && !hasHtml && tagName !== 'script') {
         hydrateChildren(element, context, runtime);
     }
-    startModel?.();
+    afterChildren.forEach(start => start());
 }

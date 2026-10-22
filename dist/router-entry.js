@@ -1,4 +1,4 @@
-import { c as createTypeError, b as createError, m as isString, t as startsWith, p as includesItem, g as getLength, d as deleteItem, j as isInstanceOf, q as objectKeys, o as objectConstructor } from "./native-DNTl55LH.js";
+import { c as createTypeError, m as isString, b as createError, t as startsWith, p as includesItem, g as getLength, d as deleteItem, j as isInstanceOf, q as objectKeys, o as objectConstructor } from "./native-DNTl55LH.js";
 import { a as addEventListener, r as removeEventListener } from "./native-Di2Lf1wo.js";
 import { s as state, b as signal } from "./state-TMgcg8XY.js";
 import { e as effect, u as untrack, b as batch } from "./effect-Hm6a3OX7.js";
@@ -55,8 +55,8 @@ function createRouter(routes, options = {}) {
   let fallback;
   const compiled = [];
   for (const route2 of routes) {
-    if (!route2.component && route2.redirect === void 0)
-      throw createTypeError(`Route "${route2.path}" requires a component name or a redirect.`);
+    if (route2.component !== void 0 && (!isString(route2.component) || !route2.component))
+      throw createTypeError(`Route "${route2.path}" component must be a non-empty component name.`);
     if (route2.path === FALLBACK) {
       if (fallback) throw createError('Duplicate route pattern "*".');
       fallback = { route: route2, segments: [] };

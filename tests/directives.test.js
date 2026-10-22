@@ -1475,6 +1475,21 @@ test('b-model.number checks radios and checkbox groups that hold numbers', t => 
     assert.equal(second.checked, false);
 });
 
+test('b-bind-value on select selects options rendered by b-for and survives option changes', async t => {
+    const { app, root, window } = environment(t, `
+        <select b-bind-value="$data.size" b-on-change="$data.size = $event.target.value">
+            <option b-for="size in $data.sizes" b-key="$for.size" b-bind-value="$for.size" b-text="$for.size"></option>
+        </select>`, { size: 'L', sizes: ['S', 'M', 'L'] });
+    app.mount(root);
+    const select = root.querySelector('select');
+    assert.equal(select.value, 'L', 'applied after the options render, not to an empty select');
+    app.state.size = 'M';
+    assert.equal(select.value, 'M');
+    app.state.sizes.unshift('XS');
+    await new Promise(resolve => window.setTimeout(resolve, 0));
+    assert.equal(select.value, 'M', 'new options do not reset the bound selection');
+});
+
 test('b-model on select applies its value synchronously to options rendered by b-for', t => {
     const { app, root } = environment(t, `
         <div b-if="$data.visible">
@@ -1824,12 +1839,45 @@ test('a missing "#id" component template is a clear error', t => {
     assert.throws(() => app.mount(root), /<missing-tpl> template "#nope" does not match a <template> element/);
 });
 
+test('.outside ignores the click that created it and closes on later outside clicks', t => {
+    const { window, app, root } = environment(t, `
+        <button id="toggle" b-on-click="$data.open = !$data.open"></button>
+        <button id="plain"></button>
+        <div id="menu" b-if="$data.open" b-on-click.outside="$data.open = false"><button id="inside"></button></div>
+        <p id="elsewhere"></p>`, { open: false });
+    app.mount(root);
+    const click = id => {
+        root.querySelector(`#${id}`).click();
+        window.brio.flush();
+    };
+    click('toggle');
+    assert.ok(root.querySelector('#menu'), 'the opening click does not count as an outside click');
+    click('inside');
+    assert.ok(root.querySelector('#menu'));
+    click('elsewhere');
+    assert.equal(root.querySelector('#menu'), null);
+    click('toggle');
+    click('toggle');
+    assert.equal(root.querySelector('#menu'), null, 'the toggle still closes it');
+
+    // Opened by a plain listener rather than a Brio handler.
+    root.querySelector('#plain').addEventListener('click', () => {
+        app.state.open = true;
+        window.brio.flush();
+    });
+    click('plain');
+    assert.ok(root.querySelector('#menu'));
+    click('elsewhere');
+    assert.equal(root.querySelector('#menu'), null);
+});
+
 test('key and system modifiers filter keyboard and mouse events; unknown modifiers throw', t => {
     const { window, app, root } = environment(t, `
         <input b-on-keydown.enter.prevent="$data.log.push('enter')"
                b-on-keydown.esc="$data.log.push('esc')"
                b-on-keydown.up.down="$data.log.push($event.key)"
                b-on-keydown.delete="$data.log.push('delete')"
+               b-on-keydown.space.prevent="$data.log.push('space')"
                b-on-keydown.ctrl.enter="$data.log.push('ctrl+enter')">
         <button b-on-click.shift="$data.log.push('shift-click')"></button>`, { log: [] });
     app.mount(root);
@@ -1845,10 +1893,13 @@ test('key and system modifiers filter keyboard and mouse events; unknown modifie
     key('ArrowUp');
     key('ArrowDown');
     key('Backspace');
+    key('Delete');
+    assert.equal(key(' '), true, '.space matches the " " key');
+    assert.equal(key('Spacebar'), false);
     key('Enter', { ctrlKey: true });
     root.querySelector('button').click();
     root.querySelector('button').dispatchEvent(new window.MouseEvent('click', { bubbles: true, shiftKey: true }));
-    assert.deepEqual([...app.state.log], ['enter', 'esc', 'ArrowUp', 'ArrowDown', 'delete', 'enter', 'ctrl+enter', 'shift-click']);
+    assert.deepEqual([...app.state.log], ['enter', 'esc', 'ArrowUp', 'ArrowDown', 'delete', 'delete', 'space', 'enter', 'ctrl+enter', 'shift-click']);
 
     const typo = environment(t, '<button b-on-click.prevnt="$data.x = 1"></button>');
     assert.throws(() => typo.app.mount(typo.root), /Unknown event modifier "\.prevnt" on "b-on-click"/);

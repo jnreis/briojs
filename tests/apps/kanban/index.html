@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Website relaunch · Brio Boards</title>
+    <style>
+        :root {
+            --ink: #172b4d; --muted: #5e6c84; --line: #dfe1e6; --list: #f1f2f4; --card: #fff;
+            --accent: #0c66e4; --danger: #c9372c; --ok: #1f845a; --warn: #b65c02;
+            --label-green: #4bce97; --label-red: #f87168; --label-purple: #9f8fef; --label-blue: #579dff; --label-orange: #fea362;
+            font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+            color: var(--ink);
+        }
+        * { box-sizing: border-box; }
+        body { margin: 0; min-height: 100vh; background: linear-gradient(135deg, #0055cc 0%, #7f5fcc 100%); line-height: 1.4; }
+        [b-cloak] { display: none; }
+        button { font: inherit; color: inherit; }
+        .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+        :focus-visible { outline: 2px solid #85b8ff; outline-offset: 2px; }
+
+        #app { display: grid; grid-template-rows: auto auto 1fr; grid-template-columns: minmax(0, 1fr); min-height: 100vh; }
+
+        /* Top bar */
+        .topbar { display: flex; align-items: center; gap: 16px; padding: 8px 16px; background: rgb(0 0 0 / .24); color: #fff; }
+        .brand { font-weight: 800; letter-spacing: -.01em; opacity: .9; }
+        .board-title { margin: 0; font-size: 1.15rem; font-weight: 700; }
+        .spacer { flex: 1; }
+        .members { display: flex; }
+        .avatar { display: inline-grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--avatar, #6b7280);
+            color: #fff; font-size: .7rem; font-weight: 700; border: 2px solid rgb(255 255 255 / .85); }
+        .members .avatar + .avatar { margin-left: -6px; }
+        .avatar.small { width: 22px; height: 22px; font-size: .6rem; border-width: 1px; }
+        .sync { display: inline-flex; align-items: center; gap: 6px; font-size: .85rem; padding: 4px 10px; border-radius: 999px; background: rgb(255 255 255 / .16); }
+        .sync::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: #4bce97; }
+        .sync[data-state="saving"]::before { background: #f5cd47; animation: pulse 1s infinite; }
+        .sync[data-state="offline"] { background: #ae2e24; }
+        .sync[data-state="offline"]::before, .sync[data-state="connecting"]::before { background: #dcdfe4; }
+        @keyframes pulse { 50% { opacity: .3; } }
+        .top-button { border: 0; border-radius: 6px; padding: 6px 12px; background: rgb(255 255 255 / .2); color: #fff; cursor: pointer; font-weight: 600; }
+        .top-button:hover, .top-button[aria-pressed="true"] { background: rgb(255 255 255 / .32); }
+
+        /* Filter bar */
+        .toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 10px 16px; background: rgb(0 0 0 / .12); color: #fff; }
+        .toolbar input[type="search"] { width: 220px; border: 0; border-radius: 6px; padding: 7px 10px; font: inherit; }
+        .label-filter { display: flex; gap: 6px; flex-wrap: wrap; }
+        .chip { border: 0; border-radius: 4px; padding: 3px 10px; font-size: .8rem; font-weight: 600; cursor: pointer; color: #172b4d; opacity: .7; }
+        .chip[aria-pressed="true"] { opacity: 1; box-shadow: 0 0 0 2px #fff; }
+        .label-green { background: var(--label-green); } .label-red { background: var(--label-red); }
+        .label-purple { background: var(--label-purple); } .label-blue { background: var(--label-blue); }
+        .label-orange { background: var(--label-orange); }
+        .filter-summary { font-size: .85rem; }
+        .link-button { border: 0; background: none; padding: 0 4px; color: inherit; text-decoration: underline; cursor: pointer; }
+
+        /* Workspace */
+        .workspace { display: flex; min-height: 0; }
+        .board { flex: 1; min-width: 0; display: flex; align-items: flex-start; gap: 12px; padding: 16px; overflow-x: auto; }
+        .board-status { margin: 48px auto; padding: 16px 24px; border-radius: 12px; background: rgb(255 255 255 / .9); }
+        .board-status.error { color: var(--danger); }
+
+        /* Lists */
+        kanban-list { display: block; flex: 0 0 272px; position: relative; }
+        kanban-list.is-dragged { opacity: .4; }
+        kanban-list.drop-before::before, .add-list.drop-before::before {
+            content: ""; position: absolute; left: -8px; top: 0; bottom: 0; width: 4px; border-radius: 2px; background: #fff; }
+        .list { display: flex; flex-direction: column; max-height: calc(100vh - 150px); background: var(--list); border-radius: 12px; box-shadow: 0 1px 1px rgb(9 30 66 / .25); }
+        .list-header { display: flex; align-items: center; gap: 6px; padding: 8px 8px 4px 12px; cursor: grab; }
+        .list-title { flex: 1; margin: 0; padding: 4px 0; font-size: .95rem; font-weight: 700; cursor: pointer; overflow-wrap: anywhere; }
+        .list-title-input { flex: 1; font: inherit; font-weight: 700; padding: 3px 6px; border: 2px solid var(--accent); border-radius: 4px; }
+        .count { font-size: .78rem; color: var(--muted); background: rgb(9 30 66 / .08); border-radius: 999px; padding: 1px 8px; }
+        .icon-button { border: 0; background: transparent; border-radius: 6px; width: 30px; height: 30px; cursor: pointer; color: var(--muted); font-size: 1.1rem; line-height: 1; }
+        .icon-button:hover { background: rgb(9 30 66 / .1); color: var(--ink); }
+        .menu-wrap { position: relative; }
+        .menu { position: absolute; right: 0; top: 34px; z-index: 5; display: grid; min-width: 180px; padding: 6px 0; background: #fff; border-radius: 8px;
+            box-shadow: 0 8px 16px rgb(9 30 66 / .25); }
+        .menu button { border: 0; background: none; text-align: left; padding: 8px 14px; cursor: pointer; }
+        .menu button:hover:not(:disabled) { background: var(--list); }
+        .menu button:disabled { color: #a5adba; cursor: default; }
+        .menu .danger { color: var(--danger); }
+        .cards { display: flex; flex-direction: column; gap: 8px; min-height: 8px; margin: 0; padding: 4px 8px 2px; overflow-y: auto; position: relative; }
+        .cards.drop-end::after { content: ""; height: 4px; border-radius: 2px; background: var(--accent); }
+        .empty { margin: 4px 12px; color: var(--muted); font-size: .85rem; }
+        .add-card { margin: 4px 8px 8px; padding: 8px; border: 0; border-radius: 8px; background: transparent; color: var(--muted); text-align: left; cursor: pointer; }
+        .add-card:hover { background: rgb(9 30 66 / .08); color: var(--ink); }
+        .composer { display: grid; gap: 8px; padding: 4px 8px 8px; }
+        .composer textarea, .add-list input { width: 100%; resize: vertical; border: 0; border-radius: 8px; padding: 8px 10px; font: inherit;
+            box-shadow: 0 1px 1px rgb(9 30 66 / .25), inset 0 0 0 2px var(--accent); }
+        .composer-actions { display: flex; align-items: center; gap: 6px; }
+        .primary { border: 0; border-radius: 4px; padding: 6px 12px; background: var(--accent); color: #fff; font-weight: 600; cursor: pointer; }
+        .primary:hover { background: #0055cc; }
+        .add-list { flex: 0 0 272px; position: relative; }
+        .add-list > button { width: 100%; border: 0; border-radius: 12px; padding: 12px; text-align: left; background: rgb(255 255 255 / .24); color: #fff; font-weight: 600; cursor: pointer; }
+        .add-list > button:hover { background: rgb(255 255 255 / .34); }
+        .add-list form { display: grid; gap: 8px; padding: 8px; border-radius: 12px; background: var(--list); }
+
+        /* Cards */
+        kanban-card { display: block; position: relative; }
+        kanban-card.drop-before::before { content: ""; position: absolute; left: 0; right: 0; top: -6px; height: 4px; border-radius: 2px; background: var(--accent); }
+        .card { display: block; padding: 8px 10px; border-radius: 8px; background: var(--card); color: inherit; text-decoration: none;
+            box-shadow: 0 1px 1px rgb(9 30 66 / .25); cursor: pointer; transition: box-shadow 150ms, opacity 150ms; }
+        .card:hover { box-shadow: 0 1px 1px rgb(9 30 66 / .25), inset 0 0 0 2px #85b8ff; }
+        .card.dragging { opacity: .45; }
+        .card.grabbed { transform: rotate(2deg); box-shadow: 0 8px 18px rgb(9 30 66 / .35), inset 0 0 0 2px var(--accent); }
+        .card.touched { box-shadow: 0 0 0 2px var(--touch, #f5cd47); }
+        .card-labels { display: flex; gap: 4px; margin-bottom: 6px; }
+        .label-bar { width: 40px; height: 8px; border-radius: 4px; }
+        .card-title { display: block; overflow-wrap: anywhere; }
+        .badges { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin-top: 6px; font-size: .78rem; color: var(--muted); }
+        .badges:empty { display: none; }
+        .badge { display: inline-flex; align-items: center; gap: 4px; border-radius: 3px; padding: 1px 4px; }
+        .badge.overdue { background: var(--danger); color: #fff; }
+        .badge.soon { background: #f5cd47; color: #533f04; }
+        .badge.complete { background: var(--ok); color: #fff; }
+        .saving-dot { width: 8px; height: 8px; padding: 0; border-radius: 50%; background: #f5cd47; animation: pulse 1s infinite; }
+        .badges .avatar { margin-left: auto; }
+
+        /* Activity */
+        .activity { flex: 0 0 300px; margin: 16px 16px 16px 0; padding: 12px 14px; border-radius: 12px; background: rgb(255 255 255 / .94); max-height: calc(100vh - 130px); overflow-y: auto; }
+        .activity h2 { margin: 0 0 8px; font-size: .95rem; }
+        .activity ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+        .activity li { display: grid; grid-template-columns: 28px 1fr; gap: 8px; font-size: .85rem; }
+        .activity time { display: block; color: var(--muted); font-size: .75rem; }
+        @media (max-width: 900px) { .activity { display: none; } }
+
+        /* Card dialog */
+        .overlay { position: fixed; inset: 0; z-index: 20; display: grid; justify-items: center; align-items: start; padding: 48px 16px; overflow-y: auto; background: rgb(9 30 66 / .55); }
+        .dialog { position: relative; width: min(100%, 720px); padding: 20px 24px 24px; border-radius: 12px; background: var(--list); box-shadow: 0 12px 32px rgb(0 0 0 / .3); }
+        .dialog .close { position: absolute; top: 12px; right: 12px; }
+        .dialog-title { width: calc(100% - 40px); border: 0; border-radius: 6px; padding: 4px 6px; margin-left: -6px; resize: none; background: transparent; font: inherit; font-size: 1.3rem; font-weight: 700; }
+        .dialog-title:focus { background: #fff; box-shadow: inset 0 0 0 2px var(--accent); }
+        .muted { color: var(--muted); }
+        .in-list select { font: inherit; border: 1px solid var(--line); border-radius: 4px; padding: 1px 4px; background: #fff; }
+        .dialog section { margin-top: 20px; }
+        .dialog h3 { margin: 0 0 8px; font-size: .95rem; }
+        .dialog-grid { display: grid; grid-template-columns: minmax(0, 1fr) 180px; gap: 24px; }
+        @media (max-width: 640px) { .dialog-grid { grid-template-columns: 1fr; } }
+        .label-picker { display: flex; flex-wrap: wrap; gap: 6px; }
+        .label-picker .chip { opacity: .45; }
+        .label-picker .chip[aria-pressed="true"] { opacity: 1; box-shadow: 0 0 0 2px var(--ink); }
+        .description { white-space: pre-wrap; min-height: 56px; padding: 8px 10px; border-radius: 8px; background: rgb(9 30 66 / .06); cursor: pointer; }
+        .description:hover { background: rgb(9 30 66 / .1); }
+        .dialog textarea.input, .dialog input.input { width: 100%; font: inherit; border: 0; border-radius: 6px; padding: 8px 10px; box-shadow: inset 0 0 0 2px var(--accent); background: #fff; }
+        .row-actions { display: flex; gap: 6px; margin-top: 6px; }
+        .secondary { border: 0; border-radius: 4px; padding: 6px 12px; background: rgb(9 30 66 / .08); cursor: pointer; font-weight: 600; }
+        .secondary:hover { background: rgb(9 30 66 / .14); }
+        .progress { display: grid; grid-template-columns: 36px 1fr; align-items: center; gap: 8px; font-size: .78rem; color: var(--muted); }
+        .bar { height: 8px; border-radius: 4px; background: rgb(9 30 66 / .12); overflow: hidden; }
+        .bar span { display: block; height: 100%; width: var(--percent); background: var(--accent); transition: width 200ms; }
+        .bar.complete span { background: var(--ok); }
+        .checklist { list-style: none; margin: 8px 0; padding: 0; display: grid; gap: 2px; }
+        .checklist li { display: flex; align-items: center; gap: 8px; padding: 4px 6px; border-radius: 6px; }
+        .checklist li:hover { background: rgb(9 30 66 / .06); }
+        .checklist label { flex: 1; display: flex; gap: 8px; align-items: center; cursor: pointer; }
+        .checklist .done span { text-decoration: line-through; color: var(--muted); }
+        .checklist .icon-button { width: 24px; height: 24px; font-size: .9rem; }
+        .side { display: grid; align-content: start; gap: 8px; }
+        .side label { font-size: .78rem; font-weight: 700; color: var(--muted); }
+        .side input[type="date"] { font: inherit; padding: 5px 8px; border: 1px solid var(--line); border-radius: 4px; }
+        .danger-button { border: 0; border-radius: 4px; padding: 6px 12px; background: var(--danger); color: #fff; font-weight: 600; cursor: pointer; }
+        .gone { text-align: center; padding: 24px 0 8px; }
+
+        /* Toasts and demo controls */
+        .toasts { position: fixed; left: 50%; transform: translateX(-50%); bottom: 16px; z-index: 30; display: grid; gap: 8px; width: min(420px, calc(100% - 32px)); }
+        .toast { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; background: #172b4d; color: #fff; box-shadow: 0 8px 16px rgb(0 0 0 / .25); font-size: .9rem; }
+        .toast.error { background: #ae2e24; }
+        .toast p { flex: 1; margin: 0; }
+        .toast button { border: 0; background: rgb(255 255 255 / .2); color: #fff; border-radius: 4px; padding: 3px 8px; cursor: pointer; }
+        .demo { position: fixed; left: 16px; bottom: 16px; z-index: 30; width: 260px; padding: 8px 12px; border-radius: 10px; background: rgb(255 255 255 / .96); box-shadow: 0 8px 16px rgb(0 0 0 / .25); font-size: .85rem; }
+        .demo summary { cursor: pointer; font-weight: 700; }
+        .demo .controls { display: grid; gap: 8px; margin-top: 8px; }
+        .demo .controls button { border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; background: #fff; cursor: pointer; text-align: left; }
+        .demo .controls button[aria-pressed="true"] { background: #e9f2ff; border-color: var(--accent); }
+        .demo label { display: grid; gap: 4px; }
+    </style>
+</head>
+<body>
+    <div id="app" b-cloak>
+        <header class="topbar">
+            <span class="brand">▦ Brio Boards</span>
+            <h1 class="board-title" b-text="$stores.board.title || 'Loading…'" data-testid="board-title"></h1>
+            <span class="spacer"></span>
+            <span class="members" aria-label="Board members">
+                <span class="avatar" b-for="member in $stores.board.members" b-key="$for.member.id"
+                      b-bind-style="{ '--avatar': $for.member.color }" b-bind-title="$for.member.name" b-text="$for.member.initials"></span>
+            </span>
+            <span class="sync" b-bind-data-state="$stores.sync.status" role="status" data-testid="sync-status"
+                  b-text="{ saving: 'Saving…', saved: 'All changes saved', offline: 'Offline', connecting: 'Connecting…' }[$stores.sync.status]"></span>
+            <button type="button" class="top-button" b-bind-aria-pressed="$stores.prefs.activity"
+                    b-on-click="$stores.prefs.activity = !$stores.prefs.activity" data-testid="toggle-activity">Activity</button>
+        </header>
+
+        <div class="toolbar" role="search">
+            <input type="search" placeholder="Filter cards…" aria-label="Filter cards" b-model="$stores.filter.text"
+                   b-on-keydown.esc="$stores.filter.clear()" data-testid="filter-text">
+            <div class="label-filter" aria-label="Filter by label">
+                <button type="button" class="chip" b-for="label in $stores.board.labels" b-key="$for.label.id"
+                        b-bind-class="'label-' + $for.label.color" b-bind-aria-pressed="$stores.filter.labels.includes($for.label.id)"
+                        b-on-click="$stores.filter.toggle($for.label.id)" b-text="$for.label.name" data-testid="filter-label"></button>
+            </div>
+            <span class="filter-summary" b-if="$stores.filter.active" data-testid="filter-summary">
+                Showing ${$data.visibleCount} of ${$data.totalCount} cards
+                <button type="button" class="link-button" b-on-click="$stores.filter.clear()">Clear filter</button>
+            </span>
+        </div>
+
+        <main class="workspace">
+            <div class="board-status" b-if="$stores.board.status === 'loading'" data-testid="loading">Loading board…</div>
+            <div class="board-status error" b-else-if="$stores.board.status === 'error'" role="alert" data-testid="load-error">
+                Couldn't load the board. ${$stores.board.error}.
+                <button type="button" class="secondary" b-on-click="$stores.actions.reload()">Try again</button>
+            </div>
+            <div class="board" b-else data-testid="board"
+                 b-on-dragover.prevent="$stores.drag.active" b-on-drop.prevent="$stores.drag.drop()" b-on-dragend="$stores.drag.end()">
+                <kanban-list b-for="list in $stores.board.lists" b-key="$for.list.id" b-bind-list="$for.list"
+                             b-attr-class="{ 'drop-before': $stores.drag.isListBefore($for.list), 'is-dragged': $stores.drag.isDragged($for.list.id) }"
+                             b-attr-data-list="$for.list.id"
+                             b-on-dragover.prevent="$stores.drag.overList($event, $for.list)"></kanban-list>
+                <section class="add-list" b-bind-class="{ 'drop-before': $stores.drag.listAtEnd }">
+                    <form b-if="$data.addingList" b-on-submit.prevent="$data.submitList()" data-testid="list-composer">
+                        <input b-model="$data.listDraft" placeholder="Enter list name…" aria-label="List name" maxlength="200"
+                               b-on-keydown.esc="$data.closeListComposer()" data-testid="new-list-title">
+                        <div class="composer-actions">
+                            <button type="submit" class="primary">Add list</button>
+                            <button type="button" class="icon-button" aria-label="Cancel" b-on-click="$data.closeListComposer()">×</button>
+                        </div>
+                    </form>
+                    <button type="button" b-else b-on-click="$data.openListComposer()" data-testid="add-list">+ Add another list</button>
+                </section>
+            </div>
+
+            <aside class="activity" b-if="$stores.prefs.activity" aria-label="Activity" data-testid="activity">
+                <h2>Activity</h2>
+                <p class="muted" b-if="!$stores.sync.activity.length">Changes by you and your teammates appear here.</p>
+                <ol>
+                    <li b-for="entry in $stores.sync.activity" b-key="$for.entry.version" data-testid="activity-entry">
+                        <span class="avatar small" b-bind-style="{ '--avatar': $stores.format.member($for.entry.actor).color }"
+                              b-text="$stores.format.member($for.entry.actor).initials"></span>
+                        <span><strong b-text="$stores.format.member($for.entry.actor).name"></strong> <span b-text="$for.entry.text"></span>
+                            <time b-bind-datetime="$for.entry.at" b-text="$stores.format.time($for.entry.at)"></time></span>
+                    </li>
+                </ol>
+            </aside>
+        </main>
+
+        <div class="toasts" aria-live="polite">
+            <div class="toast" b-for="toast in $stores.sync.toasts" b-key="$for.toast.id" b-bind-class="$for.toast.tone" data-testid="toast">
+                <p b-text="$for.toast.message"></p>
+                <button type="button" b-if="$for.toast.retry" b-on-click="$stores.actions.retry($for.toast)" data-testid="toast-retry">Retry</button>
+                <button type="button" aria-label="Dismiss" b-on-click="$stores.actions.dismiss($for.toast.id)">×</button>
+            </div>
+        </div>
+        <div class="sr-only" aria-live="assertive" b-text="$stores.dnd.announcement" data-testid="announcer"></div>
+
+        <details class="demo" data-testid="demo">
+            <summary>Simulator</summary>
+            <div class="controls">
+                <label>Server latency
+                    <select b-bind-value="$stores.demo.latency" b-on-change="$stores.demo.setLatency($event.target.value)">
+                        <option value="0">Instant</option>
+                        <option value="300">300 ms</option>
+                        <option value="1500">1.5 s (watch optimistic updates)</option>
+                    </select>
+                </label>
+                <button type="button" b-on-click="$stores.demo.teammate()" data-testid="teammate">A teammate makes a change</button>
+                <button type="button" b-bind-aria-pressed="$stores.demo.auto" b-on-click="$stores.demo.toggleAuto()">Teammates keep working</button>
+                <button type="button" b-on-click="$stores.demo.failNext()">Fail the next save</button>
+                <button type="button" b-bind-aria-pressed="!$stores.demo.online" b-on-click="$stores.demo.toggleOnline()" data-testid="toggle-online">Go offline</button>
+            </div>
+        </details>
+
+        <div b-router-outlet data-testid="outlet"></div>
+    </div>
+
+    <template id="tpl-kanban-list">
+        <section class="list" b-bind-aria-label="$props.list.title" data-testid="list">
+            <header class="list-header" draggable="true" b-on-dragstart="$stores.drag.start($event, 'list', $props.list.id)">
+                <h2 class="list-title" b-if="!$data.renaming" tabindex="0" b-on-click="$data.startRename()" b-on-keydown.enter="$data.startRename()"
+                    b-text="$props.list.title" data-testid="list-title"></h2>
+                <input class="list-title-input" b-else b-ref="title" b-model="$data.titleDraft" aria-label="List name" maxlength="200"
+                       b-on-keydown.enter.prevent="$data.saveRename()" b-on-keydown.esc="$data.cancelRename()" b-on-blur="$data.saveRename()"
+                       data-testid="list-title-input">
+                <span class="count" b-text="$data.count" data-testid="list-count"></span>
+                <div class="menu-wrap">
+                    <button type="button" class="icon-button" aria-label="List actions" aria-haspopup="menu" b-bind-aria-expanded="$data.menu"
+                            b-on-click="$data.menu = !$data.menu" data-testid="list-menu">⋯</button>
+                    <div class="menu" role="menu" b-if="$data.menu" b-on-click.outside="$data.menu = false" b-on-keydown.esc.window="$data.menu = false">
+                        <button type="button" role="menuitem" b-on-click="$data.openComposer()">Add card</button>
+                        <button type="button" role="menuitem" b-bind-disabled="$data.first" b-on-click="$data.move(-1)" data-testid="move-list-left">Move list left</button>
+                        <button type="button" role="menuitem" b-bind-disabled="$data.last" b-on-click="$data.move(1)" data-testid="move-list-right">Move list right</button>
+                        <button type="button" role="menuitem" class="danger" b-on-click="$data.remove()" data-testid="delete-list">Delete list…</button>
+                    </div>
+                </div>
+            </header>
+            <div class="cards" role="list" b-bind-class="{ 'drop-end': $stores.drag.isEnd($props.list) }" data-testid="cards">
+                <kanban-card b-for="card in $data.cards" b-key="$for.card.id" b-bind-card="$for.card" role="listitem"
+                             b-attr-class="{ 'drop-before': $stores.drag.isBefore($for.card) }"
+                             b-on-dragover.prevent.stop="$stores.drag.overCard($event, $for.card, $props.list)"></kanban-card>
+            </div>
+            <p class="empty" b-if="!$data.cards.length && !$data.composing"
+               b-text="$stores.filter.active && $props.list.cards.length ? 'No matching cards' : 'No cards yet'"></p>
+            <form class="composer" b-if="$data.composing" b-on-submit.prevent="$data.addCard()">
+                <textarea b-ref="composer" rows="2" b-model="$data.cardDraft" placeholder="Enter a title for this card…" aria-label="Card title" maxlength="200"
+                          b-on-keydown.enter.prevent="$data.addCard()" b-on-keydown.esc="$data.closeComposer()" data-testid="card-composer"></textarea>
+                <div class="composer-actions">
+                    <button type="submit" class="primary">Add card</button>
+                    <button type="button" class="icon-button" aria-label="Cancel" b-on-click="$data.closeComposer()">×</button>
+                </div>
+            </form>
+            <button type="button" class="add-card" b-else b-on-click="$data.openComposer()" data-testid="add-card">+ Add a card</button>
+        </section>
+    </template>
+
+    <template id="tpl-kanban-card">
+        <a class="card" draggable="true" b-bind-href="$stores.to.card($props.card.id)" b-bind-data-card="$props.card.id"
+           b-bind-class="{ dragging: $stores.drag.isDragged($props.card.id), grabbed: $stores.dnd.keyboard && $stores.drag.isDragged($props.card.id), touched: $data.touchedBy }"
+           b-bind-style="{ '--touch': $data.touchedBy?.color }"
+           b-bind-aria-label="$props.card.title + ($data.saving ? ' (saving)' : '')"
+           b-on-dragstart="$stores.drag.start($event, 'card', $props.card.id)"
+           b-on-keydown.space.prevent="$stores.drag.grab($props.card)"
+           b-on-keydown.up.down.left.right="$stores.drag.step($event)"
+           b-on-keydown.esc="$stores.drag.cancel()"
+           data-testid="card">
+            <span class="card-labels" b-if="$data.labels.length">
+                <span class="label-bar" b-for="label in $data.labels" b-key="$for.label.id" b-bind-class="'label-' + $for.label.color" b-bind-title="$for.label.name"></span>
+            </span>
+            <span class="card-title" b-text="$props.card.title" data-testid="card-title"></span>
+            <span class="badges">
+                <span class="badge" b-if="$props.card.due" b-bind-class="$data.dueState" data-testid="due-badge">🕑 ${$stores.format.due($props.card.due)}</span>
+                <span class="badge" b-if="$props.card.description" title="This card has a description">≡</span>
+                <span class="badge" b-if="$data.progress.total" b-bind-class="{ complete: $data.progress.complete }" data-testid="checklist-badge">☑ ${$data.progress.done}/${$data.progress.total}</span>
+                <span class="badge saving-dot" b-if="$data.saving" title="Saving…" data-testid="saving"></span>
+                <span class="avatar small" b-if="$data.touchedBy" b-bind-style="{ '--avatar': $data.touchedBy.color }"
+                      b-bind-title="$data.touchedBy.name + ' just changed this'" b-text="$data.touchedBy.initials" data-testid="touched-by"></span>
+            </span>
+        </a>
+    </template>
+
+    <template id="tpl-card-dialog">
+        <div class="overlay" b-on-click.self="$data.close()" b-on-keydown.esc.window="$data.close()">
+            <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="card-dialog-title" data-testid="card-dialog">
+                <button type="button" class="icon-button close" aria-label="Close" b-on-click="$data.close()" data-testid="close-dialog">×</button>
+                <template b-if="$data.card">
+                    <textarea id="card-dialog-title" class="dialog-title" rows="1" aria-label="Card title" maxlength="200"
+                              b-bind-value="$data.card.title" b-on-change="$data.saveTitle($event)"
+                              b-on-keydown.enter.prevent="$event.target.blur()" data-testid="dialog-title"></textarea>
+                    <p class="in-list muted">
+                        in list
+                        <select aria-label="Move to list" b-bind-value="$data.card.listId" b-on-change="$data.moveTo($event.target.value)" data-testid="dialog-list">
+                            <option b-for="list in $stores.board.lists" b-key="$for.list.id" b-bind-value="$for.list.id" b-text="$for.list.title"></option>
+                        </select>
+                        <span b-if="$data.saving"> · Saving…</span>
+                    </p>
+                    <div class="dialog-grid">
+                        <div>
+                            <section>
+                                <h3>Labels</h3>
+                                <div class="label-picker">
+                                    <button type="button" class="chip" b-for="label in $stores.board.labels" b-key="$for.label.id"
+                                            b-bind-class="'label-' + $for.label.color" b-bind-aria-pressed="$data.hasLabel($for.label.id)"
+                                            b-on-click="$data.toggleLabel($for.label.id)" b-text="$for.label.name" data-testid="label-toggle"></button>
+                                </div>
+                            </section>
+                            <section>
+                                <h3>Description</h3>
+                                <div b-if="$data.editingDescription">
+                                    <textarea class="input" rows="5" b-model="$data.descriptionDraft" placeholder="Add a more detailed description…"
+                                              b-on-keydown.ctrl.enter="$data.saveDescription()" b-on-keydown.meta.enter="$data.saveDescription()"
+                                              b-on-keydown.esc.stop="$data.editingDescription = false" data-testid="description-input"></textarea>
+                                    <div class="row-actions">
+                                        <button type="button" class="primary" b-on-click="$data.saveDescription()" data-testid="save-description">Save</button>
+                                        <button type="button" class="secondary" b-on-click="$data.editingDescription = false">Cancel</button>
+                                    </div>
+                                </div>
+                                <div class="description" b-else tabindex="0" role="button" b-on-click="$data.editDescription()" b-on-keydown.enter="$data.editDescription()"
+                                     b-text="$data.card.description || 'Add a more detailed description…'" data-testid="description"></div>
+                            </section>
+                            <section>
+                                <h3>Checklist</h3>
+                                <div class="progress" b-if="$data.progress.total" data-testid="progress">
+                                    <span b-text="$data.percent + '%'"></span>
+                                    <span class="bar" b-bind-class="{ complete: $data.percent === 100 }" b-bind-style="{ '--percent': $data.percent + '%' }"><span></span></span>
+                                </div>
+                                <ul class="checklist">
+                                    <li b-for="item in $data.card.checklist" b-key="$for.item.id" b-bind-class="{ done: $for.item.done }" data-testid="checklist-item">
+                                        <label>
+                                            <input type="checkbox" b-bind-checked="$for.item.done" b-on-change="$data.toggleItem($for.item)">
+                                            <span b-text="$for.item.text"></span>
+                                        </label>
+                                        <button type="button" class="icon-button" b-bind-aria-label="'Delete ' + $for.item.text" b-on-click="$data.removeItem($for.item)">×</button>
+                                    </li>
+                                </ul>
+                                <form class="row-actions" b-on-submit.prevent="$data.addItem()">
+                                    <input class="input" b-model="$data.itemDraft" placeholder="Add an item" aria-label="New checklist item" data-testid="new-item">
+                                    <button type="submit" class="secondary">Add</button>
+                                </form>
+                            </section>
+                        </div>
+                        <aside class="side">
+                            <label for="card-due">Due date</label>
+                            <input id="card-due" type="date" b-bind-value="$data.card.due ?? ''" b-on-change="$data.setDue($event.target.value)" data-testid="due-input">
+                            <button type="button" class="secondary" b-if="$data.card.due" b-on-click="$data.setDue('')">Remove due date</button>
+                            <label>Actions</label>
+                            <button type="button" class="danger-button" b-on-click="$data.remove()" data-testid="delete-card">Delete card</button>
+                        </aside>
+                    </div>
+                </template>
+                <div class="gone" b-if="$data.missing" data-testid="card-missing">
+                    <h2 b-text="$data.deletedBy ? 'This card was deleted by ' + $data.deletedBy : 'Card not found'"></h2>
+                    <button type="button" class="primary" b-on-click="$data.close()">Back to the board</button>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <script src="../../../dist/brio.min.js"></script>
+    <script src="../../../dist/brio.router.min.js"></script>
+    <script src="../../../dist/brio.http.min.js"></script>
+    <script src="../../../dist/brio.persistence.min.js"></script>
+    <script src="./server.js"></script>
+    <script src="./app.js"></script>
+</body>
+</html>

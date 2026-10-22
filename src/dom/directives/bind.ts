@@ -10,11 +10,13 @@ import {
     startsWith,
     objectConstructor,
     GET_OWN_PROPERTY_DESCRIPTOR,
+    isInstanceOf,
 } from '../../core/native';
 import { getAttribute, removeAttribute } from '../native';
 import { evaluate } from '../../core/expression';
 import { effect } from '../../reactivity/effect';
 import { causedError, errorText } from '../../core/errors';
+import { onCleanup } from '../../core/scope';
 
 const staticClasses = new WeakMap<Element, Set<string>>();
 const SVG_NAMESPACE = 'http://www.w3.org/2000/svg';
@@ -116,7 +118,7 @@ export function handleBind(
     expression: string,
     modifiers: Record<string, boolean>,
     context: Record<PropertyKey, any>,
-): void {
+): (() => void) | void {
     // `b-attr-*` is the component-host form: it binds the host element itself instead of a prop.
     const rawTarget = attrName.slice(getLength(startsWith(attrName, 'b-bind-') ? 'b-bind-'
         : startsWith(attrName, 'b-attr-') ? 'b-attr-' : 'bind-'));
@@ -126,7 +128,7 @@ export function handleBind(
     const target = resolveBindTarget(element, rawTarget, forceProp);
     let last: unknown;
     let written = false;
-    effect(() => {
+    const start = () => effect(() => {
         const value = evaluate(expression, context, attrName, element);
         // Unchanged primitives skip the DOM write; objects may have been mutated in place, so they always apply.
         if (written && objectConstructor.is(value, last) && (value === null || !isObjectType(value))) return;
@@ -134,4 +136,13 @@ export function handleBind(
         last = value;
         written = true;
     });
+    if (target === 'value' && isInstanceOf(element, HTMLSelectElement)) {
+        // A select can only take a value its options offer: start after child directives render them, and
+        // reapply when they change.
+        const observer = new MutationObserver(() => written && setBoundValue(element, target, last, forceProp));
+        observer.observe(element, { childList: true, subtree: true });
+        onCleanup(() => observer.disconnect());
+        return start;
+    }
+    start();
 }

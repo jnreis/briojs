@@ -4,7 +4,6 @@ import {
     getLength,
     isArray,
     objectEntries,
-    arrayFrom,
     createSyntaxError,
     deleteItem,
     startsWith,
@@ -45,6 +44,7 @@ export const resolveBindTarget = (element: Element, name: string, forceProp: boo
     return svgNames.get(name) ?? name;
 };
 const dynamicStyles = new WeakMap<Element, Set<string>>();
+const dynamicClasses = new WeakMap<Element, Set<string>>();
 
 export const setBoundValue = (element: Element, name: string, value: unknown, forceProp: boolean = false) => {
     if (name === 'class') {
@@ -62,12 +62,13 @@ export const setBoundValue = (element: Element, name: string, value: unknown, fo
             for (const [className, enabled] of objectEntries(value))
                 if (enabled) className.split(/\s+/).filter(Boolean).forEach(name => currentDynamic.add(name));
         }
-        const combined = new Set([...staticNames, ...currentDynamic]);
-        const current = getAttribute(element, 'class');
-        if (combined.size) {
-            const next = arrayFrom(combined).join(' ');
-            if (current !== next) element.setAttribute('class', next);
-        } else if (current !== null) removeAttribute(element, 'class');
+        // Only names this binding owns change, so classes added elsewhere (transitions, other code) survive.
+        const { classList } = element;
+        for (const className of dynamicClasses.get(element) ?? [])
+            if (!currentDynamic.has(className) && !staticNames.has(className)) classList.remove(className);
+        for (const className of currentDynamic) if (!classList.contains(className)) classList.add(className);
+        dynamicClasses.set(element, currentDynamic);
+        if (!getLength(classList) && getAttribute(element, 'class') !== null) removeAttribute(element, 'class');
         return;
     }
     if (name === 'style' && value && isObjectType(value)) {

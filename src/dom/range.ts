@@ -5,6 +5,17 @@ import { onCleanup } from '../core/scope';
 import { ownNode } from './ownership';
 import type { DomRuntime } from './types';
 
+// Prefers the state-preserving `moveBefore` (keeps focus, selection, iframes, animations) where supported.
+function moveNode(parent: Node, node: Node, reference: Node | null): void {
+    const move = (parent as Node & { moveBefore?: (node: Node, reference: Node | null) => void }).moveBefore;
+    if (move && node.isConnected && parent.isConnected) {
+        try {
+            return move.call(parent, node, reference);
+        } catch {}
+    }
+    insertBefore(parent, node, reference);
+}
+
 export type PortalDestination = {
     target: Element;
     placement: 'before' | 'after' | 'prepend' | 'append';
@@ -91,7 +102,7 @@ export function createDomRange(document: Document, name: string): DomRange {
                 const contents = nodes(true);
                 if (reference && includesItem(contents, reference))
                     throw createError('Cannot move a Brio range inside itself.');
-                for (const node of contents) insertBefore(parent, node, reference);
+                for (const node of contents) moveNode(parent, node, reference);
             }
             if (resuming) {
                 detached = false;
@@ -165,7 +176,7 @@ class ElementRange implements DomRange<Element> {
     moveBefore(parent: Node, reference: Node | null): void {
         const { start } = this;
         if (reference === start) return;
-        if (getParent(start) !== parent || getNextSibling(start) !== reference) insertBefore(parent, start, reference);
+        if (getParent(start) !== parent || getNextSibling(start) !== reference) moveNode(parent, start, reference);
     }
 
     detach(): void {

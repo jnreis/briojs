@@ -13,14 +13,14 @@
   },
   "browser": {
     "brio.min.js": {
-      "raw": 56445,
-      "gzip": 21329,
-      "brotli": 19300
+      "raw": 58081,
+      "gzip": 21907,
+      "brotli": 19841
     },
     "brio.dev.min.js": {
-      "raw": 58357,
-      "gzip": 22148,
-      "brotli": 20042
+      "raw": 59993,
+      "gzip": 22717,
+      "brotli": 20561
     },
     "brio.router.min.js": {
       "raw": 6345,
@@ -58,7 +58,7 @@
       "files": [
         "index.js",
         "native-DNTl55LH.js",
-        "native-Di2Lf1wo.js",
+        "native-Da80auZ6.js",
         "context-values-BXAsS55z.js",
         "effect-Hm6a3OX7.js",
         "state-TMgcg8XY.js",
@@ -71,9 +71,9 @@
         "http-entry.js",
         "devtools-DxlDsvKn.js"
       ],
-      "raw": 167980,
-      "gzip": 45480,
-      "brotli": 39325
+      "raw": 171483,
+      "gzip": 46265,
+      "brotli": 39980
     },
     "reactivity": {
       "files": [
@@ -82,35 +82,35 @@
         "native-DNTl55LH.js",
         "state-TMgcg8XY.js",
         "persistence-entry.js",
-        "native-Di2Lf1wo.js"
+        "native-Da80auZ6.js"
       ],
       "raw": 30158,
-      "gzip": 9285,
-      "brotli": 8154
+      "gzip": 9287,
+      "brotli": 8159
     },
     "router": {
       "files": [
         "router-entry.js",
         "native-DNTl55LH.js",
-        "native-Di2Lf1wo.js",
+        "native-Da80auZ6.js",
         "state-TMgcg8XY.js",
         "effect-Hm6a3OX7.js"
       ],
       "raw": 35701,
-      "gzip": 10671,
-      "brotli": 9413
+      "gzip": 10673,
+      "brotli": 9439
     },
     "persistence": {
       "files": [
         "persistence-entry.js",
         "native-DNTl55LH.js",
-        "native-Di2Lf1wo.js",
+        "native-Da80auZ6.js",
         "effect-Hm6a3OX7.js",
         "state-TMgcg8XY.js"
       ],
       "raw": 27354,
-      "gzip": 8319,
-      "brotli": 7300
+      "gzip": 8321,
+      "brotli": 7305
     },
     "http": {
       "files": [
@@ -154,14 +154,14 @@
       "files": [
         "astro-entry.js",
         "native-DNTl55LH.js",
-        "native-Di2Lf1wo.js",
+        "native-Da80auZ6.js",
         "context-values-BXAsS55z.js",
         "effect-Hm6a3OX7.js",
         "state-TMgcg8XY.js"
       ],
       "raw": 38032,
-      "gzip": 11489,
-      "brotli": 10080
+      "gzip": 11491,
+      "brotli": 10077
     },
     "devtools": {
       "files": [
@@ -176,17 +176,17 @@
     },
     "all-entries-deduplicated": {
       "files": 16,
-      "raw": 175327,
-      "gzip": 47817,
-      "brotli": 41326
+      "raw": 178830,
+      "gzip": 48602,
+      "brotli": 41974
     }
   },
   "consumers": {
     "app-main": {
       "files": 1,
-      "raw": 55320,
-      "gzip": 20878,
-      "brotli": 18902
+      "raw": 56956,
+      "gzip": 21422,
+      "brotli": 19387
     },
     "signal-main": {
       "files": 1,
@@ -286,15 +286,15 @@
     },
     "devtools-main": {
       "files": 1,
-      "raw": 56575,
-      "gzip": 21370,
-      "brotli": 19383
+      "raw": 58211,
+      "gzip": 21914,
+      "brotli": 19885
     },
     "devtools-subpath": {
       "files": 1,
-      "raw": 56580,
-      "gzip": 21371,
-      "brotli": 19328
+      "raw": 58216,
+      "gzip": 21919,
+      "brotli": 19904
     },
     "astro-subpath": {
       "files": 1,
@@ -304,9 +304,9 @@
     },
     "app-with-tools": {
       "files": 1,
-      "raw": 64508,
-      "gzip": 24399,
-      "brotli": 22105
+      "raw": 66136,
+      "gzip": 24965,
+      "brotli": 22654
     }
   }
 }

@@ -1942,3 +1942,129 @@ test('.once waits for an event that passes key and target filters', t => {
     root.querySelector('div').click();
     assert.deepEqual([...app.state.log], ['enter', 'self']);
 });
+
+function stubRowLayout(window) {
+    const reads = { count: 0 };
+    window.HTMLElement.prototype.getBoundingClientRect = function () {
+        reads.count++;
+        const index = this.parentNode ? [...this.parentNode.children].indexOf(this) : 0;
+        return { left: 0, top: index * 20, right: 100, bottom: index * 20 + 20, width: 100, height: 20 };
+    };
+    return reads;
+}
+
+test('keyed b-for reorders keep focus and caret inside moved rows', t => {
+    const { window, app, root } = environment(t, `
+        <ul><li b-for="item in $data.items" b-key="$for.item"><input b-bind-value="$for.item"></li></ul>`,
+    { items: ['alpha', 'beta', 'gamma'] });
+    app.mount(root);
+    const input = root.querySelectorAll('input')[1];
+    input.focus();
+    input.setSelectionRange(1, 3);
+    app.state.items = ['gamma', 'alpha', 'beta'];
+    app.state.items.reverse();
+    window.brio.flush?.();
+    assert.deepEqual([...root.querySelectorAll('input')].map(field => field.value), ['beta', 'alpha', 'gamma']);
+    assert.equal(window.document.activeElement, input);
+    assert.deepEqual([input.selectionStart, input.selectionEnd], [1, 3]);
+});
+
+test('keyed b-for prefers native moveBefore and falls back when it throws', t => {
+    const { window, app, root } = environment(t, `
+        <ul><li b-for="item in $data.items" b-key="$for.item" b-text="$for.item"></li></ul>`, { items: ['a', 'b', 'c'] });
+    let calls = 0;
+    let fail = false;
+    window.Element.prototype.moveBefore = function (node, reference) {
+        calls++;
+        if (fail) throw new window.DOMException('nope', 'HierarchyRequestError');
+        this.insertBefore(node, reference);
+    };
+    app.mount(root);
+    app.state.items = ['c', 'b', 'a'];
+    assert.ok(calls > 0);
+    assert.equal(root.querySelector('ul').textContent, 'cba');
+    fail = true;
+    app.state.items = ['a', 'c', 'b'];
+    assert.equal(root.querySelector('ul').textContent, 'acb');
+    delete window.Element.prototype.moveBefore;
+});
+
+test('b-for rows with b-transition animate position changes with a -move class', t => {
+    const { window, app, root } = environment(t, `
+        <ul><li b-for="item in $data.items" b-key="$for.item" b-text="$for.item" b-transition="'slide'"
+            style="transition-property: transform; transition-duration: 0.3s"></li></ul>`, { items: ['a', 'b', 'c'] });
+    const clock = transitionClock(window);
+    stubRowLayout(window);
+    app.mount(root);
+    clock.advanceFrames();
+    const [a, b, c] = root.querySelectorAll('li');
+    const transforms = new Map();
+    for (const row of [a, b, c]) {
+        const style = row.style;
+        let value = '';
+        Object.defineProperty(style, 'transform', {
+            configurable: true,
+            get: () => value,
+            set: next => {
+                value = next;
+                if (next) transforms.set(row.textContent, next);
+            },
+        });
+    }
+    app.state.items = ['c', 'b', 'a', 'd'];
+    assert.equal(root.querySelector('ul').textContent, 'cbad');
+    assert.equal(transforms.get('a'), 'translate(0px, -40px)');
+    assert.equal(transforms.get('c'), 'translate(0px, 40px)');
+    assert.equal(transforms.has('b'), false);
+    assert.ok(a.classList.contains('slide-move') && c.classList.contains('slide-move'));
+    assert.equal(b.classList.contains('slide-move'), false);
+    const d = root.querySelectorAll('li')[3];
+    assert.equal(d.classList.contains('slide-move'), false);
+    assert.equal(a.style.transform, '');
+    assert.equal(a.style.transitionDuration, '0.3s');
+    transitionEvent(window, a, 'transitionend', 'transform');
+    assert.equal(a.classList.contains('slide-move'), false);
+    assert.ok(c.classList.contains('slide-move'));
+    for (const timer of [...clock.timers.values()]) timer.callback();
+    assert.equal(c.classList.contains('slide-move'), false);
+});
+
+test('b-for without b-transition never reads layout', t => {
+    const { window, app, root } = environment(t, `
+        <ul><li b-for="item in $data.items" b-key="$for.item" b-text="$for.item"></li></ul>`, { items: ['a', 'b', 'c'] });
+    const reads = stubRowLayout(window);
+    app.mount(root);
+    app.state.items = ['c', 'b', 'a'];
+    assert.equal(root.querySelector('ul').textContent, 'cba');
+    assert.equal(reads.count, 0);
+});
+
+test('component hosts accept b-transition and animate keyed moves', t => {
+    const { window, app, root } = environment(t, `
+        <ul><item-row b-for="item in $data.items" b-key="$for.item" b-bind-label="$for.item"
+            b-transition="'slide'" style="transition-property: transform; transition-duration: 0.2s"></item-row></ul>`, { items: ['a', 'b'] });
+    app.component('item-row', { template: '<span b-text="$props.label"></span>' });
+    const clock = transitionClock(window);
+    stubRowLayout(window);
+    app.mount(root);
+    clock.advanceFrames();
+    const [a, b] = root.querySelectorAll('item-row');
+    assert.equal(a.textContent, 'a');
+    app.state.items = ['b', 'a'];
+    assert.equal(root.querySelector('ul').textContent, 'ba');
+    assert.ok(a.classList.contains('slide-move') && b.classList.contains('slide-move'));
+});
+
+test('class bindings change only their own names and keep classes added elsewhere', t => {
+    const { app, root } = environment(t, `<p class="base" b-bind-class="{ active: $data.on, 'is-big': $data.big }"></p>`,
+        { on: true, big: false });
+    app.mount(root);
+    const p = root.querySelector('p');
+    assert.equal(p.className, 'base active');
+    p.classList.add('slide-move');
+    app.state.big = true;
+    assert.deepEqual([...p.classList].sort(), ['active', 'base', 'is-big', 'slide-move']);
+    app.state.on = false;
+    p.classList.remove('slide-move');
+    assert.equal(p.className, 'base is-big');
+});

@@ -28,6 +28,7 @@ import { createRefs } from './refs';
 import { handleBind } from './directives/bind';
 import { extractModifiers } from './directives/modifier';
 import { handleOn } from './directives/on';
+import { handleTransition } from './directives/transition';
 
 const projectedContexts = new WeakMap<Node, Record<PropertyKey, any>>();
 
@@ -169,6 +170,8 @@ export function mountComponent(
             } else if (startsWith(attribute.name, 'b-attr-')) {
                 handleBind(element, extractModifiers(attribute.name).baseName, attribute.value,
                     extractModifiers(attribute.name).modifiers, context);
+            } else if (extractModifiers(attribute.name).baseName === 'b-transition') {
+                handleTransition(element, attribute.value, {}, context);
             } else if (startsWith(attribute.name, 'b-') && !startsWith(attribute.name, 'b-bind-')) {
                 throw createError(`Directive "${attribute.name}" is not supported on component hosts.`);
             }

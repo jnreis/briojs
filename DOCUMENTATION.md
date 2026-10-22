@@ -283,7 +283,15 @@ Directive arguments use hyphens (`b-on-click`, `b-bind-href`); options use chain
 </div>
 ```
 
-`b-for` uses `item in $data.items` or `item, index in $data.items`. These names declare properties of `$for`, so row expressions use `$for.item` and `$for.index`. Without `b-key`, the index is the key; provide a stable key when items can be inserted, removed, or reordered. Duplicate keys are errors. Keyed reorders move only rows whose relative order changed (swapping two rows moves two rows).
+`b-for` uses `item in $data.items` or `item, index in $data.items`. These names declare properties of `$for`, so row expressions use `$for.item` and `$for.index`. Without `b-key`, the index is the key; provide a stable key when items can be inserted, removed, or reordered. Duplicate keys are errors. Keyed reorders move only rows whose relative order changed (swapping two rows moves two rows). A moved row keeps its element, state, focus, and text selection: Brio uses the browser's state-preserving `moveBefore()` where available and otherwise restores focus and selection after the move.
+
+A row that moves to a *different* `b-for` (a card dragged to another list) is a new element in the destination loop, so focus cannot follow it automatically. Flush, then focus the new row by key:
+
+```js
+moveCard(card, toList);   // state change: removes the row from one loop, adds it to another
+brio.flush();
+document.querySelector(`[data-card-id="${card.id}"]`)?.focus();
+```
 
 A row whose repeated element is a single concrete element (not a `<template>`, `b-template`, or teleported row) is its own boundary: Brio adds no `<!--brio:range-->` comments around it. Template and teleported rows keep their range comments. Clearing a list, or replacing it with items that share no keys with the old ones, disposes every old row at once; when the loop is the only content of its parent (besides whitespace), the old rows are removed with a single DOM write.
 
@@ -623,7 +631,7 @@ overwrite each other. Do not rely on attribute order to resolve competing owners
 | `b-model` + `b-mask` | Supported on text-like inputs/textareas: the mask formats input before model listeners read it. Masked values are formatted strings; `.number` uses `parseFloat`, not locale-aware money parsing. Initialize model values in the expected format; changing model state alone does not cause an input event or guarantee reformatting by the mask. |
 | `b-model` on non-form elements; `b-mask` on non-input/textarea elements; `b-script` on non-script elements | Errors when processed. A component host does not acquire native input/script capabilities by using one of these directives. |
 | `b-if.hide` + `b-bind-style` / effects writing `display` on the branch | Competing display owners; a reactive style write can reveal an inactive branch or override activation. Let the conditional own branch display; style a child or use `.detach` when appropriate. |
-| `b-transition` + dynamic class/style bindings | Avoid bindings that remove transition classes or overwrite animated properties while a transition runs. Put dynamic classes/styles on a child when possible. `b-transition` does not provide automatic list-move/leave animation for `b-for`, or animate every descendant when an ancestor is removed. |
+| `b-transition` + dynamic class/style bindings | Class bindings add and remove only the names they own, so transition classes survive. Do not let a binding toggle a transition class itself, and avoid styles that overwrite animated properties while a transition runs; put those on a child when possible. Keyed `b-for` rows with `b-transition` animate position changes through `<name>-move` and briefly own the row's inline `transform`; do not bind `style.transform` on that row. `b-transition` does not provide leave animation for removed `b-for` rows, or animate every descendant when an ancestor is removed. |
 | `b-for` + same-row `b-teleport` | Supported for concrete or template rows. Keyed reconciliation moves the complete row range at its destination. Each loop owns bounded groups per target/placement, preserving unrelated surrounding content through retargeting. |
 | `b-teleport` + a destination controlled by `b-text` / `b-html` / `b-router-outlet` / `b-ignore` | Child placements are errors; use `before` / `after` beside the controlled container, or choose an independently managed destination. |
 | `b-if` + teleported children | Supported, but hiding an ancestor with `.hide` cannot hide descendants moved elsewhere. Their effects also stay live in preservation modes. Put visibility on the surviving teleported element when it must be controlled independently. |
@@ -857,6 +865,21 @@ opposite starting pose. Plain `b-if` keeps the branch hydrated during leave so
 a reversal can reuse it without a second element or state reset. Only a completed
 leave dehydrates that branch; its next activation starts a fresh enter animation.
 Enclosing cleanup cancels transitions and disposes all branches immediately.
+
+#### Move transitions for keyed lists
+
+A keyed `b-for` row with `b-transition` also animates when it changes position, whether it was reordered or shifted by an insertion or removal. Brio measures the rows, reorders the DOM, then starts each moved row at its old position with an inverse `transform` and adds `<name>-move` while it slides home (FLIP). Style the move class:
+
+```html
+<li b-for="task in $data.tasks" b-key="$for.task.id" b-transition="'task'">${$for.task.title}</li>
+```
+
+```css
+.task-move { transition: transform 0.2s ease; }
+@media (prefers-reduced-motion: reduce) { .task-move { transition: none; } }
+```
+
+The class is removed on the row's own `transform` `transitionend`, or after the computed duration. Interrupting a move restarts it from the row's current visual position. New rows play the enter transition, and rows that did not shift are untouched. Loops without `b-transition` never read layout. `b-transition` also works on component hosts, so a `b-for` of components can animate. Moves between different loops create a new element and cannot slide.
 
 ## Observer options
 
@@ -1369,7 +1392,7 @@ Effects run synchronously by default. Explicit batches are synchronous too; ther
 
 Array methods that mutate (`push`, `splice`, `sort`, …) run on the underlying array and then notify only the indexes that changed, plus `length` when it changes. Values they return (`pop()`, `shift()`, `splice()` results) and the values passed to a `sort` comparator are the same reactive values that reads return.
 
-Bindings skip DOM writes when the value has not changed: `b-text`, `${…}` interpolation, and `b-bind-*` with primitive values compare against the last written value, and `b-bind-class` compares the resulting class string. Object values (for example a style object) are always reapplied, since they may have been mutated in place.
+Bindings skip DOM writes when the value has not changed: `b-text`, `${…}` interpolation, and `b-bind-*` with primitive values compare against the last written value, and `b-bind-class` adds or removes only class names that changed, leaving classes added by other code in place. Object values (for example a style object) are always reapplied, since they may have been mutated in place.
 
 Pending effects run in creation order. An owner (a router outlet, a `b-if` branch, a component, any effect that mounts children in a child scope) is always created before the effects it creates, so when one write affects both, the owner re-renders and disposes its stale children before they could run against the new values.
 

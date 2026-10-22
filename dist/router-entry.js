@@ -1,5 +1,5 @@
 import { c as createTypeError, m as isString, b as createError, t as startsWith, p as includesItem, g as getLength, d as deleteItem, j as isInstanceOf, q as objectKeys, o as objectConstructor } from "./native-DNTl55LH.js";
-import { a as addEventListener, r as removeEventListener } from "./native-Di2Lf1wo.js";
+import { a as addEventListener, r as removeEventListener } from "./native-Da80auZ6.js";
 import { s as state, b as signal } from "./state-TMgcg8XY.js";
 import { e as effect, u as untrack, b as batch } from "./effect-Hm6a3OX7.js";
 const MAX_REDIRECTS = 10;

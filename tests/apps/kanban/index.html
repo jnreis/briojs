@@ -93,6 +93,10 @@
         .add-list > button:hover { background: rgb(255 255 255 / .34); }
         .add-list form { display: grid; gap: 8px; padding: 8px; border-radius: 12px; background: var(--list); }
 
+        /* Keyed moves slide into place (b-for + b-transition adds <name>-move while a row travels). */
+        .slide-list-move, .slide-card-move { transition: transform 200ms ease; }
+        @media (prefers-reduced-motion: reduce) { .slide-list-move, .slide-card-move { transition: none; } }
+
         /* Cards */
         kanban-card { display: block; position: relative; }
         kanban-card.drop-before::before { content: ""; position: absolute; left: 0; right: 0; top: -6px; height: 4px; border-radius: 2px; background: var(--accent); }
@@ -211,7 +215,7 @@
             </div>
             <div class="board" b-else data-testid="board"
                  b-on-dragover.prevent="$stores.drag.active" b-on-drop.prevent="$stores.drag.drop()" b-on-dragend="$stores.drag.end()">
-                <kanban-list b-for="list in $stores.board.lists" b-key="$for.list.id" b-bind-list="$for.list"
+                <kanban-list b-for="list in $stores.board.lists" b-key="$for.list.id" b-bind-list="$for.list" b-transition="'slide-list'"
                              b-attr-class="{ 'drop-before': $stores.drag.isListBefore($for.list), 'is-dragged': $stores.drag.isDragged($for.list.id) }"
                              b-attr-data-list="$for.list.id"
                              b-on-dragover.prevent="$stores.drag.overList($event, $for.list)"></kanban-list>
@@ -292,7 +296,7 @@
                 </div>
             </header>
             <div class="cards" role="list" b-bind-class="{ 'drop-end': $stores.drag.isEnd($props.list) }" data-testid="cards">
-                <kanban-card b-for="card in $data.cards" b-key="$for.card.id" b-bind-card="$for.card" role="listitem"
+                <kanban-card b-for="card in $data.cards" b-key="$for.card.id" b-bind-card="$for.card" role="listitem" b-transition="'slide-card'"
                              b-attr-class="{ 'drop-before': $stores.drag.isBefore($for.card) }"
                              b-on-dragover.prevent.stop="$stores.drag.overCard($event, $for.card, $props.list)"></kanban-card>
             </div>

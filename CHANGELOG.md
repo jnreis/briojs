@@ -145,6 +145,9 @@ metadata on `main`, through commit `d868d43`.
 
 ### Fixed
 
+- Keyed `b-for` reorders no longer blur a focused element inside a moved row: rows move with the state-preserving `moveBefore()` where supported, otherwise focus and text selection are restored.
+- Class bindings (`b-bind-class`, `b-attr-class`) add and remove only the names they own instead of rewriting the `class` attribute, so classes added by transitions or other code survive binding updates.
+- Transition fallback timeouts treat unparsable computed durations or delays as zero instead of `NaN`.
 - The `.space` key modifier never matched: key lists were split on spaces, so `" "` became two empty names.
 - `.outside` no longer fires for the event that created its element, so a menu opened by a click is not closed by that click reaching `document`.
 - `b-bind-value` on a `<select>` whose options come from `b-for` selects the bound option: it applies after the
@@ -188,6 +191,8 @@ metadata on `main`, through commit `d868d43`.
   instead of silently becoming attributes.
 
 ### Added
+- Move transitions: keyed `b-for` rows with `b-transition` animate position changes (FLIP) via a `<name>-move` class. Loops without `b-transition` do no layout reads.
+- `b-transition` on component hosts.
 - Routes without a `component` or `redirect`: they match, update `$route`, and leave the outlet empty (for permanent page content with URL-addressable overlays).
 - Router route state: `router.route` (reactive `matched`, `component`, `path`, `params`, `query`, `hash`, `fullPath`), `$route` in templates, and `route` in component setup.
 - Router guards (`guard` per route and as a global option) returning `true`, `false`, or a redirect path. Guards are reactive: they re-run when state they read changes, e.g. on sign-out.

@@ -1,5 +1,5 @@
 import { i as isFunction, c as createTypeError, o as objectConstructor, b as createError, e as objectEntries, d as deleteItem, g as getLength, f as isObjectType, a as arrayFrom, h as isNumber, j as isInstanceOf } from "./native-DNTl55LH.js";
-import { a as addEventListener, r as removeEventListener, g as getAttribute } from "./native-Di2Lf1wo.js";
+import { a as addEventListener, r as removeEventListener, g as getAttribute } from "./native-Da80auZ6.js";
 import { c as copyContextValues, e as evaluate } from "./context-values-BXAsS55z.js";
 import { a as combinedError } from "./effect-Hm6a3OX7.js";
 const lazyMarker = Symbol("brio.astro.lazy");

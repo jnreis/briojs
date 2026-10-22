@@ -20,7 +20,7 @@ export function cancelTransition(element: Element): void {
 function transitionTimeout(element: Element): number {
     const style = getOwnerDocument(element).defaultView!.getComputedStyle(element);
     const milliseconds = (value: string) =>
-        parseFloat(value) * (value.trim().endsWith('ms') ? 1 : 1000);
+        (parseFloat(value) || 0) * (value.trim().endsWith('ms') ? 1 : 1000);
     const durations = style.transitionDuration.split(',').map(milliseconds);
     const delays = style.transitionDelay.split(',').map(milliseconds);
     return Math.max(0, ...style.transitionProperty.split(',').map((property, index) =>
@@ -107,6 +107,66 @@ export function enterTransition(element: Element, name: string = 'brio'): void {
 
 export function leaveTransition(element: Element, name: string = 'brio', onDone: () => void): void {
     runTransition(element, name, 'leave', onDone);
+}
+
+const moving = new WeakMap<Element, () => void>();
+
+/** Positions of keyed rows that animate moves, read before the DOM changes. */
+export function measureMoves(elements: Iterable<Element>): Map<Element, DOMRect> {
+    const rects = new Map<Element, DOMRect>();
+    for (const element of elements) {
+        if (getTransitionName(element) && element.isConnected) rects.set(element, element.getBoundingClientRect());
+    }
+    return rects;
+}
+
+/** FLIP: rows that shifted start at their old position and transition to the new one under `${name}-move`. */
+export function moveTransitions(before: Map<Element, DOMRect>): void {
+    if (!before.size) return;
+    for (const element of before.keys()) moving.get(element)?.();
+    const shifted: [HTMLElement, string, string][] = [];
+    for (const [element, rect] of before) {
+        const name = getTransitionName(element);
+        if (!name || !element.isConnected) continue;
+        const after = element.getBoundingClientRect();
+        const dx = rect.left - after.left;
+        const dy = rect.top - after.top;
+        if (!dx && !dy) continue;
+        const { style } = element as HTMLElement;
+        shifted.push([element as HTMLElement, name, style.transitionDuration]);
+        style.transitionDuration = '0s';
+        style.transform = `translate(${dx}px, ${dy}px)`;
+    }
+    if (!getLength(shifted)) return;
+    // One forced reflow commits every inverted position before the transitions start.
+    void getOwnerDocument(shifted[0][0]).body?.offsetHeight;
+    for (const [element, name, duration] of shifted) {
+        const moveClass = `${name}-move`;
+        const { style } = element;
+        let timer: ReturnType<typeof setTimeout> | undefined;
+        const done = () => {
+            clearTimeout(timer);
+            removeEventListener(element, 'transitionend', onEnd);
+            removeEventListener(element, 'transitioncancel', onEnd);
+            element.classList.remove(moveClass);
+            if (moving.get(element) === done) deleteItem(moving, element);
+        };
+        const onEnd = (event: Event) => {
+            if (event.target === element && (event as TransitionEvent).propertyName === 'transform') done();
+        };
+        moving.set(element, () => {
+            done();
+            style.transform = '';
+        });
+        addEventListener(element, 'transitionend', onEnd);
+        addEventListener(element, 'transitioncancel', onEnd);
+        element.classList.add(moveClass);
+        style.transitionDuration = duration;
+        style.transform = '';
+        const timeout = transitionTimeout(element);
+        if (timeout > 0) timer = setTimeout(done, timeout + 50);
+        else done();
+    }
 }
 
 export function handleTransition(

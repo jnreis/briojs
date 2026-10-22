@@ -430,9 +430,11 @@
 
     const dnd = brio.state({ kind: null, id: null, target: null, keyboard: false, announcement: '' });
     const visible = list => list.cards.filter(matches);
+    // Reorders inside one list keep focus on their own; a card moved to another list is a new element.
     const focusCard = id => {
         brio.flush();
-        document.querySelector(`[data-card="${id}"]`)?.focus();
+        const card = document.querySelector(`[data-card="${id}"]`);
+        if (card && document.activeElement !== card) card.focus();
     };
     const setTarget = target => {
         if (!same(dnd.target, target)) dnd.target = target;

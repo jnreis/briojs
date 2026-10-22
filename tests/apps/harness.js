@@ -14,6 +14,8 @@ export function openApp(t, name, { before, hash = '' } = {}) {
     const page = new URL('index.html', directory);
     const dom = new JSDOM(readFileSync(page, 'utf8'), {
         runScripts: 'outside-only',
+        // Browsers always have requestAnimationFrame, which transitions rely on.
+        pretendToBeVisual: true,
         url: `https://apps.brio.test/${name}/${hash}`,
     });
     const { window } = dom;

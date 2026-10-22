@@ -355,6 +355,11 @@ Transitions: `b-transition="'fade'"` uses `fade-enter`, `fade-enter-active`,
 `fade-enter-to`, `fade-leave`, `fade-leave-active`, and `fade-leave-to`.
 Supply CSS transitions, not keyframe animations. Hide/removal waits for own
 properties, ignores descendant events, and cancels pending work on disposal.
+Keyed `b-for` rows (including component hosts) with `b-transition` animate
+position changes: style `.<name>-move { transition: transform .2s }` and do not
+bind `style.transform` on that row. Keyed reorders keep focus and selection. A
+row moved into a different loop is a new element: call `brio.flush()`, then
+query it by key and focus it.
 
 ## Scripts, components, and cleanup
 

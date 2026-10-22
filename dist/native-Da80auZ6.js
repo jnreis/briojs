@@ -17,13 +17,13 @@ export {
   addEventListener as a,
   getChildNodes as b,
   removeAttribute as c,
-  removeChild as d,
-  getParent as e,
-  getOwnerDocument as f,
+  getOwnerDocument as d,
+  removeChild as e,
+  getParent as f,
   getAttribute as g,
   getNodeType as h,
   getNextSibling as i,
   insertBefore as j,
   removeEventListener as r
 };
-//# sourceMappingURL=native-Di2Lf1wo.js.map
+//# sourceMappingURL=native-Da80auZ6.js.map

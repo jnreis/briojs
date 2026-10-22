@@ -31,6 +31,7 @@ import type { DomRange, PortalDestination } from '../range';
 import { combinedError } from '../../core/errors';
 import { cloneProjectedNode } from '../components';
 import { defineLazyRefs } from '../refs';
+import { measureMoves, moveTransitions } from './transition';
 
 type LoopRow = {
     element: Element;
@@ -108,6 +109,11 @@ export function handleFor(
         const { baseName } = extractModifiers(name);
         return baseName === B_TELEPORT || baseName === TELEPORT || baseName === 'b-template';
     });
+    // Only rows that declare b-transition pay for layout reads (move animations).
+    const animated = arrayFrom(template[ATTRIBUTES]).some(({ name }) => {
+        const { baseName } = extractModifiers(name);
+        return baseName === 'b-transition' || baseName === 'transition';
+    });
 
     const rows = new Map<string | number, LoopRow>();
     const portals: { destination: PortalDestination; range: DomRange }[] = [];
@@ -139,12 +145,26 @@ export function handleFor(
         // Rows forming the longest run already in relative order stay put; only the rest move.
         const stable = longestIncreasing(ordered.map(row =>
             destinations.has(row) || row.output.detached ? -1 : placed.get(row) ?? -1));
+        // Without native moveBefore, moving a row blurs whatever it contains; remember it to restore after.
+        const doc = getOwnerDocument(element);
+        const active = doc.activeElement as HTMLInputElement | null;
+        let selection: [number | null, number | null, string | null] | undefined;
+        try {
+            if (active) selection = [active.selectionStart, active.selectionEnd, active.selectionDirection];
+        } catch {}
         for (let index = getLength(ordered) - 1; index >= 0; index--) {
             const row = ordered[index];
             const destination = destinations.get(row) ?? output;
             if (!stable.has(index))
                 row.output.moveBefore(getParent(destination.end)!, references.get(destination) ?? null);
             references.set(destination, row.output.start);
+        }
+        if (active && active !== doc.activeElement && active.isConnected) {
+            active.focus({ preventScroll: true });
+            try {
+                if (selection && selection[0] !== null)
+                    active.setSelectionRange(selection[0], selection[1]!, (selection[2] ?? undefined) as 'none');
+            } catch {}
         }
         placed = new Map();
         for (const row of ordered) if (!destinations.has(row)) placed.set(row, placed.size);
@@ -205,6 +225,7 @@ export function handleFor(
 
     effect(() => {
         reconciling = true;
+        const before = animated ? measureMoves(arrayFrom(rows.values(), row => row.element)) : undefined;
         try {
             const { items, keys } = enumerate(evaluate(collectionExpression, context, 'b-for', element));
             const nextKeys = new Set<string | number>();
@@ -282,5 +303,6 @@ export function handleFor(
             reconciling = false;
         }
         reconcilePositions();
+        if (before) moveTransitions(before);
     });
 }

@@ -2,7 +2,7 @@ var __defProp = Object.defineProperty;
 var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
 var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "symbol" ? key + "" : key, value);
 import { R as ReflectApi, $ as $PARENT, c as createTypeError, p as includesItem, d as deleteItem, b as createError, g as getLength, T as TELEPORT, a as arrayFrom, l as ownKeys, G as GET_OWN_PROPERTY_DESCRIPTOR, o as objectConstructor, n as createSyntaxError, t as startsWith, j as isInstanceOf, m as isString, k as isArray, f as isObjectType, e as objectEntries, q as objectKeys, u as TEMPLATE, A as ATTRIBUTES, B as B_TELEPORT, r as removeElement, h as isNumber, i as isFunction, v as isBoolean, w as snapshotList } from "./native-DNTl55LH.js";
-import { b as getChildNodes, g as getAttribute, c as removeAttribute, a as addEventListener, r as removeEventListener, d as removeChild, e as getParent, f as getOwnerDocument, h as getNodeType, i as getNextSibling, j as insertBefore } from "./native-Di2Lf1wo.js";
+import { b as getChildNodes, g as getAttribute, c as removeAttribute, a as addEventListener, r as removeEventListener, d as getOwnerDocument, e as removeChild, f as getParent, h as getNodeType, i as getNextSibling, j as insertBefore } from "./native-Da80auZ6.js";
 import { e as evaluate, a as execute, b as emptyContextValues, d as createExpressionScope, f as assign, g as createProvidedValues, h as evaluateFunction, c as copyContextValues } from "./context-values-BXAsS55z.js";
 import { j as getCurrentScope, a as combinedError, o as onCleanup, b as batch, e as effect, c as causedError, k as errorText, n as createScope, p as onDispose, h as directiveError, s as setScopeNode, r as locate, u as untrack, t as notifyRootMounted, v as flush, w as notifyAppDisposed, x as notifyAppCreated, y as notifyRootUnmounted } from "./effect-Hm6a3OX7.js";
 import { z, f, E, m, A, B, D, C } from "./effect-Hm6a3OX7.js";
@@ -211,6 +211,7 @@ const resolveBindTarget = (element, name, forceProp) => {
   return svgNames.get(name) ?? name;
 };
 const dynamicStyles = /* @__PURE__ */ new WeakMap();
+const dynamicClasses = /* @__PURE__ */ new WeakMap();
 const setBoundValue = (element, name, value, forceProp = false) => {
   if (name === "class") {
     let staticNames = staticClasses.get(element);
@@ -227,12 +228,12 @@ const setBoundValue = (element, name, value, forceProp = false) => {
       for (const [className, enabled] of objectEntries(value))
         if (enabled) className.split(/\s+/).filter(Boolean).forEach((name2) => currentDynamic.add(name2));
     }
-    const combined = /* @__PURE__ */ new Set([...staticNames, ...currentDynamic]);
-    const current = getAttribute(element, "class");
-    if (combined.size) {
-      const next = arrayFrom(combined).join(" ");
-      if (current !== next) element.setAttribute("class", next);
-    } else if (current !== null) removeAttribute(element, "class");
+    const { classList } = element;
+    for (const className of dynamicClasses.get(element) ?? [])
+      if (!currentDynamic.has(className) && !staticNames.has(className)) classList.remove(className);
+    for (const className of currentDynamic) if (!classList.contains(className)) classList.add(className);
+    dynamicClasses.set(element, currentDynamic);
+    if (!getLength(classList) && getAttribute(element, "class") !== null) removeAttribute(element, "class");
     return;
   }
   if (name === "style" && value && isObjectType(value)) {
@@ -411,6 +412,170 @@ function handleOn(element, attrName, expression, modifiers, context) {
     removeEventListener(target, rawTarget, handler, options);
   });
 }
+const names = /* @__PURE__ */ new WeakMap();
+const running = /* @__PURE__ */ new WeakMap();
+function prepareTransition(element, expression) {
+  names.set(element, expression.trim().replace(/^['"]|['"]$/g, "") || "brio");
+}
+function getTransitionName(element) {
+  return names.get(element);
+}
+function cancelTransition(element) {
+  var _a;
+  (_a = running.get(element)) == null ? void 0 : _a();
+}
+function transitionTimeout(element) {
+  const style = getOwnerDocument(element).defaultView.getComputedStyle(element);
+  const milliseconds = (value) => (parseFloat(value) || 0) * (value.trim().endsWith("ms") ? 1 : 1e3);
+  const durations = style.transitionDuration.split(",").map(milliseconds);
+  const delays = style.transitionDelay.split(",").map(milliseconds);
+  return Math.max(0, ...style.transitionProperty.split(",").map(
+    (property, index) => property.trim() === "none" ? 0 : durations[index % getLength(durations)] + delays[index % getLength(delays)]
+  ));
+}
+function runTransition(element, name, phase, onDone) {
+  const interrupted = running.has(element);
+  cancelTransition(element);
+  const view = getOwnerDocument(element).defaultView;
+  const classes = [`${name}-${phase}`, `${name}-${phase}-active`, `${name}-${phase}-to`];
+  const pending = /* @__PURE__ */ new Set();
+  let started = false;
+  let activated = false;
+  let settled = false;
+  let frame = 0;
+  let completionFrame = 0;
+  let timer;
+  const cleanup = () => {
+    if (settled) return;
+    settled = true;
+    view.cancelAnimationFrame(frame);
+    view.cancelAnimationFrame(completionFrame);
+    clearTimeout(timer);
+    removeEventListener(element, "transitionrun", onRun);
+    removeEventListener(element, "transitionend", onEnd);
+    removeEventListener(element, "transitioncancel", onEnd);
+    element.classList.remove(...classes);
+    if (running.get(element) === cleanup) deleteItem(running, element);
+  };
+  const finish = () => {
+    if (settled) return;
+    cleanup();
+    onDone == null ? void 0 : onDone();
+  };
+  const isOwnEvent = (event) => event.target === element && !event.pseudoElement;
+  const onRun = (event) => {
+    const transition = event;
+    if (!activated || !isOwnEvent(transition)) return;
+    started = true;
+    pending.add(transition.propertyName);
+  };
+  const onEnd = (event) => {
+    const transition = event;
+    if (!activated || !isOwnEvent(transition)) return;
+    deleteItem(pending, transition.propertyName);
+    if (started && pending.size === 0) {
+      view.cancelAnimationFrame(completionFrame);
+      completionFrame = view.requestAnimationFrame(() => {
+        if (pending.size === 0) finish();
+      });
+    }
+  };
+  running.set(element, cleanup);
+  addEventListener(element, "transitionrun", onRun);
+  addEventListener(element, "transitionend", onEnd);
+  addEventListener(element, "transitioncancel", onEnd);
+  const activate = () => {
+    activated = true;
+    element.classList.remove(classes[0]);
+    element.classList.add(classes[1], classes[2]);
+    const timeout = transitionTimeout(element);
+    if (timeout > 0) timer = setTimeout(finish, timeout + 50);
+    else finish();
+  };
+  if (interrupted) {
+    activate();
+  } else {
+    element.classList.add(classes[0], classes[1]);
+    frame = view.requestAnimationFrame(() => {
+      frame = view.requestAnimationFrame(activate);
+    });
+  }
+}
+function enterTransition(element, name = "brio") {
+  runTransition(element, name, "enter");
+}
+function leaveTransition(element, name = "brio", onDone) {
+  runTransition(element, name, "leave", onDone);
+}
+const moving = /* @__PURE__ */ new WeakMap();
+function measureMoves(elements) {
+  const rects = /* @__PURE__ */ new Map();
+  for (const element of elements) {
+    if (getTransitionName(element) && element.isConnected) rects.set(element, element.getBoundingClientRect());
+  }
+  return rects;
+}
+function moveTransitions(before) {
+  var _a, _b;
+  if (!before.size) return;
+  for (const element of before.keys()) (_a = moving.get(element)) == null ? void 0 : _a();
+  const shifted = [];
+  for (const [element, rect] of before) {
+    const name = getTransitionName(element);
+    if (!name || !element.isConnected) continue;
+    const after = element.getBoundingClientRect();
+    const dx = rect.left - after.left;
+    const dy = rect.top - after.top;
+    if (!dx && !dy) continue;
+    const { style } = element;
+    shifted.push([element, name, style.transitionDuration]);
+    style.transitionDuration = "0s";
+    style.transform = `translate(${dx}px, ${dy}px)`;
+  }
+  if (!getLength(shifted)) return;
+  void ((_b = getOwnerDocument(shifted[0][0]).body) == null ? void 0 : _b.offsetHeight);
+  for (const [element, name, duration] of shifted) {
+    const moveClass = `${name}-move`;
+    const { style } = element;
+    let timer;
+    const done = () => {
+      clearTimeout(timer);
+      removeEventListener(element, "transitionend", onEnd);
+      removeEventListener(element, "transitioncancel", onEnd);
+      element.classList.remove(moveClass);
+      if (moving.get(element) === done) deleteItem(moving, element);
+    };
+    const onEnd = (event) => {
+      if (event.target === element && event.propertyName === "transform") done();
+    };
+    moving.set(element, () => {
+      done();
+      style.transform = "";
+    });
+    addEventListener(element, "transitionend", onEnd);
+    addEventListener(element, "transitioncancel", onEnd);
+    element.classList.add(moveClass);
+    style.transitionDuration = duration;
+    style.transform = "";
+    const timeout = transitionTimeout(element);
+    if (timeout > 0) timer = setTimeout(done, timeout + 50);
+    else done();
+  }
+}
+function handleTransition(element, expression, _modifiers, _context) {
+  var _a;
+  prepareTransition(element, expression);
+  onCleanup(() => {
+    cancelTransition(element);
+    deleteItem(names, element);
+  });
+  if (element.isConnected) {
+    for (let ancestor = element; ancestor; ancestor = ancestor.parentElement) {
+      if (((_a = ancestor.style) == null ? void 0 : _a.display) === "none") return;
+    }
+    enterTransition(element, getTransitionName(element));
+  }
+}
 const projectedContexts = /* @__PURE__ */ new WeakMap();
 function takeProjectedContext(node) {
   const context = projectedContexts.get(node);
@@ -524,6 +689,8 @@ function mountComponent(element, definition, context, runtime, hydrateNodeFn) {
           extractModifiers(attribute.name).modifiers,
           context
         );
+      } else if (extractModifiers(attribute.name).baseName === "b-transition") {
+        handleTransition(element, attribute.value);
       } else if (startsWith(attribute.name, "b-") && !startsWith(attribute.name, "b-bind-")) {
         throw createError(`Directive "${attribute.name}" is not supported on component hosts.`);
       }
@@ -567,115 +734,6 @@ function mountComponent(element, definition, context, runtime, hydrateNodeFn) {
     }
   });
 }
-const names = /* @__PURE__ */ new WeakMap();
-const running = /* @__PURE__ */ new WeakMap();
-function prepareTransition(element, expression) {
-  names.set(element, expression.trim().replace(/^['"]|['"]$/g, "") || "brio");
-}
-function getTransitionName(element) {
-  return names.get(element);
-}
-function cancelTransition(element) {
-  var _a;
-  (_a = running.get(element)) == null ? void 0 : _a();
-}
-function transitionTimeout(element) {
-  const style = getOwnerDocument(element).defaultView.getComputedStyle(element);
-  const milliseconds = (value) => parseFloat(value) * (value.trim().endsWith("ms") ? 1 : 1e3);
-  const durations = style.transitionDuration.split(",").map(milliseconds);
-  const delays = style.transitionDelay.split(",").map(milliseconds);
-  return Math.max(0, ...style.transitionProperty.split(",").map(
-    (property, index) => property.trim() === "none" ? 0 : durations[index % getLength(durations)] + delays[index % getLength(delays)]
-  ));
-}
-function runTransition(element, name, phase, onDone) {
-  const interrupted = running.has(element);
-  cancelTransition(element);
-  const view = getOwnerDocument(element).defaultView;
-  const classes = [`${name}-${phase}`, `${name}-${phase}-active`, `${name}-${phase}-to`];
-  const pending = /* @__PURE__ */ new Set();
-  let started = false;
-  let activated = false;
-  let settled = false;
-  let frame = 0;
-  let completionFrame = 0;
-  let timer;
-  const cleanup = () => {
-    if (settled) return;
-    settled = true;
-    view.cancelAnimationFrame(frame);
-    view.cancelAnimationFrame(completionFrame);
-    clearTimeout(timer);
-    removeEventListener(element, "transitionrun", onRun);
-    removeEventListener(element, "transitionend", onEnd);
-    removeEventListener(element, "transitioncancel", onEnd);
-    element.classList.remove(...classes);
-    if (running.get(element) === cleanup) deleteItem(running, element);
-  };
-  const finish = () => {
-    if (settled) return;
-    cleanup();
-    onDone == null ? void 0 : onDone();
-  };
-  const isOwnEvent = (event) => event.target === element && !event.pseudoElement;
-  const onRun = (event) => {
-    const transition = event;
-    if (!activated || !isOwnEvent(transition)) return;
-    started = true;
-    pending.add(transition.propertyName);
-  };
-  const onEnd = (event) => {
-    const transition = event;
-    if (!activated || !isOwnEvent(transition)) return;
-    deleteItem(pending, transition.propertyName);
-    if (started && pending.size === 0) {
-      view.cancelAnimationFrame(completionFrame);
-      completionFrame = view.requestAnimationFrame(() => {
-        if (pending.size === 0) finish();
-      });
-    }
-  };
-  running.set(element, cleanup);
-  addEventListener(element, "transitionrun", onRun);
-  addEventListener(element, "transitionend", onEnd);
-  addEventListener(element, "transitioncancel", onEnd);
-  const activate = () => {
-    activated = true;
-    element.classList.remove(classes[0]);
-    element.classList.add(classes[1], classes[2]);
-    const timeout = transitionTimeout(element);
-    if (timeout > 0) timer = setTimeout(finish, timeout + 50);
-    else finish();
-  };
-  if (interrupted) {
-    activate();
-  } else {
-    element.classList.add(classes[0], classes[1]);
-    frame = view.requestAnimationFrame(() => {
-      frame = view.requestAnimationFrame(activate);
-    });
-  }
-}
-function enterTransition(element, name = "brio") {
-  runTransition(element, name, "enter");
-}
-function leaveTransition(element, name = "brio", onDone) {
-  runTransition(element, name, "leave", onDone);
-}
-function handleTransition(element, expression, _modifiers, _context) {
-  var _a;
-  prepareTransition(element, expression);
-  onCleanup(() => {
-    cancelTransition(element);
-    deleteItem(names, element);
-  });
-  if (element.isConnected) {
-    for (let ancestor = element; ancestor; ancestor = ancestor.parentElement) {
-      if (((_a = ancestor.style) == null ? void 0 : _a.display) === "none") return;
-    }
-    enterTransition(element, getTransitionName(element));
-  }
-}
 const trustedMarkup = Symbol("brio.trustedMarkup");
 function trustedHTML(markup) {
   return { [trustedMarkup]: markup };
@@ -685,6 +743,16 @@ function isTrustedHTML(value) {
 }
 function getTrustedHTMLString(value) {
   return value[trustedMarkup];
+}
+function moveNode(parent, node, reference) {
+  const move = parent.moveBefore;
+  if (move && node.isConnected && parent.isConnected) {
+    try {
+      return move.call(parent, node, reference);
+    } catch {
+    }
+  }
+  insertBefore(parent, node, reference);
 }
 function portalPosition({ target, placement }) {
   const sibling = placement === "before" || placement === "after";
@@ -753,7 +821,7 @@ function createDomRange(document2, name) {
         const contents = nodes(true);
         if (reference && includesItem(contents, reference))
           throw createError("Cannot move a Brio range inside itself.");
-        for (const node of contents) insertBefore(parent, node, reference);
+        for (const node of contents) moveNode(parent, node, reference);
       }
       if (resuming) {
         detached = false;
@@ -823,7 +891,7 @@ class ElementRange {
   moveBefore(parent, reference) {
     const { start } = this;
     if (reference === start) return;
-    if (getParent(start) !== parent || getNextSibling(start) !== reference) insertBefore(parent, start, reference);
+    if (getParent(start) !== parent || getNextSibling(start) !== reference) moveNode(parent, start, reference);
   }
   detach() {
     removeElement(this.start);
@@ -1278,6 +1346,10 @@ function handleFor(element, expression, _modifiers, context, runtime, hydrateNod
     const { baseName } = extractModifiers(name);
     return baseName === B_TELEPORT || baseName === TELEPORT || baseName === "b-template";
   });
+  const animated = arrayFrom(template[ATTRIBUTES]).some(({ name }) => {
+    const { baseName } = extractModifiers(name);
+    return baseName === "b-transition" || baseName === "transition";
+  });
   const rows = /* @__PURE__ */ new Map();
   const portals = [];
   let ordered = [];
@@ -1304,12 +1376,27 @@ function handleFor(element, expression, _modifiers, context, runtime, hydrateNod
     const references = /* @__PURE__ */ new Map([[output, output.end]]);
     for (const portal of portals) references.set(portal.range, portal.range.end);
     const stable = longestIncreasing(ordered.map((row) => destinations.has(row) || row.output.detached ? -1 : placed.get(row) ?? -1));
+    const doc = getOwnerDocument(element);
+    const active = doc.activeElement;
+    let selection;
+    try {
+      if (active) selection = [active.selectionStart, active.selectionEnd, active.selectionDirection];
+    } catch {
+    }
     for (let index = getLength(ordered) - 1; index >= 0; index--) {
       const row = ordered[index];
       const destination = destinations.get(row) ?? output;
       if (!stable.has(index))
         row.output.moveBefore(getParent(destination.end), references.get(destination) ?? null);
       references.set(destination, row.output.start);
+    }
+    if (active && active !== doc.activeElement && active.isConnected) {
+      active.focus({ preventScroll: true });
+      try {
+        if (selection && selection[0] !== null)
+          active.setSelectionRange(selection[0], selection[1], selection[2] ?? void 0);
+      } catch {
+      }
     }
     placed = /* @__PURE__ */ new Map();
     for (const row of ordered) if (!destinations.has(row)) placed.set(row, placed.size);
@@ -1365,6 +1452,7 @@ function handleFor(element, expression, _modifiers, context, runtime, hydrateNod
   });
   effect(() => {
     reconciling = true;
+    const before = animated ? measureMoves(arrayFrom(rows.values(), (row) => row.element)) : void 0;
     try {
       const { items, keys: keys2 } = enumerate(evaluate(collectionExpression, context, "b-for", element));
       const nextKeys = /* @__PURE__ */ new Set();
@@ -1438,6 +1526,7 @@ function handleFor(element, expression, _modifiers, context, runtime, hydrateNod
       reconciling = false;
     }
     reconcilePositions();
+    if (before) moveTransitions(before);
   });
 }
 function handleHtml(element, expression, modifiers, context, runtime, hydrateChildrenFn) {

@@ -3,7 +3,7 @@ import test from 'node:test';
 import { assertStandaloneAssets, openApp, settle } from '../harness.js';
 
 /** Opens Conduit at `path` with an instant mock server; `token` starts the page signed in. */
-function open(t, start = '', { token, latency = 0 } = {}) {
+function open(t, start = '', { token, latency = 0, mode } = {}) {
     const page = openApp(t, 'conduit', {
         hash: start,
         before(window) {
@@ -11,6 +11,7 @@ function open(t, start = '', { token, latency = 0 } = {}) {
             window.Headers = Headers;
             window.Response = Response;
             window.conduitBase = '/conduit/';
+            if (mode) window.conduitMode = mode;
             window.conduitLatency = latency;
             window.confirm = () => true;
             if (token) window.localStorage.setItem('conduit.token', JSON.stringify(token));
@@ -43,6 +44,16 @@ const newestTitles = [
     'Drop-in apps for content sites', 'Debugging effects with intent', 'Shared stores across mounts',
     'A love letter to the template element', 'Hydrating islands on demand',
 ];
+
+test('optional hash routing supports static hosting without changing the history-mode default', async t => {
+    const app = open(t, '#/login', { mode: 'hash' });
+    await app.waitFor(() => app.window.document.querySelector('input[type="password"]'));
+    assert.equal(app.window.location.hash, '#/login');
+    app.user.click(app.link('Home'));
+    await app.loaded();
+    assert.equal(app.window.location.hash, '#/');
+    assert.equal(app.$('nav-login').getAttribute('href'), '#/login');
+});
 
 test('guests see the global feed, newest first, with pages and popular tags', async t => {
     const app = open(t);

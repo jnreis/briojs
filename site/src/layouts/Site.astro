@@ -1,0 +1,44 @@
+---
+import '../styles/site.css';
+import { version } from '../../../package.json';
+const { title, description = 'Powerfully simple, HTML-first web development. Add a widget, enhance a page, or build an app with Brio.js.' } = Astro.props;
+const canonical = new URL(Astro.url.pathname === '/404/' ? '/404.html' : Astro.url.pathname, Astro.site);
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    <title>{title} · Brio.js</title>
+    <link rel="canonical" href={canonical} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta property="og:title" content={`${title} · Brio.js`} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content="https://briojs.com/social.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="theme-color" content="#2563eb" />
+    <script is:inline src="/theme.js"></script>
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to content</a>
+    <header class="header wrap">
+      <a class="wordmark" href="/" aria-label="Brio.js home"><span class="brand-icon" aria-hidden="true">b</span> Brio<span class="muted">.js</span></a>
+      <nav aria-label="Main navigation">
+        <a href="/start/getting-started/">Docs</a>
+        <a href="/examples/">Examples</a>
+        <a href="/releases/">v{version}</a>
+        <a href="https://github.com/jnreis/briojs">GitHub <span aria-hidden="true">↗</span></a>
+      </nav>
+      <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Switch color theme">◐</button>
+    </header>
+    <main id="main"><slot /></main>
+    <footer class="footer wrap">
+      <a class="wordmark" href="/">Brio.js</a>
+      <span>HTML first. Your app, your way.</span>
+      <div><a href="https://www.npmjs.com/package/@jnreis/briojs">npm</a> · <a href="https://github.com/jnreis/briojs/blob/main/LICENSE">MIT license</a> · <a href="https://github.com/jnreis/briojs">Jonathan Reis</a></div>
+    </footer>
+  </body>
+</html>

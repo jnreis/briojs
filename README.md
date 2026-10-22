@@ -11,6 +11,11 @@ Version **4.0.0** is Brio's first npm release.
 The npm package is **`@jnreis/briojs`**; the framework is Brio.js and the
 standalone browser API remains `brio`.
 
+[Website](https://briojs.com) ·
+[Getting started](https://briojs.com/start/getting-started/) ·
+[API reference](https://briojs.com/reference/install/) ·
+[Live examples](https://briojs.com/examples/)
+
 ## Quick start
 
 ### With npm

@@ -131,7 +131,7 @@
         { path: '/profile/:username', component: 'profile-page' },
         { path: '/profile/:username/favorites', component: 'profile-page' },
         { path: '*', component: 'not-found-page' },
-    ], { base: BASE });
+    ], { base: BASE, mode: window.conduitMode ?? 'history' });
     const route = router.route;
 
     const link = (path, query = {}) => {

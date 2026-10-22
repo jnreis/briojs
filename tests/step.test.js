@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { JSDOM } from 'jsdom';
-import * as npm from 'briojs';
+import * as npm from '@jnreis/briojs';
 
 function environment(t, bundle) {
     if (!bundle) return { api: npm, realm: value => value };

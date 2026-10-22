@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { JSDOM } from 'jsdom';
-import { createRouter } from 'briojs/router';
+import { createRouter } from '@jnreis/briojs/router';
 
 const routes = [
     { path: '/', component: 'home-page' },

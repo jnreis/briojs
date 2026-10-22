@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { assign, createExpressionScope, evaluate, evaluateFunction, execute, state, effect } from 'briojs';
+import { assign, createExpressionScope, evaluate, evaluateFunction, execute, state, effect } from '@jnreis/briojs';
 
 test('contexts merge named references with nearest precedence without copying reactive state', () => {
     const parentData = state({ count: 1 });

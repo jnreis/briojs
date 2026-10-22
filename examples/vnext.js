@@ -1,8 +1,8 @@
-const devtools = import.meta.env.DEV ? await import('briojs/devtools') : undefined;
+const devtools = import.meta.env.DEV ? await import('@jnreis/briojs/devtools') : undefined;
 
-import { createApp } from 'briojs';
-import { createRouter } from 'briojs/router';
-import { signal } from 'briojs/reactivity';
+import { createApp } from '@jnreis/briojs';
+import { createRouter } from '@jnreis/briojs/router';
+import { signal } from '@jnreis/briojs/reactivity';
 
 const router = createRouter([
     { path: '/', component: 'home-page' },

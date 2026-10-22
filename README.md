@@ -8,12 +8,15 @@ No virtual DOM, JSX, required compiler, or runtime dependencies.
 
 Version **4.0.0** is Brio's first npm release.
 
+The npm package is **`@jnreis/briojs`**; the framework is Brio.js and the
+standalone browser API remains `brio`.
+
 ## Quick start
 
 ### With npm
 
 ```sh
-npm install briojs
+npm install @jnreis/briojs
 ```
 
 ```html
@@ -25,7 +28,7 @@ npm install briojs
 ```
 
 ```js
-import { createApp } from 'briojs';
+import { createApp } from '@jnreis/briojs';
 
 const app = createApp({ state: () => ({ count: 0 }) });
 app.mount('#counter');
@@ -53,7 +56,7 @@ Save this as an HTML file and serve it from any static server:
       Count: <span b-text="$data.count"></span>
     </button>
   </div>
-  <script src="https://cdn.jsdelivr.net/npm/briojs@4.0.0/dist/brio.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@jnreis/briojs@4.0.0/dist/brio.min.js"></script>
   <script>
     const app = brio.createApp({ state: () => ({ count: 0 }) });
     app.mount('#counter');
@@ -63,7 +66,7 @@ Save this as an HTML file and serve it from any static server:
 ```
 
 Use `brio.dev.min.js` instead during development for the live inspector.
-To self-host, copy scripts from `node_modules/briojs/dist/` to your public assets.
+To self-host, copy scripts from `node_modules/@jnreis/briojs/dist/` to your public assets.
 Do not load both core builds on the same page.
 
 ## What Brio provides
@@ -73,7 +76,7 @@ Do not load both core builds on the same page.
   wrapperless templates, teleports, and DOM observers.
 - **Fine-grained reactivity:** plain-object and array state, signals, computed
   values, synchronous effects, explicit batching, and cancellable async resources.
-  Use these independently through `briojs/reactivity`, even without a DOM.
+  Use these independently through `@jnreis/briojs/reactivity`, even without a DOM.
 - **Explicit ownership:** app and component scopes clean up effects, listeners,
   observers, and resources when removed. Mount several independent apps on a page.
 - **Reusable HTML components:** setup functions, reactive props, emitted events,
@@ -92,23 +95,23 @@ The npm package is ESM with TypeScript declarations and tree-shakable exports.
 There is no CommonJS build.
 
 ```js
-import { createApp } from 'briojs';
-import { computed, effect, signal } from 'briojs/reactivity';
-import { createRouter } from 'briojs/router';
-import { persist } from 'briojs/persistence';
-import { http, HttpError } from 'briojs/http';
-import { validate } from 'briojs/forms';
-import { createStepEngine } from 'briojs/step';
-import { moneyMask } from 'briojs/money-mask';
+import { createApp } from '@jnreis/briojs';
+import { computed, effect, signal } from '@jnreis/briojs/reactivity';
+import { createRouter } from '@jnreis/briojs/router';
+import { persist } from '@jnreis/briojs/persistence';
+import { http, HttpError } from '@jnreis/briojs/http';
+import { validate } from '@jnreis/briojs/forms';
+import { createStepEngine } from '@jnreis/briojs/step';
+import { moneyMask } from '@jnreis/briojs/money-mask';
 ```
 
-Most tools are also named exports from `briojs`; subpaths make intent explicit.
+Most tools are also named exports from `@jnreis/briojs`; subpaths make intent explicit.
 For standalone browser apps, load the matching optional scripts **after** core
 and **before** your bootstrap:
 
 ```html
-<script src="https://cdn.jsdelivr.net/npm/briojs@4.0.0/dist/brio.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/briojs@4.0.0/dist/brio.router.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@jnreis/briojs@4.0.0/dist/brio.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@jnreis/briojs@4.0.0/dist/brio.router.min.js"></script>
 <script src="/app.js"></script>
 ```
 

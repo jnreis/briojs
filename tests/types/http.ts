@@ -1,5 +1,5 @@
-import { http, HttpError } from 'briojs';
-import type { HttpBody, HttpMethod, HttpOptions, HttpParser, HttpQuery, HttpQueryValue } from 'briojs';
+import { http, HttpError } from '@jnreis/briojs';
+import type { HttpBody, HttpMethod, HttpOptions, HttpParser, HttpQuery, HttpQueryValue } from '@jnreis/briojs';
 
 const options: HttpOptions = { signal: new AbortController().signal, credentials: 'include',
     headers: [['X-Test', 'yes']], duplex: 'half' };

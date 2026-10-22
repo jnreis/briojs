@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { JSDOM } from 'jsdom';
-import { assign, evaluateFunction, execute, hydrateRoot, hydrateNode } from 'briojs';
+import { assign, evaluateFunction, execute, hydrateRoot, hydrateNode } from '@jnreis/briojs';
 
 const bundle = readFileSync(new URL('../dist/brio.min.js', import.meta.url), 'utf8');
 

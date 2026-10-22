@@ -4,8 +4,8 @@ import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { JSDOM } from 'jsdom';
-import { createApp, onCleanup } from 'briojs';
-import { enhanceAstro, lazyApp } from 'briojs/astro';
+import { createApp, onCleanup } from '@jnreis/briojs';
+import { enhanceAstro, lazyApp } from '@jnreis/briojs/astro';
 
 function environment(t, html) {
     const dom = new JSDOM(html, { url: 'https://brio.test/' });
@@ -47,7 +47,7 @@ const counter = (_root, props) => createApp({ state: () => ({ count: props.count
 
 test('Astro entry imports without a DOM and public declarations compile', () => {
     execFileSync(process.execPath, ['--input-type=module', '-e', `
-        import { enhanceAstro, lazyApp } from 'briojs/astro';
+        import { enhanceAstro, lazyApp } from '@jnreis/briojs/astro';
         if (typeof enhanceAstro !== 'function' || typeof lazyApp !== 'function') throw Error('exports');
     `]);
     execFileSync(fileURLToPath(new URL('../node_modules/.bin/tsc', import.meta.url)), [
@@ -288,7 +288,7 @@ test('already mounted apps are rejected without disposing unrelated mounts', t =
 test('exceptions in onError remain visible rather than becoming swallowed promise rejections', () => {
     execFileSync(process.execPath, ['--input-type=module', '-e', `
         import { JSDOM } from 'jsdom';
-        import { enhanceAstro } from 'briojs/astro';
+        import { enhanceAstro } from '@jnreis/briojs/astro';
         const dom = new JSDOM('<main b-app="missing"></main>');
         globalThis.document = dom.window.document;
         process.exitCode = 1;

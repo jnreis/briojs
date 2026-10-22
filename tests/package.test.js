@@ -10,7 +10,7 @@ const read = path => readFileSync(new URL(path, root), 'utf8');
 const manifest = JSON.parse(read('package.json'));
 
 test('release metadata identifies the public package and builds before packing', () => {
-    assert.equal(manifest.name, 'briojs');
+    assert.equal(manifest.name, '@jnreis/briojs');
     assert.equal(manifest.private, undefined);
     assert.equal(manifest.repository.url, 'git+https://github.com/jnreis/briojs.git');
     assert.equal(manifest.bugs.url, 'https://github.com/jnreis/briojs/issues');
@@ -36,7 +36,7 @@ test('every ESM package entry resolves, imports, and supplies declarations', asy
 test('standalone browser scripts are exported for self-hosting', () => {
     for (const suffix of ['', '.dev', '.router', '.persistence', '.http', '.forms', '.step', '.money-mask']) {
         const path = `dist/brio${suffix}.min.js`;
-        assert.equal(fileURLToPath(import.meta.resolve(`briojs/${path}`)),
+        assert.equal(fileURLToPath(import.meta.resolve(`@jnreis/briojs/${path}`)),
             fileURLToPath(new URL(path, root)));
         assert.ok(read(path).length, path);
     }
@@ -81,7 +81,7 @@ test('README browser quick start uses the release version and works unchanged', 
         }
     });
     const source = window.document.querySelector('script[src]').getAttribute('src');
-    assert.equal(source, `https://cdn.jsdelivr.net/npm/briojs@${manifest.version}/dist/brio.min.js`);
+    assert.equal(source, `https://cdn.jsdelivr.net/npm/@jnreis/briojs@${manifest.version}/dist/brio.min.js`);
     window.eval(read('dist/brio.min.js'));
     const bootstrap = window.document.querySelector('script:not([src])').textContent;
     window.eval(`${bootstrap}\nwindow.__exampleApp = app;`);

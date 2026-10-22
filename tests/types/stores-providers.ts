@@ -1,5 +1,5 @@
-import { createApp, state, enableDevtools, devtools, devtoolsPanel, inspectDevtools, createStepEngine } from 'briojs';
-import type { AppOptions, BrioApp, ComponentContext, RefMap, StepOptions, StepDefinition, StepRecord, StepEngine } from 'briojs';
+import { createApp, state, enableDevtools, devtools, devtoolsPanel, inspectDevtools, createStepEngine } from '@jnreis/briojs';
+import type { AppOptions, BrioApp, ComponentContext, RefMap, StepOptions, StepDefinition, StepRecord, StepEngine } from '@jnreis/briojs';
 
 const session = state({ user: 'Alice' });
 const app = createApp({

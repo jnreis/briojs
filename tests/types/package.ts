@@ -1,13 +1,13 @@
-import { createApp, type ComponentDefinition } from 'briojs';
-import { computed, signal } from 'briojs/reactivity';
-import { createRouter } from 'briojs/router';
-import { persist } from 'briojs/persistence';
-import { http, HttpError } from 'briojs/http';
-import { validate } from 'briojs/forms';
-import { createStepEngine } from 'briojs/step';
-import { moneyMask } from 'briojs/money-mask';
-import * as astro from 'briojs/astro';
-import { devtoolsPanel } from 'briojs/devtools';
+import { createApp, type ComponentDefinition } from '@jnreis/briojs';
+import { computed, signal } from '@jnreis/briojs/reactivity';
+import { createRouter } from '@jnreis/briojs/router';
+import { persist } from '@jnreis/briojs/persistence';
+import { http, HttpError } from '@jnreis/briojs/http';
+import { validate } from '@jnreis/briojs/forms';
+import { createStepEngine } from '@jnreis/briojs/step';
+import { moneyMask } from '@jnreis/briojs/money-mask';
+import * as astro from '@jnreis/briojs/astro';
+import { devtoolsPanel } from '@jnreis/briojs/devtools';
 
 const count = signal(1);
 const doubled: number = computed(() => count.value * 2).value;

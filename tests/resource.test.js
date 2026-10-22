@@ -2,8 +2,8 @@ import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import * as main from 'briojs';
-import * as standalone from 'briojs/reactivity';
+import * as main from '@jnreis/briojs';
+import * as standalone from '@jnreis/briojs/reactivity';
 
 function deferred() {
     let resolve;

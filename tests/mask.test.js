@@ -4,11 +4,11 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { test } from 'node:test';
 import { JSDOM } from 'jsdom';
-import { moneyMask } from 'briojs/money-mask';
-import { http } from 'briojs/http';
-import { validate } from 'briojs/forms';
-import { createStepEngine } from 'briojs/step';
-import * as main from 'briojs';
+import { moneyMask } from '@jnreis/briojs/money-mask';
+import { http } from '@jnreis/briojs/http';
+import { validate } from '@jnreis/briojs/forms';
+import { createStepEngine } from '@jnreis/briojs/step';
+import * as main from '@jnreis/briojs';
 
 function environment(t, bundle, markup, setup = '({})', money = false) {
     const dom = new JSDOM(`<main>${markup}</main>`, { runScripts: 'outside-only', pretendToBeVisual: true });

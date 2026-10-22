@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { execFileSync } from 'node:child_process';
 import { JSDOM } from 'jsdom';
-import * as esm from 'briojs';
+import * as esm from '@jnreis/briojs';
 
 const production = readFileSync(new URL('../dist/brio.min.js', import.meta.url), 'utf8');
 const development = readFileSync(new URL('../dist/brio.dev.min.js', import.meta.url), 'utf8');
@@ -97,7 +97,7 @@ test('ESM main exports devtools without activating tracking; the devtools subpat
     productionApp.dispose();
     assert.equal(reads, 0);
     assert.equal(typeof esm.enableDevtools, 'function');
-    const { inspectDevtools } = await import('briojs/devtools');
+    const { inspectDevtools } = await import('@jnreis/briojs/devtools');
     const developmentApp = create();
     try {
         assert.ok(reads > 0);
@@ -247,7 +247,7 @@ for (const [name, bundle, dev] of [['production', production, false], ['developm
 test('npm main entry exposes every plugin and enables devtools only on explicit request', () => {
     execFileSync(process.execPath, ['--input-type=module', '-e', `
         import assert from 'node:assert/strict';
-        import * as brio from 'briojs';
+        import * as brio from '@jnreis/briojs';
         for (const name of ['persist', 'createRouter', 'createStepEngine', 'validate',
             'resource', 'untrack', 'trustedHTML', 'enableDevtools', 'inspectDevtools', 'devtoolsPanel'])
             assert.equal(typeof brio[name], 'function', name);

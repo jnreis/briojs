@@ -45,7 +45,7 @@ All browser plugins require their optional scripts: `brio.router.min.js`,
 core and before mounting. Dedicated npm subpaths and tree-shakable main-entry
 imports expose every plugin and development helper.
 Run bootstrap after the bundle and markup are available. ESM consumers can
-import `createApp` from `briojs`; do not mix browser and ESM runtimes on a root.
+import `createApp` from `@jnreis/briojs`; do not mix browser and ESM runtimes on a root.
 For side-by-side migration testing, use separate pages/builds, not competing
 `window.brio` globals.
 
@@ -130,7 +130,7 @@ forbids runtime `new Function` remains a deployment blocker.
 | `b-text` | Use an explicit value expression. Returned strings remain literal, including `${...}`. Never depend on combined `b-html` / `b-text` precedence. |
 | `b-bind-*`, `bind-*` | Prefer `b-bind-*`; give an explicit expression. No empty-value inference. `.prop` forces property assignment; property/attribute and falsy-value semantics require tests. |
 | `b-model` | Explicit assignable `$data.field`; type conversion and modifiers need special review below. |
-| `b-mask` | Pattern string or synchronous formatter function; Unicode tokens `*`/`A`/`a`/`#`, literal 9, backslash escaping. Money is optional `brio.moneyMask(options)` / `briojs/money-mask`; no injected helper or `.money`. Legacy registries and callbacks are not drop-in compatible. |
+| `b-mask` | Pattern string or synchronous formatter function; Unicode tokens `*`/`A`/`a`/`#`, literal 9, backslash escaping. Money is optional `brio.moneyMask(options)` / `@jnreis/briojs/money-mask`; no injected helper or `.money`. Legacy registries and callbacks are not drop-in compatible. |
 | `b-uid` | `b-id="['input']"` then explicit `b-bind-id="$id.input"` / label `b-bind-for="$id.input"`. |
 | `b-ref` | Static literal registration in local `$ref` (not `$refs`). Data boundaries, components and rows isolate names; duplicates throw. No inherited lookup or automatic collection. |
 | `b-slot` | Removed as a registry. Use named component slots and `slot="name"` on caller content. |

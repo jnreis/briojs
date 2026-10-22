@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { createApp } from 'briojs';
-import { batch, computed, createScope, effect, flush, onCleanup, signal, state, untrack } from 'briojs/reactivity';
-import { persist } from 'briojs/persistence';
-import { createRouter } from 'briojs/router';
-import { validate } from 'briojs/forms';
+import { createApp } from '@jnreis/briojs';
+import { batch, computed, createScope, effect, flush, onCleanup, signal, state, untrack } from '@jnreis/briojs/reactivity';
+import { persist } from '@jnreis/briojs/persistence';
+import { createRouter } from '@jnreis/briojs/router';
+import { validate } from '@jnreis/briojs/forms';
 
 test('state preserves cycles, shared references, and raw identity', () => {
     const shared = { value: 1 };

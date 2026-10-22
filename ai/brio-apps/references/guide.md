@@ -2,7 +2,7 @@
 
 Use this guide to build applications with Brio.js, not to modify its internals.
 It describes the public v4 contracts. Check the consuming app's installed
-`briojs/package.json` version and integration before using it. For browser-only
+`@jnreis/briojs/package.json` version and integration before using it. For browser-only
 apps, check the selected bundle's source/version; `window.brio` has no version
 property. If APIs differ, inspect that version's documentation/types instead of
 guessing. The examples target v4.0.0.
@@ -36,14 +36,14 @@ snapshotting, and development tracking hooks. Do not load both bundles.
 ESM with a bundler:
 
 ```js
-import { createApp, trustedHTML, createStepEngine, validate, http } from 'briojs';
-import { state, signal, computed, effect, batch, createScope, onCleanup } from 'briojs/reactivity';
-import { persist } from 'briojs/persistence';
-import { createRouter } from 'briojs/router';
-import { moneyMask } from 'briojs/money-mask';
-// Dedicated briojs/http, briojs/forms, and briojs/step entries are also available.
+import { createApp, trustedHTML, createStepEngine, validate, http } from '@jnreis/briojs';
+import { state, signal, computed, effect, batch, createScope, onCleanup } from '@jnreis/briojs/reactivity';
+import { persist } from '@jnreis/briojs/persistence';
+import { createRouter } from '@jnreis/briojs/router';
+import { moneyMask } from '@jnreis/briojs/money-mask';
+// Dedicated @jnreis/briojs/http, @jnreis/briojs/forms, and @jnreis/briojs/step entries are also available.
 // Development only; import before creating apps:
-import { devtoolsPanel } from 'briojs/devtools';
+import { devtoolsPanel } from '@jnreis/briojs/devtools';
 ```
 
 Keep devtools imports out of production application entry points. Native browser
@@ -346,7 +346,7 @@ the existing selection. No registry or mask modifiers. Composition/model/cleanup
 are owned by Brio. Use pure formatters; reactive configuration re-evaluates.
 Optional `brio.money-mask.min.js` provides
 `b-mask="brio.moneyMask({ precision: 2 })"`; ESM imports moneyMask from
-briojs/money-mask and exposes the formatter through state. Money retains ASCII
+@jnreis/briojs/money-mask and exposes the formatter through state. Money retains ASCII
 fixed-minor-unit entry: `123456` formats to `1,234.56`. Options may be reactive
 when passed to a factory in the expression. A masked
 model holds a formatted string, not a numeric currency value.
@@ -464,7 +464,7 @@ update once. `onCleanup(fn)` called directly in an effect body runs before the
 next run and on stop (e.g. `effect(() => { if (s.live) onCleanup(feed.subscribe(fn)); })`).
 `untrack(() => …)` reads without subscribing. `createScope().run(...)` owns created effects;
 dispose that scope. The app's state factory alone is not a scope.
-`resource(fetcher)` is exported from `briojs`, `briojs/reactivity`, and the
+`resource(fetcher)` is exported from `@jnreis/briojs`, `@jnreis/briojs/reactivity`, and the
 browser global (`brio.resource`). It starts fetching and exposes `data.value`,
 `loading.value`, `error.value`, `refetch()`, and idempotent `dispose()`.
 The fetcher receives an AbortSignal; pass it to Fetch/cancellable work.
@@ -592,7 +592,7 @@ the actual root Element. Keep page-local and persistent app lifetimes separate.
 Do not dispose cached documents on pagehide (`event.persisted`), or remount
 their live roots on pageshow. Register host lifecycle listeners only once.
 
-Astro: import enhanceAstro/lazyApp from optional `briojs/astro` in a shared
+Astro: import enhanceAstro/lazyApp from optional `@jnreis/briojs/astro` in a shared
 layout's processed client script, installed once:
 `enhanceAstro({ apps: { counter: lazyApp(() => import('./counter')) }, onError(error, root) { console.error(error, root); } })`.
 Modules default-export synchronous `(root, props) => createApp(...)` factories.

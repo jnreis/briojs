@@ -8,7 +8,7 @@ is required to run them once the Brio browser bundle is available.
 ## Running the assets
 
 Copy the chosen HTML into the application's served directory. Copy
-`node_modules/briojs/dist/brio.min.js` alongside it as `brio.min.js`, or change
+`node_modules/@jnreis/briojs/dist/brio.min.js` alongside it as `brio.min.js`, or change
 its script URL to the actual served production bundle. During development use
 the development bundle instead, never both. The copies are ordinary application
 assets; installing the skill does not make their relative bundle URL resolve.
@@ -36,7 +36,7 @@ For client-side swaps, dispose page-local apps before replacement and mount
 fresh server markup afterward. Keep actual host-preserved roots mounted and
 track roots by Element identity to avoid duplicate enhancement.
 
-For Astro, use the optional `briojs/astro` entry rather than writing a
+For Astro, use the optional `@jnreis/briojs/astro` entry rather than writing a
 counter-specific coordinator. Install one shared
 `enhanceAstro({ apps, onError })` registry from a layout; declare `b-app` roots
 and read-once trusted `b-props`. Eager factories and `lazyApp` module loaders
@@ -95,12 +95,12 @@ loader/data-fetching abstraction.
 ## ESM adaptation
 
 Replace the bundle tag with an application module entry, import `createApp`
-from `briojs`, and import optional router/persistence APIs from their subpaths.
+from `@jnreis/briojs`, and import optional router/persistence APIs from their subpaths.
 Keep those imports in module code; expressions cannot resolve arbitrary module
 locals. State methods can close over imported helpers:
 
 ```js
-import { createApp, validate } from 'briojs';
+import { createApp, validate } from '@jnreis/briojs';
 
 const app = createApp({
   state: () => ({

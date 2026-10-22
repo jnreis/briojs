@@ -106,11 +106,13 @@ Before publishing:
    a public release or publishing with public provenance.
 7. Authenticate with npm as `jnreis`, verify with `npm whoami`, and enable the
    account/package security controls npm requires. Recheck availability with
-   `npm view briojs`; availability is not a reservation.
+   `npm view @jnreis/briojs`; availability is not a reservation, and an unused
+   unscoped name can still be rejected by npm's similar-name protection.
 8. Run `npm publish --access public`. `publishConfig` selects the public npm
-   registry; the package is **unscoped** `briojs`, owned by the publishing account,
-   not `@jnreis/briojs`. Never put npm credentials in the repository.
-9. Verify `npm view briojs@4.0.0`, installation, and pinned CDN scripts. Create
+   registry; the package is **scoped** `@jnreis/briojs`, under the publishing
+   account `jnreis`. Public scoped packages require `--access public`.
+   Never put npm credentials in the repository.
+9. Verify `npm view @jnreis/briojs@4.0.0`, installation, and pinned CDN scripts. Create
    the `v4.0.0` tag and GitHub release against the published commit.
 
 Publishing, pushing, tagging, and making the repository public are explicit

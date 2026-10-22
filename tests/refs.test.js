@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { JSDOM } from 'jsdom';
-import { assign, createScope, evaluate, evaluateFunction, execute, hydrateNode, hydrateRoot } from 'briojs';
+import { assign, createScope, evaluate, evaluateFunction, execute, hydrateNode, hydrateRoot } from '@jnreis/briojs';
 
 function environment(t, markup, source = '({})', bundle = 'brio.min.js') {
     const dom = new JSDOM(`<main id="app">${markup}</main><aside id="other"></aside><div id="portal"></div>`, {

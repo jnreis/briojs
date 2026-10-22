@@ -25,42 +25,42 @@ iterations, not npm releases.
 ## Install
 
 ```sh
-npm install briojs
+npm install @jnreis/briojs
 ```
 
 ```js
-import { createApp } from 'briojs';
+import { createApp } from '@jnreis/briojs';
 ```
 
 The package publishes tree-shakable ESM entry points. Import only the capabilities you use:
 
 ```js
-import { createApp } from 'briojs';
-import { state, effect, computed, batch } from 'briojs/reactivity';
-import { persist } from 'briojs/persistence';
-import { createRouter } from 'briojs/router';
-import { http, HttpError } from 'briojs/http';
-import { validate } from 'briojs/forms';
-import { createStepEngine } from 'briojs/step';
-import { moneyMask } from 'briojs/money-mask';
+import { createApp } from '@jnreis/briojs';
+import { state, effect, computed, batch } from '@jnreis/briojs/reactivity';
+import { persist } from '@jnreis/briojs/persistence';
+import { createRouter } from '@jnreis/briojs/router';
+import { http, HttpError } from '@jnreis/briojs/http';
+import { validate } from '@jnreis/briojs/forms';
+import { createStepEngine } from '@jnreis/briojs/step';
+import { moneyMask } from '@jnreis/briojs/money-mask';
 ```
 
 The development tools are deliberately separate:
 
 ```js
-import { devtoolsPanel } from 'briojs/devtools';
+import { devtoolsPanel } from '@jnreis/briojs/devtools';
 ```
 
 Import that entry before creating apps to enable the development inspector.
 All tooling is also available from the npm main entry without implicit activation:
 
 ```js
-import { createApp, enableDevtools, inspectDevtools, devtoolsPanel } from 'briojs';
+import { createApp, enableDevtools, inspectDevtools, devtoolsPanel } from '@jnreis/briojs';
 enableDevtools(); // Development only; before creating apps.
 ```
 
 Unused devtools exports can be tree-shaken. Main-entry imports alone do not
-enable snapshotting; the dedicated `briojs/devtools` entry enables it automatically.
+enable snapshotting; the dedicated `@jnreis/briojs/devtools` entry enables it automatically.
 
 ### Browser bundles
 
@@ -68,12 +68,12 @@ Load one of the standalone bundles, not both:
 
 ```html
 <!-- Production: runtime without development tools or tracking hooks -->
-<script src="https://cdn.jsdelivr.net/npm/briojs@4.0.0/dist/brio.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@jnreis/briojs@4.0.0/dist/brio.min.js"></script>
 <!-- During development, use this instead: -->
-<!-- <script src="https://cdn.jsdelivr.net/npm/briojs@4.0.0/dist/brio.dev.min.js"></script> -->
+<!-- <script src="https://cdn.jsdelivr.net/npm/@jnreis/briojs@4.0.0/dist/brio.dev.min.js"></script> -->
 ```
 
-For self-hosting, copy the desired scripts from `node_modules/briojs/dist/`
+For self-hosting, copy the desired scripts from `node_modules/@jnreis/briojs/dist/`
 to your public assets.
 The `/dist/` URLs below assume you serve them at that path. Pin core and plugins
 to the same version; load the scripts before mounting your app.
@@ -133,7 +133,7 @@ behavioral decisions, and verification before production rollout.
 ## First app
 
 ```js
-import { createApp } from 'briojs';
+import { createApp } from '@jnreis/briojs';
 
 const app = createApp({
   state: () => ({ count: 0 }),
@@ -392,7 +392,7 @@ earlier sibling initialization. Event-time optional chaining handles missing
 targets; an owned effect can respond to a target appearing later:
 
 ```js
-import { effect } from 'briojs';
+import { effect } from '@jnreis/briojs';
 
 app.component('search-field', {
   template: '<input b-ref="input">',
@@ -867,7 +867,7 @@ Brio owns composition handling, input events, model synchronization, and cleanup
 ```
 
 ```js
-import { moneyMask } from 'briojs/money-mask';
+import { moneyMask } from '@jnreis/briojs/money-mask';
 const app = createApp({
   state: () => ({ amount: '', amountMask: moneyMask({ precision: 2 }) }),
 });
@@ -883,7 +883,7 @@ fixed-minor-unit entry: `123456` becomes `1,234.56`. It is not a locale-aware
 number parser or Unicode digit converter. Options are copied at factory time;
 use `b-mask="brio.moneyMask($data.options)"` to rebuild reactively.
 npm exports the formatter types
-from both `briojs` and `briojs/money-mask`.
+from both `@jnreis/briojs` and `@jnreis/briojs/money-mask`.
 
 ### CSS transitions
 
@@ -971,7 +971,7 @@ polyfill; native constructor validation governs CSS margins and platform support
 Components are a first-party feature. Define them with a hyphenated custom-element name, an HTML template, and an optional setup function:
 
 ```js
-import { createApp } from 'briojs';
+import { createApp } from '@jnreis/briojs';
 
 const app = createApp({ state: () => ({ label: 'Clicks' }) });
 
@@ -1216,8 +1216,8 @@ Use ordinary server routes and HTML for navigation. Mount Brio only around the i
 Use the optional router when client-side navigation is useful:
 
 ```js
-import { createApp } from 'briojs';
-import { createRouter } from 'briojs/router';
+import { createApp } from '@jnreis/briojs';
+import { createRouter } from '@jnreis/briojs/router';
 
 const router = createRouter([
   { path: '/', component: 'home-page' },
@@ -1379,7 +1379,7 @@ asset paths, or server rendering.
 The standalone reactivity entry works without a DOM:
 
 ```js
-import { batch, computed, createScope, effect, signal, state } from 'briojs/reactivity';
+import { batch, computed, createScope, effect, signal, state } from '@jnreis/briojs/reactivity';
 
 const scope = createScope();
 scope.run(() => {
@@ -1435,13 +1435,13 @@ A write invalidates every dependent computed before any effect re-runs, so effec
 
 ### Async resources
 
-`resource(fetcher)` is exported from `briojs` and `briojs/reactivity`, and is
+`resource(fetcher)` is exported from `@jnreis/briojs` and `@jnreis/briojs/reactivity`, and is
 available as `brio.resource` in the browser bundles. It starts immediately and tracks
 reactive dependencies read synchronously by the fetcher (before its first await).
 It does not block mounting or provide server rendering.
 
 ```js
-import { createScope, resource, signal } from 'briojs/reactivity';
+import { createScope, resource, signal } from '@jnreis/briojs/reactivity';
 
 const scope = createScope();
 const query = signal('Brio');
@@ -1488,7 +1488,7 @@ as read-only and perform refreshes through `refetch()`.
 
 ## Step navigation
 
-The optional `briojs/step` entry (browser: `brio.step.min.js`) provides
+The optional `@jnreis/briojs/step` entry (browser: `brio.step.min.js`) provides
 `createStepEngine({ initial, steps })`, a small synchronous navigation engine
 with **exactly one current step** and history-based Back. It owns its reactive
 state: definitions are configuration, not a record of mutable active flags.
@@ -1572,12 +1572,12 @@ loading, errors, and competing requests in that application workflow.
 ## HTTP
 
 Load `brio.http.min.js` after the core for `brio.http` and `brio.HttpError`,
-or import `http` and `HttpError` from `briojs/http` (also exported by `briojs`).
+or import `http` and `HttpError` from `@jnreis/briojs/http` (also exported by `@jnreis/briojs`).
 HTTP is not an automatic `$http` expression helper:
 expose application methods through `$data` or component setup.
 
 ```js
-import { http, HttpError } from 'briojs';
+import { http, HttpError } from '@jnreis/briojs';
 
 const controller = new AbortController();
 try {
@@ -1686,11 +1686,11 @@ Explicit non-JSON parsers infer their native result types. npm also exports
 ## Form validation
 
 `validate(data, schema, customRules?)` is a synchronous helper, not a form
-controller. Import it from `briojs/forms` or `briojs`; the optional
+controller. Import it from `@jnreis/briojs/forms` or `@jnreis/briojs`; the optional
 `brio.forms.min.js` browser script exposes `brio.validate`.
 
 ```js
-import { validate } from 'briojs/forms';
+import { validate } from '@jnreis/briojs/forms';
 
 const schema = {
   email: [
@@ -1752,8 +1752,8 @@ Server-side validation is still required.
 Import persistence where needed. Inside component setup, an app plugin, or an explicit reactive scope, disposal removes the value's save effect and cross-tab listener. Outside any scope (for example a module-level `const token = persist('token', '')` shared by several components), the value lives for the life of the page:
 
 ```js
-import { createApp } from 'briojs';
-import { persist } from 'briojs/persistence';
+import { createApp } from '@jnreis/briojs';
+import { persist } from '@jnreis/briojs/persistence';
 
 createApp().component('preferences-panel', {
   template: `
@@ -1807,7 +1807,7 @@ the new content. A value without the trust marker is rejected before replacing
 existing content. Authored `b-template` and managed insertion are unchanged.
 
 ```js
-import { createApp, trustedHTML } from 'briojs';
+import { createApp, trustedHTML } from '@jnreis/briojs';
 
 createApp({ state: () => ({ content: '<em>Trusted</em>' }) }).mount('#content');
 ```
@@ -1846,7 +1846,7 @@ Brio expression failed: "$data.user.name" in b-text on <span.name> inside <user-
 Import the separate development entry before creating apps, then mount its inspector:
 
 ```js
-import { devtoolsPanel } from 'briojs/devtools';
+import { devtoolsPanel } from '@jnreis/briojs/devtools';
 
 const stopInspector = devtoolsPanel(document.querySelector('#brio-tools'));
 ```
@@ -1969,14 +1969,14 @@ for non-cached navigation, guard `!event.persisted` and do not use `{ once: true
 
 ### Astro islands
 
-`briojs/astro` is an optional **client integration**, exported from the same
+`@jnreis/briojs/astro` is an optional **client integration**, exported from the same
 package. It requires no Astro server plugin, component wrapper, separate package,
 or addition to the Brio browser core. Install it once from a shared layout's
 processed client script:
 
 ```astro
 <script>
-  import { enhanceAstro, lazyApp } from 'briojs/astro';
+  import { enhanceAstro, lazyApp } from '@jnreis/briojs/astro';
   import { createGreeting } from '../apps/greeting';
 
   const integration = enhanceAstro({
@@ -2011,8 +2011,8 @@ Factories are synchronous; `lazyApp` explicitly marks asynchronous module loadin
 
 ```ts
 // apps/counter.ts
-import { createApp } from 'briojs';
-import type { AstroAppFactory } from 'briojs/astro';
+import { createApp } from '@jnreis/briojs';
+import type { AstroAppFactory } from '@jnreis/briojs/astro';
 
 const createCounter: AstroAppFactory = (_root, props) => {
   const initial = props.initial ?? 0;
@@ -2103,17 +2103,17 @@ and browser back/forward restoration.
 
 The package exports:
 
-- `briojs`: app, components, DOM enhancement, trusted HTML, and core types.
-- `briojs/reactivity`: DOM-independent state, signals, effects, computed values, batching, async resources, and scopes.
-- `briojs/persistence`: local/session/custom storage, with scope cleanup where owned.
-- `briojs/router`: optional history or hash router.
-- `briojs/http`: Fetch helpers and `HttpError`.
-- `briojs/forms`: validation rules and `validate`.
-- `briojs/step`: step navigation.
-- `briojs/money-mask`: the optional `moneyMask` formatter.
-- `briojs/devtools`: development-only instrumentation and inspector panel.
-- `briojs/astro`: optional named-island lifecycle integration and lazy code loading.
-- `briojs/dist/*`: built files for self-hosted standalone browser scripts.
+- `@jnreis/briojs`: app, components, DOM enhancement, trusted HTML, and core types.
+- `@jnreis/briojs/reactivity`: DOM-independent state, signals, effects, computed values, batching, async resources, and scopes.
+- `@jnreis/briojs/persistence`: local/session/custom storage, with scope cleanup where owned.
+- `@jnreis/briojs/router`: optional history or hash router.
+- `@jnreis/briojs/http`: Fetch helpers and `HttpError`.
+- `@jnreis/briojs/forms`: validation rules and `validate`.
+- `@jnreis/briojs/step`: step navigation.
+- `@jnreis/briojs/money-mask`: the optional `moneyMask` formatter.
+- `@jnreis/briojs/devtools`: development-only instrumentation and inspector panel.
+- `@jnreis/briojs/astro`: optional named-island lifecycle integration and lazy code loading.
+- `@jnreis/briojs/dist/*`: built files for self-hosted standalone browser scripts.
 
 All JavaScript entry points are ES modules; there is no CommonJS build. Runtime
 dependencies are not required. Brio enhances client-rendered DOM rather than

@@ -1,7 +1,7 @@
-import { resource } from 'briojs';
-import { resource as standalone } from 'briojs/reactivity';
-import type { Resource } from 'briojs';
-import type { Resource as StandaloneResource } from 'briojs/reactivity';
+import { resource } from '@jnreis/briojs';
+import { resource as standalone } from '@jnreis/briojs/reactivity';
+import type { Resource } from '@jnreis/briojs';
+import type { Resource as StandaloneResource } from '@jnreis/briojs/reactivity';
 
 const result: Resource<string> = resource(async signal => {
     const abort: AbortSignal = signal;

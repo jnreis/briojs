@@ -1,6 +1,6 @@
-import { createApp } from 'briojs';
-import { enhanceAstro, lazyApp } from 'briojs/astro';
-import type { AstroAppFactory, AstroAppProps, AstroEnhancement } from 'briojs/astro';
+import { createApp } from '@jnreis/briojs';
+import { enhanceAstro, lazyApp } from '@jnreis/briojs/astro';
+import type { AstroAppFactory, AstroAppProps, AstroEnhancement } from '@jnreis/briojs/astro';
 
 const factory: AstroAppFactory = (root, props: AstroAppProps) => createApp({
     state: () => ({ text: typeof props.text === 'string' ? props.text : root.id }),

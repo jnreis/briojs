@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { JSDOM } from 'jsdom';
-import * as npm from 'briojs';
+import * as npm from '@jnreis/briojs';
 
 function environment(t, bundle) {
     let host = globalThis;

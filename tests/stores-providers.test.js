@@ -4,7 +4,7 @@ import { test } from 'node:test';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { JSDOM } from 'jsdom';
-import { assign, createApp, evaluate, evaluateFunction, execute, state } from 'briojs';
+import { assign, createApp, evaluate, evaluateFunction, execute, state } from '@jnreis/briojs';
 
 const bundles = ['brio.min.js', 'brio.dev.min.js'].map(name => [
     name, readFileSync(new URL(`../dist/${name}`, import.meta.url), 'utf8'),

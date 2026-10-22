@@ -66,6 +66,22 @@ test('Temperature converter: converts in every direction while preserving what t
     assert.doesNotMatch(fieldClass('celsius'), /\bis-source\b/);
 });
 
+test('Temperature converter: first edits and scale switches preserve the caret', t => {
+    const { $, window, user } = converter(t);
+    for (const scale of ['celsius', 'fahrenheit', 'kelvin', 'celsius']) {
+        const field = $(scale);
+        field.focus();
+        field.setSelectionRange(1, 1);
+        field.setRangeText('1', 1, 1, 'end');
+        const expected = field.value;
+        field.dispatchEvent(new window.Event('input', { bubbles: true }));
+        assert.equal(field.value, expected);
+        assert.equal(field.selectionStart, 2, `${scale} keeps the insertion position`);
+        assert.equal(field.selectionEnd, 2);
+        user.leave(field);
+    }
+});
+
 test('Temperature converter: invalid input is isolated to its field and accessible', t => {
     const { $, user, fields, fieldClass, document, window } = converter(t);
 

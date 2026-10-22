@@ -115,11 +115,13 @@
                 return this.editing === scale ? this.draft : this.format(scale);
             },
             edit(scale, text) {
-                this.editing = scale;
-                this.draft = text;
-                if (this.error) return;
-                const celsius = SCALES[scale].toCelsius(parseTemperature(text));
-                this.celsius = Math.max(celsius, ABSOLUTE_ZERO);
+                brio.batch(() => {
+                    this.editing = scale;
+                    this.draft = text;
+                    if (this.error) return;
+                    const celsius = SCALES[scale].toCelsius(parseTemperature(text));
+                    this.celsius = Math.max(celsius, ABSOLUTE_ZERO);
+                });
             },
             commit() {
                 if (!this.error) this.editing = null;

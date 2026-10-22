@@ -1,6 +1,6 @@
 # Changelog
 
-## [4.0.0] — Unreleased
+## [4.0.0] — 2026-10-22
 
 The first npm release of Brio.js, an HTML-first framework for reactive
 widgets, multi-page sites, and single-page applications.
@@ -8,7 +8,6 @@ widgets, multi-page sites, and single-page applications.
 Development began with [Initial v4](https://github.com/jnreis/briojs/commit/86f1cc3eb023470b11ed6343436fd97483dd3092)
 on October 12, 2026. This entry consolidates the entire v4 development cycle:
 intermediate APIs and bug fixes were never published as separate releases.
-The release date will be recorded when 4.0.0 is published.
 
 ### Core and reactivity
 

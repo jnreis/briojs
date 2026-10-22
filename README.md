@@ -6,8 +6,7 @@ Brio enhances the real DOM in place. Add a reactive widget to an existing app,
 enhance a server-rendered multi-page site, or build a single-page application.
 No virtual DOM, JSX, required compiler, or runtime dependencies.
 
-Version **4.0.0** is being prepared as Brio's first npm release. The installation
-and CDN examples below become available after publication.
+Version **4.0.0** is Brio's first npm release.
 
 ## Quick start
 

@@ -1,4 +1,4 @@
-import { createApp, state, signal, computed, effect, batch, untrack, resource, createScope, onCleanup, getCurrentScope, trustedHTML } from './index';
+import { createApp, state, signal, computed, effect, batch, untrack, resource, createScope, onCleanup, getCurrentScope, trustedHTML } from './index.js';
 
 declare const brio: {
     createApp: typeof createApp;

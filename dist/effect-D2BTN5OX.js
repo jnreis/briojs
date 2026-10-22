@@ -1,9 +1,9 @@
 var __defProp = Object.defineProperty;
 var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
 var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "symbol" ? key + "" : key, value);
-import { f as isObjectType, b as createError, s as brioErrors, o as objectConstructor, d as deleteItem, j as isInstanceOf, g as getLength } from "./native-DNTl55LH.js";
+import { e as isObjectType, b as createError, q as brioErrors, O as ObjectConstructor, d as deleteItem, h as isInstanceOf, g as getLength } from "./native-Ba4LWja7.js";
 const located = /* @__PURE__ */ new WeakSet();
-const define = (error, name, value) => objectConstructor.defineProperty(error, name, { configurable: true, value });
+const define = (error, name, value) => ObjectConstructor.defineProperty(error, name, { configurable: true, value });
 const errorText = (error) => error && isObjectType(error) && "message" in error ? `${error.name}: ${error.message}` : String(error);
 const elementOf = (node) => {
   const element = node.nodeType === 1 ? node : node.parentNode;
@@ -396,4 +396,4 @@ export {
   notifyRootUnmounted as y,
   addDisposer as z
 };
-//# sourceMappingURL=effect-Hm6a3OX7.js.map
+//# sourceMappingURL=effect-D2BTN5OX.js.map

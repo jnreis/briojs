@@ -1,4 +1,4 @@
-import { objectConstructor, isArray, deleteItem } from '../../core/native';
+import { ObjectConstructor, isArray, deleteItem } from '../../core/native';
 import { evaluate, createExpressionScope } from '../../core/expression';
 import { onCleanup } from '../../core/scope';
 
@@ -22,7 +22,7 @@ export function handleId(
     }
 
     onCleanup(() => {
-        for (const val of objectConstructor.values(idMap)) {
+        for (const val of ObjectConstructor.values(idMap)) {
             deleteItem(activeIds, val);
         }
     });

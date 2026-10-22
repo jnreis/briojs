@@ -200,10 +200,10 @@ Escape HTML-significant characters in literal text/attribute values.
 | `b-text="expr"` | Sets literal text; returned tags and `${...}` are never interpreted. |
 | `b-provide="{ name: expression }"` | Supplies live read-only names through `$provided` on this element and its subtree. |
 | `b-bind-href="expr"` | Binds a DOM property when available, otherwise an attribute. `null`, `undefined`, and `false` remove attributes, except `aria-*` booleans, which become `"true"`/`"false"`. Read-only properties (SVG `r`/`cx`) bind as attributes; mixed-case SVG names (`b-bind-viewBox`) are restored; `.prop` forces a property and resolves its casing. |
-| `b-bind-class="expr"` | Accepts strings, arrays, or class-name/boolean objects. |
+| `b-bind-class="expr"` | Accepts strings, class-name/boolean objects, or arrays mixing both (`['card', { active: on }]`). |
 | `b-bind-style="expr"` | Supports style objects. |
 | `b-on-click="statements"` | Executes event statements; listeners are scope-owned. |
-| `b-model="$data.field"` | Assignable input/textarea/select state; supports checkboxes, radios, and multiple selects. |
+| `b-model="$data.field"` | Assignable input/textarea/select state; supports checkboxes, radios, and multiple selects. State writes to a focused text field keep its cursor/selection on the same characters. |
 | `b-if`, `b-else-if`, `b-else` | Adjacent first-match branches; whitespace/comments can separate them. Default dehydrates inactive branches; `.hide` preserves in DOM, `.detach` preserves outside DOM. |
 | `b-for="item, index in $data.items"` | Arrays, iterables, objects, or nonnegative integers; values live in `$for`. |
 | `b-key="$for.item.id"` | Stable string/number identity; duplicate keys throw. Index is the default key. |

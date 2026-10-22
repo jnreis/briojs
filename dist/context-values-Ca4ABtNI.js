@@ -1,6 +1,6 @@
-import { i as isFunction, c as createTypeError, g as getLength, o as objectConstructor, n as createSyntaxError, d as deleteItem, f as isObjectType, p as includesItem, q as objectKeys, R as ReflectApi, G as GET_OWN_PROPERTY_DESCRIPTOR, l as ownKeys } from "./native-DNTl55LH.js";
-import { m as mark, f as describeNode, h as directiveError, u as untrack, e as effect } from "./effect-Hm6a3OX7.js";
-import { t as trigger, a as track } from "./state-TMgcg8XY.js";
+import { i as isFunction, c as createTypeError, g as getLength, O as ObjectConstructor, m as createSyntaxError, d as deleteItem, e as isObjectType, n as includesItem, p as objectKeys, R as ReflectApi, G as GET_OWN_PROPERTY_DESCRIPTOR, k as ownKeys } from "./native-Ba4LWja7.js";
+import { m as mark, f as describeNode, h as directiveError, u as untrack, e as effect } from "./effect-D2BTN5OX.js";
+import { t as trigger, a as track } from "./state-I6UeiIZD.js";
 const valueExpressions = /* @__PURE__ */ new Map();
 const statementExpressions = /* @__PURE__ */ new Map();
 const assignmentExpressions = /* @__PURE__ */ new Map();
@@ -27,9 +27,9 @@ function evaluateFunction(source, context, node) {
 }
 function createExpressionScope(...sources) {
   const last = getLength(sources) - 1;
-  let scope = last < 1 ? objectConstructor.assign(objectConstructor.create(null), sources[0]) : sources[last];
+  let scope = last < 1 ? ObjectConstructor.assign(ObjectConstructor.create(null), sources[0]) : sources[last];
   for (let index = last - 1; index >= 0; index--)
-    scope = objectConstructor.assign(objectConstructor.create(scope), sources[index]);
+    scope = ObjectConstructor.assign(ObjectConstructor.create(scope), sources[index]);
   return scope;
 }
 const compile = (cache, source, make, directive, node) => {
@@ -107,20 +107,20 @@ function assign(source, scope, value, directive, node = scope.$el) {
   }
 }
 function copyContextValues(value, label) {
-  if (value === null || !isObjectType(value) || !includesItem([objectConstructor.prototype, null], objectConstructor.getPrototypeOf(value)))
+  if (value === null || !isObjectType(value) || !includesItem([ObjectConstructor.prototype, null], ObjectConstructor.getPrototypeOf(value)))
     throw createTypeError(`${label} must be a synchronous plain object.`);
-  const result = objectConstructor.create(null);
+  const result = ObjectConstructor.create(null);
   for (const key of objectKeys(value)) {
-    const descriptor = objectConstructor[GET_OWN_PROPERTY_DESCRIPTOR](value, key);
+    const descriptor = ObjectConstructor[GET_OWN_PROPERTY_DESCRIPTOR](value, key);
     if (!("value" in descriptor))
       throw createTypeError(`${label} must contain data properties, not accessors.`);
     result[key] = ReflectApi.get(value, key);
   }
   return result;
 }
-const emptyContextValues = objectConstructor.freeze(objectConstructor.create(null));
+const emptyContextValues = ObjectConstructor.freeze(ObjectConstructor.create(null));
 function createProvidedValues(getValues, parent = emptyContextValues) {
-  let values = objectConstructor.create(null);
+  let values = ObjectConstructor.create(null);
   const holder = {};
   effect(() => {
     values = copyContextValues(getValues(), "b-provide");
@@ -129,8 +129,8 @@ function createProvidedValues(getValues, parent = emptyContextValues) {
   const readOnly = () => {
     throw createTypeError("$provided names are read-only.");
   };
-  const hasOwn = (key) => objectConstructor.prototype.hasOwnProperty.call(values, key);
-  return new Proxy(objectConstructor.create(null), {
+  const hasOwn = (key) => ObjectConstructor.prototype.hasOwnProperty.call(values, key);
+  return new Proxy(ObjectConstructor.create(null), {
     get(_target, key) {
       track(holder, "values");
       return hasOwn(key) ? ReflectApi.get(values, key) : ReflectApi.get(parent, key);
@@ -145,7 +145,7 @@ function createProvidedValues(getValues, parent = emptyContextValues) {
     },
     [GET_OWN_PROPERTY_DESCRIPTOR](_target, key) {
       track(holder, "values");
-      if (!hasOwn(key) && !objectConstructor.prototype.hasOwnProperty.call(parent, key)) return;
+      if (!hasOwn(key) && !ObjectConstructor.prototype.hasOwnProperty.call(parent, key)) return;
       return {
         configurable: true,
         enumerable: true,
@@ -170,4 +170,4 @@ export {
   createProvidedValues as g,
   evaluateFunction as h
 };
-//# sourceMappingURL=context-values-BXAsS55z.js.map
+//# sourceMappingURL=context-values-Ca4ABtNI.js.map

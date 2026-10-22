@@ -1,11 +1,11 @@
-import { q as objectKeys, c as createTypeError, g as getLength, o as objectConstructor, m as isString, f as isObjectType, p as includesItem, l as ownKeys, G as GET_OWN_PROPERTY_DESCRIPTOR } from "./native-DNTl55LH.js";
-import { b as signal } from "./state-TMgcg8XY.js";
+import { p as objectKeys, c as createTypeError, g as getLength, O as ObjectConstructor, l as isString, e as isObjectType, n as includesItem, k as ownKeys, G as GET_OWN_PROPERTY_DESCRIPTOR } from "./native-Ba4LWja7.js";
+import { b as signal } from "./state-I6UeiIZD.js";
 function properties(value, label) {
-  if (!value || !isObjectType(value) || !includesItem([objectConstructor.prototype, null], objectConstructor.getPrototypeOf(value)))
+  if (!value || !isObjectType(value) || !includesItem([ObjectConstructor.prototype, null], ObjectConstructor.getPrototypeOf(value)))
     throw createTypeError(`${label} must be a plain object.`);
-  const result = objectConstructor.create(null);
+  const result = ObjectConstructor.create(null);
   for (const key of ownKeys(value)) {
-    const descriptor = objectConstructor[GET_OWN_PROPERTY_DESCRIPTOR](value, key);
+    const descriptor = ObjectConstructor[GET_OWN_PROPERTY_DESCRIPTOR](value, key);
     if (!isString(key) || !("value" in descriptor))
       throw createTypeError(`${label} must contain string-keyed data properties.`);
     result[key] = descriptor.value;
@@ -27,7 +27,7 @@ function createStepEngine(options) {
     if (objectKeys(definition).some((key) => key !== "next"))
       throw createTypeError(`Step "${name}" supports only next.`);
     const next = definition.next;
-    if (objectConstructor.prototype.hasOwnProperty.call(definition, "next") && !validName(next))
+    if (ObjectConstructor.prototype.hasOwnProperty.call(definition, "next") && !validName(next))
       throw createTypeError(`Step "${name}" next must be a nonempty string.`);
     links.set(name, isString(next) ? next : void 0);
   }
@@ -57,7 +57,7 @@ function createStepEngine(options) {
     notify();
     return true;
   };
-  return objectConstructor.freeze({
+  return ObjectConstructor.freeze({
     get current() {
       observe();
       return current;

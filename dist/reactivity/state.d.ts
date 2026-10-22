@@ -1,4 +1,4 @@
-import { Signal } from './types';
+import { Signal } from './types.js';
 
 export declare const isObject: (value: unknown) => value is Record<PropertyKey, unknown>;
 export declare const toRaw: <T>(value: T) => T;

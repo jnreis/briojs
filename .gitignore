@@ -10,6 +10,7 @@ lerna-debug.log*
 node_modules
 *.local
 test-results/
+/*.tgz
 bench/dist/
 tests/fixtures/astro/.astro/
 tests/fixtures/astro/build/

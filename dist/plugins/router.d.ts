@@ -1,4 +1,4 @@
-import { Signal } from '../reactivity/types';
+import { Signal } from '../reactivity/types.js';
 
 export type RouteMatch = {
     /** Matched application pathname, without the base (still percent-encoded). */

@@ -1,7 +1,7 @@
-import { ContextValues } from '../core/context-values';
-import { StoreMap } from '../core/types';
-import { RefMap } from './refs';
-import { RouteState } from '../plugins/router';
+import { ContextValues } from '../core/context-values.js';
+import { StoreMap } from '../core/types.js';
+import { RefMap } from './refs.js';
+import { RouteState } from '../plugins/router.js';
 
 export type ComponentContext = {
     el: Element;

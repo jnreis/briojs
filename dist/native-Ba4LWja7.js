@@ -4,17 +4,17 @@ const TEMPLATE = "template";
 const TELEPORT = "teleport";
 const B_TELEPORT = "b-" + TELEPORT;
 const ATTRIBUTES = "attributes";
-const objectConstructor = Object;
+const ObjectConstructor = Object;
 const ReflectApi = Reflect;
 const isArray = (value) => Array.isArray(value);
-const objectKeys = (value) => objectConstructor.keys(value);
-const objectEntries = (value) => objectConstructor.entries(value);
+const objectKeys = (value) => ObjectConstructor.keys(value);
+const objectEntries = (value) => ObjectConstructor.entries(value);
 const ownKeys = (value) => ReflectApi.ownKeys(value);
 function arrayFrom(items, map, thisArg) {
-  return arguments.length === 1 ? Array.from(items) : Array.from(items, map, thisArg);
+  return getLength(arguments) === 1 ? Array.from(items) : Array.from(items, map, thisArg);
 }
 const snapshotList = (list) => {
-  const length = list.length;
+  const length = getLength(list);
   const copy = new Array(length);
   for (let index = 0; index < length; index++) copy[index] = list[index];
   return copy;
@@ -40,30 +40,30 @@ export {
   ATTRIBUTES as A,
   B_TELEPORT as B,
   GET_OWN_PROPERTY_DESCRIPTOR as G,
+  ObjectConstructor as O,
   ReflectApi as R,
   TELEPORT as T,
   arrayFrom as a,
   createError as b,
   createTypeError as c,
   deleteItem as d,
-  objectEntries as e,
-  isObjectType as f,
+  isObjectType as e,
+  isNumber as f,
   getLength as g,
-  isNumber as h,
+  isInstanceOf as h,
   isFunction as i,
-  isInstanceOf as j,
-  isArray as k,
-  ownKeys as l,
-  isString as m,
-  createSyntaxError as n,
-  objectConstructor as o,
-  includesItem as p,
-  objectKeys as q,
+  isArray as j,
+  ownKeys as k,
+  isString as l,
+  createSyntaxError as m,
+  includesItem as n,
+  objectEntries as o,
+  objectKeys as p,
+  brioErrors as q,
   removeElement as r,
-  brioErrors as s,
-  startsWith as t,
-  TEMPLATE as u,
-  isBoolean as v,
-  snapshotList as w
+  startsWith as s,
+  TEMPLATE as t,
+  isBoolean as u,
+  snapshotList as v
 };
-//# sourceMappingURL=native-DNTl55LH.js.map
+//# sourceMappingURL=native-Ba4LWja7.js.map

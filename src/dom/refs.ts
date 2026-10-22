@@ -1,4 +1,4 @@
-import { objectConstructor, ReflectApi, createTypeError, ownKeys, createSyntaxError, GET_OWN_PROPERTY_DESCRIPTOR } from '../core/native';
+import { ObjectConstructor, ReflectApi, createTypeError, ownKeys, createSyntaxError, GET_OWN_PROPERTY_DESCRIPTOR } from '../core/native';
 import { onCleanup } from '../core/scope';
 import { batch } from '../reactivity/effect';
 import { track, trigger } from '../reactivity/state';
@@ -9,7 +9,7 @@ const registries = new WeakMap<RefMap, Record<string, Element>>();
 const keys = Symbol('brio.refs');
 
 export function createRefs(): RefMap {
-    const values: Record<string, Element> = objectConstructor.create(null);
+    const values: Record<string, Element> = ObjectConstructor.create(null);
     const readOnly = () => { throw createTypeError('$ref names are read-only.'); };
     const refs: RefMap = new Proxy(values, {
         get(target, key) {
@@ -42,13 +42,13 @@ export function createRefs(): RefMap {
 /** Defines a `$ref` registry on `context` that is created on first read; most loop rows never use refs. */
 export function defineLazyRefs<T extends object>(context: T): T {
     let refs: RefMap | undefined;
-    return objectConstructor.defineProperty(context, '$ref', {
+    return ObjectConstructor.defineProperty(context, '$ref', {
         enumerable: true,
         configurable: true,
         get: () => refs ??= createRefs(),
         // Child scopes assigning their own `$ref` shadow this accessor instead of hitting a getter-only property.
         set(this: object, value: RefMap) {
-            objectConstructor.defineProperty(this, '$ref', { value, writable: true, enumerable: true, configurable: true });
+            ObjectConstructor.defineProperty(this, '$ref', { value, writable: true, enumerable: true, configurable: true });
         },
     });
 }
@@ -56,7 +56,7 @@ export function defineLazyRefs<T extends object>(context: T): T {
 export function registerRef(refs: RefMap, name: string, element: Element): void {
     const values = registries.get(refs);
     if (!values) throw createTypeError('b-ref requires a Brio ref registry.');
-    if (objectConstructor.prototype.hasOwnProperty.call(values, name))
+    if (ObjectConstructor.prototype.hasOwnProperty.call(values, name))
         throw createSyntaxError(`Duplicate b-ref name "${name}" in the same scope.`);
     const notify = () => batch(() => {
         trigger(values, name, 'set');

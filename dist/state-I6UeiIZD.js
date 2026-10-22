@@ -1,5 +1,5 @@
-import { c as createTypeError, R as ReflectApi, i as isFunction, k as isArray, g as getLength, G as GET_OWN_PROPERTY_DESCRIPTOR, o as objectConstructor, l as ownKeys, f as isObjectType, m as isString } from "./native-DNTl55LH.js";
-import { b as batch, d as enterBatch, l as leaveBatch, g as getActiveEffect, q as queueEffect } from "./effect-Hm6a3OX7.js";
+import { c as createTypeError, R as ReflectApi, i as isFunction, j as isArray, g as getLength, G as GET_OWN_PROPERTY_DESCRIPTOR, O as ObjectConstructor, k as ownKeys, e as isObjectType, l as isString } from "./native-Ba4LWja7.js";
+import { b as batch, d as enterBatch, l as leaveBatch, g as getActiveEffect, q as queueEffect } from "./effect-D2BTN5OX.js";
 const targetMap = /* @__PURE__ */ new WeakMap();
 const proxyCache = /* @__PURE__ */ new WeakMap();
 const rawCache = /* @__PURE__ */ new WeakMap();
@@ -79,7 +79,7 @@ const triggerArrayChanges = (target, before, from, oldLength) => {
   try {
     for (let index = from, end = oldLength > newLength ? oldLength : newLength; index < end; index++) {
       const previous = index - from;
-      if (!objectConstructor.is(before[previous], target[index]) || previous in before !== index in target)
+      if (!ObjectConstructor.is(before[previous], target[index]) || previous in before !== index in target)
         queueDependency(dependencies.get(String(index)), activeEffect);
     }
     if (oldLength !== newLength) {
@@ -93,8 +93,8 @@ const triggerArrayChanges = (target, before, from, oldLength) => {
 const observe = (value) => isObject(value) && canObserve(value) ? state(value) : value;
 const canObserve = (value) => {
   if (isArray(value)) return true;
-  const prototype = objectConstructor.getPrototypeOf(value);
-  return prototype === objectConstructor.prototype || prototype === null;
+  const prototype = ObjectConstructor.getPrototypeOf(value);
+  return prototype === ObjectConstructor.prototype || prototype === null;
 };
 function state(target) {
   if (!isObject(target)) throw createTypeError("Brio state() requires a plain object or array.");
@@ -137,9 +137,9 @@ function state(target) {
     },
     set(current, key, incoming, receiver) {
       const value = toRaw(incoming);
-      const hadKey = objectConstructor.prototype.hasOwnProperty.call(current, key);
+      const hadKey = ObjectConstructor.prototype.hasOwnProperty.call(current, key);
       const previous = ReflectApi.get(current, key, receiver);
-      if (objectConstructor.is(toRaw(previous), value)) return true;
+      if (ObjectConstructor.is(toRaw(previous), value)) return true;
       settingDepth++;
       let succeeded;
       try {
@@ -160,12 +160,12 @@ function state(target) {
       if (!succeeded) return succeeded;
       const next = ReflectApi[GET_OWN_PROPERTY_DESCRIPTOR](current, key);
       const type = previous ? "set" : "add";
-      const changed = !previous || !next || !objectConstructor.is(toRaw(previous.value), toRaw(next.value)) || previous.enumerable !== next.enumerable || previous.configurable !== next.configurable || previous.writable !== next.writable;
+      const changed = !previous || !next || !ObjectConstructor.is(toRaw(previous.value), toRaw(next.value)) || previous.enumerable !== next.enumerable || previous.configurable !== next.configurable || previous.writable !== next.writable;
       if (changed) trigger(current, key, type, next == null ? void 0 : next.value, previous == null ? void 0 : previous.value);
       return succeeded;
     },
     deleteProperty(current, key) {
-      const hadKey = objectConstructor.prototype.hasOwnProperty.call(current, key);
+      const hadKey = ObjectConstructor.prototype.hasOwnProperty.call(current, key);
       const succeeded = ReflectApi.deleteProperty(current, key);
       if (succeeded && hadKey) trigger(current, key, "delete");
       return succeeded;
@@ -189,7 +189,7 @@ function signal(initialValue) {
       return isObject(value) && canObserve(value) ? state(value) : value;
     },
     set value(next) {
-      if (objectConstructor.is(toRaw(value), toRaw(next))) return;
+      if (ObjectConstructor.is(toRaw(value), toRaw(next))) return;
       value = next;
       trigger(holder, "value", "set");
     }
@@ -201,4 +201,4 @@ export {
   state as s,
   trigger as t
 };
-//# sourceMappingURL=state-TMgcg8XY.js.map
+//# sourceMappingURL=state-I6UeiIZD.js.map

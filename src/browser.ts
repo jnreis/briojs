@@ -1,8 +1,8 @@
-import { objectConstructor } from './core/native';
+import { ObjectConstructor } from './core/native';
 import brio from './browser-api';
 
 if (typeof window !== 'undefined') {
-    objectConstructor.assign(window, { brio });
+    ObjectConstructor.assign(window, { brio });
     window.dispatchEvent(new CustomEvent('brio'));
 }
 

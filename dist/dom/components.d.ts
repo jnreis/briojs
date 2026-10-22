@@ -1,4 +1,4 @@
-import { ComponentDefinition, DomRuntime } from './types';
+import { ComponentDefinition, DomRuntime } from './types.js';
 
 export declare function takeProjectedContext(node: Node): Record<PropertyKey, any> | undefined;
 export declare function cloneProjectedNode<T extends Node>(node: T): T;

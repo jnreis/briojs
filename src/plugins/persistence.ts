@@ -1,5 +1,5 @@
 import {
-    isObjectType, objectConstructor, isFunction, isArray, createError, createTypeError, objectKeys, getLength,
+    isObjectType, ObjectConstructor, isFunction, isArray, createError, createTypeError, objectKeys, getLength,
 } from '../core/native';
 import { addEventListener, removeEventListener } from '../dom/native';
 import { getCurrentScope, onCleanup } from '../core/scope';
@@ -18,8 +18,8 @@ type Persisted<T> = T extends readonly unknown[] | Record<string, unknown> ? T :
 const isPlainContainer = (value: unknown): value is Record<PropertyKey, unknown> | unknown[] => {
     if (value === null || !isObjectType(value)) return false;
     if (isArray(value)) return true;
-    const prototype = objectConstructor.getPrototypeOf(value);
-    return prototype === objectConstructor.prototype || prototype === null;
+    const prototype = ObjectConstructor.getPrototypeOf(value);
+    return prototype === ObjectConstructor.prototype || prototype === null;
 };
 
 const resolveStorage = (selection: PersistOptions['storage']): StorageAdapter => {
@@ -75,7 +75,7 @@ export function persist<T>(key: string, initialValue: T, options: PersistOptions
                         for (const prop of objectKeys(target)) {
                             if (!(prop in next)) delete target[prop];
                         }
-                        objectConstructor.assign(target, next);
+                        ObjectConstructor.assign(target, next);
                     }
                 } else if (!objectBacked) {
                     (value as Signal<T>).value = next as T;

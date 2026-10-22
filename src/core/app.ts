@@ -1,5 +1,5 @@
 import {
-    objectConstructor,
+    ObjectConstructor,
     isString,
     getLength,
     createError,
@@ -49,7 +49,7 @@ export function createApp<
     options: AppOptions<T, S> = {},
 ): BrioApp<T, S> {
     const appState = state((options.state?.() ?? {}) as T);
-    const stores = objectConstructor.freeze(copyContextValues(
+    const stores = ObjectConstructor.freeze(copyContextValues(
         options.stores === undefined ? {} : options.stores, 'Brio stores',
     )) as Readonly<S>;
     const components = new Map<string, ComponentDefinition>();

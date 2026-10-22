@@ -1,11 +1,11 @@
-import { i as isFunction, c as createTypeError, o as objectConstructor, b as createError, e as objectEntries, d as deleteItem, g as getLength, f as isObjectType, a as arrayFrom, h as isNumber, j as isInstanceOf } from "./native-DNTl55LH.js";
-import { a as addEventListener, r as removeEventListener, g as getAttribute } from "./native-Da80auZ6.js";
-import { c as copyContextValues, e as evaluate } from "./context-values-BXAsS55z.js";
-import { a as combinedError } from "./effect-Hm6a3OX7.js";
+import { i as isFunction, c as createTypeError, O as ObjectConstructor, b as createError, o as objectEntries, d as deleteItem, g as getLength, e as isObjectType, a as arrayFrom, f as isNumber, h as isInstanceOf } from "./native-Ba4LWja7.js";
+import { a as addEventListener, r as removeEventListener, g as getAttribute } from "./native-BP66_Ihq.js";
+import { c as copyContextValues, e as evaluate } from "./context-values-Ca4ABtNI.js";
+import { a as combinedError } from "./effect-D2BTN5OX.js";
 const lazyMarker = Symbol("brio.astro.lazy");
 function lazyApp(load) {
   if (!isFunction(load)) throw createTypeError("lazyApp requires a module loader.");
-  return objectConstructor.freeze({ [lazyMarker]: true, load });
+  return ObjectConstructor.freeze({ [lazyMarker]: true, load });
 }
 const installations = /* @__PURE__ */ new WeakSet();
 const ownedApps = /* @__PURE__ */ new WeakSet();
@@ -14,7 +14,7 @@ function enhanceAstro(options) {
   if (typeof document === "undefined") throw createError("enhanceAstro requires a browser document.");
   if (!options || !isFunction(options.onError))
     throw createTypeError("enhanceAstro requires onError(error, root).");
-  const apps = objectConstructor.create(null);
+  const apps = ObjectConstructor.create(null);
   for (const [name, entry] of objectEntries(copyContextValues(options.apps, "Astro apps"))) {
     if (!name.trim() || !isFactory(entry) && !isLazy(entry))
       throw createTypeError(`Invalid Astro app registration "${name}".`);
@@ -92,10 +92,10 @@ function enhanceAstro(options) {
         if (((_a = root.parentElement) == null ? void 0 : _a.closest("[b-app]")) || root.querySelector("[b-app]"))
           throw createError("Brio Astro islands cannot be nested.");
         const name = getAttribute(root, "b-app");
-        if (!objectConstructor.prototype.hasOwnProperty.call(apps, name))
+        if (!ObjectConstructor.prototype.hasOwnProperty.call(apps, name))
           throw createError(`Unknown Brio Astro app "${name}".`);
         const source = getAttribute(root, "b-props");
-        const props = objectConstructor.freeze(copyContextValues(
+        const props = ObjectConstructor.freeze(copyContextValues(
           source === null ? {} : evaluate(source, { $el: root }),
           "b-props"
         ));

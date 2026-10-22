@@ -1,8 +1,26 @@
-# Brio.js vNext
+# Brio.js 4.0
 
 Brio is a petite, HTML-first framework for reactive widgets and web apps. It enhances real DOM nodes in place; there is no virtual DOM, JSX transform, or required compiler. Use it for one small island on a server-rendered page, several independent widgets, or a client-side application.
 
-**Version 4 is a clean break from the v3 API.** The package entry point now exposes the vNext runtime. The old v3 sources are not part of the published package API.
+Version 4.0.0 is being prepared as the first npm release of this reimagined
+framework. Earlier versions in the repository were private development
+iterations, not npm releases.
+
+## Contents
+
+- [Installation and browser bundles](#install)
+- [First app](#first-app)
+- [Shared stores](#shared-stores) and [subtree-provided values](#subtree-provided-values)
+- [HTML directives](#html-directives) and [directive combinations](#directive-combinations-and-conflicts)
+- [Components](#components) and [CSS](#recommended-css)
+- [Widgets, multi-page sites, and SPAs](#three-ways-to-use-brio)
+- [Reactive primitives](#reactive-primitives) and [async resources](#async-resources)
+- [Step navigation](#step-navigation), [HTTP](#http), [form validation](#form-validation), and [persistence](#persistence)
+- [HTML and expression security](#trusted-html-and-expression-security)
+- [Errors](#errors) and [devtools](#devtools)
+- [Lifecycle and insertion](#app-and-lifecycle-api)
+- [Astro islands](#astro-islands)
+- [Package entry points](#package-entry-points)
 
 ## Install
 
@@ -50,10 +68,15 @@ Load one of the standalone bundles, not both:
 
 ```html
 <!-- Production: runtime without development tools or tracking hooks -->
-<script src="/dist/brio.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/briojs@4.0.0/dist/brio.min.js"></script>
 <!-- During development, use this instead: -->
-<!-- <script src="/dist/brio.dev.min.js"></script> -->
+<!-- <script src="https://cdn.jsdelivr.net/npm/briojs@4.0.0/dist/brio.dev.min.js"></script> -->
 ```
+
+These CDN URLs become available after 4.0.0 is published to npm. For self-hosting,
+copy the desired scripts from `node_modules/briojs/dist/` to your public assets.
+The `/dist/` URLs below assume you serve them at that path. Pin core and plugins
+to the same version; load the scripts before mounting your app.
 
 Both expose `window.brio` with `createApp`, `state`, `signal`, `computed`,
 `effect`, `batch`, `flush`, `untrack`, `resource`, `createScope`, `onCleanup`,
@@ -295,7 +318,7 @@ document.querySelector(`[data-card-id="${card.id}"]`)?.focus();
 
 A row whose repeated element is a single concrete element (not a `<template>`, `b-template`, or teleported row) is its own boundary: Brio adds no `<!--brio:range-->` comments around it. Template and teleported rows keep their range comments. Clearing a list, or replacing it with items that share no keys with the old ones, disposes every old row at once; when the loop is the only content of its parent (besides whitespace), the old rows are removed with a single DOM write.
 
-`b-bind-*` binds a DOM property when one exists; otherwise it sets or removes the corresponding attribute. `false`, `null`, and `undefined` remove attributes. `aria-*` bindings are the exception for booleans: ARIA states are enumerated strings, so `true`/`false` become `"true"`/`"false"` (`b-bind-aria-pressed="$data.on"` keeps a toggle button's state announced), while `null`/`undefined` still remove the attribute. `class` accepts a string, array, or object of class names and booleans. `style` accepts a style object. Read-only properties (SVG geometry such as `r`/`cx`, `input.form`/`list`) are bound as attributes. A writable property whose setter throws surfaces an error instead of silently falling back to an attribute.
+`b-bind-*` binds a DOM property when one exists; otherwise it sets or removes the corresponding attribute. `false`, `null`, and `undefined` remove attributes. `aria-*` bindings are the exception for booleans: ARIA states are enumerated strings, so `true`/`false` become `"true"`/`"false"` (`b-bind-aria-pressed="$data.on"` keeps a toggle button's state announced), while `null`/`undefined` still remove the attribute. `class` accepts a string, an object of class names and booleans, or an array mixing both (nested freely: `['card ' + $data.kind, { active: $data.on }]`). `style` accepts a style object. Read-only properties (SVG geometry such as `r`/`cx`, `input.form`/`list`) are bound as attributes. A writable property whose setter throws surfaces an error instead of silently falling back to an attribute.
 
 HTML parsing lowercases attribute names, so `b-bind-viewBox` reaches Brio as `b-bind-viewbox`. On SVG elements Brio restores the spec's mixed-case attribute names (`viewBox`, `preserveAspectRatio`, `gradientUnits`, `stdDeviation`, …). The `.prop` modifier always assigns a DOM property and resolves its casing against the element (`b-bind-tabIndex.prop`, `b-bind-scrollTop.prop`).
 
@@ -304,6 +327,15 @@ whitespace and numeric-looking text. Supported model modifiers are `.lazy`
 (update on change instead of input), `.trim` (trim whitespace), and `.number`
 (`parseFloat`, keeping nonnumeric text unchanged). Text is literal by default;
 `b-html.hydrate` opts into content hydration.
+
+When state changes the value of a focused text input or textarea (through
+`b-model` or `b-bind-value`), Brio keeps the cursor and selection on the same
+characters: text changed before the cursor shifts it, text changed after it
+leaves it alone. Without this, browsers move the cursor to the end on every
+programmatic write, which breaks live collaboration and server-side
+reformatting. The browser's own undo history does not survive programmatic
+writes, and writing during IME composition can cancel it; avoid changing a
+field's value while `compositionstart` is active.
 
 ### Local DOM references with `b-ref`
 
@@ -945,7 +977,7 @@ const app = createApp({ state: () => ({ label: 'Clicks' }) });
 
 app.component('click-counter', {
   template: `
-    <button b-on-click="$data.count.value++">
+    <button b-on-click="$data.count.value++; $data.notify()">
       <span b-text="$props.label"></span>:
       <span b-text="$data.count.value"></span>
       <slot></slot>
@@ -1016,8 +1048,9 @@ Earlier structural/context steps still apply: `b-if`, `b-for` with `b-key`,
 `b-data`, `b-id`, `b-provide`, and `b-ref` can be handled before component setup, subject
 to the combination rules above. `b-ignore` skips setup altogether, while
 `b-template` unwraps the tag instead of setting it up.
-Other `b-*` host directives (such as `b-model`, `b-html`, `b-teleport`, and
-`b-transition`) are rejected. Do not use unprefixed aliases to bypass that
+`b-transition` animates the host itself, and `b-attr-*` binds the host's own
+attributes. Other `b-*` host directives (such as `b-model`, `b-html`, and
+`b-teleport`) are rejected. Do not use unprefixed aliases to bypass that
 restriction; they do not install ordinary host behaviors either.
 Use a surviving wrapper or put the directive inside the component.
 
@@ -1650,6 +1683,70 @@ Explicit non-JSON parsers infer their native result types. npm also exports
 `HttpMethod`, `HttpParser`, `HttpOptions`, `HttpBody`, `HttpQuery`, and
 `HttpQueryValue`.
 
+## Form validation
+
+`validate(data, schema, customRules?)` is a synchronous helper, not a form
+controller. Import it from `briojs/forms` or `briojs`; the optional
+`brio.forms.min.js` browser script exposes `brio.validate`.
+
+```js
+import { validate } from 'briojs/forms';
+
+const schema = {
+  email: [
+    { name: 'required', message: 'Enter your email address.' },
+    { name: 'email', message: 'Enter a valid email address.' },
+  ],
+  password: [{ name: 'min', value: 8, message: 'Use at least eight characters.' }],
+  confirmation: [{ name: 'same', value: 'password', message: 'Passwords must match.' }],
+};
+
+const result = validate({
+  email: 'ada@example.com',
+  password: 'eight-or-more',
+  confirmation: 'eight-or-more',
+}, schema);
+
+if (result !== true) {
+  // Field names map to arrays of messages, e.g. result.email.
+  console.log(result);
+}
+```
+
+Success is exactly `true`; failure is a field-to-message-array object. Do not
+test the result's truthiness: an error object is also truthy. All declared rules
+run in order, so one field can have several messages. Each rule accepts
+`{ name, value?, message? }`. Without a custom message, the fallback is
+`"<field> failed <rule> validation"`.
+
+| Rule | Meaning |
+| --- | --- |
+| `required` | Rejects null, undefined, false, empty/whitespace-only strings, empty arrays, and objects without enumerable string keys. Numeric zero is valid. |
+| `min` / `max` | Minimum/maximum string or array length, or numeric value. The rule's `value` supplies the bound. String length is UTF-16 length, not grapheme count. |
+| `email` | A basic string email-format check, not verification that an address exists or can receive mail. |
+| `same` | Strict equality with another top-level field named by `value`. |
+| `in` | Membership in the array supplied as `value`, using native `includes` semantics. |
+
+Custom rules receive `(value, ruleValue, allData)` and return a boolean. They
+can add rules or override built-ins:
+
+```js
+const result = validate({ age: 24 }, {
+  age: [{ name: 'multipleOf', value: 3, message: 'Use a multiple of three.' }],
+}, {
+  multipleOf: (value, divisor) => typeof value === 'number' && value % Number(divisor) === 0,
+});
+```
+
+Unknown rule names throw a `TypeError`; they are not skipped. There is no
+implicit trimming, type coercion of field values, nested-path traversal, async
+validation, or automatic DOM error rendering. For an optional field, omit
+format rules when it is empty rather than expecting `email` or `min` to skip it.
+Call validation from your own submit/input handlers, put errors in reactive
+state, and render messages with `b-text`. If using `novalidate` to replace native
+form validation, provide your own accessible messages and focus handling.
+Server-side validation is still required.
+
 ## Persistence
 
 Import persistence where needed. Inside component setup, an app plugin, or an explicit reactive scope, disposal removes the value's save effect and cross-tab listener. Outside any scope (for example a module-level `const token = persist('token', '')` shared by several components), the value lives for the life of the page:
@@ -1678,6 +1775,11 @@ createApp().component('preferences-panel', {
 
 Objects and arrays are reactive directly. Primitive values are returned as signals and use `.value`. The default adapter is `localStorage`; select `sessionStorage` or pass a `getItem`/`setItem` adapter with `{ storage }`. JSON serialization errors and storage errors are surfaced. Cross-tab updates are applied to the existing reactive value (array roots are replaced in place) and saving continues afterwards. A remote value whose shape differs from the local one (array vs. object, or a non-object for an object root) is ignored.
 
+Use `{ storage: 'session' }` for session storage, `{ storage: 'local' }` for
+explicit local storage, or `{ storage: adapter }` for a custom adapter. Persistence
+uses JSON, not encryption; do not treat browser storage as a secure credential
+vault or an authoritative server-side data store.
+
 ## Trusted HTML and expression security
 
 Directive expressions are ordinary strict-mode JavaScript compiled and cached at runtime with `new Function`, without `with`. They are authored application code, **not a sandbox**; the approach is incompatible with a strict CSP that disallows `unsafe-eval`. Never render untrusted content as a Brio template or directive expression.
@@ -1705,7 +1807,7 @@ the new content. A value without the trust marker is rejected before replacing
 existing content. Authored `b-template` and managed insertion are unchanged.
 
 ```js
-import { trustedHTML } from 'briojs';
+import { createApp, trustedHTML } from 'briojs';
 
 createApp({ state: () => ({ content: '<em>Trusted</em>' }) }).mount('#content');
 ```
@@ -1749,7 +1851,7 @@ import { devtoolsPanel } from 'briojs/devtools';
 const stopInspector = devtoolsPanel(document.querySelector('#brio-tools'));
 ```
 
-The inspector tracks app state snapshots, mounted roots, and reactive effect counts. Call the returned function to remove the panel and its subscription. The devtools entry is not imported by the core package entry.
+The inspector tracks app state snapshots, mounted roots, and reactive effect counts. Call the returned function to remove the panel and its subscription. The main entry also exports devtools functions, but does not activate tracking automatically; unused tooling can be tree-shaken.
 
 With the development browser bundle, use
 `brio.devtoolsPanel(document.querySelector('#brio-tools'))` directly.
@@ -1798,8 +1900,9 @@ insert into the row itself or outside the loop instead. Replacement is destructi
 is disposed first; a hydration failure removes the failed insertion and throws,
 but does not restore the old content.
 
-Use authored or sanitized markup only. Automatic `trustedHTML` is an ergonomic
-trust assertion, not sanitization; inserted expressions and scripts execute code.
+Use only templates you trust as application code. Automatic `trustedHTML` is an
+ergonomic trust assertion, not sanitization; inserted expressions and scripts
+execute code. Sanitizing HTML alone does not make it a trusted Brio template.
 
 ### Low-level dynamic hydration
 
@@ -1987,7 +2090,7 @@ DOM changes outside Astro navigation remain the host's responsibility.
 The adapter leaves back/forward-cached documents live. It is tested against
 Astro 5.18.2 and its generated `data-astro-transition-persist` marker; reverify
 when upgrading Astro or customizing its swap algorithm. The runnable
-[fixture registry](./tests/fixtures/astro/src/lifecycle.js) exercises eager/lazy
+[fixture registry](https://github.com/jnreis/briojs/blob/main/tests/fixtures/astro/src/lifecycle.js) exercises eager/lazy
 apps and persistent ancestors. Pulse events in the fixture are test diagnostics
 for leaked listeners, not part of the adapter API.
 
@@ -1996,15 +2099,29 @@ once, then `npm run test:astro` for production-build browser tests of repeated
 navigation, actual DOM/state persistence, resource cancellation, cleanup counts,
 and browser back/forward restoration.
 
-## Package and migration
-
-Version 4 is not API-compatible with version 3. Replace `newApp()` with `createApp()`, `$state` with app state or the `state()` import, `$effect` with `effect()`, and the previous directives with the table above. Router, persistence, and devtools are first-party package subpaths. Review all templates: state access requires `$data` or `$data.$parent`, loop values require `$for` (outer loop values use `$for.$parent`), arguments use hyphens and modifiers use dots, expressions are explicitly trusted strict-mode JavaScript, and `b-html.hydrate` requires `trustedHTML()` (`$insert` trusts authored markup automatically). Default `b-html` is inert and `b-text` is literal. Migrate `$parent.$parent.$data` to `$data.$parent.$parent`.
+## Package entry points
 
 The package exports:
 
 - `briojs`: app, components, DOM enhancement, trusted HTML, and core types.
-- `briojs/reactivity`: state, signals, effects, computed values, batching, and scopes.
-- `briojs/persistence`: scope-owned local/session/custom storage.
-- `briojs/router`: optional history router.
+- `briojs/reactivity`: DOM-independent state, signals, effects, computed values, batching, async resources, and scopes.
+- `briojs/persistence`: local/session/custom storage, with scope cleanup where owned.
+- `briojs/router`: optional history or hash router.
+- `briojs/http`: Fetch helpers and `HttpError`.
+- `briojs/forms`: validation rules and `validate`.
+- `briojs/step`: step navigation.
+- `briojs/money-mask`: the optional `moneyMask` formatter.
 - `briojs/devtools`: development-only instrumentation and inspector panel.
 - `briojs/astro`: optional named-island lifecycle integration and lazy code loading.
+- `briojs/dist/*`: built files for self-hosted standalone browser scripts.
+
+All JavaScript entry points are ES modules; there is no CommonJS build. Runtime
+dependencies are not required. Brio enhances client-rendered DOM rather than
+providing server-side rendering or hydration of framework-generated server output.
+Its reactivity entry can run without a DOM. Modern browsers are required; optional
+observer directives and native CSS features depend on browser support.
+
+For a private application built with an older Brio runtime, use the
+[legacy migration kit](./ai/brio-migrate-1-1-5/references/migration.md).
+The [historical v3 reference](https://github.com/jnreis/briojs/blob/main/DOCUMENTATION-v3.md)
+is preserved in the repository, not shipped as current documentation.

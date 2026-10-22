@@ -1,12 +1,12 @@
-import { c as createTypeError, f as isObjectType, b as createError, i as isFunction, k as isArray, o as objectConstructor, g as getLength, q as objectKeys } from "./native-DNTl55LH.js";
-import { a as addEventListener, r as removeEventListener } from "./native-Da80auZ6.js";
-import { e as effect, j as getCurrentScope, o as onCleanup, c as causedError, b as batch } from "./effect-Hm6a3OX7.js";
-import { s as state, b as signal } from "./state-TMgcg8XY.js";
+import { c as createTypeError, e as isObjectType, b as createError, i as isFunction, j as isArray, O as ObjectConstructor, g as getLength, p as objectKeys } from "./native-Ba4LWja7.js";
+import { a as addEventListener, r as removeEventListener } from "./native-BP66_Ihq.js";
+import { e as effect, j as getCurrentScope, o as onCleanup, c as causedError, b as batch } from "./effect-D2BTN5OX.js";
+import { s as state, b as signal } from "./state-I6UeiIZD.js";
 const isPlainContainer = (value) => {
   if (value === null || !isObjectType(value)) return false;
   if (isArray(value)) return true;
-  const prototype = objectConstructor.getPrototypeOf(value);
-  return prototype === objectConstructor.prototype || prototype === null;
+  const prototype = ObjectConstructor.getPrototypeOf(value);
+  return prototype === ObjectConstructor.prototype || prototype === null;
 };
 const resolveStorage = (selection) => {
   if (selection && isObjectType(selection)) return selection;
@@ -57,7 +57,7 @@ function persist(key, initialValue, options = {}) {
             for (const prop of objectKeys(target)) {
               if (!(prop in next)) delete target[prop];
             }
-            objectConstructor.assign(target, next);
+            ObjectConstructor.assign(target, next);
           }
         } else if (!objectBacked) {
           value.value = next;

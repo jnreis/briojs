@@ -1,6 +1,6 @@
 import {
     isInstanceOf, isString, getLength, createTypeError, createError, deleteItem, includesItem, startsWith,
-    objectConstructor, objectKeys,
+    ObjectConstructor, objectKeys,
 } from '../core/native';
 
 import { addEventListener, removeEventListener } from '../dom/native';
@@ -168,7 +168,7 @@ export function createRouter(routes: RouteDefinition[], options: RouterOptions =
         const create = (candidate: Compiled, params: Record<string, string>): [RouteMatch, RouteDefinition] => {
             const hash = hashMode ? '' : url.hash;
             return [{
-                path: pathname, params, query: objectConstructor.fromEntries(url.searchParams), hash,
+                path: pathname, params, query: ObjectConstructor.fromEntries(url.searchParams), hash,
                 fullPath: `${pathname}${url.search}${hash}`, component: candidate.route.component ?? '',
             }, candidate.route];
         };

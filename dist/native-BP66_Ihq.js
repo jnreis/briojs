@@ -18,12 +18,12 @@ export {
   getChildNodes as b,
   removeAttribute as c,
   getOwnerDocument as d,
-  removeChild as e,
-  getParent as f,
+  getParent as e,
+  removeChild as f,
   getAttribute as g,
   getNodeType as h,
   getNextSibling as i,
   insertBefore as j,
   removeEventListener as r
 };
-//# sourceMappingURL=native-Da80auZ6.js.map
+//# sourceMappingURL=native-BP66_Ihq.js.map

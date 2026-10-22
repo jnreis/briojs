@@ -1,7 +1,7 @@
-import { c as createTypeError, m as isString, b as createError, t as startsWith, p as includesItem, g as getLength, d as deleteItem, j as isInstanceOf, q as objectKeys, o as objectConstructor } from "./native-DNTl55LH.js";
-import { a as addEventListener, r as removeEventListener } from "./native-Da80auZ6.js";
-import { s as state, b as signal } from "./state-TMgcg8XY.js";
-import { e as effect, u as untrack, b as batch } from "./effect-Hm6a3OX7.js";
+import { c as createTypeError, l as isString, b as createError, s as startsWith, n as includesItem, g as getLength, d as deleteItem, h as isInstanceOf, p as objectKeys, O as ObjectConstructor } from "./native-Ba4LWja7.js";
+import { a as addEventListener, r as removeEventListener } from "./native-BP66_Ihq.js";
+import { s as state, b as signal } from "./state-I6UeiIZD.js";
+import { e as effect, u as untrack, b as batch } from "./effect-D2BTN5OX.js";
 const MAX_REDIRECTS = 10;
 const FALLBACK = "*";
 const origin = () => {
@@ -105,7 +105,7 @@ function createRouter(routes, options = {}) {
       return [{
         path: pathname,
         params,
-        query: objectConstructor.fromEntries(url.searchParams),
+        query: ObjectConstructor.fromEntries(url.searchParams),
         hash,
         fullPath: `${pathname}${url.search}${hash}`,
         component: candidate.route.component ?? ""

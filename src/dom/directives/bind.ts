@@ -1,5 +1,4 @@
 import {
-    isString,
     isObjectType,
     getLength,
     isArray,
@@ -7,11 +6,12 @@ import {
     createSyntaxError,
     deleteItem,
     startsWith,
-    objectConstructor,
+    ObjectConstructor,
     GET_OWN_PROPERTY_DESCRIPTOR,
     isInstanceOf,
 } from '../../core/native';
 import { getAttribute, removeAttribute } from '../native';
+import { writeValue } from '../value';
 import { evaluate } from '../../core/expression';
 import { effect } from '../../reactivity/effect';
 import { causedError, errorText } from '../../core/errors';
@@ -24,8 +24,8 @@ const svgAttributeNames = 'attributeName attributeType baseFrequency calcMode cl
 let svgNames: Map<string, string> | undefined;
 
 const findProperty = (element: Element, name: string): PropertyDescriptor | undefined => {
-    for (let target: object | null = element; target; target = objectConstructor.getPrototypeOf(target)) {
-        const descriptor = objectConstructor[GET_OWN_PROPERTY_DESCRIPTOR](target, name);
+    for (let target: object | null = element; target; target = ObjectConstructor.getPrototypeOf(target)) {
+        const descriptor = ObjectConstructor[GET_OWN_PROPERTY_DESCRIPTOR](target, name);
         if (descriptor) return descriptor;
     }
 };
@@ -34,8 +34,8 @@ const findProperty = (element: Element, name: string): PropertyDescriptor | unde
 export const resolveBindTarget = (element: Element, name: string, forceProp: boolean): string => {
     if (forceProp) {
         if (name in element) return name;
-        for (let target: object | null = element; target; target = objectConstructor.getPrototypeOf(target))
-            for (const key of objectConstructor.getOwnPropertyNames(target))
+        for (let target: object | null = element; target; target = ObjectConstructor.getPrototypeOf(target))
+            for (const key of ObjectConstructor.getOwnPropertyNames(target))
                 if (key.toLowerCase() === name) return key;
         return name;
     }
@@ -46,6 +46,14 @@ export const resolveBindTarget = (element: Element, name: string, forceProp: boo
 const dynamicStyles = new WeakMap<Element, Set<string>>();
 const dynamicClasses = new WeakMap<Element, Set<string>>();
 
+/** Strings, arrays, and `{ name: enabled }` objects nest freely: `['card', { active: on }]`. */
+const collectClasses = (entry: unknown, into: Set<string>): void => {
+    if (isArray(entry)) for (const item of entry) collectClasses(item, into);
+    else if (entry && isObjectType(entry)) {
+        for (const [className, enabled] of objectEntries(entry)) if (enabled) collectClasses(className, into);
+    } else if (entry && entry !== true) for (const name of String(entry).split(/\s+/)) if (name) into.add(name);
+};
+
 export const setBoundValue = (element: Element, name: string, value: unknown, forceProp: boolean = false) => {
     if (name === 'class') {
         let staticNames = staticClasses.get(element);
@@ -54,14 +62,7 @@ export const setBoundValue = (element: Element, name: string, value: unknown, fo
             staticClasses.set(element, staticNames);
         }
         const currentDynamic = new Set<string>();
-        if (isString(value))
-            value.split(/\s+/).filter(Boolean).forEach(className => currentDynamic.add(className));
-        else if (isArray(value))
-            value.filter(Boolean).forEach(className => String(className).split(/\s+/).filter(Boolean).forEach(name => currentDynamic.add(name)));
-        else if (value && isObjectType(value)) {
-            for (const [className, enabled] of objectEntries(value))
-                if (enabled) className.split(/\s+/).filter(Boolean).forEach(name => currentDynamic.add(name));
-        }
+        collectClasses(value, currentDynamic);
         // Only names this binding owns change, so classes added elsewhere (transitions, other code) survive.
         const { classList } = element;
         for (const className of dynamicClasses.get(element) ?? [])
@@ -103,7 +104,8 @@ export const setBoundValue = (element: Element, name: string, value: unknown, fo
         ? undefined : findProperty(element, name);
     if (forceProp || descriptor?.set || descriptor?.writable) {
         try {
-            (element as unknown as Record<string, unknown>)[name] = value;
+            if (name === 'value') writeValue(element, value);
+            else (element as unknown as Record<string, unknown>)[name] = value;
             return;
         } catch (error) {
             throw causedError(`Unable to bind property "${name}" on <${element.tagName.toLowerCase()}>: ${errorText(error)}`, error);
@@ -132,7 +134,7 @@ export function handleBind(
     const start = () => effect(() => {
         const value = evaluate(expression, context, attrName, element);
         // Unchanged primitives skip the DOM write; objects may have been mutated in place, so they always apply.
-        if (written && objectConstructor.is(value, last) && (value === null || !isObjectType(value))) return;
+        if (written && ObjectConstructor.is(value, last) && (value === null || !isObjectType(value))) return;
         setBoundValue(element, target, value, forceProp);
         last = value;
         written = true;

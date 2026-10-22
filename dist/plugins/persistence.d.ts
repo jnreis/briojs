@@ -1,4 +1,4 @@
-import { Signal } from '../reactivity/types';
+import { Signal } from '../reactivity/types.js';
 
 export type StorageAdapter = Pick<Storage, 'getItem' | 'setItem'>;
 export type PersistOptions = {

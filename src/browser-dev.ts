@@ -1,4 +1,4 @@
-import { objectConstructor } from './core/native';
+import { ObjectConstructor } from './core/native';
 import api from './browser-api';
 import { devtools, inspectDevtools, devtoolsPanel, enableDevtools } from './devtools-entry';
 
@@ -6,7 +6,7 @@ const brio = { ...api, devtools, inspectDevtools, devtoolsPanel, enableDevtools 
 enableDevtools();
 
 if (typeof window !== 'undefined') {
-    objectConstructor.assign(window, { brio });
+    ObjectConstructor.assign(window, { brio });
     window.dispatchEvent(new CustomEvent('brio'));
 }
 

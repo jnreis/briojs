@@ -1,6 +1,6 @@
-import { Scope } from '../core/scope';
-import { ExpressionScope } from '../core/expression';
-import { DomRuntime } from './types';
+import { Scope } from '../core/scope.js';
+import { ExpressionScope } from '../core/expression.js';
+import { DomRuntime } from './types.js';
 
 export type NodeOwner = {
     context: ExpressionScope;

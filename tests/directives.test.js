@@ -412,6 +412,77 @@ test('$insert uses component state at hosts and retains slot contexts', t => {
     assert.equal(root.querySelector('em').textContent, 'root');
 });
 
+test('component templates may branch with b-if/b-else-if/b-else across their root elements', t => {
+    const { app, root, window } = environment(t, '<status-card></status-card>');
+    const shared = window.brio.state(window.JSON.parse('{"status":"loading"}'));
+    app.component('status-card', {
+        template: `
+            <p b-if="$data.status === 'loading'">Loading</p>
+            <p b-else-if="$data.status === 'error'">Failed</p>
+            <p b-else>Ready</p>`,
+        setup: window.eval('shared => () => ({ get status() { return shared.status; } })')(shared),
+    });
+    app.mount(root);
+    const card = root.querySelector('status-card');
+    const shown = () => [...card.querySelectorAll('p')].map(element => element.textContent);
+    assert.deepEqual(shown(), ['Loading']);
+    shared.status = 'error';
+    window.brio.flush();
+    assert.deepEqual(shown(), ['Failed']);
+    shared.status = 'ready';
+    window.brio.flush();
+    assert.deepEqual(shown(), ['Ready']);
+});
+
+test('external value writes keep the selection of a focused text field on the same characters', t => {
+    const { window, app, root } = environment(t, `
+        <textarea b-model="$data.text"></textarea>
+        <input id="bound" b-bind-value="$data.text">
+        <input id="email" type="email" b-model="$data.mail">`, { text: 'hello world', mail: 'a@b.c' });
+    app.mount(root);
+    const area = root.querySelector('textarea');
+    const bound = root.querySelector('#bound');
+    const state = app.state;
+
+    area.focus();
+    area.setSelectionRange(6, 11);
+    state.text = '>> hello world';
+    window.brio.flush();
+    assert.deepEqual([area.selectionStart, area.selectionEnd], [9, 14], 'text inserted before shifts the selection');
+    state.text = '>> hello world!';
+    window.brio.flush();
+    assert.deepEqual([area.selectionStart, area.selectionEnd], [9, 14], 'text appended after leaves it alone');
+    state.text = '>> hello there!';
+    window.brio.flush();
+    assert.deepEqual([area.selectionStart, area.selectionEnd], [9, 14], 'a replaced selection now covers the new text');
+
+    bound.focus();
+    bound.setSelectionRange(3, 3);
+    state.text = 'Oh, >> hello there!';
+    window.brio.flush();
+    assert.equal(bound.value, 'Oh, >> hello there!');
+    assert.deepEqual([bound.selectionStart, bound.selectionEnd], [7, 7], 'b-bind-value keeps the caret too');
+    assert.equal(area.value, 'Oh, >> hello there!', 'unfocused fields are simply written');
+
+    root.querySelector('#email').focus();
+    state.mail = 'x@y.z';
+    window.brio.flush();
+    assert.equal(root.querySelector('#email').value, 'x@y.z', 'inputs without selection APIs still update');
+});
+
+test('class arrays accept nested arrays and { name: enabled } objects', t => {
+    const { window, app, root } = environment(t,
+        `<p class="base" b-bind-class="['card ' + $data.kind, [$data.on && 'lit', { done: $data.done, 'is wide': $data.on }], true, null]"></p>`,
+        { kind: 'note', on: true, done: false });
+    app.mount(root);
+    const p = root.querySelector('p');
+    assert.equal(p.className, 'base card note lit is wide');
+    app.state.on = false;
+    app.state.done = true;
+    window.brio.flush();
+    assert.equal(p.className, 'base card note done');
+});
+
 function transitionEvent(window, element, type, propertyName) {
     const event = new window.Event(type, { bubbles: true });
     Object.defineProperties(event, {

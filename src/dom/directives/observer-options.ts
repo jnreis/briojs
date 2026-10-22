@@ -1,4 +1,4 @@
-import { isInstanceOf, isObjectType, objectConstructor, ReflectApi, isString, isBoolean, isNumber, isArray, createTypeError } from '../../core/native';
+import { isInstanceOf, isObjectType, ObjectConstructor, ReflectApi, isString, isBoolean, isNumber, isArray, createTypeError } from '../../core/native';
 
 import { getAttribute, getOwnerDocument } from '../native';
 import { evaluate } from '../../core/expression';
@@ -17,14 +17,14 @@ export function observerOptions(
     const base = attrName.split('.')[0];
     const result: Record<string, unknown> = {};
     for (const name of new Set([base, attrName])) {
-        const options: unknown = objectConstructor.prototype.hasOwnProperty.call(mapping, name)
+        const options: unknown = ObjectConstructor.prototype.hasOwnProperty.call(mapping, name)
             ? ReflectApi.get(mapping, name) : undefined;
         if (options === undefined) continue;
         if (!options || !isObjectType(options) || isArray(options))
             throw createTypeError(`b-options["${name}"] must be an object.`);
-        objectConstructor.assign(result, options);
+        ObjectConstructor.assign(result, options);
     }
-    return objectConstructor.assign(result, modifiers);
+    return ObjectConstructor.assign(result, modifiers);
 }
 
 export function observerTarget(value: unknown, element: Element, label: string): Element | Document | Text {

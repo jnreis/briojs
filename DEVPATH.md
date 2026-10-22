@@ -1,5 +1,8 @@
 # Development Path
 
+> Historical brainstorming, not a list of shipped features or release promises.
+> See [README](./README.md) and [DOCUMENTATION](./DOCUMENTATION.md) for the current framework.
+
 ## Purpose
 
 Be able to build web apps directly in the browser, without the need for overly complicated build tools. The goal is to create a simple, yet powerful, web development environment that, at its core, relies only on web standards and native JavaScript APIs. HTML5 as template language, bringing forth the power of JavaScript APIs through directives and methods.

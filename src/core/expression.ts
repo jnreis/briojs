@@ -1,4 +1,4 @@
-import { isFunction, objectConstructor, createTypeError, createSyntaxError, deleteItem, getLength } from './native';
+import { isFunction, ObjectConstructor, createTypeError, createSyntaxError, deleteItem, getLength } from './native';
 import { directiveError, describeNode, mark } from './errors';
 import { untrack } from '../reactivity/effect';
 
@@ -36,10 +36,10 @@ export function evaluateFunction(source: string, context: ExpressionScope, node?
 export function createExpressionScope(...sources: ExpressionScope[]): ExpressionScope {
     const last = getLength(sources) - 1;
     let scope: ExpressionScope = last < 1
-        ? objectConstructor.assign(objectConstructor.create(null), sources[0])
+        ? ObjectConstructor.assign(ObjectConstructor.create(null), sources[0])
         : sources[last];
     for (let index = last - 1; index >= 0; index--)
-        scope = objectConstructor.assign(objectConstructor.create(scope), sources[index]);
+        scope = ObjectConstructor.assign(ObjectConstructor.create(scope), sources[index]);
     return scope;
 }
 

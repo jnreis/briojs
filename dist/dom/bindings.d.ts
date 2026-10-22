@@ -1,4 +1,4 @@
-import { DomRuntime } from './types';
+import { DomRuntime } from './types.js';
 
 export declare function mountRouterOutlet(element: Element, context: Record<PropertyKey, any>, runtime: DomRuntime, hydrateNodeFn: (node: Node, context: Record<PropertyKey, any>, runtime: DomRuntime) => void): void;
 export declare function hydrateChildren(element: Element, context: Record<PropertyKey, any>, runtime: DomRuntime): void;

@@ -1,5 +1,5 @@
-import { ComponentDefinition } from '../dom/types';
-import { Router } from '../plugins/router';
+import { ComponentDefinition } from '../dom/types.js';
+import { Router } from '../plugins/router.js';
 
 export type BrioPlugin = (app: BrioApp) => void;
 export type ComponentMap = Record<string, ComponentDefinition>;

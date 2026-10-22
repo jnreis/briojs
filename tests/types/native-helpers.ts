@@ -1,6 +1,6 @@
 import {
     arrayFrom, isArray, objectEntries, objectKeys, isString, isObjectType, isNumber, isBoolean, isFunction,
-    getLength, objectConstructor, ReflectApi, isInstanceOf, removeElement, deleteItem, includesItem, startsWith,
+    getLength, ObjectConstructor, ReflectApi, isInstanceOf, removeElement, deleteItem, includesItem, startsWith,
 } from '../../src/core/native';
 import {
     addEventListener, removeEventListener, getOwnerDocument, getChildNodes, insertBefore,
@@ -29,7 +29,7 @@ const length: number = getLength('text');
 // @ts-expect-error length requires a length-bearing value.
 getLength({});
 const reflected: unknown = ReflectApi.get({ value: 1 }, 'value');
-const frozen: Readonly<{ value: number }> = objectConstructor.freeze({ value: 1 });
+const frozen: Readonly<{ value: number }> = ObjectConstructor.freeze({ value: 1 });
 declare const candidate: unknown;
 if (isInstanceOf(candidate, HTMLInputElement)) candidate.value = 'typed';
 if (isInstanceOf(candidate, Promise)) candidate.then(value => value);

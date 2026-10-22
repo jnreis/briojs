@@ -152,9 +152,9 @@ export * from ${JSON.stringify(fileURLToPath(new URL('../src/dom/native.ts', imp
         assert.deepEqual(native.objectKeys(values), ['a']);
         assert.deepEqual(native.objectEntries(values), [['a', 1]]);
         assert.deepEqual(native.ownKeys(values), ['a', key]);
-        assert.deepEqual(native.objectConstructor[native.GET_OWN_PROPERTY_DESCRIPTOR](values, 'a'),
+        assert.deepEqual(native.ObjectConstructor[native.GET_OWN_PROPERTY_DESCRIPTOR](values, 'a'),
             Object.getOwnPropertyDescriptor(values, 'a'));
-        assert.strictEqual(native.objectConstructor, Object);
+        assert.strictEqual(native.ObjectConstructor, Object);
         assert.strictEqual(native.ReflectApi, Reflect);
         assert.equal(native.isInstanceOf(child, dom.window.HTMLElement), true);
         assert.equal(native.isInstanceOf({}, dom.window.HTMLElement), false);

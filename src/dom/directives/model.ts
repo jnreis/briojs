@@ -1,6 +1,7 @@
-import { isInstanceOf, objectConstructor, createTypeError, arrayFrom, isArray, includesItem } from '../../core/native';
+import { isInstanceOf, ObjectConstructor, createTypeError, arrayFrom, isArray, includesItem } from '../../core/native';
 
 import { addEventListener, removeEventListener } from '../native';
+import { writeValue } from '../value';
 import { assign, evaluate } from '../../core/expression';
 import { effect } from '../../reactivity/effect';
 import { onCleanup } from '../../core/scope';
@@ -67,9 +68,9 @@ export function handleModel(
         } else if (input.type === 'checkbox') {
             input.checked = isArray(value) ? includesItem(value, formatValue(input.value)) : Boolean(value);
         } else if (input.type === 'radio') {
-            input.checked = objectConstructor.is(value, formatValue(input.value));
+            input.checked = ObjectConstructor.is(value, formatValue(input.value));
         } else if (element.value !== String(value ?? '')) {
-            element.value = String(value ?? '');
+            writeValue(element, String(value ?? ''));
         }
     };
 

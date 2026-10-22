@@ -283,7 +283,7 @@ function hydrateOwnedNode(
     if (transitionAttr) prepareTransition(element, transitionAttr.value);
 
     // Scan element attributes
-    for (let index = 0; index < attributes.length; index++) {
+    for (let index = 0; index < getLength(attributes); index++) {
         const attribute = attributes[index];
         const attrName = attribute.name;
         const attrValue = attribute.value;

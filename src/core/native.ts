@@ -5,12 +5,12 @@ export const TELEPORT: 'teleport' = 'teleport';
 export const B_TELEPORT = 'b-' + TELEPORT as 'b-teleport';
 export const ATTRIBUTES: 'attributes' = 'attributes';
 
-export const objectConstructor = Object;
+export const ObjectConstructor = Object;
 export const ReflectApi = Reflect;
 
 export const isArray: typeof Array.isArray = value => Array.isArray(value);
-export const objectKeys: typeof Object.keys = value => objectConstructor.keys(value);
-export const objectEntries: typeof Object.entries = (value: {}) => objectConstructor.entries(value);
+export const objectKeys: typeof Object.keys = value => ObjectConstructor.keys(value);
+export const objectEntries: typeof Object.entries = (value: {}) => ObjectConstructor.entries(value);
 export const ownKeys: typeof Reflect.ownKeys = value => ReflectApi.ownKeys(value);
 
 export function arrayFrom<T>(items: Iterable<T> | ArrayLike<T>): T[];
@@ -21,12 +21,12 @@ export function arrayFrom<T, U>(
 ): U[];
 export function arrayFrom(items: Iterable<unknown> | ArrayLike<unknown>, map?: (value: unknown, index: number) => unknown, thisArg?: unknown): unknown[] {
     // Forward only the arguments given so a replaced Array.from sees the original call shape.
-    return arguments.length === 1 ? Array.from(items) : Array.from(items, map as (value: unknown, index: number) => unknown, thisArg);
+    return getLength(arguments) === 1 ? Array.from(items) : Array.from(items, map as (value: unknown, index: number) => unknown, thisArg);
 }
 
 /** Indexed copy of a live list (attributes, child nodes); far cheaper than iterating a NodeList or NamedNodeMap. */
 export const snapshotList = <T>(list: ArrayLike<T>): T[] => {
-    const length = list.length;
+    const length = getLength(list);
     const copy = new Array<T>(length);
     for (let index = 0; index < length; index++) copy[index] = list[index];
     return copy;

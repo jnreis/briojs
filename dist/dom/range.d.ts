@@ -1,4 +1,4 @@
-import { DomRuntime } from './types';
+import { DomRuntime } from './types.js';
 
 export type PortalDestination = {
     target: Element;

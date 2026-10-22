@@ -1,9 +1,9 @@
-import { objectConstructor, createError, brioErrors, isObjectType } from './native';
+import { ObjectConstructor, createError, brioErrors, isObjectType } from './native';
 
 const located = new WeakSet<object>();
 
 const define = (error: object, name: string, value: unknown) =>
-    objectConstructor.defineProperty(error, name, { configurable: true, value });
+    ObjectConstructor.defineProperty(error, name, { configurable: true, value });
 
 export const errorText = (error: unknown): string =>
     error && isObjectType(error) && 'message' in error ? `${(error as Error).name}: ${(error as Error).message}` : String(error);

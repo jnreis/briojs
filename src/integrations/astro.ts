@@ -1,7 +1,7 @@
 import {
     isInstanceOf,
     isFunction,
-    objectConstructor,
+    ObjectConstructor,
     isNumber,
     getLength,
     isObjectType,
@@ -35,7 +35,7 @@ export type AstroEnhancement = { dispose(): void };
 
 export function lazyApp(load: LazyAstroApp['load']): LazyAstroApp {
     if (!isFunction(load)) throw createTypeError('lazyApp requires a module loader.');
-    return objectConstructor.freeze({ [lazyMarker]: true as const, load });
+    return ObjectConstructor.freeze({ [lazyMarker]: true as const, load });
 }
 
 const installations = new WeakSet<Document>();
@@ -47,7 +47,7 @@ export function enhanceAstro(options: AstroEnhanceOptions): AstroEnhancement {
     if (typeof document === 'undefined') throw createError('enhanceAstro requires a browser document.');
     if (!options || !isFunction(options.onError))
         throw createTypeError('enhanceAstro requires onError(error, root).');
-    const apps: AstroAppRegistry = objectConstructor.create(null);
+    const apps: AstroAppRegistry = ObjectConstructor.create(null);
     for (const [name, entry] of objectEntries(copyContextValues(options.apps, 'Astro apps'))) {
         if (!name.trim() || (!isFactory(entry) && !isLazy(entry)))
             throw createTypeError(`Invalid Astro app registration "${name}".`);
@@ -116,10 +116,10 @@ export function enhanceAstro(options: AstroEnhanceOptions): AstroEnhancement {
                 if (root.parentElement?.closest('[b-app]') || root.querySelector('[b-app]'))
                     throw createError('Brio Astro islands cannot be nested.');
                 const name = getAttribute(root, 'b-app')!;
-                if (!objectConstructor.prototype.hasOwnProperty.call(apps, name))
+                if (!ObjectConstructor.prototype.hasOwnProperty.call(apps, name))
                     throw createError(`Unknown Brio Astro app "${name}".`);
                 const source = getAttribute(root, 'b-props');
-                const props = objectConstructor.freeze(copyContextValues(
+                const props = ObjectConstructor.freeze(copyContextValues(
                     source === null ? {} : evaluate(source, { $el: root }), 'b-props',
                 ));
                 const entry = apps[name];

@@ -1,13 +1,13 @@
 var __defProp = Object.defineProperty;
 var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
 var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "symbol" ? key + "" : key, value);
-import { R as ReflectApi, $ as $PARENT, c as createTypeError, p as includesItem, d as deleteItem, b as createError, g as getLength, T as TELEPORT, a as arrayFrom, l as ownKeys, G as GET_OWN_PROPERTY_DESCRIPTOR, o as objectConstructor, n as createSyntaxError, t as startsWith, j as isInstanceOf, m as isString, k as isArray, f as isObjectType, e as objectEntries, q as objectKeys, u as TEMPLATE, A as ATTRIBUTES, B as B_TELEPORT, r as removeElement, h as isNumber, i as isFunction, v as isBoolean, w as snapshotList } from "./native-DNTl55LH.js";
-import { b as getChildNodes, g as getAttribute, c as removeAttribute, a as addEventListener, r as removeEventListener, d as getOwnerDocument, e as removeChild, f as getParent, h as getNodeType, i as getNextSibling, j as insertBefore } from "./native-Da80auZ6.js";
-import { e as evaluate, a as execute, b as emptyContextValues, d as createExpressionScope, f as assign, g as createProvidedValues, h as evaluateFunction, c as copyContextValues } from "./context-values-BXAsS55z.js";
-import { j as getCurrentScope, a as combinedError, o as onCleanup, b as batch, e as effect, c as causedError, k as errorText, n as createScope, p as onDispose, h as directiveError, s as setScopeNode, r as locate, u as untrack, t as notifyRootMounted, v as flush, w as notifyAppDisposed, x as notifyAppCreated, y as notifyRootUnmounted } from "./effect-Hm6a3OX7.js";
-import { z, f, E, m, A, B, D, C } from "./effect-Hm6a3OX7.js";
-import { s as state, a as track, t as trigger } from "./state-TMgcg8XY.js";
-import { b } from "./state-TMgcg8XY.js";
+import { R as ReflectApi, $ as $PARENT, c as createTypeError, n as includesItem, d as deleteItem, b as createError, g as getLength, T as TELEPORT, a as arrayFrom, k as ownKeys, G as GET_OWN_PROPERTY_DESCRIPTOR, O as ObjectConstructor, m as createSyntaxError, h as isInstanceOf, s as startsWith, e as isObjectType, o as objectEntries, j as isArray, p as objectKeys, t as TEMPLATE, A as ATTRIBUTES, l as isString, B as B_TELEPORT, r as removeElement, f as isNumber, i as isFunction, u as isBoolean, v as snapshotList } from "./native-Ba4LWja7.js";
+import { b as getChildNodes, g as getAttribute, c as removeAttribute, a as addEventListener, r as removeEventListener, d as getOwnerDocument, e as getParent, f as removeChild, h as getNodeType, i as getNextSibling, j as insertBefore } from "./native-BP66_Ihq.js";
+import { e as evaluate, a as execute, b as emptyContextValues, d as createExpressionScope, f as assign, g as createProvidedValues, h as evaluateFunction, c as copyContextValues } from "./context-values-Ca4ABtNI.js";
+import { j as getCurrentScope, a as combinedError, o as onCleanup, b as batch, e as effect, c as causedError, k as errorText, n as createScope, p as onDispose, h as directiveError, s as setScopeNode, r as locate, u as untrack, t as notifyRootMounted, v as flush, w as notifyAppDisposed, x as notifyAppCreated, y as notifyRootUnmounted } from "./effect-D2BTN5OX.js";
+import { z, f, E, m, A, B, D, C } from "./effect-D2BTN5OX.js";
+import { s as state, a as track, t as trigger } from "./state-I6UeiIZD.js";
+import { b } from "./state-I6UeiIZD.js";
 import { computed, resource } from "./reactivity.js";
 import { createRouter } from "./router-entry.js";
 import { persist } from "./persistence-entry.js";
@@ -15,7 +15,7 @@ import { createStepEngine } from "./step-entry.js";
 import { validate } from "./forms-entry.js";
 import { moneyMask } from "./money-mask-entry.js";
 import { HttpError, http } from "./http-entry.js";
-import { d, a, e, i } from "./devtools-DxlDsvKn.js";
+import { d, a, e, i } from "./devtools-B8Q44qG9.js";
 const sources = /* @__PURE__ */ new WeakMap();
 function createScopedState(source, parent) {
   const observed = state(sources.get(source) ?? source);
@@ -128,7 +128,7 @@ function disposeNodes(nodes) {
 const registries = /* @__PURE__ */ new WeakMap();
 const keys = Symbol("brio.refs");
 function createRefs() {
-  const values = objectConstructor.create(null);
+  const values = ObjectConstructor.create(null);
   const readOnly = () => {
     throw createTypeError("$ref names are read-only.");
   };
@@ -161,20 +161,20 @@ function createRefs() {
 }
 function defineLazyRefs(context) {
   let refs;
-  return objectConstructor.defineProperty(context, "$ref", {
+  return ObjectConstructor.defineProperty(context, "$ref", {
     enumerable: true,
     configurable: true,
     get: () => refs ?? (refs = createRefs()),
     // Child scopes assigning their own `$ref` shadow this accessor instead of hitting a getter-only property.
     set(value) {
-      objectConstructor.defineProperty(this, "$ref", { value, writable: true, enumerable: true, configurable: true });
+      ObjectConstructor.defineProperty(this, "$ref", { value, writable: true, enumerable: true, configurable: true });
     }
   });
 }
 function registerRef(refs, name, element) {
   const values = registries.get(refs);
   if (!values) throw createTypeError("b-ref requires a Brio ref registry.");
-  if (objectConstructor.prototype.hasOwnProperty.call(values, name))
+  if (ObjectConstructor.prototype.hasOwnProperty.call(values, name))
     throw createSyntaxError(`Duplicate b-ref name "${name}" in the same scope.`);
   const notify = () => batch(() => {
     trigger(values, name, "set");
@@ -188,21 +188,52 @@ function registerRef(refs, name, element) {
   });
   notify();
 }
+const writeValue = (element, value) => {
+  const field = element;
+  const root = element.getRootNode();
+  if (!(isInstanceOf(element, HTMLInputElement) || isInstanceOf(element, HTMLTextAreaElement)) || root.activeElement !== element) {
+    field.value = value;
+    return;
+  }
+  const previous = field.value;
+  let start = null;
+  let end = null;
+  let direction = null;
+  try {
+    ({ selectionStart: start, selectionEnd: end, selectionDirection: direction } = field);
+  } catch {
+  }
+  field.value = value;
+  const next = field.value;
+  if (start === null || end === null || next === previous) return;
+  const before = getLength(previous);
+  const after = getLength(next);
+  const shortest = Math.min(before, after);
+  let prefix = 0;
+  while (prefix < shortest && previous[prefix] === next[prefix]) prefix++;
+  let suffix = 0;
+  while (suffix < shortest - prefix && previous[before - 1 - suffix] === next[after - 1 - suffix]) suffix++;
+  const map = (offset) => offset <= prefix ? offset : offset >= before - suffix ? offset + after - before : after - suffix;
+  try {
+    field.setSelectionRange(map(start), map(end), direction ?? void 0);
+  } catch {
+  }
+};
 const staticClasses = /* @__PURE__ */ new WeakMap();
 const SVG_NAMESPACE = "http://www.w3.org/2000/svg";
 const svgAttributeNames = "attributeName attributeType baseFrequency calcMode clipPathUnits diffuseConstant edgeMode filterUnits gradientTransform gradientUnits kernelMatrix kernelUnitLength keyPoints keySplines keyTimes lengthAdjust limitingConeAngle markerHeight markerUnits markerWidth maskContentUnits maskUnits numOctaves pathLength patternContentUnits patternTransform patternUnits pointsAtX pointsAtY pointsAtZ preserveAlpha preserveAspectRatio primitiveUnits refX refY repeatCount repeatDur requiredExtensions specularConstant specularExponent spreadMethod startOffset stdDeviation stitchTiles surfaceScale systemLanguage tableValues targetX targetY textLength viewBox xChannelSelector yChannelSelector";
 let svgNames;
 const findProperty = (element, name) => {
-  for (let target = element; target; target = objectConstructor.getPrototypeOf(target)) {
-    const descriptor = objectConstructor[GET_OWN_PROPERTY_DESCRIPTOR](target, name);
+  for (let target = element; target; target = ObjectConstructor.getPrototypeOf(target)) {
+    const descriptor = ObjectConstructor[GET_OWN_PROPERTY_DESCRIPTOR](target, name);
     if (descriptor) return descriptor;
   }
 };
 const resolveBindTarget = (element, name, forceProp) => {
   if (forceProp) {
     if (name in element) return name;
-    for (let target = element; target; target = objectConstructor.getPrototypeOf(target))
-      for (const key of objectConstructor.getOwnPropertyNames(target))
+    for (let target = element; target; target = ObjectConstructor.getPrototypeOf(target))
+      for (const key of ObjectConstructor.getOwnPropertyNames(target))
         if (key.toLowerCase() === name) return key;
     return name;
   }
@@ -212,6 +243,14 @@ const resolveBindTarget = (element, name, forceProp) => {
 };
 const dynamicStyles = /* @__PURE__ */ new WeakMap();
 const dynamicClasses = /* @__PURE__ */ new WeakMap();
+const collectClasses = (entry, into) => {
+  if (isArray(entry)) for (const item of entry) collectClasses(item, into);
+  else if (entry && isObjectType(entry)) {
+    for (const [className, enabled] of objectEntries(entry)) if (enabled) collectClasses(className, into);
+  } else if (entry && entry !== true) {
+    for (const name of String(entry).split(/\s+/)) if (name) into.add(name);
+  }
+};
 const setBoundValue = (element, name, value, forceProp = false) => {
   if (name === "class") {
     let staticNames = staticClasses.get(element);
@@ -220,14 +259,7 @@ const setBoundValue = (element, name, value, forceProp = false) => {
       staticClasses.set(element, staticNames);
     }
     const currentDynamic = /* @__PURE__ */ new Set();
-    if (isString(value))
-      value.split(/\s+/).filter(Boolean).forEach((className) => currentDynamic.add(className));
-    else if (isArray(value))
-      value.filter(Boolean).forEach((className) => String(className).split(/\s+/).filter(Boolean).forEach((name2) => currentDynamic.add(name2)));
-    else if (value && isObjectType(value)) {
-      for (const [className, enabled] of objectEntries(value))
-        if (enabled) className.split(/\s+/).filter(Boolean).forEach((name2) => currentDynamic.add(name2));
-    }
+    collectClasses(value, currentDynamic);
     const { classList } = element;
     for (const className of dynamicClasses.get(element) ?? [])
       if (!currentDynamic.has(className) && !staticNames.has(className)) classList.remove(className);
@@ -264,7 +296,8 @@ const setBoundValue = (element, name, value, forceProp = false) => {
   const descriptor = forceProp || aria || startsWith(name, "data-") || !(name in element) ? void 0 : findProperty(element, name);
   if (forceProp || (descriptor == null ? void 0 : descriptor.set) || (descriptor == null ? void 0 : descriptor.writable)) {
     try {
-      element[name] = value;
+      if (name === "value") writeValue(element, value);
+      else element[name] = value;
       return;
     } catch (error) {
       throw causedError(`Unable to bind property "${name}" on <${element.tagName.toLowerCase()}>: ${errorText(error)}`, error);
@@ -282,7 +315,7 @@ function handleBind(element, attrName, expression, modifiers, context) {
   let written = false;
   const start = () => effect(() => {
     const value = evaluate(expression, context, attrName, element);
-    if (written && objectConstructor.is(value, last) && (value === null || !isObjectType(value))) return;
+    if (written && ObjectConstructor.is(value, last) && (value === null || !isObjectType(value))) return;
     setBoundValue(element, target, value, forceProp);
     last = value;
     written = true;
@@ -295,7 +328,7 @@ function handleBind(element, attrName, expression, modifiers, context) {
   }
   start();
 }
-const noModifiers = objectConstructor.freeze({});
+const noModifiers = ObjectConstructor.freeze({});
 const parsedNames = /* @__PURE__ */ new Map();
 function extractModifiers(attrName) {
   let parsed = parsedNames.get(attrName);
@@ -305,10 +338,10 @@ function extractModifiers(attrName) {
     const parts = attrName.split(".");
     const modifiers = {};
     for (let i2 = 1; i2 < getLength(parts); i2++) modifiers[parts[i2]] = true;
-    parsed = { baseName: parts[0], modifiers: objectConstructor.freeze(modifiers) };
+    parsed = { baseName: parts[0], modifiers: ObjectConstructor.freeze(modifiers) };
   }
   if (parsedNames.size > 1e3) parsedNames.clear();
-  parsedNames.set(attrName, objectConstructor.freeze(parsed));
+  parsedNames.set(attrName, ObjectConstructor.freeze(parsed));
   return parsed;
 }
 const keyNames = {
@@ -726,7 +759,7 @@ function mountComponent(element, definition, context, runtime, hydrateNodeFn) {
     element.replaceChildren(content);
     withHydration(element, () => {
       for (const child of arrayFrom(getChildNodes(element))) {
-        hydrateNodeFn(child, componentContext, runtime);
+        if (getParent(child) === element && !getNodeOwner(child)) hydrateNodeFn(child, componentContext, runtime);
       }
     });
     for (const attribute of arrayFrom(element[ATTRIBUTES])) {
@@ -1109,9 +1142,9 @@ function handleModel(element, expression, modifiers, context) {
     } else if (input.type === "checkbox") {
       input.checked = isArray(value) ? includesItem(value, formatValue(input.value)) : Boolean(value);
     } else if (input.type === "radio") {
-      input.checked = objectConstructor.is(value, formatValue(input.value));
+      input.checked = ObjectConstructor.is(value, formatValue(input.value));
     } else if (element.value !== String(value ?? "")) {
-      element.value = String(value ?? "");
+      writeValue(element, String(value ?? ""));
     }
   };
   const start = () => {
@@ -1588,7 +1621,7 @@ function handleId(_element, expression, _modifiers, context) {
     idMap[name] = generated;
   }
   onCleanup(() => {
-    for (const val of objectConstructor.values(idMap)) {
+    for (const val of ObjectConstructor.values(idMap)) {
       deleteItem(activeIds, val);
     }
   });
@@ -1816,13 +1849,13 @@ function observerOptions(element, attrName, modifiers, context) {
   const base = attrName.split(".")[0];
   const result = {};
   for (const name of /* @__PURE__ */ new Set([base, attrName])) {
-    const options = objectConstructor.prototype.hasOwnProperty.call(mapping, name) ? ReflectApi.get(mapping, name) : void 0;
+    const options = ObjectConstructor.prototype.hasOwnProperty.call(mapping, name) ? ReflectApi.get(mapping, name) : void 0;
     if (options === void 0) continue;
     if (!options || !isObjectType(options) || isArray(options))
       throw createTypeError(`b-options["${name}"] must be an object.`);
-    objectConstructor.assign(result, options);
+    ObjectConstructor.assign(result, options);
   }
-  return objectConstructor.assign(result, modifiers);
+  return ObjectConstructor.assign(result, modifiers);
 }
 function observerTarget(value, element, label) {
   const target = isString(value) ? getOwnerDocument(element).querySelector(value) : value;
@@ -2198,7 +2231,7 @@ function hydrateOwnedNode(node, parentContext, runtime) {
   const afterChildren = [];
   const transitionAttr = attributes.find((_, index) => transitionNames.has(parsed[index].baseName));
   if (transitionAttr) prepareTransition(element, transitionAttr.value);
-  for (let index = 0; index < attributes.length; index++) {
+  for (let index = 0; index < getLength(attributes); index++) {
     const attribute = attributes[index];
     const attrName = attribute.name;
     const attrValue = attribute.value;
@@ -2267,7 +2300,7 @@ const activeMountRoots = /* @__PURE__ */ new Set();
 function createApp(options = {}) {
   var _a;
   const appState = state(((_a = options.state) == null ? void 0 : _a.call(options)) ?? {});
-  const stores = objectConstructor.freeze(copyContextValues(
+  const stores = ObjectConstructor.freeze(copyContextValues(
     options.stores === void 0 ? {} : options.stores,
     "Brio stores"
   ));

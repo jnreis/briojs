@@ -1,6 +1,6 @@
 import {
     isInstanceOf,
-    objectConstructor,
+    ObjectConstructor,
     isObjectType,
     isString,
     isBoolean,
@@ -44,13 +44,13 @@ export class HttpError extends Error {
 }
 
 function isPlainObject(value: object): boolean {
-    const prototype = objectConstructor.getPrototypeOf(value);
+    const prototype = ObjectConstructor.getPrototypeOf(value);
     return prototype === null ||
-        (objectConstructor.getPrototypeOf(prototype) === null && objectConstructor.prototype.toString.call(value) === '[object Object]');
+        (ObjectConstructor.getPrototypeOf(prototype) === null && ObjectConstructor.prototype.toString.call(value) === '[object Object]');
 }
 
 function isDate(value: unknown): value is Date {
-    return objectConstructor.prototype.toString.call(value) === '[object Date]';
+    return ObjectConstructor.prototype.toString.call(value) === '[object Date]';
 }
 
 function appendQuery(url: string, query: unknown): string {

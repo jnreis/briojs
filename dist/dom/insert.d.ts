@@ -1,4 +1,4 @@
-import { Insert } from '../core/types';
-import { DomRuntime } from './types';
+import { Insert } from '../core/types.js';
+import { DomRuntime } from './types.js';
 
 export declare function createInsert(runtime: DomRuntime): Insert;

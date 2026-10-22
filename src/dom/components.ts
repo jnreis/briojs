@@ -207,8 +207,9 @@ export function mountComponent(
         element.replaceChildren(content);
 
         withHydration(element, () => {
+            // A root b-if consumes its b-else-if/b-else siblings, which must not hydrate again as strays.
             for (const child of arrayFrom(getChildNodes(element))) {
-                hydrateNodeFn(child, componentContext, runtime);
+                if (getParent(child) === element && !getNodeOwner(child)) hydrateNodeFn(child, componentContext, runtime);
             }
         });
 

@@ -1,5 +1,5 @@
 import {
-    isObjectType, isString, objectConstructor, ReflectApi, isFunction, isArray, createTypeError, ownKeys, getLength,
+    isObjectType, isString, ObjectConstructor, ReflectApi, isFunction, isArray, createTypeError, ownKeys, getLength,
     GET_OWN_PROPERTY_DESCRIPTOR,
 } from '../core/native';
 import { batch, enterBatch, leaveBatch, getActiveEffect, queueEffect } from './effect';
@@ -95,7 +95,7 @@ const triggerArrayChanges = (target: unknown[], before: unknown[], from: number,
     try {
         for (let index = from, end = oldLength > newLength ? oldLength : newLength; index < end; index++) {
             const previous = index - from;
-            if (!objectConstructor.is(before[previous], target[index]) || (previous in before) !== (index in target))
+            if (!ObjectConstructor.is(before[previous], target[index]) || (previous in before) !== (index in target))
                 queueDependency(dependencies.get(String(index)), activeEffect);
         }
         if (oldLength !== newLength) {
@@ -111,8 +111,8 @@ const observe = (value: unknown): unknown => isObject(value) && canObserve(value
 
 export const canObserve = (value: object): boolean => {
     if (isArray(value)) return true;
-    const prototype = objectConstructor.getPrototypeOf(value);
-    return prototype === objectConstructor.prototype || prototype === null;
+    const prototype = ObjectConstructor.getPrototypeOf(value);
+    return prototype === ObjectConstructor.prototype || prototype === null;
 };
 
 export function state<T extends object>(target: T): T {
@@ -159,9 +159,9 @@ export function state<T extends object>(target: T): T {
         },
         set(current, key, incoming, receiver) {
             const value = toRaw(incoming);
-            const hadKey = objectConstructor.prototype.hasOwnProperty.call(current, key);
+            const hadKey = ObjectConstructor.prototype.hasOwnProperty.call(current, key);
             const previous = ReflectApi.get(current, key, receiver);
-            if (objectConstructor.is(toRaw(previous), value)) return true;
+            if (ObjectConstructor.is(toRaw(previous), value)) return true;
             settingDepth++;
             let succeeded: boolean;
             try {
@@ -184,7 +184,7 @@ export function state<T extends object>(target: T): T {
             const next = ReflectApi[GET_OWN_PROPERTY_DESCRIPTOR](current, key);
             const type = previous ? 'set' : 'add';
             const changed = !previous || !next ||
-                !objectConstructor.is(toRaw(previous.value), toRaw(next.value)) ||
+                !ObjectConstructor.is(toRaw(previous.value), toRaw(next.value)) ||
                 previous.enumerable !== next.enumerable ||
                 previous.configurable !== next.configurable ||
                 previous.writable !== next.writable;
@@ -192,7 +192,7 @@ export function state<T extends object>(target: T): T {
             return succeeded;
         },
         deleteProperty(current, key) {
-            const hadKey = objectConstructor.prototype.hasOwnProperty.call(current, key);
+            const hadKey = ObjectConstructor.prototype.hasOwnProperty.call(current, key);
             const succeeded = ReflectApi.deleteProperty(current, key);
             if (succeeded && hadKey) trigger(current, key, 'delete');
             return succeeded;
@@ -217,7 +217,7 @@ export function signal<T>(initialValue: T): Signal<T> {
             return isObject(value) && canObserve(value) ? state(value) : value;
         },
         set value(next: T) {
-            if (objectConstructor.is(toRaw(value), toRaw(next))) return;
+            if (ObjectConstructor.is(toRaw(value), toRaw(next))) return;
             value = next;
             trigger(holder, 'value', 'set');
         },

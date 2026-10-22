@@ -4,10 +4,20 @@
   "description": "A petite, HTML-first framework for reactive widgets and web apps.",
   "author": {
     "name": "Jonathan Reis",
-    "email": "jonathan@briojs.com",
-    "url": "https://briojs.com/about-the-creator"
+    "email": "jonathan@briojs.com"
   },
-  "homepage": "https://briojs.com",
+  "homepage": "https://github.com/jnreis/briojs#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jnreis/briojs.git"
+  },
+  "bugs": {
+    "url": "https://github.com/jnreis/briojs/issues"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
   "keywords": [
     "brio",
     "briojs",
@@ -24,7 +34,9 @@
     "dist",
     "ai",
     "README.md",
-    "DOCUMENTATION.md"
+    "DOCUMENTATION.md",
+    "CHANGELOG.md",
+    "LICENSE"
   ],
   "type": "module",
   "types": "./dist/index.d.ts",
@@ -72,7 +84,8 @@
       "types": "./dist/astro-entry.d.ts",
       "import": "./dist/astro-entry.js"
     },
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./dist/*": "./dist/*"
   },
   "sideEffects": [
     "./src/devtools-entry.ts",
@@ -81,6 +94,7 @@
   "scripts": {
     "dev": "vite",
     "build": "node scripts/build.js",
+    "prepack": "npm run build",
     "size": "node scripts/size.js",
     "test": "npm run build && node --test",
     "typecheck": "tsc --noEmit",

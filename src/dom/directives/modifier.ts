@@ -1,7 +1,7 @@
-import { getLength, objectConstructor } from '../../core/native';
+import { getLength, ObjectConstructor } from '../../core/native';
 
 type ParsedName = { baseName: string; modifiers: Readonly<Record<string, boolean>> };
-const noModifiers: Readonly<Record<string, boolean>> = objectConstructor.freeze({});
+const noModifiers: Readonly<Record<string, boolean>> = ObjectConstructor.freeze({});
 // Attribute names repeat across every clone of a template, so each distinct name is parsed once.
 const parsedNames = new Map<string, ParsedName>();
 
@@ -13,9 +13,9 @@ export function extractModifiers(attrName: string): ParsedName {
         const parts = attrName.split('.');
         const modifiers: Record<string, boolean> = {};
         for (let i = 1; i < getLength(parts); i++) modifiers[parts[i]] = true;
-        parsed = { baseName: parts[0], modifiers: objectConstructor.freeze(modifiers) };
+        parsed = { baseName: parts[0], modifiers: ObjectConstructor.freeze(modifiers) };
     }
     if (parsedNames.size > 1000) parsedNames.clear();
-    parsedNames.set(attrName, objectConstructor.freeze(parsed));
+    parsedNames.set(attrName, ObjectConstructor.freeze(parsed));
     return parsed;
 }

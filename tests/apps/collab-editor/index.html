@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brio Docs</title>
+    <style>
+        :root {
+            --ink: #1f2328; --muted: #656d76; --line: #e4e7eb; --soft: #f6f8fa; --page: #fff; --accent: #4f46e5;
+            --danger: #cf222e; --ok: #1a7f37; --warn: #9a6700;
+            font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+            color: var(--ink);
+        }
+        * { box-sizing: border-box; }
+        body { margin: 0; min-height: 100vh; background: #eef0f3; line-height: 1.5; }
+        [b-cloak] { display: none; }
+        button, input, textarea, select { font: inherit; color: inherit; }
+        a { color: var(--accent); }
+        .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+        :focus-visible { outline: 2px solid #8b85f7; outline-offset: 2px; }
+        .muted { color: var(--muted); }
+
+        #app { min-height: 100vh; display: grid; grid-template-rows: auto 1fr; }
+
+        /* Top bar */
+        .topbar { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 14px; padding: 10px 20px;
+            background: rgb(255 255 255 / .92); backdrop-filter: blur(6px); border-bottom: 1px solid var(--line); }
+        .brand { font-weight: 800; letter-spacing: -.01em; color: var(--ink); text-decoration: none; }
+        .brand span { color: var(--accent); }
+        .spacer { flex: 1; }
+        .sync { display: inline-flex; align-items: center; gap: 6px; font-size: .82rem; color: var(--muted); }
+        .sync::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: #2da44e; }
+        .sync[data-state="saving"]::before { background: #d4a72c; animation: pulse 1s infinite; }
+        .sync[data-state="offline"] { color: var(--danger); font-weight: 600; }
+        .sync[data-state="offline"]::before { background: var(--danger); }
+        .sync[data-state="connecting"]::before { background: #afb8c1; }
+        @keyframes pulse { 50% { opacity: .3; } }
+
+        .avatar { display: inline-grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--who, #6b7280);
+            color: #fff; font-size: .68rem; font-weight: 700; border: 2px solid #fff; flex: none; }
+        .avatar.small { width: 22px; height: 22px; font-size: .58rem; border-width: 1px; }
+        .avatars { display: inline-flex; }
+        .avatars .avatar + .avatar { margin-left: -7px; }
+
+        .button { border: 1px solid var(--line); border-radius: 8px; padding: 6px 12px; background: #fff; cursor: pointer; font-weight: 600; font-size: .9rem; }
+        .button:hover { background: var(--soft); }
+        .button[aria-pressed="true"] { background: #eef0ff; border-color: #c7c9fb; color: var(--accent); }
+        .button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+        .button.primary:hover { background: #4338ca; }
+        .button.primary:disabled { opacity: .6; cursor: progress; }
+        .button.danger { color: var(--danger); }
+        .icon-button { border: 0; background: none; border-radius: 6px; width: 28px; height: 28px; cursor: pointer; color: var(--muted); }
+        .icon-button:hover { background: var(--soft); color: var(--ink); }
+
+        main { padding: 28px 20px 120px; }
+        .status-card { max-width: 560px; margin: 48px auto; padding: 24px; border-radius: 12px; background: #fff; border: 1px solid var(--line); text-align: center; }
+        .status-card.error { color: var(--danger); }
+        .status-card h2 { margin: 0 0 6px; color: var(--ink); }
+
+        /* Document list */
+        .library { max-width: 860px; margin: 0 auto; }
+        .library-head { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+        .library-head h1 { margin: 0; font-size: 1.6rem; }
+        .new-doc { display: flex; gap: 8px; }
+        .new-doc input { width: 260px; border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; background: #fff; }
+        .field-error { margin: 6px 0 0; color: var(--danger); font-size: .85rem; }
+        .doc-cards { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+        .doc-card { display: grid; grid-template-columns: 1fr auto; gap: 4px 16px; padding: 14px 16px; border-radius: 12px; background: #fff;
+            border: 1px solid var(--line); transition: border-color 120ms, box-shadow 120ms; }
+        .doc-card:hover { border-color: #c9ced6; box-shadow: 0 2px 8px rgb(31 35 40 / .06); }
+        .doc-card a { font-weight: 700; font-size: 1.05rem; color: var(--ink); text-decoration: none; }
+        .doc-card a:hover { text-decoration: underline; }
+        .doc-card .excerpt { grid-column: 1; margin: 0; color: var(--muted); font-size: .9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .doc-card .meta { grid-column: 1; font-size: .8rem; color: var(--muted); display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: center; }
+        .doc-card .side { grid-row: 1 / span 3; grid-column: 2; display: flex; align-items: center; gap: 10px; }
+        .badge { font-size: .72rem; font-weight: 700; padding: 1px 8px; border-radius: 999px; background: #fff8c5; color: var(--warn); }
+
+        /* Editor */
+        .editor { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; max-width: 900px; margin: 0 auto; }
+        .editor.with-history { grid-template-columns: minmax(0, 1fr) 320px; max-width: 1240px; }
+        .editor-bar { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 12px; font-size: .9rem; }
+        .editor-bar .back { color: var(--muted); text-decoration: none; }
+        .editor-bar .back:hover { color: var(--ink); }
+        .page { background: var(--page); border: 1px solid var(--line); border-radius: 14px; padding: 48px 64px 56px; box-shadow: 0 1px 3px rgb(31 35 40 / .05);
+            min-height: 60vh; }
+        .blocks { display: grid; gap: 2px; margin-top: 8px; }
+        .add-block { margin-top: 16px; border: 0; background: none; color: var(--muted); cursor: pointer; padding: 4px 0; }
+        .add-block:hover { color: var(--ink); }
+        @media (max-width: 760px) {
+            .page { padding: 28px 22px 40px; }
+            .editor.with-history { grid-template-columns: minmax(0, 1fr); }
+        }
+
+        /* Blocks: the textarea and a transparent copy of its text share one grid cell. The copy sizes the cell
+           (so the textarea grows with its content) and draws teammates' cursors and selections in place. */
+        .block { position: relative; display: flex; align-items: flex-start; gap: 8px; border-radius: 6px; padding: 1px 0; }
+        .block.has-editor::before { content: ""; position: absolute; left: -14px; top: 4px; bottom: 4px; width: 3px; border-radius: 2px; background: var(--who); }
+        .field { flex: 1; min-width: 0; display: grid; }
+        .field > textarea, .field > .mirror { grid-area: 1 / 1; margin: 0; padding: 3px 0; border: 0; font: inherit; line-height: inherit; letter-spacing: inherit;
+            white-space: pre-wrap; overflow-wrap: break-word; word-break: normal; tab-size: 4; }
+        .field > textarea { resize: none; overflow: hidden; background: transparent; outline: none; min-height: 0; width: 100%; }
+        .field > textarea::placeholder { color: transparent; }
+        .field > textarea:focus::placeholder, .block-p .field > textarea:placeholder-shown:only-child::placeholder { color: #a8b0b9; }
+        .block-title .field > textarea::placeholder { color: #c4cad1; }
+        .mirror { color: transparent; pointer-events: none; z-index: 1; }
+        .remote-caret { position: relative; border-left: 2px solid var(--who); margin: 0 -1px; }
+        .remote-caret::before { content: attr(data-name); position: absolute; left: -2px; bottom: 100%; padding: 0 5px; border-radius: 4px 4px 4px 0;
+            background: var(--who); color: #fff; font: 600 .62rem/1.5 ui-sans-serif, system-ui, sans-serif; white-space: nowrap; }
+        .remote-selection { background: color-mix(in srgb, var(--who) 22%, transparent); border-radius: 2px; }
+
+        .block-title { margin-bottom: 10px; font-size: 2.2rem; font-weight: 800; letter-spacing: -.02em; line-height: 1.2; }
+        .block-h1 { margin-top: 18px; font-size: 1.6rem; font-weight: 750; line-height: 1.3; }
+        .block-h2 { margin-top: 12px; font-size: 1.2rem; font-weight: 700; line-height: 1.35; }
+        .block-quote .field { border-left: 3px solid #d0d7de; padding-left: 14px; color: #57606a; font-style: italic; }
+        .block-code .field { background: var(--soft); border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .88rem; }
+        .block-todo.is-done .field { color: var(--muted); text-decoration: line-through; }
+        .todo-check { margin: 7px 0 0; width: 16px; height: 16px; accent-color: var(--accent); flex: none; cursor: pointer; }
+        .bullet { width: 16px; text-align: center; padding-top: 3px; flex: none; color: var(--muted); }
+
+        .block-menu { position: absolute; left: -40px; top: 2px; opacity: 0; transition: opacity 120ms; }
+        .block:hover .block-menu, .block:focus-within .block-menu, .block-menu.open { opacity: 1; }
+        .block-title .block-menu { display: none; }
+        .menu { position: absolute; z-index: 30; top: 30px; left: 0; min-width: 190px; padding: 6px; border-radius: 10px; background: #fff;
+            border: 1px solid var(--line); box-shadow: 0 8px 24px rgb(31 35 40 / .14); display: grid; font-size: .88rem; }
+        .menu button { border: 0; background: none; text-align: left; padding: 6px 10px; border-radius: 6px; cursor: pointer; }
+        .menu button:hover:not(:disabled), .menu button[aria-checked="true"] { background: var(--soft); }
+        .menu button:disabled { color: #afb8c1; cursor: default; }
+        .menu hr { border: 0; border-top: 1px solid var(--line); margin: 4px 0; width: 100%; }
+        .menu .danger { color: var(--danger); }
+        @media (max-width: 760px) { .block-menu { left: auto; right: -14px; } .menu { left: auto; right: 0; } }
+
+        .block-enter-active, .block-leave-active { transition: opacity 160ms ease, transform 160ms ease; }
+        .block-enter-from, .block-leave-to { opacity: 0; transform: translateY(-4px); }
+        .block-move { transition: transform 180ms ease; }
+        @media (prefers-reduced-motion: reduce) {
+            .block-enter-active, .block-leave-active, .block-move { transition: none; }
+        }
+
+        /* Gone */
+        .gone { max-width: 560px; margin: 48px auto; text-align: center; }
+
+        /* History */
+        .history { align-self: start; position: sticky; top: 72px; max-height: calc(100vh - 92px); overflow: auto; background: #fff; border: 1px solid var(--line);
+            border-radius: 14px; padding: 14px; }
+        .history h2 { margin: 0 0 10px; font-size: 1rem; display: flex; justify-content: space-between; align-items: center; }
+        .history ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+        .version { width: 100%; display: grid; grid-template-columns: auto 1fr; gap: 0 10px; align-items: center; text-align: left; border: 1px solid transparent;
+            background: none; border-radius: 8px; padding: 6px 8px; cursor: pointer; }
+        .version:hover { background: var(--soft); }
+        .version[aria-pressed="true"] { border-color: #c7c9fb; background: #eef0ff; }
+        .version .avatar { grid-row: span 2; }
+        .version strong { font-size: .88rem; }
+        .version small { color: var(--muted); }
+        .preview { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
+        .preview-blocks { margin: 8px 0 12px; padding: 10px 12px; border-radius: 8px; background: var(--soft); font-size: .85rem; max-height: 280px; overflow: auto; }
+        .preview-blocks p { margin: 0 0 4px; white-space: pre-wrap; }
+        .preview-blocks .title { font-weight: 800; font-size: 1rem; }
+        .preview-blocks .h1, .preview-blocks .h2 { font-weight: 700; }
+        .preview-blocks .done { text-decoration: line-through; color: var(--muted); }
+
+        /* Toasts and simulator */
+        .toasts { position: fixed; z-index: 40; left: 50%; bottom: 20px; transform: translateX(-50%); display: grid; gap: 8px; width: min(440px, calc(100vw - 32px)); }
+        .toast { display: flex; align-items: center; gap: 10px; padding: 10px 12px 10px 16px; border-radius: 10px; background: #1f2328; color: #fff;
+            box-shadow: 0 8px 24px rgb(31 35 40 / .25); font-size: .9rem; }
+        .toast p { margin: 0; flex: 1; }
+        .toast.warn { background: #6c4400; }
+        .toast.error { background: #a40e26; }
+        .toast button { border: 0; background: rgb(255 255 255 / .16); color: #fff; border-radius: 6px; padding: 3px 10px; cursor: pointer; font-weight: 600; }
+        .toast .dismiss { background: none; padding: 0 4px; opacity: .8; }
+
+        .demo { position: fixed; z-index: 30; right: 16px; bottom: 16px; max-width: 340px; background: #fff; border: 1px solid var(--line);
+            border-radius: 12px; box-shadow: 0 8px 24px rgb(31 35 40 / .12); font-size: .85rem; }
+        .demo summary { cursor: pointer; padding: 8px 14px; font-weight: 700; }
+        .demo .controls { display: grid; gap: 6px; padding: 0 14px 14px; }
+        .demo .controls p { margin: 0 0 4px; color: var(--muted); }
+        .demo .controls button { text-align: left; }
+        .demo label { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+    </style>
+</head>
+<body>
+    <div id="app" b-cloak>
+        <header class="topbar">
+            <a class="brand" b-bind-href="$stores.to.home()"><span>▤</span> Brio Docs</a>
+            <span class="spacer"></span>
+            <span class="sync" b-bind-data-state="$stores.sync.status" role="status" data-testid="sync-status"
+                  b-text="{ saving: 'Saving…', saved: 'All changes saved', offline: 'Offline · edits are kept', connecting: 'Connecting…' }[$stores.sync.status]"></span>
+        </header>
+
+        <main b-router-outlet data-testid="outlet"></main>
+
+        <div class="toasts">
+            <div class="toast" b-for="toast in $stores.toasts.list" b-key="$for.toast.id" b-bind-class="$for.toast.tone" data-testid="toast">
+                <p b-text="$for.toast.message"></p>
+                <button type="button" b-if="$for.toast.action" b-on-click="$stores.toasts.run($for.toast)" b-text="$for.toast.action.label" data-testid="toast-action"></button>
+                <button type="button" class="dismiss" aria-label="Dismiss" b-on-click="$stores.toasts.dismiss($for.toast.id)">×</button>
+            </div>
+        </div>
+        <div class="sr-only" aria-live="polite" b-text="$stores.toasts.announcement" data-testid="announcer"></div>
+
+        <details class="demo" data-testid="demo">
+            <summary>Simulator</summary>
+            <div class="controls">
+                <p>Teammates edit from their own browsers through the same server.</p>
+                <label>Latency
+                    <select b-bind-value="$stores.demo.latency" b-on-change="$stores.demo.setLatency($event.target.value)">
+                        <option value="0">Instant</option>
+                        <option value="120">120 ms</option>
+                        <option value="800">800 ms (watch conflicts resolve)</option>
+                    </select>
+                </label>
+                <button type="button" class="button" b-bind-disabled="!$stores.demo.open" b-on-click="$stores.demo.typeHere()" data-testid="sim-type-here">Grace types where you are</button>
+                <button type="button" class="button" b-bind-disabled="!$stores.demo.open" b-on-click="$stores.demo.editElsewhere()" data-testid="sim-elsewhere">Ada adds a paragraph</button>
+                <button type="button" class="button" b-bind-disabled="!$stores.demo.open" b-on-click="$stores.demo.rename()">Ada renames the document</button>
+                <button type="button" class="button" b-bind-disabled="!$stores.demo.open" b-on-click="$stores.demo.deleteYourBlock()" data-testid="sim-delete-block">Grace deletes your block</button>
+                <button type="button" class="button" b-bind-disabled="!$stores.demo.open" b-on-click="$stores.demo.deleteDocument()">Grace deletes the document</button>
+                <button type="button" class="button" b-bind-aria-pressed="!$stores.demo.online" b-on-click="$stores.demo.toggleOnline()" data-testid="toggle-online">Go offline</button>
+                <button type="button" class="button" b-bind-aria-pressed="$stores.demo.auto" b-on-click="$stores.demo.toggleAuto()">Teammates keep working</button>
+            </div>
+        </details>
+    </div>
+
+    <template id="tpl-doc-list">
+        <section class="library" data-testid="library">
+            <div class="library-head">
+                <h1>Documents</h1>
+                <form class="new-doc" b-on-submit.prevent="$data.create()">
+                    <input b-ref="title" b-model="$data.draft" placeholder="New document title" aria-label="New document title" maxlength="140" data-testid="new-doc-title">
+                    <button type="submit" class="button primary" b-bind-disabled="$stores.library.creating" data-testid="new-doc">New document</button>
+                </form>
+            </div>
+            <p class="field-error" role="alert" b-if="$stores.library.createError" b-text="$stores.library.createError" data-testid="create-error"></p>
+
+            <div class="status-card" b-if="$stores.library.status === 'loading'" data-testid="loading">Loading documents…</div>
+            <div class="status-card error" b-else-if="$stores.library.status === 'error'" role="alert" data-testid="load-error">
+                Couldn't load your documents. ${$stores.library.error}.
+                <button type="button" class="button" b-on-click="$stores.library.load()">Try again</button>
+            </div>
+            <div class="status-card" b-else-if="!$stores.library.docs.length" data-testid="empty">
+                <h2>No documents yet</h2>
+                <p class="muted">Create one, then open it in a second tab to see live editing.</p>
+            </div>
+            <ul class="doc-cards" b-else>
+                <li class="doc-card" b-for="doc in $stores.library.sorted" b-key="$for.doc.id" data-testid="doc-card">
+                    <a b-bind-href="$stores.to.doc($for.doc.id)" b-text="$for.doc.title || 'Untitled'" data-testid="doc-link"></a>
+                    <p class="excerpt" b-text="$for.doc.excerpt || 'Empty document'"></p>
+                    <div class="meta">
+                        <span>Edited <time b-bind-datetime="$for.doc.updatedAt" b-text="$stores.format.ago($for.doc.updatedAt)"></time>
+                            by <span b-text="$stores.format.member($for.doc.updatedBy).name" data-testid="doc-updated-by"></span></span>
+                        <span b-text="$stores.format.words($for.doc.words)" data-testid="doc-words"></span>
+                    </div>
+                    <div class="side">
+                        <span class="badge" b-if="$data.saving($for.doc.id)" data-testid="doc-saving">Saving…</span>
+                        <span class="avatars" b-bind-aria-label="$for.doc.here.length ? 'Open now by ' + $data.people($for.doc).map(person => person.name).join(', ') : null">
+                            <span class="avatar small" b-for="person in $data.people($for.doc)" b-key="$for.person.id" b-bind-style="{ '--who': $for.person.color }"
+                                  b-bind-title="$for.person.name" b-text="$for.person.initials" data-testid="doc-here"></span>
+                        </span>
+                        <button type="button" class="icon-button" b-bind-aria-label="'Delete ' + ($for.doc.title || 'Untitled')"
+                                b-on-click="$stores.library.remove($for.doc)" data-testid="delete-doc">🗑</button>
+                    </div>
+                </li>
+            </ul>
+        </section>
+    </template>
+
+    <template id="tpl-doc-editor">
+        <div class="status-card" b-if="$data.state.status === 'loading'" data-testid="doc-loading">Opening document…</div>
+        <div class="status-card error" b-else-if="$data.state.status === 'error'" role="alert" data-testid="doc-error">
+            Couldn't open this document. ${$data.state.error}.
+            <button type="button" class="button" b-on-click="$data.retry()" data-testid="doc-retry">Try again</button>
+        </div>
+        <div class="status-card gone" b-else-if="$data.state.status === 'gone'" role="alert" data-testid="doc-gone">
+            <h2>This document is gone</h2>
+            <p class="muted" b-text="$data.state.deletedBy ? $data.state.deletedBy + ' deleted it while you were here.' : $data.state.error"></p>
+            <a class="button" b-bind-href="$stores.to.home()">Back to documents</a>
+        </div>
+        <div class="editor" b-else b-bind-class="{ 'with-history': $data.history }" data-testid="editor">
+            <div class="editor-bar">
+                <a class="back" b-bind-href="$stores.to.home()" data-testid="back">← All documents</a>
+                <span class="spacer"></span>
+                <span class="muted" b-text="$stores.format.words($data.words)" data-testid="word-count"></span>
+                <span class="avatars" aria-label="People in this document" data-testid="people">
+                    <span class="avatar" b-for="person in $data.people" b-key="$for.person.id" b-bind-style="{ '--who': $for.person.color }"
+                          b-bind-title="$for.person.name" b-text="$for.person.initials" data-testid="person"></span>
+                </span>
+                <button type="button" class="button" b-bind-aria-pressed="$data.history" b-on-click="$data.toggleHistory()" data-testid="toggle-history">History</button>
+            </div>
+            <article class="page" b-bind-aria-label="$data.state.title || 'Untitled'">
+                <doc-block b-bind-block="$data.state.titleBlock" b-bind-doc="$data.doc"></doc-block>
+                <div class="blocks">
+                    <doc-block b-for="block in $data.state.visible" b-key="$for.block.id" b-bind-block="$for.block" b-bind-doc="$data.doc" b-transition="'block'"></doc-block>
+                </div>
+                <button type="button" class="add-block" b-on-click="$data.addBlock()" data-testid="add-block">+ Add a block</button>
+            </article>
+            <doc-history b-if="$data.history" b-bind-doc="$data.doc"></doc-history>
+        </div>
+    </template>
+
+    <template id="tpl-doc-block">
+        <div class="block" b-bind-class="['block-' + $props.block.type, { 'is-done': $props.block.checked, 'has-editor': $data.editors.length }]"
+             b-bind-style="{ '--who': $data.editors[0]?.color }" b-bind-data-block-id="$props.block.id" data-testid="block">
+            <div class="block-menu" b-bind-class="{ open: $data.menu }" b-on-keydown.esc="$data.menu = false">
+                <button type="button" class="icon-button" aria-label="Block actions" aria-haspopup="menu" b-bind-aria-expanded="$data.menu"
+                        b-on-click="$data.menu = !$data.menu" data-testid="block-menu">⋮⋮</button>
+                <div class="menu" role="menu" b-if="$data.menu" b-on-click.outside="$data.menu = false">
+                    <button type="button" role="menuitemradio" b-for="option in $data.types" b-key="$for.option.type"
+                            b-bind-aria-checked="$props.block.type === $for.option.type" b-on-click="$data.setType($for.option.type)"
+                            b-text="$for.option.label" b-bind-data-testid="'turn-into-' + $for.option.type"></button>
+                    <hr>
+                    <button type="button" role="menuitem" b-on-click="$data.move(-1)" data-testid="move-up">Move up</button>
+                    <button type="button" role="menuitem" b-on-click="$data.move(1)" data-testid="move-down">Move down</button>
+                    <button type="button" role="menuitem" class="danger" b-on-click="$data.remove()" data-testid="delete-block">Delete</button>
+                </div>
+            </div>
+            <input type="checkbox" class="todo-check" b-if="$props.block.type === 'todo'" b-bind-checked="$props.block.checked"
+                   b-on-change="$data.toggle()" aria-label="Done" data-testid="block-check">
+            <span class="bullet" b-if="$props.block.type === 'bullet'" aria-hidden="true">•</span>
+            <div class="field">
+                <textarea rows="1" spellcheck="true" b-ref="input" b-bind-value="$props.block.text" b-bind-aria-label="$data.label"
+                          b-bind-placeholder="$data.placeholder" b-on-input="$data.input($event)" b-on-keydown="$data.keydown($event)"
+                          b-on-focus="$data.track()" b-on-keyup="$data.track()" b-on-mouseup="$data.track()" b-on-select="$data.track()"
+                          b-on-blur="$data.blur()" data-testid="block-input"></textarea>
+                <div class="mirror" aria-hidden="true"><span b-for="part in $data.parts" b-key="$for.part.key" b-bind-class="$for.part.className"
+                      b-bind-style="$for.part.style" b-bind-data-name="$for.part.name" b-text="$for.part.text" data-testid="mirror-part"></span>&#8203;</div>
+            </div>
+        </div>
+    </template>
+
+    <template id="tpl-doc-history">
+        <aside class="history" aria-label="Version history" data-testid="history">
+            <h2>Version history <a class="icon-button" b-bind-href="$stores.to.doc($props.doc.id)" aria-label="Close history">×</a></h2>
+            <p class="muted" b-if="$data.loading">Loading history…</p>
+            <p class="field-error" role="alert" b-else-if="$data.error" b-text="$data.error"></p>
+            <ol b-else>
+                <li b-for="group in $data.groups" b-key="$for.group.to + ':' + $for.group.from">
+                    <button type="button" class="version" b-bind-aria-pressed="$data.view.selected === $for.group.to" b-on-click="$data.select($for.group)"
+                            data-testid="version">
+                        <span class="avatar small" b-bind-style="{ '--who': $for.group.actor ? $stores.format.member($for.group.actor).color : '#8c959f' }"
+                              b-text="$for.group.actor ? $stores.format.member($for.group.actor).initials : '✦'"></span>
+                        <strong b-text="$for.group.actor ? $stores.format.member($for.group.actor).name : 'Created'"></strong>
+                        <small>
+                            <time b-bind-datetime="$for.group.at" b-text="$stores.format.clock($for.group.at)"></time>
+                            <span b-if="$for.group.count"> · ${$for.group.count} change${$for.group.count === 1 ? '' : 's'}</span>
+                            <span b-if="$data.isCurrent($for.group)"> · current</span>
+                        </small>
+                    </button>
+                </li>
+            </ol>
+            <section class="preview" b-if="$data.preview" data-testid="preview">
+                <strong>Preview</strong>
+                <div class="preview-blocks">
+                    <p b-for="block in $data.preview" b-key="$for.block.id" b-bind-class="[$for.block.type, { done: $for.block.checked }]"
+                       b-text="($for.block.type === 'bullet' ? '• ' : $for.block.type === 'todo' ? ($for.block.checked ? '☑ ' : '☐ ') : '') + ($for.block.text || ' ')"
+                       data-testid="preview-block"></p>
+                </div>
+                <button type="button" class="button primary" b-on-click="$data.restore()" data-testid="restore-version">Restore this version</button>
+            </section>
+        </aside>
+    </template>
+
+    <script src="../../../dist/brio.min.js"></script>
+    <script src="../../../dist/brio.router.min.js"></script>
+    <script src="../../../dist/brio.http.min.js"></script>
+    <script src="./ot.js"></script>
+    <script src="./server.js"></script>
+    <script src="./app.js"></script>
+</body>
+</html>

@@ -4,7 +4,7 @@ export declare const TEMPLATE: 'template';
 export declare const TELEPORT: 'teleport';
 export declare const B_TELEPORT: "b-teleport";
 export declare const ATTRIBUTES: 'attributes';
-export declare const objectConstructor: ObjectConstructor;
+export declare const ObjectConstructor: ObjectConstructor;
 export declare const ReflectApi: typeof Reflect;
 export declare const isArray: typeof Array.isArray;
 export declare const objectKeys: typeof Object.keys;

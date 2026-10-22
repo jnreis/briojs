@@ -1,4 +1,4 @@
-import { BrioApp } from '../core/types';
+import { BrioApp } from '../core/types.js';
 
 export type AstroAppProps = Readonly<Record<string, unknown>>;
 export type AstroApp = Pick<BrioApp, 'roots' | 'mount' | 'dispose'>;

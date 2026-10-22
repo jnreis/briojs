@@ -1,5 +1,5 @@
 import {
-    isObjectType, objectConstructor, isString, getLength, createTypeError, ownKeys, GET_OWN_PROPERTY_DESCRIPTOR,
+    isObjectType, ObjectConstructor, isString, getLength, createTypeError, ownKeys, GET_OWN_PROPERTY_DESCRIPTOR,
     objectKeys,
     includesItem,
 } from '../core/native';
@@ -22,11 +22,11 @@ export type StepEngine = {
 
 function properties(value: unknown, label: string): Record<string, unknown> {
     if (!value || !isObjectType(value) ||
-        !includesItem([objectConstructor.prototype, null], objectConstructor.getPrototypeOf(value)))
+        !includesItem([ObjectConstructor.prototype, null], ObjectConstructor.getPrototypeOf(value)))
         throw createTypeError(`${label} must be a plain object.`);
-    const result: Record<string, unknown> = objectConstructor.create(null);
+    const result: Record<string, unknown> = ObjectConstructor.create(null);
     for (const key of ownKeys(value)) {
-        const descriptor = objectConstructor[GET_OWN_PROPERTY_DESCRIPTOR](value, key)!;
+        const descriptor = ObjectConstructor[GET_OWN_PROPERTY_DESCRIPTOR](value, key)!;
         if (!isString(key) || !('value' in descriptor))
             throw createTypeError(`${label} must contain string-keyed data properties.`);
         result[key] = descriptor.value;
@@ -50,7 +50,7 @@ export function createStepEngine(options: StepOptions): StepEngine {
         if (objectKeys(definition).some(key => key !== 'next'))
             throw createTypeError(`Step "${name}" supports only next.`);
         const next = definition.next;
-        if (objectConstructor.prototype.hasOwnProperty.call(definition, 'next') && !validName(next))
+        if (ObjectConstructor.prototype.hasOwnProperty.call(definition, 'next') && !validName(next))
             throw createTypeError(`Step "${name}" next must be a nonempty string.`);
         links.set(name, isString(next) ? next : undefined);
     }
@@ -77,7 +77,7 @@ export function createStepEngine(options: StepOptions): StepEngine {
         notify();
         return true;
     };
-    return objectConstructor.freeze({
+    return ObjectConstructor.freeze({
         get current() { observe(); return current; },
         get canGoNext() { observe(); return links.get(current) !== undefined; },
         get canGoBack() { observe(); return getLength(history) > 0; },

@@ -1,2 +1,2 @@
-export { validate, defaultRules } from './plugins/forms';
-export type { ValidationRule, ValidationSchema, ValidationResult } from './plugins/forms';
+export { validate, defaultRules } from './plugins/forms.js';
+export type { ValidationRule, ValidationSchema, ValidationResult } from './plugins/forms.js';

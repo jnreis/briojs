@@ -1,5 +1,8 @@
 Brainstorming Ideas for Brio.js
 
+> Archived implementation notes for an earlier runtime, not current API guidance.
+> See [DOCUMENTATION.md](./DOCUMENTATION.md).
+
 Reactivity system:
 
 - the stateObject now has a `refs` array that contains all the locations (proxiedTarget + propertyName) where the current proxiedTarget is used.

@@ -1,4 +1,4 @@
-import { MaskFormatter } from '../dom/directives/mask';
+import { MaskFormatter } from '../dom/directives/mask.js';
 
 export type MoneyMaskOptions = {
     thousands?: string;

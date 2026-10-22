@@ -1,6 +1,7 @@
 import { build } from 'vite';
 import dts from 'vite-plugin-dts';
-import { resolve, dirname } from 'node:path';
+import { resolve, dirname, extname } from 'node:path';
+import ts from 'typescript';
 
 // 1. Build ES modules for npm distribution with TypeScript declarations
 await build({
@@ -32,6 +33,28 @@ await build({
             entryRoot: 'src',
             include: ['src/core', 'src/dom', 'src/plugins', 'src/reactivity', 'src/integrations', 'src/*.ts'],
             rollupTypes: false,
+            beforeWriteFile(filePath, content) {
+                if (!filePath.endsWith('.d.ts')) return;
+                // NodeNext consumers require explicit ESM paths, including in type-only imports.
+                const source = ts.createSourceFile(filePath, content, ts.ScriptTarget.Latest);
+                const edits = [];
+                const visit = node => {
+                    const specifier = ts.isImportDeclaration(node) || ts.isExportDeclaration(node)
+                        ? node.moduleSpecifier
+                        : ts.isImportTypeNode(node) && ts.isLiteralTypeNode(node.argument)
+                            ? node.argument.literal : undefined;
+                    if (specifier && ts.isStringLiteral(specifier) && specifier.text.startsWith('.') && !extname(specifier.text)) {
+                        const path = specifier.text === '.' || specifier.text === '..'
+                            ? `${specifier.text}/index.js` : `${specifier.text}.js`;
+                        edits.push({ start: specifier.getStart(source) + 1, end: specifier.end - 1, path });
+                    }
+                    ts.forEachChild(node, visit);
+                };
+                visit(source);
+                for (const edit of edits.sort((a, b) => b.start - a.start))
+                    content = content.slice(0, edit.start) + edit.path + content.slice(edit.end);
+                return { filePath, content };
+            },
         }),
     ],
 });

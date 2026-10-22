@@ -1,7 +1,7 @@
 var __defProp = Object.defineProperty;
 var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
 var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "symbol" ? key + "" : key, value);
-import { p as includesItem, c as createTypeError, j as isInstanceOf, f as isObjectType, e as objectEntries, m as isString, h as isNumber, v as isBoolean, k as isArray, o as objectConstructor, d as deleteItem } from "./native-DNTl55LH.js";
+import { n as includesItem, c as createTypeError, h as isInstanceOf, e as isObjectType, o as objectEntries, l as isString, f as isNumber, u as isBoolean, j as isArray, O as ObjectConstructor, d as deleteItem } from "./native-Ba4LWja7.js";
 class HttpError extends Error {
   constructor(response) {
     super(`HTTP ${response.status}: ${response.statusText}`);
@@ -13,11 +13,11 @@ class HttpError extends Error {
   }
 }
 function isPlainObject(value) {
-  const prototype = objectConstructor.getPrototypeOf(value);
-  return prototype === null || objectConstructor.getPrototypeOf(prototype) === null && objectConstructor.prototype.toString.call(value) === "[object Object]";
+  const prototype = ObjectConstructor.getPrototypeOf(value);
+  return prototype === null || ObjectConstructor.getPrototypeOf(prototype) === null && ObjectConstructor.prototype.toString.call(value) === "[object Object]";
 }
 function isDate(value) {
-  return objectConstructor.prototype.toString.call(value) === "[object Date]";
+  return ObjectConstructor.prototype.toString.call(value) === "[object Date]";
 }
 function appendQuery(url, query) {
   const target = new URL(url, typeof location !== "undefined" ? location.href : "http://localhost");

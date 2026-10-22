@@ -1,5 +1,8 @@
 # Brio.js Documentation
 
+> Historical reference for the private v3 runtime. This is not the documentation
+> for the npm package. Use [Brio 4.0 documentation](./DOCUMENTATION.md) for current APIs.
+
 Welcome to the official documentation for Brio.js, a powerful JavaScript framework designed to simplify web development. This guide will help you get started with Brio.js, explore its features, and understand how to use it effectively in your projects.
 
 ## Table of Contents

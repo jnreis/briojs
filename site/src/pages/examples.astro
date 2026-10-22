@@ -1,0 +1,20 @@
+---
+import Site from '../layouts/Site.astro';
+import { examples } from '../../data/examples.mjs';
+---
+<Site title="Examples" description="Ten working Brio apps, from a small counter to collaborative editing. Explore the interactions and read the source.">
+  <section class="wrap section gallery-heading">
+    <p class="overline">The best explanation is a working app</p>
+    <h1>Small beginnings.<br /><span class="blue">Real possibilities.</span></h1>
+    <p class="hero-description">Start simple, then push further. Every example is a working app with source you can explore.</p>
+    <aside class="notice"><strong>A learning lab, not a hosted service.</strong> These demos run in your browser. Examples marked “Simulated backend” use local mock APIs, authentication, or teammates—not real accounts or a collaboration server. Some demos persist data in your browser. Do not enter sensitive information.</aside>
+  </section>
+  <section class="wrap cards gallery" aria-label="Example apps">
+    {examples.map((example, index) => <article class="card">
+      <div class="card-top"><span class="card-number">{String(index + 1).padStart(2, '0')} / {example.level}</span>{example.mock && <span class="badge">Simulated backend</span>}</div>
+      <h2>{example.title}</h2><p>{example.description}</p>
+      <div class="card-links"><a href={`/demos/${example.id}/index.html`}>Try demo →</a><a href={`https://github.com/jnreis/briojs/tree/main/tests/apps/${example.id}`}>Source ↗</a></div>
+    </article>)}
+  </section>
+  <section class="wrap closing"><h2>Ready for your own?</h2><a class="button primary" href="/start/getting-started/">Build your first widget →</a></section>
+</Site>

@@ -1,0 +1,77 @@
+---
+import Site from '../layouts/Site.astro';
+import { Code } from '@astrojs/starlight/components';
+import { version } from '../../../package.json';
+const html = `<div id="counter">
+  <button b-on-click="$data.count++">
+    Count: <span b-text="$data.count"></span>
+  </button>
+</div>`;
+const js = `import { createApp } from '@jnreis/briojs';
+
+createApp({
+  state: () => ({ count: 0 }),
+}).mount('#counter');`;
+---
+<Site title="Powerfully simple web development">
+  <section class="hero wrap">
+    <a class="eyebrow" href="/releases/"><span class="status-dot"></span> Brio {version} · Small by design. Ready to build. <span aria-hidden="true">→</span></a>
+    <h1>Less ceremony.<br /><span class="blue">More possibility.</span></h1>
+    <p class="hero-description">Powerfully simple web development.<br />Add a widget. Enhance a page. Build an app.<br /><strong>Start with HTML. Go wherever you need.</strong></p>
+    <div class="actions"><a class="button primary" href="/start/getting-started/">Get started <span aria-hidden="true">→</span></a><a class="button" href="/examples/">See it in action</a></div>
+    <div class="install"><code>npm install @jnreis/briojs</code><button id="copy-install" type="button" aria-label="Copy npm install command">Copy</button></div>
+    <p class="small muted">No virtual DOM. No required compiler. No runtime dependencies.</p>
+  </section>
+  <section class="wrap demo-section" aria-labelledby="demo-heading">
+    <div class="section-intro"><p class="overline">A little HTML. A little JavaScript.</p><h2 id="demo-heading">That’s the whole widget.</h2><p>State is explicit. The DOM is real. Change a value and Brio takes care of the rest.</p></div>
+    <div class="code-demo">
+      <div class="code-panels"><div class="code-label"><span class="dot"></span> index.html</div><Code code={html} lang="html" /><div class="code-label second">app.js</div><Code code={js} lang="js" /></div>
+      <div class="live-panel">
+        <p class="overline"><span class="status-dot"></span> Live result</p>
+        <div id="home-counter" b-cloak>
+          <p class="counter-number" b-text="$data.count" aria-live="polite">0</p>
+          <button class="button primary" b-on-click="$data.count++">Count: <span b-text="$data.count">0</span></button>
+          <button class="reset" b-on-click="$data.count = 0">Reset</button>
+        </div>
+        <noscript><p>Enable JavaScript to try the counter. The documentation and code examples work without it.</p></noscript>
+        <p class="small muted">Try it. No build step required.</p>
+      </div>
+    </div>
+  </section>
+  <section class="wrap section" aria-labelledby="ways-heading">
+    <p class="overline">Meet your app where it is</p><h2 id="ways-heading">One framework. Your level of ambition.</h2>
+    <div class="cards">
+      <article class="card"><span class="card-number">01 / WIDGETS</span><h3>A small island of useful.</h3><p>A menu, a form, a calculator. Mount Brio around just the interactive part. Leave your existing app alone.</p><a href="/reference/three-ways-to-use-brio/#a-widget-in-an-existing-app">Add a widget →</a></article>
+      <article class="card"><span class="card-number">02 / MULTI-PAGE</span><h3>Keep your server. Add some life.</h3><p>Ordinary links, server-rendered pages, and reactive behavior right where you want it. No takeover required.</p><a href="/reference/three-ways-to-use-brio/#multi-page-site">Enhance a page →</a></article>
+      <article class="card"><span class="card-number">03 / APPLICATIONS</span><h3>Room to grow.</h3><p>Components, routing, shared state, async resources, and cleanup. The pieces for an app, without the ceremony.</p><a href="/reference/three-ways-to-use-brio/#single-page-app">Build an app →</a></article>
+    </div>
+  </section>
+  <section class="wrap section features" aria-labelledby="features-heading">
+    <div><p class="overline">Simple does not mean limited</p><h2 id="features-heading">Small ideas.<br />Serious capabilities.</h2><a class="text-link" href="/reference/html-directives/">Explore the reference →</a></div>
+    <div class="feature-grid">
+      <article><h3>HTML is the template</h3><p>Bindings, models, keyed lists, transitions, and teleports. Familiar markup, a few powerful directives.</p></article>
+      <article><h3>State that stays in sync</h3><p>Fine-grained reactivity, computed values, explicit batching, and cancellable async resources.</p></article>
+      <article><h3>Cleanup is part of the design</h3><p>Scopes give effects and resources a lifetime. Remove a component, release its behavior.</p></article>
+      <article><h3>Only what you need</h3><p>Optional routing, persistence, HTTP, validation, and tools. Tree-shakable ESM with TypeScript declarations.</p></article>
+    </div>
+  </section>
+  <section class="wrap closing">
+    <p class="overline">Learn by doing</p><h2>From a counter to concurrent editing.</h2><p>Ten working apps. Real interactions. Source you can read.</p><a class="button primary" href="/examples/">Explore the examples →</a>
+  </section>
+  <script is:inline src="/dist/brio.min.js"></script>
+  <script is:inline>
+    const counterApp = brio.createApp({ state: () => ({ count: 0 }) });
+    counterApp.mount('#home-counter');
+    addEventListener('pagehide', event => { if (!event.persisted) counterApp.dispose(); });
+    document.querySelector('#copy-install').addEventListener('click', async event => {
+      const button = event.currentTarget;
+      try {
+        await navigator.clipboard.writeText('npm install @jnreis/briojs');
+        button.textContent = 'Copied!';
+      } catch (error) {
+        button.textContent = 'Select command to copy';
+        console.error('Unable to copy installation command.', error);
+      }
+    });
+  </script>
+</Site>

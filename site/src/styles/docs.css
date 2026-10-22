@@ -1,0 +1,16 @@
+:root {
+    --sl-color-accent-low: #102d59;
+    --sl-color-accent: #3b82f6;
+    --sl-color-accent-high: #c0d9ff;
+    --sl-font: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+:root[data-theme="light"] {
+    --sl-color-accent-low: #dfecff;
+    --sl-color-accent: #205cce;
+    --sl-color-accent-high: #173c79;
+}
+html { scroll-behavior: smooth; }
+:focus-visible { outline: 3px solid #438bff; outline-offset: 4px; }
+@media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+}

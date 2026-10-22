@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+Disallow: /demos/
+Sitemap: https://briojs.com/sitemap-index.xml

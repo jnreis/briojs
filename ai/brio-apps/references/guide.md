@@ -214,7 +214,7 @@ Escape HTML-significant characters in literal text/attribute values.
 | `b-effect="$data.observe($data.count)"` | Reactive expression, not a block of event-style statements. Avoid feedback writes. |
 | `b-id="['input']"` | Creates `$id.input`; bind `id`/label `for` explicitly. |
 | `b-ref="input"` | Register a concrete DOM target by literal name. Read `$ref.input`; not `$refs`. |
-| `b-template` | Required on any `<template>` that carries `b-if`/`b-else-if`/`b-else`/`b-for` (otherwise an error). Unwraps authored contents into an owned range of hydrated siblings. Supports keyed `b-for`, plain `b-if`, `.detach`, `b-id`, providers, teleport and effects; no template-name/expression sourcing. |
+| `b-template` | Implied on any `<template>` carrying a `b-` directive (`<template b-if>`, `<template b-for>`); needed on other elements. `b-bind-*`/`b-on-*`/`b-text`/etc. on a wrapper are errors. Directive-free and `b-ignore` templates stay inert. Unwraps authored contents into an owned range of hydrated siblings. Supports keyed `b-for`, plain `b-if`, `.detach`, `b-id`, providers, teleport and effects; no template-name/expression sourcing. |
 | `b-teleport="$ref.panel"` | Reactive Element/ref or selector expression; defaults to `after`. Use `[$ref.panel, 'append']` to insert inside. |
 | `b-router-outlet` | Renders the router's matched registered component. |
 

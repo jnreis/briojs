@@ -1681,19 +1681,57 @@ test('manual cloak page hides templates until its delayed bootstrap mounts them'
     assert.ok(widget.textContent.includes('0 clicks'));
 });
 
-test('native templates with structural directives but no b-template fail with a located fix', t => {
-    for (const markup of [
-        '<template b-for="item in $data.items"><i></i></template>',
-        '<template b-if="$data.on"><i></i></template>',
-        '<p b-if="$data.on"></p><template b-else><i></i></template>',
+test('a <template> with Brio directives renders in place as if it had b-template', t => {
+    const render = (markup, state = {}) => {
+        const { app, root } = environment(t, markup, state);
+        app.mount(root);
+        return { app, root, html: () => root.innerHTML.replace(/<!--\/?brio:range-->/g, '') };
+    };
+    const state = { items: [{ id: 1, name: 'a' }, { id: 2, name: 'b' }], on: true, n: 3 };
+
+    const loop = render('<ul><template b-for="item in $data.items" b-key="$for.item.id"><li b-text="$for.item.name"></li><li>-</li></template></ul>', state);
+    assert.equal(loop.html(), '<ul><li>a</li><li>-</li><li>b</li><li>-</li></ul>');
+    loop.app.state.items.reverse();
+    assert.equal(loop.html(), '<ul><li>b</li><li>-</li><li>a</li><li>-</li></ul>');
+
+    const chain = render('<template b-if="$data.n > 5"><b>big</b></template><template b-else-if="$data.on"><i>on</i></template><template b-else><u>off</u></template>', state);
+    assert.equal(chain.html(), '<i>on</i>');
+    chain.app.state.on = false;
+    assert.equal(chain.html(), '<u>off</u>');
+
+    assert.equal(render('<template b-data="{ label: \'local\' }"><p>${$data.label}</p></template>').html(), '<p>local</p>');
+    assert.equal(render('<template b-id="[\'f\']"><label b-bind-for="$id.f">L</label></template>').html(), '<label for="brio-1">L</label>');
+    assert.equal(render('<template b-template><p>explicit</p></template>').html(), '<p>explicit</p>', 'explicit b-template is still accepted');
+
+    const inner = render('<template b-if="$data.on"><template id="stash"><p b-text="nope"></p></template></template>', state);
+    assert.equal(inner.html(), '<template id="stash"><p b-text="nope"></p></template>', 'directive-free templates stay inert, even inside fragments');
+    assert.equal(render('<template id="row" slot="x" class="c"><p b-text="nope"></p></template>').html(),
+        '<template id="row" slot="x" class="c"><p b-text="nope"></p></template>');
+    assert.equal(render('<template b-ignore b-if="nope"><p>${nope}</p></template>').html(),
+        '<template b-ignore="" b-if="nope"><p>${nope}</p></template>', 'b-ignore keeps a template inert');
+    assert.equal(render('<template b-cloak><p>x</p></template>').html(), '<template><p>x</p></template>', 'b-cloak alone does not expand');
+});
+
+test('fragment wrappers reject directives that need a concrete element instead of dropping them', t => {
+    for (const [markup, message] of [
+        ['<template b-bind-class="\'x\'"><i></i></template>', /b-bind-class needs a concrete element, but <template> renders its contents in place/],
+        ['<template b-if="true" b-on-click="1"><i></i></template>', /b-on-click needs a concrete element/],
+        ['<template b-for="x in 2" b-text="\'t\'"><i></i></template>', /b-text needs a concrete element/],
+        ['<template b-show="false"><i></i></template>', /b-show needs a concrete element/],
+        ['<div b-template b-bind-class="\'x\'"><i></i></div>', /b-bind-class needs a concrete element, but b-template renders/],
+        ['<template b-if.hide="true"><i></i></template>', /b-if.hide requires a concrete branch element/],
+        ['<template b-ref="row"><i></i></template>', /b-ref requires a concrete element/],
     ]) {
-        const { app, root } = environment(t, markup, { items: [1], on: true });
-        assert.throws(() => app.mount(root), /<template b-(for|if|else)> would render inert template contents; add b-template/);
+        const { app, root } = environment(t, markup);
+        assert.throws(() => app.mount(root), message, markup);
     }
-    const { app, root } = environment(t,
-        '<template b-template b-for="item in $data.items"><i b-text="$for.item"></i></template>', { items: [1, 2] });
+});
+
+test('component slots inside implicit template fragments are filled', t => {
+    const { app, root } = environment(t, '<info-box><b slot="extra">projected</b></info-box>', { open: true });
+    app.component('info-box', { template: '<template b-if="$data.$parent.open"><p><slot name="extra">fallback</slot></p></template>' });
     app.mount(root);
-    assert.equal(root.textContent, '12');
+    assert.equal(root.querySelector('info-box').innerHTML.replace(/<!--\/?brio:range-->/g, ''), '<p><b slot="extra">projected</b></p>');
 });
 
 test('reference errors suggest $for, $data and $props paths for bare names', t => {

@@ -255,7 +255,7 @@ Directive arguments use hyphens (`b-on-click`, `b-bind-href`); options use chain
 | `b-transition` | Animate enter/leave with named CSS transition classes. |
 | `b-for` | Render an array, iterable, object, or integer. |
 | `b-key` | Give a repeated item a stable string or number identity. Used with `b-for`. |
-| `b-template` | Unwrap an element or instantiate a `<template>`'s contents in place, hydrating them without a rendered wrapper. |
+| `b-template` | Unwrap an element or instantiate a `<template>`'s contents in place, hydrating them without a rendered wrapper. Implied on a `<template>` that carries any `b-` directive. |
 | `b-html` | Insert markup without activating Brio; `.hydrate` activates templates explicitly marked with `trustedHTML()`. |
 | `b-ignore` | Skip hydration for this element and its descendants. |
 | `b-cloak` | Removed when Brio hydrates the element; pair with `[b-cloak] { display: none; }` to hide raw templates until mount. |
@@ -463,7 +463,28 @@ expression first. Native DOM removal alone never unregisters a ref.
 ### Wrapperless content with `b-template`
 
 `b-template` is an **in-place, one-time unwrap**, not a component definition,
-named template registry, HTML expression, or reactive template selector:
+named template registry, HTML expression, or reactive template selector.
+
+A native `<template>` that carries any `b-` directive renders in place as if it
+had `b-template`, so `b-template` is only needed on other elements (or to be
+explicit on a directive-free `<template>`):
+
+```html
+<template b-if="$data.user">
+  <h2>${$data.user.name}</h2>
+  <p b-text="$data.user.bio"></p>
+</template>
+```
+
+| `<template>` carries | Result |
+| --- | --- |
+| No `b-` directive (only `id`, `slot`, `class`, …) | Stays inert. Brio never touches its `.content`, so it is safe for templates cloned by your own code or other libraries. Short aliases such as `text` or `effect` do not count. |
+| `b-ignore` | Stays inert, whatever else it carries. |
+| `b-cloak` only | The attribute is removed; the template stays inert. |
+| `b-if`, `b-else-if`, `b-else`, `b-for`/`b-key`, `b-data`, `b-id`, `b-provide`, `b-teleport`, `b-effect`, or `b-template` | Its contents render in place. |
+| A directive that needs a concrete element (`b-bind-*`, `b-on-*`, `b-text`, `b-html`, `b-model`, `b-mask`, `b-transition`, `b-ref`, `b-if.hide`, or any unknown `b-*`) | An error naming the directive. Put it on an element inside. |
+
+The same explicit form still works everywhere:
 
 ```html
 <div id="app">
@@ -477,10 +498,8 @@ named template registry, HTML expression, or reactive template selector:
 Brio replaces the marked element with paired anchor comments and its hydrated
 contents. Multiple top-level elements, text nodes, and comments are allowed.
 The example renders the heading and paragraph directly inside `#app`.
-A native `<template>` without `b-template` stays inert; Brio does not hydrate
-its `.content` automatically. A `<template>` carrying `b-if`, `b-else-if`,
-`b-else`, or `b-for` without `b-template` would only render inert copies, so it
-is an error that names the element; add `b-template` or use a concrete element.
+A native `<template>` with no `b-` directive stays inert; Brio does not hydrate
+its `.content` automatically.
 
 - On `<template b-template>`, Brio clones the template's inert contents.
   On an ordinary container such as `<div b-template>`, it moves the existing
@@ -508,12 +527,12 @@ is an error that names the element; add `b-template` or use a concrete element.
   hydrate. `b-teleport` moves the whole rendered range to its destination,
   including text, nested structural output, and boundary comments. Its selector
   must already exist; it is not a reactive template-source expression.
-- Ordinary same-element directives do **not** run after `b-template` takes
-  over: `b-text`, `b-html`, `b-bind-*`, events/observers, `b-model`, `b-mask`,
-  `b-script`, `b-transition`, and `b-router-outlet`
-  on that wrapper are skipped. Move them onto surviving children or an outer
-  container. A registered component tag with `b-template` is unwrapped rather
-  than instantiated as a component.
+- Directives that need a surviving element are an error on a wrapper (an
+  explicit `b-template` or a directive-bearing `<template>`): `b-text`,
+  `b-html`, `b-bind-*`, events/observers, `b-model`, `b-mask`, `b-transition`,
+  `b-router-outlet`, and their short aliases. Move them onto surviving children
+  or an outer container. A registered component tag with `b-template` is
+  unwrapped rather than instantiated as a component, so it cannot take props.
 - Wrapper attributes are not forwarded: `class`, `style`, `id`, accessibility
   attributes, and the wrapper's layout/semantics disappear. Native CSS `@scope`
   follows the style element's new physical parent.
@@ -535,19 +554,19 @@ is an error that names the element; add `b-template` or use a concrete element.
 These combinations need no rendered wrapper:
 
 ```html
-<template b-if="$data.visible" b-template>
+<template b-if="$data.visible">
   <h2>Conditional heading</h2>
   <p>Both roots are removed and disposed together.</p>
 </template>
 
 <ul>
-  <template b-template b-for="item in $data.items" b-key="$for.item.id">
+  <template b-for="item in $data.items" b-key="$for.item.id">
     <li b-text="$for.item.name"></li>
     <li b-text="$for.item.description"></li>
   </template>
 </ul>
 
-<template b-if.detach="$data.open" b-template b-teleport="['#portal', 'append']">
+<template b-if.detach="$data.open" b-teleport="['#portal', 'append']">
   <h2>Preserved at the destination</h2>
   <button b-on-click="$data.open = false">Close</button>
 </template>
@@ -591,7 +610,7 @@ overwrite each other. Do not rely on attribute order to resolve competing owners
 | `b-for` + same-element `b-id` | Supported: IDs are generated per row after `$for` is established. Retained keys keep their IDs; new keys get fresh IDs. A same-element `b-key` is evaluated before these new IDs exist. |
 | `b-for` + same-element `b-provide` | Supported: providers are created during row hydration and can use the row's `$for`. |
 | `b-for` + `b-key` | Supported; `b-key` belongs on that repeated element and evaluates in its row context. It has no standalone binding behavior. |
-| `b-template` + structural/ordinary host directives | See the limitations above. Context directives may share its wrapper; put behaviors requiring a surviving element inside or outside it. |
+| `b-template` or directive-bearing `<template>` + structural/ordinary host directives | See the limitations above. Context, structural, teleport, and effect directives may share the wrapper; directives requiring a surviving element are an error. |
 | `b-ref` + `b-template` / native `<template>` | An error. Ref concrete children, not fragment wrappers. |
 | `b-ref` + `b-data` / `b-for` / component host | Normal data elements register in their data-local registry; rows register in their row-local registry. Component hosts register in the caller's applicable registry; component internals are private. |
 | Reused ref name across live conditional branches | Duplicate error, including inactive preserved branches and transition-overlapping branches. Use distinct names or explicit `b-data` boundaries. |

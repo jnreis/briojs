@@ -89,8 +89,6 @@ export function handleFor(
 ): void {
     const parent = getParent(element);
     if (!parent) throw createError('b-for requires an element with a parent node.');
-    if (element.localName === TEMPLATE && !element.hasAttribute('b-template'))
-        throw createSyntaxError('<template b-for> would render inert template contents; add b-template to render each row in place, or use a concrete element.');
     const parsed = /^\s*([A-Za-z_$][\w$]*)(?:\s*,\s*([A-Za-z_$][\w$]*))?\s+in\s+([\s\S]+)$/.exec(expression);
     if (!parsed) throw createSyntaxError(`Invalid b-for expression "${expression}". Use "item in $data.items".`);
     const [, itemName, indexName = '$index', collectionExpression] = parsed;
@@ -102,6 +100,8 @@ export function handleFor(
     const template = cloneProjectedNode(element);
     removeAttribute(template, 'b-for');
     removeAttribute(template, 'b-key');
+    // A directive-bearing <template> renders in place; keep that once the triggering directive is removed.
+    if (template.localName === TEMPLATE) template.setAttribute('b-template', '');
     removeElement(element);
     // Rows that cannot be teleported or expand into template content are their own range, without anchors.
     const anchorless = template.localName !== TEMPLATE && !arrayFrom(template[ATTRIBUTES]).some(({ name }) => {

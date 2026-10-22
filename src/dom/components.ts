@@ -54,9 +54,14 @@ export function cloneProjectedNode<T extends Node>(node: T): T {
     return clone;
 }
 
+/** A `<template>` carrying any `b-` directive (other than b-cloak, and unless b-ignore) renders in place, like `b-template`. */
+export const isFragmentTemplate = (element: Element): boolean =>
+    element.localName === TEMPLATE && !element.hasAttribute('b-ignore') &&
+    arrayFrom(element[ATTRIBUTES]).some(({ name }) => startsWith(name, 'b-') && name !== 'b-cloak');
+
 function findSlots(root: ParentNode): Element[] {
-    return arrayFrom(root.querySelectorAll('slot, template[b-template]')).flatMap(node =>
-        isInstanceOf(node, HTMLTemplateElement) ? findSlots(node.content) : [node]);
+    return arrayFrom(root.querySelectorAll('slot, template')).flatMap(node =>
+        isInstanceOf(node, HTMLTemplateElement) ? isFragmentTemplate(node) ? findSlots(node.content) : [] : [node]);
 }
 
 export function fillSlots(

@@ -1,7 +1,7 @@
 var __defProp = Object.defineProperty;
 var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
 var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "symbol" ? key + "" : key, value);
-import { R as ReflectApi, $ as $PARENT, c as createTypeError, p as includesItem, d as deleteItem, b as createError, g as getLength, T as TELEPORT, a as arrayFrom, l as ownKeys, G as GET_OWN_PROPERTY_DESCRIPTOR, o as objectConstructor, n as createSyntaxError, t as startsWith, m as isString, k as isArray, f as isObjectType, e as objectEntries, A as ATTRIBUTES, j as isInstanceOf, u as TEMPLATE, B as B_TELEPORT, r as removeElement, q as objectKeys, h as isNumber, i as isFunction, v as isBoolean, w as snapshotList } from "./native-DNTl55LH.js";
+import { R as ReflectApi, $ as $PARENT, c as createTypeError, p as includesItem, d as deleteItem, b as createError, g as getLength, T as TELEPORT, a as arrayFrom, l as ownKeys, G as GET_OWN_PROPERTY_DESCRIPTOR, o as objectConstructor, n as createSyntaxError, t as startsWith, m as isString, k as isArray, f as isObjectType, e as objectEntries, u as TEMPLATE, A as ATTRIBUTES, j as isInstanceOf, B as B_TELEPORT, r as removeElement, q as objectKeys, h as isNumber, i as isFunction, v as isBoolean, w as snapshotList } from "./native-DNTl55LH.js";
 import { b as getChildNodes, g as getAttribute, c as removeAttribute, a as addEventListener, r as removeEventListener, d as removeChild, e as getParent, f as getOwnerDocument, h as getNodeType, i as getNextSibling, j as insertBefore } from "./native-Di2Lf1wo.js";
 import { e as evaluate, a as emptyContextValues, b as createExpressionScope, d as execute, f as assign, g as createProvidedValues, h as evaluateFunction, c as copyContextValues } from "./context-values-DGLwTbXl.js";
 import { j as getCurrentScope, a as combinedError, o as onCleanup, b as batch, e as effect, c as causedError, k as errorText, n as createScope, p as onDispose, h as directiveError, s as setScopeNode, r as locate, t as notifyRootMounted, v as flush, w as notifyAppDisposed, x as notifyAppCreated, y as notifyRootUnmounted } from "./effect-BTu8V88D.js";
@@ -325,8 +325,9 @@ function cloneProjectedNode(node) {
   if (!projectionFree.has(node) && !copyProjected(node, clone)) projectionFree.add(node);
   return clone;
 }
+const isFragmentTemplate = (element) => element.localName === TEMPLATE && !element.hasAttribute("b-ignore") && arrayFrom(element[ATTRIBUTES]).some(({ name }) => startsWith(name, "b-") && name !== "b-cloak");
 function findSlots(root) {
-  return arrayFrom(root.querySelectorAll("slot, template[b-template]")).flatMap((node) => isInstanceOf(node, HTMLTemplateElement) ? findSlots(node.content) : [node]);
+  return arrayFrom(root.querySelectorAll("slot, template")).flatMap((node) => isInstanceOf(node, HTMLTemplateElement) ? isFragmentTemplate(node) ? findSlots(node.content) : [] : [node]);
 }
 function fillSlots(host, template, context) {
   const slots = /* @__PURE__ */ new Map();
@@ -994,14 +995,13 @@ function handleIf(element, expression, modifiers, context, runtime, hydrateNodeF
     const conditional = attributes.filter((attribute) => includesItem(["b-if", "b-else-if", "b-else"], extractModifiers(attribute.name).baseName));
     if (getLength(conditional) !== 1)
       throw createSyntaxError("An element can have only one conditional directive.");
-    if (node.localName === TEMPLATE && !node.hasAttribute("b-template"))
-      throw createSyntaxError(`<template ${extractModifiers(conditional[0].name).baseName}> would render inert template contents; add b-template to render them in place, or use a concrete element.`);
     if (node !== element && getLength(objectKeys(extractModifiers(conditional[0].name).modifiers)))
       throw createSyntaxError("Conditional modifiers belong only on the leading b-if, not b-else-if or b-else.");
-    if (modifiers.hide && attributes.some((attribute) => includesItem(["b-for", "b-template", TEMPLATE], extractModifiers(attribute.name).baseName)))
+    if (modifiers.hide && (node.localName === TEMPLATE || attributes.some((attribute) => includesItem(["b-for", "b-template", TEMPLATE], extractModifiers(attribute.name).baseName))))
       throw createSyntaxError("b-if.hide requires a concrete branch element; wrap b-for or b-template in another element or use .detach.");
     const template = cloneProjectedNode(node);
     removeAttribute(template, conditional[0].name);
+    if (template.localName === TEMPLATE) template.setAttribute("b-template", "");
     originals.push(node);
     branches.push({ template, expression: condition });
   };
@@ -1184,8 +1184,6 @@ const enumerate = (value) => {
 function handleFor(element, expression, _modifiers, context, runtime, hydrateNodeFn) {
   const parent = getParent(element);
   if (!parent) throw createError("b-for requires an element with a parent node.");
-  if (element.localName === TEMPLATE && !element.hasAttribute("b-template"))
-    throw createSyntaxError("<template b-for> would render inert template contents; add b-template to render each row in place, or use a concrete element.");
   const parsed = /^\s*([A-Za-z_$][\w$]*)(?:\s*,\s*([A-Za-z_$][\w$]*))?\s+in\s+([\s\S]+)$/.exec(expression);
   if (!parsed) throw createSyntaxError(`Invalid b-for expression "${expression}". Use "item in $data.items".`);
   const [, itemName, indexName = "$index", collectionExpression] = parsed;
@@ -1197,6 +1195,7 @@ function handleFor(element, expression, _modifiers, context, runtime, hydrateNod
   const template = cloneProjectedNode(element);
   removeAttribute(template, "b-for");
   removeAttribute(template, "b-key");
+  if (template.localName === TEMPLATE) template.setAttribute("b-template", "");
   removeElement(element);
   const anchorless = template.localName !== TEMPLATE && !arrayFrom(template[ATTRIBUTES]).some(({ name }) => {
     const { baseName } = extractModifiers(name);
@@ -1888,6 +1887,8 @@ const componentNamePattern$1 = /^[a-z][a-z0-9]*-[a-z0-9-]+$/;
 const conditionalNames = /* @__PURE__ */ new Set(["b-if", "b-else-if", "b-else"]);
 const childControllingNames = /* @__PURE__ */ new Set(["b-text", "text", "b-html", "html", "b-router-outlet"]);
 const transitionNames = /* @__PURE__ */ new Set(["b-transition", "transition"]);
+const fragmentNames = /* @__PURE__ */ new Set(["b-template", "b-teleport", "teleport", "b-effect", "effect"]);
+const elementAliases = /* @__PURE__ */ new Set(["text", "html", "model", "mask", "transition"]);
 function hydrateChildren(element, context, runtime) {
   withHydration(element, () => {
     for (const child of snapshotList(getChildNodes(element))) {
@@ -1961,6 +1962,7 @@ function hydrateOwnedNode(node, parentContext, runtime) {
   }
   if (ifAttr)
     throw createSyntaxError("b-else-if and b-else require an adjacent preceding b-if branch.");
+  const fragmentTemplate = isFragmentTemplate(element);
   let context = elementContext(element, parentContext, runtime);
   const dataAttr = getAttribute(element, "b-data");
   if (dataAttr !== null) {
@@ -2001,8 +2003,14 @@ function hydrateOwnedNode(node, parentContext, runtime) {
     registerRef(context.$ref, name, element);
     removeAttribute(element, "b-ref");
   }
-  if (templateAttr !== null) {
-    handleTemplate(element, templateAttr, {}, context, runtime, hydrateNode);
+  if (templateAttr !== null || fragmentTemplate) {
+    for (const attribute of arrayFrom(element[ATTRIBUTES])) {
+      const { baseName } = extractModifiers(attribute.name);
+      if (fragmentNames.has(baseName)) continue;
+      if (startsWith(baseName, "b-") || elementAliases.has(baseName) || startsWith(baseName, "bind-") || startsWith(baseName, "on-"))
+        throw createSyntaxError(`${baseName} needs a concrete element, but ${templateAttr !== null ? "b-template" : "<template>"} renders its contents in place without one. Put it on an element inside.`);
+    }
+    handleTemplate(element, templateAttr ?? "", {}, context, runtime, hydrateNode);
     for (const attribute of arrayFrom(element[ATTRIBUTES])) {
       const { baseName, modifiers } = extractModifiers(attribute.name);
       if (baseName === B_TELEPORT || baseName === TELEPORT)

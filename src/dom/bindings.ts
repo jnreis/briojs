@@ -12,7 +12,7 @@ import { locate, setScopeNode } from '../core/errors';
 import type { Scope } from '../core/scope';
 import { effect } from '../reactivity/effect';
 import type { DomRuntime } from './types';
-import { mountComponent, takeProjectedContext } from './components';
+import { isFragmentTemplate, mountComponent, takeProjectedContext } from './components';
 import { prepareTransition } from './directives/transition';
 import { createInsert } from './insert';
 import { getNodeOwner, ownNode, withHydration } from './ownership';
@@ -68,6 +68,9 @@ const componentNamePattern = /^[a-z][a-z0-9]*-[a-z0-9-]+$/;
 const conditionalNames = new Set(['b-if', 'b-else-if', 'b-else']);
 const childControllingNames = new Set(['b-text', 'text', 'b-html', 'html', 'b-router-outlet']);
 const transitionNames = new Set(['b-transition', 'transition']);
+// Directives a fragment wrapper (b-template or a directive-bearing <template>) applies; the rest need a concrete element.
+const fragmentNames = new Set(['b-template', 'b-teleport', 'teleport', 'b-effect', 'effect']);
+const elementAliases = new Set(['text', 'html', 'model', 'mask', 'transition']);
 
 import {
     handleBind,
@@ -194,6 +197,8 @@ function hydrateOwnedNode(
     if (ifAttr)
         throw createSyntaxError('b-else-if and b-else require an adjacent preceding b-if branch.');
 
+    // Decided before b-data/b-id/b-provide are consumed, since any of them makes a <template> render in place.
+    const fragmentTemplate = isFragmentTemplate(element);
     let context = elementContext(element, parentContext, runtime);
 
     const dataAttr = getAttribute(element, 'b-data');
@@ -241,8 +246,15 @@ function hydrateOwnedNode(
         registerRef(context.$ref, name, element);
         removeAttribute(element, 'b-ref');
     }
-    if (templateAttr !== null) {
-        handleTemplate(element, templateAttr, {}, context, runtime, hydrateNode);
+    if (templateAttr !== null || fragmentTemplate) {
+        for (const attribute of arrayFrom(element[ATTRIBUTES])) {
+            const { baseName } = extractModifiers(attribute.name);
+            if (fragmentNames.has(baseName)) continue;
+            if (startsWith(baseName, 'b-') || elementAliases.has(baseName) ||
+                startsWith(baseName, 'bind-') || startsWith(baseName, 'on-'))
+                throw createSyntaxError(`${baseName} needs a concrete element, but ${templateAttr !== null ? 'b-template' : '<template>'} renders its contents in place without one. Put it on an element inside.`);
+        }
+        handleTemplate(element, templateAttr ?? '', {}, context, runtime, hydrateNode);
         for (const attribute of arrayFrom(element[ATTRIBUTES])) {
             const { baseName, modifiers } = extractModifiers(attribute.name);
             if (baseName === B_TELEPORT || baseName === TELEPORT)

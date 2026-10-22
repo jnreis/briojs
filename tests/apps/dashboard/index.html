@@ -227,7 +227,7 @@
             <div class="block tall"></div>
         </div>
 
-        <template b-else b-template>
+        <template b-else>
             <section class="grid kpis" aria-label="Key metrics" data-testid="kpis">
                 <kpi-card b-for="kpi in $data.kpis" b-key="$for.kpi.key"
                           b-attr-data-testid="'kpi-' + $for.kpi.key" b-attr-class="{ rising: $for.kpi.delta > 0, falling: $for.kpi.delta < 0 }"

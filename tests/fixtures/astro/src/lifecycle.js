@@ -12,12 +12,20 @@ export function enhance() {
             broken: lazyApp(() => import('./apps/broken.js')),
             delayed: lazyApp(async () => {
                 window.lazyLifecycle.loads++;
-                await new Promise(resolve => { window.releaseLazy = resolve; });
+                await new Promise(resolve => {
+                    window.releaseLazy = () => {
+                        delete window.releaseLazy;
+                        resolve();
+                        window.dispatchEvent(new Event('brio:diagnostics'));
+                    };
+                    window.dispatchEvent(new Event('brio:diagnostics'));
+                });
                 return import('./apps/delayed.js');
             }),
         },
         onError(error, root) {
             window.lazyLifecycle.errors.push({ message: error.message, name: root.getAttribute('b-app') });
+            window.dispatchEvent(new Event('brio:diagnostics'));
             console.error('Brio Astro enhancement failed', root, error);
         },
     });

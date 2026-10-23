@@ -99,6 +99,7 @@
     "site:build": "npm run build && npm run site:prepare && astro build --root site",
     "site:preview": "astro preview --root site",
     "test:site": "playwright test --config tests/site/playwright.config.js",
+    "test:playground": "playwright test --config tests/playground/playwright.config.js",
     "prepack": "npm run build",
     "size": "node scripts/size.js",
     "test": "npm run build && node --test",

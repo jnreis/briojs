@@ -1,5 +1,43 @@
 import { test, expect } from '@playwright/test';
 
+test('shared theme survives Astro swaps, reloads, and full document navigation', async ({ page }) => {
+    await page.emulateMedia({ colorScheme: 'light' });
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Switch color theme' }).click();
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+    await expect(page.locator('[data-page]')).toHaveCSS('background-color', 'rgb(17, 30, 50)');
+    await page.locator('a[href="/other"]').click();
+    await expect(page).toHaveURL('/other');
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+    await page.getByRole('button', { name: 'Switch color theme' }).click();
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+    await page.reload();
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+    await page.locator('a[href="/away"]').click();
+    await expect(page).toHaveURL('/away');
+    await page.getByRole('button', { name: 'Switch color theme' }).click();
+    await page.goBack({ waitUntil: 'commit' });
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+    await page.setViewportSize({ width: 390, height: 844 });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
+
+test('Astro lab exposes real lifecycle data, lazy release, and a return address', async ({ page }) => {
+    await page.goto('/?lab=http%3A%2F%2F127.0.0.1%3A4335');
+    await expect(page.locator('#lab-return')).toHaveAttribute('href', 'http://127.0.0.1:4335/');
+    await expect.poll(async () => JSON.parse(await page.locator('#lifecycle-readout').innerText()).islands.live).toBe(2);
+    await page.getByRole('button', { name: 'Send window pulse' }).click();
+    await expect.poll(async () => JSON.parse(await page.locator('#lifecycle-readout').innerText()).islands.pulses).toBe(2);
+    await page.locator('a[href="/other"]').click();
+    await expect.poll(async () => JSON.parse(await page.locator('#lifecycle-readout').innerText()).islands.disposed).toBe(1);
+    await expect(page.locator('#lab-return')).toHaveAttribute('href', 'http://127.0.0.1:4335/');
+    await page.locator('a[href="/lazy"]').click();
+    await page.getByRole('button', { name: 'Release pending modules' }).click();
+    await expect(page.locator('#retained b')).toHaveText('7');
+    await expect.poll(async () => JSON.parse(await page.locator('#lifecycle-readout').innerText()).lazy.calls.length).toBe(2);
+    await expect(page.getByRole('button', { name: 'Release pending modules' })).toBeHidden();
+});
+
 test('Astro swaps release local apps, preserve actual islands, and do not accumulate behavior', async ({ page }) => {
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
@@ -73,11 +111,19 @@ test('a real document navigation restores a live island from browser back/forwar
     await player.click();
     await page.evaluate(() => {
         window.savedPlayer = document.querySelector('[data-player]');
-        window.addEventListener('pageshow', event => { window.restoredFromCache = event.persisted; });
+        window.addEventListener('pageshow', event => {
+            window.restoredFromCache = event.persisted;
+            console.debug(`brio:pageshow:${event.persisted}`);
+        });
     });
     await page.locator('a[href="/away"]').click();
     await expect(page).toHaveURL('/away');
+    const restored = page.waitForEvent('console', {
+        predicate: message => message.text() === 'brio:pageshow:true',
+        timeout: 5000,
+    });
     await page.goBack({ waitUntil: 'commit' });
+    await restored;
     await expect(page).toHaveURL('/');
     await expect.poll(() => page.evaluate(() => window.restoredFromCache), { message: JSON.stringify(misses) }).toBe(true);
     expect(await page.evaluate(() => window.savedPlayer === document.querySelector('[data-player]'))).toBe(true);

@@ -1,0 +1,37 @@
+<div id="creature-builder">
+  <div class="creature-stage">
+    <div role="img" b-bind-aria-label="$data.greeting"
+      b-bind-class="['creature', 'is-' + $data.mood, 'wiggle-' + $data.wiggles % 2]"
+      b-bind-style="{ '--body': $data.color, '--size': $data.size / 100 }">
+      <span class="creature-zzz" b-if="$data.mood === 'sleepy'">z z z</span>
+      <span class="creature-horns" b-if="$data.mood === 'mischievous'"></span>
+      <span class="creature-eyes"><i></i><i></i></span>
+      <span class="creature-cheeks" b-if="$data.mood === 'happy'"></span>
+      <span class="creature-mouth"></span>
+    </div>
+    <p class="creature-name" b-text="$data.name.trim() || 'Unnamed creature'"></p>
+    <p class="creature-greeting" aria-live="polite" b-text="$data.greeting"></p>
+  </div>
+
+  <div class="creature-controls">
+    <fieldset>
+      <legend>Mood</legend>
+      <label><input type="radio" name="mood" value="happy" b-model="$data.mood"> 😊 Happy</label>
+      <label><input type="radio" name="mood" value="sleepy" b-model="$data.mood"> 😴 Sleepy</label>
+      <label><input type="radio" name="mood" value="mischievous" b-model="$data.mood"> 😈 Mischievous</label>
+    </fieldset>
+    <fieldset>
+      <legend>Color</legend>
+      <button type="button" class="swatch" b-for="color in $data.colors" b-key="$for.color"
+        b-bind-style="{ '--swatch': $for.color }" b-bind-aria-label="'Color ' + $for.color"
+        b-bind-aria-pressed="$data.color === $for.color" b-on-click="$data.color = $for.color"></button>
+    </fieldset>
+    <label>Size <output b-text="$data.size + '%'"></output>
+      <input type="range" min="70" max="130" b-model.number="$data.size">
+    </label>
+    <label>Name
+      <input maxlength="16" placeholder="Give it a name" b-model="$data.name">
+    </label>
+    <button type="button" class="button primary" b-on-click="$data.surprise()">🎲 Surprise me</button>
+  </div>
+</div>

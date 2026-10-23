@@ -1,22 +1,25 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <script src="/site/public/theme.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Manual Test: Router</title>
     <style>
-        body { font-family: system-ui, -apple-system, sans-serif; margin: 20px; background: #f8fafc; color: #1e293b; }
-        .card { background: white; border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; }
+        body { font-family: system-ui, -apple-system, sans-serif; margin: 20px; background: var(--canvas); color: var(--ink); }
+        .card { background: var(--surface); border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid var(--line); }
         h1 { font-size: 1.5rem; }
-        h3 { margin-top: 0; color: #0f172a; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; }
+        h3 { margin-top: 0; color: var(--ink); border-bottom: 1px solid var(--line); padding-bottom: 8px; }
         nav { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
         button, nav a { background: #3b82f6; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 0.95rem; text-decoration: none; }
         button:hover, nav a:hover { background: #2563eb; }
         code, td { overflow-wrap: anywhere; }
         table { width: 100%; border-collapse: collapse; }
-        th, td { text-align: left; padding: 8px; border-bottom: 1px solid #e2e8f0; }
-        .router-view { min-height: 120px; border: 2px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-top: 16px; background: white; }
+        th, td { text-align: left; padding: 8px; border-bottom: 1px solid var(--line); }
+        .router-view { min-height: 120px; border: 2px solid var(--line); border-radius: 8px; padding: 16px; margin-top: 16px; background: var(--surface); }
     </style>
+    <link rel="stylesheet" href="/tests/shared/showcase.css">
+    <link rel="icon" type="image/svg+xml" href="/site/public/favicon.svg">
 </head>
 <body>
 
@@ -104,7 +107,7 @@
 
         app.component('home-page', {
             template: `
-                <div style="color: #1e293b;">
+                <div style="color: var(--ink);">
                     <h2>Home Dashboard</h2>
                     <p>Use ordinary anchors or app-relative API navigation. Refresh any matched URL to test direct loading.</p>
                 </div>
@@ -113,7 +116,7 @@
 
         app.component('user-page', {
             template: `
-                <div style="color: #0369a1;">
+                <div style="color: var(--blue);">
                     <h2>User Profile</h2>
                     <p>Current Route Path: <strong b-text="$data.currentRoute"></strong></p>
                     <p>Matched Username Parameter: <strong id="username" b-text="$data.username"></strong></p>
@@ -131,7 +134,7 @@
 
         app.component('about-page', {
             template: `
-                <div style="color: #166534;">
+                <div style="color: var(--ok);">
                     <h2>About Brio</h2>
                     <p id="details">Replace navigation keeps the same history length.</p>
                     <p>Brio.js is a petite, HTML-first frontend framework designed for fine-grained reactivity and minimal overhead.</p>
@@ -156,5 +159,6 @@
             app.dispose({ restore: false });
         });
     </script>
+    <nav class="brio-demo-nav" b-ignore aria-label="Brio lab"><a href="/">Lab</a><a href="/tests/index.html">Directory</a><button id="theme-toggle" type="button" aria-label="Switch color theme">&#9680;</button></nav>
 </body>
 </html>

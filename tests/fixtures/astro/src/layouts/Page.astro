@@ -1,27 +1,44 @@
 ---
 import { ClientRouter } from 'astro:transitions';
+import '../../../../shared/showcase.css';
+import themeScript from '../../../../../site/public/theme.js?url';
+import favicon from '../../../../../site/public/favicon.svg?url';
 const { title, player = true, playerCount = 0 } = Astro.props;
 ---
 <!doctype html>
 <html lang="en">
-  <head><meta charset="utf-8" /><title>{title}</title><ClientRouter /></head>
+  <head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><title>{title} · Brio Astro Lab</title><link rel="icon" type="image/svg+xml" href={favicon} /><script is:inline src={themeScript}></script><ClientRouter /></head>
   <body>
-    <nav><a href="/">Home</a> <a href="/other">Other</a> <a href="/plain">Without player</a> <a href="/away" data-astro-reload>Full navigation</a></nav>
+    <header class="playground-header"><span class="wordmark">brio / lab</span><a id="lab-return" href="http://localhost:5173/" data-astro-reload>Workbench &nearr;</a><button id="theme-toggle" type="button" aria-label="Switch color theme">&#9680;</button></header>
+    <p class="overline">Integration bench / Astro page swaps</p>
+    <h1>Same document.<br>Different lifetimes.</h1>
+    <p>Increment both islands, then navigate. The persistent island keeps its actual DOM; the page island is disposed and recreated. Send a pulse to test their live window listeners.</p>
+    <nav class="astro-routes" aria-label="Lifecycle experiments"><a href="/">Home</a> <a href="/other">Other</a> <a href="/plain">Without player</a> <a href="/away" data-astro-reload>Full navigation</a><a href="/lazy">Lazy loading</a><a href="/errors">Error isolation</a></nav>
+    <section class="astro-diagnostics" aria-label="Lifecycle diagnostics" b-ignore>
+      <div class="astro-diagnostics-heading"><h2>Lifecycle readout</h2><button id="send-pulse" type="button">Send window pulse</button></div>
+      <pre id="lifecycle-readout" aria-label="Current lifecycle diagnostics">Waiting for islands...</pre>
+      <p>Real fixture counters, not estimates. A pulse reaches each live island once. Lazy loading requires the explicit release button below.</p>
+      <button id="release-lazy" type="button" hidden>Release pending modules</button>
+    </section>
     {player && <aside transition:persist="player"><section b-app="counter" b-props={`{ count: ${playerCount} }`} data-player>
-      <h2>Persistent counter</h2>
+      <p class="overline">Retained / transition:persist</p><h2>Persistent island</h2>
       <button b-on-click="$data.count++" b-text="$data.count">0</button>
+      <p>Increment, navigate, come back. This node stays alive until a destination leaves it out.</p>
     </section></aside>}
     <main b-app="counter" b-props="{ count: 0 }" data-page>
-      <h1>{title}</h1>
+      <p class="overline">Disposable / page-local</p><h2>{title}</h2>
       <button b-on-click="$data.count++" b-text="$data.count">0</button>
       <p>Pulse count: <span b-text="$data.pulses">0</span></p>
     </main>
     <slot />
+    <footer class="playground-footer">Brio Lab / Astro fixture. This server is independent of the Vite workbench. <a href="https://briojs.com/">Reference</a></footer>
     <script>
       import { enhance } from '../lifecycle.js';
+      import { installDiagnostics } from '../diagnostics.js';
       const integration = enhance();
+      const stopDiagnostics = installDiagnostics();
       if (import.meta.hot) {
-        import.meta.hot.dispose(() => integration.dispose());
+        import.meta.hot.dispose(() => { stopDiagnostics(); integration.dispose(); });
       }
     </script>
   </body>

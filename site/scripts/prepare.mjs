@@ -34,13 +34,13 @@ for (const example of examples) {
         if (!/\.(html|css|js)$/.test(file) || file.endsWith('.test.js')) continue;
         if (file.endsWith('.html')) {
             let content = (await readFile(resolve(source, file), 'utf8'))
-                .replaceAll('../../../dist/', '/dist/');
-            content = content.replace('<head>', '<head><script src="/theme.js"></script>')
-                .replace('</head>', '<link rel="stylesheet" href="/demo-theme.css"></head>')
-                .replace('<body>', `<body data-demo="${example.id}">`);
+                .replaceAll('../../../dist/', '/dist/')
+                .replaceAll('../../../site/public/', '/')
+                .replaceAll('/site/public/', '/')
+                .replace('aria-label="Brio lab"', 'aria-label="Brio website"')
+                .replace('<a href="/">Lab</a><a href="/tests/index.html">Directory</a>', '<a href="/examples/">← Brio examples</a>');
             if (example.id === 'conduit')
                 content = content.replace('<head>', '<head><script>window.conduitMode = "hash";</script>');
-            content = content.replace('</body>', '<nav class="brio-demo-nav" aria-label="Brio website"><a href="/examples/">← Brio examples</a><button id="theme-toggle" type="button" aria-label="Switch color theme">◐</button></nav></body>');
             await write(resolve(output, file), content);
         } else await copyFile(resolve(source, file), resolve(output, file));
     }

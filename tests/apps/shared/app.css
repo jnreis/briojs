@@ -29,7 +29,7 @@ body {
     line-height: 1.5;
 }
 
-.app-shell { width: min(100%, 560px); }
+.app-shell { width: min(100%, 560px); margin-bottom: 48px; }
 
 .app-header { margin-bottom: 20px; }
 .app-header h1 { margin: 0; font-size: 1.6rem; letter-spacing: -0.02em; }

@@ -1,18 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <script src="/site/public/theme.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Manual Test: b-provide and $provided</title>
     <style>
-        body { font-family: system-ui, -apple-system, sans-serif; margin: 20px; background: #f8fafc; color: #1e293b; }
-        .card { background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+        body { font-family: system-ui, -apple-system, sans-serif; margin: 20px; background: var(--canvas); color: var(--ink); }
+        .card { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
         h1 { font-size: 1.5rem; }
         h3 { margin-top: 0; }
         .nested { border-left: 4px solid #3b82f6; padding: 12px; margin-top: 12px; }
         button { background: #3b82f6; color: white; border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer; margin: 4px; }
         output { font-weight: bold; }
     </style>
+    <link rel="stylesheet" href="/tests/shared/showcase.css">
+    <link rel="icon" type="image/svg+xml" href="/site/public/favicon.svg">
 </head>
 <body>
     <h1>b-provide / $provided Manual Tests</h1>
@@ -117,5 +120,6 @@
         app.mount('#provider-app');
         window.addEventListener('pagehide', () => app.dispose(), { once: true });
     </script>
+    <nav class="brio-demo-nav" b-ignore aria-label="Brio lab"><a href="/">Lab</a><a href="/tests/index.html">Directory</a><button id="theme-toggle" type="button" aria-label="Switch color theme">&#9680;</button></nav>
 </body>
 </html>

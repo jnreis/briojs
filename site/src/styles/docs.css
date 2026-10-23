@@ -11,6 +11,9 @@
 }
 html { scroll-behavior: smooth; }
 :focus-visible { outline: 3px solid #438bff; outline-offset: 4px; }
+.sl-markdown-content :is(h1, h2, h3) { letter-spacing: -.025em; }
+.sl-markdown-content :is(.starlight-aside, .expressive-code) { border-radius: 10px; }
+.sl-markdown-content table { font-size: .94em; }
 @media (prefers-reduced-motion: reduce) {
     html { scroll-behavior: auto; }
 }

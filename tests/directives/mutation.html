@@ -1,20 +1,23 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <script src="/site/public/theme.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Manual Test: mutation directive</title>
     <style>
-        body { font-family: system-ui, -apple-system, sans-serif; margin: 20px; background: #f8fafc; color: #1e293b; }
-        .card { background: white; border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; }
+        body { font-family: system-ui, -apple-system, sans-serif; margin: 20px; background: var(--canvas); color: var(--ink); }
+        .card { background: var(--surface); border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid var(--line); }
         h1 { font-size: 1.5rem; }
-        h3 { margin-top: 0; color: #0f172a; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; }
+        h3 { margin-top: 0; color: var(--ink); border-bottom: 1px solid var(--line); padding-bottom: 8px; }
         button { background: #3b82f6; color: white; border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 0.9rem; margin-right: 6px; }
         button:hover { background: #2563eb; }
-        .observed-box { padding: 16px; background: #f1f5f9; border: 2px dashed #94a3b8; border-radius: 6px; margin-top: 10px; }
+        .observed-box { padding: 16px; background: var(--soft); border: 2px dashed #94a3b8; border-radius: 6px; margin-top: 10px; }
         .tag { display: inline-block; padding: 4px 10px; background: #38bdf8; color: #0369a1; border-radius: 4px; margin: 4px; font-weight: bold; }
-        code { background: #e2e8f0; padding: 2px 6px; border-radius: 4px; font-family: monospace; }
+        code { background: var(--soft); padding: 2px 6px; border-radius: 4px; font-family: monospace; }
     </style>
+    <link rel="stylesheet" href="/tests/shared/showcase.css">
+    <link rel="icon" type="image/svg+xml" href="/site/public/favicon.svg">
 </head>
 <body b-data="{
     mutationLogs: [],
@@ -103,5 +106,6 @@
             console.log('mutation.html hydrated successfully');
         });
     </script>
+    <nav class="brio-demo-nav" b-ignore aria-label="Brio lab"><a href="/">Lab</a><a href="/tests/index.html">Directory</a><button id="theme-toggle" type="button" aria-label="Switch color theme">&#9680;</button></nav>
 </body>
 </html>

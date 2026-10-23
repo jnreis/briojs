@@ -3,35 +3,94 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Brio.js playground</title>
-  <style>
-    body { font: 16px/1.5 system-ui, sans-serif; margin: 2rem auto; max-width: 48rem; padding: 0 1rem; }
-    section { border: 1px solid #ddd; border-radius: .75rem; margin: 1rem 0; padding: 1rem; }
-    nav { display: flex; gap: 1rem; }
-  </style>
+  <title>Brio Lab</title>
+  <link rel="icon" type="image/svg+xml" href="/site/public/favicon.svg">
+  <script src="/site/public/theme.js"></script>
+  <link rel="stylesheet" href="/lab/lab.css">
 </head>
-<body>
-  <h1>Brio.js</h1>
-  <p><a href="/tests/index.html">Explore the example apps and directive demos</a></p>
-  <section id="widget">
-    <h2>Embeddable widget</h2>
-    <label>Message <input b-model="$data.message"></label>
-    <p data-testid="message" b-text="$data.message"></p>
-    <button data-testid="increment" b-on-click="$data.count++">Increment</button>
-    <span data-testid="count" b-text="$data.count"></span>
-    <button data-testid="toggle" b-on-click="$data.visible = !$data.visible">Toggle details</button>
-    <p data-testid="details" b-if="$data.visible">Conditional content is mounted and disposed.</p>
-    <ul>
-      <li b-for="item in $data.items" b-key="$for.item.id" b-text="$for.item.label"></li>
-    </ul>
-    <button data-testid="add-item" b-on-click="$data.items.push({ id: $data.items.length + 1, label: 'A new row' })">Add row</button>
-    <click-counter label="Component"></click-counter>
-  </section>
-  <section id="spa">
-    <h2>Optional single-page routing</h2>
-    <nav><a href="/">Home route</a><a href="/about">About route</a></nav>
-    <div b-router-outlet></div>
-  </section>
-  <script type="module" src="/examples/vnext.js"></script>
+<body class="lab">
+  <a class="lab-skip" href="#main">Skip to workbench</a>
+  <header class="playground-header lab-header">
+    <a class="wordmark" href="/" aria-label="Brio Lab home">brio<span class="lab-label">/ lab</span></a>
+    <nav aria-label="Lab navigation">
+      <a href="#experiments">Experiments</a>
+      <a href="/tests/index.html">All examples</a>
+      <a href="#astro-lab">Astro lab</a>
+      <a href="https://briojs.com/reference/html-directives/">Reference</a>
+      <button id="theme-toggle" type="button" aria-label="Switch color theme">&#9680;</button>
+    </nav>
+  </header>
+  <main id="main">
+    <div class="lab-intro">
+      <div><p class="overline">Local development / Brio Lab</p><h1>Pull a thread.<br>Watch the DOM.</h1></div>
+      <p>A bench for small experiments and big apps. Break an assumption, inspect the result, follow the source. This is the back room, not the showroom.</p>
+    </div>
+
+    <section class="bench" aria-labelledby="bench-title">
+      <header class="bench-heading"><div><span class="overline">Specimen 001 / Keyed identity</span><h2 id="bench-title">Change the order. Keep the node.</h2></div><span class="lab-tag">Live instrumentation</span></header>
+      <p class="bench-instructions">Rotate the queue and compare the node IDs. Edit a label in place, then batch-complete the queue. The inspector reads the real DOM; nothing here is an animation pretending to be reactivity.</p>
+      <div class="bench-grid">
+        <div class="bench-live">
+          <div class="pane-label"><span>01 / Specimen</span><code>b-for + b-key + b-model</code></div>
+          <div id="specimen"></div>
+          <noscript><p>Enable JavaScript to run the workbench. <a href="/tests/index.html">Browse the full example directory</a> without it.</p></noscript>
+        </div>
+        <aside class="bench-inspector" aria-label="Live inspector">
+          <div class="pane-label"><span>02 / Under the hood</span><span class="live-dot" aria-hidden="true"></span></div>
+          <h3>Node identity</h3>
+          <p class="inspector-hint">Assigned by a WeakMap to actual <code>&lt;li&gt;</code> elements. A new node gets a new number.</p>
+          <ol id="node-map" aria-label="Live DOM nodes"></ol>
+          <details class="state-disclosure" open><summary>Reactive state</summary><pre id="state-snapshot" aria-label="Current reactive state"></pre></details>
+        </aside>
+      </div>
+      <div class="trace-heading"><h3>DOM trace</h3><span>MutationObserver · latest 12 deliveries</span><button id="clear-trace" type="button">Clear trace</button></div>
+      <ol id="dom-trace" aria-label="DOM mutation trace"><li class="trace-empty">Waiting for your first change.</li></ol>
+      <details class="bench-source"><summary>Open the specimen source <span>Actual HTML + JavaScript used above</span></summary><div class="source-grid"><div><h3>HTML</h3><pre><code id="specimen-html"></code></pre></div><div><h3>JavaScript</h3><pre><code id="specimen-js"></code></pre></div></div></details>
+    </section>
+
+    <section id="experiments" class="lab-catalog" aria-labelledby="catalog-title">
+      <div class="catalog-heading"><div><p class="overline">Choose your next rabbit hole</p><h2 id="catalog-title">The experiment rack.</h2></div><a href="/tests/index.html">Full directory &rarr;</a></div>
+      <div class="catalog-tools">
+        <label class="lab-search"><span>Find an experiment</span><input id="experiment-search" type="search" placeholder="Try: cleanup, keyboard, persistence..." autocomplete="off" aria-keyshortcuts="/"><kbd aria-hidden="true">/</kbd></label>
+        <div class="catalog-filters" role="group" aria-label="Experiment category">
+          <button type="button" data-category="all" aria-pressed="true">All</button><button type="button" data-category="apps" aria-pressed="false">Apps</button><button type="button" data-category="directives" aria-pressed="false">Directives</button><button type="button" data-category="methods" aria-pressed="false">Utilities</button><button type="button" data-category="reactivity" aria-pressed="false">State &amp; tools</button>
+        </div>
+      </div>
+      <p id="catalog-count" role="status"></p>
+      <div id="experiment-grid" class="experiment-grid"></div>
+      <p id="catalog-empty" hidden>No match. Try another term or switch to All.</p>
+      <noscript><p><a href="/tests/index.html">Open the full directory</a> to explore every experiment.</p></noscript>
+    </section>
+
+    <section id="astro-lab" class="astro-launch" aria-labelledby="astro-title">
+      <div><p class="overline">Separate runtime / Same bench</p><h2 id="astro-title">What survives a page swap?</h2><p>The Astro lab makes island lifetimes tangible: local state resets, persistent state stays, and diagnostics reveal what mounted and disposed.</p></div>
+      <div><code>npm run dev:astro</code><a id="astro-launch-link" href="http://localhost:4321/">Open Astro lab &nearr;</a><p>Start its server first. Runs on port 4321, separate from Vite. Theme preferences are saved per origin.</p></div>
+    </section>
+  </main>
+  <footer class="lab-footer"><span>Brio Lab / Local only. Intentionally hands-on.</span><a href="https://briojs.com/">Back to the showroom &nearr;</a></footer>
+
+  <template id="specimen-template">
+    <form class="queue-add" b-on-submit.prevent="$data.add()">
+      <label for="queue-draft">New task</label>
+      <div><input id="queue-draft" b-model="$data.draft" placeholder="Something worth building" maxlength="80" autocomplete="off"><button type="submit" class="primary" b-bind-disabled="!$data.draft.trim()">Add</button></div>
+    </form>
+    <div class="queue-actions">
+      <button type="button" b-on-click="$data.rotate()" b-bind-disabled="$data.tasks.length &lt; 2">Rotate queue</button>
+      <button type="button" b-on-click="$data.complete()" b-bind-disabled="!$data.tasks.some(task =&gt; !task.done)">Batch complete</button>
+      <button type="button" b-on-click="$data.reset()">Reset specimen</button>
+    </div>
+    <div id="queue-preview">
+      <p class="queue-total"><strong b-text="$data.tasks.filter(task =&gt; task.done).length"></strong> complete / <span b-text="$data.tasks.length"></span> tasks</p>
+      <ol class="task-queue" aria-label="Task queue">
+        <li b-for="task in $data.tasks" b-key="$for.task.id" b-bind-data-task-id="$for.task.id" b-bind-class="{ 'task-done': $for.task.done }">
+          <input type="checkbox" b-model="$for.task.done" b-bind-aria-label="`Complete ${$for.task.label}`">
+          <input class="task-label" b-model="$for.task.label" b-bind-aria-label="`Task ${$for.task.id} label`" maxlength="80">
+          <button type="button" b-on-click="$data.remove($for.task.id)" b-bind-aria-label="`Remove task ${$for.task.id}`">&times;</button>
+        </li>
+      </ol>
+      <p b-if="!$data.tasks.length" class="queue-empty">An empty bench. Add something and start again.</p>
+    </div>
+  </template>
+  <script type="module" src="/lab/main.js"></script>
 </body>
 </html>

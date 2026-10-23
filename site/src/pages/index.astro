@@ -3,50 +3,45 @@ import Site from '../layouts/Site.astro';
 import { Code } from '@astrojs/starlight/components';
 import { version } from '../../../package.json';
 import { examples } from '../../data/examples.mjs';
-const featured = ['temperature-converter', 'kanban', 'collab-editor'].map(id => {
+import html from '../demos/creature.html?raw';
+import js from '../demos/creature.js?raw';
+const featured = ['temperature-converter', 'dashboard', 'kanban'].map(id => {
   const example = examples.find(example => example.id === id);
   if (!example) throw new Error(`Missing featured example: ${id}`);
   return example;
 });
-const html = `<div id="counter" b-cloak>
-  <p class="counter-number" b-text="$data.count"
-     aria-live="polite">0</p>
-  <button class="button primary" b-on-click="$data.count++">
-    Increment
-  </button>
-  <button class="reset" b-on-click="$data.count = 0">Reset</button>
-</div>`;
-const js = `import { createApp } from '@jnreis/briojs';
-
-createApp({
-  state: () => ({ count: 0 }),
-}).mount('#counter');`;
+const bootstrap = "\n\ncreateCreature().mount('#creature-builder');";
 ---
 <Site title="Powerfully simple web development">
   <section class="hero wrap">
-    <a class="eyebrow" href="/releases/"><span class="status-dot"></span> Brio {version} · Small by design. Ready to build. <span aria-hidden="true">→</span></a>
-    <h1>Less ceremony.<br /><span class="blue">More possibility.</span></h1>
-    <p class="hero-description">Powerfully simple web development.<br />Add a widget. Enhance a page. Build an app.<br /><strong>Start with HTML. Go wherever you need.</strong></p>
-    <div class="actions"><a class="button primary" href="/start/getting-started/">Get started <span aria-hidden="true">→</span></a><a class="button" href="/examples/">See it in action</a></div>
+    <a class="eyebrow" href="/releases/"><span class="status-dot"></span> Brio {version} · Small by design. Yours to build with. <span aria-hidden="true">→</span></a>
+    <h1>Your HTML.<br /><span class="blue">More interactive.</span></h1>
+    <p class="hero-description">An HTML-first JavaScript framework.<br />Bring a little life to a page—or build a whole app.<br /><strong>Start small. See where it takes you.</strong></p>
+    <div class="actions"><a class="button primary" href="/start/getting-started/">Build your first thing <span aria-hidden="true">→</span></a><a class="button" href="#demo-heading">Play a little ↓</a></div>
     <div class="install"><code>npm install @jnreis/briojs</code><button id="copy-install" type="button" aria-label="Copy npm install command">Copy</button></div>
     <p class="small muted">No virtual DOM. No required compiler. No runtime dependencies.</p>
   </section>
   <section class="wrap demo-section" aria-labelledby="demo-heading">
-    <div class="section-intro"><p class="overline">A little HTML. A little JavaScript.</p><h2 id="demo-heading">That’s the whole widget.</h2><p>State is explicit. The DOM is real. Change a value and Brio takes care of the rest.</p></div>
-    <div class="code-demo">
-      <div class="code-panels"><div class="code-label"><span class="dot"></span> index.html</div><Code code={html} lang="html" /><div class="code-label second">app.js</div><Code code={js} lang="js" /></div>
-      <div class="live-panel">
-        <p class="overline"><span class="status-dot"></span> Live result</p>
+    <div class="section-intro"><p class="overline">Small code. Big personality.</p><h2 id="demo-heading">Make a little creature.</h2><p>Pick a mood. Choose a color. Give it a name.<br />Or hit Surprise me and meet someone new.</p></div>
+    <div class="mixer-workshop">
+      <div class="workshop-bar"><span><span class="status-dot"></span> The try-it corner</span><span>No install. No wrong answers.</span></div>
+      <div class="mixer-stage">
         <div set:html={html}></div>
-        <noscript><p>Enable JavaScript to try the counter. The documentation and code examples work without it.</p></noscript>
-        <p class="small muted">Try it. No build step required.</p>
+        <noscript><p>Enable JavaScript to build a creature. The source below and all documentation work without it.</p></noscript>
       </div>
+      <div class="workshop-notes"><span><code>b-model</code> connects the controls.</span><span><code>b-bind-style</code> paints and sizes it.</span><span><code>b-if</code> swaps the mood extras.</span><span><code>b-on-click</code> rolls the dice.</span></div>
+      <details class="mixer-source"><summary>That’s the whole thing. <span>Peek at the HTML + JavaScript ↗</span></summary>
+        <div class="code-demo">
+          <div class="code-panels"><div class="code-label"><span class="dot"></span> index.html</div><Code code={html} lang="html" /></div>
+          <div class="code-panels"><div class="code-label"><span class="dot"></span> app.js</div><Code code={js + bootstrap} lang="js" /><p class="source-note">The creature is a few spans and ordinary CSS. No canvas, images, or component compiler. <a href="/reference/first-app/">Start with something smaller →</a></p></div>
+        </div>
+      </details>
     </div>
   </section>
   <section class="wrap section" aria-labelledby="real-examples-heading">
-    <p class="overline">Beyond the counter</p>
-    <h2 id="real-examples-heading">Try something real.</h2>
-    <p class="muted">Explore the interaction, then read the HTML and JavaScript behind it.</p>
+    <p class="overline">Start small. Build something real.</p>
+    <h2 id="real-examples-heading">Go on. Pull a thread.</h2>
+    <p class="muted">A useful little tool. A dashboard full of data. A board for the whole project. Try one, then see how it works.</p>
     <div class="cards">
       {featured.map(example => <article class="card">
         <span class="card-number">{example.level}</span>
@@ -58,10 +53,10 @@ createApp({
         </div>
       </article>)}
     </div>
-    <p class="small muted">Kanban and the editor use simulated backends and teammates, not a hosted collaboration service. Some demos save data in your browser. Please don’t enter sensitive information.</p>
+    <p class="small muted">The dashboard and Kanban use simulated backends, data, or teammates, not hosted services. Some demos save data in your browser. Please don’t enter sensitive information.</p>
   </section>
   <section class="wrap section" aria-labelledby="ways-heading">
-    <p class="overline">Meet your app where it is</p><h2 id="ways-heading">One framework. Your level of ambition.</h2>
+    <p class="overline">No grand rewrite required</p><h2 id="ways-heading">Start small. Get carried away.</h2>
     <div class="cards">
       <article class="card"><span class="card-number">01 / WIDGETS</span><h3>A small island of useful.</h3><p>A menu, a form, a calculator. Mount Brio around just the interactive part. Leave your existing app alone.</p><a href="/reference/three-ways-to-use-brio/#a-widget-in-an-existing-app">Add a widget →</a></article>
       <article class="card"><span class="card-number">02 / MULTI-PAGE</span><h3>Keep your server. Add some life.</h3><p>Ordinary links, server-rendered pages, and reactive behavior right where you want it. No takeover required.</p><a href="/reference/three-ways-to-use-brio/#multi-page-site">Enhance a page →</a></article>
@@ -78,13 +73,15 @@ createApp({
     </div>
   </section>
   <section class="wrap closing">
-    <p class="overline">Learn by doing</p><h2>From a counter to concurrent editing.</h2><p>Ten working apps. Real interactions. Source you can read.</p><a class="button primary" href="/examples/">Explore the examples →</a>
+    <p class="overline">Your turn</p><h2>Got a small idea?</h2><p>That’s plenty to start with. Let’s put it on a page.</p><a class="button primary" href="/start/getting-started/">Make your first Brio app →</a>
   </section>
-  <script is:inline src="/dist/brio.min.js"></script>
+  <script>
+    import { createCreature } from '../demos/creature.js';
+    const creature = createCreature();
+    creature.mount('#creature-builder');
+    addEventListener('pagehide', event => { if (!event.persisted) creature.dispose(); });
+  </script>
   <script is:inline>
-    const counterApp = brio.createApp({ state: () => ({ count: 0 }) });
-    counterApp.mount('#counter');
-    addEventListener('pagehide', event => { if (!event.persisted) counterApp.dispose(); });
     document.querySelector('#copy-install').addEventListener('click', async event => {
       const button = event.currentTarget;
       try {

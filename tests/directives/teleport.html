@@ -1,17 +1,20 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <script src="/site/public/theme.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Manual Test: teleport directive</title>
     <style>
-        body { font-family: system-ui, sans-serif; margin: 20px; background: #f8fafc; color: #1e293b; }
-        section { background: white; border: 1px solid #cbd5e1; border-radius: 8px; padding: 16px; margin: 16px 0; }
+        body { font-family: system-ui, sans-serif; margin: 20px; background: var(--canvas); color: var(--ink); }
+        section { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 16px; margin: 16px 0; }
         aside { border: 2px dashed #6366f1; padding: 12px; margin: 8px 0; min-height: 24px; }
         button, select, input { margin: 4px; }
         .output { display: inline-block; background: #e0e7ff; padding: 8px; margin: 4px; }
         .row { display: inline-flex; gap: 4px; align-items: center; }
     </style>
+    <link rel="stylesheet" href="/tests/shared/showcase.css">
+    <link rel="icon" type="image/svg+xml" href="/site/public/favicon.svg">
 </head>
 <body b-data="{
     second: false, placement: 'after', targetVisible: false, visible: true,
@@ -96,5 +99,6 @@
             window.addEventListener('pagehide', () => app.dispose(), { once: true });
         }, { once: true });
     </script>
+    <nav class="brio-demo-nav" b-ignore aria-label="Brio lab"><a href="/">Lab</a><a href="/tests/index.html">Directory</a><button id="theme-toggle" type="button" aria-label="Switch color theme">&#9680;</button></nav>
 </body>
 </html>

@@ -1,16 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <script src="/site/public/theme.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Manual Test: ignore directive</title>
     <style>
-        body { font-family: system-ui, -apple-system, sans-serif; margin: 20px; background: #f8fafc; color: #1e293b; }
-        .card { background: white; border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; }
+        body { font-family: system-ui, -apple-system, sans-serif; margin: 20px; background: var(--canvas); color: var(--ink); }
+        .card { background: var(--surface); border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid var(--line); }
         h1 { font-size: 1.5rem; }
-        h3 { margin-top: 0; color: #0f172a; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; }
-        .box { padding: 12px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 6px; }
+        h3 { margin-top: 0; color: var(--ink); border-bottom: 1px solid var(--line); padding-bottom: 8px; }
+        .box { padding: 12px; background: var(--soft); border: 1px solid var(--line); border-radius: 6px; }
     </style>
+    <link rel="stylesheet" href="/tests/shared/showcase.css">
+    <link rel="icon" type="image/svg+xml" href="/site/public/favicon.svg">
 </head>
 <body b-data="{
     secret: 'SuperSecretValue',
@@ -43,5 +46,6 @@
             console.log('ignore.html hydrated successfully');
         });
     </script>
+    <nav class="brio-demo-nav" b-ignore aria-label="Brio lab"><a href="/">Lab</a><a href="/tests/index.html">Directory</a><button id="theme-toggle" type="button" aria-label="Switch color theme">&#9680;</button></nav>
 </body>
 </html>

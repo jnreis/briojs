@@ -21,6 +21,8 @@ h3 { font-size: 1.35rem; letter-spacing: -.025em; }
 .header nav a:hover { color: var(--blue); }
 .theme-toggle { border: 1px solid var(--line); border-radius: 50%; background: var(--surface); color: var(--ink); width: 36px; height: 36px; padding: 0; }
 .hero { padding-block: 76px 64px; text-align: center; }
+/* "interactive." is one long word; wide fallback fonts (e.g. DejaVu Sans) overflow small phones at the base h1 size. */
+.hero h1 { font-size: min(clamp(3.2rem, 7.5vw, 6.6rem), 12.5vw); overflow-wrap: break-word; }
 .eyebrow { display: inline-flex; align-items: center; flex-wrap: wrap; justify-content: center; gap: 9px; background: var(--soft); border: 1px solid var(--line); padding: 6px 14px; border-radius: 99px; font-size: .8rem; font-weight: 600; text-decoration: none; margin-bottom: 30px; }
 .status-dot { display: inline-block; background: #268b66; width: 7px; height: 7px; border-radius: 50%; }
 .blue { color: var(--blue); }

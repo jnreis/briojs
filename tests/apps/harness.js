@@ -19,6 +19,7 @@ export function openApp(t, name, { before, hash = '' } = {}) {
         url: `https://apps.brio.test/${name}/${hash}`,
     });
     const { window } = dom;
+    window.matchMedia = () => ({ matches: false, addEventListener() {} });
     const { document } = window;
     const errors = [];
     window.addEventListener('error', event => errors.push(event.error ?? event.message));

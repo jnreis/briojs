@@ -10,6 +10,8 @@ class LocalResources extends ResourceLoader {
     fetch(url) {
         const path = new URL(url).pathname;
         if (path === '/tests/source-viewer.js' || path === '/tests/source-viewer.css' ||
+            path === '/site/public/theme.js' || path === '/tests/shared/showcase.css' ||
+            /^\/site\/public\/(?:demo-theme|theme-tokens)\.css$/.test(path) ||
             /^\/dist\/brio(?:\.(?:http|forms|step|money-mask))?\.min\.js$/.test(path))
             return Promise.resolve(readFileSync(new URL(`..${path}`, import.meta.url)));
         throw new Error(`Unexpected source-viewer test resource: ${url}`);
@@ -27,6 +29,9 @@ async function page(t, path) {
         resources: new LocalResources(),
         url: `https://brio.test/tests/${path.replace('./', '')}`,
         virtualConsole: console,
+        beforeParse(window) {
+            window.matchMedia = () => ({ matches: false, addEventListener() {} });
+        },
     });
     t.after(() => {
         dom.window.dispatchEvent(new dom.window.Event('pagehide'));

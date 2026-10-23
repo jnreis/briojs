@@ -20,17 +20,38 @@ The root playground and manual test gallery are development pages. Their
 `/dist/` script URLs require the build output. Example apps with mock backends
 are not production server implementations.
 
+Open `/` for **Brio Lab** (`index.html` + `lab/`): a keyed-list workbench with
+live state, real DOM-node identities, a bounded MutationObserver trace, and a
+searchable experiment rack. The catalog reads the links and descriptions from
+`tests/index.html`, so the full directory remains the source of truth. Specimen
+source is shown directly from its template and JavaScript module.
+
+Use `/tests/index.html` for the complete example directory. The standalone apps,
+manual pages, and Astro fixture share the website palette and a light/dark
+toggle. The preference uses `starlight-theme` in local storage (per origin);
+without a saved preference it follows your operating system. The Astro fixture
+runs separately with `npm run dev:astro`. The lab links to the same hostname on
+port 4321 and passes its origin for the return link; change the URL manually if
+you start Astro on another port. In the Astro lab, compare local and persistent
+islands across page swaps, send a window pulse, and release lazy modules using
+the diagnostic controls. Returning from Astro defaults to Vite's port 5173 when
+no lab origin was supplied.
+
 ## Validation
 
 ```sh
 npm run typecheck
 npm test
 npm run test:astro
+npm run test:playground
 ```
 
 `npm test` builds first and runs the Node test suite, including jsdom user
 flows, directive interactions, and package-content checks. The Astro suite
 builds its fixture and exercises real browser navigation with Playwright.
+The playground suite checks the shared theme on every manual page and app,
+plus keyed identity, workbench state and mutation traces, catalog navigation,
+preference persistence, and mobile layout.
 For a focused check, build once and run `node --test path/to/test.js`.
 
 Keep changes focused, preserve lifecycle cleanup and existing behavior, and
@@ -55,13 +76,22 @@ canonical Markdown or example sources, rerun `pnpm run site:prepare` while the
 dev server is running. Source website pages and styles support Astro hot reload.
 After changing framework source, rebuild it before preparing the site again.
 
-The homepage and gallery are custom Astro pages. Only the homepage's counter
+The homepage and gallery are custom Astro pages. Only the homepage's creature builder
 uses Brio; documentation navigation and search use Starlight. Demos run in
 the same tab with a return link, not embedded frames. Staged demos share the
-website's light/dark preference and include a theme toggle. Website-only
-palette overrides live in `site/public/demo-theme.css`; standalone app sources
-keep their own styling. Mock backends and
+website's light/dark preference and include a theme toggle. Shared demo
+palette overrides live in `site/public/demo-theme.css` and shared color tokens
+in `site/public/theme-tokens.css`. These assets also theme the standalone apps;
+manual pages use `tests/shared/showcase.css`. App-specific layouts remain local
+to each example. Mock backends and
 simulated collaborators remain demonstrations, not deployable services.
+The creature builder's displayed HTML is also its live template, and its
+displayed JavaScript is the module that creates the live app (`site/src/demos/`).
+Mood, color, size, and name drive reactive classes, styles, conditional extras,
+and text. "Surprise me" picks random values and always changes the mood, color,
+and name. Motion is decorative and disabled under `prefers-reduced-motion`.
+The gallery groups the canonical example list into three
+learning paths without hiding any demos.
 Conduit uses hash routing in the staged site so deep routes survive reloads on
 GitHub Pages; the original development app keeps history routing by default.
 

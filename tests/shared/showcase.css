@@ -1,0 +1,87 @@
+@import '../../site/public/demo-theme.css';
+
+html body {
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 48px 24px 100px;
+    font: 16px/1.65 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+*, *::before, *::after { box-sizing: border-box; }
+html h1, html h2, html h3 { line-height: 1.15; letter-spacing: -.035em; }
+html h1 { font-size: clamp(2rem, 5vw, 3.6rem); margin-bottom: 16px; }
+html h2 { font-size: 1.5rem; }
+html h3 { font-size: 1.15rem; border-color: var(--line); }
+html a { color: var(--blue); text-underline-offset: 4px; }
+html :is(.card, .section, .example-source-setup, [data-page], [data-player], .playground-panel) {
+    background: var(--surface);
+    color: var(--ink);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+    padding: 24px;
+    margin-bottom: 20px;
+    min-width: 0;
+}
+html :is(.subtitle, .desc, .expect, .placeholder) { color: var(--muted); }
+html :is(button, .button) {
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    padding: 9px 16px;
+    background: var(--surface);
+    color: var(--ink);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+}
+html .button { display: inline-flex; align-items: center; justify-content: center; text-decoration: none; }
+html button:hover:not(:disabled) { background: var(--soft); color: var(--ink); border-color: var(--blue); }
+html :is(button.primary, .button.primary, .step-pill.active) { background: #245fe2; color: white; border-color: #245fe2; }
+html button:disabled { cursor: not-allowed; opacity: .5; }
+html :is(input:not([type="checkbox"], [type="radio"], [type="range"], [type="color"]), select, textarea) {
+    max-width: 100%;
+    padding: 9px 12px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background-color: var(--surface);
+    color: var(--ink);
+    font: inherit;
+}
+html code { background: var(--soft); color: var(--ink); border-radius: 4px; overflow-wrap: anywhere; }
+html pre { max-width: 100%; overflow: auto; }
+html pre code { background: transparent; color: inherit; }
+html .example-source { border-color: var(--line); }
+html .example-source > pre { border-color: var(--line); background: #101b2f; color: #edf3ff; }
+html .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr)); gap: 14px; }
+html a.test-link {
+    display: block; padding: 18px; border: 1px solid var(--line); border-radius: 10px;
+    background: var(--surface); color: var(--blue); text-decoration: none; font-weight: 650;
+}
+html a.test-link:hover { background: var(--soft); color: var(--blue); border-color: var(--blue); transform: translateY(-1px); }
+html a.test-link:hover .desc { color: var(--muted); }
+.desc { display: block; margin-top: 6px; font-size: .85rem; font-weight: 400; }
+.playground-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; margin-bottom: 48px; }
+.playground-header nav { display: flex; flex-wrap: wrap; gap: 20px; }
+.playground-header a { text-decoration: none; font-size: .9rem; }
+.wordmark { color: var(--ink); font-size: 1.5rem !important; font-weight: 800; letter-spacing: -.05em; }
+.wordmark { display: inline-flex; align-items: center; gap: 9px; }
+.wordmark::before { content: ""; display: inline-block; width: 29px; height: 29px; flex: 0 0 29px; background: url('../../site/public/favicon.svg') center / contain no-repeat; }
+html #theme-toggle { display: inline-grid; place-items: center; width: 36px; height: 36px; padding: 0; border-radius: 50%; font-size: 18px; line-height: 1; flex-shrink: 0; }
+.overline { color: var(--blue); text-transform: uppercase; letter-spacing: .12em; font-size: .75rem; font-weight: 750; }
+.intro { max-width: 700px; margin-bottom: 36px; }
+.intro > p:not(.overline) { color: var(--muted); font-size: 1.1rem; }
+.playground-footer { margin-top: 36px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 24px; }
+.astro-routes { display: flex; flex-wrap: wrap; gap: 8px; margin-block: 24px; }
+.astro-routes a { font: .8rem ui-monospace, monospace; border: 1px solid var(--line); border-radius: 7px; padding: 8px 12px; background: var(--surface); text-decoration: none; }
+.astro-routes a:hover { background: var(--soft); border-color: var(--blue); }
+.astro-diagnostics { border: 1px solid var(--line); background: var(--soft); border-radius: 12px; padding: 24px; margin-block: 24px; }
+.astro-diagnostics-heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+.astro-diagnostics h2 { margin: 0; font-size: 1rem; }
+.astro-diagnostics pre { font: .75rem/1.6 ui-monospace, monospace; white-space: pre-wrap; overflow-wrap: anywhere; }
+.astro-diagnostics p { color: var(--muted); font-size: .8rem; }
+@media (max-width: 700px) {
+    html body { padding: 24px 16px 110px; }
+    html :is(.card, .section, .playground-panel) { padding: 20px; }
+}
+@media (prefers-reduced-motion: reduce) {
+    html *, html *::before, html *::after { scroll-behavior: auto !important; }
+}

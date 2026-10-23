@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <script src="../../../site/public/theme.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>7GUIs · Brio</title>
@@ -64,8 +65,10 @@
         .formula-bar input { flex: 1; min-width: 0; padding: 6px 10px; border: 1px solid #d1d5db; border-radius: 8px; font: 0.9rem ui-monospace, SFMono-Regular, Menlo, monospace; }
         .formula-bar input:focus { outline: 2px solid var(--brand); outline-offset: -1px; }
     </style>
+    <link rel="stylesheet" href="../../../site/public/demo-theme.css">
+    <link rel="icon" type="image/svg+xml" href="../../../site/public/favicon.svg">
 </head>
-<body>
+<body data-demo="7guis">
     <main id="guis-app" class="app-shell wide" b-on-hashchange.window="$data.route(location.hash)">
         <header class="app-header">
             <h1>7GUIs</h1>
@@ -323,5 +326,6 @@
 
     <script src="../../../dist/brio.min.js"></script>
     <script src="./app.js"></script>
+    <nav class="brio-demo-nav" b-ignore aria-label="Brio lab"><a href="/">Lab</a><a href="/tests/index.html">Directory</a><button id="theme-toggle" type="button" aria-label="Switch color theme">&#9680;</button></nav>
 </body>
 </html>

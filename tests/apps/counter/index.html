@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <script src="../../../site/public/theme.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Door Count · Occupancy</title>
@@ -44,8 +45,10 @@
         .panel-header h2 { margin: 0; font-size: 1rem; }
         kbd { border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 6px; padding: 0 6px; font-size: 0.8rem; }
     </style>
+    <link rel="stylesheet" href="../../../site/public/demo-theme.css">
+    <link rel="icon" type="image/svg+xml" href="../../../site/public/favicon.svg">
 </head>
-<body>
+<body data-demo="counter">
     <main id="occupancy-app" class="app-shell"
           b-on-keydown.window="$data.handleShortcut($event)"
           b-effect="document.title = `${$data.count}/${$data.validCapacity || '–'} · Door Count`">
@@ -127,5 +130,6 @@
 
     <script src="../../../dist/brio.min.js"></script>
     <script src="./app.js"></script>
+    <nav class="brio-demo-nav" b-ignore aria-label="Brio lab"><a href="/">Lab</a><a href="/tests/index.html">Directory</a><button id="theme-toggle" type="button" aria-label="Switch color theme">&#9680;</button></nav>
 </body>
 </html>

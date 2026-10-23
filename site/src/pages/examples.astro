@@ -1,20 +1,29 @@
 ---
 import Site from '../layouts/Site.astro';
 import { examples } from '../../data/examples.mjs';
+const paths = [
+  { id: 'small', title: 'A small win', hint: 'Start here. Inputs, events, and that first “oh, nice.”', levels: ['Start small', 'Build confidence'] },
+  { id: 'deeper', title: 'Follow your curiosity', hint: 'More moving parts. The same small ideas doing the work.', levels: ['Go deeper', 'Build an app'] },
+  { id: 'further', title: 'Get a little ambitious', hint: 'Optimistic saves, offline edits, and company in the document.', levels: ['Push further'] },
+];
 ---
 <Site title="Examples" description="Ten working Brio apps, from a small counter to collaborative editing. Explore the interactions and read the source.">
   <section class="wrap section gallery-heading">
-    <p class="overline">The best explanation is a working app</p>
-    <h1>Small beginnings.<br /><span class="blue">Real possibilities.</span></h1>
-    <p class="hero-description">Start simple, then push further. Every example is a working app with source you can explore.</p>
+    <p class="overline">The best explanation? Try it.</p>
+    <h1>Start small.<br /><span class="blue">Build something real.</span></h1>
+    <p class="hero-description">Ten working apps. No slides, no pretend buttons.<br />Pick something that makes you curious. The source is right there.</p>
+    <nav class="example-paths" aria-label="Choose an example path">{paths.map((path, index) => <a href={`#${path.id}`}><span>0{index + 1}</span>{path.title} ↓</a>)}</nav>
     <aside class="notice"><strong>A learning lab, not a hosted service.</strong> These demos run in your browser. Examples marked “Simulated backend” use local mock APIs, authentication, or teammates—not real accounts or a collaboration server. Some demos persist data in your browser. Do not enter sensitive information.</aside>
   </section>
-  <section class="wrap cards gallery" aria-label="Example apps">
-    {examples.map((example, index) => <article class="card">
-      <div class="card-top"><span class="card-number">{String(index + 1).padStart(2, '0')} / {example.level}</span>{example.mock && <span class="badge">Simulated backend</span>}</div>
-      <h2>{example.title}</h2><p>{example.description}</p>
+  <div class="wrap gallery" aria-label="Example apps">
+    {paths.map((path, groupIndex) => <section class="example-group" aria-labelledby={path.id}>
+      <header class="example-group-heading"><span class="group-index">0{groupIndex + 1}</span><div><h2 id={path.id}>{path.title}</h2><p>{path.hint}</p></div></header>
+      <div class="cards">
+    {examples.filter(example => path.levels.includes(example.level)).map(example => <article class="card">
+      <div class="card-top"><span class="card-number">{example.level}</span>{example.mock && <span class="badge">Simulated backend</span>}</div>
+      <h3>{example.title}</h3><p>{example.description}</p>
       <div class="card-links"><a href={`/demos/${example.id}/index.html`}>Try demo →</a><a href={`https://github.com/jnreis/briojs/tree/main/tests/apps/${example.id}`}>Source ↗</a></div>
-    </article>)}
-  </section>
-  <section class="wrap closing"><h2>Ready for your own?</h2><a class="button primary" href="/start/getting-started/">Build your first widget →</a></section>
+    </article>)}</div></section>)}
+  </div>
+  <section class="wrap closing"><p class="overline">Borrow an idea. Make it yours.</p><h2>Your next example isn’t here yet.</h2><p>Let’s change that. Start with a little HTML and see where it goes.</p><a class="button primary" href="/start/getting-started/">Build your first widget →</a></section>
 </Site>

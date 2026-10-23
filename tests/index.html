@@ -1,33 +1,46 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <script src="/site/public/theme.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Brio.js Manual Test Suite Index</title>
+    <title>Experiment directory · Brio Lab</title>
+    <link rel="icon" type="image/svg+xml" href="/site/public/favicon.svg">
     <style>
-        body { font-family: system-ui, -apple-system, sans-serif; margin: 30px; background: #f8fafc; color: #1e293b; max-width: 900px; }
-        h1 { font-size: 2rem; color: #0f172a; margin-bottom: 8px; }
-        p.subtitle { color: #64748b; font-size: 1.1rem; margin-top: 0; margin-bottom: 24px; }
-        .section { background: white; border-radius: 8px; padding: 20px; margin-bottom: 24px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-        h2 { margin-top: 0; font-size: 1.3rem; color: #1e293b; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; }
+        body { font-family: system-ui, -apple-system, sans-serif; margin: 30px; background: var(--canvas); color: var(--ink); max-width: 900px; }
+        h1 { font-size: 2rem; color: var(--ink); margin-bottom: 8px; }
+        p.subtitle { color: var(--muted); font-size: 1.1rem; margin-top: 0; margin-bottom: 24px; }
+        .section { background: var(--surface); border-radius: 8px; padding: 20px; margin-bottom: 24px; border: 1px solid var(--line); box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        h2 { margin-top: 0; font-size: 1.3rem; color: var(--ink); border-bottom: 2px solid var(--line); padding-bottom: 8px; }
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; margin-top: 14px; }
-        a.test-link { display: block; padding: 12px 16px; background: #f1f5f9; border-radius: 6px; text-decoration: none; color: #2563eb; font-weight: 500; transition: all 0.2s; border: 1px solid #cbd5e1; }
+        a.test-link { display: block; padding: 12px 16px; background: var(--soft); border-radius: 6px; text-decoration: none; color: #2563eb; font-weight: 500; transition: all 0.2s; border: 1px solid var(--line); }
         a.test-link:hover { background: #3b82f6; color: white; border-color: #2563eb; transform: translateY(-1px); }
-        .desc { display: block; font-size: 0.8rem; color: #64748b; margin-top: 4px; font-weight: normal; }
+        .desc { display: block; font-size: 0.8rem; color: var(--muted); margin-top: 4px; font-weight: normal; }
         a.test-link:hover .desc { color: #e0f2fe; }
     </style>
+    <link rel="stylesheet" href="/tests/shared/showcase.css">
 </head>
 <body>
 
-    <h1>🧪 Brio.js Manual Test Suite</h1>
-    <p class="subtitle">Interactive, manual verification pages for all directives, utility methods, reactivity features, routing, and devtools.</p>
+    <header class="playground-header">
+        <a class="wordmark" href="/">brio / lab</a>
+        <nav aria-label="Examples navigation"><a href="/">Workbench</a><a href="/#experiments">Search experiments</a><a href="/#astro-lab">Astro lab</a><a href="https://briojs.com/reference/first-app/">Reference</a></nav>
+    </header>
+    <main>
+    <div class="intro">
+    <p class="overline">Brio Lab / Experiment directory</p>
+    <h1>Pick a specimen.</h1>
+    <p class="subtitle">The complete rack: ten apps and focused experiments for directives, state, and tools. No setup hidden behind a screenshot. Open one, change something, inspect the source.</p>
     <p>Each example has a collapsible <strong>Example HTML (before hydration)</strong>
         panel. Shared JavaScript, root context, and CSS are available under
-        <strong>Page setup</strong> at the bottom of each page.</p>
+        <strong>Page setup</strong> at the bottom of directive and feature pages.</p>
+    </div>
 
     <!-- Apps Section -->
     <div class="section">
-        <h2>Real-world apps (tests/apps/)</h2>
+        <p class="overline">01 / Put the pieces together</p>
+        <h2>Complete apps</h2>
+        <p>Mock backends and simulated teammates keep these demos self-contained. Some apps save data in your browser; please do not enter sensitive information.</p>
         <div class="grid">
             <a class="test-link" href="/tests/apps/counter/index.html">
                 counter
@@ -74,7 +87,8 @@
 
     <!-- Directives Section -->
     <div class="section">
-        <h2>Directives (tests/directives/)</h2>
+        <p class="overline">02 / HTML that does more</p>
+        <h2>Directives</h2>
         <div class="grid">
             <a class="test-link" href="/tests/directives/bind.html">
                 bind.html
@@ -169,7 +183,8 @@
 
     <!-- Methods Section -->
     <div class="section">
-        <h2>Methods (tests/methods/)</h2>
+        <p class="overline">03 / Useful building blocks</p>
+        <h2>Methods and utilities</h2>
         <div class="grid">
             <a class="test-link" href="/tests/methods/dom.html">
                 dom.html
@@ -196,7 +211,8 @@
 
     <!-- Reactivity Section -->
     <div class="section">
-        <h2>Reactivity, Persistence & Devtools (tests/reactivity/)</h2>
+        <p class="overline">04 / State and tools</p>
+        <h2>Reactivity, persistence & devtools</h2>
         <div class="grid">
             <a class="test-link" href="/tests/reactivity/reactivity.html">
                 reactivity.html
@@ -217,5 +233,13 @@
         </div>
     </div>
 
+    <section class="section">
+        <p class="overline">05 / Framework integration</p>
+        <h2>Brio with Astro</h2>
+        <p>Explore persistent islands, client navigation, lazy apps, and cleanup in a real Astro fixture.</p>
+        <p>Run <code>npm run dev:astro</code>, then use the <a href="/#astro-lab">Astro lab launcher</a> to open it with a return link to this server.</p>
+    </section>
+    </main>
+    <nav class="brio-demo-nav" b-ignore aria-label="Brio lab"><a href="/">Lab</a><a href="/tests/index.html">Directory</a><button id="theme-toggle" type="button" aria-label="Switch color theme">&#9680;</button></nav>
 </body>
 </html>

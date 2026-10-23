@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <script src="/site/public/theme.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Manual Test: cloak directive</title>
@@ -10,27 +11,29 @@
         /* Optional variant: keep the cloaked element's space to avoid layout shift. */
         .reserve[b-cloak] { display: revert !important; visibility: hidden; }
 
-        body { font-family: system-ui, -apple-system, sans-serif; margin: 20px; background: #f8fafc; color: #1e293b; }
+        body { font-family: system-ui, -apple-system, sans-serif; margin: 20px; background: var(--canvas); color: var(--ink); }
         h1 { font-size: 1.5rem; }
-        h3 { margin-top: 0; color: #0f172a; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; }
-        .card { background: white; border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; }
+        h3 { margin-top: 0; color: var(--ink); border-bottom: 1px solid var(--line); padding-bottom: 8px; }
+        .card { background: var(--surface); border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid var(--line); }
         .status { position: sticky; top: 0; z-index: 1; display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; padding: 10px 14px; margin-bottom: 16px; border-radius: 8px; background: #0f172a; color: white; }
         .status strong { font-variant-numeric: tabular-nums; }
         .status a { color: #93c5fd; }
         .status[data-phase="mounted"] { background: #166534; }
         .split { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
         .stage { min-height: 150px; padding: 12px; border: 1px dashed #94a3b8; border-radius: 6px; }
-        .stage h4 { margin: 0 0 8px; font-size: .8rem; text-transform: uppercase; letter-spacing: .05em; color: #64748b; }
-        .placeholder { display: none; color: #64748b; }
+        .stage h4 { margin: 0 0 8px; font-size: .8rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+        .placeholder { display: none; color: var(--muted); }
         [b-cloak] ~ .placeholder { display: block; }
         .skeleton { height: 12px; margin: 8px 0; border-radius: 4px; background: linear-gradient(90deg, #e2e8f0, #f1f5f9, #e2e8f0); background-size: 200% 100%; animation: shimmer 1.2s infinite linear; }
         @keyframes shimmer { to { background-position: -200% 0; } }
-        .expect { margin: 8px 0 0; font-size: .9rem; color: #475569; }
+        .expect { margin: 8px 0 0; font-size: .9rem; color: var(--muted); }
         .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; background: #dbeafe; color: #1e40af; font-size: .85rem; }
         .controls { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
-        button { padding: 6px 12px; border: 1px solid #cbd5e1; border-radius: 6px; background: white; cursor: pointer; }
+        button { padding: 6px 12px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); cursor: pointer; }
         button:disabled { opacity: .5; cursor: default; }
     </style>
+    <link rel="stylesheet" href="/tests/shared/showcase.css">
+    <link rel="icon" type="image/svg+xml" href="/site/public/favicon.svg">
 </head>
 <body>
 
@@ -176,5 +179,6 @@
             console.log('cloak.html hydrated successfully');
         }, delay);
     </script>
+    <nav class="brio-demo-nav" b-ignore aria-label="Brio lab"><a href="/">Lab</a><a href="/tests/index.html">Directory</a><button id="theme-toggle" type="button" aria-label="Switch color theme">&#9680;</button></nav>
 </body>
 </html>

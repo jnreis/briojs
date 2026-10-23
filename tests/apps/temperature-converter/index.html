@@ -1,14 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <script src="../../../site/public/theme.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Temperature Converter</title>
     <link rel="stylesheet" href="../shared/app.css">
     <style>
-        .converter { display: grid; gap: 4px; }
-        .unit-field { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 0; position: relative; }
-        .unit-field input { border-top-right-radius: 0 !important; border-bottom-right-radius: 0 !important; font-size: 1.25rem; font-variant-numeric: tabular-nums; }
+        .converter { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; }
+        .unit-field { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 0; position: relative; }
+        .unit-field input { min-width: 0; border-top-right-radius: 0 !important; border-bottom-right-radius: 0 !important; font-size: 1.25rem; font-variant-numeric: tabular-nums; }
         .unit { display: grid; place-items: center; min-width: 56px; height: 100%; border: 1px solid #d1d5db; border-left: 0; border-radius: 0 10px 10px 0; background: #f9fafb; color: var(--muted); font-weight: 600; }
         .field.is-source label::after { content: "editing"; margin-left: 8px; font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--brand); }
         .field.is-stale input { color: var(--muted); }
@@ -23,11 +24,13 @@
         .presets { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
         .presets .button { min-height: 34px; padding: 0 12px; font-size: 0.85rem; font-weight: 500; }
         .presets .button[aria-pressed="true"] { border-color: var(--brand); color: var(--brand); background: #eef2ff; }
-        .options { display: flex; justify-content: space-between; align-items: end; gap: 12px; margin-top: 8px; }
+        .options { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: end; gap: 12px; margin-top: 8px; }
         .options .field { margin: 0; width: 180px; }
     </style>
+    <link rel="stylesheet" href="../../../site/public/demo-theme.css">
+    <link rel="icon" type="image/svg+xml" href="../../../site/public/favicon.svg">
 </head>
-<body>
+<body data-demo="temperature-converter">
     <main id="temperature-app" class="app-shell"
           b-effect="$data.persist({ celsius: $data.celsius, precision: $data.precision })">
         <header class="app-header">
@@ -119,5 +122,6 @@
 
     <script src="../../../dist/brio.min.js"></script>
     <script src="./app.js"></script>
+    <nav class="brio-demo-nav" b-ignore aria-label="Brio lab"><a href="/">Lab</a><a href="/tests/index.html">Directory</a><button id="theme-toggle" type="button" aria-label="Switch color theme">&#9680;</button></nav>
 </body>
 </html>

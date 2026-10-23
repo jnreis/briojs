@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <script src="../../../site/public/theme.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Website relaunch · Brio Boards</title>
@@ -176,8 +177,10 @@
         .demo .controls button[aria-pressed="true"] { background: #e9f2ff; border-color: var(--accent); }
         .demo label { display: grid; gap: 4px; }
     </style>
+    <link rel="stylesheet" href="../../../site/public/demo-theme.css">
+    <link rel="icon" type="image/svg+xml" href="../../../site/public/favicon.svg">
 </head>
-<body>
+<body data-demo="kanban">
     <div id="app" b-cloak>
         <header class="topbar">
             <span class="brand">▦ Brio Boards</span>
@@ -422,5 +425,6 @@
     <script src="../../../dist/brio.persistence.min.js"></script>
     <script src="./server.js"></script>
     <script src="./app.js"></script>
+    <nav class="brio-demo-nav" b-ignore aria-label="Brio lab"><a href="/">Lab</a><a href="/tests/index.html">Directory</a><button id="theme-toggle" type="button" aria-label="Switch color theme">&#9680;</button></nav>
 </body>
 </html>

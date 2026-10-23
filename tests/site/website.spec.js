@@ -1,44 +1,106 @@
 import { test, expect } from '@playwright/test';
 import { examples } from '../../site/data/examples.mjs';
+import { readFileSync } from 'node:fs';
 
-test('homepage demo, color theme, and mobile layout work', async ({ page }) => {
+test('homepage creature builder, color theme, and mobile layout work', async ({ page }) => {
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
     await page.goto('/');
-    await expect(page.getByRole('heading', { level: 1 })).toContainText('Less ceremony.');
-    await page.getByRole('button', { name: 'Increment', exact: true }).click();
-    await expect(page.locator('#counter .counter-number')).toHaveText('1');
-    await page.getByRole('button', { name: 'Reset', exact: true }).click();
-    await expect(page.locator('#counter .counter-number')).toHaveText('0');
+    await expect(page.getByRole('heading', { level: 1 })).toContainText('Your HTML.');
+    await expect(page.getByRole('heading', { level: 1 })).toContainText('More interactive.');
+    await expect(page.locator('.hero-description')).toContainText('Start small. See where it takes you.');
+    const creature = page.locator('.creature');
+    await expect(page.locator('.creature-name')).toHaveText('Blip');
+    await expect(page.locator('.creature-greeting')).toHaveText('Blip is having a great day.');
+    await expect(creature).toHaveClass(/is-happy/);
+    await expect(page.locator('.creature-cheeks')).toHaveCount(1);
+    await expect(creature).toHaveAttribute('aria-label', 'Blip is having a great day.');
+    await page.getByLabel('😴 Sleepy').check();
+    await expect(creature).toHaveClass(/is-sleepy/);
+    await expect(page.locator('.creature-zzz')).toBeVisible();
+    await expect(page.locator('.creature-cheeks')).toHaveCount(0);
+    await page.getByLabel('😈 Mischievous').check();
+    await expect(page.locator('.creature-horns')).toHaveCount(1);
+    await expect(page.locator('.creature-zzz')).toHaveCount(0);
+    await expect(page.locator('.creature-greeting')).toHaveText('Blip is up to something.');
     const theme = await page.locator('html').getAttribute('data-theme');
     await page.getByRole('button', { name: 'Switch color theme' }).click();
     expect(await page.locator('html').getAttribute('data-theme')).not.toBe(theme);
     await page.setViewportSize({ width: 375, height: 812 });
     await expect(page.getByRole('link', { name: 'Docs', exact: true })).toBeVisible();
+    await expect(creature).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     expect(errors).toEqual([]);
 });
 
-test('homepage shows the exact counter markup and three curated examples', async ({ page }) => {
+test('homepage reveals its actual creature source and requested featured demos', async ({ page }) => {
     await page.goto('/');
+    await page.locator('.mixer-source > summary').click();
     const snippet = await page.locator('.code-panels pre').first().innerText();
-    const matches = await page.locator('#counter').evaluate((counter, markup) => {
-        const template = document.createElement('template');
-        template.innerHTML = markup;
-        const expected = template.content.firstElementChild;
-        for (const element of [expected, ...expected.querySelectorAll('*')]) {
-            for (const attribute of [...element.attributes]) {
-                if (attribute.name.startsWith('b-')) element.removeAttribute(attribute.name);
-            }
-        }
-        return { expected: expected.outerHTML, actual: counter.outerHTML };
-    }, snippet);
-    expect(matches.actual).toBe(matches.expected);
-    const section = page.getByRole('region', { name: 'Try something real.' });
-    for (const id of ['temperature-converter', 'kanban', 'collab-editor']) {
+    const normalize = source => source.split('\n').map(line => line.trimEnd()).filter(line => line.length).join('\n');
+    expect(normalize(snippet)).toBe(normalize(readFileSync(new URL('../../site/src/demos/creature.html', import.meta.url), 'utf8')));
+    const js = await page.locator('.code-panels pre').nth(1).innerText();
+    expect(normalize(js)).toContain(normalize(readFileSync(new URL('../../site/src/demos/creature.js', import.meta.url), 'utf8')));
+    expect(js).toContain("createCreature().mount('#creature-builder')");
+    const section = page.getByRole('region', { name: 'Go on. Pull a thread.' });
+    for (const id of ['temperature-converter', 'dashboard', 'kanban']) {
         await expect(section.locator(`a[href="/demos/${id}/index.html"]`)).toBeVisible();
         await expect(section.locator(`a[href="https://github.com/jnreis/briojs/tree/main/tests/apps/${id}"]`)).toBeVisible();
     }
+    await expect(section.locator('.card')).toHaveCount(3);
+    await expect(section.locator('a[href="/examples/"]')).toHaveCount(0);
+});
+
+test('creature color, size, name, surprise, keyboard, and reduced motion stay in sync', async ({ page }) => {
+    await page.goto('/');
+    const creature = page.locator('.creature');
+    const swatches = page.locator('.swatch');
+    await expect(swatches).toHaveCount(6);
+    await expect(swatches.first()).toHaveAttribute('aria-pressed', 'true');
+    await swatches.nth(1).focus();
+    await page.keyboard.press('Enter');
+    await expect(swatches.nth(1)).toHaveAttribute('aria-pressed', 'true');
+    await expect(swatches.first()).toHaveAttribute('aria-pressed', 'false');
+    expect(await creature.evaluate(element => element.style.getPropertyValue('--body'))).toBe('#ff7aa8');
+    const size = page.locator('.creature-controls input[type="range"]');
+    await size.fill('130');
+    await expect(page.locator('.creature-controls output')).toHaveText('130%');
+    expect(await creature.evaluate(element => element.style.getPropertyValue('--size'))).toBe('1.3');
+    const name = page.getByLabel('Name');
+    await name.fill('Sir Wobbles');
+    await expect(page.locator('.creature-name')).toHaveText('Sir Wobbles');
+    await expect(page.locator('.creature-greeting')).toHaveText('Sir Wobbles is having a great day.');
+    await name.fill('   ');
+    await expect(page.locator('.creature-name')).toHaveText('Unnamed creature');
+    await expect(page.locator('.creature-greeting')).toHaveText('This creature is having a great day.');
+    await expect(name).toHaveAttribute('maxlength', '16');
+    await name.fill('Blip');
+    const before = await creature.evaluate(element => ({ className: element.className, color: element.style.getPropertyValue('--body') }));
+    await page.getByRole('button', { name: '🎲 Surprise me' }).click();
+    await expect(creature).not.toHaveClass(new RegExp(before.className.match(/is-\w+/)[0]));
+    await expect(creature).toHaveClass(/wiggle-1/);
+    await expect(page.locator('.creature-name')).not.toHaveText('Blip');
+    expect(await creature.evaluate(element => element.style.getPropertyValue('--body'))).not.toBe(before.color);
+    const surprised = Number((await page.locator('.creature-controls output').textContent()).replace('%', ''));
+    expect(surprised).toBeGreaterThanOrEqual(70);
+    expect(surprised).toBeLessThanOrEqual(130);
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    expect(await creature.evaluate(element => getComputedStyle(element).animationName)).toBe('none');
+    await page.setViewportSize({ width: 320, height: 720 });
+    await page.locator('.mixer-source > summary').click();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
+
+test('gallery provides three approachable paths with every demo exactly once', async ({ page }) => {
+    await page.goto('/examples/');
+    await expect(page.locator('.example-group')).toHaveCount(3);
+    await expect(page.locator('.gallery .card')).toHaveCount(examples.length);
+    for (const example of examples)
+        await expect(page.locator(`.gallery a[href="/demos/${example.id}/index.html"]`)).toHaveCount(1);
+    await page.getByRole('link', { name: /Get a little ambitious/ }).click();
+    await expect(page).toHaveURL(/#further$/);
+    await page.setViewportSize({ width: 320, height: 720 });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
 
 test('search, docs code and mobile navigation work in production', async ({ page }) => {
@@ -59,6 +121,8 @@ test('reading works without JavaScript', async ({ browser }) => {
     const page = await context.newPage();
     await page.goto('/');
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+    await page.locator('.mixer-source > summary').click();
+    await expect(page.locator('.code-panels pre').first()).toContainText('b-model');
     await page.goto('/start/getting-started/');
     await expect(page.locator('main')).toContainText('npm install @jnreis/briojs');
     await context.close();

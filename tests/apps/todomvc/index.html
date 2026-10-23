@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <script src="../../../site/public/theme.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Todos · Brio</title>
@@ -44,8 +45,10 @@
         .info p { margin: 2px 0; }
         @media (max-width: 520px) { .footer { grid-template-columns: 1fr; justify-items: center; } .clear-completed { justify-self: center; } }
     </style>
+    <link rel="stylesheet" href="../../../site/public/demo-theme.css">
+    <link rel="icon" type="image/svg+xml" href="../../../site/public/favicon.svg">
 </head>
-<body>
+<body data-demo="todomvc">
     <main id="todo-app" class="app-shell" b-on-hashchange.window="$data.route(location.hash)">
         <header class="app-header">
             <h1>Todos</h1>
@@ -117,5 +120,6 @@
     <script src="../../../dist/brio.min.js"></script>
     <script src="../../../dist/brio.persistence.min.js"></script>
     <script src="./app.js"></script>
+    <nav class="brio-demo-nav" b-ignore aria-label="Brio lab"><a href="/">Lab</a><a href="/tests/index.html">Directory</a><button id="theme-toggle" type="button" aria-label="Switch color theme">&#9680;</button></nav>
 </body>
 </html>

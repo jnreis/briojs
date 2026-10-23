@@ -25,7 +25,7 @@ const canonical = new URL(Astro.url.pathname === '/404/' ? '/404.html' : Astro.u
   <body>
     <a class="skip" href="#main">Skip to content</a>
     <header class="header wrap">
-      <a class="wordmark" href="/" aria-label="Brio.js home"><span class="brand-icon" aria-hidden="true">b</span> Brio<span class="muted">.js</span></a>
+      <a class="wordmark" href="/" aria-label="Brio.js home"><img class="brand-icon" src="/favicon.svg" alt="" width="29" height="29" /> Brio<span class="muted">.js</span></a>
       <nav aria-label="Main navigation">
         <a href="/start/getting-started/">Docs</a>
         <a href="/examples/">Examples</a>
@@ -36,7 +36,7 @@ const canonical = new URL(Astro.url.pathname === '/404/' ? '/404.html' : Astro.u
     </header>
     <main id="main"><slot /></main>
     <footer class="footer wrap">
-      <a class="wordmark" href="/">Brio.js</a>
+      <a class="wordmark" href="/"><img class="brand-icon" src="/favicon.svg" alt="" width="29" height="29" />Brio.js</a>
       <span>HTML first. Your app, your way.</span>
       <div><a href="https://www.npmjs.com/package/@jnreis/briojs">npm</a> · <a href="https://github.com/jnreis/briojs/blob/main/LICENSE">MIT license</a> · <a href="https://github.com/jnreis/briojs">Jonathan Reis</a></div>
     </footer>

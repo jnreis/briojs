@@ -1,15 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <script src="/site/public/theme.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Manual Test: b-ref</title>
     <style>
-        body { font-family: system-ui, sans-serif; margin: 24px; color: #1e293b; }
-        section { border: 1px solid #cbd5e1; padding: 16px; margin-block: 16px; }
+        body { font-family: system-ui, sans-serif; margin: 24px; color: var(--ink); }
+        section { border: 1px solid var(--line); padding: 16px; margin-block: 16px; }
         button, input { margin: 4px; }
         #portal { border: 1px dashed #64748b; padding: 12px; }
     </style>
+    <link rel="stylesheet" href="/tests/shared/showcase.css">
+    <link rel="icon" type="image/svg+xml" href="/site/public/favicon.svg">
 </head>
 <body>
     <h1>Local DOM references</h1>
@@ -93,5 +96,6 @@
             window.addEventListener('pagehide', () => app.dispose(), { once: true });
         }, { once: true });
     </script>
+    <nav class="brio-demo-nav" b-ignore aria-label="Brio lab"><a href="/">Lab</a><a href="/tests/index.html">Directory</a><button id="theme-toggle" type="button" aria-label="Switch color theme">&#9680;</button></nav>
 </body>
 </html>

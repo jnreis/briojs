@@ -1,19 +1,22 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <script src="/site/public/theme.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Manual Test: intersection directive</title>
     <style>
-        body { font-family: system-ui, -apple-system, sans-serif; margin: 20px; background: #f8fafc; color: #1e293b; }
-        .card { background: white; border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; }
+        body { font-family: system-ui, -apple-system, sans-serif; margin: 20px; background: var(--canvas); color: var(--ink); }
+        .card { background: var(--surface); border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid var(--line); }
         h1 { font-size: 1.5rem; }
-        h3 { margin-top: 0; color: #0f172a; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; }
-        .scroll-container { height: 250px; overflow-y: auto; border: 2px solid #cbd5e1; border-radius: 8px; padding: 16px; background: white; position: relative; }
-        .spacer { height: 400px; background: linear-gradient(180deg, #f1f5f9 0%, #cbd5e1 100%); border-radius: 6px; padding: 10px; color: #64748b; text-align: center; }
+        h3 { margin-top: 0; color: var(--ink); border-bottom: 1px solid var(--line); padding-bottom: 8px; }
+        .scroll-container { height: 250px; overflow-y: auto; border: 2px solid var(--line); border-radius: 8px; padding: 16px; background: var(--surface); position: relative; }
+        .spacer { height: 400px; background: linear-gradient(180deg, #f1f5f9 0%, #cbd5e1 100%); border-radius: 6px; padding: 10px; color: var(--muted); text-align: center; }
         .target { padding: 20px; background: #10b981; color: white; border-radius: 6px; font-weight: bold; text-align: center; margin: 20px 0; }
         .status-badge { position: sticky; top: 10px; background: #0f172a; color: #38bdf8; padding: 8px 12px; border-radius: 6px; display: inline-block; font-family: monospace; z-index: 10; }
     </style>
+    <link rel="stylesheet" href="/tests/shared/showcase.css">
+    <link rel="icon" type="image/svg+xml" href="/site/public/favicon.svg">
 </head>
 <body b-data="{
     intersectStatus: 'Not visible in viewport'
@@ -68,5 +71,6 @@
             console.log('intersection.html hydrated successfully');
         });
     </script>
+    <nav class="brio-demo-nav" b-ignore aria-label="Brio lab"><a href="/">Lab</a><a href="/tests/index.html">Directory</a><button id="theme-toggle" type="button" aria-label="Switch color theme">&#9680;</button></nav>
 </body>
 </html>

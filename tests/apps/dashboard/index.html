@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <script src="../../../site/public/theme.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sales analytics · Brio</title>
@@ -159,8 +160,10 @@
         .devtools label { display: inline-flex; align-items: center; gap: 8px; }
         .devtools select { min-height: 32px; border: 1px solid var(--line); border-radius: 8px; font: inherit; }
     </style>
+    <link rel="stylesheet" href="../../../site/public/demo-theme.css">
+    <link rel="icon" type="image/svg+xml" href="../../../site/public/favicon.svg">
 </head>
-<body>
+<body data-demo="dashboard">
     <main id="dashboard" class="app-shell wide" b-cloak b-provide="{ busy: $data.busy }">
         <div class="top">
             <header class="app-header">
@@ -327,5 +330,6 @@
     <script src="./data.js"></script>
     <script src="./components.js"></script>
     <script src="./app.js"></script>
+    <nav class="brio-demo-nav" b-ignore aria-label="Brio lab"><a href="/">Lab</a><a href="/tests/index.html">Directory</a><button id="theme-toggle" type="button" aria-label="Switch color theme">&#9680;</button></nav>
 </body>
 </html>

@@ -6,10 +6,10 @@ test('homepage demo, color theme, and mobile layout work', async ({ page }) => {
     page.on('pageerror', error => errors.push(error.message));
     await page.goto('/');
     await expect(page.getByRole('heading', { level: 1 })).toContainText('Less ceremony.');
-    await page.getByRole('button', { name: 'Count: 0' }).click();
-    await expect(page.getByRole('button', { name: 'Count: 1' })).toBeVisible();
+    await page.getByRole('button', { name: 'Increment', exact: true }).click();
+    await expect(page.locator('#counter .counter-number')).toHaveText('1');
     await page.getByRole('button', { name: 'Reset', exact: true }).click();
-    await expect(page.getByRole('button', { name: 'Count: 0' })).toBeVisible();
+    await expect(page.locator('#counter .counter-number')).toHaveText('0');
     const theme = await page.locator('html').getAttribute('data-theme');
     await page.getByRole('button', { name: 'Switch color theme' }).click();
     expect(await page.locator('html').getAttribute('data-theme')).not.toBe(theme);

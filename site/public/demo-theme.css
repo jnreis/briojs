@@ -31,7 +31,7 @@ html[data-theme="dark"] .badge { background: #28345b; color: var(--brand); }
 html[data-theme="dark"] :is(.ticket.selected, .session:has(input:checked), .presets .button[aria-pressed="true"], .filters a.selected, .timings li:first-child, .context-menu button:hover) { background: #28345b; color: var(--brand); border-color: var(--brand); }
 html[data-theme="dark"] :is(.status, .seats, .notice, .confirmation .check-icon) { background: #163e35; color: var(--ok); }
 html[data-theme="dark"] :is(.status.busy, .seats.low) { background: #45351d; color: var(--warn); }
-html[data-theme="dark"] :is(.status.full, .status.over, .summary, .alert, .notice.error, tbody tr.danger, .todo .destroy:hover, .remove:hover) { background: #482b35; color: var(--danger); }
+html[data-theme="dark"] :is(.status.full, .status.over, .summary[role="alert"], .alert, .notice.error, tbody tr.danger, .todo .destroy:hover, .remove:hover) { background: #482b35; color: var(--danger); }
 html[data-theme="dark"] :is(.session.sold-out, .session.sold-out .seats, .session.sold-out input) { background: var(--soft); color: var(--muted); }
 html[data-theme="dark"] .conditional { border-color: var(--brand); }
 html[data-theme="dark"] tbody td { border-color: var(--line); }

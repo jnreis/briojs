@@ -25,6 +25,10 @@ for (const example of examples) {
             await demo.getByTestId('increment').click();
             await expect(demo.getByTestId('count')).toHaveText('1');
         }
+        if (example.id === 'temperature-converter') {
+            await expect(demo.locator('.summary')).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+            await expect(demo.locator('.summary')).toHaveCSS('color', 'rgb(237, 243, 255)');
+        }
 
         expect(errors).toEqual([]);
         await demo.getByRole('button', { name: 'Switch color theme' }).click();

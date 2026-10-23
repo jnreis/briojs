@@ -2,10 +2,19 @@
 import Site from '../layouts/Site.astro';
 import { Code } from '@astrojs/starlight/components';
 import { version } from '../../../package.json';
-const html = `<div id="counter">
-  <button b-on-click="$data.count++">
-    Count: <span b-text="$data.count"></span>
+import { examples } from '../../data/examples.mjs';
+const featured = ['temperature-converter', 'kanban', 'collab-editor'].map(id => {
+  const example = examples.find(example => example.id === id);
+  if (!example) throw new Error(`Missing featured example: ${id}`);
+  return example;
+});
+const html = `<div id="counter" b-cloak>
+  <p class="counter-number" b-text="$data.count"
+     aria-live="polite">0</p>
+  <button class="button primary" b-on-click="$data.count++">
+    Increment
   </button>
+  <button class="reset" b-on-click="$data.count = 0">Reset</button>
 </div>`;
 const js = `import { createApp } from '@jnreis/briojs';
 
@@ -28,15 +37,28 @@ createApp({
       <div class="code-panels"><div class="code-label"><span class="dot"></span> index.html</div><Code code={html} lang="html" /><div class="code-label second">app.js</div><Code code={js} lang="js" /></div>
       <div class="live-panel">
         <p class="overline"><span class="status-dot"></span> Live result</p>
-        <div id="home-counter" b-cloak>
-          <p class="counter-number" b-text="$data.count" aria-live="polite">0</p>
-          <button class="button primary" b-on-click="$data.count++">Count: <span b-text="$data.count">0</span></button>
-          <button class="reset" b-on-click="$data.count = 0">Reset</button>
-        </div>
+        <div set:html={html}></div>
         <noscript><p>Enable JavaScript to try the counter. The documentation and code examples work without it.</p></noscript>
         <p class="small muted">Try it. No build step required.</p>
       </div>
     </div>
+  </section>
+  <section class="wrap section" aria-labelledby="real-examples-heading">
+    <p class="overline">Beyond the counter</p>
+    <h2 id="real-examples-heading">Try something real.</h2>
+    <p class="muted">Explore the interaction, then read the HTML and JavaScript behind it.</p>
+    <div class="cards">
+      {featured.map(example => <article class="card">
+        <span class="card-number">{example.level}</span>
+        <h3>{example.title}</h3>
+        <p>{example.description}</p>
+        <div class="card-links">
+          <a href={`/demos/${example.id}/index.html`}>Try demo →</a>
+          <a href={`https://github.com/jnreis/briojs/tree/main/tests/apps/${example.id}`}>Source ↗</a>
+        </div>
+      </article>)}
+    </div>
+    <p class="small muted">Kanban and the editor use simulated backends and teammates, not a hosted collaboration service. Some demos save data in your browser. Please don’t enter sensitive information.</p>
   </section>
   <section class="wrap section" aria-labelledby="ways-heading">
     <p class="overline">Meet your app where it is</p><h2 id="ways-heading">One framework. Your level of ambition.</h2>
@@ -61,13 +83,14 @@ createApp({
   <script is:inline src="/dist/brio.min.js"></script>
   <script is:inline>
     const counterApp = brio.createApp({ state: () => ({ count: 0 }) });
-    counterApp.mount('#home-counter');
+    counterApp.mount('#counter');
     addEventListener('pagehide', event => { if (!event.persisted) counterApp.dispose(); });
     document.querySelector('#copy-install').addEventListener('click', async event => {
       const button = event.currentTarget;
       try {
         await navigator.clipboard.writeText('npm install @jnreis/briojs');
         button.textContent = 'Copied!';
+        setTimeout(() => { button.textContent = 'Copy'; }, 2000);
       } catch (error) {
         button.textContent = 'Select command to copy';
         console.error('Unable to copy installation command.', error);

@@ -16,6 +16,20 @@ standalone browser API remains `brio`.
 [API reference](https://briojs.com/reference/install/) ·
 [Live examples](https://briojs.com/examples/)
 
+## When Brio fits
+
+Brio is a good fit when:
+
+- You already render HTML on the server and want to add interactive regions.
+- You need a widget inside a larger app without taking over the whole page.
+- You prefer authored HTML and explicit JavaScript over a required template compiler.
+- You want room to add components, shared state, and routing as your app grows.
+
+Brio enhances the client-side DOM; it is not a server renderer or an application
+backend. Runtime expressions require a CSP that permits `unsafe-eval`. See
+[browser and security considerations](#browser-and-security-considerations)
+before choosing it for your project.
+
 ## Quick start
 
 ### With npm
@@ -125,6 +139,20 @@ engine rather than embedding another runtime.
 
 ## Learn and explore
 
+### Try something real
+
+| Example | What it demonstrates | Links |
+| --- | --- | --- |
+| Temperature Converter | Two-way inputs and derived values that stay in sync. | [Try demo](https://briojs.com/demos/temperature-converter/index.html) · [Source](https://github.com/jnreis/briojs/tree/main/tests/apps/temperature-converter) |
+| Kanban board | Drag and drop, nested state, and optimistic updates. | [Try demo](https://briojs.com/demos/kanban/index.html) · [Source](https://github.com/jnreis/briojs/tree/main/tests/apps/kanban) |
+| Collaborative Editor | Concurrent edits, offline merging, and lifecycle cleanup. | [Try demo](https://briojs.com/demos/collab-editor/index.html) · [Source](https://github.com/jnreis/briojs/tree/main/tests/apps/collab-editor) |
+
+Kanban and the editor use simulated backends and teammates, not a hosted
+collaboration service. Some demos save data in your browser; don't enter
+sensitive information.
+
+### Guides and development
+
 - [Documentation](./DOCUMENTATION.md): directives, components, reactivity,
   routing, lifecycle, and every optional tool.
 - [Changelog](./CHANGELOG.md): the consolidated 4.0 release and private history.
@@ -158,6 +186,21 @@ not a sandbox. A CSP that forbids `unsafe-eval` is incompatible with runtime
 expressions. Use `b-text` for user content. `b-html` is not a sanitizer, and
 `trustedHTML()` is a trust assertion, not sanitization. See
 [HTML and expression security](./DOCUMENTATION.md#trusted-html-and-expression-security).
+
+## Questions and bugs
+
+Have a question, found a bug, or want to suggest an improvement?
+[Open a GitHub issue](https://github.com/jnreis/briojs/issues).
+For bugs, include:
+
+- The Brio version, browser/version, and operating system.
+- A minimal reproduction or runnable example, with no credentials or private data.
+- Steps to reproduce, what you expected, and what actually happened.
+- Relevant console errors and whether you're using npm imports or browser scripts.
+
+Brio is independently maintained. Clear, small reproductions make it easier
+to investigate; response times are not guaranteed. For development setup and
+validation, see the [contribution guide](https://github.com/jnreis/briojs/blob/main/CONTRIBUTING.md).
 
 ## License
 

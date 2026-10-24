@@ -1,6 +1,6 @@
 export const examples = [
-    { id: 'counter', title: 'A little counter', level: 'Start small', description: 'State, events, keyboard shortcuts, and reactive output. A whole widget in a handful of ideas.' },
-    { id: 'temperature-converter', title: 'Temperature converter', level: 'Start small', description: 'Two-way inputs, derived values, and constraints that stay in sync.' },
+    { id: 'counter', title: 'A little counter', level: 'First steps', description: 'State, events, keyboard shortcuts, and reactive output. A whole widget in a handful of ideas.' },
+    { id: 'temperature-converter', title: 'Temperature converter', level: 'First steps', description: 'Two-way inputs, derived values, and constraints that stay in sync.' },
     { id: 'conditional-form', title: 'A thoughtful form', level: 'Build confidence', description: 'Conditional fields, validation, async submission, and accessible feedback.', mock: true },
     { id: 'todomvc', title: 'TodoMVC', level: 'Build confidence', description: 'CRUD, filtering, computed counts, and keyed lists in a familiar little app.' },
     { id: '7guis', title: '7GUIs', level: 'Go deeper', description: 'Seven interaction challenges: timers, constraints, undo/redo, and dependent state.' },

@@ -13,6 +13,9 @@ export function referencePages(markdown) {
     const sections = [];
     let section;
     for (const node of tree.children) {
+        if (node.type === 'paragraph' && section && !section.summary)
+            section.summary = markdown.slice(node.position.start.offset, node.position.end.offset)
+                .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1').replace(/\s+/g, ' ').trim();
         if (node.type !== 'heading') continue;
         const title = plain(node);
         const slug = slugger.slug(title);
@@ -55,6 +58,8 @@ export function referencePages(markdown) {
             body = body.slice(0, edit.start - section.start) + edit.url + body.slice(edit.end - section.start);
         return {
             slug: section.slug,
+            title: section.title,
+            summary: section.summary ?? '',
             content: `---\ntitle: ${JSON.stringify(section.title)}\ndescription: ${JSON.stringify(`${section.title}: API contracts, usage examples, and guidance for Brio.js.`)}\nsidebar:\n  order: ${index + 1}\neditUrl: ${repo}DOCUMENTATION.md\n---\n\n<!-- Generated from DOCUMENTATION.md. Do not edit this copy. -->\n${body.trim()}\n`,
         };
     });
@@ -63,3 +68,87 @@ export function referencePages(markdown) {
 export function releasePage(markdown) {
     return `---\ntitle: Release notes\ndescription: Brio.js release history, features, and development milestones.\neditUrl: ${repo}CHANGELOG.md\n---\n\n${markdown.replace(/^# Changelog\s*/, '').replaceAll('](./ai/', `](${repo}ai/`)}`;
 }
+
+const site = 'https://briojs.com';
+const absolute = markdown => markdown
+    .replace(/\]\(\/(?!\/)/g, `](${site}/`)
+    .replace(/\]\(\.\/(?!DOCUMENTATION\.md)/g, `](${repo}`)
+    .replace(/\]\(\.\/DOCUMENTATION\.md#/g, '](#');
+const stripFrontmatter = markdown => markdown.replace(/^---\n[\s\S]*?\n---\n/, '').trim();
+const frontmatter = (markdown, key) => {
+    const value = markdown.match(new RegExp(`^${key}: (.+)$`, 'm'))?.[1] ?? '';
+    return value.startsWith('"') ? JSON.parse(value) : value;
+};
+
+const intro = `> Brio.js (npm: \`@jnreis/briojs\`) is an HTML-first JavaScript framework. It enhances the real DOM in place: add a reactive widget to an existing app, enhance a server-rendered multi-page site, or build a single-page app. No virtual DOM, JSX, required compiler, or runtime dependencies.
+
+Key facts for writing Brio code:
+
+- Directives are \`b-\` attributes: \`b-text\`, \`b-bind-*\`, \`b-on-*\`, \`b-model\`, \`b-if\`/\`b-else-if\`/\`b-else\`, \`b-for\` with \`b-key\`, and more.
+- State is explicit in expressions: \`$data.count\`, \`$props.label\`, \`$for.item\`, \`$ref.input\`. Brio never guesses which scope a bare name belongs to.
+- Mount with \`createApp({ state: () => ({ … }) }).mount('#root')\`; Brio owns only the DOM you mount. Unmount before a host removes it.
+- Browser bundle: \`<script src="https://cdn.jsdelivr.net/npm/@jnreis/briojs@4.1.0/dist/brio.min.js">\` exposes \`window.brio\`. ESM: \`import { createApp } from '@jnreis/briojs'\`.
+- Expressions are trusted JavaScript (CSP needs \`unsafe-eval\`). Use \`b-text\` for user content; \`b-html\` does not sanitize.`;
+
+/** The llms.txt index: https://llmstxt.org */
+export function llmsTxt({ guides, pages, examples }) {
+    const link = (title, url, description) => `- [${title}](${url})${description ? `: ${description}` : ''}`;
+    return [
+        '# Brio.js',
+        '',
+        intro,
+        '',
+        '## Start here',
+        '',
+        ...guides.map(guide => link(guide.title, `${site}/start/${guide.slug}/`, guide.description)),
+        link('Full documentation as one file', `${site}/llms-full.txt`, 'every guide and reference page in a single Markdown file.'),
+        '',
+        '## Reference',
+        '',
+        ...pages.map(page => link(page.title, `${site}/reference/${page.slug}/`, page.summary)),
+        '',
+        '## AI developer kit',
+        '',
+        link('Kit overview and installation', `${repo}ai/README.md`, 'a portable, tool-neutral kit for building Brio apps with an assistant.'),
+        link('Brio v4 application guide', `${repo}ai/brio-apps/references/guide.md`, 'the rules and patterns an assistant should follow.'),
+        link('Application recipes', `${repo}ai/brio-apps/references/recipes.md`, 'tested widget, multi-page, and SPA recipes.'),
+        link('Brio apps skill', `${repo}ai/brio-apps/SKILL.md`, 'an on-demand skill for assistants that support skills.'),
+        link('Directive manifest', `${site}/dist/directives.json`, 'every directive, its value, modifiers, example, and docs link as JSON.'),
+        '',
+        '## Examples',
+        '',
+        ...examples.map(example => link(example.title, `${site}/demos/${example.id}/index.html`,
+            `${example.description} Source: ${repo.replace('/blob/', '/tree/')}tests/apps/${example.id}`)),
+        '',
+        '## Optional',
+        '',
+        link('Migrating from Brio 1.1.5', `${repo}ai/brio-migrate-1-1-5/SKILL.md`, 'a migration skill and guide for older apps.'),
+        link('Release notes', `${site}/releases/`),
+        link('Source code', 'https://github.com/jnreis/briojs'),
+        '',
+    ].join('\n');
+}
+
+/** Every guide and the full reference in one Markdown file, with links made absolute. */
+export function llmsFullTxt({ guides, documentation }) {
+    return [
+        '# Brio.js documentation',
+        '',
+        intro,
+        '',
+        ...guides.flatMap(guide => [`# ${guide.title}`, '', `Source: ${site}/start/${guide.slug}/`, '', absolute(stripFrontmatter(guide.markdown)), '']),
+        `# Reference`,
+        '',
+        `Source: ${site}/reference/install/`,
+        '',
+        absolute(documentation.replace(/^# .+\n/, '')).trim(),
+        '',
+    ].join('\n');
+}
+
+export const guideInfo = (slug, markdown) => ({
+    slug,
+    title: frontmatter(markdown, 'title'),
+    description: frontmatter(markdown, 'description'),
+    markdown,
+});

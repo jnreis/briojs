@@ -20,6 +20,8 @@ site/src/content/docs/reference/
 site/src/content/docs/releases.md
 site/public/demos/
 site/public/dist/
+site/public/llms.txt
+site/public/llms-full.txt
 
 # Editor directories and files
 !.vscode/extensions.json

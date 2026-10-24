@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Brio widget starter</title>
+  <link rel="stylesheet" href="/src/style.css">
+</head>
+<body>
+  <!-- Everything outside #packing-list stands in for the page you already have. -->
+  <header class="host-header">
+    <strong>Weekend Trip</strong>
+    <nav><a href="#">Itinerary</a> <a href="#">Bookings</a> <a href="#">Notes</a></nav>
+  </header>
+
+  <main class="host-page">
+    <article>
+      <h1>Two days in the mountains</h1>
+      <p>This page is ordinary HTML. Brio only owns the packing list on the side,
+        so the rest of the page stays exactly as it is.</p>
+      <p>Open <code>src/main.js</code> and <code>index.html</code> to change the widget.</p>
+    </article>
+
+    <aside id="packing-list" class="widget" b-cloak>
+      <h2>Packing list <span class="count" b-text="`${$data.packed}/${$data.items.length}`"></span></h2>
+
+      <form b-on-submit.prevent="$data.add()">
+        <label for="new-item" class="visually-hidden">Add an item</label>
+        <input id="new-item" b-model.trim="$data.draft" placeholder="Add an item…" autocomplete="off">
+        <button b-bind-disabled="!$data.draft">Add</button>
+      </form>
+
+      <ul b-if="$data.items.length">
+        <li b-for="item in $data.items" b-key="$for.item.id" b-bind-class="{ packed: $for.item.packed }">
+          <label><input type="checkbox" b-model="$for.item.packed"> <span b-text="$for.item.name"></span></label>
+          <button type="button" class="remove" b-bind-aria-label="`Remove ${$for.item.name}`"
+                  b-on-click="$data.remove($for.item)">×</button>
+        </li>
+      </ul>
+      <p b-else class="empty">Nothing to pack yet.</p>
+
+      <p class="done" b-if="$data.items.length && $data.packed === $data.items.length">All packed. Have fun! 🎒</p>
+    </aside>
+  </main>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

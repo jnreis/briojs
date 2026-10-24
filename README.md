@@ -6,7 +6,7 @@ Brio enhances the real DOM in place. Add a reactive widget to an existing app,
 enhance a server-rendered multi-page site, or build a single-page application.
 No virtual DOM, JSX, required compiler, or runtime dependencies.
 
-Version **4.0.0** is Brio's first npm release.
+Version **4.1.0** adds editor autocomplete, starter templates, and `llms.txt`. See the [changelog](./CHANGELOG.md).
 
 The npm package is **`@jnreis/briojs`**; the framework is Brio.js and the
 standalone browser API remains `brio`.
@@ -75,7 +75,7 @@ Save this as an HTML file and serve it from any static server:
       Count: <span b-text="$data.count"></span>
     </button>
   </div>
-  <script src="https://cdn.jsdelivr.net/npm/@jnreis/briojs@4.0.0/dist/brio.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@jnreis/briojs@4.1.0/dist/brio.min.js"></script>
   <script>
     const app = brio.createApp({ state: () => ({ count: 0 }) });
     app.mount('#counter');
@@ -129,8 +129,8 @@ For standalone browser apps, load the matching optional scripts **after** core
 and **before** your bootstrap:
 
 ```html
-<script src="https://cdn.jsdelivr.net/npm/@jnreis/briojs@4.0.0/dist/brio.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@jnreis/briojs@4.0.0/dist/brio.router.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@jnreis/briojs@4.1.0/dist/brio.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@jnreis/briojs@4.1.0/dist/brio.router.min.js"></script>
 <script src="/app.js"></script>
 ```
 
@@ -151,11 +151,24 @@ Kanban and the editor use simulated backends and teammates, not a hosted
 collaboration service. Some demos save data in your browser; don't enter
 sensitive information.
 
+### Start faster
+
+- [Starter templates](./templates/): a widget, multi-page site, SPA, and Astro
+  islands project. Open any of them in StackBlitz, or copy one with
+  `npx degit jnreis/briojs/templates/widget my-app`.
+- **Editor autocomplete:** point VS Code's `html.customData` setting at
+  `./node_modules/@jnreis/briojs/dist/html-custom-data.json` for `b-`
+  directive completions and hover docs.
+  [Setup](https://briojs.com/reference/install/#editor-autocomplete).
+- **AI assistants:** [llms.txt](https://briojs.com/llms.txt) and
+  [llms-full.txt](https://briojs.com/llms-full.txt) give agents the whole
+  documentation; the [AI developer kit](./ai/README.md) adds a guide and skill.
+
 ### Guides and development
 
 - [Documentation](./DOCUMENTATION.md): directives, components, reactivity,
   routing, lifecycle, and every optional tool.
-- [Changelog](./CHANGELOG.md): the consolidated 4.0 release and private history.
+- [Changelog](./CHANGELOG.md): release notes, starting with the consolidated 4.0 release.
 - [AI developer kit](./ai/README.md): a portable application guide, optional
   assistant skills, and tested widget, multi-page, and SPA recipes.
 - [Contributing and release guide](https://github.com/jnreis/briojs/blob/main/CONTRIBUTING.md):

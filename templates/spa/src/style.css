@@ -1,0 +1,24 @@
+[b-cloak] { display: none; }
+
+:root {
+  color-scheme: light dark;
+  --accent: #16a34a;
+  --line: color-mix(in srgb, currentColor 15%, transparent);
+  font-family: system-ui, sans-serif;
+  line-height: 1.5;
+}
+
+body { margin: 0; }
+main { max-width: 52rem; margin: 2rem auto; padding: 0 1.5rem; }
+.site-header { display: flex; justify-content: space-between; padding: 1rem 1.5rem; border-bottom: 1px solid var(--line); }
+.site-header a { color: inherit; margin-left: 1rem; text-decoration: none; }
+.site-header .brand { margin: 0; font-weight: 700; }
+[aria-current="page"] { color: var(--accent) !important; text-decoration: underline !important; }
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr)); gap: 1rem; padding: 0; list-style: none; }
+.card { display: grid; gap: 0.25rem; padding: 1.25rem; border: 1px solid var(--line); border-radius: 1rem; color: inherit; text-decoration: none; }
+.card:hover { border-color: var(--accent); }
+.emoji { font-size: 2rem; }
+.emoji.big { font-size: 4rem; }
+.detail { text-align: center; }
+button { padding: 0.6rem 1rem; border: 0; border-radius: 0.5rem; background: var(--accent); color: white; font: inherit; cursor: pointer; }
+a { color: var(--accent); }

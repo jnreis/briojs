@@ -25,7 +25,7 @@ Save this as `index.html`, then serve it with a local static server:
     <label>Your name <input b-model="$data.name"></label>
     <p>Hello, <span b-text="$data.name || 'friend'"></span>!</p>
   </main>
-  <script src="https://cdn.jsdelivr.net/npm/@jnreis/briojs@4.0.0/dist/brio.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@jnreis/briojs@4.1.0/dist/brio.min.js"></script>
   <script>
     const app = brio.createApp({ state: () => ({ name: '' }) });
     app.mount('#hello');
@@ -57,6 +57,23 @@ app.mount('#hello');
 
 Use the same HTML, without the CDN and inline bootstrap scripts. Your bundler
 handles the ESM import; Brio does not require a template compiler.
+
+## Or start from a template
+
+Each starter is a complete project. Open one in your browser with StackBlitz,
+or copy it locally with `npx degit jnreis/briojs/templates/<name> my-app`.
+
+- [Widget](https://stackblitz.com/github/jnreis/briojs/tree/main/templates/widget?file=index.html):
+  a Brio widget inside a page you already have.
+- [Multi-page site](https://stackblitz.com/github/jnreis/briojs/tree/main/templates/multi-page?file=index.html):
+  real pages and links, with Brio enhancing only the interactive parts.
+- [Single-page app](https://stackblitz.com/github/jnreis/briojs/tree/main/templates/spa?file=src%2Fmain.js):
+  components, the router, route parameters, and shared state.
+- [Astro islands](https://stackblitz.com/github/jnreis/briojs/tree/main/templates/astro?file=src%2Fpages%2Findex.astro):
+  Astro renders the pages; Brio brings the islands to life.
+
+Every template turns on [editor autocomplete](/reference/install/#editor-autocomplete)
+for `b-` directives.
 
 ## The few ideas to learn first
 

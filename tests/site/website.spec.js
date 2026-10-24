@@ -196,3 +196,46 @@ for (const [app, route] of [['kanban', 'card'], ['collab-editor', 'd']]) {
         expect(errors).toEqual([]);
     });
 }
+
+test('llms.txt and editor custom data are published for tools and assistants', async ({ request }) => {
+    const index = await request.get('/llms.txt');
+    expect(index.ok()).toBe(true);
+    const text = await index.text();
+    expect(text.startsWith('# Brio.js\n\n> ')).toBe(true);
+    for (const heading of ['## Start here', '## Reference', '## AI developer kit', '## Examples'])
+        expect(text).toContain(heading);
+    const urls = [...text.matchAll(/\]\((https:\/\/briojs\.com\/[^)]+)\)/g)].map(match => new URL(match[1]).pathname);
+    expect(urls.length).toBeGreaterThan(30);
+    for (const path of urls) expect((await request.get(path)).ok(), path).toBe(true);
+
+    const full = await (await request.get('/llms-full.txt')).text();
+    expect(full).toContain('# Your first Brio widget');
+    expect(full).toContain('## HTML directives');
+    expect(full).not.toMatch(/\]\(\.\//);
+
+    const data = await (await request.get('/dist/html-custom-data.json')).json();
+    expect(data.globalAttributes.map(attribute => attribute.name)).toContain('b-model');
+    const manifest = await (await request.get('/dist/directives.json')).json();
+    expect(manifest.directives.length).toBeGreaterThan(25);
+});
+
+test('starter templates open in StackBlitz from the homepage, examples, and guide', async ({ page }) => {
+    const { templates } = await import('../../site/data/templates.mjs');
+    await page.goto('/examples/');
+    const starters = page.locator('.starter-cards .card');
+    await expect(starters).toHaveCount(templates.length);
+    for (const [index, template] of templates.entries()) {
+        await expect(starters.nth(index).getByRole('link', { name: 'Open in StackBlitz ↗' })).toHaveAttribute('href', template.stackblitz);
+        await expect(starters.nth(index).getByRole('link', { name: 'Source ↗' })).toHaveAttribute('href', template.source);
+    }
+    await page.goto('/');
+    await page.locator('.mixer-source > summary').click();
+    await expect(page.getByRole('link', { name: 'Start your own widget in StackBlitz ↗' }))
+        .toHaveAttribute('href', templates.find(template => template.id === 'widget').stackblitz);
+    await expect(page.locator('.closing-extras a[href="/llms.txt"]')).toBeVisible();
+    await page.locator('.closing-extras a[href="/examples/#starters"]').click();
+    await expect(page.locator('#starters')).toBeInViewport();
+    await page.goto('/start/getting-started/');
+    for (const template of templates)
+        await expect(page.locator(`a[href="${template.stackblitz}"]`)).toHaveCount(1);
+});

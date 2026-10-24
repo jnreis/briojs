@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Questions and ideas
+    url: https://github.com/jnreis/briojs/discussions
+    about: Ask how to do something, share what you built, or float an idea.
+  - name: Documentation
+    url: https://briojs.com/start/getting-started/
+    about: Guides, the full reference, and runnable examples.

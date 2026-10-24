@@ -1,6 +1,7 @@
 ---
 import Site from '../layouts/Site.astro';
 import { examples } from '../../data/examples.mjs';
+import { templates } from '../../data/templates.mjs';
 const paths = [
   { id: 'small', title: 'A quick win', hint: 'Start here. Inputs, events, and that first “oh, nice.”', levels: ['First steps', 'Build confidence'] },
   { id: 'deeper', title: 'Follow your curiosity', hint: 'More moving parts. The same few ideas doing the work.', levels: ['Go deeper', 'Build an app'] },
@@ -25,5 +26,17 @@ const paths = [
       <div class="card-links"><a href={`/demos/${example.id}/index.html`}>Try demo →</a><a href={`https://github.com/jnreis/briojs/tree/main/tests/apps/${example.id}`}>Source ↗</a></div>
     </article>)}</div></section>)}
   </div>
+  <section class="wrap section starters" aria-labelledby="starters">
+    <p class="overline">Skip the setup</p>
+    <h2 id="starters">Start from a template.</h2>
+    <p class="muted">Four runnable projects, one for each way to use Brio. Open one in your browser with StackBlitz. Nothing to install.</p>
+    <div class="cards starter-cards">
+      {templates.map(template => <article class="card">
+        <span class="card-number">templates/{template.id}</span>
+        <h3>{template.title}</h3><p>{template.description}</p>
+        <div class="card-links"><a class="stackblitz-link" href={template.stackblitz}>Open in StackBlitz ↗</a><a href={template.source}>Source ↗</a></div>
+      </article>)}
+    </div>
+  </section>
   <section class="wrap closing"><p class="overline">Borrow an idea. Make it yours.</p><h2>Your next example isn’t here yet.</h2><p>Let’s change that. Start with a little HTML and see where it goes.</p><a class="button primary" href="/start/getting-started/">Build your first widget →</a></section>
 </Site>

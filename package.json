@@ -1,6 +1,6 @@
 {
   "name": "@jnreis/briojs",
-  "version": "4.0.0",
+  "version": "4.1.0",
   "description": "A petite, HTML-first framework for reactive widgets and web apps.",
   "author": {
     "name": "Jonathan Reis",

@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Home · Brio multi-page starter</title>
+  <link rel="stylesheet" href="/src/style.css">
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="/">Lantern</a>
+    <nav><a href="/" aria-current="page">Home</a> <a href="/pricing.html">Pricing</a></nav>
+  </header>
+
+  <main>
+    <h1>Pages stay pages.</h1>
+    <p class="lead">Each page is ordinary HTML with real links. Brio enhances only the
+      parts marked with <code>data-widget</code>, on whichever page they appear.</p>
+
+    <section class="panel" data-widget="newsletter" b-cloak>
+      <h2>Get the monthly note</h2>
+      <form b-if="!$data.sent" b-on-submit.prevent="$data.submit()">
+        <label for="email">Email</label>
+        <input id="email" type="email" required b-model.trim="$data.email" placeholder="you@example.com">
+        <button b-bind-disabled="!$data.valid">Subscribe</button>
+      </form>
+      <p b-else role="status">Thanks! We'll write to <strong b-text="$data.email"></strong>.</p>
+    </section>
+  </main>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

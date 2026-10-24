@@ -1,0 +1,28 @@
+[b-cloak] { display: none; }
+
+:root {
+  color-scheme: light dark;
+  --accent: #2563eb;
+  --line: color-mix(in srgb, currentColor 15%, transparent);
+  font-family: system-ui, sans-serif;
+  line-height: 1.5;
+}
+
+body { margin: 0; }
+main { max-width: 56rem; margin: 2rem auto; padding: 0 1.5rem; }
+.site-header { display: flex; justify-content: space-between; padding: 1rem 1.5rem; border-bottom: 1px solid var(--line); }
+.site-header a { color: inherit; margin-left: 1rem; }
+.site-header .brand { margin: 0; font-weight: 700; text-decoration: none; }
+[aria-current="page"] { color: var(--accent) !important; }
+.lead { font-size: 1.15rem; opacity: 0.8; }
+.panel { padding: 1.25rem; border: 1px solid var(--line); border-radius: 1rem; }
+form { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
+input { flex: 1; min-width: 12rem; padding: 0.5rem 0.75rem; border: 1px solid var(--line); border-radius: 0.5rem; font: inherit; }
+button { padding: 0.5rem 0.9rem; border: 1px solid var(--accent); border-radius: 0.5rem; background: var(--accent); color: white; font: inherit; cursor: pointer; }
+button:disabled { opacity: 0.5; cursor: default; }
+.toggle { display: inline-flex; gap: 0.25rem; margin-bottom: 1rem; }
+.toggle button { background: none; color: inherit; }
+.toggle button[aria-pressed="true"] { background: var(--accent); color: white; }
+.plans { display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: 1rem; }
+.plans h2 { margin: 0; font-size: 1.1rem; }
+.price strong { font-size: 1.75rem; }

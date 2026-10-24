@@ -1,0 +1,63 @@
+name: Bug report
+description: Something in Brio doesn't work the way the docs say it should.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time! A small, runnable reproduction is the fastest way to a fix.
+        Please don't include credentials or private data.
+  - type: input
+    id: version
+    attributes:
+      label: Brio version
+      placeholder: "4.1.0"
+    validations:
+      required: true
+  - type: dropdown
+    id: setup
+    attributes:
+      label: How do you load Brio?
+      options:
+        - npm / ESM import
+        - Browser script (brio.min.js)
+        - Browser script (brio.dev.min.js)
+        - Astro adapter
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Browser and operating system
+      placeholder: Chrome 140 on macOS 15
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal reproduction
+      description: |
+        A link (StackBlitz, CodePen, a repository) or the smallest HTML + JS that shows the problem.
+        Starting from a template helps: https://github.com/jnreis/briojs/tree/main/templates
+      render: html
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps, expected, and actual behavior
+      value: |
+        1.
+        2.
+
+        **Expected:**
+
+        **Actual:**
+    validations:
+      required: true
+  - type: textarea
+    id: errors
+    attributes:
+      label: Console errors
+      description: Paste any errors from the browser console. Brio errors name the directive and element.
+      render: text

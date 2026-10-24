@@ -3,6 +3,7 @@ import Site from '../layouts/Site.astro';
 import { Code } from '@astrojs/starlight/components';
 import { version } from '../../../package.json';
 import { examples } from '../../data/examples.mjs';
+import { templates } from '../../data/templates.mjs';
 import html from '../demos/creature.html?raw';
 import js from '../demos/creature.js?raw';
 const featured = ['temperature-converter', 'dashboard', 'kanban'].map(id => {
@@ -10,6 +11,7 @@ const featured = ['temperature-converter', 'dashboard', 'kanban'].map(id => {
   if (!example) throw new Error(`Missing featured example: ${id}`);
   return example;
 });
+const widgetTemplate = templates.find(template => template.id === 'widget');
 const bootstrap = "\n\ncreateCreature().mount('#creature-builder');";
 ---
 <Site title="Powerfully simple web development">
@@ -33,7 +35,7 @@ const bootstrap = "\n\ncreateCreature().mount('#creature-builder');";
       <details class="mixer-source"><summary>See how it works. <span>Peek at the HTML + JavaScript behind the creature</span></summary>
         <div class="code-demo">
           <div class="code-panels"><div class="code-label"><span class="dot"></span> index.html</div><Code code={html} lang="html" /></div>
-          <div class="code-panels"><div class="code-label"><span class="dot"></span> app.js</div><Code code={js + bootstrap} lang="js" /><p class="source-note">The creature is a few spans and ordinary CSS. No canvas, images, or component compiler. <a href="/reference/first-app/">Build your first app, step by step →</a></p></div>
+          <div class="code-panels"><div class="code-label"><span class="dot"></span> app.js</div><Code code={js + bootstrap} lang="js" /><p class="source-note">The creature is a few spans and ordinary CSS. No canvas, images, or component compiler. <a href="/reference/first-app/">Build your first app, step by step →</a><a class="stackblitz-link" href={widgetTemplate.stackblitz}>Start your own widget in StackBlitz ↗</a></p></div>
         </div>
       </details>
     </div>
@@ -74,6 +76,7 @@ const bootstrap = "\n\ncreateCreature().mount('#creature-builder');";
   </section>
   <section class="wrap closing">
     <p class="overline">Your turn</p><h2>Got a small idea?</h2><p>That’s plenty to start with. Let’s put it on a page.</p><a class="button primary" href="/start/getting-started/">Make your first Brio app →</a>
+    <p class="closing-extras small">Want a head start? <a href="/examples/#starters">Open a starter template</a>. Building with an AI assistant? Hand it <a href="/llms.txt">llms.txt</a> and the <a href="/reference/ai-assisted-application-development/">AI developer kit</a>.</p>
   </section>
   <script>
     import { createCreature } from '../demos/creature.js';

@@ -2,7 +2,7 @@ import { readFile, writeFile, mkdir, readdir, copyFile, rm } from 'node:fs/promi
 import { fileURLToPath } from 'node:url';
 import { resolve, dirname } from 'node:path';
 import { examples } from '../data/examples.mjs';
-import { referencePages, releasePage } from './content.mjs';
+import { referencePages, releasePage, llmsTxt, llmsFullTxt, guideInfo } from './content.mjs';
 
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const site = resolve(root, 'site');
@@ -14,6 +14,11 @@ const reference = resolve(site, 'src/content/docs/reference');
 await rm(reference, { recursive: true, force: true });
 const pages = referencePages(await readFile(resolve(root, 'DOCUMENTATION.md'), 'utf8'));
 for (const page of pages) await write(resolve(reference, `${page.slug}.md`), page.content);
+const guides = await Promise.all(['getting-started', 'how-brio-fits'].map(async slug =>
+    guideInfo(slug, await readFile(resolve(site, `src/content/docs/start/${slug}.md`), 'utf8'))));
+const documentation = await readFile(resolve(root, 'DOCUMENTATION.md'), 'utf8');
+await write(resolve(site, 'public/llms.txt'), llmsTxt({ guides, pages, examples }));
+await write(resolve(site, 'public/llms-full.txt'), llmsFullTxt({ guides, documentation }));
 await write(resolve(site, 'src/content/docs/releases.md'), releasePage(await readFile(resolve(root, 'CHANGELOG.md'), 'utf8')));
 
 const bundles = ['', '.router', '.http', '.persistence', '.forms', '.step', '.money-mask'];
@@ -22,6 +27,8 @@ for (const suffix of bundles) {
     const content = (await readFile(resolve(root, 'dist', file), 'utf8')).replace(/\/\/# sourceMappingURL=.*$/gm, '');
     await write(resolve(site, 'public/dist', file), content);
 }
+for (const file of ['directives.json', 'html-custom-data.json'])
+    await copyFile(resolve(root, 'dist', file), resolve(site, 'public/dist', file));
 const demoRoot = resolve(site, 'public/demos');
 await rm(demoRoot, { recursive: true, force: true });
 for (const example of examples) {
@@ -47,4 +54,4 @@ for (const example of examples) {
 }
 await mkdir(resolve(demoRoot, 'shared'), { recursive: true });
 await copyFile(resolve(root, 'tests/apps/shared/app.css'), resolve(demoRoot, 'shared/app.css'));
-console.log(`Prepared ${pages.length} reference pages, release notes and ${examples.length} demos.`);
+console.log(`Prepared ${pages.length} reference pages, release notes, llms.txt and ${examples.length} demos.`);

@@ -2,6 +2,8 @@ import { build } from 'vite';
 import dts from 'vite-plugin-dts';
 import { resolve, dirname, extname } from 'node:path';
 import ts from 'typescript';
+import { writeFile } from 'node:fs/promises';
+import { directives, customData, docsUrl } from './directives.mjs';
 
 // 1. Build ES modules for npm distribution with TypeScript declarations
 await build({
@@ -111,3 +113,12 @@ for (const plugin of ['router', 'persistence', 'http', 'forms', 'step', 'money-m
         },
     });
 }
+
+// 3. Editor tooling: the directive manifest and VS Code HTML custom data.
+const manifest = directives.map(({ docs: _docs, suggestions, ...directive }) => ({
+    ...directive,
+    ...(suggestions ? { suggestions } : {}),
+    docs: docsUrl(directive),
+}));
+await writeFile('dist/directives.json', JSON.stringify({ version: 1, directives: manifest }, null, 2) + '\n');
+await writeFile('dist/html-custom-data.json', JSON.stringify(customData(), null, 2) + '\n');

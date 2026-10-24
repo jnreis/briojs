@@ -1,0 +1,632 @@
+{
+  "version": 1,
+  "directives": [
+    {
+      "name": "b-data",
+      "description": "Create a nested state scope from an object expression. Read it as `$data`.",
+      "value": "expression",
+      "example": "<section b-data=\"{ open: false }\">…</section>",
+      "docs": "https://briojs.com/reference/undefined"
+    },
+    {
+      "name": "b-provide",
+      "description": "Provide live named values to this element and its subtree through `$provided`.",
+      "value": "expression",
+      "example": "<section b-provide=\"{ theme: $data.theme }\">…</section>",
+      "docs": "https://briojs.com/reference/undefined"
+    },
+    {
+      "name": "b-id",
+      "description": "Generate named unique values in `$id`; bind them to `id`, `for`, or ARIA attributes explicitly.",
+      "value": "expression",
+      "example": "<div b-id=\"['email']\"><label b-bind-for=\"$id.email\">Email</label><input b-bind-id=\"$id.email\"></div>",
+      "docs": "https://briojs.com/reference/undefined"
+    },
+    {
+      "name": "b-ref",
+      "description": "Register this element under a literal name in the local, read-only `$ref` registry.",
+      "value": "name",
+      "example": "<input b-ref=\"search\"> <button b-on-click=\"$ref.search.focus()\">Search</button>",
+      "docs": "https://briojs.com/reference/undefined"
+    },
+    {
+      "name": "b-text",
+      "description": "Reactively set the element's text content. Safe for user-provided text.",
+      "value": "expression",
+      "example": "<span b-text=\"$data.name\"></span>",
+      "docs": "https://briojs.com/reference/undefined"
+    },
+    {
+      "name": "b-html",
+      "description": "Insert markup without activating Brio. Does not sanitize: never pass untrusted HTML.",
+      "value": "expression",
+      "example": "<div b-html=\"$data.trustedMarkup\"></div>",
+      "modifiers": [
+        {
+          "name": "hydrate",
+          "description": "Activate Brio directives in templates marked with `trustedHTML()`."
+        }
+      ],
+      "docs": "https://briojs.com/reference/undefined"
+    },
+    {
+      "name": "b-bind-*",
+      "description": "Reactively bind an attribute or DOM property, e.g. `b-bind-href=\"$data.url\"`. `class` and `style` accept strings, arrays, or objects.",
+      "value": "expression",
+      "example": "<a b-bind-href=\"$data.url\" b-bind-class=\"{ active: $data.current }\">Link</a>",
+      "modifiers": [
+        {
+          "name": "prop",
+          "description": "Set the DOM property instead of the attribute."
+        }
+      ],
+      "suggestions": [
+        {
+          "name": "class",
+          "description": "Classes from a string, array, or `{ name: condition }` object."
+        },
+        {
+          "name": "style",
+          "description": "Styles from a string or `{ property: value }` object."
+        },
+        {
+          "name": "href",
+          "description": "Link target."
+        },
+        {
+          "name": "src",
+          "description": "Image or media source."
+        },
+        {
+          "name": "alt",
+          "description": "Alternative text."
+        },
+        {
+          "name": "title",
+          "description": "Advisory title."
+        },
+        {
+          "name": "id",
+          "description": "Element id (pair with `$id` for unique ids)."
+        },
+        {
+          "name": "for",
+          "description": "Associated control id (pair with `$id`)."
+        },
+        {
+          "name": "value",
+          "description": "Control value."
+        },
+        {
+          "name": "checked",
+          "description": "Checked state."
+        },
+        {
+          "name": "disabled",
+          "description": "Disabled state; `false`, `null`, and `undefined` remove it."
+        },
+        {
+          "name": "hidden",
+          "description": "Hide while truthy."
+        },
+        {
+          "name": "placeholder",
+          "description": "Input placeholder."
+        },
+        {
+          "name": "aria-expanded",
+          "description": "Expanded state for assistive technology."
+        },
+        {
+          "name": "aria-pressed",
+          "description": "Pressed state for toggle buttons."
+        },
+        {
+          "name": "aria-label",
+          "description": "Accessible name."
+        },
+        {
+          "name": "aria-describedby",
+          "description": "Ids of describing elements."
+        },
+        {
+          "name": "aria-invalid",
+          "description": "Validation state for assistive technology."
+        }
+      ],
+      "docs": "https://briojs.com/reference/undefined"
+    },
+    {
+      "name": "b-on-*",
+      "description": "Listen for a DOM event and run a statement. `$event` is the event, e.g. `b-on-submit.prevent=\"$data.save($event)\"`.",
+      "value": "statement",
+      "example": "<button b-on-click=\"$data.count++\">Add</button>",
+      "modifiers": [
+        {
+          "name": "prevent",
+          "description": "Call `event.preventDefault()`."
+        },
+        {
+          "name": "stop",
+          "description": "Call `event.stopPropagation()`."
+        },
+        {
+          "name": "self",
+          "description": "Run only when the event targets this element itself."
+        },
+        {
+          "name": "outside",
+          "description": "Run only for events outside this element (ignores the event that created it)."
+        },
+        {
+          "name": "window",
+          "description": "Listen on `window`."
+        },
+        {
+          "name": "document",
+          "description": "Listen on `document`."
+        },
+        {
+          "name": "debounce",
+          "description": "Wait until events pause for 150ms, then run once."
+        },
+        {
+          "name": "throttle",
+          "description": "Run at most once every 150ms."
+        },
+        {
+          "name": "capture",
+          "description": "Use a capturing listener."
+        },
+        {
+          "name": "passive",
+          "description": "Use a passive listener (cannot call `preventDefault()`)."
+        },
+        {
+          "name": "once",
+          "description": "Remove the listener after the first event that passes the other filters."
+        },
+        {
+          "name": "ctrl",
+          "description": "Run only while Ctrl is held."
+        },
+        {
+          "name": "alt",
+          "description": "Run only while Alt is held."
+        },
+        {
+          "name": "shift",
+          "description": "Run only while Shift is held."
+        },
+        {
+          "name": "meta",
+          "description": "Run only while Meta is held."
+        },
+        {
+          "name": "enter",
+          "description": "Run only when Enter is pressed."
+        },
+        {
+          "name": "esc",
+          "description": "Run only when Escape is pressed."
+        },
+        {
+          "name": "space",
+          "description": "Run only when Space is pressed."
+        },
+        {
+          "name": "tab",
+          "description": "Run only when Tab is pressed."
+        },
+        {
+          "name": "up",
+          "description": "Run only when ArrowUp is pressed."
+        },
+        {
+          "name": "down",
+          "description": "Run only when ArrowDown is pressed."
+        },
+        {
+          "name": "left",
+          "description": "Run only when ArrowLeft is pressed."
+        },
+        {
+          "name": "right",
+          "description": "Run only when ArrowRight is pressed."
+        },
+        {
+          "name": "delete",
+          "description": "Run only when Delete or Backspace is pressed."
+        }
+      ],
+      "suggestions": [
+        {
+          "name": "click",
+          "description": "A pointer click or keyboard activation."
+        },
+        {
+          "name": "input",
+          "description": "A control's value changed while typing."
+        },
+        {
+          "name": "change",
+          "description": "A control's value was committed."
+        },
+        {
+          "name": "submit",
+          "description": "A form was submitted; usually paired with `.prevent`."
+        },
+        {
+          "name": "keydown",
+          "description": "A key was pressed; combine with key modifiers like `.enter`."
+        },
+        {
+          "name": "keyup",
+          "description": "A key was released."
+        },
+        {
+          "name": "focus",
+          "description": "The element received focus."
+        },
+        {
+          "name": "blur",
+          "description": "The element lost focus."
+        },
+        {
+          "name": "focusin",
+          "description": "Focus moved into the element or a descendant."
+        },
+        {
+          "name": "focusout",
+          "description": "Focus moved out of the element or a descendant."
+        },
+        {
+          "name": "pointerdown",
+          "description": "A pointer was pressed."
+        },
+        {
+          "name": "pointerup",
+          "description": "A pointer was released."
+        },
+        {
+          "name": "pointermove",
+          "description": "A pointer moved; consider `.throttle`."
+        },
+        {
+          "name": "mouseenter",
+          "description": "The mouse entered the element."
+        },
+        {
+          "name": "mouseleave",
+          "description": "The mouse left the element."
+        },
+        {
+          "name": "scroll",
+          "description": "The element or window scrolled; consider `.throttle` or `.passive`."
+        },
+        {
+          "name": "toggle",
+          "description": "A `<details>` or popover opened or closed."
+        }
+      ],
+      "docs": "https://briojs.com/reference/undefined"
+    },
+    {
+      "name": "b-model",
+      "description": "Two-way bind a text-like input, textarea, checkbox, radio, or select to state.",
+      "value": "expression",
+      "example": "<input b-model=\"$data.name\">",
+      "modifiers": [
+        {
+          "name": "lazy",
+          "description": "Update on `change` instead of every `input`."
+        },
+        {
+          "name": "trim",
+          "description": "Trim whitespace from the written value."
+        },
+        {
+          "name": "number",
+          "description": "Write `parseFloat(value)`, keeping nonnumeric text unchanged."
+        }
+      ],
+      "docs": "https://briojs.com/reference/undefined"
+    },
+    {
+      "name": "b-if",
+      "description": "Render this branch while the expression is truthy. Inactive branches are removed by default.",
+      "value": "expression",
+      "example": "<p b-if=\"$data.items.length === 0\">Nothing yet.</p>",
+      "modifiers": [
+        {
+          "name": "hide",
+          "description": "Keep inactive branches in the DOM, hidden, preserving local state."
+        },
+        {
+          "name": "detach",
+          "description": "Keep inactive branches alive outside the DOM, preserving local state."
+        }
+      ],
+      "docs": "https://briojs.com/reference/undefined"
+    },
+    {
+      "name": "b-else-if",
+      "description": "Render when every previous sibling branch is false and this expression is truthy.",
+      "value": "expression",
+      "example": "<p b-else-if=\"$data.loading\">Loading…</p>",
+      "docs": "https://briojs.com/reference/undefined"
+    },
+    {
+      "name": "b-else",
+      "description": "Render when every previous sibling branch is false.",
+      "value": "none",
+      "example": "<p b-else>Done.</p>",
+      "docs": "https://briojs.com/reference/undefined"
+    },
+    {
+      "name": "b-for",
+      "description": "Repeat the element for an array, iterable, object, or integer. Read the item as `$for.<name>`.",
+      "value": "loop",
+      "example": "<li b-for=\"todo in $data.todos\" b-key=\"$for.todo.id\" b-text=\"$for.todo.title\"></li>",
+      "docs": "https://briojs.com/reference/undefined"
+    },
+    {
+      "name": "b-key",
+      "description": "Give a repeated item a stable string or number identity. Used with `b-for`.",
+      "value": "expression",
+      "example": "<li b-for=\"todo in $data.todos\" b-key=\"$for.todo.id\"></li>",
+      "docs": "https://briojs.com/reference/undefined"
+    },
+    {
+      "name": "b-template",
+      "description": "Render this element's contents in place without a wrapper. Implied on a `<template>` that carries any `b-` directive.",
+      "value": "none",
+      "example": "<template b-if=\"$data.ready\"><h2>Ready</h2><p>Go.</p></template>",
+      "docs": "https://briojs.com/reference/undefined"
+    },
+    {
+      "name": "b-teleport",
+      "description": "Move this element or template range next to an Element, ref, or selector. Default placement: `after`.",
+      "value": "expression",
+      "example": "<div b-teleport=\"['#modal-root', 'append']\">Modal content</div>",
+      "docs": "https://briojs.com/reference/undefined"
+    },
+    {
+      "name": "b-transition",
+      "description": "Animate enter and leave with named CSS transition classes.",
+      "value": "expression",
+      "example": "<div b-if=\"$data.open\" b-transition=\"'fade'\">…</div>",
+      "docs": "https://briojs.com/reference/undefined"
+    },
+    {
+      "name": "b-effect",
+      "description": "Run a reactive expression for side effects; it reruns when what it reads changes.",
+      "value": "statement",
+      "example": "<div b-effect=\"document.title = $data.title\"></div>",
+      "docs": "https://briojs.com/reference/undefined"
+    },
+    {
+      "name": "b-script",
+      "description": "Mark a `<script>` whose body is an unassigned arrow function. Brio calls it with `$context`; cleanup belongs to that piece of HTML.",
+      "value": "none",
+      "example": "<script b-script>\n  ($context) => { $context.$data.ready = true; }\n</script>",
+      "docs": "https://briojs.com/reference/undefined"
+    },
+    {
+      "name": "b-mask",
+      "description": "Format an input with a pattern string or a synchronous formatter function.",
+      "value": "pattern",
+      "example": "<input b-model=\"$data.phone\" b-mask=\"'(###) ###-####'\">",
+      "docs": "https://briojs.com/reference/undefined"
+    },
+    {
+      "name": "b-ignore",
+      "description": "Skip hydration for this element and its descendants.",
+      "value": "none",
+      "example": "<div b-ignore><!-- managed by a third-party widget --></div>",
+      "docs": "https://briojs.com/reference/undefined"
+    },
+    {
+      "name": "b-cloak",
+      "description": "Removed when Brio hydrates the element. Pair with `[b-cloak] { display: none; }`.",
+      "value": "none",
+      "example": "<main id=\"app\" b-cloak>…</main>",
+      "docs": "https://briojs.com/reference/undefined"
+    },
+    {
+      "name": "b-router-outlet",
+      "description": "Render the component matching the current route.",
+      "value": "none",
+      "example": "<main b-router-outlet></main>",
+      "docs": "https://briojs.com/reference/undefined"
+    },
+    {
+      "name": "b-on-enter",
+      "description": "Run when the element enters the viewport (or `root`). `$entry` is the intersection entry.",
+      "value": "statement",
+      "example": "<img b-on-enter.once=\"$data.load()\">",
+      "modifiers": [
+        {
+          "name": "once",
+          "description": "Stop after the first delivered callback."
+        },
+        {
+          "name": "debounce",
+          "description": "Debounce callbacks (configure the delay with `b-options`)."
+        }
+      ],
+      "docs": "https://briojs.com/reference/undefined"
+    },
+    {
+      "name": "b-on-exit",
+      "description": "Run when the element leaves the viewport (or `root`). `$entry` is the intersection entry.",
+      "value": "statement",
+      "example": "<video b-on-exit=\"$el.pause()\"></video>",
+      "modifiers": [
+        {
+          "name": "once",
+          "description": "Stop after the first delivered callback."
+        },
+        {
+          "name": "debounce",
+          "description": "Debounce callbacks (configure the delay with `b-options`)."
+        }
+      ],
+      "docs": "https://briojs.com/reference/undefined"
+    },
+    {
+      "name": "b-on-addednodes",
+      "description": "Run when child nodes are added. `$mutations` lists the records.",
+      "value": "statement",
+      "example": "<ul b-on-addednodes=\"console.log($mutations)\"></ul>",
+      "modifiers": [
+        {
+          "name": "once",
+          "description": "Stop after the first delivered callback."
+        },
+        {
+          "name": "debounce",
+          "description": "Debounce callbacks (configure the delay with `b-options`)."
+        },
+        {
+          "name": "subtree",
+          "description": "Observe descendants too (the default unless `b-options` sets `subtree: false`)."
+        }
+      ],
+      "docs": "https://briojs.com/reference/undefined"
+    },
+    {
+      "name": "b-on-removednodes",
+      "description": "Run when child nodes are removed. `$mutations` lists the records.",
+      "value": "statement",
+      "example": "<ul b-on-removednodes=\"console.log($mutations)\"></ul>",
+      "modifiers": [
+        {
+          "name": "once",
+          "description": "Stop after the first delivered callback."
+        },
+        {
+          "name": "debounce",
+          "description": "Debounce callbacks (configure the delay with `b-options`)."
+        },
+        {
+          "name": "subtree",
+          "description": "Observe descendants too (the default unless `b-options` sets `subtree: false`)."
+        }
+      ],
+      "docs": "https://briojs.com/reference/undefined"
+    },
+    {
+      "name": "b-on-attrs",
+      "description": "Run when attributes change. `$mutations` lists the records.",
+      "value": "statement",
+      "example": "<ul b-on-attrs=\"console.log($mutations)\"></ul>",
+      "modifiers": [
+        {
+          "name": "once",
+          "description": "Stop after the first delivered callback."
+        },
+        {
+          "name": "debounce",
+          "description": "Debounce callbacks (configure the delay with `b-options`)."
+        },
+        {
+          "name": "subtree",
+          "description": "Observe descendants too (the default unless `b-options` sets `subtree: false`)."
+        }
+      ],
+      "docs": "https://briojs.com/reference/undefined"
+    },
+    {
+      "name": "b-on-text",
+      "description": "Run when text (character data) changes. `$mutations` lists the records.",
+      "value": "statement",
+      "example": "<ul b-on-text=\"console.log($mutations)\"></ul>",
+      "modifiers": [
+        {
+          "name": "once",
+          "description": "Stop after the first delivered callback."
+        },
+        {
+          "name": "debounce",
+          "description": "Debounce callbacks (configure the delay with `b-options`)."
+        },
+        {
+          "name": "subtree",
+          "description": "Observe descendants too (the default unless `b-options` sets `subtree: false`)."
+        }
+      ],
+      "docs": "https://briojs.com/reference/undefined"
+    },
+    {
+      "name": "b-on-resize",
+      "description": "Run when the element (or document with `.document`) changes size. Read `$size.width` and `$size.height`.",
+      "value": "statement",
+      "example": "<div b-on-resize=\"$data.wide = $size.width > 600\"></div>",
+      "modifiers": [
+        {
+          "name": "once",
+          "description": "Stop after the first delivered callback."
+        },
+        {
+          "name": "debounce",
+          "description": "Debounce callbacks (configure the delay with `b-options`)."
+        },
+        {
+          "name": "document",
+          "description": "Observe the document element instead."
+        }
+      ],
+      "docs": "https://briojs.com/reference/undefined"
+    },
+    {
+      "name": "b-options",
+      "description": "Configure observer directives on this element, keyed by attribute name, e.g. `{ 'b-on-enter': { threshold: 0.5 } }`.",
+      "value": "expression",
+      "example": "<div b-options=\"{ 'b-on-enter': { rootMargin: '20px' } }\" b-on-enter=\"$data.seen = true\"></div>",
+      "docs": "https://briojs.com/reference/undefined"
+    },
+    {
+      "name": "b-attr-*",
+      "description": "On a component host: bind the host element itself instead of passing a prop.",
+      "value": "expression",
+      "example": "<kpi-card b-attr-class=\"{ rising: $data.up }\"></kpi-card>",
+      "origin": "component",
+      "suggestions": [
+        {
+          "name": "class",
+          "description": "Host classes."
+        },
+        {
+          "name": "style",
+          "description": "Host styles."
+        },
+        {
+          "name": "id",
+          "description": "Host id."
+        },
+        {
+          "name": "hidden",
+          "description": "Hide the host while truthy."
+        }
+      ],
+      "docs": "https://briojs.com/reference/undefined"
+    },
+    {
+      "name": "b-app",
+      "description": "Astro adapter: mark an island root by its registered app name.",
+      "value": "name",
+      "example": "<section b-app=\"counter\">…</section>",
+      "origin": "astro",
+      "docs": "https://briojs.com/reference/undefined"
+    },
+    {
+      "name": "b-props",
+      "description": "Astro adapter: a trusted expression evaluated once and passed to the island's app factory.",
+      "value": "expression",
+      "example": "<section b-app=\"counter\" b-props=\"{ initial: 5 }\">…</section>",
+      "origin": "astro",
+      "docs": "https://briojs.com/reference/undefined"
+    }
+  ]
+}

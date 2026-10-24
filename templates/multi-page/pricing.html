@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pricing · Brio multi-page starter</title>
+  <link rel="stylesheet" href="/src/style.css">
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="/">Lantern</a>
+    <nav><a href="/">Home</a> <a href="/pricing.html" aria-current="page">Pricing</a></nav>
+  </header>
+
+  <main>
+    <h1>Pricing</h1>
+    <p class="lead">The plans are server-rendered content. The billing toggle is a Brio widget.</p>
+
+    <section data-widget="pricing" b-cloak>
+      <div class="toggle" role="group" aria-label="Billing period">
+        <button type="button" b-bind-aria-pressed="!$data.yearly" b-on-click="$data.yearly = false">Monthly</button>
+        <button type="button" b-bind-aria-pressed="$data.yearly" b-on-click="$data.yearly = true">Yearly <small>−20%</small></button>
+      </div>
+      <div class="plans">
+        <article class="panel" b-for="plan in $data.plans" b-key="$for.plan.name">
+          <h2 b-text="$for.plan.name"></h2>
+          <p class="price"><strong b-text="$data.price($for.plan)"></strong> / month</p>
+          <p b-text="$for.plan.blurb"></p>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

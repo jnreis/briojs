@@ -1,0 +1,22 @@
+---
+import Layout from '../layouts/Layout.astro';
+const initial = 5;
+---
+<Layout title="Home">
+  <h1>Astro renders. Brio animates.</h1>
+  <p>This text is static HTML from Astro. The boxes below are Brio islands,
+    marked with <code>b-app</code> and registered in <code>src/layouts/Layout.astro</code>.</p>
+
+  <section class="island" b-app="counter" b-props={JSON.stringify({ initial })}>
+    <button b-on-click="$data.count++">Clicked <span b-text="$data.count">{initial}</span> times</button>
+  </section>
+
+  <section class="island" b-app="poll" b-cloak>
+    <h2>How do you like your JavaScript?</h2>
+    <p b-for="option in $data.options" b-key="$for.option.label">
+      <button b-on-click="$for.option.votes++" b-text="$for.option.label"></button>
+      <span b-text="$data.share($for.option.votes) + '%'"></span>
+    </p>
+    <p><small b-text="$data.total + ' votes'"></small></p>
+  </section>
+</Layout>

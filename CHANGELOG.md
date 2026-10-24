@@ -1,5 +1,16 @@
 # Changelog
 
+## [4.1.0] — 2026-10-24
+
+### Tooling and ecosystem
+
+- `dist/html-custom-data.json`: VS Code autocomplete and hover docs for every
+  `b-` directive and common modifiers through the `html.customData` setting.
+- `dist/directives.json`: a machine-readable directive manifest for tools.
+- Starter templates for a widget, multi-page site, SPA, and Astro islands,
+  with "Open in StackBlitz" links on the website.
+- `llms.txt` and `llms-full.txt` on briojs.com for AI assistants.
+
 ## [4.0.0] — 2026-10-22
 
 The first npm release of Brio.js, an HTML-first framework for reactive

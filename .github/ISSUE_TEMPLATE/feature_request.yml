@@ -1,0 +1,44 @@
+name: Feature request
+description: Suggest a directive, API, or tool that would make Brio better.
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Brio stays HTML-first and light, so the best requests start with a real problem.
+        For open-ended ideas, a Discussion may be a better first step.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to build?
+      description: Describe the use case and what makes it hard today.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What would you like to write?
+      description: Show the HTML or JavaScript you wish worked.
+      render: html
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Workarounds you've tried
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Where could this live?
+      description: Many features fit best as an optional plugin or a recipe rather than in the core.
+      options:
+        - Core runtime
+        - Optional plugin or entry point
+        - Documentation, recipe, or example
+        - Not sure
+  - type: checkboxes
+    id: contribute
+    attributes:
+      label: Contributing
+      options:
+        - label: I'd be willing to help implement this.

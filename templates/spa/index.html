@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Brio SPA starter</title>
+  <link rel="stylesheet" href="/src/style.css">
+</head>
+<body>
+  <div id="app" b-cloak>
+    <header class="site-header">
+      <a class="brand" href="/">🌿 Greenhouse</a>
+      <nav>
+        <a href="/" b-bind-aria-current="$route.path === '/' ? 'page' : null">Plants</a>
+        <a href="/about" b-bind-aria-current="$route.path === '/about' ? 'page' : null">About</a>
+      </nav>
+    </header>
+    <main b-router-outlet></main>
+  </div>
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

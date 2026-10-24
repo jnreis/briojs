@@ -1,5 +1,10 @@
 # Development and releases
 
+New here? Start with issues labeled `good first issue` or `help wanted`, ask
+questions in [GitHub Discussions](https://github.com/jnreis/briojs/discussions),
+and see [ROADMAP.md](./ROADMAP.md) for where Brio is headed. Bug reports and
+feature requests use the forms in `.github/ISSUE_TEMPLATE/`.
+
 ## Local development
 
 Use a current Node.js LTS release supported by the build/test tools (Node 22.12+
@@ -58,6 +63,30 @@ Keep changes focused, preserve lifecycle cleanup and existing behavior, and
 add regression coverage for behavioral changes. Do not edit generated `dist/`
 files by hand; regenerate them with `npm run build`.
 
+### Directive manifest and editor data
+
+`scripts/directives.mjs` describes every `b-` attribute: its value, modifiers,
+example, and docs anchor. `npm run build` turns it into
+`dist/directives.json` and `dist/html-custom-data.json` (VS Code
+`html.customData`). When you add or change a directive or modifier, update the
+manifest too; `tests/directive-manifest.test.js` fails if it drifts from the
+runtime source or from `DOCUMENTATION.md` headings.
+
+### Starter templates
+
+`templates/` holds runnable starters (widget, multi-page, SPA, Astro). They
+install the **published** `@jnreis/briojs` package, so they only use released
+APIs; StackBlitz opens them straight from `main`. The site lists them from
+`site/data/templates.mjs`, and `tests/starter-templates.test.js` checks their
+structure, links, and directives. Before changing one, run it for real:
+
+```sh
+cd templates/spa
+npm install
+npm run dev
+npm run build
+```
+
 ## Documentation website
 
 The static Astro/Starlight website lives in `site/`. It is deployed separately
@@ -70,7 +99,9 @@ pnpm run site:dev
 
 `DOCUMENTATION.md` remains the canonical API reference, and `CHANGELOG.md`
 remains the canonical release history. `site:prepare` generates their Starlight
-pages and stages the allowlisted example apps and local browser bundles. Do not
+pages, `llms.txt` and `llms-full.txt` (from the docs, getting-started guides,
+and example list), and stages the allowlisted example apps, local browser
+bundles, and editor data files. Do not
 edit generated reference/release pages or staged demo files. After changing
 canonical Markdown or example sources, rerun `pnpm run site:prepare` while the
 dev server is running. Source website pages and styles support Astro hot reload.
@@ -207,37 +238,37 @@ After reviewing an intentional change:
 node scripts/size.js --json > scripts/size-baseline.json
 ```
 
-## Preparing 4.0.0
+## Releasing
 
-4.0.0 is the first npm release. Keep its changelog as one consolidated entry,
-not a list of breaking changes between unpublished v4 drafts. Earlier private
-version numbers do not require a public npm migration sequence.
+Follow [Semantic Versioning](https://semver.org/): patch for fixes, minor for
+backward-compatible features (including new files in `dist`), major for
+breaking changes. 4.0.0 was the first npm release; its changelog stays one
+consolidated entry for the whole unpublished v4 development cycle.
 
 Before publishing:
 
-1. Review the worktree and intended files. Check author metadata, license,
-   release notes, examples, and package version.
-2. Run the validation commands above, plus size and performance checks.
-3. Run `npm pack --dry-run` to review the file list. `prepack` rebuilds `dist`
+1. Set `version` in `package.json`. Rename `## [Unreleased]` in `CHANGELOG.md`
+   to `## [x.y.z] — YYYY-MM-DD`.
+2. Update pinned CDN URLs (`@jnreis/briojs@x.y.z`) in `README.md`,
+   `DOCUMENTATION.md`, `site/src/content/docs/start/getting-started.md`, and
+   `site/scripts/content.mjs`, plus the version notes at the top of the README
+   and documentation. For minor and major releases, raise the starter
+   templates' `@jnreis/briojs` range and the bug report version placeholder.
+3. Run the validation commands above, plus size and performance checks.
+4. Run `npm pack --dry-run` to review the file list. `prepack` rebuilds `dist`
    for both packing and publishing; it does not run the full test suite.
-4. Run `npm pack`, install the resulting tarball in a clean project, and verify
+5. Run `npm pack`, install the resulting tarball in a clean project, and verify
    the documented imports and standalone scripts. Remove the local tarball
    after checking it; never commit it.
-5. Set the 4.0.0 changelog date when publishing. Update the README and
-   documentation's pre-publication notices at the same time.
 6. Commit the intended release files and push to
-   `https://github.com/jnreis/briojs`. Make the repository public before creating
-   a public release or publishing with public provenance.
-7. Authenticate with npm as `jnreis`, verify with `npm whoami`, and enable the
-   account/package security controls npm requires. Recheck availability with
-   `npm view @jnreis/briojs`; availability is not a reservation, and an unused
-   unscoped name can still be rejected by npm's similar-name protection.
-8. Run `npm publish --access public`. `publishConfig` selects the public npm
-   registry; the package is **scoped** `@jnreis/briojs`, under the publishing
-   account `jnreis`. Public scoped packages require `--access public`.
-   Never put npm credentials in the repository.
-9. Verify `npm view @jnreis/briojs@4.0.0`, installation, and pinned CDN scripts. Create
-   the `v4.0.0` tag and GitHub release against the published commit.
+   `https://github.com/jnreis/briojs`.
+7. Authenticate with npm as `jnreis` and verify with `npm whoami`.
+8. Run `npm publish`. `publishConfig` selects the public npm registry and
+   public access for the scoped `@jnreis/briojs` package. Never put npm
+   credentials in the repository.
+9. Verify `npm view @jnreis/briojs@x.y.z`, installation, and pinned CDN
+   scripts. Create the `vx.y.z` tag and GitHub release against the published
+   commit.
 
 Publishing, pushing, tagging, and making the repository public are explicit
 release actions, not automatic build steps. No npm token is stored by this

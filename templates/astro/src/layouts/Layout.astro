@@ -1,0 +1,49 @@
+---
+import { ClientRouter } from 'astro:transitions';
+interface Props { title: string }
+const { title } = Astro.props;
+---
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{title} · Brio + Astro</title>
+  <ClientRouter />
+  <style is:global>
+    [b-cloak] { display: none; }
+    :root { color-scheme: light dark; --accent: #7c3aed; --line: color-mix(in srgb, currentColor 15%, transparent); font-family: system-ui, sans-serif; line-height: 1.5; }
+    body { margin: 0; }
+    header { display: flex; justify-content: space-between; padding: 1rem 1.5rem; border-bottom: 1px solid var(--line); }
+    header a { color: inherit; margin-left: 1rem; }
+    main { max-width: 48rem; margin: 2rem auto; padding: 0 1.5rem; }
+    .island { padding: 1.25rem; margin-block: 1rem; border: 1px solid var(--line); border-radius: 1rem; }
+    button { padding: 0.5rem 0.9rem; border: 0; border-radius: 0.5rem; background: var(--accent); color: white; font: inherit; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <header>
+    <strong>Brio + Astro</strong>
+    <nav><a href="/">Home</a> <a href="/about/">About</a></nav>
+  </header>
+  <main><slot /></main>
+
+  <script>
+    import { enhanceAstro, lazyApp } from '@jnreis/briojs/astro';
+    import createCounter from '../apps/counter';
+
+    // Register every island once. Astro owns navigation; Brio owns the islands.
+    const integration = enhanceAstro({
+      apps: {
+        counter: createCounter,
+        poll: lazyApp(() => import('../apps/poll')),
+      },
+      onError(error, root) {
+        console.error('Unable to enhance island', root, error);
+      },
+    });
+
+    if (import.meta.hot) import.meta.hot.dispose(() => integration.dispose());
+  </script>
+</body>
+</html>

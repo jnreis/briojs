@@ -1,8 +1,8 @@
-# Brio.js 4.0
+# Brio.js 4
 
 Brio is a petite, HTML-first framework for reactive widgets and web apps. It enhances real DOM nodes in place; there is no virtual DOM, JSX transform, or required compiler. Use it for one small island on a server-rendered page, several independent widgets, or a client-side application.
 
-Version 4.0.0 is the first npm release of this reimagined framework.
+Version 4.0.0 was the first npm release of this reimagined framework; the current release is 4.1.0.
 Earlier versions in the repository were private development
 iterations, not npm releases.
 
@@ -50,6 +50,27 @@ import { createStepEngine } from '@jnreis/briojs/step';
 import { moneyMask } from '@jnreis/briojs/money-mask';
 ```
 
+### Editor autocomplete
+
+The package ships `dist/html-custom-data.json`, which gives VS Code (and other
+editors that read HTML custom data) completions, hover docs, and links for
+every `b-` directive and its common modifiers. Add it to your project's
+`.vscode/settings.json`:
+
+```json
+{
+  "html.customData": ["./node_modules/@jnreis/briojs/dist/html-custom-data.json"]
+}
+```
+
+Reload the window after adding it. Not using npm? Download
+[html-custom-data.json](https://briojs.com/dist/html-custom-data.json) into
+your project and point the setting at that copy.
+
+Building tooling of your own? `dist/directives.json` is the machine-readable
+directive manifest the custom data is generated from: names, values,
+modifiers, examples, and docs links.
+
 ### Add development tools when you need them
 
 The development tools are deliberately separate:
@@ -75,9 +96,9 @@ Load one of the standalone bundles, not both:
 
 ```html
 <!-- Production: runtime without development tools or tracking hooks -->
-<script src="https://cdn.jsdelivr.net/npm/@jnreis/briojs@4.0.0/dist/brio.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@jnreis/briojs@4.1.0/dist/brio.min.js"></script>
 <!-- During development, use this instead: -->
-<!-- <script src="https://cdn.jsdelivr.net/npm/@jnreis/briojs@4.0.0/dist/brio.dev.min.js"></script> -->
+<!-- <script src="https://cdn.jsdelivr.net/npm/@jnreis/briojs@4.1.0/dist/brio.dev.min.js"></script> -->
 ```
 
 For self-hosting, copy the desired scripts from `node_modules/@jnreis/briojs/dist/`
@@ -143,6 +164,16 @@ in the npm package under `ai/`. Read the kit's installation instructions before
 copying the entire skill folder to a supported assistant location; npm
 installation does not activate it. These resources guide app development, not
 framework maintenance, and generated code still requires review and testing.
+
+### Give an assistant the docs
+
+The website publishes the documentation in the [llms.txt](https://llmstxt.org)
+format for assistants and agents that read the web:
+
+- [briojs.com/llms.txt](https://briojs.com/llms.txt): an index of every guide,
+  reference page, AI kit resource, and example, with one-line summaries.
+- [briojs.com/llms-full.txt](https://briojs.com/llms-full.txt): the complete
+  guides and reference as one Markdown file, ready to paste or attach.
 
 ### Migrating an older app?
 

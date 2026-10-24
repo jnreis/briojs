@@ -1,0 +1,15 @@
+{
+  "name": "brio-astro",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview"
+  },
+  "dependencies": {
+    "@jnreis/briojs": "^4.1.0",
+    "astro": "^5.18.2"
+  }
+}

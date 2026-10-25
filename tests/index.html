@@ -6,25 +6,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Experiment directory · Brio Lab</title>
     <link rel="icon" type="image/svg+xml" href="/site/public/favicon.svg">
-    <style>
-        body { font-family: system-ui, -apple-system, sans-serif; margin: 30px; background: var(--canvas); color: var(--ink); max-width: 900px; }
-        h1 { font-size: 2rem; color: var(--ink); margin-bottom: 8px; }
-        p.subtitle { color: var(--muted); font-size: 1.1rem; margin-top: 0; margin-bottom: 24px; }
-        .section { background: var(--surface); border-radius: 8px; padding: 20px; margin-bottom: 24px; border: 1px solid var(--line); box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-        h2 { margin-top: 0; font-size: 1.3rem; color: var(--ink); border-bottom: 2px solid var(--line); padding-bottom: 8px; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; margin-top: 14px; }
-        a.test-link { display: block; padding: 12px 16px; background: var(--soft); border-radius: 6px; text-decoration: none; color: #2563eb; font-weight: 500; transition: all 0.2s; border: 1px solid var(--line); }
-        a.test-link:hover { background: #3b82f6; color: white; border-color: #2563eb; transform: translateY(-1px); }
-        .desc { display: block; font-size: 0.8rem; color: var(--muted); margin-top: 4px; font-weight: normal; }
-        a.test-link:hover .desc { color: #e0f2fe; }
-    </style>
-    <link rel="stylesheet" href="/tests/shared/showcase.css">
+    <link rel="stylesheet" href="/tests/shared/catalog.css">
 </head>
-<body>
+<body class="directory">
 
-    <header class="playground-header">
-        <a class="wordmark" href="/">brio / lab</a>
-        <nav aria-label="Examples navigation"><a href="/">Workbench</a><a href="/#experiments">Search experiments</a><a href="/#astro-lab">Astro lab</a><a href="https://briojs.com/reference/first-app/">Reference</a></nav>
+    <header class="playground-header lab-header">
+        <a class="wordmark" href="/" aria-label="Brio Lab home">brio<span class="lab-label">/ lab</span></a>
+        <nav aria-label="Lab navigation">
+            <a href="/tests/" aria-current="page">Experiments</a>
+            <a href="https://briojs.com/reference/html-directives/">Reference</a>
+            <button id="theme-toggle" type="button" aria-label="Switch color theme">&#9680;</button>
+        </nav>
     </header>
     <main>
     <div class="intro">
@@ -36,6 +28,15 @@
         <strong>Page setup</strong> at the bottom of directive and feature pages.</p>
     </div>
 
+    <div class="catalog-tools" hidden>
+        <label class="lab-search"><span>Find an experiment</span><input id="experiment-search" type="search" placeholder="Try: cleanup, keyboard, persistence..." autocomplete="off" aria-keyshortcuts="/"><kbd aria-hidden="true">/</kbd></label>
+        <div class="catalog-filters" role="group" aria-label="Experiment category">
+            <button type="button" data-category="all" aria-pressed="true">All</button><button type="button" data-category="apps" aria-pressed="false">Apps</button><button type="button" data-category="directives" aria-pressed="false">Directives</button><button type="button" data-category="methods" aria-pressed="false">Utilities</button><button type="button" data-category="reactivity" aria-pressed="false">State &amp; tools</button>
+        </div>
+    </div>
+    <p id="catalog-count" role="status" hidden></p>
+    <p id="catalog-empty" hidden>No match. Try another term or switch to All.</p>
+
     <!-- Apps Section -->
     <div class="section">
         <p class="overline">01 / Put the pieces together</p>
@@ -43,43 +44,43 @@
         <p>Mock backends and simulated teammates keep these demos self-contained. Some apps save data in your browser; please do not enter sensitive information.</p>
         <div class="grid">
             <a class="test-link" href="/tests/apps/counter/index.html">
-                counter
+                <h3>counter</h3>
                 <span class="desc">Venue occupancy counter: state, events, keyboard shortcuts, keyed log, ARIA meter</span>
             </a>
             <a class="test-link" href="/tests/apps/temperature-converter/index.html">
-                temperature-converter
+                <h3>temperature-converter</h3>
                 <span class="desc">Derived state, accessor two-way bindings, validation, persistence</span>
             </a>
             <a class="test-link" href="/tests/apps/conditional-form/index.html">
-                conditional-form
+                <h3>conditional-form</h3>
                 <span class="desc">Conference registration: conditional branches, validation, dynamic attributes, async submit</span>
             </a>
             <a class="test-link" href="/tests/apps/todomvc/index.html">
-                todomvc
+                <h3>todomvc</h3>
                 <span class="desc">TodoMVC: keyed lists, CRUD, inline editing, hash filters, computed counts, persistence</span>
             </a>
             <a class="test-link" href="/tests/apps/7guis/index.html">
-                7guis
+                <h3>7guis</h3>
                 <span class="desc">7GUIs: constraints, timer, CRUD, undo/redo circle drawer, spreadsheet with cycle detection</span>
             </a>
             <a class="test-link" href="/tests/apps/large-table/index.html">
-                large-table
+                <h3>large-table</h3>
                 <span class="desc">1,000/10,000 keyed rows: create, partial update, select, swap, remove, timed per operation</span>
             </a>
             <a class="test-link" href="/tests/apps/dashboard/index.html">
-                dashboard
+                <h3>dashboard</h3>
                 <span class="desc">Sales analytics: async loading/abort/retry, 10k-order derived KPIs, SVG charts, live feed, 100+ nested components</span>
             </a>
             <a class="test-link" href="/tests/apps/conduit/index.html">
-                conduit
+                <h3>conduit</h3>
                 <span class="desc">RealWorld blog: routing with guards and paged URLs, token auth, mock REST API, optimistic favorites/follows, shared cache</span>
             </a>
             <a class="test-link" href="/tests/apps/kanban/index.html">
-                kanban
+                <h3>kanban</h3>
                 <span class="desc">Trello-like board: drag-and-drop (mouse and keyboard), nested card state, optimistic saves with rollback, live teammate sync, offline catch-up</span>
             </a>
             <a class="test-link" href="/tests/apps/collab-editor/index.html">
-                collab-editor
+                <h3>collab-editor</h3>
                 <span class="desc">Collaborative docs: operational transform, live teammate cursors, offline edits that merge on reconnect, exactly-once saves, version history and restore</span>
             </a>
         </div>
@@ -89,110 +90,110 @@
     <div class="section">
         <p class="overline">02 / HTML that does more</p>
         <h2>Directives</h2>
-        <h3>State and bindings</h3>
+        <h3 class="catalog-group">State and bindings</h3>
         <div class="grid">
             <a class="test-link" href="/tests/directives/data.html">
-                data.html
+                <h3>b-data</h3>
                 <span class="desc">Nested data scopes and context inheritance</span>
             </a>
             <a class="test-link" href="/tests/directives/provide.html">
-                provide.html
+                <h3>b-provide</h3>
                 <span class="desc">Live $provided values, overrides, components, slots, and cleanup</span>
             </a>
             <a class="test-link" href="/tests/directives/html.html">
-                html.html
+                <h3>b-text / b-html</h3>
                 <span class="desc">Literal text, inert HTML, and explicit trusted template hydration</span>
             </a>
             <a class="test-link" href="/tests/directives/bind.html">
-                bind.html
+                <h3>b-bind-*</h3>
                 <span class="desc">Property & attribute binding, .prop modifier, class & style objects</span>
             </a>
             <a class="test-link" href="/tests/directives/model.html">
-                model.html
+                <h3>b-model</h3>
                 <span class="desc">Two-way binding, .trim, .lazy, .number, inputs, selects, radios</span>
             </a>
             <a class="test-link" href="/tests/directives/id.html">
-                id.html
+                <h3>b-id</h3>
                 <span class="desc">Unique ID generation and form field associations</span>
             </a>
             <a class="test-link" href="/tests/directives/ref.html">
-                ref.html
+                <h3>b-ref</h3>
                 <span class="desc">Local DOM refs, native focus/dialog, reactive membership, rows and component privacy</span>
             </a>
         </div>
-        <h3>Rendering and placement</h3>
+        <h3 class="catalog-group">Rendering and placement</h3>
         <div class="grid">
             <a class="test-link" href="/tests/directives/if.html">
-                if.html
+                <h3>b-if / b-else-if / b-else</h3>
                 <span class="desc">Conditional chains, dehydration, .hide and .detach preservation modes</span>
             </a>
             <a class="test-link" href="/tests/directives/for.html">
-                for.html
+                <h3>b-for / b-key</h3>
                 <span class="desc">List iteration, array mutations, number ranges, object keys</span>
             </a>
             <a class="test-link" href="/tests/directives/template.html">
-                template.html
+                <h3>b-template</h3>
                 <span class="desc">Owned fragments, conditional cleanup, detach, keyed rows, IDs and teleport</span>
             </a>
             <a class="test-link" href="/tests/directives/teleport.html">
-                teleport.html
+                <h3>b-teleport</h3>
                 <span class="desc">Dynamic element teleportation to remote containers</span>
             </a>
             <a class="test-link" href="/tests/directives/transition.html">
-                transition.html
+                <h3>b-transition</h3>
                 <span class="desc">Animated enter/exit transitions with all b-if lifecycle modes</span>
             </a>
             <a class="test-link" href="/tests/directives/styles.html">
-                styles.html
+                <h3>CSS @scope / b-bind-style</h3>
                 <span class="desc">Native CSS @scope, generated selectors, custom properties and connectivity</span>
             </a>
         </div>
-        <h3>Events and behavior</h3>
+        <h3 class="catalog-group">Events and behavior</h3>
         <div class="grid">
             <a class="test-link" href="/tests/directives/on.html">
-                on.html
+                <h3>b-on-*</h3>
                 <span class="desc">Event handling, .prevent, .stop, .once, .outside, .window</span>
             </a>
             <a class="test-link" href="/tests/directives/options.html">
-                options.html
+                <h3>b-*.options</h3>
                 <span class="desc">Per-directive options, event delays, object references, and plugin configuration</span>
             </a>
             <a class="test-link" href="/tests/directives/effect.html">
-                effect.html
+                <h3>b-effect</h3>
                 <span class="desc">Element-level side effects tracking reactive dependencies</span>
             </a>
             <a class="test-link" href="/tests/directives/script.html">
-                script.html
+                <h3>b-script</h3>
                 <span class="desc">Inline contextual initialization scripts</span>
             </a>
             <a class="test-link" href="/tests/directives/mask.html">
-                mask.html
+                <h3>b-mask</h3>
                 <span class="desc">Inputs add-on: input formatting masks (phone, currency)</span>
             </a>
         </div>
-        <h3>Observers add-on</h3>
+        <h3 class="catalog-group">Observers add-on</h3>
         <div class="grid">
             <a class="test-link" href="/tests/directives/intersection.html">
-                intersection.html
-                <span class="desc">IntersectionObserver triggers on-enter and on-exit</span>
+                <h3>b-on-enter / b-on-exit</h3>
+                <span class="desc">IntersectionObserver triggers b-on-enter and b-on-exit</span>
             </a>
             <a class="test-link" href="/tests/directives/mutation.html">
-                mutation.html
+                <h3>b-on-addednodes / b-on-removednodes / b-on-attrs / b-on-text</h3>
                 <span class="desc">MutationObserver tracks nodes, attributes, and text changes</span>
             </a>
             <a class="test-link" href="/tests/directives/resize.html">
-                resize.html
+                <h3>b-on-resize</h3>
                 <span class="desc">ResizeObserver tracking element box sizes</span>
             </a>
         </div>
-        <h3>Hydration boundaries</h3>
+        <h3 class="catalog-group">Hydration boundaries</h3>
         <div class="grid">
             <a class="test-link" href="/tests/directives/cloak.html">
-                cloak.html
+                <h3>b-cloak</h3>
                 <span class="desc">Hide raw templates until mount; delayed mount makes the flash visible</span>
             </a>
             <a class="test-link" href="/tests/directives/ignore.html">
-                ignore.html
+                <h3>b-ignore</h3>
                 <span class="desc">Skip hydration for subtrees with b-ignore</span>
             </a>
         </div>
@@ -202,29 +203,29 @@
     <div class="section">
         <p class="overline">03 / Useful building blocks</p>
         <h2>Methods and utilities</h2>
-        <h3>DOM and data</h3>
+        <h3 class="catalog-group">DOM and data</h3>
         <div class="grid">
             <a class="test-link" href="/tests/methods/dom.html">
-                dom.html
+                <h3>DOM insertion</h3>
                 <span class="desc">DOM insertions: prepend, append, before, after, replace</span>
             </a>
             <a class="test-link" href="/tests/methods/http.html">
-                http.html
+                <h3>HTTP</h3>
                 <span class="desc">HTTP fetch client, get/post requests, and auto-parsing</span>
             </a>
         </div>
-        <h3>Forms and flows</h3>
+        <h3 class="catalog-group">Forms and flows</h3>
         <div class="grid">
             <a class="test-link" href="/tests/methods/validate.html">
-                validate.html
+                <h3>Validation</h3>
                 <span class="desc">Inputs add-on: schema validation rules, errors, and messages</span>
             </a>
             <a class="test-link" href="/tests/methods/step.html">
-                step.html
+                <h3>Step navigation</h3>
                 <span class="desc">Reactive wizard navigation, history Back, branching, and reset</span>
             </a>
             <a class="test-link" href="/tests/methods/route.html">
-                route.html
+                <h3>Router / b-router-outlet</h3>
                 <span class="desc">SPA router navigation, parameter matching, b-router-outlet</span>
             </a>
         </div>
@@ -236,31 +237,40 @@
         <h2>Reactivity, persistence & devtools</h2>
         <div class="grid">
             <a class="test-link" href="/tests/reactivity/reactivity.html">
-                reactivity.html
+                <h3>Reactivity</h3>
                 <span class="desc">Signals, computed values, effects, batch, and scope cleanups</span>
             </a>
             <a class="test-link" href="/tests/reactivity/stores.html">
-                stores.html
+                <h3>Shared stores</h3>
                 <span class="desc">App-wide $stores, explicit reactivity, shared identity, and app lifetimes</span>
             </a>
             <a class="test-link" href="/tests/reactivity/persistence.html">
-                persistence.html
+                <h3>Persistence</h3>
                 <span class="desc">State persistence with localStorage and reload restoration</span>
             </a>
             <a class="test-link" href="/tests/reactivity/devtools.html">
-                devtools.html
+                <h3>Devtools</h3>
                 <span class="desc">Live Devtools inspector panel, app tracking, and state snapshots</span>
             </a>
         </div>
     </div>
 
-    <section class="section">
-        <p class="overline">05 / Framework integration</p>
-        <h2>Brio with Astro</h2>
-        <p>Explore persistent islands, client navigation, lazy apps, and cleanup in a real Astro fixture.</p>
-        <p>Run <code>npm run dev:astro</code>, then use the <a href="/#astro-lab">Astro lab launcher</a> to open it with a return link to this server.</p>
+    <section class="astro-launch" aria-labelledby="astro-title">
+        <div>
+            <p class="overline">05 / Framework integration</p>
+            <h2 id="astro-title">Brio with Astro</h2>
+            <p>What survives a page swap? Explore persistent islands, client navigation, lazy apps, and cleanup.
+                Local state resets, persistent state stays, and diagnostics reveal what mounted and disposed.</p>
+        </div>
+        <div>
+            <code>npm run dev:astro</code>
+            <a id="astro-launch-link" href="http://localhost:4321/">Open Astro lab &nearr;</a>
+            <p>Start its server first. Runs on port 4321, separate from Vite.
+                Opens with a return link to this server. Theme preferences are saved per origin.</p>
+        </div>
     </section>
     </main>
-    <nav class="brio-demo-nav" b-ignore aria-label="Brio lab"><a href="/">Lab</a><a href="/tests/index.html">Directory</a><button id="theme-toggle" type="button" aria-label="Switch color theme">&#9680;</button></nav>
+    <footer class="lab-footer"><span>Brio Lab / Local only. Intentionally hands-on.</span><a href="https://briojs.com/">Back to the showroom &nearr;</a></footer>
+    <script type="module" src="/lab/catalog.js"></script>
 </body>
 </html>

@@ -20,6 +20,7 @@ html[data-theme="dark"] :is(.status.full, .status.over, .summary[role="alert"], 
 html[data-theme="dark"] :is(.session.sold-out, .session.sold-out .seats, .session.sold-out input) { background: var(--soft); color: var(--muted); }
 html[data-theme="dark"] .conditional { border-color: var(--brand); }
 html[data-theme="dark"] tbody td { border-color: var(--line); }
+html[data-theme="dark"] [data-demo="large-table"] thead th { background: var(--soft); }
 html[data-theme="dark"] .canvas { background-color: var(--surface); background-image: radial-gradient(var(--line) 1px, transparent 1px); }
 html[data-theme="dark"] .canvas circle { fill: var(--soft); }
 html[data-theme="dark"] .canvas circle.selected { fill: #516887; }
@@ -63,7 +64,7 @@ html[data-theme="dark"] [data-demo="collab-editor"] .badge { background: #45351d
     z-index: 9999;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 1rem;
     max-width: calc(100vw - 24px);
     flex-wrap: wrap;
     padding: 8px 12px;

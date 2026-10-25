@@ -60,7 +60,7 @@ html a.test-link:hover { background: var(--soft); color: var(--blue); border-col
 html a.test-link:hover .desc { color: var(--muted); }
 .desc { display: block; margin-top: 6px; font-size: .85rem; font-weight: 400; }
 .playground-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; margin-bottom: 48px; }
-.playground-header nav { display: flex; flex-wrap: wrap; gap: 20px; }
+.playground-header nav { display: flex; flex-wrap: wrap; gap: 20px; align-items: center; }
 .playground-header a { text-decoration: none; font-size: .9rem; }
 .wordmark { color: var(--ink); font-size: 1.5rem !important; font-weight: 800; letter-spacing: -.05em; }
 .wordmark { display: inline-flex; align-items: center; gap: 9px; }

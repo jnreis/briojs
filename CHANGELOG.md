@@ -41,6 +41,15 @@ plugin per app; see
   `throttle` accept a delay in milliseconds:
   `b-on-input.options="{ debounce: 400 }"`.
 
+### Scaffolder (separate package, pending publication)
+
+- Prepared `create-brio`: generates widget, multi-page, SPA, Astro, and plugin
+  projects in JavaScript or TypeScript, with package-manager selection,
+  non-interactive flags, and editor settings. It never overwrites a nonempty
+  destination or automatically installs dependencies or initializes git.
+- The packed CLI and all ten generated variants are tested. The command
+  `npm create brio@latest` becomes available only after separate publication.
+
 ### Add-ons
 
 - Add-on scripts with directives attach them to every app created after they

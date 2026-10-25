@@ -1,0 +1,58 @@
+@import './showcase.css';
+
+.lab-header { padding-bottom: 24px; margin-bottom: 44px; border-bottom: 1px solid var(--line); }
+.lab-label { color: var(--muted); font-weight: 400; letter-spacing: -.02em; }
+.lab-footer { border-top: 1px solid var(--line); padding-top: 24px; display: flex; justify-content: space-between; gap: 16px; font-size: .7rem; color: var(--muted); }
+.lab-header a[aria-current="page"] { color: var(--blue); font-weight: 700; text-decoration: underline; text-underline-offset: 6px; }
+html body.directory { max-width: 1320px; padding: 28px 32px 40px; }
+.directory [hidden] { display: none !important; }
+.catalog-tools { display: flex; align-items: end; flex-wrap: wrap; gap: 16px; }
+.lab-search { flex: 1; min-width: min(100%, 260px); position: relative; }
+.lab-search > span { display: block; font-size: .8rem; font-weight: 600; margin-bottom: 7px; }
+html .lab-search input { width: 100%; padding-right: 40px; }
+html .lab-search input, html .catalog-filters button { height: 44px; margin: 0; }
+.lab-search kbd { position: absolute; right: 12px; bottom: 11px; padding: 0 6px; border: 1px solid var(--line); border-radius: 4px; color: var(--muted); font-size: .75rem; pointer-events: none; }
+.catalog-filters { display: flex; flex-wrap: wrap; gap: 5px; }
+html .catalog-filters button { padding: 9px 10px; font-size: .75rem; font-weight: 500; }
+html .catalog-filters button[aria-pressed="true"] { color: var(--blue); border-color: var(--blue); background: var(--soft); }
+#catalog-count { font: .7rem ui-monospace, monospace; color: var(--muted); margin: 18px 0; }
+.directory .section { padding: 0; margin-block: 48px; background: transparent; border: 0; box-shadow: none; }
+.directory .section > h2 { margin-top: 0; font-size: 2rem; }
+.directory .catalog-group { margin: 32px 0 16px; font-size: .95rem; color: var(--muted); }
+.directory .overline { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: .68rem; letter-spacing: .08em; }
+.directory .grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+html .directory a.test-link {
+    display: flex; flex-direction: column; align-items: start; min-width: 0;
+    padding: 20px; border: 1px solid var(--line); border-radius: 9px;
+    text-decoration: none; background: var(--surface); color: var(--ink); font-weight: 400;
+}
+html .directory a.test-link:hover { border-color: var(--blue); background: var(--soft); color: var(--ink); transform: none; }
+.directory a.test-link::before { color: var(--blue); font: .6rem ui-monospace, monospace; text-transform: uppercase; letter-spacing: .1em; }
+.directory a.test-link::before { content: 'state & tools'; }
+.directory a.test-link[href*="/apps/"]::before { content: 'apps'; }
+.directory a.test-link[href*="/directives/"]::before { content: 'directives'; }
+.directory a.test-link[href*="/methods/"]::before { content: 'utilities'; }
+.directory a.test-link h3 { font-size: 1rem; font-weight: 700; margin: 16px 0 10px; overflow-wrap: anywhere; }
+.directory a.test-link .desc { font-size: .78rem; line-height: 1.6; color: var(--muted); margin: 0 0 20px; font-weight: 400; }
+.directory a.test-link::after { font: .6rem/1.65 ui-monospace, monospace; color: var(--muted); background: none; margin-top: auto; overflow-wrap: anywhere; }
+.directory a.test-link::after { content: attr(href); }
+.astro-launch { display: grid; grid-template-columns: 1.2fr 1fr; gap: 48px; padding: 28px; border: 1px solid var(--line); border-radius: 12px; margin-block: 48px; background: var(--surface); scroll-margin-top: 24px; }
+.astro-launch h2 { margin: 12px 0; }
+.astro-launch p { color: var(--muted); font-size: .85rem; }
+.astro-launch code { display: block; padding: 12px 16px; border: 1px solid var(--line); font-size: .85rem; margin-bottom: 16px; }
+.astro-launch a { font-size: .9rem; }
+.astro-launch > div > p:last-child { margin-bottom: 0; }
+
+@media (max-width: 900px) {
+    .lab-header nav { gap: 14px; }
+    .directory .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 650px) {
+    .lab-footer { flex-direction: column; }
+    .lab-header { margin-bottom: 32px; }
+    .lab-header nav { gap: 12px; }
+    .lab-header nav a { font-size: .75rem; }
+    html body.directory { padding: 24px 16px 28px; }
+    .directory .grid { grid-template-columns: 1fr; }
+    .astro-launch { grid-template-columns: 1fr; gap: 20px; padding: 20px; }
+}

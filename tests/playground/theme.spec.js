@@ -15,12 +15,16 @@ for (const path of pages) {
         await page.goto(path);
         await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
         await expect(page.locator('body')).toHaveCSS('color', 'rgb(21, 33, 57)');
+        if (path === '/tests/apps/large-table/index.html')
+            await expect(page.locator('thead th').first()).toHaveCSS('background-color', 'rgb(249, 250, 251)');
         await expect(page.locator('#theme-toggle')).toHaveCount(1);
         await expect(page.locator('#theme-toggle')).toHaveText('◐');
         await expect(page.locator('link[rel="icon"]')).toHaveCount(1);
         await page.getByRole('button', { name: 'Switch color theme' }).click();
         await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
         await expect(page.locator('body')).toHaveCSS('color', 'rgb(237, 243, 255)');
+        if (path === '/tests/apps/large-table/index.html')
+            await expect(page.locator('thead th').first()).toHaveCSS('background-color', 'rgb(19, 44, 80)');
         await page.reload();
         await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
         if (path === '/tests/apps/temperature-converter/index.html') {
@@ -33,7 +37,7 @@ for (const path of pages) {
         if (path.startsWith('/tests/apps/')) {
             await expect(page.locator('.brio-demo-nav')).toHaveCount(1);
             await expect(page.getByRole('link', { name: 'Lab', exact: true })).toHaveAttribute('href', '/');
-            await expect(page.getByRole('link', { name: 'Directory', exact: true })).toHaveAttribute('href', '/tests/index.html');
+            await expect(page.getByRole('link', { name: 'Experiments', exact: true })).toHaveAttribute('href', '/tests/index.html');
         } else if (manual.includes(path)) {
             await expect(page.locator('.example-source').first()).toBeVisible();
             await expect(page.locator('.example-source').first()).toHaveCSS('background-color', 'rgb(19, 44, 80)');
@@ -100,8 +104,10 @@ test('empty workbench remains usable and lab navigation works without JavaScript
     try {
         const staticPage = await context.newPage();
         await staticPage.goto(new URL('/', page.url()).href);
-        await staticPage.getByRole('link', { name: 'All examples', exact: true }).click();
+        await staticPage.getByRole('link', { name: 'Experiments', exact: true }).click();
         await expect(staticPage.locator('a.test-link')).toHaveCount(manual.length + examples.length);
+        await expect(staticPage.locator('a.test-link:visible')).toHaveCount(manual.length + examples.length);
+        await expect(staticPage.locator('.catalog-tools')).toBeHidden();
     } finally {
         await context.close();
     }
@@ -109,7 +115,11 @@ test('empty workbench remains usable and lab navigation works without JavaScript
 
 test('lab catalog search, categories, shortcuts, and navigation work', async ({ page }) => {
     await page.goto('/');
-    const cards = page.locator('.experiment-card');
+    await expect(page.locator('.lab-catalog')).toHaveCount(0);
+    await expect(page.getByRole('navigation', { name: 'Lab navigation' }).getByRole('link')).toHaveText(['Experiments', 'Reference']);
+    await page.getByRole('link', { name: 'Experiments', exact: true }).click();
+    await expect(page).toHaveURL(/\/tests\/$/);
+    const cards = page.locator('a.test-link:visible');
     await expect(cards).toHaveCount(manual.length + examples.length);
     await page.getByRole('button', { name: 'Apps', exact: true }).click();
     await expect(cards).toHaveCount(examples.length);
@@ -127,12 +137,13 @@ test('lab catalog search, categories, shortcuts, and navigation work', async ({ 
     await expect(page.getByLabel('Find an experiment')).toBeFocused();
     await page.getByLabel('Find an experiment').fill('teleport');
     await expect(cards).toHaveCount(2);
-    await page.locator('.experiment-card[href="/tests/directives/teleport.html"]').click();
+    await page.locator('a.test-link[href="/tests/directives/teleport.html"]').click();
     await expect(page).toHaveURL(/\/tests\/directives\/teleport.html$/);
     await page.getByRole('link', { name: 'Lab', exact: true }).click();
     await expect(page).toHaveURL('/');
     await expect(page.locator('#astro-launch-link')).toHaveAttribute('href', /:4321\/\?lab=http/);
-    const broken = await page.locator('.experiment-card').evaluateAll(links =>
+    await page.getByRole('link', { name: 'Experiments', exact: true }).click();
+    const broken = await page.locator('a.test-link').evaluateAll(links =>
         Promise.all(links.map(async link => {
             const response = await fetch(link.href);
             return response.ok ? null : link.pathname;
@@ -144,7 +155,7 @@ test('lab theme handoff and mobile layout', async ({ page }) => {
     await page.goto('/');
     await page.getByRole('button', { name: 'Switch color theme' }).click();
     const theme = await page.locator('html').getAttribute('data-theme');
-    await page.getByRole('link', { name: 'All examples', exact: true }).click();
+    await page.getByRole('link', { name: 'Experiments', exact: true }).click();
     await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
     for (const path of ['/', '/tests/index.html', '/tests/directives/on.html', '/tests/apps/temperature-converter/index.html']) {
         await page.setViewportSize({ width: 320, height: 844 });

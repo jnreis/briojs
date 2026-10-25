@@ -29,6 +29,24 @@ iterations, not npm releases.
 Choose the setup that fits your page: an npm import for bundled apps, or a
 script tag for a quick start without a build step.
 
+### Scaffold a project
+
+The separate `create-brio` CLI is implemented but not yet published. After its
+release alongside Brio 5, use:
+
+```sh
+npm create brio@latest
+npm create brio@latest my-app -- --template spa --language ts --package-manager npm
+```
+
+Choose widget, multi-page, SPA, Astro, or plugin; each supports JavaScript and
+TypeScript. It includes editor settings and prints the install/dev commands.
+No automatic dependency installation or git initialization; nonempty
+directories are rejected without overwriting files. In non-interactive
+environments, provide all choices or pass `--yes` for defaults.
+Until publication, use the
+[local scaffolder instructions](https://github.com/jnreis/briojs/tree/main/packages/create-brio).
+
 ### Install with npm
 
 ```sh

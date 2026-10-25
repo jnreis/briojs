@@ -1,7 +1,7 @@
 import { effect } from '@jnreis/briojs/reactivity';
 import { createSpecimen } from './workbench.js';
 import specimenSource from './workbench.js?raw';
-import { installCatalog } from './catalog.js';
+import './astro-launch.js';
 
 const template = document.querySelector('#specimen-template');
 document.querySelector('#specimen-html').textContent = template.innerHTML.trim();
@@ -88,20 +88,11 @@ const clear = () => {
     trace.append(empty);
 };
 document.querySelector('#clear-trace').addEventListener('click', clear);
-const stopCatalog = installCatalog();
-const astro = new URL(location.href);
-astro.port = '4321';
-astro.pathname = '/';
-astro.search = '';
-astro.searchParams.set('lab', location.origin);
-astro.hash = '';
-document.querySelector('#astro-launch-link').href = astro.href;
 
 addEventListener('pagehide', event => {
     if (event.persisted) return;
     observer.disconnect();
     stopSnapshot();
-    stopCatalog();
     document.querySelector('#clear-trace').removeEventListener('click', clear);
     app.dispose();
 });

@@ -27,7 +27,10 @@ treat this as a direction, not a promise. Ideas and feedback are welcome in
 
 ## Next: start faster, share more
 
-- **`npm create brio@latest`**, built on the starter templates.
+- ✅ **Project scaffolder implemented:** all five templates in JavaScript or
+  TypeScript, with prompts, automation flags, and non-destructive generation.
+  The separate [`create-brio` package](./packages/create-brio/) is prepared
+  locally; `npm create brio@latest` becomes available after publication.
 - **A playground with shareable links** on briojs.com.
 - **Brio Parts:** copy-paste accessible widgets (dialog, tabs, disclosure,
   combobox, toast, menu) with live demos.

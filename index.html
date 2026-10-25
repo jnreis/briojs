@@ -13,9 +13,7 @@
   <header class="playground-header lab-header">
     <a class="wordmark" href="/" aria-label="Brio Lab home">brio<span class="lab-label">/ lab</span></a>
     <nav aria-label="Lab navigation">
-      <a href="#experiments">Experiments</a>
-      <a href="/tests/index.html">All examples</a>
-      <a href="#astro-lab">Astro lab</a>
+      <a href="/tests/">Experiments</a>
       <a href="https://briojs.com/reference/html-directives/">Reference</a>
       <button id="theme-toggle" type="button" aria-label="Switch color theme">&#9680;</button>
     </nav>
@@ -46,20 +44,6 @@
       <div class="trace-heading"><h3>DOM trace</h3><span>MutationObserver · latest 12 deliveries</span><button id="clear-trace" type="button">Clear trace</button></div>
       <ol id="dom-trace" aria-label="DOM mutation trace"><li class="trace-empty">Waiting for your first change.</li></ol>
       <details class="bench-source"><summary>Open the specimen source <span>Actual HTML + JavaScript used above</span></summary><div class="source-grid"><div><h3>HTML</h3><pre><code id="specimen-html"></code></pre></div><div><h3>JavaScript</h3><pre><code id="specimen-js"></code></pre></div></div></details>
-    </section>
-
-    <section id="experiments" class="lab-catalog" aria-labelledby="catalog-title">
-      <div class="catalog-heading"><div><p class="overline">Choose your next rabbit hole</p><h2 id="catalog-title">The experiment rack.</h2></div><a href="/tests/index.html">Full directory &rarr;</a></div>
-      <div class="catalog-tools">
-        <label class="lab-search"><span>Find an experiment</span><input id="experiment-search" type="search" placeholder="Try: cleanup, keyboard, persistence..." autocomplete="off" aria-keyshortcuts="/"><kbd aria-hidden="true">/</kbd></label>
-        <div class="catalog-filters" role="group" aria-label="Experiment category">
-          <button type="button" data-category="all" aria-pressed="true">All</button><button type="button" data-category="apps" aria-pressed="false">Apps</button><button type="button" data-category="directives" aria-pressed="false">Directives</button><button type="button" data-category="methods" aria-pressed="false">Utilities</button><button type="button" data-category="reactivity" aria-pressed="false">State &amp; tools</button>
-        </div>
-      </div>
-      <p id="catalog-count" role="status"></p>
-      <div id="experiment-grid" class="experiment-grid"></div>
-      <p id="catalog-empty" hidden>No match. Try another term or switch to All.</p>
-      <noscript><p><a href="/tests/index.html">Open the full directory</a> to explore every experiment.</p></noscript>
     </section>
 
     <section id="astro-lab" class="astro-launch" aria-labelledby="astro-title">

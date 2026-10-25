@@ -1,0 +1,25 @@
+{
+  "name": "create-brio",
+  "version": "1.0.0",
+  "description": "Create a Brio.js app or plugin.",
+  "type": "module",
+  "license": "MIT",
+  "author": "Jonathan Reis",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jnreis/briojs.git",
+    "directory": "packages/create-brio"
+  },
+  "bin": {
+    "create-brio": "./bin/create-brio.js"
+  },
+  "files": ["bin", "templates", "README.md", "LICENSE"],
+  "engines": {
+    "node": "^22.12.0 || >=24.0.0"
+  },
+  "scripts": {
+    "prepare:templates": "node scripts/prepare-templates.js",
+    "verify:templates": "node scripts/verify-templates.js",
+    "prepack": "npm run prepare:templates"
+  }
+}

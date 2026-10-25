@@ -45,7 +45,7 @@ for (const example of examples) {
                 .replaceAll('../../../site/public/', '/')
                 .replaceAll('/site/public/', '/')
                 .replace('aria-label="Brio lab"', 'aria-label="Brio website"')
-                .replace('<a href="/">Lab</a><a href="/tests/index.html">Directory</a>', '<a href="/examples/">← Brio examples</a>');
+                .replace('<a href="/">Lab</a><a href="/tests/index.html">Experiments</a>', '<a href="/examples/">← Brio examples</a>');
             if (example.id === 'conduit')
                 content = content.replace('<head>', '<head><script>window.conduitMode = "hash";</script>');
             await write(resolve(output, file), content);

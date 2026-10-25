@@ -32,6 +32,11 @@ before choosing it for your project.
 
 ## Quick start
 
+The project scaffolder is implemented in
+[`packages/create-brio`](./packages/create-brio/), with all five starter templates
+in JavaScript or TypeScript. It is not published yet; see its README for local
+usage. After publication, start a project with `npm create brio@latest`.
+
 ### With npm
 
 ```sh

@@ -10,7 +10,7 @@ export default defineConfig({
         { name: 'production' },
         {
             name: 'development',
-            testMatch: 'demo-links.spec.js',
+            testMatch: ['demo-links.spec.js', 'playground.spec.js'],
             use: { baseURL: 'http://127.0.0.1:4334' },
         },
     ],

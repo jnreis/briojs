@@ -50,6 +50,24 @@ plugin per app; see
 - The packed CLI and all ten generated variants are tested. The command
   `npm create brio@latest` becomes available only after separate publication.
 
+### Website playground
+
+- Added `/play/` for HTML, CSS, and plain JavaScript, starting with the
+  homepage creature. Run/Stop/Reset controls and runtime error reporting are
+  included in a full-height, branded workspace with tabbed CodeMirror editors,
+  syntax highlighting, completion, search, undo, and a side-by-side preview.
+  The layout stacks on mobile and follows the site theme.
+- Copy link writes a shareable URL directly to the clipboard, with an explicit
+  manual-copy fallback if clipboard access fails. Source is conservatively
+  minified before compression and formatted when loaded into the editors.
+  Projects share through versioned URL fragments without a storage backend.
+  Shared code loads without executing until Run is clicked.
+- Reset restores the initially loaded project, including shared code, rather
+  than always returning to the creature example.
+- Preview isolation blocks parent-page access, storage, forms, popups, external
+  resources, and network APIs. CPU usage is not isolated. Sharing enforces
+  source and URL-size limits, with explicit errors for invalid links.
+
 ### Add-ons
 
 - Add-on scripts with directives attach them to every app created after they

@@ -1,7 +1,7 @@
 ---
 import '../styles/site.css';
 import { version } from '../../../package.json';
-const { title, description = 'Powerfully simple, HTML-first web development. Add a widget, enhance a page, or build an app with Brio.js.' } = Astro.props;
+const { title, workspace = false, description = 'Powerfully simple, HTML-first web development. Add a widget, enhance a page, or build an app with Brio.js.' } = Astro.props;
 const canonical = new URL(Astro.url.pathname === '/404/' ? '/404.html' : Astro.url.pathname, Astro.site);
 ---
 <!doctype html>
@@ -22,23 +22,24 @@ const canonical = new URL(Astro.url.pathname === '/404/' ? '/404.html' : Astro.u
     <meta name="theme-color" content="#2563eb" />
     <script is:inline src="/theme.js"></script>
   </head>
-  <body>
+  <body class:list={{ 'workspace-page': workspace }}>
     <a class="skip" href="#main">Skip to content</a>
     <header class="header wrap">
       <a class="wordmark" href="/" aria-label="Brio.js home"><img class="brand-icon" src="/favicon.svg" alt="" width="29" height="29" /> Brio<span class="muted">.js</span></a>
       <nav aria-label="Main navigation">
         <a href="/start/getting-started/">Docs</a>
         <a href="/examples/">Examples</a>
+        <a href="/play/">Playground</a>
         <a href="/releases/">v{version}</a>
         <a href="https://github.com/jnreis/briojs">GitHub <span aria-hidden="true">↗</span></a>
       </nav>
       <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Switch color theme">◐</button>
     </header>
     <main id="main"><slot /></main>
-    <footer class="footer wrap">
+    {!workspace && <footer class="footer wrap">
       <a class="wordmark" href="/"><img class="brand-icon" src="/favicon.svg" alt="" width="29" height="29" />Brio.js</a>
       <span>HTML first. Your app, your way.</span>
       <div><a href="https://www.npmjs.com/package/@jnreis/briojs">npm</a> · <a href="https://github.com/jnreis/briojs/blob/main/LICENSE">MIT license</a> · <a href="https://github.com/jnreis/briojs">Jonathan Reis</a></div>
-    </footer>
+    </footer>}
   </body>
 </html>

@@ -19,6 +19,9 @@ h3 { font-size: 1.35rem; letter-spacing: -.025em; }
 .header nav { margin-left: auto; display: flex; align-items: center; gap: 26px; }
 .header nav a { font-size: .9rem; font-weight: 580; color: var(--muted); text-decoration: none; }
 .header nav a:hover { color: var(--blue); }
+@media (max-width: 760px) {
+  .header nav { flex-wrap: wrap; }
+}
 .theme-toggle { border: 1px solid var(--line); border-radius: 50%; background: var(--surface); color: var(--ink); width: 36px; height: 36px; padding: 0; }
 .hero { padding-block: 76px 64px; text-align: center; }
 /* "interactive." is one long word; wide fallback fonts (e.g. DejaVu Sans) overflow small phones at the base h1 size. */

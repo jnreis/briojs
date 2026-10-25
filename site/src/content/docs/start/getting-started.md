@@ -7,6 +7,10 @@ editUrl: https://github.com/jnreis/briojs/blob/main/site/src/content/docs/start/
 Brio adds reactive behavior to HTML you already own. Start with one element,
 one piece of state, and one event.
 
+Want to experiment without setup? The next site deployment includes the
+[playground](/play/): edit HTML/CSS/JavaScript, run an isolated preview, and
+share your code with a link. Shared code waits for you to click Run.
+
 ## Start with a script tag
 
 Save this as `index.html`, then serve it with a local static server:

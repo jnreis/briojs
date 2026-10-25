@@ -22,6 +22,7 @@ export default defineConfig({
             ] },
             { label: 'Reference', autogenerate: { directory: 'reference' } },
             { label: 'Examples', link: '/examples/' },
+            { label: 'Playground', link: '/play/' },
             { label: 'Releases', slug: 'releases' },
         ],
         head: [

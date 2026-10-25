@@ -77,6 +77,36 @@ directives) need the add-on's plugin on the app:
 createApp({ plugins: [inputsPlugin, observersPlugin] }).mount('#app');
 ```
 
+### Try the playground
+
+The [playground](https://briojs.com/play/) is included in the next site
+deployment. It starts with the homepage creature in a full-height workspace:
+tabbed, syntax-highlighted HTML, CSS, and JavaScript editors on the left and an
+isolated preview on the right (stacked on small screens). Editors include line
+numbers, completion, search, and undo; switching tabs preserves edits and history.
+Write body HTML and plain JavaScript; the matching Brio
+browser build is available as `brio`, without imports.
+
+Click **Run** (or Ctrl/Command + Enter) to replace the preview with your current code. **Stop** removes
+the preview; **Reset** restores the initially loaded code (the shared project when
+opened from a link, otherwise the creature). Copying a new link does not change
+this reset point. **Copy link** copies a shareable URL
+to your clipboard (a selected URL field is offered if clipboard access fails).
+Code is conservatively minified, then compressed into the URL fragment, not saved to a
+database. Names and meaningful HTML text whitespace are preserved during minification.
+Loaded code is formatted for readable editing. Opening a shared link fills the editors but does not execute code
+until the recipient clicks Run.
+
+The preview has an opaque origin. It cannot read the site's DOM, cookies, or
+storage; forms, popups, external resources, and network APIs are blocked. It
+does not isolate CPU usage: infinite loops can still hang a browser tab. Review
+shared code before running it. Runtime errors appear below the preview.
+
+Do not put secrets in a share link. There is no automatic draft saving.
+Projects are limited to 256 KB of UTF-8 source and a 64 KB fragment; browsers
+and messaging services may impose lower URL limits. This first version supports
+the core browser API, not npm imports, TypeScript, or add-on selection.
+
 ### Editor autocomplete
 
 The package ships `dist/html-custom-data.json`, which gives VS Code (and other

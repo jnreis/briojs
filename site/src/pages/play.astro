@@ -1,0 +1,60 @@
+---
+import Site from '../layouts/Site.astro';
+import '../styles/play.css';
+---
+<Site title="Playground" workspace description="Edit HTML, CSS, and JavaScript, run Brio in an isolated preview, and share your experiment with a link.">
+  <section class="play-workspace" aria-label="Brio playground">
+    <div class="play-toolbar">
+      <h1>Playground<span> / Make something small. Make it yours.</span></h1>
+      <div class="play-actions">
+        <button id="play-run" class="button primary" type="button" title="Run (Ctrl/Command + Enter)">Run <span aria-hidden="true">&#9654;</span></button>
+        <button id="play-stop" class="button" type="button">Stop</button>
+        <button id="play-reset" class="button" type="button">Reset</button>
+        <button id="play-share" class="button" type="button">Copy link</button>
+        <details class="play-help">
+          <summary>How it works</summary>
+          <div>
+            <p>Write body HTML, CSS, and plain JavaScript. Brio is available as <code>brio</code>. No imports or build step.</p>
+            <p>Click Run (Ctrl/Command + Enter) to replace the preview and clear its state.
+              Reset restores the code initially loaded on this page, including shared projects.
+              The editor supports completion, search, undo, and automatic indentation. Tab moves focus out of the editor.</p>
+            <p>The preview is isolated: storage, forms, popups, external resources, and network APIs are blocked.
+              Infinite loops can still hang this tab. Only run code you trust; shared links never run automatically.</p>
+            <p>Copy link copies a URL with minified, compressed code. Loaded code is formatted for editing.
+              Share links contain your code, not a database ID. Don't include secrets.
+              Limits: 256 KB of source and a 64 KB URL fragment. No automatic saving.</p>
+          </div>
+        </details>
+      </div>
+    </div>
+    <label class="play-share-label" hidden>Shareable URL (code is stored in the fragment, not a database)
+      <input id="play-link" type="text" readonly hidden aria-label="Shareable URL" />
+    </label>
+    <div class="play-panels">
+      <section class="play-source" aria-label="Source code">
+        <div class="play-tabs" role="tablist" aria-label="Code language">
+          <button id="tab-html" type="button" role="tab" aria-selected="true" aria-controls="play-html">HTML</button>
+          <button id="tab-css" type="button" role="tab" aria-selected="false" aria-controls="play-css" tabindex="-1">CSS</button>
+          <button id="tab-js" type="button" role="tab" aria-selected="false" aria-controls="play-js" tabindex="-1">JavaScript</button>
+          <span class="play-file-hint" aria-hidden="true">SOURCE</span>
+        </div>
+        <div class="play-editors">
+          <div id="play-html" role="tabpanel" aria-labelledby="tab-html"></div>
+          <div id="play-css" role="tabpanel" aria-labelledby="tab-css" hidden></div>
+          <div id="play-js" role="tabpanel" aria-labelledby="tab-js" hidden></div>
+        </div>
+      </section>
+      <section class="play-result" aria-label="Preview">
+        <div class="play-preview-heading"><h2><span class="play-preview-dot" aria-hidden="true"></span>Live preview</h2><span>ISOLATED</span></div>
+        <div id="play-preview"></div>
+        <ul id="play-errors" aria-label="Playground errors" role="alert" hidden></ul>
+      </section>
+    </div>
+    <div class="play-statusbar"><p id="play-status" role="status">Loading playground...</p><span>HTML first. Your app, your way.</span></div>
+    <noscript><p>Enable JavaScript to use the playground, or explore the <a href="/reference/first-app/">first app guide</a>.</p></noscript>
+  </section>
+  <script>
+    import { installPlayground } from '../playground/main.js';
+    installPlayground();
+  </script>
+</Site>

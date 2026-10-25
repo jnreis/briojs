@@ -16,6 +16,10 @@ standalone browser API remains `brio`.
 [API reference](https://briojs.com/reference/install/) ·
 [Live examples](https://briojs.com/examples/)
 
+The next site deployment also includes a [shareable playground](https://briojs.com/play/):
+edit HTML, CSS, and JavaScript, run an isolated preview, and share the code in a
+URL fragment. Shared projects do not execute until the recipient clicks Run.
+
 ## When Brio fits
 
 Brio is a good fit when:

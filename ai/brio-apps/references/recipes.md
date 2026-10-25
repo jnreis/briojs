@@ -1,6 +1,6 @@
 # Brio application recipes
 
-These assets are small executable v4 examples, not an application generator.
+These assets are small executable v5 examples, not an application generator.
 Adapt their root IDs, deployment paths, state, labels, and integration to the
 consuming project. No external API, dependency installation, or internet access
 is required to run them once the Brio browser bundle is available.
@@ -13,7 +13,7 @@ its script URL to the actual served production bundle. During development use
 the development bundle instead, never both. The copies are ordinary application
 assets; installing the skill does not make their relative bundle URL resolve.
 Also serve the plugin scripts referenced by the chosen HTML: the multi-page
-recipe needs `brio.persistence.min.js` and `brio.forms.min.js`. The SPA needs
+recipe needs `brio.persistence.min.js` and `brio.inputs.min.js`. The SPA needs
 `brio.router.min.js`. The widget needs only the core. Plugins load after the
 core and before bootstrap, with the same URLs for development.
 

@@ -32,9 +32,11 @@ export const snapshotList = <T>(list: ArrayLike<T>): T[] => {
     return copy;
 };
 
-/** Errors Brio raised itself; only these get DOM locations appended, never errors thrown by application code. */
-export const brioErrors = new WeakSet<object>();
-const ownError = <E extends Error>(error: E): E => (brioErrors.add(error), error);
+// Marks errors Brio raised itself; only these get DOM locations appended, never errors thrown by application code.
+// A registry symbol, so errors from add-on bundles are recognized by the core bundle too.
+const brioError = /* @__PURE__ */ Symbol.for('brio.error');
+export const isBrioError = (error: unknown): boolean => (error as { [brioError]?: boolean } | null)?.[brioError] === true;
+const ownError = <E extends Error>(error: E): E => ObjectConstructor.defineProperty(error, brioError, { value: true });
 export const createError = (message: string): Error => ownError(new Error(message));
 export const createTypeError = (message: string): TypeError => ownError(new TypeError(message));
 export const createSyntaxError = (message: string): SyntaxError => ownError(new SyntaxError(message));

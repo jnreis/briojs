@@ -21,3 +21,5 @@ export declare const notifyRootMounted: (app: object, root: Element) => void;
 export declare const notifyRootUnmounted: (app: object, root: Element) => void;
 export declare const notifyEffectCreated: () => boolean;
 export declare const notifyEffectDisposed: (tracked: boolean) => void;
+/** Development only: an unrecognized b-* attribute usually means a missing plugin or a typo. */
+export declare const notifyUnknownDirective: (name: string, element: Element) => void;

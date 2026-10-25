@@ -13,7 +13,7 @@ const viteRequire = createRequire(require.resolve('vite'));
 const entries = {
     main: 'index.js', reactivity: 'reactivity.js', router: 'router-entry.js',
     persistence: 'persistence-entry.js', http: 'http-entry.js',
-    forms: 'forms-entry.js', step: 'step-entry.js', money: 'money-mask-entry.js',
+    inputs: 'inputs-entry.js', observers: 'observers-entry.js', step: 'step-entry.js',
     astro: 'astro-entry.js', devtools: 'devtools-entry.js',
 };
 
@@ -91,7 +91,7 @@ export async function consumerSize(imports) {
 
 export async function measure() {
     const browserNames = ['brio.min.js', 'brio.dev.min.js',
-        ...['router', 'persistence', 'http', 'forms', 'step', 'money-mask']
+        ...['router', 'persistence', 'http', 'inputs', 'observers', 'step']
             .map(plugin => `brio.${plugin}.min.js`)];
     const browser = Object.fromEntries(browserNames.map(name => [name, bytes(readFileSync(resolve(dist, name)))]));
     const esm = {};
@@ -111,7 +111,7 @@ export async function measure() {
     };
     for (const [name, symbol] of Object.entries({
         router: 'createRouter', http: 'http',
-        forms: 'validate', step: 'createStepEngine', money: 'moneyMask',
+        inputs: 'inputsPlugin', observers: 'observersPlugin', step: 'createStepEngine',
     })) {
         scenarios[`${name}-main`] = [['main', [symbol]]];
         scenarios[`${name}-subpath`] = [[name, [symbol]]];
@@ -122,7 +122,7 @@ export async function measure() {
     scenarios['devtools-subpath'] = [['main', ['createApp']], ['devtools', ['enableDevtools', 'inspectDevtools']]];
     scenarios['astro-subpath'] = [['astro', ['enhanceAstro', 'lazyApp']]];
     scenarios['app-with-tools'] = [['main', ['createApp']], ['router', ['createRouter']],
-        ['http', ['http']], ['forms', ['validate']]];
+        ['http', ['http']], ['inputs', ['inputsPlugin']]];
     const consumers = {};
     for (const [name, imports] of Object.entries(scenarios))
         consumers[name] = await consumerSize(imports);

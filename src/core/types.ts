@@ -1,7 +1,20 @@
 import type { ComponentDefinition } from '../dom/types';
 import type { Router } from '../plugins/router';
+import type { DirectiveDefinition } from '../dom/directives/registry';
 
-export type BrioPlugin = (app: BrioApp) => void;
+export type BrioPluginObject = {
+    /** Unique per app; by convention the package name, such as `brio-plugin-tooltip`. */
+    name: string;
+    directives?: DirectiveDefinition[];
+    /** `$`-prefixed names available in every expression of the app. */
+    helpers?: Record<string, unknown>;
+    components?: ComponentMap;
+    /** Runs once at installation, inside a scope that lives until the app is disposed. */
+    setup?(app: BrioApp): void;
+    /** Runs after each root hydrates, inside the root's scope; the returned function runs when the root unmounts. */
+    onMount?(root: Element, app: BrioApp): (() => void) | void;
+};
+export type BrioPlugin = ((app: BrioApp) => void) | BrioPluginObject;
 export type ComponentMap = Record<string, ComponentDefinition>;
 export type StoreMap = Record<string, unknown>;
 
@@ -49,7 +62,12 @@ export type BrioApp<
     readonly roots: ReadonlySet<MountHandle>;
     readonly router?: Router;
     component(name: string, definition: ComponentDefinition): BrioApp<T, S>;
-    plugin(plugin: BrioPlugin): BrioApp<T, S>;
+    /** Installs a plugin on this app. Installing the same plugin again does nothing. */
+    use(plugin: BrioPlugin): BrioApp<T, S>;
+    /** Registers a custom directive for this app. Must be called before the first mount. */
+    directive(definition: DirectiveDefinition): BrioApp<T, S>;
+    /** Adds a `$`-prefixed name to every expression in this app. Must be called before the first mount. */
+    helper(name: string, value: unknown): BrioApp<T, S>;
     mount(target: Element | string): MountHandle;
     insert: Insert;
     unmount(options?: UnmountOptions): void;

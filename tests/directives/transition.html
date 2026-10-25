@@ -36,11 +36,11 @@
     <!-- Test 1: Fade and Slide transition with b-if -->
     <div class="card">
         <h3>1. Fade & Slide Transition with b-if</h3>
-        <button on-click="$data.showBox = !$data.showBox">Toggle Box (${$data.showBox ? 'Hide' : 'Show'})</button>
+        <button b-on-click="$data.showBox = !$data.showBox">Toggle Box (${$data.showBox ? 'Hide' : 'Show'})</button>
 
         <div b-if="$data.showBox" b-transition="'fade'" b-data="{ count: 0 }" class="box">
             ✨ Smooth Animated Transition (b-if)!
-            <button on-click="$data.count++">Local counter: ${$data.count}</button>
+            <button b-on-click="$data.count++">Local counter: ${$data.count}</button>
         </div>
         <p>Increment, hide, then show before leave completes: the same box must reverse smoothly and keep its counter,
             with no duplicate box. Bindings/listeners stay active during leave. Wait until the box is fully removed,
@@ -49,13 +49,13 @@
 
     <div class="card">
         <h3>3. CSS Display Mode and Reversed Leave</h3>
-        <button on-click="$data.showDisplay = !$data.showDisplay">Toggle display box</button>
+        <button b-on-click="$data.showDisplay = !$data.showDisplay">Toggle display box</button>
         <div b-transition="'fade'" b-if.hide="$data.showDisplay" class="box">I remain in the DOM.</div>
         <p>Hide: display becomes none only after the fade. Hide then immediately show: no late callback should hide the visible box. The transition attribute comes first to test attribute-order independence.</p>
     </div>
     <div class="card">
         <h3>4. Multiple Properties, Delays, and Duration Over One Second</h3>
-        <button on-click="$data.showSlow = !$data.showSlow">Toggle long transition</button>
+        <button b-on-click="$data.showSlow = !$data.showSlow">Toggle long transition</button>
         <div b-if.detach="$data.showSlow" b-transition="'slow'" class="box">Inspect me while hiding.</div>
         <p>Opacity takes 1.2s and transform takes 1.6s. Toggle again halfway through either direction: the box should reverse from its current location without jumping to the starting pose. It must stay attached until both properties finish.</p>
     </div>
@@ -63,7 +63,7 @@
     <!-- Test 2: Fade and Slide transition with b-if.detach -->
     <div class="card">
         <h3>2. Fade & Slide Transition with b-if.detach</h3>
-        <button on-click="$data.showBoxShow = !$data.showBoxShow">Toggle Box (${$data.showBoxShow ? 'Hide' : 'Show'})</button>
+        <button b-on-click="$data.showBoxShow = !$data.showBoxShow">Toggle Box (${$data.showBoxShow ? 'Hide' : 'Show'})</button>
 
         <div b-if.detach="$data.showBoxShow" b-transition="'fade'" class="box" style="background: #a7f3d0; color: #065f46;">
             🌿 Smooth Animated Transition (b-if.detach)!

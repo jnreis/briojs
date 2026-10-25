@@ -1,6 +1,6 @@
 # Verified Brio 1.1.5 inventory
 
-This describes the **old** runtime, not APIs to use in v4. Pair it with the
+This describes the **old** runtime, not APIs to use in v5. Pair it with the
 [migration guide](./migration.md). Do not infer an app's behavior solely from a
 version-looking filename or a changelog entry.
 
@@ -40,7 +40,7 @@ Evidence: `src/briojs.min.ts`, `src/app.ts`.
   `app.insert` contract in this downloaded build. DOM operations live under
   `app.gc.$dom`.
 - App contexts and registries are implementation-coupled, not a stable
-  compatibility layer that v4 reproduces.
+  compatibility layer that v5 reproduces.
 
 ### Global expression context (`app.gc`)
 
@@ -56,7 +56,7 @@ Evidence: `src/briojs.min.ts`, `src/app.ts`.
 | `$tools` | `hasProp`, `getProp`, `setProp`, `sync`, `clone`, `validate` |
 
 `$dom.context(target)` queries the element and returns its registered BNode's
-`ctx`, or undefined. That DOM-context introspection API is not supplied by v4.
+`ctx`, or undefined. That DOM-context introspection API is not supplied by v5.
 `$dom.hydrate(nodeOrSelector, contextNodeOrSelector?)` is asynchronous;
 scripts/directives may delay completion.
 `$dom.dehydrate(node, removeNode = true, removeBNode = true)` cleans a subtree.
@@ -119,7 +119,7 @@ Do not attribute later-version features to 1.1.5.
 
 - `b-props` and `b-data` establish contexts using inline expressions or app
   assets. Props inheritance and data boundaries differ; converting both into
-  v4 component props would change state ownership.
+  v5 component props would change state ownership.
   Asset factories receive the parent/current context object and are awaited.
   Returned properties/descriptors are copied into the established context.
 - `b-each="item, index in items"` parses aliases and evaluates the collection,
@@ -127,12 +127,12 @@ Do not attribute later-version features to 1.1.5.
   omitted it defaults to `index`. Row fields are `$each.item` / `$each.index`.
   It updates by collection key/index with create/update/delete callbacks;
   this is not a stable item-identity diff. There is no independent public `b-key`.
-- Row item reassignment can write through to the legacy collection; v4 loop
+- Row item reassignment can write through to the legacy collection; v5 loop
   alias assignment does not provide this same writeback contract.
 - `b-if` uses a placeholder and hydrates a cloned branch; false removes and
   dehydrates its instance, after the transition callback when one is present.
 - `b-show` preserves bindings and toggles **display**, rather than detaching the
-  subtree. Its closest current v4 display behavior is `b-if.hide` (with
+  subtree. Its closest current v5 display behavior is `b-if.hide` (with
   conditions evaluated before branch-local data).
 - `b-template` replaces its host with template content, allowing multiple roots.
   It cannot preserve all host-bound directives. Template registration and
@@ -145,7 +145,7 @@ Do not attribute later-version features to 1.1.5.
 - `b-html` inserts reactive HTML with hydration; `b-text` inserts text. In legacy
   dispatch, `b-html` takes priority when both are present.
 - `b-script` accepts registered scripts, arrays, inline/external script content,
-  and awaits sequential execution. It is not equivalent to v4's inline
+  and awaits sequential execution. It is not equivalent to v5's inline
   function-only script processing.
 - `b-style` creates style content adjacent to the directive host.
 - `b-ref` stores the actual element in `$refs[name]`; duplicate names overwrite.
@@ -163,7 +163,7 @@ Do not attribute later-version features to 1.1.5.
 - Binding matcher: `/^(b-bind-|bind-)[\w-$]+$/`. Empty values can infer the bound
   property name; legacy `.prop`-style options can force a property assignment.
 - Event matcher: `/^(b-on-|on-)[\w-]+$/`. Dots are not accepted by these matchers;
-  v4 dot modifiers cannot be copied back into the old app.
+  v5 dot modifiers cannot be copied back into the old app.
 - Event options: capture, once, passive, signal, prevent, stop, self, outside,
   document, window, debounce, throttle, and keyboard `keys`.
   Hyphen suffixes after the event provide quick boolean options.
@@ -173,13 +173,13 @@ Do not attribute later-version features to 1.1.5.
   cleanup. Intersection forwards root/rootMargin/threshold and once options.
   Both families debounce by default at 100ms. Resize can observe the document
   element and pass observe options; its `$size` is a border-box `[width, height]`
-  array, not v4's content-rectangle object.
+  array, not v5's content-rectangle object.
 - Model supports input/textarea/select, checkbox/radio/group behavior, and
   lazy/trim/raw options. Unless `raw` is enabled, it attempts JSON typecasting,
   so numeric/boolean/null-looking strings need explicit compatibility handling.
 - Masks use app `masks` / `maskTokens` registries, string or function-driven
   masks, and a built-in money formatter. The old callback's context differs from
-  v4's formatter-function contract. Default legacy tokens are `#` (Unicode decimal
+  v5's formatter-function contract. Default legacy tokens are `#` (Unicode decimal
   digit), `&` (Unicode letter), and `*` (Unicode letter/digit). Numeric quantifiers,
   `?`, `+`, and escapes are part of the old pattern parser.
 - `b-mask="money"` selects the registered formatter; decimal/thousands/precision
@@ -189,7 +189,7 @@ Do not attribute later-version features to 1.1.5.
   `b-transition-play` / `b-transition-reverse`, but these names are not matched
   by the bundled directive entry. Its expression supplies two CSS selectors,
   e.g. `b-transition="['.in', '.out']"`, on an element with `b-if` or `b-show`.
-  It extracts selector styles and handles `transitionend`, not the v4 six-class
+  It extracts selector styles and handles `transitionend`, not the v5 six-class
   protocol. Do not infer animation support from stale comments.
 
 ## Tools, HTTP, storage, routing, extensions
@@ -222,7 +222,7 @@ and `$watch(state, propertyOrFalsy, listener, priority = 0)` are available
 through `gc`. Watch returns a disposer; a falsy property other than numeric zero
 watches the whole container. Listener contexts contain operation/property/
 old/new values. Legacy listener cleanup, explicit dependency selection and
-priority differ from v4's effects/scopes. No public `persist`, `session`,
+priority differ from v5's effects/scopes. No public `persist`, `session`,
 or `storage` method is present on the downloaded browser app/global. The
 embedded storage module and storage-event listener do not make `$store`
 automatically persistent. Verify whether the production app uses ESM-only
@@ -234,7 +234,7 @@ Evidence: `src/methods/route.ts`, `src/methods/dom.ts`, `src/app.ts`.
 
 The runtime constructs `newRouter(routes, routeRules, insert)` internally,
 returning `[setRoute, route]`. Public app usage is through `$set.route`,
-`$set.routeRules`, `$set.router`, and `$dom.route`, not a v4 `createRouter`.
+`$set.routeRules`, `$set.router`, and `$dom.route`, not a v5 `createRouter`.
 Routing integrates with HTML insertion and configurable route rules.
 `$set.route('/items/:id:number', ({ params, path, remove }) => ...)` registers a
 handler. Dynamic suffix rules consult `routeRules`. A matching route calls its
@@ -259,7 +259,7 @@ whitespace and empty containers). V4 required semantics are stricter.
 Custom directive entries have shape `[string | RegExp, hydrateFunction]` in the
 app's directive registry. Assets/masks/tokens are also configurable. Custom
 functions may depend on BNode internals, `exec`, context generation, or cleanup
-arrays; there is no supported v4 translation of those internals.
+arrays; there is no supported v5 translation of those internals.
 
 BNodes keep cleanup callbacks for effects, events, observers, masks, scripts,
 and transitions. Hydration/dehydration, structural replacement, and async

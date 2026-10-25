@@ -1,11 +1,11 @@
-# Brio v4 application guide for AI assistants
+# Brio v5 application guide for AI assistants
 
 Use this guide to build applications with Brio.js, not to modify its internals.
-It describes the public v4 contracts. Check the consuming app's installed
+It describes the public v5 contracts. Check the consuming app's installed
 `@jnreis/briojs/package.json` version and integration before using it. For browser-only
 apps, check the selected bundle's source/version; `window.brio` has no version
 property. If APIs differ, inspect that version's documentation/types instead of
-guessing. The examples target v4.0.0.
+guessing. The examples target v5.0.0.
 
 ## Integration and public APIs
 
@@ -22,11 +22,15 @@ not automatically available `/dist/` URLs.
 
 The browser global contains `createApp`, `state`, `signal`, `computed`, `effect`,
 `batch`, `flush`, `untrack`, `resource`, `createScope`, `onCleanup`,
-`getCurrentScope`, and `trustedHTML`.
-All plugins are optional: load `brio.router.min.js`, `brio.persistence.min.js`,
-`brio.http.min.js`, `brio.forms.min.js`, `brio.step.min.js`, or
-`brio.money-mask.min.js` after the core as needed. They add createRouter, persist,
-http/HttpError, validate, createStepEngine, or moneyMask respectively. These scripts share
+`getCurrentScope`, `trustedHTML`, `defineDirective`, `definePlugin`, and `use`.
+All add-ons are optional: load `brio.router.min.js`, `brio.persistence.min.js`,
+`brio.http.min.js`, `brio.inputs.min.js`, `brio.observers.min.js`, or
+`brio.step.min.js` after the core as needed. They add createRouter (and
+b-router-outlet), persist, http/HttpError, b-mask/b-form/validate/moneyMask,
+the observer directives (b-on-enter, b-on-exit, b-on-resize, b-on-addednodes,
+b-on-removednodes, b-on-attrs, b-on-text), or createStepEngine respectively.
+b-mask, b-form, and observer directives throw without their add-on. Add-on
+scripts with directives attach them to every app created after they load. These scripts share
 the core runtime and extend its global; they do not emit another ready event.
 Bootstrap after all needed scripts load, not at the core's ready event alone.
 The development bundle also contains
@@ -40,8 +44,10 @@ import { createApp, trustedHTML, createStepEngine, validate, http } from '@jnrei
 import { state, signal, computed, effect, batch, createScope, onCleanup } from '@jnreis/briojs/reactivity';
 import { persist } from '@jnreis/briojs/persistence';
 import { createRouter } from '@jnreis/briojs/router';
-import { moneyMask } from '@jnreis/briojs/money-mask';
-// Dedicated @jnreis/briojs/http, @jnreis/briojs/forms, and @jnreis/briojs/step entries are also available.
+import { inputsPlugin, moneyMask } from '@jnreis/briojs/inputs';
+import { observersPlugin } from '@jnreis/briojs/observers';
+// Install add-on directives per app: createApp({ plugins: [inputsPlugin, observersPlugin] }).
+// Dedicated @jnreis/briojs/http and @jnreis/briojs/step entries are also available.
 // Development only; import before creating apps:
 import { devtoolsPanel } from '@jnreis/briojs/devtools';
 ```
@@ -64,7 +70,11 @@ app.dispose();
 ```
 
 `createApp` accepts `state` (a factory), `stores`, `components`, `router`, and `plugins`.
-`app.component(name, definition)` and `app.plugin(plugin)` return the app.
+`app.component(name, definition)`, `app.use(plugin)`, `app.directive(definition)`,
+and `app.helper('$name', value)` return the app. Register directives, helpers,
+and plugins that add them before the first mount. Plugin directives use
+`{ name: 'b-x', scope?, mount?, ready? }` hooks; only use `b-` attributes that
+Brio or an installed plugin defines. See https://briojs.com/reference/plugins/.
 Mount targets are elements or selectors; roots cannot overlap, even across apps.
 Separate apps isolate app state; multiple roots of one app share `app.state`.
 Explicitly registered stores can be shared across apps.
@@ -185,9 +195,7 @@ inside component-internal providers. Teleports retain original providers.
 Inserted children inherit the destination's providers; inserted siblings
 inherit the container's. Normal owned cleanup stops provider effects.
 
-The named-store/provider APIs are additions in this checkout's Unreleased
-section. Verify the consuming bundle supports them; the version number alone
-does not distinguish older v4.0.0 builds.
+Named stores and providers are available since 4.0.0.
 
 ## Directive contracts
 
@@ -310,19 +318,26 @@ non-numeric text). Text inputs and textareas preserve strings by default.
 Do not assume checkbox/radio value coercion beyond current
 model behavior; test the form's exact value types.
 
-Observers: `b-on-enter`/`b-on-exit` receive `$entry`;
+Observers (observers add-on): `b-on-enter`/`b-on-exit` receive `$entry`;
 `b-on-resize` receives `$size.width`, `$size.height`, and `$entry`;
 `b-on-addednodes`, `b-on-removednodes`, `b-on-attrs`, `b-on-text` receive
-`$mutations`. Observer `.debounce` is 100ms; `b-options` can specify a numeric
+`$mutations`. Observer `.debounce` is 100ms; `.options` can specify a numeric
 delay. Intersection also supports `.once`. Resize/IntersectionObserver require browser support or app polyfills.
 Text observers watch characterData, not every replacement of child text nodes.
 
-Observer `b-options` is keyed by base/full directive names, with full-name
-options overriding base options and dot booleans overriding both:
+Configure a directive with a separate `<directive>.options` attribute holding an
+object literal or reference. It applies to every same-base attribute on the
+element, cannot be combined with other modifiers (`b-on-enter.once.options` is
+an error), and its values win over modifiers. Unknown keys throw. Only `b-on-*`
+(any event modifier; `debounce`/`throttle` also take milliseconds), observer
+directives, and plugin directives that declare `options` accept it. Brio 4's
+`b-options` was removed.
 
 ```html
-<div b-options="{ 'b-on-enter': { root: '#scroller', rootMargin: '20px', threshold: [0, 0.5, 1] } }"
-     b-on-enter.debounce="console.log($entry)"></div>
+<div b-on-enter.debounce="console.log($entry)"
+     b-on-enter.options="{ root: '#scroller', rootMargin: '20px', threshold: [0, 0.5, 1] }"></div>
+<div b-on-exit="$data.pause()" b-on-exit.options="$data.exitOptions"></div>
+<input b-on-input="$data.search()" b-on-input.options="{ debounce: 400 }">
 ```
 
 Intersection root may be an Element/Document, selector, or null viewport.
@@ -333,9 +348,9 @@ border-box, device-pixel-content-box. `$size` uses the selected box as physical
 width/height; device pixels are not CSS pixels. Missing requested nondefault
 measurements throw. Mutation debounce accumulates records. All options are
 read once at hydration, invalid settings throw, and cleanup cancels pending
-callbacks. This b-options API applies only to observer directives.
+callbacks.
 
-Masks: `b-mask="'##/##/####'"` or `b-mask="$data.formatter"`.
+Masks (inputs add-on): `b-mask="'##/##/####'"` or `b-mask="$data.formatter"`.
 Tokens are Unicode-aware: `*` any code point, `A` letters/decimal digits, `a` letters,
 `#` decimal digits. `9` is literal. Backslash escapes tokens; double it inside a JS
 string expression. Patterns process code points, not grapheme clusters.
@@ -344,9 +359,9 @@ selectionDirection, inputType }`, return a string or `{ value, selectionStart?,
 selectionEnd? }`; positions use native UTF-16 offsets. Without positions, clamp
 the existing selection. No registry or mask modifiers. Composition/model/cleanup
 are owned by Brio. Use pure formatters; reactive configuration re-evaluates.
-Optional `brio.money-mask.min.js` provides
+`brio.inputs.min.js` also provides
 `b-mask="brio.moneyMask({ precision: 2 })"`; ESM imports moneyMask from
-@jnreis/briojs/money-mask and exposes the formatter through state. Money retains ASCII
+@jnreis/briojs/inputs and exposes the formatter through state. Money retains ASCII
 fixed-minor-unit entry: `123456` formats to `1,234.56`. Options may be reactive
 when passed to a factory in the expression. A masked
 model holds a formatted string, not a numeric currency value.

@@ -1,4 +1,5 @@
 import { Signal } from '../reactivity/types.js';
+import { BrioPluginObject } from '../core/types.js';
 
 export type RouteMatch = {
     /** Matched application pathname, without the base (still percent-encoded). */
@@ -39,6 +40,8 @@ export type Router = {
         replace?: boolean;
     }): boolean;
     start(root: Element): () => void;
+    /** Adds `b-router-outlet`; `createApp({ router })` installs it for you. */
+    readonly plugin: BrioPluginObject;
 };
 export type RouterOptions = {
     base?: string;

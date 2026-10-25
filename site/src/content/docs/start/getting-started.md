@@ -25,7 +25,7 @@ Save this as `index.html`, then serve it with a local static server:
     <label>Your name <input b-model="$data.name"></label>
     <p>Hello, <span b-text="$data.name || 'friend'"></span>!</p>
   </main>
-  <script src="https://cdn.jsdelivr.net/npm/@jnreis/briojs@4.1.0/dist/brio.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@jnreis/briojs@5.0.0/dist/brio.min.js"></script>
   <script>
     const app = brio.createApp({ state: () => ({ name: '' }) });
     app.mount('#hello');
@@ -71,6 +71,8 @@ or copy it locally with `npx degit jnreis/briojs/templates/<name> my-app`.
   components, the router, route parameters, and shared state.
 - [Astro islands](https://stackblitz.com/github/jnreis/briojs/tree/main/templates/astro?file=src%2Fpages%2Findex.astro):
   Astro renders the pages; Brio brings the islands to life.
+- [Plugin](https://stackblitz.com/github/jnreis/briojs/tree/main/templates/plugin?file=src%2Findex.js):
+  a publishable plugin with a directive, a helper, tests, and editor autocomplete.
 
 Every template turns on [editor autocomplete](/reference/install/#editor-autocomplete)
 for `b-` directives.

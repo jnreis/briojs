@@ -6,7 +6,7 @@ Brio enhances the real DOM in place. Add a reactive widget to an existing app,
 enhance a server-rendered multi-page site, or build a single-page application.
 No virtual DOM, JSX, required compiler, or runtime dependencies.
 
-Version **4.1.0** adds editor autocomplete, starter templates, and `llms.txt`. See the [changelog](./CHANGELOG.md).
+Version **5.0.0** adds a public plugin API for your own `b-` directives and `$` helpers, `b-form`, and a testing helper, and moves masks and observers into opt-in add-ons for a smaller core. Upgrading? See the [changelog](./CHANGELOG.md) and the [migration guide](./DOCUMENTATION.md#migrating-from-brio-4).
 
 The npm package is **`@jnreis/briojs`**; the framework is Brio.js and the
 standalone browser API remains `brio`.
@@ -75,7 +75,7 @@ Save this as an HTML file and serve it from any static server:
       Count: <span b-text="$data.count"></span>
     </button>
   </div>
-  <script src="https://cdn.jsdelivr.net/npm/@jnreis/briojs@4.1.0/dist/brio.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@jnreis/briojs@5.0.0/dist/brio.min.js"></script>
   <script>
     const app = brio.createApp({ state: () => ({ count: 0 }) });
     app.mount('#counter');
@@ -92,7 +92,7 @@ Do not load both core builds on the same page.
 
 - **HTML directives:** text and attribute bindings, events and key modifiers,
   two-way form models, keyed lists, conditional branches, transitions, refs,
-  wrapperless templates, teleports, and DOM observers.
+  wrapperless templates, and teleports.
 - **Fine-grained reactivity:** plain-object and array state, signals, computed
   values, synchronous effects, explicit batching, and cancellable async resources.
   Use these independently through `@jnreis/briojs/reactivity`, even without a DOM.
@@ -100,8 +100,10 @@ Do not load both core builds on the same page.
   observers, and resources when removed. Mount several independent apps on a page.
 - **Reusable HTML components:** setup functions, reactive props, emitted events,
   slots, shared stores, and subtree-provided values.
-- **Optional tools:** routing, persistence, HTTP, validation, step navigation,
-  money formatting, devtools, and Astro island lifecycle integration.
+- **Optional add-ons:** routing, persistence, HTTP, input masks and form
+  validation, DOM observers, step navigation, devtools, and Astro island
+  lifecycle integration. Each is a separate script or import, so you load only
+  what a page uses.
 - **Useful diagnostics:** template errors identify the expression, directive,
   element, enclosing component, and original cause.
 
@@ -119,9 +121,11 @@ import { computed, effect, signal } from '@jnreis/briojs/reactivity';
 import { createRouter } from '@jnreis/briojs/router';
 import { persist } from '@jnreis/briojs/persistence';
 import { http, HttpError } from '@jnreis/briojs/http';
-import { validate } from '@jnreis/briojs/forms';
+import { inputsPlugin, validate, moneyMask } from '@jnreis/briojs/inputs';
+import { observersPlugin } from '@jnreis/briojs/observers';
 import { createStepEngine } from '@jnreis/briojs/step';
-import { moneyMask } from '@jnreis/briojs/money-mask';
+
+createApp({ plugins: [inputsPlugin, observersPlugin] }); // b-mask, b-form, b-on-enter, …
 ```
 
 Most tools are also named exports from `@jnreis/briojs`; subpaths make intent explicit.
@@ -129,13 +133,15 @@ For standalone browser apps, load the matching optional scripts **after** core
 and **before** your bootstrap:
 
 ```html
-<script src="https://cdn.jsdelivr.net/npm/@jnreis/briojs@4.1.0/dist/brio.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@jnreis/briojs@4.1.0/dist/brio.router.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@jnreis/briojs@5.0.0/dist/brio.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@jnreis/briojs@5.0.0/dist/brio.router.min.js"></script>
 <script src="/app.js"></script>
 ```
 
-Keep core and plugin versions aligned. Optional scripts reuse core's reactive
-engine rather than embedding another runtime.
+Keep core and add-on versions aligned. Add-on scripts reuse core's reactive
+engine rather than embedding another runtime, and those with directives
+(`brio.inputs.min.js`, `brio.observers.min.js`) attach them to every app you
+create afterwards.
 
 ## Learn and explore
 

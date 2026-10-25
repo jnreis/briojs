@@ -87,7 +87,8 @@ Key facts for writing Brio code:
 - Directives are \`b-\` attributes: \`b-text\`, \`b-bind-*\`, \`b-on-*\`, \`b-model\`, \`b-if\`/\`b-else-if\`/\`b-else\`, \`b-for\` with \`b-key\`, and more.
 - State is explicit in expressions: \`$data.count\`, \`$props.label\`, \`$for.item\`, \`$ref.input\`. Brio never guesses which scope a bare name belongs to.
 - Mount with \`createApp({ state: () => ({ … }) }).mount('#root')\`; Brio owns only the DOM you mount. Unmount before a host removes it.
-- Browser bundle: \`<script src="https://cdn.jsdelivr.net/npm/@jnreis/briojs@4.1.0/dist/brio.min.js">\` exposes \`window.brio\`. ESM: \`import { createApp } from '@jnreis/briojs'\`.
+- Browser bundle: \`<script src="https://cdn.jsdelivr.net/npm/@jnreis/briojs@5.0.0/dist/brio.min.js">\` exposes \`window.brio\`. Add-on scripts load after it: \`brio.inputs.min.js\` (\`b-mask\`, \`b-form\`, \`validate\`), \`brio.observers.min.js\` (\`b-on-enter\`, \`b-on-resize\`, …), \`brio.router.min.js\`, and others. With npm, install add-on directives with \`plugins: [inputsPlugin]\`. ESM: \`import { createApp } from '@jnreis/briojs'\`.
+- Custom directives and \`$helpers\` come only from plugins registered before mount (\`app.directive()\`, \`app.helper()\`, \`app.use({ name, directives, helpers })\`). Never invent \`b-\` attributes that no installed plugin defines.
 - Expressions are trusted JavaScript (CSP needs \`unsafe-eval\`). Use \`b-text\` for user content; \`b-html\` does not sanitize.`;
 
 /** The llms.txt index: https://llmstxt.org */

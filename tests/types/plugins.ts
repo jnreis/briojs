@@ -1,9 +1,8 @@
-import { moneyMask } from '@jnreis/briojs/money-mask';
-import type { MoneyMaskOptions, MaskContext, MaskResult, MaskFormatter } from '@jnreis/briojs/money-mask';
+import { moneyMask, validate, inputsPlugin } from '@jnreis/briojs/inputs';
+import type { MoneyMaskOptions, MaskContext, MaskResult, MaskFormatter, ValidationSchema } from '@jnreis/briojs/inputs';
+import { observersPlugin } from '@jnreis/briojs/observers';
 import { http, HttpError } from '@jnreis/briojs/http';
 import type { HttpOptions } from '@jnreis/briojs/http';
-import { validate } from '@jnreis/briojs/forms';
-import type { ValidationSchema } from '@jnreis/briojs/forms';
 import { createStepEngine } from '@jnreis/briojs/step';
 import type { StepEngine } from '@jnreis/briojs/step';
 import type { MaskFormatter as CoreFormatter } from '@jnreis/briojs';
@@ -21,7 +20,8 @@ createRouter([], { base: 123 });
 void [link, base];
 
 const teardown: UnmountOptions = { restore: false };
-const app = createApp();
+const app = createApp({ plugins: [inputsPlugin, observersPlugin] });
+app.use(inputsPlugin);
 const mount = app.mount(document.createElement('main'));
 mount.unmount(teardown);
 app.unmount(teardown);

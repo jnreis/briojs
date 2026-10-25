@@ -37,9 +37,9 @@
         <button id="reset-wizard" b-on-click="$data.wizard.reset()">Reset Wizard</button>
 
         <div class="step-indicator">
-            <span class="step-pill" bind-class="{ active: $data.wizard.isActive('intro') }">1. Intro</span>
-            <span class="step-pill" bind-class="{ active: $data.wizard.isActive('details') }">2. Details</span>
-            <span class="step-pill" bind-class="{ active: $data.wizard.isActive('review') }">3. Review</span>
+            <span class="step-pill" b-bind-class="{ active: $data.wizard.isActive('intro') }">1. Intro</span>
+            <span class="step-pill" b-bind-class="{ active: $data.wizard.isActive('details') }">2. Details</span>
+            <span class="step-pill" b-bind-class="{ active: $data.wizard.isActive('review') }">3. Review</span>
         </div>
 
         <div b-if="$data.wizard.isActive('intro')" class="step-container">

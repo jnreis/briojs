@@ -177,7 +177,7 @@ test('local data and shared stores consume engine reactivity without caller wrap
     const first = api.createApp(window.eval('({ state: () => ({}) })'));
     first.state.wizard = wizard;
     const root = window.document.querySelector('main');
-    root.innerHTML = '<b b-text="$data.wizard.current"></b><button on-click="$data.wizard.next()">next</button>';
+    root.innerHTML = '<b b-text="$data.wizard.current"></b><button b-on-click="$data.wizard.next()">next</button>';
     const sharedOptions = window.eval('({stores:{}})');
     sharedOptions.stores.wizard = wizard;
     const second = api.createApp(sharedOptions);

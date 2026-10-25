@@ -29,11 +29,16 @@ test('templates are runnable projects on the current minor release', () => {
         assert.equal(manifest.type, 'module', id);
         assert.ok(manifest.scripts.dev && manifest.scripts.build, `${id} scripts`);
         const [major, minor] = version.split('.');
-        assert.equal(manifest.dependencies['@jnreis/briojs'], `^${major}.${minor}.0`, id);
+        // Plugins list Brio as a peer dependency so apps provide the one shared runtime.
+        const range = (manifest.peerDependencies ?? manifest.dependencies)['@jnreis/briojs'];
+        assert.equal(range, `^${major}.${minor}.0`, id);
+        if (manifest.peerDependencies) assert.equal(manifest.devDependencies['@jnreis/briojs'], range, `${id} dev copy`);
         assert.ok(existsSync(new URL(`templates/${id}/README.md`, root)), `${id} README`);
         assert.ok(read(`templates/${id}/.gitignore`).includes('node_modules'), `${id} .gitignore`);
         const settings = JSON.parse(read(`templates/${id}/.vscode/settings.json`));
-        assert.deepEqual(settings['html.customData'], ['./node_modules/@jnreis/briojs/dist/html-custom-data.json'], id);
+        assert.equal(settings['html.customData'][0], './node_modules/@jnreis/briojs/dist/html-custom-data.json', id);
+        for (const file of settings['html.customData'].slice(1))
+            assert.ok(existsSync(new URL(`templates/${id}/${file}`, root)), `${id} ${file}`);
     }
 });
 
@@ -43,10 +48,14 @@ test('template markup only uses known directives', async () => {
     const prefixes = directives.filter(directive => directive.name.endsWith('*')).map(directive => directive.name.slice(0, -1));
     const files = readdirSync(new URL('templates/', root), { recursive: true })
         .filter(file => /\.(html|astro|js|ts)$/.test(file) && !file.includes('node_modules'));
+    // A template may use directives it defines itself, such as the plugin starter's b-copy.
+    const defined = id => new Set(files.filter(file => file.startsWith(`${id}/`))
+        .flatMap(file => [...read(`templates/${file}`).matchAll(/name: '(b-[a-z-]+)'/g)].map(match => match[1])));
     let seen = 0;
     for (const file of files) {
+        const own = defined(file.split('/')[0]);
         for (const [, name] of read(`templates/${file}`).matchAll(/\s(b-[a-z-]+)(?:\.[a-z.]+)?[=\s>]/g)) {
-            const known = exact.has(name) || prefixes.some(prefix => name.startsWith(prefix) && name.length > prefix.length);
+            const known = exact.has(name) || own.has(name) || prefixes.some(prefix => name.startsWith(prefix) && name.length > prefix.length);
             assert.ok(known, `${file}: unknown directive ${name}`);
             seen++;
         }

@@ -32,12 +32,12 @@
     <!-- Test 1: DOM Node Additions & Removals -->
     <div class="card">
         <h3>1. DOM Mutation Observer: on-addednodes & on-removednodes</h3>
-        <button on-click="$data.childItems.push('Item ' + ($data.childItems.length + 1))">Add Child Element</button>
-        <button on-click="$data.childItems.pop()">Remove Child Element</button>
+        <button b-on-click="$data.childItems.push('Item ' + ($data.childItems.length + 1))">Add Child Element</button>
+        <button b-on-click="$data.childItems.pop()">Remove Child Element</button>
 
         <div class="observed-box"
-             on-addednodes="$data.mutationLogs.push('Added ' + $mutations.length + ' node(s) at ' + new Date().toLocaleTimeString())"
-             on-removednodes="$data.mutationLogs.push('Removed node(s) at ' + new Date().toLocaleTimeString())">
+             b-on-addednodes="$data.mutationLogs.push('Added ' + $mutations.length + ' node(s) at ' + new Date().toLocaleTimeString())"
+             b-on-removednodes="$data.mutationLogs.push('Removed node(s) at ' + new Date().toLocaleTimeString())">
             <h4>Observed Node Container</h4>
             <div b-for="item in $data.childItems" class="tag">
                 ${$for.item}
@@ -48,13 +48,13 @@
     <!-- Test 2: Attribute Changes -->
     <div class="card">
         <h3>2. Attribute Mutation Observer: on-attrs</h3>
-        <button on-click="$data.targetTheme = ($data.targetTheme === 'light' ? 'dark' : 'light')">
+        <button b-on-click="$data.targetTheme = ($data.targetTheme === 'light' ? 'dark' : 'light')">
             Toggle Theme Attribute (Current: ${$data.targetTheme})
         </button>
 
         <div class="observed-box"
              b-bind-data-theme="$data.targetTheme"
-             on-attrs="$data.mutationLogs.push('Attribute modified: ' + $mutations.map(m => m.attributeName).join(', ') + ' at ' + new Date().toLocaleTimeString())">
+             b-on-attrs="$data.mutationLogs.push('Attribute modified: ' + $mutations.map(m => m.attributeName).join(', ') + ' at ' + new Date().toLocaleTimeString())">
             Observed attribute element: <code>data-theme="${$data.targetTheme}"</code>
         </div>
     </div>
@@ -65,7 +65,7 @@
         <p>Type directly into the contenteditable element below to trigger characterData mutations:</p>
         <div class="observed-box"
              contenteditable="true"
-             on-text="$data.mutationLogs.push('Text content mutated at ' + new Date().toLocaleTimeString())">
+             b-on-text="$data.mutationLogs.push('Text content mutated at ' + new Date().toLocaleTimeString())">
             Edit this text content directly to trigger on-text observer!
         </div>
     </div>
@@ -74,16 +74,16 @@
         <h3>4. External target, subtree false versus true, filters and old values</h3>
         <p>Buttons change an external target. Direct attributes reach both observers; descendant attributes reach only
             the subtree observer. Unfiltered data-other changes do not reach the filtered observer. See console logs.</p>
-        <button on-click="document.querySelector('#mutation-target').setAttribute('data-test', String(Date.now()))">Direct attribute</button>
-        <button on-click="document.querySelector('#mutation-target span').setAttribute('data-test', String(Date.now()))">Descendant attribute</button>
-        <button on-click="document.querySelector('#mutation-target').setAttribute('data-other', String(Date.now()))">Excluded attribute</button>
-        <button on-click="document.querySelector('#mutation-target span').firstChild.data = String(Date.now())">Character data</button>
+        <button b-on-click="document.querySelector('#mutation-target').setAttribute('data-test', String(Date.now()))">Direct attribute</button>
+        <button b-on-click="document.querySelector('#mutation-target span').setAttribute('data-test', String(Date.now()))">Descendant attribute</button>
+        <button b-on-click="document.querySelector('#mutation-target').setAttribute('data-other', String(Date.now()))">Excluded attribute</button>
+        <button b-on-click="document.querySelector('#mutation-target span').firstChild.data = String(Date.now())">Character data</button>
         <div id="mutation-target" b-ignore><span>Original text</span></div>
-        <div b-options="{ 'on-attrs': { target: '#mutation-target', subtree: false, attributeOldValue: true, attributeFilter: ['data-test'] } }"
-             on-attrs="console.log('Direct filtered attributes with old value', $mutations)"></div>
-        <div b-options="{ 'on-attrs': { target: $el.previousElementSibling.previousElementSibling, debounce: 150 }, 'on-text': { target: '#mutation-target', characterDataOldValue: true } }"
-             on-attrs.subtree="console.log('Subtree attributes, batched', $mutations)"
-             on-text.subtree.debounce="console.log('Subtree text with old value', $mutations)"></div>
+        <div b-on-attrs.options="{ target: '#mutation-target', subtree: false, attributeOldValue: true, attributeFilter: ['data-test'] }"
+             b-on-attrs="console.log('Direct filtered attributes with old value', $mutations)"></div>
+        <div b-on-attrs.options="{ target: $el.previousElementSibling.previousElementSibling, debounce: 150 }" b-on-text.options="{ target: '#mutation-target', characterDataOldValue: true }"
+             b-on-attrs.subtree="console.log('Subtree attributes, batched', $mutations)"
+             b-on-text.subtree.debounce="console.log('Subtree text with old value', $mutations)"></div>
         <p>Existing scenarios exercise added/removed nodes and default subtree=true. Debounced mutation callbacks
             accumulate all records, rather than dropping earlier deliveries.</p>
     </div>
@@ -91,7 +91,7 @@
     <!-- Logs Section -->
     <div class="card">
         <h3>Mutation Event Logs:</h3>
-        <button on-click="$data.mutationLogs = []">Clear Logs</button>
+        <button b-on-click="$data.mutationLogs = []">Clear Logs</button>
         <ul>
             <li b-for="log in $data.mutationLogs">${$for.log}</li>
         </ul>
@@ -99,6 +99,7 @@
 
     <script src="/tests/source-viewer.js"></script>
     <script src="/dist/brio.min.js"></script>
+    <script src="/dist/brio.observers.min.js"></script>
     <script>
         window.addEventListener('DOMContentLoaded', () => {
             const app = brio.createApp();

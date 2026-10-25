@@ -1,4 +1,4 @@
-import { isFunction, ObjectConstructor, createTypeError, createSyntaxError, deleteItem, getLength } from './native';
+import { isFunction, ObjectConstructor, createTypeError, createSyntaxError, deleteItem, getLength, includesItem } from './native';
 import { directiveError, describeNode, mark } from './errors';
 import { untrack } from '../reactivity/effect';
 
@@ -14,14 +14,28 @@ const $CONTEXT: '$context' = '$context';
 const contextNames = ['$data', '$el', '$event', '$id', '$ref', '$for', '$mutations', '$size', '$entry', '$props', '$emit', '$insert', '$stores', '$provided', '$route', 'trustedHTML', 'flush', 'onCleanup'];
 
 // Only names that appear in the source are destructured, so each evaluation reads just what it uses.
-const contextBindings = (expression: string): string => {
-    const names = contextNames.filter(name => new RegExp(`(?<![\\w$])${name.replace('$', '\\$')}(?![\\w$])`).test(expression));
+const contextBindings = (expression: string, extras: string[]): string => {
+    const names = contextNames.filter(name => new RegExp(`(?<![\\w$])${name.replace('$', '\\$')}(?![\\w$])`).test(expression)).concat(extras);
     return `"use strict";${getLength(names) ? ` const { ${names.join(', ')} } = ${$CONTEXT};` : ''}\n`;
 };
 
+const customNames = new Map<string, string[]>();
+// Other `$names` (app helpers, names added by plugin scope hooks) are bound only when the context has them,
+// so a misspelled name still throws a ReferenceError.
+const presentNames = (source: string, scope: ExpressionScope): string[] => {
+    let names = customNames.get(source);
+    if (!names) {
+        names = [...new Set(source.match(/(?<![\w$])\$[\w$]+/g))]
+            .filter(name => !includesItem(contextNames, name) && name !== $CONTEXT && name !== '$value');
+        if (customNames.size > 500) customNames.clear();
+        customNames.set(source, names);
+    }
+    return getLength(names) ? names.filter(name => name in scope) : names;
+};
+
 export function evaluateFunction(source: string, context: ExpressionScope, node?: Node): ($context: ExpressionScope) => unknown {
-    const fn = compile(functionExpressions, source, expression =>
-        new Function($CONTEXT, `${contextBindings(expression)} return (${expression.replace(/;\s*$/, '')});`), 'b-script', node,
+    const fn = compile(functionExpressions, source, (expression, bindings) =>
+        new Function($CONTEXT, `${bindings} return (${expression.replace(/;\s*$/, '')});`), context, 'b-script', node,
     );
     const result = fn(context);
     if (!isFunction(result))
@@ -46,20 +60,23 @@ export function createExpressionScope(...sources: ExpressionScope[]): Expression
 const compile = (
     cache: Map<string, Function>,
     source: string,
-    make: (source: string) => Function,
+    make: (source: string, bindings: string) => Function,
+    scope: ExpressionScope,
     directive?: string,
     node?: Node,
 ): Function => {
-    let fn = cache.get(source);
+    const extras = presentNames(source, scope);
+    const key = getLength(extras) ? `${source}\0${extras}` : source;
+    let fn = cache.get(key);
     if (!fn) {
         try {
-            fn = make(source);
+            fn = make(source, contextBindings(source, extras));
         } catch (error) {
             throw mark(createSyntaxError(
                 `Invalid Brio expression "${source}"${directive ? ` in ${directive}` : ''}${node ? ` on ${describeNode(node)}` : ''}: ${String(error)}`,
             ), node, directive);
         }
-        cache.set(source, fn);
+        cache.set(key, fn);
         if (cache.size > 500)
             deleteItem(cache, cache.keys().next().value!);
     }
@@ -89,8 +106,8 @@ const referenceHint = (error: unknown, scope: ExpressionScope): string => {
  * `Brio expression failed: "…" in b-bind-href on <a.nav>: TypeError: …`. The node defaults to `$el`.
  */
 export function evaluate(source: string, scope: ExpressionScope, directive?: string, node: Node = scope.$el): any {
-    const fn = compile(valueExpressions, source, expression =>
-        new Function($CONTEXT, `${contextBindings(expression)} return (${expression});`), directive, node,
+    const fn = compile(valueExpressions, source, (expression, bindings) =>
+        new Function($CONTEXT, `${bindings} return (${expression});`), scope, directive, node,
     );
     try {
         return fn(scope);
@@ -100,8 +117,8 @@ export function evaluate(source: string, scope: ExpressionScope, directive?: str
 }
 
 export function execute(source: string, scope: ExpressionScope, event?: Event, directive?: string, node: Node = scope.$el): void {
-    const fn = compile(statementExpressions, source, expression =>
-        new Function($CONTEXT, `${contextBindings(expression)} ${expression}`), directive, node,
+    const fn = compile(statementExpressions, source, (expression, bindings) =>
+        new Function($CONTEXT, `${bindings} ${expression}`), scope, directive, node,
     );
     try {
         fn(event === undefined ? scope : createExpressionScope({ $event: event }, scope));
@@ -111,8 +128,8 @@ export function execute(source: string, scope: ExpressionScope, event?: Event, d
 }
 
 export function assign(source: string, scope: ExpressionScope, value: unknown, directive?: string, node: Node = scope.$el): void {
-    const fn = compile(assignmentExpressions, source, expression =>
-        new Function($CONTEXT, '$value', `${contextBindings(expression)} return (${expression} = $value);`), directive, node,
+    const fn = compile(assignmentExpressions, source, (expression, bindings) =>
+        new Function($CONTEXT, '$value', `${bindings} return (${expression} = $value);`), scope, directive, node,
     );
     try {
         fn(scope, value);

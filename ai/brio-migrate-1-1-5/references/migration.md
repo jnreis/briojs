@@ -1,4 +1,4 @@
-# Brio 1.1.5 to 4.0.0 migration
+# Brio 1.1.5 to 5.0.0 migration
 
 ## Feasibility and limits
 
@@ -9,9 +9,9 @@ No compatibility build is provided.
 
 The source baseline is the downloaded 1.1.5 browser artifact described in the
 [legacy inventory](./legacy-api.md), whose mapped sources match `df5fbdc`.
-The original target baseline is v4.0.0 through framework commit `d868d43`;
-named stores and subtree providers below require this checkout's newer
-Unreleased implementation. Check the application's
+The target is Brio 5. Brio 5 differs from 4.x only in packaging: masks, forms,
+and observers need the inputs and observers add-ons, and `app.plugin()` is now
+`app.use()`. Check the application's
 actual artifact and target declarations before following this guide.
 
 Most ordinary bindings, events, loops, forms, and conditional UI can be
@@ -39,9 +39,10 @@ app.dispose();
 ```
 
 Use `brio.min.js` in production or `brio.dev.min.js` in development, not both.
-All browser plugins require their optional scripts: `brio.router.min.js`,
-`brio.persistence.min.js`, `brio.http.min.js`, `brio.forms.min.js`,
-`brio.step.min.js`, or `brio.money-mask.min.js`. Load needed scripts after the
+All browser add-ons require their optional scripts: `brio.router.min.js`,
+`brio.persistence.min.js`, `brio.http.min.js`, `brio.inputs.min.js` (b-mask,
+b-form, validate, moneyMask), `brio.observers.min.js` (b-on-enter and the
+other observer directives), or `brio.step.min.js`. Load needed scripts after the
 core and before mounting. Dedicated npm subpaths and tree-shakable main-entry
 imports expose every plugin and development helper.
 Run bootstrap after the bundle and markup are available. ESM consumers can
@@ -75,7 +76,7 @@ V4 compiles strict JavaScript with explicit context bindings and no `with`.
 | `$cleanup(fn)` | `onCleanup(fn)` in a synchronous owned script/setup/plugin scope |
 | `$dom`, `$set`, `$tools`, `$watch`, `$state`, `$effect`, `$http` | No automatic namespace in expressions; expose required operations as application methods |
 
-A nested v4 `b-data` does not implicitly merge all app methods into its own
+A nested v5 `b-data` does not implicitly merge all app methods into its own
 object. Navigate `$data.$parent`, or explicitly pass shared state/operations.
 An app factory is plain initialization, not a cleanup scope.
 
@@ -107,7 +108,7 @@ Ordinary wrappers and loops do not add a data boundary. Empty `b-data` does not
 create local data. Components do create a data boundary. `$parent` metadata is
 reserved/read-only; standalone `$parent` is not supplied.
 
-Explicit calls matter: `b-on-click="$data.save"` does not call `save` in v4.
+Explicit calls matter: `b-on-click="$data.save"` does not call `save` in v5.
 Use `$data.save($event)` when the method needs the event. V4 `b-effect` evaluates
 a value expression; use a named method, not a statement block.
 
@@ -118,7 +119,7 @@ forbids runtime `new Function` remains a deployment blocker.
 
 ## 3. Directive conversion matrix
 
-| 1.1.5 surface | v4 action / semantic check |
+| 1.1.5 surface | v5 action / semantic check |
 | --- | --- |
 | `b-ignore` | Keep canonical name; it still stops hydration of the entire subtree. |
 | `b-props` | Removed as a general data directive. Use app/local state or a registered component, not a rename to component `$props`. |
@@ -130,7 +131,7 @@ forbids runtime `new Function` remains a deployment blocker.
 | `b-text` | Use an explicit value expression. Returned strings remain literal, including `${...}`. Never depend on combined `b-html` / `b-text` precedence. |
 | `b-bind-*`, `bind-*` | Prefer `b-bind-*`; give an explicit expression. No empty-value inference. `.prop` forces property assignment; property/attribute and falsy-value semantics require tests. |
 | `b-model` | Explicit assignable `$data.field`; type conversion and modifiers need special review below. |
-| `b-mask` | Pattern string or synchronous formatter function; Unicode tokens `*`/`A`/`a`/`#`, literal 9, backslash escaping. Money is optional `brio.moneyMask(options)` / `@jnreis/briojs/money-mask`; no injected helper or `.money`. Legacy registries and callbacks are not drop-in compatible. |
+| `b-mask` | Pattern string or synchronous formatter function; Unicode tokens `*`/`A`/`a`/`#`, literal 9, backslash escaping. Requires the inputs add-on (`brio.inputs.min.js` / `inputsPlugin` from `@jnreis/briojs/inputs`), which also provides `brio.moneyMask(options)`; no injected helper or `.money`. Legacy registries and callbacks are not drop-in compatible. |
 | `b-uid` | `b-id="['input']"` then explicit `b-bind-id="$id.input"` / label `b-bind-for="$id.input"`. |
 | `b-ref` | Static literal registration in local `$ref` (not `$refs`). Data boundaries, components and rows isolate names; duplicates throw. No inherited lookup or automatic collection. |
 | `b-slot` | Removed as a registry. Use named component slots and `slot="name"` on caller content. |
@@ -139,17 +140,18 @@ forbids runtime `new Function` remains a deployment blocker.
 | `b-script` | Inline function expression on a script element only; no registry name/array/src loader. Async script completion no longer delays the rest of mounting. |
 | `b-style` | Replace the legacy style-loader expression with ordinary CSS / `<style>@scope { ... }</style>`. Prefer CSS custom properties via `b-bind-style` for dynamic values; ordinary style text also supports `${...}` interpolation. |
 | `b-save`, `b-hydrate` | Removed asset-preprocessing contract; move saved templates/scripts/styles to explicit application definitions/imports. |
-| `b-load-once` | No v4 script-loader equivalent; control asset loading through normal application boot/imports. |
+| `b-load-once` | No v5 script-loader equivalent; control asset loading through normal application boot/imports. |
 | `b-transition` | Rewrite the two-selector expression into named CSS classes. Historical comments mention play/reverse aliases, but they are not registered in this build. |
 | `b-on-*`, `on-*` | Prefer `b-on-*`, explicit calls, dot modifiers; translate old options deliberately. |
-| Intersection / resize | Keep event names; current builds accept keyed observer `b-options` for root/rootMargin/threshold, document, and box. Update payloads to `$entry` / `$size`. |
+| Intersection / resize | Keep event names; current builds take per-directive `.options` (e.g. `b-on-enter.options="{ rootMargin: '20px' }"`) for root/rootMargin/threshold, document, and box. Update payloads to `$entry` / `$size`. |
 | `b-effect` | Explicit expression such as `$data.observe($data.count)`; synchronous dependencies and feedback writes need review. |
 
-V4 has no general custom directive registration API or general legacy `b-options`
-processor; current `b-options` applies specifically to observer directives. Unrecognized legacy attributes can remain inert without an error.
+Current Brio has no general legacy `b-options` processor. Translate each entry to a
+`<directive>.options` attribute on `b-on-*`, observer, or plugin directives that
+accept it; other legacy option keys need redesign. Unrecognized legacy attributes can remain inert without an error.
 Search for leftovers as well as testing visible behavior.
 
-New v4 conditional chains use adjacent `b-else-if` and `b-else`, with
+New v5 conditional chains use adjacent `b-else-if` and `b-else`, with
 whitespace/comments allowed between branches. Do not synthesize branches that
 alter the original conditions' precedence.
 Use `.hide` or `.detach` only on the leading `b-if`, not on else branches.
@@ -160,29 +162,29 @@ loops, including their teleported row groups. Conditions always
 see parent data before branch-local `b-data` and providers; review legacy
 expressions that relied on the element's own local data rather than blindly
 renaming the directive.
-Legacy conditional updates are deferred; v4 selection updates synchronously.
-With a leave transition, current v4 also keeps the branch hydrated until
+Legacy conditional updates are deferred; v5 selection updates synchronously.
+With a leave transition, current v5 also keeps the branch hydrated until
 completion. Reversing leave reuses the same branch and its state; after completed
 removal, activation creates fresh state. Test exiting form events, reversal,
 cleanup timing, and focus rather than assuming the old transition engine's behavior.
 
-Legacy row alias reassignment can write back to the collection. In v4,
+Legacy row alias reassignment can write back to the collection. In v5,
 `$for.item = replacement` does not replace the source collection entry:
 update `$data.items[$for.index]` explicitly (resolving the correct data owner),
 or mutate the item's actual fields.
 
 ### Models and values
 
-Legacy model typecasting is not the v4 default. V4 ordinary inputs store strings;
+Legacy model typecasting is not the v5 default. V4 ordinary inputs store strings;
 single checkboxes store booleans; checkbox-array membership follows the model's
 array, not merely the number of same-name controls.
 
 - Use `.number` only if `parseFloat` semantics are intended. It is not a general
   JSON parser and keeps nonnumeric text unchanged.
 - `.trim` trims text; `.lazy` uses change rather than input.
-- Legacy `b-options` model `raw: true` needs no v4 modifier: plain v4 text
+- Legacy `b-options` model `raw: true` needs no v5 modifier: plain v5 text
   already stays text. Remove that legacy option rather than replacing it with
-  `b-model.raw`, which is not supported in v4 (and was not a registered legacy
+  `b-model.raw`, which is not supported in v5 (and was not a registered legacy
   directive). `.raw` on `b-text`/`b-html` is also removed: literal text and inert
   HTML are the defaults; `b-html.hydrate` explicitly activates trusted templates.
 - Preserve existing defaults in state before mounting; do not rely on the input
@@ -192,7 +194,7 @@ array, not merely the number of same-name controls.
 - Write explicit parsing/validation for legacy booleans, nulls, numeric formats,
   or serialized values, without accepting malformed values silently.
 - Legacy text models suppress updates during composition; do not assume the
-  same IME timing in v4's model handler. Validate composition in a real browser.
+  same IME timing in v5's model handler. Validate composition in a real browser.
 
 ### Bindings, events, and observers
 
@@ -203,30 +205,31 @@ static classes. Style objects clear removed dynamic properties.
 
 Normal DOM events support `.prevent`, `.stop`, `.self`, `.once`, `.capture`,
 `.passive`, `.window`, `.document`, `.outside`, `.debounce`, `.throttle`.
-Debounce/throttle are fixed at 150ms. Do not invent `.debounce.500`.
+Dot `.debounce`/`.throttle` use 150ms; for another delay use
+`b-on-input.options="{ debounce: 500 }"`. Do not invent `.debounce.500`.
 Component-host event handling does not implement these DOM modifier behaviors;
 handle prevention/filtering explicitly or attach to an ordinary element.
 
 Translate `b-on-click-prevent` to `b-on-click.prevent`, not a new event named
 `click-prevent`. Old `b-options` objects are keyed by the complete directive
-attribute. `.signal` and old keyboard `keys` options are not supported v4
+attribute. `.signal` and old keyboard `keys` options are not supported v5
 modifiers; use an explicitly owned native listener or application filter.
 Preserve the intended exact event names when removing hyphen options.
 
 Intersection handlers use `$entry`; resize handlers use `$size.width`,
-`$size.height`, and `$entry`. Current observer `b-options` supports
+`$size.height`, and `$entry`. Current observer `.options` supports
 root/rootMargin/threshold, mutation target/subtree, resize document/box, and
-numeric debounce delays. Dot `.debounce` is 100ms and overrides configured
-delays. These additions require the current bundle, not the original v4 baseline.
-Old observers debounce even without an option; v4 debounce is opt-in.
-Old resize payloads are border-box `[width, height]` arrays; v4's
+numeric debounce delays. Dot `.debounce` is 100ms; a numeric `.options` delay
+overrides it. These additions require the current bundle, not the original v5 baseline.
+Old observers debounce even without an option; v5 debounce is opt-in.
+Old resize payloads are border-box `[width, height]` arrays; v5's
 object describes the selected box (content-box by default). Convert destructuring and measurements, not just
 the payload's name.
 
 ## 4. Factories, components, scripts, and styles
 
 Replace shared data/props factories with app state or named application factory
-methods. A v4 `b-data="$data.makeLocal()"` must return a plain object immediately.
+methods. A v5 `b-data="$data.makeLocal()"` must return a plain object immediately.
 Preload async state before mounting or initialize loading/error state and update
 it explicitly; never hand `b-data` a promise.
 
@@ -288,7 +291,7 @@ Check native @scope support and all relevant page/branch lifetimes in real brows
 
 ## 5. Insertion and hydration
 
-Legacy `$dom.insert` is content-first; v4 is target-first:
+Legacy `$dom.insert` is content-first; v5 is target-first:
 
 ```js
 const handle = app.insert('#items', 'append',
@@ -332,14 +335,14 @@ function. `batch` groups synchronous writes. There is no public legacy `watch`
 or listener-priority contract; implement only the required watch behavior with
 an owned effect, explicitly choosing initial-run and old-value semantics.
 The legacy effect's optional dependency function and listener priority cannot
-be passed unchanged as the v4 options object. Legacy state can return a primitive
-unchanged; v4 `state(primitive)` throws, so use `signal(primitive)` deliberately.
+be passed unchanged as the v5 options object. Legacy state can return a primitive
+unchanged; v5 `state(primitive)` throws, so use `signal(primitive)` deliberately.
 
 Use component setup, app plugins, or `createScope().run(...)` to own effects and
 external resources. A plugin is a function receiving the app; call `onCleanup`
 synchronously during installation. An app state factory is not scope-owned.
 
-App plugins cannot register arbitrary hydration handlers into a v4 directive
+App plugins cannot register arbitrary hydration handlers into a v5 directive
 pipeline. Reimplement necessary custom directives/hooks as scoped component or
 application code with explicit event/lifetime semantics. Flag unsupported
 extensions instead of fabricating `$set` or mutating internal maps.
@@ -366,7 +369,7 @@ helper: do not treat it as an automatic replacement for application navigation.
 | `$dom.hydrate`, `$dom.dehydrate` | Mount handles/app unmount; insertion handles for inserted content |
 | `$dom.insert` | `app.insert` / contextual `$insert`, with a different signature/result |
 | `$dom.query`, `$dom.queryAll` | Native queries scoped to the owning root/component |
-| `$dom.context` | No public v4 equivalent; track state/references explicitly |
+| `$dom.context` | No public v5 equivalent; track state/references explicitly |
 | `$dom.emit`, `$dom.listen` | Native CustomEvent/listeners with owned cleanup, or component `$emit` |
 | `$tools.hasProp`, `getProp`, `setProp` | Application/native object operations after checking default/descriptor semantics |
 | `$tools.sync`, `$tools.clone` | Deliberate application-specific synchronization/copying with identity and value-type tests |
@@ -389,14 +392,14 @@ pass through. Supplied headers are preserved, not overwritten. Do not assume
 response wrappers or DELETE body behavior match 1.1.5; DELETE is query-only.
 In particular, legacy object POST bodies without a content-type override are
 URL-encoded, not JSON. If the endpoint expects form data, build a
-`URLSearchParams` or `FormData` body explicitly for v4.
+`URLSearchParams` or `FormData` body explicitly for v5.
 Legacy no-parser responses attempt JSON parsing of text regardless of headers;
-v4 chooses JSON/+json by content-type. Automatic 204/205 and zero-length JSON
+v5 chooses JSON/+json by content-type. Automatic 204/205 and zero-length JSON
 return undefined; other empty text returns an empty string. Explicit parsers
 retain native behavior, including JSON errors on empty bodies.
 Request `{ parser: 'json' }` explicitly where
 the old backend returns JSON with a non-JSON header.
-Legacy errors carry parsed `error.content`; v4 throws `HttpError` (also exposed
+Legacy errors carry parsed `error.content`; v5 throws `HttpError` (also exposed
 as `brio.HttpError`) with `status` and an unread `response`.
 Read the error response explicitly when the app needs its body and handle parse
 failure visibly.
@@ -476,7 +479,7 @@ Optional moneyMask uses ASCII minor units and `thousands`, `decimal`, `precision
 mask/model values remain formatted strings unless explicitly normalized.
 Test old monetary payloads, negatives, rounding expectations, paste, caret,
 and deletion around literals before adopting the new formatter.
-Typing `123456` formats as `123,456` in the old formatter but `1,234.56` in v4.
+Typing `123456` formats as `123,456` in the old formatter but `1,234.56` in v5.
 This is verified by the paired fixtures: preserve the old amount interpretation
 with an explicit formatter/input adapter or obtain approval for the UX change.
 

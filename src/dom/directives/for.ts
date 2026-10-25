@@ -14,7 +14,6 @@ import {
     $PARENT,
     ATTRIBUTES,
     B_TELEPORT,
-    TELEPORT,
     TEMPLATE,
 } from '../../core/native';
 import { getParent, getAttribute, removeAttribute, getOwnerDocument, insertBefore, getChildNodes, getNextSibling } from '../native';
@@ -107,12 +106,12 @@ export function handleFor(
     // Rows that cannot be teleported or expand into template content are their own range, without anchors.
     const anchorless = template.localName !== TEMPLATE && !arrayFrom(template[ATTRIBUTES]).some(({ name }) => {
         const { baseName } = extractModifiers(name);
-        return baseName === B_TELEPORT || baseName === TELEPORT || baseName === 'b-template';
+        return baseName === B_TELEPORT || baseName === 'b-template';
     });
     // Only rows that declare b-transition pay for layout reads (move animations).
     const animated = arrayFrom(template[ATTRIBUTES]).some(({ name }) => {
         const { baseName } = extractModifiers(name);
-        return baseName === 'b-transition' || baseName === 'transition';
+        return baseName === 'b-transition';
     });
 
     const rows = new Map<string | number, LoopRow>();

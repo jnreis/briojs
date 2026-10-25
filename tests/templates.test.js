@@ -17,7 +17,7 @@ for (const bundle of ['brio.min.js', 'brio.dev.min.js']) {
         const { app, root } = environment(t, `
             <template b-template b-if="$data.visible">
                 text:\${$data.count}
-                <template b-template><button on-click="$data.count++">increment</button></template>
+                <template b-template><button b-on-click="$data.count++">increment</button></template>
                 <span b-text="$data.count"></span>
                 <script b-script>({$data,onCleanup}) => {
                     $data.mounts++;
@@ -47,7 +47,7 @@ for (const bundle of ['brio.min.js', 'brio.dev.min.js']) {
     test(`${bundle}: detach preserves a fragment chain and updates while disconnected`, t => {
         const { app, root } = environment(t, `
             <template b-if.detach="$data.tab === 1" b-template>
-                first:<button on-click="$data.count++"></button><b b-text="$data.count"></b>
+                first:<button b-on-click="$data.count++"></button><b b-text="$data.count"></b>
             </template>
             <template b-else-if="$data.tab === 2" b-template><i b-text="$data.count"></i></template>
             <template b-else b-template>fallback</template>`,
@@ -78,7 +78,7 @@ test('keyed fragments move text and multiple roots together, preserving per-row 
             \${$for.index}:
             <label b-bind-for="$id.field" b-text="$provided.item.name"></label>
             <input b-bind-id="$id.field">
-            <template b-template><button on-click="$data.clicks++" b-text="$for.item.name"></button></template>
+            <template b-template><button b-on-click="$data.clicks++" b-text="$for.item.name"></button></template>
         </template><footer>tail</footer>`,
     '{items:[{id:1,name:"one"},{id:2,name:"two"}],clicks:0}');
     app.mount(root);
@@ -145,7 +145,7 @@ test('teleported fragments detach/reconnect at their destination and dispose lis
         const { app, root, portal } = environment(t, `
             <template b-if${mode}="$data.visible" b-template b-teleport="['#portal', 'append']"
                 b-effect="$data.record($data.count)">
-                remote:<button on-click="$data.count++"></button><b b-text="$data.count"></b>
+                remote:<button b-on-click="$data.count++"></button><b b-text="$data.count"></b>
             </template>`, '{visible:false,count:0}');
         const records = [];
         app.state.record = value => records.push(value);
@@ -257,7 +257,7 @@ test('managed insertion removes nested template output and teleports and rolls b
     app.mount(root);
     const handle = app.insert('#target', 'append', `
         <template b-template><b b-text="$data.count"></b>
-            <template b-template b-teleport="['#portal', 'append']"><button on-click="$data.count++"></button></template>
+            <template b-template b-teleport="['#portal', 'append']"><button b-on-click="$data.count++"></button></template>
         </template>`);
     const button = portal.querySelector('button');
     const text = root.querySelector('b');
@@ -277,7 +277,7 @@ test('managed insertion removes nested template output and teleports and rolls b
 test('failed fragment mount removes teleports and disposes already hydrated children', t => {
     const { app, root, portal } = environment(t, `
         <template b-if="true" b-template>
-            <template b-template b-teleport="['#portal', 'append']"><button on-click="$data.count++"></button></template>
+            <template b-template b-teleport="['#portal', 'append']"><button b-on-click="$data.count++"></button></template>
             <script b-script>({onCleanup,$data}) => { onCleanup($data.cleaned); }</script>
             <b b-text="$data.missing()"></b>
         </template>`, '{count:0}');

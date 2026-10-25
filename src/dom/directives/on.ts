@@ -1,4 +1,4 @@
-import { getLength, createSyntaxError, startsWith, objectKeys, includesItem } from '../../core/native';
+import { getLength, createSyntaxError, createTypeError, objectKeys, includesItem, isBoolean, isNumber } from '../../core/native';
 import { addEventListener, removeEventListener } from '../native';
 import { execute } from '../../core/expression';
 import { batch } from '../../reactivity/effect';
@@ -12,7 +12,7 @@ const keyNames: Record<string, string> = {
 const systemKeys = ['ctrl', 'alt', 'shift', 'meta'];
 /** The event whose Brio handler is running, so `.outside` listeners it creates can ignore that same event. */
 let dispatching: Event | undefined;
-const eventModifiers = ['prevent', 'stop', 'self', 'outside', 'window', 'document', 'debounce', 'throttle',
+export const eventModifiers = ['prevent', 'stop', 'self', 'outside', 'window', 'document', 'debounce', 'throttle',
     'capture', 'passive', 'once', 'ctrl', 'alt', 'shift', 'meta',
     'enter', 'esc', 'space', 'tab', 'up', 'down', 'left', 'right', 'delete'];
 
@@ -22,24 +22,32 @@ export function handleOn(
     expression: string,
     modifiers: Record<string, boolean>,
     context: Record<PropertyKey, any>,
+    options: Record<string, unknown> = {},
 ): void {
-    const rawTarget = startsWith(attrName, 'b-on-')
-        ? attrName.slice(getLength('b-on-'))
-        : attrName.slice(getLength('on-'));
+    const rawTarget = attrName.slice(getLength('b-on-'));
     if (!rawTarget) throw createSyntaxError(`Brio event directive "${attrName}" has no event name.`);
     const names = objectKeys(modifiers);
     for (const name of names)
         if (!includesItem(eventModifiers, name))
             throw createSyntaxError(`Unknown event modifier ".${name}" on "${attrName}". Supported: .${eventModifiers.join(', .')}.`);
-    const keys = names.flatMap(name => keyNames[name]?.split(',') ?? []);
-    const required = systemKeys.filter(name => modifiers[name]);
+    // Option values win over modifiers; debounce and throttle also accept a delay in milliseconds.
+    const settings: Record<string, unknown> = { ...modifiers, ...options };
+    for (const name of objectKeys(options)) {
+        const value = options[name];
+        const timed = name === 'debounce' || name === 'throttle';
+        if (!isBoolean(value) && !(timed && isNumber(value) && value >= 0 && value < Infinity))
+            throw createTypeError(`${attrName}.options ${name} must be ${timed ? 'a boolean or non-negative milliseconds' : 'a boolean'}.`);
+    }
+    const delay = (value: unknown) => value === true ? 150 : value as number;
+    const keys = objectKeys(settings).flatMap(name => settings[name] && keyNames[name]?.split(',') || []);
+    const required = systemKeys.filter(name => settings[name]);
 
     let target: EventTarget = element;
     // A click that opens a menu bubbles on to `document` after the menu's `.outside` listener is added; it must not close it.
-    const opener = modifiers.outside ? dispatching ?? (globalThis as { event?: Event }).event : undefined;
-    if (modifiers.outside) target = document;
-    else if (modifiers.window) target = window;
-    else if (modifiers.document) target = document;
+    const opener = settings.outside ? dispatching ?? (globalThis as { event?: Event }).event : undefined;
+    if (settings.outside) target = document;
+    else if (settings.window) target = window;
+    else if (settings.document) target = document;
 
     let debounceTimer: any;
     let throttleTimer: any;
@@ -47,12 +55,12 @@ export function handleOn(
     const handler = (event: Event) => {
         if (getLength(keys) && !includesItem(keys, (event as KeyboardEvent).key)) return;
         if (required.some(name => !(event as any)[`${name}Key`])) return;
-        if (modifiers.prevent) event.preventDefault();
-        if (modifiers.stop) event.stopPropagation();
-        if (modifiers.self && event.target !== element) return;
-        if (modifiers.outside && (event === opener || element.contains(event.target as Node) || !element.isConnected)) return;
+        if (settings.prevent) event.preventDefault();
+        if (settings.stop) event.stopPropagation();
+        if (settings.self && event.target !== element) return;
+        if (settings.outside && (event === opener || element.contains(event.target as Node) || !element.isConnected)) return;
         // Applied after the filters, so `.enter.once` waits for Enter rather than the first key.
-        if (modifiers.once) removeEventListener(target, rawTarget, handler, options);
+        if (settings.once) removeEventListener(target, rawTarget, handler, listenerOptions);
 
         const invoke = () => {
             const previous = dispatching;
@@ -64,17 +72,17 @@ export function handleOn(
             }
         };
 
-        if (modifiers.debounce) {
+        if (settings.debounce) {
             clearTimeout(debounceTimer);
-            debounceTimer = setTimeout(invoke, 150);
+            debounceTimer = setTimeout(invoke, delay(settings.debounce));
             return;
         }
 
-        if (modifiers.throttle) {
+        if (settings.throttle) {
             if (throttleTimer) return;
             throttleTimer = setTimeout(() => {
                 throttleTimer = null;
-            }, 150);
+            }, delay(settings.throttle));
             invoke();
             return;
         }
@@ -82,15 +90,15 @@ export function handleOn(
         invoke();
     };
 
-    const options: AddEventListenerOptions = {
-        capture: Boolean(modifiers.capture),
-        passive: Boolean(modifiers.passive),
+    const listenerOptions: AddEventListenerOptions = {
+        capture: Boolean(settings.capture),
+        passive: Boolean(settings.passive),
     };
 
-    addEventListener(target, rawTarget, handler, options);
+    addEventListener(target, rawTarget, handler, listenerOptions);
     onCleanup(() => {
         clearTimeout(debounceTimer);
         clearTimeout(throttleTimer);
-        removeEventListener(target, rawTarget, handler, options);
+        removeEventListener(target, rawTarget, handler, listenerOptions);
     });
 }

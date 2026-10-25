@@ -39,10 +39,10 @@
     <div class="card">
         <h3>1. Attribute & Boolean Bindings</h3>
         <p>Testing <code>bind-title</code>, <code>bind-disabled</code>, and <code>bind-aria-label</code>.</p>
-        <button on-click="$data.isDisabled = !$data.isDisabled">Toggle Disabled State</button>
-        <button on-click="$data.titleText = 'Updated at ' + new Date().toLocaleTimeString()">Update Title</button>
+        <button b-on-click="$data.isDisabled = !$data.isDisabled">Toggle Disabled State</button>
+        <button b-on-click="$data.titleText = 'Updated at ' + new Date().toLocaleTimeString()">Update Title</button>
         <br><br>
-        <input bind-title="$data.titleText" bind-disabled="$data.isDisabled" bind-aria-label="$data.ariaLabel" bind-value="$data.customValue" style="padding: 6px; width: 300px;">
+        <input b-bind-title="$data.titleText" b-bind-disabled="$data.isDisabled" b-bind-aria-label="$data.ariaLabel" b-bind-value="$data.customValue" style="padding: 6px; width: 300px;">
         <p>Disabled status: <code>${$data.isDisabled}</code> | Title: <code>${$data.titleText}</code></p>
     </div>
 
@@ -50,10 +50,10 @@
     <div class="card">
         <h3>2. Reactive Class Object</h3>
         <p>Testing <code>bind-class="$data.themeClass"</code> with reactive object keys.</p>
-        <button on-click="$data.themeClass.highlight = !$data.themeClass.highlight">Toggle Highlight</button>
-        <button on-click="$data.themeClass.active = !$data.themeClass.active">Toggle Active Border</button>
+        <button b-on-click="$data.themeClass.highlight = !$data.themeClass.highlight">Toggle Highlight</button>
+        <button b-on-click="$data.themeClass.active = !$data.themeClass.active">Toggle Active Border</button>
         <br><br>
-        <div bind-class="$data.themeClass" style="padding: 12px; border: 1px solid var(--line); border-radius: 6px; display: inline-block;">
+        <div b-bind-class="$data.themeClass" style="padding: 12px; border: 1px solid var(--line); border-radius: 6px; display: inline-block;">
             This box reacts to <code>themeClass.highlight</code> and <code>themeClass.active</code>.
         </div>
     </div>
@@ -62,10 +62,10 @@
     <div class="card">
         <h3>3. Reactive Style Object</h3>
         <p>Testing <code>bind-style="$data.boxStyle"</code> with camelCase and kebab-case style properties.</p>
-        <button on-click="$data.boxStyle.backgroundColor = $data.boxStyle.backgroundColor === '#38bdf8' ? '#f472b6' : '#38bdf8'">Toggle Color</button>
-        <button on-click="$data.boxStyle.padding = $data.boxStyle.padding === '12px' ? '24px' : '12px'">Toggle Padding</button>
+        <button b-on-click="$data.boxStyle.backgroundColor = $data.boxStyle.backgroundColor === '#38bdf8' ? '#f472b6' : '#38bdf8'">Toggle Color</button>
+        <button b-on-click="$data.boxStyle.padding = $data.boxStyle.padding === '12px' ? '24px' : '12px'">Toggle Padding</button>
         <br><br>
-        <div bind-style="$data.boxStyle">
+        <div b-bind-style="$data.boxStyle">
             Dynamic styles applied reactively!
         </div>
     </div>
@@ -74,7 +74,7 @@
     <div class="card">
         <h3>4. Dot-notation Modifier: <code>bind-title.prop</code></h3>
         <p>Forces direct DOM property assignment instead of just element attribute.</p>
-        <div id="prop-target" bind-title.prop="$data.titleText">
+        <div id="prop-target" b-bind-title.prop="$data.titleText">
             Hover or inspect DOM property <code>.title</code> on this element.
         </div>
     </div>

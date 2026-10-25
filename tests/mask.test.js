@@ -4,9 +4,8 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { test } from 'node:test';
 import { JSDOM } from 'jsdom';
-import { moneyMask } from '@jnreis/briojs/money-mask';
+import { moneyMask, validate } from '@jnreis/briojs/inputs';
 import { http } from '@jnreis/briojs/http';
-import { validate } from '@jnreis/briojs/forms';
 import { createStepEngine } from '@jnreis/briojs/step';
 import * as main from '@jnreis/briojs';
 
@@ -14,7 +13,7 @@ function environment(t, bundle, markup, setup = '({})', money = false) {
     const dom = new JSDOM(`<main>${markup}</main>`, { runScripts: 'outside-only', pretendToBeVisual: true });
     const { window } = dom;
     window.eval(readFileSync(new URL(`../dist/${bundle}`, import.meta.url), 'utf8'));
-    if (money) window.eval(readFileSync(new URL('../dist/brio.money-mask.min.js', import.meta.url), 'utf8'));
+    window.eval(readFileSync(new URL('../dist/brio.inputs.min.js', import.meta.url), 'utf8'));
     const app = window.brio.createApp({ state: () => window.eval(setup) });
     const failures = [];
     window.addEventListener('error', event => { failures.push(event.error); event.preventDefault(); });

@@ -14,8 +14,8 @@ const eventModifiers = [
     { name: 'outside', description: 'Run only for events outside this element (ignores the event that created it).' },
     { name: 'window', description: 'Listen on `window`.' },
     { name: 'document', description: 'Listen on `document`.' },
-    { name: 'debounce', description: 'Wait until events pause for 150ms, then run once.' },
-    { name: 'throttle', description: 'Run at most once every 150ms.' },
+    { name: 'debounce', description: 'Wait until events pause for 150ms (or the `.options` delay), then run once.' },
+    { name: 'throttle', description: 'Run at most once every 150ms (or the `.options` delay).' },
     { name: 'capture', description: 'Use a capturing listener.' },
     { name: 'passive', description: 'Use a passive listener (cannot call `preventDefault()`).' },
     { name: 'once', description: 'Remove the listener after the first event that passes the other filters.' },
@@ -34,9 +34,19 @@ const eventModifiers = [
     keyModifier('delete', 'Delete or Backspace'),
 ];
 
-const observerModifiers = [
-    { name: 'once', description: 'Stop after the first delivered callback.' },
-    { name: 'debounce', description: 'Debounce callbacks (configure the delay with `b-options`).' },
+const debounceModifier = { name: 'debounce', description: 'Debounce callbacks by 100ms, or by the `debounce` option.' };
+const debounceOption = { name: 'debounce', description: '`true` (100ms) or a delay in milliseconds.' };
+const intersectionOptions = [
+    { name: 'root', description: 'Element, selector, or null for the viewport.' },
+    { name: 'rootMargin', description: 'CSS margin around the root, such as `\'200px\'`.' },
+    { name: 'threshold', description: 'Number or array between 0 and 1.' },
+    { name: 'once', description: 'Stop after the first callback.' },
+    debounceOption,
+];
+const mutationOptions = [
+    { name: 'target', description: 'Element, document, text node, or selector to observe instead of this element.' },
+    { name: 'subtree', description: 'Observe descendants too (default `true`).' },
+    debounceOption,
 ];
 
 /**
@@ -48,6 +58,7 @@ const observerModifiers = [
  *   docs: string,
  *   example: string,
  *   modifiers?: Modifier[],
+ *   options?: Modifier[],
  *   suggestions?: { name: string, description: string }[],
  *   origin?: 'core' | 'component' | 'astro',
  * }} Directive
@@ -133,6 +144,11 @@ export const directives = [
         docs: 'html-directives/#event-modifiers',
         example: `<button b-on-click="$data.count++">Add</button>`,
         modifiers: eventModifiers,
+        options: [
+            { name: 'debounce', description: '`true` (150ms) or a delay in milliseconds.' },
+            { name: 'throttle', description: '`true` (150ms) or an interval in milliseconds.' },
+            { name: 'prevent, stop, once, …', description: 'Any modifier as `true` or `false`.' },
+        ],
         suggestions: [
             { name: 'click', description: 'A pointer click or keyboard activation.' },
             { name: 'input', description: 'A control\'s value changed while typing.' },
@@ -241,10 +257,19 @@ export const directives = [
     },
     {
         name: 'b-mask',
-        description: 'Format an input with a pattern string or a synchronous formatter function.',
+        description: 'Format an input with a pattern string or a synchronous formatter function. Requires the inputs add-on (`brio.inputs.min.js` or `inputsPlugin` from `@jnreis/briojs/inputs`).',
         value: 'pattern',
+        plugin: '@jnreis/briojs/inputs',
         docs: 'html-directives/#input-masks',
         example: `<input b-model="$data.phone" b-mask="'(###) ###-####'">`,
+    },
+    {
+        name: 'b-form',
+        description: 'Track a form\'s values, validation errors, touched fields, and submission as `$form`. Requires the inputs add-on (`brio.inputs.min.js` or `inputsPlugin` from `@jnreis/briojs/inputs`).',
+        value: 'expression',
+        plugin: '@jnreis/briojs/inputs',
+        docs: 'form-validation/#bind-a-whole-form-with-b-form',
+        example: `<form b-form="{ rules: $data.rules, submit: $data.save }" novalidate>…</form>`,
     },
     {
         name: 'b-ignore',
@@ -262,26 +287,31 @@ export const directives = [
     },
     {
         name: 'b-router-outlet',
-        description: 'Render the component matching the current route.',
+        description: 'Render the component matching the current route. Requires a router (`createApp({ router })`).',
         value: 'none',
+        plugin: '@jnreis/briojs/router',
         docs: 'three-ways-to-use-brio/#single-page-app',
         example: `<main b-router-outlet></main>`,
     },
     {
         name: 'b-on-enter',
-        description: 'Run when the element enters the viewport (or `root`). `$entry` is the intersection entry.',
+        description: 'Run when the element enters the viewport (or `root`). `$entry` is the intersection entry. Requires the observers add-on.',
         value: 'statement',
+        plugin: '@jnreis/briojs/observers',
         docs: 'observer-options/#visibility-intersection-options',
         example: `<img b-on-enter.once="$data.load()">`,
-        modifiers: observerModifiers,
+        modifiers: [{ name: 'once', description: 'Stop after the first callback.' }, debounceModifier],
+        options: intersectionOptions,
     },
     {
         name: 'b-on-exit',
-        description: 'Run when the element leaves the viewport (or `root`). `$entry` is the intersection entry.',
+        description: 'Run when the element leaves the viewport (or `root`). `$entry` is the intersection entry. Requires the observers add-on.',
         value: 'statement',
+        plugin: '@jnreis/briojs/observers',
         docs: 'observer-options/#visibility-intersection-options',
         example: `<video b-on-exit="$el.pause()"></video>`,
-        modifiers: observerModifiers,
+        modifiers: [{ name: 'once', description: 'Stop after the first callback.' }, debounceModifier],
+        options: intersectionOptions,
     },
     ...['addednodes', 'removednodes', 'attrs', 'text'].map(kind => ({
         name: `b-on-${kind}`,
@@ -290,26 +320,33 @@ export const directives = [
             removednodes: 'Run when child nodes are removed. `$mutations` lists the records.',
             attrs: 'Run when attributes change. `$mutations` lists the records.',
             text: 'Run when text (character data) changes. `$mutations` lists the records.',
-        }[kind],
+        }[kind] + ' Requires the observers add-on.',
+        options: [...mutationOptions, ...{
+            attrs: [
+                { name: 'attributeFilter', description: 'Attribute names to watch.' },
+                { name: 'attributeOldValue', description: 'Record previous values (default `false`).' },
+            ],
+            text: [{ name: 'characterDataOldValue', description: 'Record previous text (default `false`).' }],
+        }[kind] ?? []],
         value: /** @type {const} */ ('statement'),
+        plugin: '@jnreis/briojs/observers',
         docs: 'observer-options/#dom-changes-mutation-options',
         example: `<ul b-on-${kind}="console.log($mutations)"></ul>`,
-        modifiers: [...observerModifiers, { name: 'subtree', description: 'Observe descendants too (the default unless `b-options` sets `subtree: false`).' }],
+        modifiers: [debounceModifier, { name: 'subtree', description: 'Observe descendants too (the default unless the options set `subtree: false`).' }],
     })),
     {
         name: 'b-on-resize',
-        description: 'Run when the element (or document with `.document`) changes size. Read `$size.width` and `$size.height`.',
+        description: 'Run when the element (or document with `.document`) changes size. Read `$size.width` and `$size.height`. Requires the observers add-on.',
         value: 'statement',
+        plugin: '@jnreis/briojs/observers',
         docs: 'observer-options/#size-changes-resize-options',
         example: `<div b-on-resize="$data.wide = $size.width > 600"></div>`,
-        modifiers: [...observerModifiers, { name: 'document', description: 'Observe the document element instead.' }],
-    },
-    {
-        name: 'b-options',
-        description: 'Configure observer directives on this element, keyed by attribute name, e.g. `{ \'b-on-enter\': { threshold: 0.5 } }`.',
-        value: 'expression',
-        docs: 'observer-options/#configure-an-observer',
-        example: `<div b-options="{ 'b-on-enter': { rootMargin: '20px' } }" b-on-enter="$data.seen = true"></div>`,
+        modifiers: [debounceModifier, { name: 'document', description: 'Observe the document element instead.' }],
+        options: [
+            { name: 'box', description: '`content-box` (default), `border-box`, or `device-pixel-content-box`.' },
+            { name: 'document', description: 'Observe the document element instead.' },
+            debounceOption,
+        ],
     },
     {
         name: 'b-attr-*',
@@ -382,6 +419,10 @@ export function customData() {
         add(directive.name, directive, directive.description);
         for (const modifier of directive.modifiers ?? [])
             add(`${directive.name}.${modifier.name}`, directive, directive.description, `\n\n**.${modifier.name}**: ${modifier.description}`);
+        if (directive.options)
+            add(`${directive.name}.options`, { ...directive, value: 'expression', modifiers: undefined },
+                `Options for \`${directive.name}\` on this element, as an object.`,
+                directive.options.map(option => `\n\n**${option.name}**: ${option.description}`).join(''));
     }
     // The most common event and modifier pairings.
     const on = directives.find(directive => directive.name === 'b-on-*');
@@ -392,5 +433,8 @@ export function customData() {
         ['keydown', 'esc', 'window'], ['scroll', 'throttle'], ['scroll', 'passive'],
     ]) add(`b-on-${event}.${names.join('.')}`, on, on.description,
         names.map(name => `\n\n**.${name}**: ${modifier(name).description}`).join(''));
+    add('b-on-input.options', { ...on, value: 'expression', modifiers: undefined },
+        'Options for `b-on-input` on this element, as an object, e.g. `{ debounce: 400 }`.',
+        on.options.map(option => `\n\n**${option.name}**: ${option.description}`).join(''));
     return { version: 1.1, globalAttributes };
 }

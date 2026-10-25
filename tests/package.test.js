@@ -34,7 +34,7 @@ test('every ESM package entry resolves, imports, and supplies declarations', asy
 });
 
 test('standalone browser scripts are exported for self-hosting', () => {
-    for (const suffix of ['', '.dev', '.router', '.persistence', '.http', '.forms', '.step', '.money-mask']) {
+    for (const suffix of ['', '.dev', '.router', '.persistence', '.http', '.inputs', '.observers', '.step']) {
         const path = `dist/brio${suffix}.min.js`;
         assert.equal(fileURLToPath(import.meta.resolve(`@jnreis/briojs/${path}`)),
             fileURLToPath(new URL(path, root)));

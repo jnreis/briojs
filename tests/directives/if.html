@@ -37,7 +37,7 @@
     <!-- Test 1: Simple Toggle -->
     <div class="card">
         <h3>1. Conditional Mounting & Unmounting</h3>
-        <button on-click="$data.isVisible = !$data.isVisible">Toggle Visibility (${$data.isVisible ? 'Hide' : 'Show'})</button>
+        <button b-on-click="$data.isVisible = !$data.isVisible">Toggle Visibility (${$data.isVisible ? 'Hide' : 'Show'})</button>
         <div b-if="$data.isVisible" class="box success">
             🎉 This element is mounted in the DOM only when <code>isVisible</code> is true!
         </div>
@@ -48,8 +48,8 @@
     <div class="card">
         <h3>2. Numeric Condition Evaluation</h3>
         <p>Current score: <strong>${$data.score}</strong></p>
-        <button on-click="$data.score += 10">+10</button>
-        <button on-click="$data.score -= 10">-10</button>
+        <button b-on-click="$data.score += 10">+10</button>
+        <button b-on-click="$data.score -= 10">-10</button>
 
         <div b-if="$data.score >= 80" class="box success">
             🌟 Grade: Excellent (${$data.score} &gt;= 80)
@@ -66,32 +66,32 @@
     <!-- Test 3: Nested Scope and Lifecycle Cleanups -->
     <div class="card">
         <h3>3. Nested State Inside b-if</h3>
-        <button on-click="$data.userLoggedIn = !$data.userLoggedIn">Toggle Login (${$data.userLoggedIn ? 'Logout' : 'Login'})</button>
+        <button b-on-click="$data.userLoggedIn = !$data.userLoggedIn">Toggle Login (${$data.userLoggedIn ? 'Logout' : 'Login'})</button>
 
         <div b-if="$data.userLoggedIn" b-data="{ childCount: 0 }" class="box" style="background: var(--soft); border: 1px solid var(--line);">
             <h4>User Dashboard</h4>
             <p>Child counter: <strong>${$data.childCount}</strong></p>
-            <button on-click="$data.childCount++">Increment Dashboard Counter</button>
+            <button b-on-click="$data.childCount++">Increment Dashboard Counter</button>
             <p>Increment, log out, then log in: this local counter must reset to zero.</p>
         </div>
     </div>
 
     <div class="card">
         <h3>4. b-if.detach: State Is Preserved Outside the DOM</h3>
-        <button id="toggle-detach" on-click="$data.showDashboard = !$data.showDashboard">Toggle preserved dashboard</button>
+        <button id="toggle-detach" b-on-click="$data.showDashboard = !$data.showDashboard">Toggle preserved dashboard</button>
         <div id="detached-dashboard" b-if.detach="$data.showDashboard" b-data="{ childCount: 0 }" class="box success">
             <p>Preserved counter: <strong>${$data.childCount}</strong></p>
-            <button on-click="$data.childCount++">Increment Preserved Counter</button>
+            <button b-on-click="$data.childCount++">Increment Preserved Counter</button>
         </div>
         <p>Increment, hide, then show: the counter must keep its value. State owned by a parent also survives b-if; only branch-local state is recreated.</p>
     </div>
 
     <div class="card">
         <h3>5. b-if.hide: Initially Hidden, Still Hydrated</h3>
-        <button id="toggle-hide" on-click="$data.hideDashboard = !$data.hideDashboard">Toggle CSS-hidden dashboard</button>
+        <button id="toggle-hide" b-on-click="$data.hideDashboard = !$data.hideDashboard">Toggle CSS-hidden dashboard</button>
         <div id="hidden-dashboard" b-if.hide="$data.hideDashboard" b-data="{ childCount: 0 }" class="box success" style="display: flex; gap: 12px;">
             <p>Preserved counter: <strong>${$data.childCount}</strong></p>
-            <button on-click="$data.childCount++">Increment CSS-hidden Counter</button>
+            <button b-on-click="$data.childCount++">Increment CSS-hidden Counter</button>
             <span b-text="$data.$parent.message"></span>
         </div>
         <p>This dashboard starts hidden but hydrated. Its authored display: flex must return when shown.
@@ -100,38 +100,38 @@
 
     <div class="card">
         <h3>6. Preserved Chains: Set the Mode Only on b-if</h3>
-        <button id="tab-one" on-click="$data.tab = 1">Tab 1</button>
-        <button id="tab-two" on-click="$data.tab = 2">Tab 2</button>
-        <button id="tab-other" on-click="$data.tab = 3">Fallback</button>
+        <button id="tab-one" b-on-click="$data.tab = 1">Tab 1</button>
+        <button id="tab-two" b-on-click="$data.tab = 2">Tab 2</button>
+        <button id="tab-other" b-on-click="$data.tab = 3">Fallback</button>
         <input id="live-message" b-model="$data.message" aria-label="Live message">
         <div id="detach-one" b-if.detach="$data.tab === 1" b-data="{ count: 0 }" class="box success">
             <script b-script>() => { $data.$parent.setupCount++; }</script>
-            <button on-click="$data.count++">Detached tab 1: ${$data.count}</button>
+            <button b-on-click="$data.count++">Detached tab 1: ${$data.count}</button>
             <span b-text="$data.$parent.message"></span>
         </div>
         <div id="detach-two" b-else-if="$data.tab === 2" b-data="{ count: 0 }" class="box success">
             <script b-script>() => { $data.$parent.setupCount++; }</script>
-            <button on-click="$data.count++">Detached tab 2: ${$data.count}</button>
+            <button b-on-click="$data.count++">Detached tab 2: ${$data.count}</button>
             <span b-text="$data.$parent.message"></span>
         </div>
         <div id="detach-other" b-else b-data="{ count: 0 }" class="box alert">
             <script b-script>() => { $data.$parent.setupCount++; }</script>
-            <button on-click="$data.count++">Detached fallback: ${$data.count}</button>
+            <button b-on-click="$data.count++">Detached fallback: ${$data.count}</button>
         </div>
         <hr>
         <div id="hide-one" b-if.hide="$data.tab === 1" b-data="{ count: 0 }" class="box success">
             <script b-script>() => { $data.$parent.setupCount++; }</script>
-            <button on-click="$data.count++">Hidden tab 1: ${$data.count}</button>
+            <button b-on-click="$data.count++">Hidden tab 1: ${$data.count}</button>
             <span b-text="$data.$parent.message"></span>
         </div>
         <div id="hide-two" b-else-if="$data.tab === 2" b-data="{ count: 0 }" class="box success">
             <script b-script>() => { $data.$parent.setupCount++; }</script>
-            <button on-click="$data.count++">Hidden tab 2: ${$data.count}</button>
+            <button b-on-click="$data.count++">Hidden tab 2: ${$data.count}</button>
             <span b-text="$data.$parent.message"></span>
         </div>
         <div id="hide-other" b-else b-data="{ count: 0 }" class="box alert">
             <script b-script>() => { $data.$parent.setupCount++; }</script>
-            <button on-click="$data.count++">Hidden fallback: ${$data.count}</button>
+            <button b-on-click="$data.count++">Hidden fallback: ${$data.count}</button>
         </div>
         <p>Setup executions: <output id="setup-count" b-text="$data.setupCount"></output> (must stay at 6).
             All six branches hydrate once immediately. Switch tabs: counters survive.

@@ -3,6 +3,7 @@ import type { ContextValues } from '../core/context-values';
 import type { StoreMap } from '../core/types';
 import type { RefMap } from './refs';
 import type { RouteState } from '../plugins/router';
+import type { DirectiveRegistry } from './directives/registry';
 
 export type ComponentContext = {
     el: Element;
@@ -32,6 +33,7 @@ export type DomRuntime = {
     components: Map<string, ComponentDefinition>;
     router?: any;
     root?: Element;
+    directives?: DirectiveRegistry;
 };
 
 const trustedMarkup = Symbol('brio.trustedMarkup');

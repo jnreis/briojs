@@ -24,7 +24,7 @@ test('size graphs follow imports/reexports once even through cycles and shared e
 });
 
 test('minified npm consumers tree-shake main exports as effectively as their utility subpaths', async () => {
-    for (const [entry, symbols] of [['reactivity', ['signal', 'effect']], ['http', ['http']], ['forms', ['validate']]]) {
+    for (const [entry, symbols] of [['reactivity', ['signal', 'effect']], ['http', ['http']], ['inputs', ['validate']]]) {
         const main = await consumerSize([['main', symbols]]);
         const subpath = await consumerSize([[entry, symbols]]);
         assert.deepEqual(main, subpath, symbols.join(','));

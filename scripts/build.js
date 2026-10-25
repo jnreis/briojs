@@ -18,10 +18,11 @@ await build({
                 'router-entry': 'src/router-entry.ts',
                 'devtools-entry': 'src/devtools-entry.ts',
                 'http-entry': 'src/http-entry.ts',
-                'forms-entry': 'src/forms-entry.ts',
+                'inputs-entry': 'src/inputs-entry.ts',
+                'observers-entry': 'src/observers-entry.ts',
                 'step-entry': 'src/step-entry.ts',
-                'money-mask-entry': 'src/money-mask-entry.ts',
                 'astro-entry': 'src/astro-entry.ts',
+                'testing-entry': 'src/testing-entry.ts',
             },
             formats: ['es'],
             fileName: (_format, entryName) => `${entryName}.js`,
@@ -87,7 +88,7 @@ const sharedRuntimeModules = new Set([
     resolve('src/reactivity/effect.ts'),
     resolve('src/core/scope.ts'),
 ]);
-for (const plugin of ['router', 'persistence', 'http', 'forms', 'step', 'money-mask']) {
+for (const plugin of ['router', 'persistence', 'http', 'inputs', 'observers', 'step']) {
     await build({
         publicDir: false,
         plugins: [{

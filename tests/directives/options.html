@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script src="/site/public/theme.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual Test: directive options</title>
+    <link rel="stylesheet" href="/tests/shared/showcase.css">
+    <link rel="icon" type="image/svg+xml" href="/site/public/favicon.svg">
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; margin: 20px; background: var(--canvas); color: var(--ink); }
+        .card { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+        h3 { margin-top: 0; }
+        input, button { padding: 8px; }
+    </style>
+</head>
+<body b-data="{ query: '', searches: 0, clicks: 0, keys: 0, searchOptions: { debounce: 400 }, tipOptions: { text: 'Options from a state object' } }">
+    <h1>Directive .options Manual Tests</h1>
+    <p>Options are read once at hydration. Attribute order does not matter, and option values override dot modifiers.
+        The <code>.options</code> attribute uses the directive's base name, without other modifiers.</p>
+
+    <div class="card">
+        <h3>1. Object reference and custom debounce delay</h3>
+        <label for="search">Search (400ms after you stop typing)</label>
+        <input id="search" b-on-input.debounce="$data.query = $event.target.value; $data.searches++"
+               b-on-input.options="$data.searchOptions">
+        <p>Delivered query: <output id="query" b-text="$data.query"></output></p>
+        <p>Search calls: <output id="searches" b-text="$data.searches"></output></p>
+    </div>
+
+    <div class="card">
+        <h3>2. Literal options before the event attribute</h3>
+        <button id="throttled" b-on-click.options="{ throttle: 600 }" b-on-click="$data.clicks++">Click repeatedly</button>
+        <p>Accepted clicks: <output id="clicks" b-text="$data.clicks"></output>. At most one click every 600ms.</p>
+    </div>
+
+    <div class="card">
+        <h3>3. Options override modifiers</h3>
+        <label for="keys">Press Enter more than once</label>
+        <input id="keys" b-on-keydown.enter.once="$data.keys++" b-on-keydown.options="{ once: false }">
+        <p>Enter presses: <output id="key-count" b-text="$data.keys"></output>. Other keys do not count.</p>
+    </div>
+
+    <div class="card">
+        <h3>4. Plugin-defined options</h3>
+        <p>The page registers <code>b-tip</code> with <code>options: ['text']</code>.
+            Its mount hook reads <code>binding.options.text</code> to set a native tooltip.</p>
+        <button id="literal-tip" b-tip="" b-tip.options="{ text: 'Options from a literal' }">Hover: literal object</button>
+        <button id="reference-tip" b-tip.options="$data.tipOptions" b-tip="">Hover: object reference</button>
+    </div>
+
+    <div class="card">
+        <h3>5. Observer options and validation</h3>
+        <p>Try per-observer settings in the <a href="intersection.html">intersection</a>,
+            <a href="resize.html">resize</a>, and <a href="mutation.html">mutation</a> pages.</p>
+        <p>Unknown keys, non-object values, orphan options, and options on unsupported directives throw errors.
+            For example, <code>b-on-click.options="{ delay: 100 }"</code> is invalid; use <code>debounce</code> or <code>throttle</code>.</p>
+    </div>
+
+    <script src="/tests/source-viewer.js"></script>
+    <script src="/dist/brio.min.js"></script>
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            brio.createApp()
+                .directive({
+                    name: 'b-tip',
+                    value: 'none',
+                    options: ['text'],
+                    mount(element, binding) {
+                        element.title = binding.options.text;
+                    },
+                })
+                .mount('body');
+        });
+    </script>
+    <nav class="brio-demo-nav" b-ignore aria-label="Brio lab"><a href="/">Lab</a><a href="/tests/index.html">Directory</a><button id="theme-toggle" type="button" aria-label="Switch color theme">&#9680;</button></nav>
+</body>
+</html>

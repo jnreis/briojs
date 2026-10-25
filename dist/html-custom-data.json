@@ -762,12 +762,25 @@
       "name": "b-mask",
       "description": {
         "kind": "markdown",
-        "value": "Format an input with a pattern string or a synchronous formatter function.\n\nValue: a pattern string expression (`#` digit, `a` letter, `*` any) or a formatter function.\n\n```html\n<input b-model=\"$data.phone\" b-mask=\"'(###) ###-####'\">\n```"
+        "value": "Format an input with a pattern string or a synchronous formatter function. Requires the inputs add-on (`brio.inputs.min.js` or `inputsPlugin` from `@jnreis/briojs/inputs`).\n\nValue: a pattern string expression (`#` digit, `a` letter, `*` any) or a formatter function.\n\n```html\n<input b-model=\"$data.phone\" b-mask=\"'(###) ###-####'\">\n```"
       },
       "references": [
         {
           "name": "Brio docs",
           "url": "https://briojs.com/reference/html-directives/#input-masks"
+        }
+      ]
+    },
+    {
+      "name": "b-form",
+      "description": {
+        "kind": "markdown",
+        "value": "Track a form's values, validation errors, touched fields, and submission as `$form`. Requires the inputs add-on (`brio.inputs.min.js` or `inputsPlugin` from `@jnreis/briojs/inputs`).\n\nValue: a JavaScript expression.\n\n```html\n<form b-form=\"{ rules: $data.rules, submit: $data.save }\" novalidate>…</form>\n```"
+      },
+      "references": [
+        {
+          "name": "Brio docs",
+          "url": "https://briojs.com/reference/form-validation/#bind-a-whole-form-with-b-form"
         }
       ]
     },
@@ -803,7 +816,7 @@
       "name": "b-router-outlet",
       "description": {
         "kind": "markdown",
-        "value": "Render the component matching the current route.\n\nNo value needed.\n\n```html\n<main b-router-outlet></main>\n```"
+        "value": "Render the component matching the current route. Requires a router (`createApp({ router })`).\n\nNo value needed.\n\n```html\n<main b-router-outlet></main>\n```"
       },
       "valueSet": "v",
       "references": [
@@ -817,7 +830,7 @@
       "name": "b-on-enter",
       "description": {
         "kind": "markdown",
-        "value": "Run when the element enters the viewport (or `root`). `$entry` is the intersection entry.\n\nValue: a JavaScript statement.\n\nModifiers: `.once`, `.debounce`.\n\n```html\n<img b-on-enter.once=\"$data.load()\">\n```"
+        "value": "Run when the element enters the viewport (or `root`). `$entry` is the intersection entry. Requires the observers add-on.\n\nValue: a JavaScript statement.\n\nModifiers: `.once`, `.debounce`.\n\n```html\n<img b-on-enter.once=\"$data.load()\">\n```"
       },
       "references": [
         {
@@ -830,7 +843,7 @@
       "name": "b-on-enter.once",
       "description": {
         "kind": "markdown",
-        "value": "Run when the element enters the viewport (or `root`). `$entry` is the intersection entry.\n\n**.once**: Stop after the first delivered callback.\n\nValue: a JavaScript statement.\n\nModifiers: `.once`, `.debounce`.\n\n```html\n<img b-on-enter.once=\"$data.load()\">\n```"
+        "value": "Run when the element enters the viewport (or `root`). `$entry` is the intersection entry. Requires the observers add-on.\n\n**.once**: Stop after the first callback.\n\nValue: a JavaScript statement.\n\nModifiers: `.once`, `.debounce`.\n\n```html\n<img b-on-enter.once=\"$data.load()\">\n```"
       },
       "references": [
         {
@@ -843,7 +856,20 @@
       "name": "b-on-enter.debounce",
       "description": {
         "kind": "markdown",
-        "value": "Run when the element enters the viewport (or `root`). `$entry` is the intersection entry.\n\n**.debounce**: Debounce callbacks (configure the delay with `b-options`).\n\nValue: a JavaScript statement.\n\nModifiers: `.once`, `.debounce`.\n\n```html\n<img b-on-enter.once=\"$data.load()\">\n```"
+        "value": "Run when the element enters the viewport (or `root`). `$entry` is the intersection entry. Requires the observers add-on.\n\n**.debounce**: Debounce callbacks by 100ms, or by the `debounce` option.\n\nValue: a JavaScript statement.\n\nModifiers: `.once`, `.debounce`.\n\n```html\n<img b-on-enter.once=\"$data.load()\">\n```"
+      },
+      "references": [
+        {
+          "name": "Brio docs",
+          "url": "https://briojs.com/reference/observer-options/#visibility-intersection-options"
+        }
+      ]
+    },
+    {
+      "name": "b-on-enter.options",
+      "description": {
+        "kind": "markdown",
+        "value": "Options for `b-on-enter` on this element, as an object.\n\n**root**: Element, selector, or null for the viewport.\n\n**rootMargin**: CSS margin around the root, such as `'200px'`.\n\n**threshold**: Number or array between 0 and 1.\n\n**once**: Stop after the first callback.\n\n**debounce**: `true` (100ms) or a delay in milliseconds.\n\nValue: a JavaScript expression.\n\n```html\n<img b-on-enter.once=\"$data.load()\">\n```"
       },
       "references": [
         {
@@ -856,7 +882,7 @@
       "name": "b-on-exit",
       "description": {
         "kind": "markdown",
-        "value": "Run when the element leaves the viewport (or `root`). `$entry` is the intersection entry.\n\nValue: a JavaScript statement.\n\nModifiers: `.once`, `.debounce`.\n\n```html\n<video b-on-exit=\"$el.pause()\"></video>\n```"
+        "value": "Run when the element leaves the viewport (or `root`). `$entry` is the intersection entry. Requires the observers add-on.\n\nValue: a JavaScript statement.\n\nModifiers: `.once`, `.debounce`.\n\n```html\n<video b-on-exit=\"$el.pause()\"></video>\n```"
       },
       "references": [
         {
@@ -869,7 +895,7 @@
       "name": "b-on-exit.once",
       "description": {
         "kind": "markdown",
-        "value": "Run when the element leaves the viewport (or `root`). `$entry` is the intersection entry.\n\n**.once**: Stop after the first delivered callback.\n\nValue: a JavaScript statement.\n\nModifiers: `.once`, `.debounce`.\n\n```html\n<video b-on-exit=\"$el.pause()\"></video>\n```"
+        "value": "Run when the element leaves the viewport (or `root`). `$entry` is the intersection entry. Requires the observers add-on.\n\n**.once**: Stop after the first callback.\n\nValue: a JavaScript statement.\n\nModifiers: `.once`, `.debounce`.\n\n```html\n<video b-on-exit=\"$el.pause()\"></video>\n```"
       },
       "references": [
         {
@@ -882,7 +908,20 @@
       "name": "b-on-exit.debounce",
       "description": {
         "kind": "markdown",
-        "value": "Run when the element leaves the viewport (or `root`). `$entry` is the intersection entry.\n\n**.debounce**: Debounce callbacks (configure the delay with `b-options`).\n\nValue: a JavaScript statement.\n\nModifiers: `.once`, `.debounce`.\n\n```html\n<video b-on-exit=\"$el.pause()\"></video>\n```"
+        "value": "Run when the element leaves the viewport (or `root`). `$entry` is the intersection entry. Requires the observers add-on.\n\n**.debounce**: Debounce callbacks by 100ms, or by the `debounce` option.\n\nValue: a JavaScript statement.\n\nModifiers: `.once`, `.debounce`.\n\n```html\n<video b-on-exit=\"$el.pause()\"></video>\n```"
+      },
+      "references": [
+        {
+          "name": "Brio docs",
+          "url": "https://briojs.com/reference/observer-options/#visibility-intersection-options"
+        }
+      ]
+    },
+    {
+      "name": "b-on-exit.options",
+      "description": {
+        "kind": "markdown",
+        "value": "Options for `b-on-exit` on this element, as an object.\n\n**root**: Element, selector, or null for the viewport.\n\n**rootMargin**: CSS margin around the root, such as `'200px'`.\n\n**threshold**: Number or array between 0 and 1.\n\n**once**: Stop after the first callback.\n\n**debounce**: `true` (100ms) or a delay in milliseconds.\n\nValue: a JavaScript expression.\n\n```html\n<video b-on-exit=\"$el.pause()\"></video>\n```"
       },
       "references": [
         {
@@ -895,20 +934,7 @@
       "name": "b-on-addednodes",
       "description": {
         "kind": "markdown",
-        "value": "Run when child nodes are added. `$mutations` lists the records.\n\nValue: a JavaScript statement.\n\nModifiers: `.once`, `.debounce`, `.subtree`.\n\n```html\n<ul b-on-addednodes=\"console.log($mutations)\"></ul>\n```"
-      },
-      "references": [
-        {
-          "name": "Brio docs",
-          "url": "https://briojs.com/reference/observer-options/#dom-changes-mutation-options"
-        }
-      ]
-    },
-    {
-      "name": "b-on-addednodes.once",
-      "description": {
-        "kind": "markdown",
-        "value": "Run when child nodes are added. `$mutations` lists the records.\n\n**.once**: Stop after the first delivered callback.\n\nValue: a JavaScript statement.\n\nModifiers: `.once`, `.debounce`, `.subtree`.\n\n```html\n<ul b-on-addednodes=\"console.log($mutations)\"></ul>\n```"
+        "value": "Run when child nodes are added. `$mutations` lists the records. Requires the observers add-on.\n\nValue: a JavaScript statement.\n\nModifiers: `.debounce`, `.subtree`.\n\n```html\n<ul b-on-addednodes=\"console.log($mutations)\"></ul>\n```"
       },
       "references": [
         {
@@ -921,7 +947,7 @@
       "name": "b-on-addednodes.debounce",
       "description": {
         "kind": "markdown",
-        "value": "Run when child nodes are added. `$mutations` lists the records.\n\n**.debounce**: Debounce callbacks (configure the delay with `b-options`).\n\nValue: a JavaScript statement.\n\nModifiers: `.once`, `.debounce`, `.subtree`.\n\n```html\n<ul b-on-addednodes=\"console.log($mutations)\"></ul>\n```"
+        "value": "Run when child nodes are added. `$mutations` lists the records. Requires the observers add-on.\n\n**.debounce**: Debounce callbacks by 100ms, or by the `debounce` option.\n\nValue: a JavaScript statement.\n\nModifiers: `.debounce`, `.subtree`.\n\n```html\n<ul b-on-addednodes=\"console.log($mutations)\"></ul>\n```"
       },
       "references": [
         {
@@ -934,7 +960,20 @@
       "name": "b-on-addednodes.subtree",
       "description": {
         "kind": "markdown",
-        "value": "Run when child nodes are added. `$mutations` lists the records.\n\n**.subtree**: Observe descendants too (the default unless `b-options` sets `subtree: false`).\n\nValue: a JavaScript statement.\n\nModifiers: `.once`, `.debounce`, `.subtree`.\n\n```html\n<ul b-on-addednodes=\"console.log($mutations)\"></ul>\n```"
+        "value": "Run when child nodes are added. `$mutations` lists the records. Requires the observers add-on.\n\n**.subtree**: Observe descendants too (the default unless the options set `subtree: false`).\n\nValue: a JavaScript statement.\n\nModifiers: `.debounce`, `.subtree`.\n\n```html\n<ul b-on-addednodes=\"console.log($mutations)\"></ul>\n```"
+      },
+      "references": [
+        {
+          "name": "Brio docs",
+          "url": "https://briojs.com/reference/observer-options/#dom-changes-mutation-options"
+        }
+      ]
+    },
+    {
+      "name": "b-on-addednodes.options",
+      "description": {
+        "kind": "markdown",
+        "value": "Options for `b-on-addednodes` on this element, as an object.\n\n**target**: Element, document, text node, or selector to observe instead of this element.\n\n**subtree**: Observe descendants too (default `true`).\n\n**debounce**: `true` (100ms) or a delay in milliseconds.\n\nValue: a JavaScript expression.\n\n```html\n<ul b-on-addednodes=\"console.log($mutations)\"></ul>\n```"
       },
       "references": [
         {
@@ -947,20 +986,7 @@
       "name": "b-on-removednodes",
       "description": {
         "kind": "markdown",
-        "value": "Run when child nodes are removed. `$mutations` lists the records.\n\nValue: a JavaScript statement.\n\nModifiers: `.once`, `.debounce`, `.subtree`.\n\n```html\n<ul b-on-removednodes=\"console.log($mutations)\"></ul>\n```"
-      },
-      "references": [
-        {
-          "name": "Brio docs",
-          "url": "https://briojs.com/reference/observer-options/#dom-changes-mutation-options"
-        }
-      ]
-    },
-    {
-      "name": "b-on-removednodes.once",
-      "description": {
-        "kind": "markdown",
-        "value": "Run when child nodes are removed. `$mutations` lists the records.\n\n**.once**: Stop after the first delivered callback.\n\nValue: a JavaScript statement.\n\nModifiers: `.once`, `.debounce`, `.subtree`.\n\n```html\n<ul b-on-removednodes=\"console.log($mutations)\"></ul>\n```"
+        "value": "Run when child nodes are removed. `$mutations` lists the records. Requires the observers add-on.\n\nValue: a JavaScript statement.\n\nModifiers: `.debounce`, `.subtree`.\n\n```html\n<ul b-on-removednodes=\"console.log($mutations)\"></ul>\n```"
       },
       "references": [
         {
@@ -973,7 +999,7 @@
       "name": "b-on-removednodes.debounce",
       "description": {
         "kind": "markdown",
-        "value": "Run when child nodes are removed. `$mutations` lists the records.\n\n**.debounce**: Debounce callbacks (configure the delay with `b-options`).\n\nValue: a JavaScript statement.\n\nModifiers: `.once`, `.debounce`, `.subtree`.\n\n```html\n<ul b-on-removednodes=\"console.log($mutations)\"></ul>\n```"
+        "value": "Run when child nodes are removed. `$mutations` lists the records. Requires the observers add-on.\n\n**.debounce**: Debounce callbacks by 100ms, or by the `debounce` option.\n\nValue: a JavaScript statement.\n\nModifiers: `.debounce`, `.subtree`.\n\n```html\n<ul b-on-removednodes=\"console.log($mutations)\"></ul>\n```"
       },
       "references": [
         {
@@ -986,7 +1012,20 @@
       "name": "b-on-removednodes.subtree",
       "description": {
         "kind": "markdown",
-        "value": "Run when child nodes are removed. `$mutations` lists the records.\n\n**.subtree**: Observe descendants too (the default unless `b-options` sets `subtree: false`).\n\nValue: a JavaScript statement.\n\nModifiers: `.once`, `.debounce`, `.subtree`.\n\n```html\n<ul b-on-removednodes=\"console.log($mutations)\"></ul>\n```"
+        "value": "Run when child nodes are removed. `$mutations` lists the records. Requires the observers add-on.\n\n**.subtree**: Observe descendants too (the default unless the options set `subtree: false`).\n\nValue: a JavaScript statement.\n\nModifiers: `.debounce`, `.subtree`.\n\n```html\n<ul b-on-removednodes=\"console.log($mutations)\"></ul>\n```"
+      },
+      "references": [
+        {
+          "name": "Brio docs",
+          "url": "https://briojs.com/reference/observer-options/#dom-changes-mutation-options"
+        }
+      ]
+    },
+    {
+      "name": "b-on-removednodes.options",
+      "description": {
+        "kind": "markdown",
+        "value": "Options for `b-on-removednodes` on this element, as an object.\n\n**target**: Element, document, text node, or selector to observe instead of this element.\n\n**subtree**: Observe descendants too (default `true`).\n\n**debounce**: `true` (100ms) or a delay in milliseconds.\n\nValue: a JavaScript expression.\n\n```html\n<ul b-on-removednodes=\"console.log($mutations)\"></ul>\n```"
       },
       "references": [
         {
@@ -999,20 +1038,7 @@
       "name": "b-on-attrs",
       "description": {
         "kind": "markdown",
-        "value": "Run when attributes change. `$mutations` lists the records.\n\nValue: a JavaScript statement.\n\nModifiers: `.once`, `.debounce`, `.subtree`.\n\n```html\n<ul b-on-attrs=\"console.log($mutations)\"></ul>\n```"
-      },
-      "references": [
-        {
-          "name": "Brio docs",
-          "url": "https://briojs.com/reference/observer-options/#dom-changes-mutation-options"
-        }
-      ]
-    },
-    {
-      "name": "b-on-attrs.once",
-      "description": {
-        "kind": "markdown",
-        "value": "Run when attributes change. `$mutations` lists the records.\n\n**.once**: Stop after the first delivered callback.\n\nValue: a JavaScript statement.\n\nModifiers: `.once`, `.debounce`, `.subtree`.\n\n```html\n<ul b-on-attrs=\"console.log($mutations)\"></ul>\n```"
+        "value": "Run when attributes change. `$mutations` lists the records. Requires the observers add-on.\n\nValue: a JavaScript statement.\n\nModifiers: `.debounce`, `.subtree`.\n\n```html\n<ul b-on-attrs=\"console.log($mutations)\"></ul>\n```"
       },
       "references": [
         {
@@ -1025,7 +1051,7 @@
       "name": "b-on-attrs.debounce",
       "description": {
         "kind": "markdown",
-        "value": "Run when attributes change. `$mutations` lists the records.\n\n**.debounce**: Debounce callbacks (configure the delay with `b-options`).\n\nValue: a JavaScript statement.\n\nModifiers: `.once`, `.debounce`, `.subtree`.\n\n```html\n<ul b-on-attrs=\"console.log($mutations)\"></ul>\n```"
+        "value": "Run when attributes change. `$mutations` lists the records. Requires the observers add-on.\n\n**.debounce**: Debounce callbacks by 100ms, or by the `debounce` option.\n\nValue: a JavaScript statement.\n\nModifiers: `.debounce`, `.subtree`.\n\n```html\n<ul b-on-attrs=\"console.log($mutations)\"></ul>\n```"
       },
       "references": [
         {
@@ -1038,7 +1064,20 @@
       "name": "b-on-attrs.subtree",
       "description": {
         "kind": "markdown",
-        "value": "Run when attributes change. `$mutations` lists the records.\n\n**.subtree**: Observe descendants too (the default unless `b-options` sets `subtree: false`).\n\nValue: a JavaScript statement.\n\nModifiers: `.once`, `.debounce`, `.subtree`.\n\n```html\n<ul b-on-attrs=\"console.log($mutations)\"></ul>\n```"
+        "value": "Run when attributes change. `$mutations` lists the records. Requires the observers add-on.\n\n**.subtree**: Observe descendants too (the default unless the options set `subtree: false`).\n\nValue: a JavaScript statement.\n\nModifiers: `.debounce`, `.subtree`.\n\n```html\n<ul b-on-attrs=\"console.log($mutations)\"></ul>\n```"
+      },
+      "references": [
+        {
+          "name": "Brio docs",
+          "url": "https://briojs.com/reference/observer-options/#dom-changes-mutation-options"
+        }
+      ]
+    },
+    {
+      "name": "b-on-attrs.options",
+      "description": {
+        "kind": "markdown",
+        "value": "Options for `b-on-attrs` on this element, as an object.\n\n**target**: Element, document, text node, or selector to observe instead of this element.\n\n**subtree**: Observe descendants too (default `true`).\n\n**debounce**: `true` (100ms) or a delay in milliseconds.\n\n**attributeFilter**: Attribute names to watch.\n\n**attributeOldValue**: Record previous values (default `false`).\n\nValue: a JavaScript expression.\n\n```html\n<ul b-on-attrs=\"console.log($mutations)\"></ul>\n```"
       },
       "references": [
         {
@@ -1051,20 +1090,7 @@
       "name": "b-on-text",
       "description": {
         "kind": "markdown",
-        "value": "Run when text (character data) changes. `$mutations` lists the records.\n\nValue: a JavaScript statement.\n\nModifiers: `.once`, `.debounce`, `.subtree`.\n\n```html\n<ul b-on-text=\"console.log($mutations)\"></ul>\n```"
-      },
-      "references": [
-        {
-          "name": "Brio docs",
-          "url": "https://briojs.com/reference/observer-options/#dom-changes-mutation-options"
-        }
-      ]
-    },
-    {
-      "name": "b-on-text.once",
-      "description": {
-        "kind": "markdown",
-        "value": "Run when text (character data) changes. `$mutations` lists the records.\n\n**.once**: Stop after the first delivered callback.\n\nValue: a JavaScript statement.\n\nModifiers: `.once`, `.debounce`, `.subtree`.\n\n```html\n<ul b-on-text=\"console.log($mutations)\"></ul>\n```"
+        "value": "Run when text (character data) changes. `$mutations` lists the records. Requires the observers add-on.\n\nValue: a JavaScript statement.\n\nModifiers: `.debounce`, `.subtree`.\n\n```html\n<ul b-on-text=\"console.log($mutations)\"></ul>\n```"
       },
       "references": [
         {
@@ -1077,7 +1103,7 @@
       "name": "b-on-text.debounce",
       "description": {
         "kind": "markdown",
-        "value": "Run when text (character data) changes. `$mutations` lists the records.\n\n**.debounce**: Debounce callbacks (configure the delay with `b-options`).\n\nValue: a JavaScript statement.\n\nModifiers: `.once`, `.debounce`, `.subtree`.\n\n```html\n<ul b-on-text=\"console.log($mutations)\"></ul>\n```"
+        "value": "Run when text (character data) changes. `$mutations` lists the records. Requires the observers add-on.\n\n**.debounce**: Debounce callbacks by 100ms, or by the `debounce` option.\n\nValue: a JavaScript statement.\n\nModifiers: `.debounce`, `.subtree`.\n\n```html\n<ul b-on-text=\"console.log($mutations)\"></ul>\n```"
       },
       "references": [
         {
@@ -1090,7 +1116,20 @@
       "name": "b-on-text.subtree",
       "description": {
         "kind": "markdown",
-        "value": "Run when text (character data) changes. `$mutations` lists the records.\n\n**.subtree**: Observe descendants too (the default unless `b-options` sets `subtree: false`).\n\nValue: a JavaScript statement.\n\nModifiers: `.once`, `.debounce`, `.subtree`.\n\n```html\n<ul b-on-text=\"console.log($mutations)\"></ul>\n```"
+        "value": "Run when text (character data) changes. `$mutations` lists the records. Requires the observers add-on.\n\n**.subtree**: Observe descendants too (the default unless the options set `subtree: false`).\n\nValue: a JavaScript statement.\n\nModifiers: `.debounce`, `.subtree`.\n\n```html\n<ul b-on-text=\"console.log($mutations)\"></ul>\n```"
+      },
+      "references": [
+        {
+          "name": "Brio docs",
+          "url": "https://briojs.com/reference/observer-options/#dom-changes-mutation-options"
+        }
+      ]
+    },
+    {
+      "name": "b-on-text.options",
+      "description": {
+        "kind": "markdown",
+        "value": "Options for `b-on-text` on this element, as an object.\n\n**target**: Element, document, text node, or selector to observe instead of this element.\n\n**subtree**: Observe descendants too (default `true`).\n\n**debounce**: `true` (100ms) or a delay in milliseconds.\n\n**characterDataOldValue**: Record previous text (default `false`).\n\nValue: a JavaScript expression.\n\n```html\n<ul b-on-text=\"console.log($mutations)\"></ul>\n```"
       },
       "references": [
         {
@@ -1103,20 +1142,7 @@
       "name": "b-on-resize",
       "description": {
         "kind": "markdown",
-        "value": "Run when the element (or document with `.document`) changes size. Read `$size.width` and `$size.height`.\n\nValue: a JavaScript statement.\n\nModifiers: `.once`, `.debounce`, `.document`.\n\n```html\n<div b-on-resize=\"$data.wide = $size.width > 600\"></div>\n```"
-      },
-      "references": [
-        {
-          "name": "Brio docs",
-          "url": "https://briojs.com/reference/observer-options/#size-changes-resize-options"
-        }
-      ]
-    },
-    {
-      "name": "b-on-resize.once",
-      "description": {
-        "kind": "markdown",
-        "value": "Run when the element (or document with `.document`) changes size. Read `$size.width` and `$size.height`.\n\n**.once**: Stop after the first delivered callback.\n\nValue: a JavaScript statement.\n\nModifiers: `.once`, `.debounce`, `.document`.\n\n```html\n<div b-on-resize=\"$data.wide = $size.width > 600\"></div>\n```"
+        "value": "Run when the element (or document with `.document`) changes size. Read `$size.width` and `$size.height`. Requires the observers add-on.\n\nValue: a JavaScript statement.\n\nModifiers: `.debounce`, `.document`.\n\n```html\n<div b-on-resize=\"$data.wide = $size.width > 600\"></div>\n```"
       },
       "references": [
         {
@@ -1129,7 +1155,7 @@
       "name": "b-on-resize.debounce",
       "description": {
         "kind": "markdown",
-        "value": "Run when the element (or document with `.document`) changes size. Read `$size.width` and `$size.height`.\n\n**.debounce**: Debounce callbacks (configure the delay with `b-options`).\n\nValue: a JavaScript statement.\n\nModifiers: `.once`, `.debounce`, `.document`.\n\n```html\n<div b-on-resize=\"$data.wide = $size.width > 600\"></div>\n```"
+        "value": "Run when the element (or document with `.document`) changes size. Read `$size.width` and `$size.height`. Requires the observers add-on.\n\n**.debounce**: Debounce callbacks by 100ms, or by the `debounce` option.\n\nValue: a JavaScript statement.\n\nModifiers: `.debounce`, `.document`.\n\n```html\n<div b-on-resize=\"$data.wide = $size.width > 600\"></div>\n```"
       },
       "references": [
         {
@@ -1142,7 +1168,7 @@
       "name": "b-on-resize.document",
       "description": {
         "kind": "markdown",
-        "value": "Run when the element (or document with `.document`) changes size. Read `$size.width` and `$size.height`.\n\n**.document**: Observe the document element instead.\n\nValue: a JavaScript statement.\n\nModifiers: `.once`, `.debounce`, `.document`.\n\n```html\n<div b-on-resize=\"$data.wide = $size.width > 600\"></div>\n```"
+        "value": "Run when the element (or document with `.document`) changes size. Read `$size.width` and `$size.height`. Requires the observers add-on.\n\n**.document**: Observe the document element instead.\n\nValue: a JavaScript statement.\n\nModifiers: `.debounce`, `.document`.\n\n```html\n<div b-on-resize=\"$data.wide = $size.width > 600\"></div>\n```"
       },
       "references": [
         {
@@ -1152,15 +1178,15 @@
       ]
     },
     {
-      "name": "b-options",
+      "name": "b-on-resize.options",
       "description": {
         "kind": "markdown",
-        "value": "Configure observer directives on this element, keyed by attribute name, e.g. `{ 'b-on-enter': { threshold: 0.5 } }`.\n\nValue: a JavaScript expression.\n\n```html\n<div b-options=\"{ 'b-on-enter': { rootMargin: '20px' } }\" b-on-enter=\"$data.seen = true\"></div>\n```"
+        "value": "Options for `b-on-resize` on this element, as an object.\n\n**box**: `content-box` (default), `border-box`, or `device-pixel-content-box`.\n\n**document**: Observe the document element instead.\n\n**debounce**: `true` (100ms) or a delay in milliseconds.\n\nValue: a JavaScript expression.\n\n```html\n<div b-on-resize=\"$data.wide = $size.width > 600\"></div>\n```"
       },
       "references": [
         {
           "name": "Brio docs",
-          "url": "https://briojs.com/reference/observer-options/#configure-an-observer"
+          "url": "https://briojs.com/reference/observer-options/#size-changes-resize-options"
         }
       ]
     },
@@ -1350,7 +1376,7 @@
       "name": "b-on-input.debounce",
       "description": {
         "kind": "markdown",
-        "value": "Listen for a DOM event and run a statement. `$event` is the event, e.g. `b-on-submit.prevent=\"$data.save($event)\"`.\n\n**.debounce**: Wait until events pause for 150ms, then run once.\n\nValue: a JavaScript statement.\n\nModifiers: `.prevent`, `.stop`, `.self`, `.outside`, `.window`, `.document`, `.debounce`, `.throttle`, `.capture`, `.passive`, `.once`, `.ctrl`, `.alt`, `.shift`, `.meta`, `.enter`, `.esc`, `.space`, `.tab`, `.up`, `.down`, `.left`, `.right`, `.delete`.\n\n```html\n<button b-on-click=\"$data.count++\">Add</button>\n```"
+        "value": "Listen for a DOM event and run a statement. `$event` is the event, e.g. `b-on-submit.prevent=\"$data.save($event)\"`.\n\n**.debounce**: Wait until events pause for 150ms (or the `.options` delay), then run once.\n\nValue: a JavaScript statement.\n\nModifiers: `.prevent`, `.stop`, `.self`, `.outside`, `.window`, `.document`, `.debounce`, `.throttle`, `.capture`, `.passive`, `.once`, `.ctrl`, `.alt`, `.shift`, `.meta`, `.enter`, `.esc`, `.space`, `.tab`, `.up`, `.down`, `.left`, `.right`, `.delete`.\n\n```html\n<button b-on-click=\"$data.count++\">Add</button>\n```"
       },
       "references": [
         {
@@ -1376,7 +1402,7 @@
       "name": "b-on-scroll.throttle",
       "description": {
         "kind": "markdown",
-        "value": "Listen for a DOM event and run a statement. `$event` is the event, e.g. `b-on-submit.prevent=\"$data.save($event)\"`.\n\n**.throttle**: Run at most once every 150ms.\n\nValue: a JavaScript statement.\n\nModifiers: `.prevent`, `.stop`, `.self`, `.outside`, `.window`, `.document`, `.debounce`, `.throttle`, `.capture`, `.passive`, `.once`, `.ctrl`, `.alt`, `.shift`, `.meta`, `.enter`, `.esc`, `.space`, `.tab`, `.up`, `.down`, `.left`, `.right`, `.delete`.\n\n```html\n<button b-on-click=\"$data.count++\">Add</button>\n```"
+        "value": "Listen for a DOM event and run a statement. `$event` is the event, e.g. `b-on-submit.prevent=\"$data.save($event)\"`.\n\n**.throttle**: Run at most once every 150ms (or the `.options` delay).\n\nValue: a JavaScript statement.\n\nModifiers: `.prevent`, `.stop`, `.self`, `.outside`, `.window`, `.document`, `.debounce`, `.throttle`, `.capture`, `.passive`, `.once`, `.ctrl`, `.alt`, `.shift`, `.meta`, `.enter`, `.esc`, `.space`, `.tab`, `.up`, `.down`, `.left`, `.right`, `.delete`.\n\n```html\n<button b-on-click=\"$data.count++\">Add</button>\n```"
       },
       "references": [
         {
@@ -1390,6 +1416,19 @@
       "description": {
         "kind": "markdown",
         "value": "Listen for a DOM event and run a statement. `$event` is the event, e.g. `b-on-submit.prevent=\"$data.save($event)\"`.\n\n**.passive**: Use a passive listener (cannot call `preventDefault()`).\n\nValue: a JavaScript statement.\n\nModifiers: `.prevent`, `.stop`, `.self`, `.outside`, `.window`, `.document`, `.debounce`, `.throttle`, `.capture`, `.passive`, `.once`, `.ctrl`, `.alt`, `.shift`, `.meta`, `.enter`, `.esc`, `.space`, `.tab`, `.up`, `.down`, `.left`, `.right`, `.delete`.\n\n```html\n<button b-on-click=\"$data.count++\">Add</button>\n```"
+      },
+      "references": [
+        {
+          "name": "Brio docs",
+          "url": "https://briojs.com/reference/html-directives/#event-modifiers"
+        }
+      ]
+    },
+    {
+      "name": "b-on-input.options",
+      "description": {
+        "kind": "markdown",
+        "value": "Options for `b-on-input` on this element, as an object, e.g. `{ debounce: 400 }`.\n\n**debounce**: `true` (150ms) or a delay in milliseconds.\n\n**throttle**: `true` (150ms) or an interval in milliseconds.\n\n**prevent, stop, once, …**: Any modifier as `true` or `false`.\n\nValue: a JavaScript expression.\n\n```html\n<button b-on-click=\"$data.count++\">Add</button>\n```"
       },
       "references": [
         {

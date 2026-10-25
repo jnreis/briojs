@@ -1,1 +1,6 @@
-export declare function handleMutation(element: Element, attrName: string, expression: string, modifiers: Record<string, boolean>, context: Record<PropertyKey, any>): void;
+import { DirectiveDefinition } from './registry.js';
+
+export declare const addedNodesDirective: DirectiveDefinition;
+export declare const removedNodesDirective: DirectiveDefinition;
+export declare const attrsDirective: DirectiveDefinition;
+export declare const textDirective: DirectiveDefinition;

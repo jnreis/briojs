@@ -3,7 +3,8 @@ import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { JSDOM } from 'jsdom';
 
-const bundle = readFileSync(new URL('../dist/brio.min.js', import.meta.url), 'utf8');
+const bundle = readFileSync(new URL('../dist/brio.min.js', import.meta.url), 'utf8') + ';\n' +
+    readFileSync(new URL('../dist/brio.observers.min.js', import.meta.url), 'utf8');
 
 function setup(t, markup) {
     const dom = new JSDOM(`<main>${markup}</main>`, { runScripts: 'outside-only' });
@@ -36,11 +37,11 @@ function setup(t, markup) {
 
 test('intersection forwards selector/node/document/viewport roots, margins and scalar/array thresholds', t => {
     const { app, observers, window, mount } = setup(t, `
-        <div id="root"><i b-options="{ 'on-enter': { root: '#root', rootMargin: '20px', threshold: [0, 0.5, 1] } }"
-            on-enter="$data.logs.push($entry.intersectionRatio)"></i></div>
-        <i b-options="{ 'on-exit': { root: document, threshold: 0.5 } }" on-exit="$data.logs.push('exit')"></i>
-        <i b-options="{ 'on-enter': { root: $el.parentElement } }" on-enter="$data.logs.push('node')"></i>
-        <i on-enter="$data.logs.push('viewport')"></i>`);
+        <div id="root"><i b-on-enter.options="{ root: '#root', rootMargin: '20px', threshold: [0, 0.5, 1] }"
+            b-on-enter="$data.logs.push($entry.intersectionRatio)"></i></div>
+        <i b-on-exit.options="{ root: document, threshold: 0.5 }" b-on-exit="$data.logs.push('exit')"></i>
+        <i b-on-enter.options="{ root: $el.parentElement }" b-on-enter="$data.logs.push('node')"></i>
+        <i b-on-enter="$data.logs.push('viewport')"></i>`);
     mount();
     const [selector, documentRoot, nodeRoot, viewport] = observers.intersection;
     assert.equal(selector.options.root, window.document.querySelector('#root'));
@@ -55,17 +56,17 @@ test('intersection forwards selector/node/document/viewport roots, margins and s
     assert.deepEqual(Array.from(app.state.logs), [0.5, 'exit']);
 });
 
-test('intersection once/debounce respects full-name overrides, dot precedence and disposal', t => {
+test('intersection .options values win over modifiers, with once and disposal', t => {
     const { app, observers, timers, flush, mount } = setup(t, `
-        <i b-options="{ 'on-enter': { threshold: 0, debounce: 300 }, 'on-enter.once.debounce': { threshold: 1 } }"
-           on-enter.once.debounce="$data.logs.push($entry.intersectionRatio)"></i>`);
+        <i b-on-enter.options="{ threshold: 1, debounce: 300 }"
+           b-on-enter.once.debounce="$data.logs.push($entry.intersectionRatio)"></i>`);
     const handle = mount();
     const observer = observers.intersection[0];
     assert.equal(observer.options.threshold, 1);
     observer.callback([{ isIntersecting: true, intersectionRatio: 0.5 }]);
     observer.callback([{ isIntersecting: true, intersectionRatio: 1 }]);
     assert.equal(timers.size, 1);
-    assert.equal([...timers.values()][0].delay, 100);
+    assert.equal([...timers.values()][0].delay, 300);
     flush();
     assert.deepEqual(Array.from(app.state.logs), [1]);
     assert.equal(observer.disconnected, true);
@@ -77,12 +78,12 @@ test('intersection once/debounce respects full-name overrides, dot precedence an
 test('mutation options forward target, subtree, filters and old values and debounce accumulates records', t => {
     const { app, window, observers, timers, flush, mount } = setup(t, `
         <div id="target"></div>
-        <i b-options="{ 'on-attrs': { target: '#target', subtree: false, attributeOldValue: true, attributeFilter: ['title'], debounce: 25 } }"
-           on-attrs="$data.logs.push($mutations.length)"></i>
-        <i b-options="{ 'on-text': { target: $el.previousElementSibling.previousElementSibling, characterDataOldValue: true } }"
-           on-text.subtree="$data.logs.push($mutations[0].oldValue)"></i>
-        <i on-addednodes="$data.logs.push('added')"></i>
-        <i on-removednodes="$data.logs.push('removed')"></i>`);
+        <i b-on-attrs.options="{ target: '#target', subtree: false, attributeOldValue: true, attributeFilter: ['title'], debounce: 25 }"
+           b-on-attrs="$data.logs.push($mutations.length)"></i>
+        <i b-on-text.options="{ target: $el.previousElementSibling.previousElementSibling, characterDataOldValue: true }"
+           b-on-text.subtree="$data.logs.push($mutations[0].oldValue)"></i>
+        <i b-on-addednodes="$data.logs.push('added')"></i>
+        <i b-on-removednodes="$data.logs.push('removed')"></i>`);
     const handle = mount();
     const [attrs, text, added, removed] = observers.mutation;
     assert.equal(attrs.target, window.document.querySelector('#target'));
@@ -110,10 +111,10 @@ test('mutation options forward target, subtree, filters and old values and debou
 
 test('resize forwards every box, document target, selected measurements and debounce', t => {
     const { window, app, observers, flush, timers, mount } = setup(t, `
-        <i on-resize="$data.logs.push($size)"></i>
-        <i b-options="{ 'on-resize': { box: 'border-box' } }" on-resize.document="$data.logs.push($size)"></i>
-        <i b-options="{ 'on-resize': { box: 'device-pixel-content-box', document: true, debounce: 30 } }"
-           on-resize="$data.logs.push($size)"></i>`);
+        <i b-on-resize="$data.logs.push($size)"></i>
+        <i b-on-resize.options="{ box: 'border-box' }" b-on-resize.document="$data.logs.push($size)"></i>
+        <i b-on-resize.options="{ box: 'device-pixel-content-box', document: true, debounce: 30 }"
+           b-on-resize="$data.logs.push($size)"></i>`);
     const handle = mount();
     const [content, border, device] = observers.resize;
     assert.equal(content.observeOptions.box, 'content-box');
@@ -143,13 +144,14 @@ test('resize forwards every box, document target, selected measurements and debo
 
 test('invalid observer settings throw during mounting without leaving an owned root', t => {
     for (const [directive, options] of [
-        ['on-enter', "{ root: '#missing' }"], ['on-enter', '{ threshold: 2 }'],
-        ['on-enter', '{ rootMargin: 1 }'], ['on-attrs', '{ target: null }'],
-        ['on-attrs', '{ subtree: 1 }'], ['on-attrs', '{ attributeFilter: [1] }'],
-        ['on-resize', "{ box: 'bad' }"], ['on-resize', '{ document: 1 }'],
-        ['on-resize', '{ debounce: -1 }'],
+        ['b-on-enter', "{ root: '#missing' }"], ['b-on-enter', '{ threshold: 2 }'],
+        ['b-on-enter', '{ rootMargin: 1 }'], ['b-on-attrs', '{ target: null }'],
+        ['b-on-attrs', '{ subtree: 1 }'], ['b-on-attrs', '{ attributeFilter: [1] }'],
+        ['b-on-resize', "{ box: 'bad' }"], ['b-on-resize', '{ document: 1 }'],
+        ['b-on-resize', '{ debounce: -1 }'], ['b-on-enter', '{ rootmargin: \'1px\' }'],
+        ['b-on-enter', '{ box: \'border-box\' }'], ['b-on-enter', 'null'], ['b-on-enter', '[]'],
     ]) {
-        const { app, mount } = setup(t, `<i b-options="{ '${directive}': ${options} }" ${directive}=""></i>`);
+        const { app, mount } = setup(t, `<i ${directive}.options="${options}" ${directive}=""></i>`);
         assert.throws(mount);
         assert.equal(app.roots.size, 0);
     }
@@ -158,12 +160,12 @@ test('invalid observer settings throw during mounting without leaving an owned r
 test('native mutation observers distinguish direct/subtree targets, filtered attributes and character data', async t => {
     const dom = new JSDOM(`<main>
         <div id="target" b-ignore><span title="old">original</span></div>
-        <i b-options="{ 'on-attrs': { target: '#target', subtree: false, attributeFilter: ['title'] } }"
-           on-attrs="$data.direct += $mutations.length"></i>
-        <i b-options="{ 'on-attrs': { target: '#target', subtree: true, attributeFilter: ['title'], attributeOldValue: true } }"
-           on-attrs="$data.attributes.push(...$mutations.map(record => record.oldValue))"></i>
-        <i b-options="{ 'on-text': { target: '#target', subtree: true, characterDataOldValue: true } }"
-           on-text="$data.text.push(...$mutations.map(record => record.oldValue))"></i>
+        <i b-on-attrs.options="{ target: '#target', subtree: false, attributeFilter: ['title'] }"
+           b-on-attrs="$data.direct += $mutations.length"></i>
+        <i b-on-attrs.options="{ target: '#target', subtree: true, attributeFilter: ['title'], attributeOldValue: true }"
+           b-on-attrs="$data.attributes.push(...$mutations.map(record => record.oldValue))"></i>
+        <i b-on-text.options="{ target: '#target', subtree: true, characterDataOldValue: true }"
+           b-on-text="$data.text.push(...$mutations.map(record => record.oldValue))"></i>
     </main>`, { runScripts: 'outside-only' });
     const { window } = dom;
     window.eval(bundle);
@@ -190,7 +192,7 @@ test('native mutation observers distinguish direct/subtree targets, filtered att
 
 test('pending debounced intersection callbacks are cancelled by scope disposal', t => {
     const { app, observers, timers, flush, mount } = setup(t,
-        '<i b-options="{ \'on-enter\': { debounce: 25, once: true } }" on-enter="$data.logs.push(1)"></i>');
+        '<i b-on-enter.options="{ debounce: 25, once: true }" b-on-enter="$data.logs.push(1)"></i>');
     const handle = mount();
     observers.intersection[0].callback([{ isIntersecting: true }]);
     assert.equal(timers.size, 1);

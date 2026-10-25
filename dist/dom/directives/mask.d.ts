@@ -1,3 +1,5 @@
+import { DirectiveDefinition } from './registry.js';
+
 export type MaskContext = {
     value: string;
     selectionStart: number | null;
@@ -11,4 +13,4 @@ export type MaskResult = string | {
     selectionEnd?: number;
 };
 export type MaskFormatter = (context: MaskContext) => MaskResult;
-export declare function handleMask(element: Element, expression: string, modifiers: Record<string, boolean>, context: Record<PropertyKey, any>): void;
+export declare const maskDirective: DirectiveDefinition;

@@ -1,8 +1,9 @@
-# Brio.js 4
+# Brio.js 5
 
 Brio is a petite, HTML-first framework for reactive widgets and web apps. It enhances real DOM nodes in place; there is no virtual DOM, JSX transform, or required compiler. Use it for one small island on a server-rendered page, several independent widgets, or a client-side application.
 
-Version 4.0.0 was the first npm release of this reimagined framework; the current release is 4.1.0.
+Version 4.0.0 was the first npm release of this reimagined framework; the current release is 5.0.0.
+Upgrading from 4.x? See [Migrating from Brio 4](#migrating-from-brio-4).
 Earlier versions in the repository were private development
 iterations, not npm releases.
 
@@ -19,8 +20,9 @@ iterations, not npm releases.
 - [HTML and expression security](#trusted-html-and-expression-security)
 - [Errors](#errors) and [devtools](#devtools)
 - [Lifecycle and insertion](#app-and-lifecycle-api)
+- [Plugins: your own directives and helpers](#plugins)
 - [Astro islands](#astro-islands)
-- [Package entry points](#package-entry-points)
+- [Package entry points](#package-entry-points) and [migrating from Brio 4](#migrating-from-brio-4)
 
 ## Install
 
@@ -45,9 +47,16 @@ import { state, effect, computed, batch } from '@jnreis/briojs/reactivity';
 import { persist } from '@jnreis/briojs/persistence';
 import { createRouter } from '@jnreis/briojs/router';
 import { http, HttpError } from '@jnreis/briojs/http';
-import { validate } from '@jnreis/briojs/forms';
+import { inputsPlugin, validate, moneyMask } from '@jnreis/briojs/inputs';
+import { observersPlugin } from '@jnreis/briojs/observers';
 import { createStepEngine } from '@jnreis/briojs/step';
-import { moneyMask } from '@jnreis/briojs/money-mask';
+```
+
+Directives that live in an add-on (`b-mask`, `b-form`, and the observer
+directives) need the add-on's plugin on the app:
+
+```js
+createApp({ plugins: [inputsPlugin, observersPlugin] }).mount('#app');
 ```
 
 ### Editor autocomplete
@@ -96,9 +105,9 @@ Load one of the standalone bundles, not both:
 
 ```html
 <!-- Production: runtime without development tools or tracking hooks -->
-<script src="https://cdn.jsdelivr.net/npm/@jnreis/briojs@4.1.0/dist/brio.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@jnreis/briojs@5.0.0/dist/brio.min.js"></script>
 <!-- During development, use this instead: -->
-<!-- <script src="https://cdn.jsdelivr.net/npm/@jnreis/briojs@4.1.0/dist/brio.dev.min.js"></script> -->
+<!-- <script src="https://cdn.jsdelivr.net/npm/@jnreis/briojs@5.0.0/dist/brio.dev.min.js"></script> -->
 ```
 
 For self-hosting, copy the desired scripts from `node_modules/@jnreis/briojs/dist/`
@@ -108,35 +117,41 @@ to the same version; load the scripts before mounting your app.
 
 Both expose `window.brio` with `createApp`, `state`, `signal`, `computed`,
 `effect`, `batch`, `flush`, `untrack`, `resource`, `createScope`, `onCleanup`,
-`getCurrentScope`, and `trustedHTML`. Both dispatch the
+`getCurrentScope`, `trustedHTML`, `defineDirective`, `definePlugin`, and `use`. Both dispatch the
 `brio` ready event after publishing the core API.
 
-#### Add only the browser plugins you use
+#### Add only the add-ons you use
 
-All plugins are optional browser scripts. Load only what you
+Add-ons are optional browser scripts. Load only what you
 need, **after** the core and **before** application bootstrap:
 
 ```html
 <script src="/dist/brio.min.js"></script>
-<script src="/dist/brio.router.min.js"></script>      <!-- Adds brio.createRouter -->
-<script src="/dist/brio.persistence.min.js"></script> <!-- Adds brio.persist -->
-<script src="/dist/brio.http.min.js"></script>        <!-- Adds brio.http, brio.HttpError -->
-<script src="/dist/brio.forms.min.js"></script>       <!-- Adds brio.validate -->
-<script src="/dist/brio.step.min.js"></script>        <!-- Adds brio.createStepEngine -->
-<script src="/dist/brio.money-mask.min.js"></script>  <!-- Adds brio.moneyMask -->
+<script src="/dist/brio.router.min.js"></script>      <!-- brio.createRouter and b-router-outlet -->
+<script src="/dist/brio.persistence.min.js"></script> <!-- brio.persist -->
+<script src="/dist/brio.http.min.js"></script>        <!-- brio.http, brio.HttpError -->
+<script src="/dist/brio.inputs.min.js"></script>      <!-- b-mask, b-form, brio.validate, brio.moneyMask -->
+<script src="/dist/brio.observers.min.js"></script>   <!-- b-on-enter/exit/resize and the mutation directives -->
+<script src="/dist/brio.step.min.js"></script>        <!-- brio.createStepEngine -->
 <script src="/app.js"></script>
 ```
 
-- **Load order:** core first, needed plugins second, application bootstrap last.
-  Loading a plugin before the core throws. For deferred loading, wait for the
+- **Load order:** core first, needed add-ons second, application bootstrap last.
+  Loading an add-on before the core throws. For deferred loading, wait for the
   needed scripts to finish, not just the core's `brio` ready event.
-- **Shared runtime:** plugins extend the existing `window.brio` and use its
+- **Automatic attachment:** an add-on that brings directives (inputs,
+  observers) installs its plugin with `brio.use()`, so every app created
+  afterwards has those directives. Apps created before the script loaded do not.
+- **Shared runtime:** add-ons extend the existing `window.brio` and use its
   reactive engine and cleanup scopes. They do not dispatch another ready event,
   and work with the development core too.
-- **Optional features:** no plugin above is included in either core bundle.
-  Pattern masks and custom formatters remain core; money formatting is optional.
+- **Clear errors:** using an add-on directive without its add-on throws an
+  error that names the script to load, for example
+  `b-mask needs the Brio inputs add-on. Load brio.inputs.min.js after brio.min.js, …`.
 - **ESM imports:** the npm main entry retains tree-shakable named exports for
-  convenience; each plugin also has the dedicated subpath shown above.
+  convenience; each add-on also has the dedicated subpath shown above. With
+  npm, install add-on directives with `plugins: [inputsPlugin]` or
+  `app.use(inputsPlugin)`.
   Importing a plugin has no implicit application registration in ESM.
 
 #### Choose the right core bundle
@@ -254,6 +269,7 @@ The expression context is also available as `$context`.
 | Event handlers | `$event` |
 | Observers | `$mutations`, `$size`, or `$entry` |
 | Contextual scripts | `onCleanup` |
+| Added by [plugins](#plugins) | App helpers such as `$format`, and names a plugin directive gives its subtree, such as `$form` |
 
 Bindings are read-only references. Change writable state properties, not the
 reference itself:
@@ -422,7 +438,7 @@ Provider effects stop when their owning scope is disposed. `b-if.hide` and
 Directives connect your HTML to state and behavior. Start with `b-text`,
 `b-on-click`, and `b-model`, then reach for the others as you need them.
 
-Directive arguments use hyphens (`b-on-click`, `b-bind-href`); options use chained dot modifiers (`on-click.prevent.stop`, `b-if.hide`). `b-mask` takes a pattern or formatter, not modifiers.
+Directive arguments use hyphens (`b-on-click`, `b-bind-href`); options use chained dot modifiers (`b-on-click.prevent.stop`, `b-if.hide`). Every directive starts with `b-`; attributes without it, such as `on-click` or `text`, are left alone. `b-mask` takes a pattern or formatter, not modifiers.
 
 ### Directive quick reference
 
@@ -438,7 +454,7 @@ Directive arguments use hyphens (`b-on-click`, `b-bind-href`); options use chain
 | `b-model` | Two-way bind a text-like input, checkbox, radio, or select. |
 | `b-if`, `b-else-if`, `b-else` | Select the first matching branch. Default: remove/dehydrate inactive branches. `.hide`: preserve in the DOM; `.detach`: preserve outside the DOM. |
 | `b-script` | Execute a contextual function expression inside a marked script element. |
-| `b-mask` | Format an input with a Unicode pattern string or synchronous formatter function. Optional `moneyMask(options)` returns a formatter. |
+| `b-mask` | Format an input with a Unicode pattern string or synchronous formatter function. `moneyMask(options)` returns a formatter. Inputs add-on. |
 | `b-transition` | Animate enter/leave with named CSS transition classes. |
 | `b-for` | Render an array, iterable, object, or integer. |
 | `b-key` | Give a repeated item a stable string or number identity. Used with `b-for`. |
@@ -448,11 +464,45 @@ Directive arguments use hyphens (`b-on-click`, `b-bind-href`); options use chain
 | `b-cloak` | Removed when Brio hydrates the element; pair with `[b-cloak] { display: none; }` to hide raw templates until mount. |
 | `b-teleport` | Reactively move an element or template range relative to an Element/ref or document selector. Default placement: `after`. |
 | `b-effect` | Run a reactive expression for side effects in the element's owned scope. |
-| `b-router-outlet` | Render the component matching the current optional route. |
-| `b-on-enter`, `b-on-exit` | Observe intersection/visibility changes. |
-| `b-on-addednodes`, `b-on-removednodes`, `b-on-attrs`, `b-on-text` | Observe DOM mutations. |
-| `b-on-resize` | Observe element or document size changes. |
-| `b-options` | Configure observer directives on the same element; see Observer options. |
+| `b-router-outlet` | Render the component matching the current route. Available when the app has a router. |
+| `b-on-enter`, `b-on-exit` | Observe intersection/visibility changes. Observers add-on. |
+| `b-on-addednodes`, `b-on-removednodes`, `b-on-attrs`, `b-on-text` | Observe DOM mutations. Observers add-on. |
+| `b-on-resize` | Observe element or document size changes. Observers add-on. |
+| `b-form` | Track a form's values, validation, and submission as `$form`; see [Bind a whole form](#bind-a-whole-form-with-b-form). Inputs add-on. |
+
+Directives that end with "Inputs add-on" or "Observers add-on" need that add-on's script or plugin; see
+[Add only the add-ons you use](#add-only-the-add-ons-you-use).
+
+### Directive options
+
+When a directive needs a value a modifier can't express, such as a delay in
+milliseconds or an observer's `rootMargin`, add a matching `.options` attribute
+holding an object:
+
+```html
+<input b-on-input="$data.search()" b-on-input.options="{ debounce: 400 }">
+<div b-on-enter="$data.loadMore()" b-on-enter.options="{ rootMargin: '200px' }"></div>
+<div b-on-exit="$data.pause()" b-on-exit.options="$data.exitOptions"></div>
+```
+
+- The value is any expression that evaluates to a plain object: a literal or a
+  reference such as `$data.exitOptions`. It is read once at hydration and is not
+  reactive.
+- It applies to every attribute with the same base name on that element, so
+  `b-on-enter.options` configures `b-on-enter.once` too. Attribute order doesn't
+  matter.
+- Modifiers are shorthands for `true`. When both are set, the `.options` value
+  wins: `b-on-click.prevent` with `b-on-click.options="{ prevent: false }"` does
+  not prevent.
+- `.options` stands alone; `b-on-enter.once.options` is an error.
+- Keys are checked. An unknown key, a directive that takes no options (for
+  example `b-text.options`), or `.options` without its directive throws an error
+  naming the problem.
+
+Directives that take options: `b-on-*` (every [event modifier](#event-modifiers),
+with `debounce` and `throttle` also accepting milliseconds) and the
+[observer directives](#observer-options). Plugin directives opt in by listing
+their keys; see [Plugins](#plugins).
 
 ### A few directives working together
 
@@ -735,7 +785,7 @@ explicit on a directive-free `<template>`):
 
 | `<template>` carries | Result |
 | --- | --- |
-| No `b-` directive (only `id`, `slot`, `class`, …) | Stays inert. Brio never touches its `.content`, so it is safe for templates cloned by your own code or other libraries. Short aliases such as `text` or `effect` do not count. |
+| No `b-` directive (only `id`, `slot`, `class`, …) | Stays inert. Brio never touches its `.content`, so it is safe for templates cloned by your own code or other libraries. |
 | `b-ignore` | Stays inert, whatever else it carries. |
 | `b-cloak` only | The attribute is removed; the template stays inert. |
 | `b-if`, `b-else-if`, `b-else`, `b-for`/`b-key`, `b-data`, `b-id`, `b-provide`, `b-teleport`, `b-effect`, or `b-template` | Its contents render in place. |
@@ -791,7 +841,7 @@ its `.content` automatically.
 - Directives that need a surviving element are an error on a wrapper (an
   explicit `b-template` or a directive-bearing `<template>`): `b-text`,
   `b-html`, `b-bind-*`, events/observers, `b-model`, `b-mask`, `b-transition`,
-  `b-router-outlet`, and their short aliases. Move them onto surviving children
+  and `b-router-outlet`. Move them onto surviving children
   or an outer container. A registered component tag with `b-template` is
   unwrapped rather than instantiated as a component, so it cannot take props.
 - Wrapper attributes are not forwarded: `class`, `style`, `id`, accessibility
@@ -909,7 +959,7 @@ overwrite each other. Do not rely on attribute order to resolve competing owners
 | `b-for` + same-row `b-teleport` | Supported for concrete or template rows. Keyed reconciliation moves the complete row range at its destination. Each loop owns bounded groups per target/placement, preserving unrelated surrounding content through retargeting. |
 | `b-teleport` + a destination controlled by `b-text` / `b-html` / `b-router-outlet` / `b-ignore` | Child placements are errors; use `before` / `after` beside the controlled container, or choose an independently managed destination. |
 | `b-if` + teleported children | Supported, but hiding an ancestor with `.hide` cannot hide descendants moved elsewhere. Their effects also stay live in preservation modes. Put visibility on the surviving teleported element when it must be controlled independently. |
-| Multiple bindings/effects writing the same attribute/property | No arbitration. Use one expression per target; do not combine prefixed/unprefixed aliases or different modifier spellings to install competing bindings. |
+| Multiple bindings/effects writing the same attribute/property | No arbitration. Use one expression per target; do not combine different modifier spellings to install competing bindings. |
 
 #### How combinations are tested
 
@@ -939,13 +989,21 @@ Enter or preventing a form's default submit behavior.
 | `.window`, `.document` | Listen on `window` / `document`. |
 | `.once` | Remove the listener after the first event that passes the other filters. |
 | `.capture`, `.passive` | Native listener options. |
-| `.debounce`, `.throttle` | Rate-limit the handler (150ms). |
+| `.debounce`, `.throttle` | Rate-limit the handler (150ms). Set another delay with `b-on-input.options="{ debounce: 400 }"`. |
 | `.enter`, `.esc`, `.space`, `.tab`, `.up`, `.down`, `.left`, `.right`, `.delete` | Run only for that key (`.delete` matches Delete and Backspace). Several keys mean any of them. |
 | `.ctrl`, `.alt`, `.shift`, `.meta` | Run only while every listed system key is held. |
 
 ```html
 <input b-on-keydown.enter.prevent="$data.addTag()" b-on-keydown.esc="$data.cancel()">
 <div b-on-keydown.ctrl.enter.window="$data.save()"></div>
+```
+
+Every modifier can also be set through [`.options`](#directive-options), where
+`debounce` and `throttle` take a delay in milliseconds (`true` keeps 150ms):
+
+```html
+<input b-on-input="$data.search()" b-on-input.options="{ debounce: 400 }">
+<div b-on-scroll.window="$data.track()" b-on-scroll.options="{ throttle: 50, passive: true }"></div>
 ```
 
 Key and system-key filters run first, so `.enter.prevent` cancels only Enter.
@@ -984,8 +1042,7 @@ call the exported `flush()` (`brio.flush()` in browser bundles). Code after an
 
 #### Avoiding observer feedback loops
 
-Observer `b-options` is specific to observer directives, not general directive
-configuration. An observer on an element whose attributes/children are updated
+An observer on an element whose attributes/children are updated
 by bindings or `b-html` can observe those framework writes too. Do not write the
 same observed state/DOM back unconditionally from its callback or `b-effect`:
 that can create feedback loops.
@@ -999,7 +1056,7 @@ choose a preservation mode only when inactive content needs to keep its state.
 
 ```html
 <section b-if="$data.loggedIn" b-data="{ clicks: 0 }">
-  <button on-click="$data.clicks++">${$data.clicks}</button>
+  <button b-on-click="$data.clicks++">${$data.clicks}</button>
 </section>
 <p b-else-if="$data.loading">Loading...</p>
 <p b-else>Please log in.</p>
@@ -1026,13 +1083,13 @@ branch in that chain:
 
 ```html
 <section b-if.hide="$data.tab === 'settings'" b-data="{ edits: 0 }">
-  <button on-click="$data.edits++">Edits: ${$data.edits}</button>
+  <button b-on-click="$data.edits++">Edits: ${$data.edits}</button>
 </section>
 <section b-else-if="$data.tab === 'preview'">Preview</section>
 <section b-else>Choose a tab</section>
 
 <aside b-if.detach="$data.open" b-data="{ count: 0 }">
-  <button on-click="$data.count++">Count: ${$data.count}</button>
+  <button b-on-click="$data.count++">Count: ${$data.count}</button>
 </aside>
 ```
 
@@ -1087,7 +1144,9 @@ the browser does not execute its body:
 ### Input masks
 
 Use a pattern for familiar formats such as phone numbers, or provide a function
-when your formatting needs custom logic.
+when your formatting needs custom logic. `b-mask` is part of the
+[inputs add-on](#add-only-the-add-ons-you-use): load `brio.inputs.min.js` after
+the core, or install `inputsPlugin` from `@jnreis/briojs/inputs`.
 
 ```html
 <input b-mask="'(###) ###-####'">
@@ -1143,17 +1202,21 @@ Without positions, the existing selection is preserved and clamped. Patterns
 map selection to editable characters; money anchors it to digits on the right.
 Brio owns composition handling, input events, model synchronization, and cleanup.
 
-### Optional money formatter
+### Money formatter
+
+The inputs add-on also provides `moneyMask`, a ready-made formatter for currency
+amounts.
 
 ```html
 <script src="/dist/brio.min.js"></script>
-<script src="/dist/brio.money-mask.min.js"></script>
+<script src="/dist/brio.inputs.min.js"></script>
 <input b-mask="brio.moneyMask({ thousands: '.', decimal: ',', precision: 2 })">
 ```
 
 ```js
-import { moneyMask } from '@jnreis/briojs/money-mask';
+import { inputsPlugin, moneyMask } from '@jnreis/briojs/inputs';
 const app = createApp({
+  plugins: [inputsPlugin],
   state: () => ({ amount: '', amountMask: moneyMask({ precision: 2 }) }),
 });
 ```
@@ -1174,7 +1237,7 @@ It is not a locale-aware number parser or Unicode digit converter.
 Options are copied at factory time. Use
 `b-mask="brio.moneyMask($data.options)"` to rebuild reactively.
 npm exports the formatter types
-from both `@jnreis/briojs` and `@jnreis/briojs/money-mask`.
+from both `@jnreis/briojs` and `@jnreis/briojs/inputs`.
 
 ### CSS transitions
 
@@ -1234,31 +1297,34 @@ computed duration.
 ## Observer options
 
 Observe visibility, DOM mutations, or size when an interaction needs information
-from the browser. Configure only the observers you use on that element.
+from the browser. Configure only the observers you use on that element. The
+observer directives are part of the observers add-on: load
+`brio.observers.min.js` after the core, or install `observersPlugin` from
+`@jnreis/briojs/observers`.
 
 ### Configure an observer
 
-Observer directives support `b-options`, a synchronous object keyed by their
-attribute name. Base-name options apply first, then full-name options, then
-boolean dot modifiers. Options are read at hydration, not reactively retargeted.
-This is an observer-specific API, not a restoration of general legacy options
-for model/event/mask directives.
+Each observer takes its own [`.options`](#directive-options) attribute for
+values that modifiers can't express, such as a `rootMargin` or an
+`attributeFilter`. Options are read once at hydration, not tracked reactively.
 
 ```html
-<div b-options="{ 'b-on-enter': {
-       root: '#scroller', rootMargin: '20px', threshold: [0, 0.5, 1]
-     } }"
-     b-on-enter.once.debounce="console.log($entry)"></div>
+<!-- Load the next page 200px before the sentinel scrolls into view. -->
+<div b-on-enter="$data.loadMore()" b-on-enter.options="{ rootMargin: '200px' }"></div>
 
-<div b-options="{ 'b-on-attrs': {
-       target: '#observed', subtree: false,
-       attributeFilter: ['data-theme'], attributeOldValue: true
-     } }"
-     b-on-attrs="console.log($mutations)"></div>
+<!-- Different settings for entering and leaving, inside a scrolling panel. -->
+<div b-on-enter="$data.play()" b-on-enter.options="{ root: '#scroller', threshold: 0.5 }"
+     b-on-exit="$data.pause()" b-on-exit.options="$data.exitOptions"></div>
 
-<div b-options="{ 'b-on-resize': { box: 'border-box', debounce: 250 } }"
-     b-on-resize.document="console.log($size, $entry)"></div>
+<div b-on-attrs="console.log($mutations)"
+     b-on-attrs.options="{ target: '#observed', subtree: false, attributeFilter: ['data-theme'], attributeOldValue: true }"></div>
+
+<div b-on-resize.document="console.log($size, $entry)"
+     b-on-resize.options="{ box: 'border-box', debounce: 250 }"></div>
 ```
+
+`b-options` from Brio 4 was removed; using it on an element with an observer
+throws an error that points to `.options`.
 
 ### Visibility: intersection options
 
@@ -1267,7 +1333,7 @@ for model/event/mask directives.
 | `root` | Element/Document reference, selector, or null for the viewport (default). |
 | `rootMargin` | Native CSS length/percentage syntax. |
 | `threshold` | Number or array between 0 and 1. |
-| `.once` | Stop after the first delivered matching callback. |
+| `once` or `.once` | Stop after the first delivered matching callback. |
 
 Enter/exit follow `isIntersecting`. Thresholds control native notification
 boundaries, not an additional percentage filter.
@@ -1277,7 +1343,7 @@ boundaries, not an additional percentage filter.
 | Option | Meaning |
 | --- | --- |
 | `target` | Element/Document/Text reference or selector; defaults to the directive element. |
-| `subtree` | Defaults to true for existing v4 behavior; set false for direct-only observation. `.subtree` forces true. |
+| `subtree` | Defaults to true for existing v4 behavior; set false for direct-only observation. `.subtree` is shorthand for `subtree: true`. |
 | `attributeFilter`, `attributeOldValue` | Attribute-observer options; the old-value flag defaults to false. |
 | `characterDataOldValue` | Text-observer option; defaults to false. |
 
@@ -1304,7 +1370,7 @@ supplying a different box.
 | Numeric `debounce` | A non-negative delay. |
 | False or absent | Run immediately. |
 
-A dot modifier overrides numeric configuration. Mutation debounce accumulates
+A value from `.options` overrides the modifier. Mutation debounce accumulates
 every matching record; intersection/resize use the latest matching entry.
 Disposal disconnects observers and cancels pending callbacks.
 
@@ -1443,8 +1509,7 @@ to the combination rules above. `b-ignore` skips setup altogether, while
 `b-template` unwraps the tag instead of setting it up.
 `b-transition` animates the host itself, and `b-attr-*` binds the host's own
 attributes. Other `b-*` host directives (such as `b-model`, `b-html`, and
-`b-teleport`) are rejected. Do not use unprefixed aliases to bypass that
-restriction; they do not install ordinary host behaviors either.
+`b-teleport`) are rejected.
 Use a surviving wrapper or put the directive inside the component.
 
 ## Recommended CSS
@@ -2210,11 +2275,11 @@ The helper leaves you in control of when validation runs and how errors appear.
 ### Validate a set of fields
 
 `validate(data, schema, customRules?)` is a synchronous helper, not a form
-controller. Import it from `@jnreis/briojs/forms` or `@jnreis/briojs`; the optional
-`brio.forms.min.js` browser script exposes `brio.validate`.
+controller. Import it from `@jnreis/briojs/inputs` or `@jnreis/briojs`; the optional
+`brio.inputs.min.js` browser script exposes `brio.validate`.
 
 ```js
-import { validate } from '@jnreis/briojs/forms';
+import { validate } from '@jnreis/briojs/inputs';
 
 const schema = {
   email: [
@@ -2276,13 +2341,73 @@ const result = validate({ age: 24 }, {
 ### Connecting validation to a form
 
 Unknown rule names throw a `TypeError`; they are not skipped. There is no
-implicit trimming, type coercion of field values, nested-path traversal, async
-validation, or automatic DOM error rendering. For an optional field, omit
-format rules when it is empty rather than expecting `email` or `min` to skip it.
-Call validation from your own submit/input handlers, put errors in reactive
-state, and render messages with `b-text`. If using `novalidate` to replace native
-form validation, provide your own accessible messages and focus handling.
-Server-side validation is still required.
+implicit trimming, nested-path traversal, or async validation. For an optional
+field, omit format rules when it is empty rather than expecting `email` or `min`
+to skip it. Call `validate` from your own submit/input handlers, put errors in
+reactive state, and render messages with `b-text`, or let `b-form` do that
+wiring for you. Server-side validation is still required.
+
+### Bind a whole form with `b-form`
+
+`b-form` connects a `<form>` to `validate`. It is part of the inputs add-on:
+load `brio.inputs.min.js` after the core, or install `inputsPlugin` once, then
+give the form its rules and a submit function:
+
+```js
+import { createApp } from '@jnreis/briojs';
+import { inputsPlugin } from '@jnreis/briojs/inputs';
+
+createApp({
+  plugins: [inputsPlugin],
+  state: () => ({
+    rules: {
+      email: [
+        { name: 'required', message: 'Enter your email address.' },
+        { name: 'email', message: 'Enter a valid email address.' },
+      ],
+    },
+    async save(values) {
+      const response = await fetch('/api/signup', { method: 'POST', body: JSON.stringify(values) });
+      if (!response.ok) throw new Error(`Signup failed: ${response.status}`);
+    },
+  }),
+}).mount('#signup');
+```
+
+```html
+<form id="signup" b-form="{ rules: $data.rules, submit: $data.save }" novalidate>
+  <label>Email <input name="email" type="email"></label>
+  <p class="error" b-text="$form.error('email')"></p>
+  <button b-bind-disabled="$form.submitting">Sign up</button>
+  <p b-if="$form.submitError">Something went wrong. Try again.</p>
+</form>
+```
+
+Inside the form, `$form` holds:
+
+| Name | Meaning |
+| --- | --- |
+| `values` | Every named control, read as a server would see it: text as strings, `number`/`range` as numbers (`null` when empty), a single checkbox as `true`/`false`, same-name checkboxes and `<select multiple>` as arrays, radios as the checked value, files as an array. |
+| `errors` | The `validate` result as field-to-messages, `{}` when valid. Updates as values change. |
+| `error(name)` | The first message for a field once it was touched (blurred) or the form was submitted; otherwise `''`. Use it for display. |
+| `touched` | Fields the user has left at least once. |
+| `valid`, `submitted`, `submitting` | Booleans for the current state. |
+| `submitError` | Whatever the submit function threw or rejected with, or `null`. |
+| `reset()`, `submit()` | Call `form.reset()` or `form.requestSubmit()`, including all of the behavior below. |
+
+- **Submitting:** an invalid form cancels the submission and focuses its first
+  invalid control. A valid form with a `submit` function cancels the native
+  submission and calls `submit(values, event)`; a second submission is ignored
+  while a returned promise is pending. Without a `submit` function a valid form
+  submits natively.
+- **Accessibility:** controls with a shown error get `aria-invalid="true"`. Use
+  `novalidate` to replace the browser's own messages with yours, and render
+  messages next to their fields.
+- **Values come from the DOM.** `b-form` reads controls on `input`, `change`,
+  `reset`, and submit. If you also use `b-model` and change the model from code,
+  the new value is read on the next user edit or submit.
+- **Options:** `{ rules?, customRules?, submit? }`. The expression is read again
+  on every validation, so rules can come from state.
 
 ## Persistence
 
@@ -2477,7 +2602,7 @@ rather than writing HTML into a managed subtree yourself.
 
 ```js
 const handle = app.insert('#items', 'append',
-  '<button on-click="$data.count++">${$data.count}</button>',
+  '<button b-on-click="$data.count++">${$data.count}</button>',
   { data: { count: 0 } });
 handle.remove();
 ```
@@ -2562,7 +2687,9 @@ createApp({
 | API | Purpose |
 | --- | --- |
 | `app.component(name, definition)` | Register a reusable component with a valid hyphenated custom-element name. |
-| `app.plugin(plugin)` | Install a plugin once per app. |
+| `app.use(plugin)` | Install a plugin function or [plugin object](#plugins) once per app; installing the same object again does nothing. |
+| `app.directive(definition)` | Register a [custom directive](#plugins) before the first mount. |
+| `app.helper(name, value)` | Make a `$`-prefixed value available in every expression; register before the first mount. |
 | `app.mount(elementOrSelector)` | Mount one independently disposable root; returns `{ root, unmounted, unmount() }`. |
 | `app.unmount(options?)` | Unmount all roots; leave the app mountable. |
 | `app.dispose(options?)` | Permanently dispose the app and its scopes. |
@@ -2779,6 +2906,201 @@ once, then `npm run test:astro` for production-build browser tests of repeated
 navigation, actual DOM/state persistence, resource cancellation, cleanup counts,
 and browser back/forward restoration.
 
+## Plugins
+
+Plugins add your own `b-` directives, `$` helpers, and components to an app.
+Built-in directives keep working exactly as documented; a plugin can only add
+names, never change existing ones. Brio's own add-ons (inputs, observers, and
+the router outlet) are plugins built on this same API.
+
+### Write a directive
+
+A directive is an object with a name and one or more hooks:
+
+```js
+import { createApp, defineDirective } from '@jnreis/briojs';
+
+const tooltip = defineDirective({
+  name: 'b-tooltip',
+  arg: true,                    // also matches b-tooltip-top, b-tooltip-left, ...
+  modifiers: ['hover'],         // anything else is an error that names the attribute
+  mount(element, binding) {
+    const tip = document.createElement('span');
+    tip.className = `tooltip ${binding.arg ?? 'top'}`;
+    element.append(tip);
+    binding.effect(() => { tip.textContent = binding.value(); });
+    if (binding.modifiers.hover) {
+      binding.on(element, 'pointerenter', () => tip.hidden = false);
+      binding.on(element, 'pointerleave', () => tip.hidden = true);
+    }
+    return () => tip.remove(); // runs when the element leaves the page
+  },
+});
+
+createApp({ state: () => ({ name: 'Ada' }) })
+  .directive(tooltip)
+  .mount('#app');
+```
+
+```html
+<button b-tooltip-left.hover="`Say hi to ${$data.name}`">Wave</button>
+```
+
+`defineDirective` only adds editor types; a plain object works the same way.
+
+| Field | Meaning |
+| --- | --- |
+| `name` | `b-` followed by lowercase kebab-case. Built-in names and prefixes (`b-on-*`, `b-bind-*`, `b-attr-*`, `b-ref-*`, `b-router-*`) are reserved. |
+| `arg` | `true` to also match `name-<anything>`, available as `binding.arg`. |
+| `modifiers` | Allowed `.modifier` names. Omit to accept any, `[]` for none. `options` is reserved. |
+| `options` | Allowed keys for a [`.options`](#directive-options) attribute, read as `binding.options`. Omit to reject `.options`. |
+| `value` | `'expression'` (default), `'statement'` for event-style code, `'text'` for the raw attribute string, or `'none'` when the attribute must be empty. |
+| `children` | `false` when the directive owns the element's content, like `b-text`; Brio then skips the element's children. |
+| `scope`, `mount`, `ready` | The hooks below. At least one is required. |
+| `description`, `example` | Optional text for documentation and editor tooling. |
+
+### When each hook runs
+
+Each element is processed in a fixed order, so you choose a phase rather than a
+priority:
+
+| Phase | Runs | Use it to |
+| --- | --- | --- |
+| `scope(element, binding)` | Before any other directive on the element, after `b-data` and `b-provide`. Return an object to add `$names` for the element, its other directives, and its descendants. | Give a subtree a controller, such as `$form`. |
+| `mount(element, binding)` | With the element's other directives, in attribute order, before its children. | Most behavior: listeners, effects, observers. |
+| `ready(element, binding)` | After the element's children are hydrated, alongside `b-model` on `<select>`. | Read or enhance content that Brio rendered inside. |
+
+`mount` and `ready` may return a cleanup function. Structural directives
+(`b-if`, `b-for`, `b-template`) finish first and hydrate each rendered copy
+again, so hooks run once per rendered element. Plugin directives cannot be used
+on component hosts or on `<template>` fragments; put them on an element inside.
+
+When two directives react to the same event, the DOM's own order decides: a
+capturing listener runs before `b-model`'s, a bubbling one after. That is how
+`b-mask` formats input before `b-model` reads it.
+
+### The binding
+
+| Member | Purpose |
+| --- | --- |
+| `directive`, `name`, `arg`, `modifiers`, `expression` | The definition name, the full attribute name, the argument, the modifier flags, and the raw value. |
+| `options` | The checked object from the element's `.options` attribute, or `{}`. Merge it over `modifiers` so that values win: `{ ...binding.modifiers, ...binding.options }`. |
+| `context` | The expression context at this element (`$data`, `$ref`, and the rest). |
+| `app` | The app that is hydrating the element. |
+| `value()` | Evaluate the attribute. Inside `binding.effect`, it re-runs when what it reads changes. |
+| `evaluate(source, locals?)` | Evaluate another expression in the element's context, with optional extra `$names`. |
+| `run(locals?)` | Run a `'statement'` value, for example `binding.run({ $event })`. |
+| `assign(value)` | Write to the attribute's expression, like `b-model` does. |
+| `effect(fn)` | A reactive effect stopped with the element. |
+| `on(target, type, listener, options?)` | `addEventListener`, removed with the element. |
+| `onCleanup(fn)` | Run `fn` when the element leaves the page (`b-if`, `b-for`, unmount). |
+| `hydrate(node)` | Hydrate content the directive inserted itself (with `children: false`) in the element's context. It is cleaned up with the element. |
+
+Locals passed to `evaluate` and `run` must be `$`-prefixed, like `$event`.
+
+### Give a subtree a name with `scope`
+
+```js
+import { defineDirective, state } from '@jnreis/briojs';
+
+const disclosure = defineDirective({
+  name: 'b-disclosure',
+  value: 'none',
+  scope: () => ({ $disclosure: state({ open: false }) }),
+});
+```
+
+```html
+<section b-disclosure>
+  <button b-on-click="$disclosure.open = !$disclosure.open">Details</button>
+  <p b-if="$disclosure.open">…</p>
+</section>
+```
+
+Names from `scope` work like `b-data`: sibling directives on the element and
+everything inside can read them, and nested elements can shadow them.
+
+### Package a plugin
+
+A plugin object groups directives, helpers, and components under one name:
+
+```js
+import { definePlugin } from '@jnreis/briojs';
+
+export default definePlugin({
+  name: 'brio-plugin-ui',
+  directives: [tooltip, disclosure],
+  helpers: { $currency: value => new Intl.NumberFormat('en', { style: 'currency', currency: 'USD' }).format(value) },
+  components: { 'ui-badge': { template: '<span class="badge"><slot></slot></span>' } },
+  setup(app) {},                       // once, at install
+  onMount(root, app) { return () => {}; }, // after each root hydrates; cleanup on unmount
+});
+```
+
+```js
+createApp({ plugins: [ui] }).mount('#app');
+// or: createApp().use(ui).mount('#app');
+```
+
+Shipping a browser script? Call `brio.use(plugin)` in it, and every app
+created afterwards on the page installs the plugin, just like Brio's own
+add-on scripts. `brio.use` exists only on the browser global; with npm, pass the
+plugin to each app.
+
+- **All or nothing.** If any part of a plugin fails to register (a name
+  conflict, a failing `setup`), nothing from it stays installed.
+- **Conflicts are errors,** never silent overrides. The message names both
+  plugins.
+- **Register before mounting.** `app.directive`, `app.helper`, and plugins that
+  add them must run before the first `app.mount()`, so every root hydrates
+  with the same vocabulary.
+- **Helpers** need a `$` prefix and cannot reuse built-in names such as `$data`.
+  A misspelled `$name` still throws a `ReferenceError`.
+- **Installed once.** `app.use()` ignores a plugin object it already
+  installed; a different plugin with the same name is an error.
+- **Plugin functions still work.** `app.use(app => { … })` runs once with the
+  app, and can call `app.directive()` and `app.helper()` itself.
+- **Unknown directives warn in development.** With `brio.dev.min.js` or
+  `enableDevtools()`, an unrecognized `b-` attribute logs a warning that names
+  it, once per name. Production bundles stay silent.
+
+Brio uses this same API itself: `inputsPlugin` (`b-mask`, `b-form`) and
+`observersPlugin` (`b-on-enter`, `b-on-resize`, …) are plugin objects, and a
+router brings `b-router-outlet` as `router.plugin`, which `createApp({ router })`
+installs for you. Their names are reserved, so another plugin cannot claim them.
+
+### Test a plugin
+
+`@jnreis/briojs/testing` mounts markup in a fresh app. It needs a DOM on
+`globalThis`, such as `global-jsdom` or happy-dom's global registrator:
+
+```js
+import 'global-jsdom/register';
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { renderBrio } from '@jnreis/briojs/testing';
+import ui from '../src/index.js';
+
+test('b-tooltip shows its text', t => {
+  const view = renderBrio('<button b-tooltip="\'Hi\'">Wave</button>', { plugins: [ui] });
+  t.after(view.cleanup);
+  assert.equal(view.get('.tooltip').textContent, 'Hi');
+});
+```
+
+`renderBrio(html, options)` accepts every `createApp` option and returns
+`{ root, app, handle, flush, get, type, click, cleanup }`. `type` and `click`
+dispatch the events and flush, so assertions see the updated DOM.
+
+### Publish a plugin
+
+Start from the [plugin template](https://github.com/jnreis/briojs/tree/main/templates/plugin):
+it includes a directive, a helper, tests, a demo page, and editor autocomplete.
+Name the package `brio-plugin-<name>` (or `@scope/brio-plugin-<name>`), add the
+`brio-plugin` keyword, list `@jnreis/briojs` as a peer dependency, and ship an
+`html-custom-data.json` for your directives so users can add it to VS Code's
+`html.customData`.
+
 ## Package entry points
 
 Import the capabilities your app needs. Optional tools have dedicated entries,
@@ -2791,11 +3113,12 @@ and the reactivity entry works without a DOM.
 | `@jnreis/briojs` | App, components, DOM enhancement, trusted HTML, and core types. |
 | `@jnreis/briojs/reactivity` | DOM-independent state, signals, effects, computed values, batching, async resources, and scopes. |
 | `@jnreis/briojs/persistence` | Local/session/custom storage, with scope cleanup where owned. |
-| `@jnreis/briojs/router` | Optional history or hash router. |
+| `@jnreis/briojs/router` | Optional history or hash router; the router brings `b-router-outlet`. |
 | `@jnreis/briojs/http` | Fetch helpers and `HttpError`. |
-| `@jnreis/briojs/forms` | Validation rules and `validate`. |
+| `@jnreis/briojs/inputs` | `inputsPlugin` (`b-mask`, `b-form`), `validate` and its rules, and the `moneyMask` formatter. |
+| `@jnreis/briojs/observers` | `observersPlugin`: `b-on-enter`, `b-on-exit`, `b-on-resize`, and the mutation directives. |
+| `@jnreis/briojs/testing` | `renderBrio()` for testing apps and plugins in Node with jsdom or happy-dom. |
 | `@jnreis/briojs/step` | Step navigation. |
-| `@jnreis/briojs/money-mask` | Optional `moneyMask` formatter. |
 | `@jnreis/briojs/devtools` | Development-only instrumentation and inspector panel. |
 | `@jnreis/briojs/astro` | Optional named-island lifecycle integration and lazy code loading. |
 | `@jnreis/briojs/dist/*` | Built files for self-hosted standalone browser scripts. |
@@ -2807,6 +3130,37 @@ dependencies are not required. Brio enhances client-rendered DOM rather than
 providing server-side rendering or hydration of framework-generated server output.
 Its reactivity entry can run without a DOM. Modern browsers are required; optional
 observer directives and native CSS features depend on browser support.
+
+### Migrating from Brio 4
+
+Brio 5 moves directives that most pages never use out of the core bundle, which
+makes `brio.min.js` about 2 KB smaller (brotli), and requires the `b-` prefix
+on every directive.
+
+| In Brio 4 | In Brio 5 |
+| --- | --- |
+| `b-mask`, `moneyMask` in the core / `brio.money-mask.min.js` | Load `brio.inputs.min.js`, or install `inputsPlugin` from `@jnreis/briojs/inputs`. |
+| `validate` from `brio.forms.min.js` / `@jnreis/briojs/forms` | `brio.inputs.min.js` / `@jnreis/briojs/inputs`. |
+| `@jnreis/briojs/money-mask` | `@jnreis/briojs/inputs`. |
+| `b-on-enter`, `b-on-exit`, `b-on-resize`, `b-on-addednodes`, `b-on-removednodes`, `b-on-attrs`, `b-on-text`, and their `.options` | Load `brio.observers.min.js`, or install `observersPlugin` from `@jnreis/briojs/observers`. |
+| `b-router-outlet` | Unchanged with `createApp({ router })`: the router installs it. |
+| `app.plugin(plugin)` | `app.use(plugin)`. |
+| `b-options="{ 'b-on-enter': { threshold: 0.5 } }"` | One `.options` attribute per directive: `b-on-enter.options="{ threshold: 0.5 }"`. Option values now win over modifiers. |
+| Short forms without `b-`: `on-*`, `bind-*`, `text`, `html`, `model`, `mask`, `teleport`, `transition`, `effect` | Add the prefix: `b-on-click`, `b-bind-href`, `b-text`, and so on. Brio now leaves unprefixed attributes alone. |
+
+With script tags, add the add-on script after `brio.min.js` and nothing else
+changes: add-ons attach to every app created afterwards. With npm, add the
+plugin to each app:
+
+```js
+import { inputsPlugin } from '@jnreis/briojs/inputs';
+import { observersPlugin } from '@jnreis/briojs/observers';
+
+createApp({ plugins: [inputsPlugin, observersPlugin], state: () => ({}) });
+```
+
+A page that still uses a moved directive without its add-on fails with an error
+that names the script and the plugin to load.
 
 ### References for older applications
 

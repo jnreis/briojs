@@ -1,0 +1,6 @@
+{
+  "html.customData": [
+    "./node_modules/@jnreis/briojs/dist/html-custom-data.json",
+    "./html-custom-data.json"
+  ]
+}

@@ -4,7 +4,8 @@ import { test } from 'node:test';
 import { JSDOM } from 'jsdom';
 
 const core = readFileSync(new URL('../dist/brio.min.js', import.meta.url), 'utf8');
-const routerPlugin = readFileSync(new URL('../dist/brio.router.min.js', import.meta.url), 'utf8');
+const addons = ['router', 'inputs', 'observers']
+    .map(name => readFileSync(new URL(`../dist/brio.${name}.min.js`, import.meta.url), 'utf8'));
 const documentation = readFileSync(new URL('../DOCUMENTATION.md', import.meta.url), 'utf8');
 
 const probe = (name, markup, verify, verifyAfterUpdate, verifyAfterDispose) => ({
@@ -149,6 +150,19 @@ const directives = [
             input.dispatchEvent(new window.Event('input', { bubbles: true }));
             equal(pair, 'b-mask', 'formats input with the pattern', input.value, '12-34');
         }),
+    probe('b-form', `
+        <form data-probe="form" b-form="{ rules: { name: [{ name: 'required' }] } }" novalidate>
+            <input name="name" data-probe="form-input">
+            <i data-probe="form-valid" b-text="$form.valid"></i>
+        </form>`,
+        ({ pair, root, window }) => {
+            const input = root.querySelector('[data-probe="form-input"]');
+            const valid = root.querySelector('[data-probe="form-valid"]');
+            equal(pair, 'b-form', 'starts invalid', valid.textContent, 'false');
+            input.value = 'Ada';
+            input.dispatchEvent(new window.Event('input', { bubbles: true }));
+            equal(pair, 'b-form', 'tracks values and validity', valid.textContent, 'true');
+        }),
     probe('b-teleport', `
         <div id="probe-teleport" b-teleport="['#portal', 'append']">
             <span data-probe="teleport" b-text="$data.value"></span>
@@ -198,10 +212,6 @@ const directives = [
     probe('b-on-resize', `<i id="probe-on-resize" b-on-resize="$data.observerRuns++"></i>`,
         ({ pair, observers }) => equal(pair, 'b-on-resize', 'creates a resize observer',
             observers.created.filter(observer => observer.kind === 'resize' && observer.target?.id === 'probe-on-resize').length, 1)),
-    probe('b-options', `
-        <i id="probe-options" b-options="{'b-on-resize': { debounce: 0 }}" b-on-resize="$data.observerRuns++"></i>`,
-    ({ pair, observers }) => equal(pair, 'b-options', 'configures an observer directive',
-        observers.created.filter(observer => observer.kind === 'resize' && observer.target?.id === 'probe-options').length, 1)),
 ];
 
 function equal(pair, directive, behavior, actual, expected) {
@@ -254,7 +264,7 @@ function setup(t, left, right, caseId) {
         }
     });
     window.eval(core);
-    window.eval(routerPlugin);
+    for (const addon of addons) window.eval(addon);
     const observers = makeObservers(window);
     const router = window.brio.createRouter([{ path: '/', component: 'home-page' }]);
     app = window.brio.createApp({

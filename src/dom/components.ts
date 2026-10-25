@@ -27,7 +27,8 @@ import { emptyContextValues } from '../core/context-values';
 import { createRefs } from './refs';
 import { handleBind } from './directives/bind';
 import { extractModifiers } from './directives/modifier';
-import { handleOn } from './directives/on';
+import { handleOn, eventModifiers } from './directives/on';
+import { checkOptionsUsed, collectOptions, readOptions } from './directives/registry';
 import { handleTransition } from './directives/transition';
 
 const projectedContexts = new WeakMap<Node, Record<PropertyKey, any>>();
@@ -137,11 +138,9 @@ export function mountComponent(
         propsObject[name] = type === Boolean ? value !== 'false' : type === Number ? Number(value) : value;
     }
     const propBindings = arrayFrom(element[ATTRIBUTES])
-        .filter(attribute => startsWith(attribute.name, 'b-bind-') || startsWith(attribute.name, 'bind-'))
+        .filter(attribute => startsWith(attribute.name, 'b-bind-') && !extractModifiers(attribute.name).modifiers.options)
         .map(attribute => {
-            const raw = startsWith(attribute.name, 'b-bind-')
-                ? attribute.name.slice(getLength('b-bind-'))
-                : attribute.name.slice(getLength('bind-'));
+            const raw = attribute.name.slice(getLength('b-bind-'));
             return {
                 name: raw.split('.')[0],
                 directive: attribute.name,
@@ -161,12 +160,17 @@ export function mountComponent(
     };
 
     componentScope.run(() => {
+        const options = collectOptions(element);
+        const names: string[] = [];
         for (const attribute of arrayFrom(element[ATTRIBUTES])) {
-            if (startsWith(attribute.name, 'b-on-') || startsWith(attribute.name, 'on-')) {
-                const { baseName, modifiers } = extractModifiers(attribute.name);
-                if (!/^(b-)?on-[a-z-]+$/.test(baseName))
+            const { baseName, modifiers } = extractModifiers(attribute.name);
+            if (modifiers.options) continue;
+            names.push(baseName);
+            if (startsWith(attribute.name, 'b-on-')) {
+                if (!/^b-on-[a-z-]+$/.test(baseName))
                     throw createSyntaxError(`Invalid component event directive "${attribute.name}".`);
-                handleOn(element, baseName, attribute.value, modifiers, context);
+                handleOn(element, baseName, attribute.value, modifiers, context,
+                    readOptions(options, baseName, eventModifiers, context, element));
             } else if (startsWith(attribute.name, 'b-attr-')) {
                 handleBind(element, extractModifiers(attribute.name).baseName, attribute.value,
                     extractModifiers(attribute.name).modifiers, context);
@@ -176,6 +180,7 @@ export function mountComponent(
                 throw createError(`Directive "${attribute.name}" is not supported on component hosts.`);
             }
         }
+        checkOptionsUsed(options, names);
 
         // Each bound prop is evaluated once here and re-evaluated only when its dependencies change.
         for (const binding of propBindings) {

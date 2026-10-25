@@ -29,8 +29,8 @@
     <div class="card" b-effect="$data.historyLogs.push('Sum is ' + ($data.a + $data.b) + ' at ' + new Date().toLocaleTimeString())">
         <h3>1. Element-Level Reactive Effect</h3>
         <p>A: <strong>${$data.a}</strong> | B: <strong>${$data.b}</strong></p>
-        <button on-click="$data.a++">Increment A</button>
-        <button on-click="$data.b++">Increment B</button>
+        <button b-on-click="$data.a++">Increment A</button>
+        <button b-on-click="$data.b++">Increment B</button>
 
         <h4>Effect Execution Logs:</h4>
         <ul>

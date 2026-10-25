@@ -1,0 +1,24 @@
+{
+  "name": "brio-plugin-copy",
+  "private": true,
+  "version": "0.1.0",
+  "description": "A b-copy directive and $copy helper for Brio.js.",
+  "type": "module",
+  "keywords": ["brio-plugin", "briojs"],
+  "exports": "./src/index.js",
+  "files": ["src/index.js", "html-custom-data.json"],
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "test": "node --test"
+  },
+  "peerDependencies": {
+    "@jnreis/briojs": "^5.0.0"
+  },
+  "devDependencies": {
+    "@jnreis/briojs": "^5.0.0",
+    "global-jsdom": "^30.0.0",
+    "jsdom": "^30.0.0",
+    "vite": "^7.0.0"
+  }
+}

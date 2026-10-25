@@ -1,6 +1,6 @@
 # Brio AI developer kit
 
-This kit helps assistants build applications with Brio v4. It is portable
+This kit helps assistants build applications with Brio v5. It is portable
 documentation and an optional skill, not model training or a runtime plugin.
 
 - Start with the tool-neutral [application guide](./brio-apps/references/guide.md).
@@ -69,7 +69,7 @@ Add a short pointer to your project's existing instruction file rather than
 duplicating the complete guide or replacing existing rules:
 
 ```md
-This application uses Brio.js v4. Before changing Brio templates or application
+This application uses Brio.js v5. Before changing Brio templates or application
 code, check the installed version and read
 node_modules/@jnreis/briojs/ai/brio-apps/references/guide.md.
 If the brio-apps skill is installed, use it for Brio application tasks.
@@ -83,7 +83,7 @@ Brio framework internals.
 
 ## Updates and confidence
 
-The references target v4.0.0. Check version compatibility after framework
+The references target v5.0.0. Check version compatibility after framework
 upgrades and recopy the skill from the corresponding package version.
 If you customize the copy, merge future updates deliberately.
 

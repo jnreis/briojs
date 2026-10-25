@@ -12,7 +12,7 @@ class LocalResources extends ResourceLoader {
         if (path === '/tests/source-viewer.js' || path === '/tests/source-viewer.css' ||
             path === '/site/public/theme.js' || path === '/tests/shared/showcase.css' ||
             /^\/site\/public\/(?:demo-theme|theme-tokens)\.css$/.test(path) ||
-            /^\/dist\/brio(?:\.(?:http|forms|step|money-mask))?\.min\.js$/.test(path))
+            /^\/dist\/brio(?:\.(?:http|inputs|observers|step))?\.min\.js$/.test(path))
             return Promise.resolve(readFileSync(new URL(`..${path}`, import.meta.url)));
         throw new Error(`Unexpected source-viewer test resource: ${url}`);
     }
@@ -293,7 +293,7 @@ test('every manual example page loads the source viewer before bootstrap', () =>
             pages++;
         }
     }
-    assert.equal(pages, 31);
+    assert.equal(pages, 32);
 });
 
 test('source panels preserve authored directives, literal interpolation and template content without hydrating it', async t => {

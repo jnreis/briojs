@@ -36,15 +36,15 @@
     <!-- Test 1: Basic Event & Expression -->
     <div class="card">
         <h3>1. Basic on-click & $event</h3>
-        <button on-click="$data.clicks++">Click to count: ${$data.clicks}</button>
-        <button on-click="$data.clicks = 0">Reset</button>
+        <button b-on-click="$data.clicks++">Click to count: ${$data.clicks}</button>
+        <button b-on-click="$data.clicks = 0">Reset</button>
     </div>
 
     <!-- Test 2: on-click.prevent -->
     <div class="card">
         <h3>2. Dot Modifier: .prevent</h3>
         <p>Clicking link shouldn't navigate because of <code>on-click.prevent</code>:</p>
-        <a href="https://example.com" on-click.prevent="$data.preventedMessage = 'Form / link submission prevented at ' + new Date().toLocaleTimeString()">
+        <a href="https://example.com" b-on-click.prevent="$data.preventedMessage = 'Form / link submission prevented at ' + new Date().toLocaleTimeString()">
             Click me (Link with .prevent)
         </a>
         <p>Result: <strong>${$data.preventedMessage}</strong></p>
@@ -53,7 +53,7 @@
     <!-- Test 3: on-click.once -->
     <div class="card">
         <h3>3. Dot Modifier: .once</h3>
-        <button on-click.once="$data.onceCount++">
+        <button b-on-click.once="$data.onceCount++">
             Click me (Runs once only): ${$data.onceCount}
         </button>
         <p>The count above will never exceed 1 even when repeatedly clicked.</p>
@@ -62,10 +62,10 @@
     <!-- Test 4: on-click.stop propagation -->
     <div class="card">
         <h3>4. Dot Modifier: .stop (Propagation)</h3>
-        <div class="box" on-click="$data.stopParent++">
+        <div class="box" b-on-click="$data.stopParent++">
             Outer container (Parent clicks: ${$data.stopParent})
             <br><br>
-            <button on-click.stop="$data.stopChild++">
+            <button b-on-click.stop="$data.stopChild++">
                 Child Button with .stop (Child clicks: ${$data.stopChild})
             </button>
             <p>Clicking the button increments child clicks without triggering parent clicks.</p>
@@ -75,7 +75,7 @@
     <!-- Test 5: on-click.outside -->
     <div class="card">
         <h3>5. Dot Modifier: .outside</h3>
-        <div class="inner-box" on-click.outside="$data.outsideStatus = 'Clicked outside at ' + new Date().toLocaleTimeString()">
+        <div class="inner-box" b-on-click.outside="$data.outsideStatus = 'Clicked outside at ' + new Date().toLocaleTimeString()">
             Click outside of this gray box to trigger outside event!
         </div>
         <p>Status: <strong>${$data.outsideStatus}</strong></p>
@@ -85,14 +85,14 @@
     <div class="card">
         <h3>6. Keydown and Modifiers</h3>
         <p>Focus input and press keys (Enter, Escape, etc.):</p>
-        <input type="text" placeholder="Type here..." on-keydown="$data.lastKeyPressed = $event.key" style="padding: 8px; width: 250px;">
+        <input type="text" placeholder="Type here..." b-on-keydown="$data.lastKeyPressed = $event.key" style="padding: 8px; width: 250px;">
         <p>Last key pressed: <code>${$data.lastKeyPressed}</code></p>
     </div>
 
     <!-- Test 7: on-click.window -->
     <div class="card">
         <h3>7. Global Window Listener: on-click.window</h3>
-        <div on-click.window="$data.windowClicks++">
+        <div b-on-click.window="$data.windowClicks++">
             Listening to window clicks anywhere on page!
         </div>
         <p>Total clicks on window: <code>${$data.windowClicks}</code></p>

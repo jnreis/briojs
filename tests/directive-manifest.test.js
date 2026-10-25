@@ -9,16 +9,31 @@ const read = path => readFileSync(new URL(path, root), 'utf8');
 const names = new Set(directives.map(directive => directive.name));
 const modifiersOf = name => directives.find(directive => directive.name === name).modifiers?.map(modifier => modifier.name) ?? [];
 const source = readdirSync(new URL('src/', root), { recursive: true })
-    .filter(file => file.endsWith('.ts'))
+    // The plugin registry names reserved stems and examples; the reserved-name test below covers it.
+    .filter(file => file.endsWith('.ts') && !file.endsWith('registry.ts'))
     .map(file => read(`src/${file}`))
     .join('\n');
 
 test('every b- attribute the runtime reads is in the directive manifest', () => {
     const literals = new Set([...source.matchAll(/['"`](b-[a-z-]+)['"`]/g)].map(match => match[1]));
     const prefixes = ['b-on-', 'b-bind-', 'b-attr-', 'b-ref-'];
-    const missing = [...literals].filter(name => !prefixes.some(prefix => name.startsWith(prefix)) && !names.has(name));
+    // Removed directives the runtime still detects only to throw a migration error.
+    const removed = new Set(['b-options']);
+    const missing = [...literals].filter(name =>
+        !prefixes.some(prefix => name.startsWith(prefix)) && !names.has(name) && !removed.has(name));
     assert.deepEqual(missing, []);
     for (const prefix of ['b-on-', 'b-bind-', 'b-attr-']) assert.ok(names.has(`${prefix}*`), prefix);
+});
+
+test('plugins cannot claim any built-in directive name', () => {
+    const registry = read('src/dom/directives/registry.ts');
+    const reserved = registry.match(/reservedDirectives = \(\s*'([^']+)' \+\s*'([^']+)'/).slice(1).join('').split(' ');
+    const stems = [...registry.match(/reservedPrefixes = \[([^\]]+)\]/)[1].matchAll(/'([a-z-]+)'/g)].map(match => match[1]);
+    const covered = name => stems.some(stem => name === stem || name.startsWith(`${stem}-`));
+    // Directives shipped as official plugins register through the public API, so they must stay claimable.
+    const official = new Set(directives.filter(directive => directive.plugin).map(directive => directive.name));
+    assert.deepEqual([...reserved].sort(), [...names].filter(name => !covered(name) && !name.endsWith('*') && !official.has(name)).sort());
+    for (const prefix of ['b-on-', 'b-bind-', 'b-attr-', 'b-router-']) assert.ok(covered(prefix + 'x'), prefix);
 });
 
 test('event modifiers match the runtime list exactly', () => {

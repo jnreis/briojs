@@ -41,3 +41,11 @@ export const notifyEffectCreated = () => {
 export const notifyEffectDisposed = (tracked: boolean) => {
     if (devtoolsEnabled && tracked) bridge?.effectDisposed();
 };
+
+const warnedDirectives = new Set<string>();
+/** Development only: an unrecognized b-* attribute usually means a missing plugin or a typo. */
+export const notifyUnknownDirective = (name: string, element: Element) => {
+    if (!devtoolsEnabled || !bridge || warnedDirectives.has(name)) return;
+    warnedDirectives.add(name);
+    console.warn(`Brio: unknown directive "${name}" on <${element.localName}>. Check the spelling, or install the plugin that provides it.`, element);
+};

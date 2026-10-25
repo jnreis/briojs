@@ -14,8 +14,7 @@ export declare function arrayFrom<T>(items: Iterable<T> | ArrayLike<T>): T[];
 export declare function arrayFrom<T, U>(items: Iterable<T> | ArrayLike<T>, map: (value: T, index: number) => U, thisArg?: unknown): U[];
 /** Indexed copy of a live list (attributes, child nodes); far cheaper than iterating a NodeList or NamedNodeMap. */
 export declare const snapshotList: <T>(list: ArrayLike<T>) => T[];
-/** Errors Brio raised itself; only these get DOM locations appended, never errors thrown by application code. */
-export declare const brioErrors: WeakSet<object>;
+export declare const isBrioError: (error: unknown) => boolean;
 export declare const createError: (message: string) => Error;
 export declare const createTypeError: (message: string) => TypeError;
 export declare const createSyntaxError: (message: string) => SyntaxError;

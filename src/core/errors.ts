@@ -1,4 +1,4 @@
-import { ObjectConstructor, createError, brioErrors, isObjectType } from './native';
+import { ObjectConstructor, createError, isBrioError, isObjectType } from './native';
 
 const located = new WeakSet<object>();
 
@@ -48,7 +48,7 @@ export const directiveError = (message: string, cause: unknown, directive?: stri
 
 /** Appends the element being hydrated or updated to a Brio-raised error that has no location yet. */
 export const locate = (error: unknown, node?: Node): unknown => {
-    if (node && brioErrors.has(error as object) && !located.has(error as object)) {
+    if (node && isBrioError(error) && !located.has(error as object)) {
         (error as Error).message += ` (at ${describeNode(node)})`;
         mark(error as Error, node);
     }

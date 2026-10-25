@@ -1,6 +1,6 @@
 {
   "name": "@jnreis/briojs",
-  "version": "4.1.0",
+  "version": "5.0.0",
   "description": "A petite, HTML-first framework for reactive widgets and web apps.",
   "author": {
     "name": "Jonathan Reis",
@@ -68,21 +68,25 @@
       "types": "./dist/http-entry.d.ts",
       "import": "./dist/http-entry.js"
     },
-    "./forms": {
-      "types": "./dist/forms-entry.d.ts",
-      "import": "./dist/forms-entry.js"
+    "./inputs": {
+      "types": "./dist/inputs-entry.d.ts",
+      "import": "./dist/inputs-entry.js"
+    },
+    "./observers": {
+      "types": "./dist/observers-entry.d.ts",
+      "import": "./dist/observers-entry.js"
     },
     "./step": {
       "types": "./dist/step-entry.d.ts",
       "import": "./dist/step-entry.js"
     },
-    "./money-mask": {
-      "types": "./dist/money-mask-entry.d.ts",
-      "import": "./dist/money-mask-entry.js"
-    },
     "./astro": {
       "types": "./dist/astro-entry.d.ts",
       "import": "./dist/astro-entry.js"
+    },
+    "./testing": {
+      "types": "./dist/testing-entry.d.ts",
+      "import": "./dist/testing-entry.js"
     },
     "./package.json": "./package.json",
     "./dist/*": "./dist/*"
@@ -102,7 +106,7 @@
     "test:playground": "playwright test --config tests/playground/playwright.config.js",
     "prepack": "npm run build",
     "size": "node scripts/size.js",
-    "test": "npm run build && node --test",
+    "test": "npm run build && node --test \"tests/**/*.test.js\"",
     "typecheck": "tsc --noEmit",
     "dev:astro": "astro dev --root tests/fixtures/astro --host 127.0.0.1 --port 4321",
     "test:astro": "npm run build && playwright test --config tests/astro/playwright.config.js",

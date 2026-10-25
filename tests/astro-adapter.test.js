@@ -223,7 +223,7 @@ test('a persistent root keeps its app and props until its boundary disappears', 
     env.install({ a: (root, props) => {
         calls++;
         const app = counter(root, props);
-        app.plugin(() => onCleanup(() => { cleanups++; }));
+        app.use(() => onCleanup(() => { cleanups++; }));
         return app;
     } });
     const original = document.querySelector('main');

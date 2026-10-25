@@ -1,13 +1,13 @@
 ---
 name: brio-apps
-description: "Build, extend, or debug applications using Brio.js v4. Use for Brio HTML directives, reactive widgets, multi-page enhancement, SPAs, components, forms, routing, scoped cleanup, and app.insert/$insert. Not for maintaining the framework internals or migrating unspecified older versions."
+description: "Build, extend, or debug applications using Brio.js v5. Use for Brio HTML directives, reactive widgets, multi-page enhancement, SPAs, components, forms, routing, scoped cleanup, and app.insert/$insert. Not for maintaining the framework internals or migrating unspecified older versions."
 ---
 
 # Building applications with Brio
 
 ## Scope
 
-Use this skill for application code using Brio v4. Check the installed version
+Use this skill for application code using Brio v5. Check the installed version
 and existing integration before editing. Do not assume Brio behaves like Vue,
 Alpine, or React. This folder is self-contained and can be copied into an
 assistant's supported skill directory.

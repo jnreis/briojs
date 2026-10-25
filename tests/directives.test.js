@@ -5,6 +5,7 @@ import { JSDOM } from 'jsdom';
 import { assign, evaluateFunction, execute, hydrateRoot, hydrateNode } from '@jnreis/briojs';
 
 const bundle = readFileSync(new URL('../dist/brio.min.js', import.meta.url), 'utf8');
+const inputs = readFileSync(new URL('../dist/brio.inputs.min.js', import.meta.url), 'utf8');
 
 test('manual model page shows default strings versus explicit numeric conversion', t => {
     const markup = readFileSync(new URL('./directives/model.html', import.meta.url), 'utf8');
@@ -170,6 +171,7 @@ function environment(t, markup, state = {}, source = bundle) {
     });
     const { window } = dom;
     window.eval(source);
+    window.eval(inputs);
     const errors = [];
     window.addEventListener('error', event => {
         errors.push(event.error);
@@ -228,11 +230,11 @@ test('$insert supports every placement, literal text, multiple roots and cloned 
     assert.equal(root.querySelector('#target').children.length, 0);
     const fragment = window.document.createDocumentFragment();
     const button = window.document.createElement('button');
-    button.setAttribute('on-click', '$data.count++');
+    button.setAttribute('b-on-click', '$data.count++');
     fragment.append(button, window.document.createTextNode('${$data.count}'));
     const cloned = app.insert('#target', 'replaceWith', fragment);
     assert.equal(fragment.childNodes.length, 2);
-    assert.equal(button.hasAttribute('on-click'), true);
+    assert.equal(button.hasAttribute('b-on-click'), true);
     cloned.nodes[0].click();
     assert.equal(cloned.nodes[1].textContent, '3');
     assert.equal(root.querySelector('#target'), null);
@@ -247,12 +249,12 @@ test('$insert supports every placement, literal text, multiple roots and cloned 
 
 test('$insert replacement dehydrates original children without stopping siblings or the container', t => {
     const { app, root } = environment(t, `
-        <section id="target"><button on-click="$data.count++"></button><span b-text="$data.count"></span></section>
+        <section id="target"><button b-on-click="$data.count++"></button><span b-text="$data.count"></span></section>
         <aside b-text="$data.count"></aside>`, { count: 0 });
     const mount = app.mount(root);
     const oldButton = root.querySelector('button');
     const oldSpan = root.querySelector('span');
-    const inserted = app.insert('#target', 'replaceChildren', '<button on-click="$data.count++">new</button>');
+    const inserted = app.insert('#target', 'replaceChildren', '<button b-on-click="$data.count++">new</button>');
     oldButton.click();
     assert.equal(app.state.count, 0);
     root.querySelector('button').click();
@@ -286,7 +288,7 @@ test('$insert inherits destination data and loop context, and optional data adds
 test('contextual $insert is lexical, root-bound, and owned by the destination', t => {
     const { app, root, window } = environment(t, `
         <div class="target"></div>
-        <button b-if="$data.visible" on-click="$insert('.target', 'append', '<span b-text=&quot;$data.count&quot;></span>')">insert</button>
+        <button b-if="$data.visible" b-on-click="$insert('.target', 'append', '<span b-text=&quot;$data.count&quot;></span>')">insert</button>
         <script b-script>() => { $data.insert = $context.$insert; }</script>`, { visible: true, count: 0 });
     const otherRoot = window.document.createElement('main');
     otherRoot.innerHTML = '<div class="target"></div>';
@@ -318,7 +320,7 @@ test('$insert owns structural regions, teleports, hidden nodes and enclosing bra
         <template b-template><span b-for="item in $data.items" b-text="$for.item"></span></template>
         <div id="hidden" b-if.detach="$data.visible"></div>
         <div b-if="$data.visible"><section id="branch"></section></div>
-        <div b-teleport="['#portal', 'append']"><button on-click="$data.items.push(3)">teleported</button></div>`);
+        <div b-teleport="['#portal', 'append']"><button b-on-click="$data.items.push(3)">teleported</button></div>`);
     const hidden = region.nodes.find(node => node.nodeType === 8 && node.nodeValue === 'brio:if:branch');
     assert.ok(hidden);
     app.state.visible = true;
@@ -377,10 +379,10 @@ test('$insert errors are explicit, preserve content on invalid input, and clean 
 test('$insert replacements clean original structural controllers, including teleported and hidden children', t => {
     const { app, root } = environment(t, `
         <section id="target">
-            <div b-if="$data.visible"><button on-click="$data.count++">if</button></div>
-            <div b-for="item in $data.items"><button on-click="$data.count++">for</button></div>
-            <div b-if.detach="$data.hidden"><button on-click="$data.count++">preserved</button></div>
-            <div b-teleport="['#portal', 'append']"><button on-click="$data.count++">teleport</button></div>
+            <div b-if="$data.visible"><button b-on-click="$data.count++">if</button></div>
+            <div b-for="item in $data.items"><button b-on-click="$data.count++">for</button></div>
+            <div b-if.detach="$data.hidden"><button b-on-click="$data.count++">preserved</button></div>
+            <div b-teleport="['#portal', 'append']"><button b-on-click="$data.count++">teleport</button></div>
         </section><aside id="portal"></aside>`, { visible: true, hidden: false, count: 0, items: [1] });
     app.mount(root);
     const buttons = [...root.querySelectorAll('button')];
@@ -501,7 +503,7 @@ test('browser app.insert replaces global hydration methods while ESM keeps the l
     assert.equal(app.$insert, undefined);
     app.mount(root);
     const handle = app.insert(root, 'append',
-        '<button on-click="$data.count++">Increment</button><span b-text="$data.count"></span>');
+        '<button b-on-click="$data.count++">Increment</button><span b-text="$data.count"></span>');
     const [button, span] = handle.nodes;
     button.click();
     assert.equal(span.textContent, '1');
@@ -515,7 +517,7 @@ test('browser app.insert replaces global hydration methods while ESM keeps the l
 test('b-if recreates local b-data, disposes listeners/effects, and preserves parent state', t => {
     const { app, root } = environment(t, `
         <section b-if="$data.visible" b-data="{ count: 0 }">
-            <button on-click="$data.count++; $data.$parent.total++">Increment</button>
+            <button b-on-click="$data.count++; $data.$parent.total++">Increment</button>
             <span b-text="$data.count"></span>
             <em b-text="$data.$parent.total"></em>
         </section>`, { visible: true, total: 0 });
@@ -538,7 +540,7 @@ test('b-if recreates local b-data, disposes listeners/effects, and preserves par
 test('b-else-if chains mount only the first match and recreate branch state', t => {
     const { app, root } = environment(t, `
         <div b-if="$data.score >= 80" b-data="{ count: 0 }">
-            <button on-click="$data.count++"></button><span b-text="$data.count"></span>
+            <button b-on-click="$data.count++"></button><span b-text="$data.count"></span>
         </div>
         <!-- adjacent branches -->
         <div b-else-if="$data.score >= 50">middle</div>
@@ -567,7 +569,7 @@ test('data ancestry is reactive, scope-specific, read-only and absent from seria
         <div b-data="{ label: 'one' }"><section>
             <div b-data="$data.$parent.shared">
                 <script b-script>($context) => { $data.$parent.$parent.capture($context.$data); }</script>
-                <button on-click="$data.increment(); $data.$parent.label = 'changed'"></button>
+                <button b-on-click="$data.increment(); $data.$parent.label = 'changed'"></button>
                 <span b-text="$data.value + ':' + $data.$parent.label + ':' + $data.$parent.$parent.count"></span>
             </div>
         </section></div>
@@ -609,7 +611,7 @@ test('nested loop ancestry survives wrappers, data scopes, reused names and keye
                 <i b-for="item in $for.item.children">
                     <span b-text="$for.item + ':' + $for.$parent.item.name"></span>
                     <b b-for="n in 1" b-text="$for.n + ':' + $for.$parent.item + ':' + $for.$parent.$parent.item.name"></b>
-                    <button on-click="$for.$parent.item.name += '!'"></button>
+                    <button b-on-click="$for.$parent.item.name += '!'"></button>
                 </i>
             </article></div>
         </section>`, { items: [{ id: 1, name: 'first', children: ['child'] }, { id: 2, name: 'second', children: ['other'] }] });
@@ -657,7 +659,7 @@ test('explicit loop values update keyed rows and nested loop contexts without lo
     const { app, root, window } = environment(t, `
         <section b-for="item, index in $data.items" b-key="$for.item.id">
             <span b-text="$for.index + ':' + $for.item.name"></span>
-            <button on-click="const suffix = '!'; $for.item.name += suffix;"></button>
+            <button b-on-click="const suffix = '!'; $for.item.name += suffix;"></button>
             <div b-data="{ local: 0 }">
                 <em b-text="$for.item.name + ':' + $data.$parent.label"></em>
             </div>
@@ -719,14 +721,14 @@ test('keyed b-for reorders with the minimum number of row moves', t => {
 
 test('component setup exposes $data, $props and $emit while slots and events keep parent context', t => {
     const { window, app, root } = environment(t, `
-        <count-widget b-bind-label="$data.label" on-change="$data.last = $event.detail">
+        <count-widget b-bind-label="$data.label" b-on-change="$data.last = $event.detail">
             <span class="projected" b-text="$data.label"></span>
         </count-widget>`, { label: 'parent', last: 0 });
     app.component('count-widget', {
-        template: `<button on-click="$data.count++; $emit('change', $data.count)">
+        template: `<button b-on-click="$data.count++; $emit('change', $data.count)">
             <span class="count" b-text="$data.count"></span>
             <em b-text="$props.label"></em>
-        </button><button class="notify" on-click="$data.notify()"></button>
+        </button><button class="notify" b-on-click="$data.notify()"></button>
         <slot></slot><p b-text="$data.$parent.label"></p>`,
         setup({ $props, $emit }) {
             assert.equal($props.label, 'parent');
@@ -751,7 +753,7 @@ test('b-if preserves the same state and reactive node in detach and hide modes',
     for (const modifier of ['.detach', '.hide']) {
         const { app, root } = environment(t, `
             <section b-if${modifier}="$data.visible" b-data="{ count: 0 }">
-                <button on-click="$data.count++"></button><span b-text="$data.count"></span>
+                <button b-on-click="$data.count++"></button><span b-text="$data.count"></span>
                 <em b-text="$data.$parent.total"></em>
             </section>`, { visible: true, total: 0 });
         app.mount(root);
@@ -773,17 +775,17 @@ test('conditional chains use one parent-context mode, eager preserved setup, and
         const { app, root } = environment(t, `
             <section id="a" b-if${mode}="$data.choice === 1" b-data="{ count: 0, choice: 99 }" style="display: flex;">
                 <script b-script>() => { $data.$parent.capture($el.parentElement); }</script>
-                <button on-click="$data.count++"></button><span b-text="$data.count"></span>
+                <button b-on-click="$data.count++"></button><span b-text="$data.count"></span>
                 <em b-text="$data.$parent.total"></em>
             </section>
             <!-- adjacency allows comments and whitespace -->
             <section id="b" b-else-if="$data.choice >= 1" b-data="{ count: 0 }">
                 <script b-script>() => { $data.$parent.capture($el.parentElement); }</script>
-                <button on-click="$data.count++"></button><span b-text="$data.count"></span>
+                <button b-on-click="$data.count++"></button><span b-text="$data.count"></span>
             </section>
             <section id="c" b-else b-data="{ count: 0 }">
                 <script b-script>() => { $data.$parent.capture($el.parentElement); }</script>
-                <button on-click="$data.count++"></button><span b-text="$data.count"></span>
+                <button b-on-click="$data.count++"></button><span b-text="$data.count"></span>
             </section>`, { choice: 1, total: 0 });
         const created = [];
         app.state.capture = element => created.push(element);
@@ -819,7 +821,7 @@ test('initially inactive preserved branches retain listeners/effects until all b
                     $data.$parent.capture($el.parentElement);
                     onCleanup($data.$parent.cleaned);
                 }</script>
-                <button on-click="$data.count++"></button><span b-text="$data.count"></span>
+                <button b-on-click="$data.count++"></button><span b-text="$data.count"></span>
                 <em b-text="$data.$parent.total"></em>
             </section>
             <article b-else><script b-script>() => { onCleanup($data.cleaned); }</script></article>`,
@@ -910,7 +912,7 @@ test('preserved branches own nested components, providers, loops, templates, tel
         let setups = 0;
         let cleanups = 0;
         app.component('owned-counter', {
-            template: '<button on-click="$data.count++" b-text="$data.count"></button><b b-text="$provided.label"></b>',
+            template: '<button b-on-click="$data.count++" b-text="$data.count"></button><b b-text="$provided.label"></b>',
             setup() {
                 setups++;
                 window.brio.onCleanup(() => cleanups++);
@@ -954,7 +956,7 @@ test('preserved component-host chains set up inactive components exactly once', 
         let setups = 0;
         let cleanups = 0;
         app.component('owned-counter', {
-            template: '<button on-click="$data.count++" b-text="$data.count"></button>',
+            template: '<button b-on-click="$data.count++" b-text="$data.count"></button>',
             setup() {
                 setups++;
                 window.brio.onCleanup(() => cleanups++);
@@ -1095,7 +1097,6 @@ test('money options reach the formatter and b-model in either attribute order', 
         const { app, root, window } = environment(t, `<input ${attributes}>`, {
             amount: '', options: { thousands: '.', decimal: ',', precision: 3 },
         });
-        window.eval(readFileSync(new URL('../dist/brio.money-mask.min.js', import.meta.url), 'utf8'));
         app.mount(root);
         const input = root.querySelector('input');
         input.value = '1234567';
@@ -1114,7 +1115,6 @@ test('money defaults, zero precision, and invalid options', t => {
         [`b-mask="brio.moneyMask({ precision: 0 })"`, '123,456'],
     ]) {
         const { app, root, window } = environment(t, `<input ${attributes}>`);
-        window.eval(readFileSync(new URL('../dist/brio.money-mask.min.js', import.meta.url), 'utf8'));
         app.mount(root);
         const input = root.querySelector('input');
         input.value = '123456';
@@ -1122,7 +1122,6 @@ test('money defaults, zero precision, and invalid options', t => {
         assert.equal(input.value, value);
     }
     const { app, root, window } = environment(t, `<input b-mask="brio.moneyMask({ precision: -1 })">`);
-    window.eval(readFileSync(new URL('../dist/brio.money-mask.min.js', import.meta.url), 'utf8'));
     assert.throws(() => app.mount(root), error => /precision must be an integer/.test(error.cause?.message));
 });
 
@@ -1152,7 +1151,6 @@ test('money edits preserve caret and selection in either model attribute order',
         `b-model="$data.amount" b-mask="brio.moneyMask()"`,
     ]) {
         const { app, root, window } = environment(t, `<input ${attributes}>`, { amount: '' });
-        window.eval(readFileSync(new URL('../dist/brio.money-mask.min.js', import.meta.url), 'utf8'));
         app.mount(root);
         const input = root.querySelector('input');
         input.focus();
@@ -1181,7 +1179,6 @@ test('money edits preserve caret and selection in either model attribute order',
 
 test('money caret mapping handles custom separators, negative values and zero precision', t => {
     const { app, root, window } = environment(t, `<input b-mask="brio.moneyMask({ thousands: ' ', decimal: ',', precision: 0 })">`);
-    window.eval(readFileSync(new URL('../dist/brio.money-mask.min.js', import.meta.url), 'utf8'));
     app.mount(root);
     const input = root.querySelector('input');
     input.focus();
@@ -1253,7 +1250,7 @@ test('leave waits for every own property and dehydrates b-if only after completi
     const { window, app, root } = environment(t, `
         <section b-if="$data.visible" b-transition="'fade'"
             style="transition-property: opacity, transform; transition-duration: 0.2s, 1.6s; transition-delay: 0s, 0.2s">
-            <button on-click="$data.count++"></button><span b-text="$data.count"></span>
+            <button b-on-click="$data.count++"></button><span b-text="$data.count"></span>
         </section>`, { visible: true, count: 0 });
     const clock = transitionClock(window);
     app.mount(root);
@@ -1296,8 +1293,8 @@ test('plain b-if reverses the same live instance and resets state only after a c
                 .fade-enter-to, .fade-leave { opacity: 1; }
             </style>
             <section ${attributes} b-data="{ local: 0, count: 0 }">
-                <button on-click="$data.count++"></button><span b-text="$data.count"></span>
-                <button class="local" on-click="$data.local++" b-text="$data.local"></button>
+                <button b-on-click="$data.count++"></button><span b-text="$data.count"></span>
+                <button class="local" b-on-click="$data.local++" b-text="$data.local"></button>
                 <script b-script>() => { onCleanup($data.$parent.cleaned); }</script>
             </section>`, { visible: false, count: 0 });
         let cleaned = 0;
@@ -1387,7 +1384,7 @@ test('completed b-if leave can reactivate from cleanup without reusing a dispose
     const { window, app, root } = environment(t, `
         <section b-if="$data.visible" b-transition="'fade'" style="transition-property: opacity; transition-duration: 1s; transition-delay: 0s">
             <script b-script>() => { onCleanup($data.reopen); }</script>
-            <button on-click="$data.count++" b-text="$data.count"></button>
+            <button b-on-click="$data.count++" b-text="$data.count"></button>
         </section>`, { visible: true, count: 0 });
     let cleanups = 0;
     app.state.reopen = () => { cleanups++; app.state.visible = true; };

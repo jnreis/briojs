@@ -34,16 +34,16 @@
             <div class="spacer">Scroll down...</div>
 
             <div class="target"
-                 b-options="{ 'on-enter': { root: '#intersection-root', rootMargin: '20px', threshold: [0, 0.5, 1] }, 'on-exit': { root: '#intersection-root', rootMargin: '20px', threshold: [0, 0.5, 1] } }"
-                 on-enter="$data.intersectStatus = 'Target entered viewport at ' + new Date().toLocaleTimeString()"
-                 on-exit="$data.intersectStatus = 'Target exited viewport at ' + new Date().toLocaleTimeString()">
+                 b-on-enter.options="{ root: '#intersection-root', rootMargin: '20px', threshold: [0, 0.5, 1] }" b-on-exit.options="{ root: '#intersection-root', rootMargin: '20px', threshold: [0, 0.5, 1] }"
+                 b-on-enter="$data.intersectStatus = 'Target entered viewport at ' + new Date().toLocaleTimeString()"
+                 b-on-exit="$data.intersectStatus = 'Target exited viewport at ' + new Date().toLocaleTimeString()">
                 🎯 I am in the viewport!
             </div>
 
             <div class="spacer">End of scroll container.</div>
             <div class="target"
-                 b-options="{ 'on-enter': { root: $el.parentElement, threshold: 0.25 } }"
-                 on-enter="console.log('Element-reference root, quarter threshold', $entry)">
+                 b-on-enter.options="{ root: $el.parentElement, threshold: 0.25 }"
+                 b-on-enter="console.log('Element-reference root, quarter threshold', $entry)">
                 Element-reference root target
             </div>
         </div>
@@ -53,17 +53,19 @@
         <p>Scroll this target in and out of the page viewport. The first matching callback logs once after 100ms.
             The other callback logs crossings after 250ms. Inspect $entry.intersectionRatio in the console.</p>
         <div class="target"
-             b-options="{ 'on-enter.once.debounce': { root: null, rootMargin: '0px', threshold: 0.5 }, 'on-exit': { threshold: 0.5, debounce: 250 } }"
-             on-enter.once.debounce="console.log('Viewport enter once', $entry.intersectionRatio)"
-             on-exit="console.log('Viewport exit debounced', $entry.intersectionRatio)">Viewport target</div>
+             b-on-enter.options="{ root: null, rootMargin: '0px', threshold: 0.5 }"
+             b-on-exit.options="{ threshold: 0.5, debounce: 250 }"
+             b-on-enter.once.debounce="console.log('Viewport enter once', $entry.intersectionRatio)"
+             b-on-exit="console.log('Viewport exit debounced', $entry.intersectionRatio)">Viewport target</div>
         <p>The first scenario uses a selector root and an array of thresholds. This one uses the viewport and a scalar.
             Options can also use an Element reference such as $el.parentElement. They are read once on hydration.</p>
-        <div class="target" b-options="{ 'on-enter': { root: document, rootMargin: '0px' } }"
-             on-enter="console.log('Document-reference root', $entry)">Document root target</div>
+        <div class="target" b-on-enter.options="{ root: document, rootMargin: '0px' }"
+             b-on-enter="console.log('Document-reference root', $entry)">Document root target</div>
     </div>
 
     <script src="/tests/source-viewer.js"></script>
     <script src="/dist/brio.min.js"></script>
+    <script src="/dist/brio.observers.min.js"></script>
     <script>
         window.addEventListener('DOMContentLoaded', () => {
             const app = brio.createApp();

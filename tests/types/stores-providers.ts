@@ -16,7 +16,7 @@ app.stores.missing;
 // @ts-expect-error State inference remains intact.
 app.state.count = 'bad';
 app.stores.session.user = 'Bob';
-app.plugin(owner => { owner.stores.session; });
+app.use(owner => { owner.stores.session; });
 app.component('test-card', {
     template: '<span></span>',
     setup({ $stores, $provided, $ref }: ComponentContext) {
@@ -32,7 +32,7 @@ app.component('test-card', {
         return { user };
     },
 });
-const chained: typeof app = app.plugin(() => {}).component('other-card', { template: '<b></b>' });
+const chained: typeof app = app.use(() => {}).component('other-card', { template: '<b></b>' });
 const oldOptions: AppOptions<{ count: number }> = { state: () => ({ count: 0 }) };
 const oldApp: BrioApp<{ count: number }> = createApp(oldOptions);
 const defaultApp: BrioApp = createApp();

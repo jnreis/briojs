@@ -1,12 +1,12 @@
 ---
 name: brio-migrate-1-1-5
-description: "Migrate applications from Brio.js 1.1.5 to v4.0.0. Use for legacy newApp, b-props/b-data, b-each, mustache templates, $set/$dom/$tools, scripts, routing/boost, persistence, masks, transitions, and hydration APIs. Inventory the actual legacy bundle and preserve production behavior; not a blind rename or compatibility shim."
+description: "Migrate applications from Brio.js 1.1.5 to v5.0.0. Use for legacy newApp, b-props/b-data, b-each, mustache templates, $set/$dom/$tools, scripts, routing/boost, persistence, masks, transitions, and hydration APIs. Inventory the actual legacy bundle and preserve production behavior; not a blind rename or compatibility shim."
 ---
 
 # Migrating Brio 1.1.5 applications
 
 This is a portable application-migration skill, not a runtime plugin. It targets
-1.1.5 to 4.0.0 specifically. Do not treat the newer app-development skill as a
+1.1.5 to 5.0.0 specifically. Do not treat the newer app-development skill as a
 description of legacy behavior.
 
 ## Required workflow
@@ -27,7 +27,7 @@ description of legacy behavior.
    persistence formats, navigation strategy, timer/event timings, validation
    acceptance, focus, or state reset/preservation.
 5. Migrate one isolated root or vertical flow at a time on a branch/staging
-   deployment. Never hydrate the same subtree with both runtimes. Install v4,
+   deployment. Never hydrate the same subtree with both runtimes. Install v5,
    register methods/components/plugins, then mount explicitly. Remove legacy
    bootstrap and registration only when their callers are replaced.
 6. Resolve every expression's actual owner before introducing `$data`, `$for`,
@@ -36,7 +36,7 @@ description of legacy behavior.
    routing deliberately; there is no complete automatic codemod.
 7. Use the [paired example instructions](./references/examples.md) as a small
    verified pattern, not proof that the entire production app is compatible.
-   The [v4 example](./assets/after.html) is runnable with the current bundle.
+   The [v5 example](./assets/after.html) is runnable with the current bundle.
 8. Run the app's targeted build/tests and real browser checks. Verify cleanup,
    state ownership, network failures, navigation, data compatibility, and CSP.
    Report completed conversions, observed differences, unsupported surfaces,
@@ -48,7 +48,7 @@ description of legacy behavior.
 - Preserve host-page behavior and server-rendered navigation unless explicitly
   authorized to change them.
 - No invented `app.$insert`, `$refs`, `$set`, `$dom`, `newApp`, custom directive
-  registry, hook chain, or template registry in v4.
+  registry, hook chain, or template registry in v5.
 - Do not use regex replacements to resolve JavaScript scope or rewrite embedded
   scripts. Do not implement a fake legacy API that silently drops options.
 - Treat markup as executable code; never move user/server response strings into

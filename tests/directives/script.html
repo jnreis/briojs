@@ -37,7 +37,7 @@
         <p>Initialized at: <code>${$data.initializedAt}</code></p>
         <p>User in context: <strong>${$data.user}</strong></p>
         <p>Counter: <strong>${$data.counter}</strong> (Doubled via method: <strong>${$data.doubleCount()}</strong>)</p>
-        <button on-click="$data.counter++">Increment</button>
+        <button b-on-click="$data.counter++">Increment</button>
     </div>
 
     <!-- Test 2: b-script using $context parameter and async/setTimeout -->
@@ -58,7 +58,7 @@
         <p>Role: <strong>${$data.title}</strong></p>
         <p>Timer Status: <strong>${$data.asyncStatus}</strong></p>
         <p>Value: <strong>${$data.count2}</strong></p>
-        <button on-click="$data.count2++">+1 Value</button>
+        <button b-on-click="$data.count2++">+1 Value</button>
     </div>
 
     <div class="card" b-data="{ status: 'Waiting' }">

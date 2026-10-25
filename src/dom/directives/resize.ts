@@ -1,17 +1,10 @@
 import { getOwnerDocument } from '../native';
 import { createTypeError, createError } from '../../core/native';
-import { createExpressionScope, execute } from '../../core/expression';
-import { onCleanup } from '../../core/scope';
+import type { DirectiveBinding, DirectiveDefinition } from './registry';
 import { observerOptions, observerBoolean, observerDelay } from './observer-options';
 
-export function handleResize(
-    element: Element,
-    attrName: string,
-    expression: string,
-    modifiers: Record<string, boolean>,
-    context: Record<PropertyKey, any>,
-): void {
-    const options = observerOptions(element, attrName, modifiers, context);
+function handleResize(element: Element, binding: DirectiveBinding): void {
+    const options = observerOptions(element, binding);
     const target = observerBoolean(options, 'document', false) ? getOwnerDocument(element).documentElement : element;
     const box = options.box ?? 'content-box';
     if (box !== 'content-box' && box !== 'border-box' && box !== 'device-pixel-content-box')
@@ -35,7 +28,7 @@ export function handleResize(
                 width: measured ? (vertical ? measured.blockSize : measured.inlineSize) : entry.contentRect.width,
                 height: measured ? (vertical ? measured.inlineSize : measured.blockSize) : entry.contentRect.height,
             };
-            execute(expression, createExpressionScope({ $size: size, $entry: entry }, context), undefined, attrName, element);
+            binding.run({ $size: size, $entry: entry });
         };
 
         if (delay !== undefined) {
@@ -46,9 +39,14 @@ export function handleResize(
         }
     });
 
-    onCleanup(() => {
+    binding.onCleanup(() => {
         clearTimeout(debounceTimer);
         observer.disconnect();
     });
     observer.observe(target, { box });
 }
+
+export const resizeDirective: DirectiveDefinition = {
+    name: 'b-on-resize', value: 'statement', mount: handleResize,
+    modifiers: ['debounce', 'document'], options: ['box', 'document', 'debounce'],
+};

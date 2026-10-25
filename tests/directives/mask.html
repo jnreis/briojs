@@ -58,7 +58,7 @@
         <h3>4. Reactive Formatter Options</h3>
         <input id="money-options" b-model="$data.euroVal" b-mask="brio.moneyMask($data.options)" placeholder="1.234,56">
         <p>Model: ${$data.euroVal}. Type 123456: expect 1.234,56. This input also checks b-model before b-mask.</p>
-        <button on-click="$data.options.thousands = $data.options.thousands === '.' ? ' ' : '.'">Toggle thousands separator</button>
+        <button b-on-click="$data.options.thousands = $data.options.thousands === '.' ? ' ' : '.'">Toggle thousands separator</button>
     </div>
     <div class="card">
         <h3>5. Configurable Money Formatters</h3>
@@ -88,7 +88,7 @@
 
     <script src="/tests/source-viewer.js"></script>
     <script src="/dist/brio.min.js"></script>
-    <script src="/dist/brio.money-mask.min.js"></script>
+    <script src="/dist/brio.inputs.min.js"></script>
     <script>
         window.addEventListener('DOMContentLoaded', () => {
             const app = brio.createApp();

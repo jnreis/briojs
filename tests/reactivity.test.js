@@ -4,7 +4,7 @@ import { createApp } from '@jnreis/briojs';
 import { batch, computed, createScope, effect, flush, onCleanup, signal, state, untrack } from '@jnreis/briojs/reactivity';
 import { persist } from '@jnreis/briojs/persistence';
 import { createRouter } from '@jnreis/briojs/router';
-import { validate } from '@jnreis/briojs/forms';
+import { validate } from '@jnreis/briojs/inputs';
 
 test('state preserves cycles, shared references, and raw identity', () => {
     const shared = { value: 1 };
@@ -360,7 +360,7 @@ test('plugins are idempotent and app initialization cleans up plugin scopes on f
     const source = signal(1);
     const values = [];
     const firstPlugin = () => effect(() => values.push(source.value));
-    const app = createApp().plugin(firstPlugin).plugin(firstPlugin);
+    const app = createApp().use(firstPlugin).use(firstPlugin);
 
     assert.deepEqual(values, [1]);
     app.dispose();

@@ -1,22 +1,15 @@
 import { isString, getLength, isArray, createTypeError, ATTRIBUTES } from '../../core/native';
-import { createExpressionScope, execute } from '../../core/expression';
-import { onCleanup } from '../../core/scope';
+import type { DirectiveBinding, DirectiveDefinition } from './registry';
 import { observerOptions, observerTarget, observerBoolean, observerDelay } from './observer-options';
 
-export function handleMutation(
-    element: Element,
-    attrName: string,
-    expression: string,
-    modifiers: Record<string, boolean>,
-    context: Record<PropertyKey, any>,
-): void {
-    const baseName = attrName.split('.')[0];
-    const isAdded = baseName.endsWith('-addednodes');
-    const isRemoved = baseName.endsWith('-removednodes');
-    const isAttrs = baseName.endsWith('-attrs');
-    const isText = baseName.endsWith('-text');
+function handleMutation(element: Element, binding: DirectiveBinding): void {
+    const { directive } = binding;
+    const isAdded = directive === 'b-on-addednodes';
+    const isRemoved = directive === 'b-on-removednodes';
+    const isAttrs = directive === 'b-on-attrs';
+    const isText = directive === 'b-on-text';
 
-    const configured = observerOptions(element, attrName, modifiers, context);
+    const configured = observerOptions(element, binding);
     const target = configured.target === undefined ? element :
         observerTarget(configured.target, element, 'Mutation target');
     const delay = observerDelay(configured);
@@ -58,7 +51,7 @@ export function handleMutation(
             const invoke = () => {
                 const records = pending;
                 pending = [];
-                execute(expression, createExpressionScope({ $mutations: records }, context), undefined, attrName, element);
+                binding.run({ $mutations: records });
             };
             pending.push(...matching);
 
@@ -71,10 +64,19 @@ export function handleMutation(
         }
     });
 
-    onCleanup(() => {
+    binding.onCleanup(() => {
         clearTimeout(debounceTimer);
         observer.disconnect();
         pending = [];
     });
     observer.observe(target, options);
 }
+
+const mutation = (name: string, ...extra: string[]): DirectiveDefinition => ({
+    name, value: 'statement', mount: handleMutation,
+    modifiers: ['debounce', 'subtree'], options: ['target', 'subtree', 'debounce', ...extra],
+});
+export const addedNodesDirective = /* @__PURE__ */ mutation('b-on-addednodes');
+export const removedNodesDirective = /* @__PURE__ */ mutation('b-on-removednodes');
+export const attrsDirective = /* @__PURE__ */ mutation('b-on-attrs', 'attributeFilter', 'attributeOldValue');
+export const textDirective = /* @__PURE__ */ mutation('b-on-text', 'characterDataOldValue');

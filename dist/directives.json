@@ -168,11 +168,11 @@
         },
         {
           "name": "debounce",
-          "description": "Wait until events pause for 150ms, then run once."
+          "description": "Wait until events pause for 150ms (or the `.options` delay), then run once."
         },
         {
           "name": "throttle",
-          "description": "Run at most once every 150ms."
+          "description": "Run at most once every 150ms (or the `.options` delay)."
         },
         {
           "name": "capture",
@@ -237,6 +237,20 @@
         {
           "name": "delete",
           "description": "Run only when Delete or Backspace is pressed."
+        }
+      ],
+      "options": [
+        {
+          "name": "debounce",
+          "description": "`true` (150ms) or a delay in milliseconds."
+        },
+        {
+          "name": "throttle",
+          "description": "`true` (150ms) or an interval in milliseconds."
+        },
+        {
+          "name": "prevent, stop, once, …",
+          "description": "Any modifier as `true` or `false`."
         }
       ],
       "suggestions": [
@@ -414,9 +428,18 @@
     },
     {
       "name": "b-mask",
-      "description": "Format an input with a pattern string or a synchronous formatter function.",
+      "description": "Format an input with a pattern string or a synchronous formatter function. Requires the inputs add-on (`brio.inputs.min.js` or `inputsPlugin` from `@jnreis/briojs/inputs`).",
       "value": "pattern",
+      "plugin": "@jnreis/briojs/inputs",
       "example": "<input b-model=\"$data.phone\" b-mask=\"'(###) ###-####'\">",
+      "docs": "https://briojs.com/reference/undefined"
+    },
+    {
+      "name": "b-form",
+      "description": "Track a form's values, validation errors, touched fields, and submission as `$form`. Requires the inputs add-on (`brio.inputs.min.js` or `inputsPlugin` from `@jnreis/briojs/inputs`).",
+      "value": "expression",
+      "plugin": "@jnreis/briojs/inputs",
+      "example": "<form b-form=\"{ rules: $data.rules, submit: $data.save }\" novalidate>…</form>",
       "docs": "https://briojs.com/reference/undefined"
     },
     {
@@ -435,155 +458,262 @@
     },
     {
       "name": "b-router-outlet",
-      "description": "Render the component matching the current route.",
+      "description": "Render the component matching the current route. Requires a router (`createApp({ router })`).",
       "value": "none",
+      "plugin": "@jnreis/briojs/router",
       "example": "<main b-router-outlet></main>",
       "docs": "https://briojs.com/reference/undefined"
     },
     {
       "name": "b-on-enter",
-      "description": "Run when the element enters the viewport (or `root`). `$entry` is the intersection entry.",
+      "description": "Run when the element enters the viewport (or `root`). `$entry` is the intersection entry. Requires the observers add-on.",
       "value": "statement",
+      "plugin": "@jnreis/briojs/observers",
       "example": "<img b-on-enter.once=\"$data.load()\">",
       "modifiers": [
         {
           "name": "once",
-          "description": "Stop after the first delivered callback."
+          "description": "Stop after the first callback."
         },
         {
           "name": "debounce",
-          "description": "Debounce callbacks (configure the delay with `b-options`)."
+          "description": "Debounce callbacks by 100ms, or by the `debounce` option."
+        }
+      ],
+      "options": [
+        {
+          "name": "root",
+          "description": "Element, selector, or null for the viewport."
+        },
+        {
+          "name": "rootMargin",
+          "description": "CSS margin around the root, such as `'200px'`."
+        },
+        {
+          "name": "threshold",
+          "description": "Number or array between 0 and 1."
+        },
+        {
+          "name": "once",
+          "description": "Stop after the first callback."
+        },
+        {
+          "name": "debounce",
+          "description": "`true` (100ms) or a delay in milliseconds."
         }
       ],
       "docs": "https://briojs.com/reference/undefined"
     },
     {
       "name": "b-on-exit",
-      "description": "Run when the element leaves the viewport (or `root`). `$entry` is the intersection entry.",
+      "description": "Run when the element leaves the viewport (or `root`). `$entry` is the intersection entry. Requires the observers add-on.",
       "value": "statement",
+      "plugin": "@jnreis/briojs/observers",
       "example": "<video b-on-exit=\"$el.pause()\"></video>",
       "modifiers": [
         {
           "name": "once",
-          "description": "Stop after the first delivered callback."
+          "description": "Stop after the first callback."
         },
         {
           "name": "debounce",
-          "description": "Debounce callbacks (configure the delay with `b-options`)."
+          "description": "Debounce callbacks by 100ms, or by the `debounce` option."
+        }
+      ],
+      "options": [
+        {
+          "name": "root",
+          "description": "Element, selector, or null for the viewport."
+        },
+        {
+          "name": "rootMargin",
+          "description": "CSS margin around the root, such as `'200px'`."
+        },
+        {
+          "name": "threshold",
+          "description": "Number or array between 0 and 1."
+        },
+        {
+          "name": "once",
+          "description": "Stop after the first callback."
+        },
+        {
+          "name": "debounce",
+          "description": "`true` (100ms) or a delay in milliseconds."
         }
       ],
       "docs": "https://briojs.com/reference/undefined"
     },
     {
       "name": "b-on-addednodes",
-      "description": "Run when child nodes are added. `$mutations` lists the records.",
-      "value": "statement",
-      "example": "<ul b-on-addednodes=\"console.log($mutations)\"></ul>",
-      "modifiers": [
+      "description": "Run when child nodes are added. `$mutations` lists the records. Requires the observers add-on.",
+      "options": [
         {
-          "name": "once",
-          "description": "Stop after the first delivered callback."
-        },
-        {
-          "name": "debounce",
-          "description": "Debounce callbacks (configure the delay with `b-options`)."
+          "name": "target",
+          "description": "Element, document, text node, or selector to observe instead of this element."
         },
         {
           "name": "subtree",
-          "description": "Observe descendants too (the default unless `b-options` sets `subtree: false`)."
+          "description": "Observe descendants too (default `true`)."
+        },
+        {
+          "name": "debounce",
+          "description": "`true` (100ms) or a delay in milliseconds."
+        }
+      ],
+      "value": "statement",
+      "plugin": "@jnreis/briojs/observers",
+      "example": "<ul b-on-addednodes=\"console.log($mutations)\"></ul>",
+      "modifiers": [
+        {
+          "name": "debounce",
+          "description": "Debounce callbacks by 100ms, or by the `debounce` option."
+        },
+        {
+          "name": "subtree",
+          "description": "Observe descendants too (the default unless the options set `subtree: false`)."
         }
       ],
       "docs": "https://briojs.com/reference/undefined"
     },
     {
       "name": "b-on-removednodes",
-      "description": "Run when child nodes are removed. `$mutations` lists the records.",
-      "value": "statement",
-      "example": "<ul b-on-removednodes=\"console.log($mutations)\"></ul>",
-      "modifiers": [
+      "description": "Run when child nodes are removed. `$mutations` lists the records. Requires the observers add-on.",
+      "options": [
         {
-          "name": "once",
-          "description": "Stop after the first delivered callback."
-        },
-        {
-          "name": "debounce",
-          "description": "Debounce callbacks (configure the delay with `b-options`)."
+          "name": "target",
+          "description": "Element, document, text node, or selector to observe instead of this element."
         },
         {
           "name": "subtree",
-          "description": "Observe descendants too (the default unless `b-options` sets `subtree: false`)."
+          "description": "Observe descendants too (default `true`)."
+        },
+        {
+          "name": "debounce",
+          "description": "`true` (100ms) or a delay in milliseconds."
+        }
+      ],
+      "value": "statement",
+      "plugin": "@jnreis/briojs/observers",
+      "example": "<ul b-on-removednodes=\"console.log($mutations)\"></ul>",
+      "modifiers": [
+        {
+          "name": "debounce",
+          "description": "Debounce callbacks by 100ms, or by the `debounce` option."
+        },
+        {
+          "name": "subtree",
+          "description": "Observe descendants too (the default unless the options set `subtree: false`)."
         }
       ],
       "docs": "https://briojs.com/reference/undefined"
     },
     {
       "name": "b-on-attrs",
-      "description": "Run when attributes change. `$mutations` lists the records.",
-      "value": "statement",
-      "example": "<ul b-on-attrs=\"console.log($mutations)\"></ul>",
-      "modifiers": [
+      "description": "Run when attributes change. `$mutations` lists the records. Requires the observers add-on.",
+      "options": [
         {
-          "name": "once",
-          "description": "Stop after the first delivered callback."
-        },
-        {
-          "name": "debounce",
-          "description": "Debounce callbacks (configure the delay with `b-options`)."
+          "name": "target",
+          "description": "Element, document, text node, or selector to observe instead of this element."
         },
         {
           "name": "subtree",
-          "description": "Observe descendants too (the default unless `b-options` sets `subtree: false`)."
+          "description": "Observe descendants too (default `true`)."
+        },
+        {
+          "name": "debounce",
+          "description": "`true` (100ms) or a delay in milliseconds."
+        },
+        {
+          "name": "attributeFilter",
+          "description": "Attribute names to watch."
+        },
+        {
+          "name": "attributeOldValue",
+          "description": "Record previous values (default `false`)."
+        }
+      ],
+      "value": "statement",
+      "plugin": "@jnreis/briojs/observers",
+      "example": "<ul b-on-attrs=\"console.log($mutations)\"></ul>",
+      "modifiers": [
+        {
+          "name": "debounce",
+          "description": "Debounce callbacks by 100ms, or by the `debounce` option."
+        },
+        {
+          "name": "subtree",
+          "description": "Observe descendants too (the default unless the options set `subtree: false`)."
         }
       ],
       "docs": "https://briojs.com/reference/undefined"
     },
     {
       "name": "b-on-text",
-      "description": "Run when text (character data) changes. `$mutations` lists the records.",
-      "value": "statement",
-      "example": "<ul b-on-text=\"console.log($mutations)\"></ul>",
-      "modifiers": [
+      "description": "Run when text (character data) changes. `$mutations` lists the records. Requires the observers add-on.",
+      "options": [
         {
-          "name": "once",
-          "description": "Stop after the first delivered callback."
-        },
-        {
-          "name": "debounce",
-          "description": "Debounce callbacks (configure the delay with `b-options`)."
+          "name": "target",
+          "description": "Element, document, text node, or selector to observe instead of this element."
         },
         {
           "name": "subtree",
-          "description": "Observe descendants too (the default unless `b-options` sets `subtree: false`)."
+          "description": "Observe descendants too (default `true`)."
+        },
+        {
+          "name": "debounce",
+          "description": "`true` (100ms) or a delay in milliseconds."
+        },
+        {
+          "name": "characterDataOldValue",
+          "description": "Record previous text (default `false`)."
+        }
+      ],
+      "value": "statement",
+      "plugin": "@jnreis/briojs/observers",
+      "example": "<ul b-on-text=\"console.log($mutations)\"></ul>",
+      "modifiers": [
+        {
+          "name": "debounce",
+          "description": "Debounce callbacks by 100ms, or by the `debounce` option."
+        },
+        {
+          "name": "subtree",
+          "description": "Observe descendants too (the default unless the options set `subtree: false`)."
         }
       ],
       "docs": "https://briojs.com/reference/undefined"
     },
     {
       "name": "b-on-resize",
-      "description": "Run when the element (or document with `.document`) changes size. Read `$size.width` and `$size.height`.",
+      "description": "Run when the element (or document with `.document`) changes size. Read `$size.width` and `$size.height`. Requires the observers add-on.",
       "value": "statement",
+      "plugin": "@jnreis/briojs/observers",
       "example": "<div b-on-resize=\"$data.wide = $size.width > 600\"></div>",
       "modifiers": [
         {
-          "name": "once",
-          "description": "Stop after the first delivered callback."
-        },
-        {
           "name": "debounce",
-          "description": "Debounce callbacks (configure the delay with `b-options`)."
+          "description": "Debounce callbacks by 100ms, or by the `debounce` option."
         },
         {
           "name": "document",
           "description": "Observe the document element instead."
         }
       ],
-      "docs": "https://briojs.com/reference/undefined"
-    },
-    {
-      "name": "b-options",
-      "description": "Configure observer directives on this element, keyed by attribute name, e.g. `{ 'b-on-enter': { threshold: 0.5 } }`.",
-      "value": "expression",
-      "example": "<div b-options=\"{ 'b-on-enter': { rootMargin: '20px' } }\" b-on-enter=\"$data.seen = true\"></div>",
+      "options": [
+        {
+          "name": "box",
+          "description": "`content-box` (default), `border-box`, or `device-pixel-content-box`."
+        },
+        {
+          "name": "document",
+          "description": "Observe the document element instead."
+        },
+        {
+          "name": "debounce",
+          "description": "`true` (100ms) or a delay in milliseconds."
+        }
+      ],
       "docs": "https://briojs.com/reference/undefined"
     },
     {

@@ -1,16 +1,14 @@
 import {
-    getLength, createError, arrayFrom, snapshotList, createSyntaxError, createTypeError, removeElement,
-    startsWith, TEMPLATE,
+    getLength, createError, arrayFrom, snapshotList, createSyntaxError, createTypeError,
+    startsWith, TEMPLATE, isObjectType,
     B_TELEPORT,
-    TELEPORT,
     ATTRIBUTES,
 } from '../core/native';
-import { getChildNodes, getParent, getNodeType, getAttribute, removeAttribute, getOwnerDocument } from './native';
+import { getChildNodes, getParent, getNodeType, getAttribute, removeAttribute } from './native';
 import { createExpressionScope } from '../core/expression';
-import { createScope, onCleanup } from '../core/scope';
+import { createScope } from '../core/scope';
 import { locate, setScopeNode } from '../core/errors';
-import type { Scope } from '../core/scope';
-import { effect, untrack } from '../reactivity/effect';
+import { effect } from '../reactivity/effect';
 import type { DomRuntime } from './types';
 import { isFragmentTemplate, mountComponent, takeProjectedContext } from './components';
 import { prepareTransition } from './directives/transition';
@@ -19,44 +17,6 @@ import { getNodeOwner, ownNode, withHydration } from './ownership';
 import { emptyContextValues } from '../core/context-values';
 import { interpolateText } from './interpolation';
 import { createRefs, registerRef } from './refs';
-
-export function mountRouterOutlet(
-    element: Element,
-    context: Record<PropertyKey, any>,
-    runtime: DomRuntime,
-    hydrateNodeFn: (node: Node, context: Record<PropertyKey, any>, runtime: DomRuntime) => void,
-): void {
-    if (!runtime.router) throw createError('b-router-outlet requires a router on the Brio app.');
-    const router = runtime.router;
-    let childScope: Scope | undefined;
-    let childElement: Element | undefined;
-    let mountedKey: string | undefined;
-    const clear = () => {
-        try {
-            childScope?.dispose();
-        } finally {
-            removeElement(childElement);
-            childScope = childElement = mountedKey = undefined;
-        }
-    };
-    onCleanup(clear);
-    effect(() => {
-        const route = router.current.value;
-        // Only the query or hash changed: keep the page and its state; it reads them through $route.
-        const key = route && `${route.component} ${route.path}`;
-        if (key === mountedKey) return;
-        clear();
-        if (!route?.component) return;
-        const definition = runtime.components.get(route.component);
-        if (!definition) throw createError(`No component registered for route "${route.component}".`);
-        const el = getOwnerDocument(element)!.createElement(route.component);
-        childElement = el;
-        childScope = createScope();
-        mountedKey = key!;
-        element.append(el);
-        untrack(() => childScope!.run(() => mountComponent(el, definition, context, runtime, hydrateNodeFn)));
-    });
-}
 
 const inserts = new WeakMap<DomRuntime, ReturnType<typeof createInsert>>();
 const getInsert = (runtime: DomRuntime) => {
@@ -67,15 +27,14 @@ const getInsert = (runtime: DomRuntime) => {
 
 const componentNamePattern = /^[a-z][a-z0-9]*-[a-z0-9-]+$/;
 const conditionalNames = new Set(['b-if', 'b-else-if', 'b-else']);
-const childControllingNames = new Set(['b-text', 'text', 'b-html', 'html', 'b-router-outlet']);
-const transitionNames = new Set(['b-transition', 'transition']);
+const childControllingNames = new Set(['b-text', 'b-html', 'b-router-outlet']);
 // Directives a fragment wrapper (b-template or a directive-bearing <template>) applies; the rest need a concrete element.
-const fragmentNames = new Set(['b-template', 'b-teleport', 'teleport', 'b-effect', 'effect']);
-const elementAliases = new Set(['text', 'html', 'model', 'mask', 'transition']);
+const fragmentNames = new Set(['b-template', 'b-teleport', 'b-effect']);
 
 import {
     handleBind,
     handleOn,
+    eventModifiers,
     handleModel,
     handleIf,
     handleFor,
@@ -85,17 +44,21 @@ import {
     handleProvide,
     handleId,
     handleIgnore,
-    handleMask,
     handleTeleport,
     handleTemplate,
     handleTransition,
-    handleIntersection,
-    handleMutation,
-    handleResize,
     handleEffect,
     handleScript,
     extractModifiers,
 } from './directives';
+import {
+    addonError, addonFor, checkOptionsUsed, collectOptions, createBinding, findPluginDirective, readOptions, keepCleanup, runHook,
+} from './directives/registry';
+import type { DirectiveBinding } from './directives/registry';
+import { devtoolsEnabled, notifyUnknownDirective } from '../plugins/devtools-bridge';
+
+// b-* attributes that stay on an element after hydration without being directives of their own.
+const passiveNames = new Set(['b-key', 'b-app', 'b-props']);
 
 export function hydrateChildren(
     element: Element,
@@ -251,16 +214,15 @@ function hydrateOwnedNode(
         for (const attribute of arrayFrom(element[ATTRIBUTES])) {
             const { baseName } = extractModifiers(attribute.name);
             if (fragmentNames.has(baseName)) continue;
-            if (startsWith(baseName, 'b-') || elementAliases.has(baseName) ||
-                startsWith(baseName, 'bind-') || startsWith(baseName, 'on-'))
+            if (startsWith(baseName, 'b-'))
                 throw createSyntaxError(`${baseName} needs a concrete element, but ${templateAttr !== null ? 'b-template' : '<template>'} renders its contents in place without one. Put it on an element inside.`);
         }
         handleTemplate(element, templateAttr ?? '', {}, context, runtime, hydrateNode);
         for (const attribute of arrayFrom(element[ATTRIBUTES])) {
             const { baseName, modifiers } = extractModifiers(attribute.name);
-            if (baseName === B_TELEPORT || baseName === TELEPORT)
+            if (baseName === B_TELEPORT)
                 handleTeleport(element, attribute.value, modifiers, context);
-            else if (baseName === 'b-effect' || baseName === 'effect')
+            else if (baseName === 'b-effect')
                 handleEffect(element, attribute.value, modifiers, context);
         }
         return;
@@ -270,16 +232,41 @@ function hydrateOwnedNode(
     const isComponent = componentNamePattern.test(tagName);
     const definition = isComponent ? runtime.components.get(tagName) : undefined;
 
+    const registry = runtime.directives;
+    const options = collectOptions(element);
+    const names = parsed.map(({ baseName, modifiers }) => modifiers.options ? '' : baseName);
+    const matches = names.map(name => findPluginDirective(registry, name));
+    const bind = (index: number) => createBinding(element, attributes[index].name, attributes[index].value,
+        parsed[index].modifiers, options, matches[index]!, runtime.app, node => hydrateNode(node, getNodeOwner(element)!.context!, runtime));
     if (definition) {
+        for (let index = 0; index < getLength(attributes); index++)
+            if (matches[index])
+                throw createSyntaxError(`${attributes[index].name} cannot be used on a component host. Put it on an element inside the component.`);
         mountComponent(element, definition, context, runtime, hydrateNode);
         return;
     }
 
-    let hasText = false;
-    let hasHtml = false;
+    // Plugin scope hooks run before any other directive on the element, so all of them see the added names.
+    const bindings: (DirectiveBinding | undefined)[] = [];
+    if (registry?.scoped) {
+        for (let index = 0; index < getLength(attributes); index++) {
+            const scope = matches[index]?.definition.scope;
+            if (!scope) continue;
+            const { name } = attributes[index];
+            const binding = bindings[index] = bind(index);
+            const added = runHook(scope, element, binding);
+            if (added === undefined) continue;
+            if (!added || !isObjectType(added))
+                throw createTypeError(`${name} scope hook must return an object of names or nothing.`);
+            context = createExpressionScope(added, context);
+            getNodeOwner(element)!.context = context;
+        }
+    }
+
+    let skipChildren = false;
     // Form controls whose value depends on child options start after the children hydrate.
     const afterChildren: (() => void)[] = [];
-    const transitionAttr = attributes.find((_, index) => transitionNames.has(parsed[index].baseName));
+    const transitionAttr = attributes.find((_, index) => names[index] === 'b-transition');
     if (transitionAttr) prepareTransition(element, transitionAttr.value);
 
     // Scan element attributes
@@ -288,60 +275,66 @@ function hydrateOwnedNode(
         const attrName = attribute.name;
         const attrValue = attribute.value;
         const { baseName, modifiers } = parsed[index];
+        const match = matches[index];
+        const addon = match ? undefined : addonFor(names[index]);
 
-        if (startsWith(baseName, 'b-on-') || startsWith(baseName, 'on-')) {
-            if (baseName.includes('-enter') || baseName.includes('-exit')) {
-                handleIntersection(element, attrName, attrValue, modifiers, context);
-            } else if (baseName.includes('-addednodes') || baseName.includes('-removednodes') || baseName.includes('-attrs') || baseName.includes('-text')) {
-                handleMutation(element, attrName, attrValue, modifiers, context);
-            } else if (baseName.includes('-resize')) {
-                handleResize(element, attrName, attrValue, modifiers, context);
-            } else {
-                handleOn(element, baseName, attrValue, modifiers, context);
-            }
+        if (modifiers.options) {
             removeAttribute(element, attrName);
-        } else if (startsWith(baseName, 'b-bind-') || startsWith(baseName, 'bind-')) {
+        } else if (addon) {
+            throw addonError(attrName, addon);
+        } else if (match) {
+            const { definition } = match;
+            const binding = bindings[index] ?? bind(index);
+            if (definition.children === false) {
+                getNodeOwner(element)!.controlsChildren = true;
+                skipChildren = true;
+            }
+            if (definition.mount) keepCleanup(runHook(definition.mount, element, binding), binding);
+            const ready = definition.ready;
+            if (ready) afterChildren.push(() => keepCleanup(runHook(ready, element, binding), binding));
+            removeAttribute(element, attrName);
+        } else if (startsWith(baseName, 'b-on-')) {
+            handleOn(element, baseName, attrValue, modifiers, context,
+                readOptions(options, baseName, eventModifiers, context, element));
+            removeAttribute(element, attrName);
+        } else if (startsWith(baseName, 'b-bind-')) {
             const start = handleBind(element, baseName, attrValue, modifiers, context);
             if (start) afterChildren.push(start);
             removeAttribute(element, attrName);
-        } else if (baseName === 'b-model' || baseName === 'model') {
+        } else if (baseName === 'b-model') {
             const start = handleModel(element, attrValue, modifiers, context);
             if (start) afterChildren.push(start);
             removeAttribute(element, attrName);
-        } else if (baseName === 'b-text' || baseName === 'text') {
+        } else if (baseName === 'b-text') {
             getNodeOwner(element)!.controlsChildren = true;
             handleText(element, attrValue, context);
             removeAttribute(element, attrName);
-            hasText = true;
-        } else if (baseName === 'b-html' || baseName === 'html') {
+            skipChildren = true;
+        } else if (baseName === 'b-html') {
             getNodeOwner(element)!.controlsChildren = true;
             handleHtml(element, attrValue, modifiers, context, runtime, hydrateChildren);
             removeAttribute(element, attrName);
-            hasHtml = true;
-        } else if (baseName === 'b-mask' || baseName === 'mask') {
-            handleMask(element, attrValue, modifiers, context);
-            removeAttribute(element, attrName);
-        } else if (baseName === B_TELEPORT || baseName === TELEPORT) {
+            skipChildren = true;
+        } else if (baseName === B_TELEPORT) {
             handleTeleport(element, attrValue, modifiers, context);
             removeAttribute(element, attrName);
-        } else if (baseName === 'b-transition' || baseName === 'transition') {
+        } else if (baseName === 'b-transition') {
             handleTransition(element, attrValue, modifiers, context);
             removeAttribute(element, attrName);
-        } else if (baseName === 'b-effect' || baseName === 'effect') {
+        } else if (baseName === 'b-effect') {
             handleEffect(element, attrValue, modifiers, context);
             removeAttribute(element, attrName);
         } else if (baseName === 'b-script') {
             handleScript(element, attrValue, modifiers, context);
             removeAttribute(element, attrName);
-        } else if (baseName === 'b-router-outlet') {
-            getNodeOwner(element)!.controlsChildren = true;
-            mountRouterOutlet(element, context, runtime, hydrateNode);
-            removeAttribute(element, attrName);
-            return;
+        } else if (devtoolsEnabled && startsWith(baseName, 'b-') && !passiveNames.has(baseName)) {
+            notifyUnknownDirective(attrName, element);
         }
     }
 
-    if (!hasText && !hasHtml && tagName !== 'script') {
+    checkOptionsUsed(options, names);
+
+    if (!skipChildren && tagName !== 'script') {
         hydrateChildren(element, context, runtime);
     }
     afterChildren.forEach(start => start());

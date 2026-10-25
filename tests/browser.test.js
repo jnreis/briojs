@@ -10,15 +10,16 @@ const development = readFileSync(new URL('../dist/brio.dev.min.js', import.meta.
 const coreAPI = [
     'createApp', 'state', 'signal', 'computed', 'effect', 'batch', 'flush',
     'untrack', 'resource', 'createScope', 'onCleanup', 'getCurrentScope', 'trustedHTML',
+    'defineDirective', 'definePlugin', 'use',
 ];
 const developmentAPI = ['devtools', 'inspectDevtools', 'devtoolsPanel', 'enableDevtools'];
 const pluginAPI = {
     router: ['createRouter'],
     persistence: ['persist'],
     http: ['http', 'HttpError'],
-    forms: ['validate'],
+    inputs: ['validate', 'moneyMask', 'inputsPlugin'],
+    observers: ['observersPlugin'],
     step: ['createStepEngine'],
-    'money-mask': ['moneyMask'],
 };
 
 for (const [name, bundle, dev] of [
@@ -28,7 +29,7 @@ for (const [name, bundle, dev] of [
     test(`${name} browser bundle publishes the expected API before its ready event`, t => {
         const dom = new JSDOM(`
             <main id="app"><div id="target"></div>
-            <button on-click="$insert('#target', 'append', '<span b-text=&quot;$data.count&quot;></span>')">Insert</button></main>
+            <button b-on-click="$insert('#target', 'append', '<span b-text=&quot;$data.count&quot;></span>')">Insert</button></main>
             <aside id="inspector"></aside>`, { runScripts: 'outside-only' });
         const { window } = dom;
         t.after(() => window.close());
@@ -153,7 +154,7 @@ for (const [name, bundle] of [['production', production], ['development', develo
         const core = window.brio;
         for (const key of ['persist', 'createRouter', 'http', 'HttpError', 'validate', 'createStepEngine', 'moneyMask'])
             assert.equal(core[key], undefined);
-        for (const plugin of ['router', 'persistence', 'http', 'forms', 'step', 'money-mask']) {
+        for (const plugin of Object.keys(pluginAPI)) {
             const source = readFileSync(new URL(`../dist/brio.${plugin}.min.js`, import.meta.url), 'utf8');
             window.eval(source);
         }
@@ -211,9 +212,9 @@ for (const [name, bundle] of [['production', production], ['development', develo
 test('optional scripts report missing core explicitly and contain no separate reactive engine', t => {
     const dom = new JSDOM('', { runScripts: 'outside-only' });
     t.after(() => dom.window.close());
-    for (const plugin of ['router', 'persistence', 'http', 'forms', 'step', 'money-mask']) {
+    for (const plugin of Object.keys(pluginAPI)) {
         const source = readFileSync(new URL(`../dist/brio.${plugin}.min.js`, import.meta.url), 'utf8');
-        assert.throws(() => dom.window.eval(source), /Load the Brio core/);
+        assert.throws(() => dom.window.eval(source), /Load the Brio 5 core bundle \(brio\.min\.js\) before Brio add-on scripts/);
         assert.equal(source.includes('Brio state() requires a plain object or array.'), false);
         assert.equal(source.includes('Cannot run a disposed Brio scope'), false);
     }

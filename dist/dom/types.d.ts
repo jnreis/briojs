@@ -2,6 +2,7 @@ import { ContextValues } from '../core/context-values.js';
 import { StoreMap } from '../core/types.js';
 import { RefMap } from './refs.js';
 import { RouteState } from '../plugins/router.js';
+import { DirectiveRegistry } from './directives/registry.js';
 
 export type ComponentContext = {
     el: Element;
@@ -28,6 +29,7 @@ export type DomRuntime = {
     components: Map<string, ComponentDefinition>;
     router?: any;
     root?: Element;
+    directives?: DirectiveRegistry;
 };
 declare const trustedMarkup: unique symbol;
 export type TrustedMarkup = {

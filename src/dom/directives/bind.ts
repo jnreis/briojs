@@ -123,8 +123,7 @@ export function handleBind(
     context: Record<PropertyKey, any>,
 ): (() => void) | void {
     // `b-attr-*` is the component-host form: it binds the host element itself instead of a prop.
-    const rawTarget = attrName.slice(getLength(startsWith(attrName, 'b-bind-') ? 'b-bind-'
-        : startsWith(attrName, 'b-attr-') ? 'b-attr-' : 'bind-'));
+    const rawTarget = attrName.slice(getLength(startsWith(attrName, 'b-attr-') ? 'b-attr-' : 'b-bind-'));
     if (!rawTarget) throw createSyntaxError(`Brio binding directive "${attrName}" has no target.`);
 
     const forceProp = Boolean(modifiers.prop);

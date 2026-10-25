@@ -7,6 +7,7 @@ import {
     arrayFrom,
     objectEntries,
     isInstanceOf,
+    isFunction,
     deleteItem,
     includesItem,
     ATTRIBUTES,
@@ -25,13 +26,17 @@ import { createScopedState } from './scoped-state';
 import { combinedError } from './errors';
 import { copyContextValues, emptyContextValues } from './context-values';
 import { createRefs } from '../dom/refs';
+import { checkPlugin, sharedPlugins } from './shared-plugins';
 import type {
     AppOptions,
     BrioApp,
     BrioPlugin,
+    BrioPluginObject,
     MountHandle,
     StoreMap,
 } from './types';
+import { createRegistry, registerDirective } from '../dom/directives/registry';
+import type { DirectiveRegistry } from '../dom/directives/registry';
 import {
     notifyAppCreated,
     notifyAppDisposed,
@@ -41,6 +46,8 @@ import {
 
 const componentNamePattern = /^[a-z][a-z0-9]*-[a-z0-9-]+$/;
 const activeMountRoots = new Set<Element>();
+const helperPattern = /^\$[A-Za-z_][\w]*$/;
+const reservedHelpers = '$data $el $emit $event $index $props $provided $ref $route $stores $value'.split(' ');
 
 export function createApp<
     T extends Record<string, unknown> = Record<string, unknown>,
@@ -57,6 +64,43 @@ export function createApp<
     const appScope = createScope();
     let disposed = false;
     const plugins = new Set<BrioPlugin>();
+    const pluginNames = new Set<string>();
+    const helpers: Record<string, unknown> = {};
+    const mountHooks: NonNullable<BrioPluginObject['onMount']>[] = [];
+    let registry: DirectiveRegistry | undefined;
+    let mounted = false;
+    const beforeMount = (what: string) => {
+        if (disposed) throw createError(`Cannot register ${what} on a disposed Brio app.`);
+        if (mounted) throw createError(`Register ${what} before the app mounts, so every root hydrates with the same directives and helpers.`);
+    };
+    const installObject = (plugin: BrioPluginObject) => {
+        const { name } = plugin;
+        if (!isString(name) || !name.trim()) throw createTypeError('A Brio plugin object needs a name.');
+        if (pluginNames.has(name)) throw createError(`A different Brio plugin named "${name}" is already installed.`);
+        // Registration is all-or-nothing: a plugin that fails part-way leaves no directives, helpers, or components behind.
+        const saved = [registry && { ...registry, exact: new Map(registry.exact), withArg: [...registry.withArg] },
+            { ...helpers }, new Map(components), getLength(mountHooks)] as const;
+        try {
+            for (const definition of plugin.directives ?? []) addDirective(definition, `plugin "${name}"`);
+            for (const [helper, value] of objectEntries(plugin.helpers ?? {})) app.helper(helper, value);
+            for (const [component, definition] of objectEntries(plugin.components ?? {})) app.component(component, definition);
+            if (plugin.onMount) mountHooks.push(plugin.onMount);
+            plugin.setup?.(app);
+            pluginNames.add(name);
+        } catch (error) {
+            registry = runtime.directives = saved[0];
+            for (const key in helpers) delete helpers[key];
+            ObjectConstructor.assign(helpers, saved[1]);
+            components.clear();
+            saved[2].forEach((definition, key) => components.set(key, definition));
+            mountHooks.length = saved[3];
+            throw error;
+        }
+    };
+    const addDirective = (definition: Parameters<BrioApp['directive']>[0], owner: string) => {
+        beforeMount('directives');
+        registerDirective(registry ??= runtime.directives = createRegistry(), definition, owner);
+    };
     const runtime: DomRuntime = {
         app: undefined,
         state: appState,
@@ -88,13 +132,27 @@ export function createApp<
             components.set(normalized, definition);
             return app;
         },
-        plugin(plugin) {
+        directive(definition) {
+            addDirective(definition, 'the app');
+            return app;
+        },
+        helper(name, value) {
+            beforeMount('helpers');
+            if (!isString(name) || !helperPattern.test(name))
+                throw createTypeError(`Helper name "${String(name)}" must start with "$", such as "$format".`);
+            if (includesItem(reservedHelpers, name) || name in helpers)
+                throw createError(`Helper "${name}" is already defined${includesItem(reservedHelpers, name) ? ' by Brio' : ''}.`);
+            helpers[name] = value;
+            return app;
+        },
+        use(plugin) {
             if (disposed) throw createError('Cannot install a plugin on a disposed Brio app.');
             if (plugins.has(plugin)) return app;
+            checkPlugin(plugin);
             plugins.add(plugin);
             const scope = createScope(appScope);
             try {
-                scope.run(() => plugin(app));
+                scope.run(() => isFunction(plugin) ? (plugin as (app: BrioApp) => void)(app) : installObject(plugin as BrioPluginObject));
             } catch (error) {
                 deleteItem(plugins, plugin);
                 try {
@@ -158,12 +216,13 @@ export function createApp<
                     }
                 },
             };
+            mounted = true;
             roots.add(handle);
             activeMountRoots.add(root);
             notifyRootMounted(app, root);
 
             const context = createExpressionScope(
-                { $data: createScopedState(appState), $stores: stores, $provided: emptyContextValues, $ref: createRefs(), $route: options.router?.route, trustedHTML, flush },
+                { ...helpers, $data: createScopedState(appState), $stores: stores, $provided: emptyContextValues, $ref: createRefs(), $route: options.router?.route, trustedHTML, flush },
             );
             try {
                 scope.run(() => {
@@ -172,6 +231,10 @@ export function createApp<
                         onCleanup(stopRouter);
                     }
                     hydrateRoot(root, context, { ...runtime, root });
+                    for (const hook of mountHooks) {
+                        const cleanup = hook(root, app as BrioApp);
+                        if (isFunction(cleanup)) onCleanup(cleanup as () => void);
+                    }
                 });
             } catch (error) {
                 try {
@@ -219,7 +282,8 @@ export function createApp<
     try {
         for (const [name, definition] of objectEntries(options.components ?? {}))
             app.component(name, definition);
-        for (const plugin of options.plugins ?? []) app.plugin(plugin);
+        for (const plugin of [...sharedPlugins, options.router?.plugin, ...options.plugins ?? []])
+            if (plugin) app.use(plugin);
     } catch (error) {
         try {
             app.dispose();

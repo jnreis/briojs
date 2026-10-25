@@ -45,7 +45,7 @@ for (const bundle of ['brio.min.js', 'brio.dev.min.js']) {
 test('later refs, disappearance and replacement move the same live output through its authored source', t => {
     const { app, root, window } = environment(t, `${capture}
         <section id="source"><input b-ref="field" b-teleport="[$ref.target, 'append']"
-            on-click="$data.count++"><footer>source tail</footer></section>
+            b-on-click="$data.count++"><footer>source tail</footer></section>
         <aside b-if="$data.visible" b-ref="target"><i>target child</i></aside>`,
     '({visible:true,count:0})');
     app.mount(root);
@@ -296,7 +296,7 @@ test('leave reversal retains teleported identity while its ref destination disap
     const { app, root, window } = environment(t, `${capture}
         <aside b-if="$data.targetVisible" b-ref="target"></aside>
         <button b-if="$data.visible" b-ref="field" b-teleport="[$ref.target,'append']"
-            b-transition="'fade'" on-click="$data.count++"
+            b-transition="'fade'" b-on-click="$data.count++"
             style="transition-property:opacity;transition-duration:1s;transition-delay:0s">live</button>`,
     '({visible:true,targetVisible:true,count:0})');
     const frames = new Map();
@@ -357,7 +357,7 @@ test('detached keyed loops reconcile new destinations, placement and collection 
 test('managed target removal and HTML replacement preserve foreign source-owned effects', t => {
     for (const mode of ['insert', 'html']) {
         const { app, root, window } = environment(t, `${capture}
-            <button b-ref="field" b-teleport="[$ref.target,'append']" on-click="$data.count++">live</button>
+            <button b-ref="field" b-teleport="[$ref.target,'append']" b-on-click="$data.count++">live</button>
             <section id="container"${mode === 'html' ? ' b-html.hydrate="trustedHTML($data.html)"' : ''}></section>`,
         `({count:0,html:'<aside b-ref="target"></aside>'})`);
         app.mount(root);

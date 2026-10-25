@@ -30,7 +30,7 @@
     <!-- Test 1: b-html -->
     <div class="card">
         <h3>1. b-html Directive</h3>
-        <button on-click="$data.rawMarkup = '<em>Updated at ' + new Date().toLocaleTimeString() + '</em> with <mark>highlight</mark>'">Update HTML</button>
+        <button b-on-click="$data.rawMarkup = '<em>Updated at ' + new Date().toLocaleTimeString() + '</em> with <mark>highlight</mark>'">Update HTML</button>
         <p>Explicitly hydrate an application-authored template:</p>
         <div id="hydrated-html" b-html.hydrate="trustedHTML($data.escapedText)" class="box"></div>
         <p>Default HTML parses tags but leaves interpolation untouched:</p>
@@ -48,7 +48,7 @@
         <p>Dynamic string expression:</p>
         <div b-text="'Current count: ' + $data.counter" class="box"></div>
         <div class="box">Current count: ${$data.counter}</div>
-        <button on-click="$data.counter++">+1</button>
+        <button b-on-click="$data.counter++">+1</button>
     </div>
 
     <script src="/tests/source-viewer.js"></script>

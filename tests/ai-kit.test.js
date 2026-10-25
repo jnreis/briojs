@@ -28,7 +28,7 @@ function recipe(t, name, pathname = '/', prepare, directory = skill) {
     window.eval(bundle);
     for (const script of dom.window.document.querySelectorAll('script[src]')) {
         const name = script.getAttribute('src').split('/').pop();
-        if (/^brio\.(router|persistence|http|forms|step|money-mask)\.min\.js$/.test(name))
+        if (/^brio\.(router|persistence|http|inputs|observers|step)\.min\.js$/.test(name))
             window.eval(readFileSync(resolve(root, 'dist', name), 'utf8'));
     }
     const bootstrap = window.document.querySelector('script[data-brio-recipe]');
@@ -240,7 +240,7 @@ test('migrated example verifies explicit contexts, numeric models, branch lifeti
     assert.equal(document.querySelector('#host').textContent, 'Host page outside the Brio root');
 });
 
-test('v4 migration HTTP contract uses JSON bodies, content-type parsing and explicit error-body handling', async t => {
+test('v5 migration HTTP contract uses JSON bodies, content-type parsing and explicit error-body handling', async t => {
     const { window } = recipe(t, 'after', '/', current => {
         current.Headers = Headers;
     }, migrationSkill);
@@ -398,8 +398,8 @@ test('preserved 1.1.5 bundle runs the before example and exposes important migra
 });
 
 for (const [directory, name, keywords] of [
-    [skill, 'brio-apps', [/Brio\.js v4/, /widgets/]],
-    [migrationSkill, 'brio-migrate-1-1-5', [/1\.1\.5/, /Migrate/, /v4\.0\.0/]],
+    [skill, 'brio-apps', [/Brio\.js v5/, /widgets/]],
+    [migrationSkill, 'brio-migrate-1-1-5', [/1\.1\.5/, /Migrate/, /v5\.0\.0/]],
 ]) test(`${name} has valid discovery metadata and all Markdown links travel with the folder`, () => {
     const content = readFileSync(resolve(directory, 'SKILL.md'), 'utf8');
     const frontmatter = /^---\n([\s\S]*?)\n---\n/.exec(content);
@@ -441,7 +441,7 @@ test('npm publication includes the complete developer kit', () => {
     assert.ok(published.has('dist/brio.dev.min.js'));
     for (const path of ['dist/astro-entry.js', 'dist/astro-entry.d.ts', 'dist/integrations/astro.d.ts'])
         assert.ok(published.has(path), `Astro integration file not published: ${path}`);
-    for (const plugin of ['router', 'persistence', 'http', 'forms', 'step', 'money-mask'])
+    for (const plugin of ['router', 'persistence', 'http', 'inputs', 'observers', 'step'])
         assert.ok(published.has(`dist/brio.${plugin}.min.js`));
     assert.equal(published.has('scripts/briojs.1.1.5.min.js'), false);
     assert.equal(published.has('scripts/briojs.1.1.5.min.js.map'), false);

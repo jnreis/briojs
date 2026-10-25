@@ -1,30 +1,13 @@
-import { isInstanceOf, isObjectType, ObjectConstructor, ReflectApi, isString, isBoolean, isNumber, isArray, createTypeError } from '../../core/native';
+import { isInstanceOf, ObjectConstructor, isString, isBoolean, isNumber, createTypeError, createSyntaxError } from '../../core/native';
 
 import { getAttribute, getOwnerDocument } from '../native';
-import { evaluate } from '../../core/expression';
-import type { ExpressionScope } from '../../core/expression';
+import type { DirectiveBinding } from './registry';
 
-export function observerOptions(
-    element: Element,
-    attrName: string,
-    modifiers: Record<string, boolean>,
-    context: ExpressionScope,
-): Record<string, unknown> {
-    const expression = getAttribute(element, 'b-options');
-    const mapping: unknown = expression === null ? {} : evaluate(expression, context, 'b-options', element);
-    if (!mapping || !isObjectType(mapping) || isArray(mapping))
-        throw createTypeError('b-options must evaluate to an object keyed by directive name.');
-    const base = attrName.split('.')[0];
-    const result: Record<string, unknown> = {};
-    for (const name of new Set([base, attrName])) {
-        const options: unknown = ObjectConstructor.prototype.hasOwnProperty.call(mapping, name)
-            ? ReflectApi.get(mapping, name) : undefined;
-        if (options === undefined) continue;
-        if (!options || !isObjectType(options) || isArray(options))
-            throw createTypeError(`b-options["${name}"] must be an object.`);
-        ObjectConstructor.assign(result, options);
-    }
-    return ObjectConstructor.assign(result, modifiers);
+/** Modifiers are shorthands for `true`; values from `.options` win. */
+export function observerOptions(element: Element, { directive, modifiers, options }: DirectiveBinding): Record<string, unknown> {
+    if (getAttribute(element, 'b-options') !== null)
+        throw createSyntaxError(`b-options was removed in Brio 5. Configure each observer with ${directive}.options="{ … }".`);
+    return ObjectConstructor.assign({}, modifiers, options);
 }
 
 export function observerTarget(value: unknown, element: Element, label: string): Element | Document | Text {

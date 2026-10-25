@@ -4,7 +4,7 @@
 
 Before edits, produce an application-specific table:
 
-| Location / flow | Actual 1.1.5 contract | v4 replacement | Behavior risk | Test / decision |
+| Location / flow | Actual 1.1.5 contract | v5 replacement | Behavior risk | Test / decision |
 | --- | --- | --- | --- | --- |
 | Bootstrap and roots | Ready event, `newApp`, hydration calls | Explicit `createApp` / mount | Double hydration, host interference | Root ownership |
 | Templates and expressions | Owner, factory, bare identifiers | Explicit owner and calls | Wrong parent, uncalled function | DOM/state assertions |
@@ -21,7 +21,7 @@ its callers and generated markup.
 
 ## Acceptance checklist
 
-- **Boot:** v4 available before bootstrap, DOM available before mount, exactly
+- **Boot:** v5 available before bootstrap, DOM available before mount, exactly
   one owner per root, no old global readiness handler remains active.
 - **Ownership:** sibling widgets and host controls unchanged; explicit parent
   data/loop chains verified; unmount/remount does not duplicate listeners.
@@ -80,7 +80,7 @@ its callers and generated markup.
   handling, empty responses, loading/cancellation, no hidden request failures.
 - **Navigation:** normal MPA links unchanged or approved SPA route set verified;
   direct URLs, reload, query/fragment, back/forward, modified/external/unmatched
-  links, title/head/focus and server fallback. Do not assume v4 updates these.
+  links, title/head/focus and server fallback. Do not assume v5 updates these.
 - **Transitions:** real browser CSS timing, reversal, multi-property completion,
   hidden/removed local state, no dependency on old animation objects.
 - **Deployment:** runtime compilation's CSP requirements, one production bundle,
@@ -96,10 +96,10 @@ Merge this pointer into the project's existing instructions; do not overwrite
 them. Adjust the path to the copied skill or npm package.
 
 ```md
-This project is migrating from Brio.js 1.1.5 to 4.0.0.
+This project is migrating from Brio.js 1.1.5 to 5.0.0.
 Use the brio-migrate-1-1-5 skill and read its migration/legacy references before
 editing Brio application code. Record the legacy behavior before replacing it.
-Never assume the v4 app-development guide describes the old runtime.
+Never assume the v5 app-development guide describes the old runtime.
 Keep host navigation, storage payloads, form value types, and scoped cleanup
 compatible unless an explicit decision authorizes a change.
 Run this project's existing behavior tests and report unresolved migration gaps.
@@ -109,7 +109,7 @@ Run this project's existing behavior tests and report unresolved migration gaps.
 
 ```text
 Use brio-migrate-1-1-5 to migrate this application's Brio 1.1.5 integration to
-4.0.0. First identify the actual runtime and inventory all roots, registrations,
+5.0.0. First identify the actual runtime and inventory all roots, registrations,
 directives/options, contexts, dynamic fragments, storage, and navigation.
 Capture baseline tests and present unsupported surfaces and behavioral decisions.
 Then migrate one complete vertical flow at a time, preserving host behavior.

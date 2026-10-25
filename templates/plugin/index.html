@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>brio-plugin-copy demo</title>
+  <style>
+    body { font: 16px/1.5 system-ui, sans-serif; max-width: 36rem; margin: 3rem auto; padding: 0 1rem; }
+    input { font: inherit; width: 100%; padding: .4rem; margin-bottom: .5rem; box-sizing: border-box; }
+    button[data-copied]::after { content: " ✓ copied"; }
+    [b-cloak] { display: none; }
+  </style>
+</head>
+<body>
+  <main id="demo" b-cloak>
+    <h1>b-copy</h1>
+    <input b-model="$data.link" aria-label="Link to copy">
+    <button b-copy="$data.link">Copy link</button>
+    <button b-on-click="$copy($data.link.toUpperCase())">Copy, shouting</button>
+  </main>
+  <script type="module" src="/src/demo.js"></script>
+</body>
+</html>

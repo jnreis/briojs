@@ -1,17 +1,10 @@
 import { isString, isNumber, createTypeError, isArray } from '../../core/native';
-import { createExpressionScope, execute } from '../../core/expression';
-import { onCleanup } from '../../core/scope';
+import type { DirectiveBinding, DirectiveDefinition } from './registry';
 import { observerOptions, observerTarget, observerBoolean, observerDelay } from './observer-options';
 
-export function handleIntersection(
-    element: Element,
-    attrName: string,
-    expression: string,
-    modifiers: Record<string, boolean>,
-    context: Record<PropertyKey, any>,
-): void {
-    const isExit = attrName.split('.')[0].endsWith('-exit');
-    const options = observerOptions(element, attrName, modifiers, context);
+function handleIntersection(element: Element, binding: DirectiveBinding): void {
+    const isExit = binding.directive === 'b-on-exit';
+    const options = observerOptions(element, binding);
     const isOnce = observerBoolean(options, 'once', false);
     const delay = observerDelay(options);
     const root = options.root === undefined || options.root === null ? null :
@@ -39,7 +32,7 @@ export function handleIntersection(
                         stopped = true;
                         observer.disconnect();
                     }
-                    execute(expression, createExpressionScope({ $entry: entry }, context), undefined, attrName, element);
+                    binding.run({ $entry: entry });
                 };
 
                 if (delay !== undefined) {
@@ -53,10 +46,17 @@ export function handleIntersection(
     }, { root: root as Element | Document | null, rootMargin: options.rootMargin as string | undefined,
         threshold: threshold as number | number[] | undefined });
 
-    onCleanup(() => {
+    binding.onCleanup(() => {
         clearTimeout(debounceTimer);
         stopped = true;
         observer.disconnect();
     });
     observer.observe(element);
 }
+
+const intersection = (name: string): DirectiveDefinition => ({
+    name, value: 'statement', mount: handleIntersection,
+    modifiers: ['once', 'debounce'], options: ['root', 'rootMargin', 'threshold', 'once', 'debounce'],
+});
+export const enterDirective = intersection('b-on-enter');
+export const exitDirective = intersection('b-on-exit');

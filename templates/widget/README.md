@@ -17,7 +17,7 @@ npm run dev
 Copy the widget markup into any page and load Brio from a CDN instead:
 
 ```html
-<script src="https://cdn.jsdelivr.net/npm/@jnreis/briojs@4/dist/brio.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@jnreis/briojs@5/dist/brio.min.js"></script>
 <script>
   brio.createApp({ state: () => ({ /* … */ }) }).mount('#packing-list');
 </script>

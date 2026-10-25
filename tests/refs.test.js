@@ -20,7 +20,7 @@ const capture = '<script b-script>() => { window.refs = $ref; }</script>';
 for (const bundle of ['brio.min.js', 'brio.dev.min.js']) {
     test(`${bundle}: static refs expose raw native elements, safe literal keys and read-only names`, t => {
         const { app, root, window } = environment(t, `${capture}
-            <input b-ref=" search "><button on-click="$ref.search.focus()"></button>
+            <input b-ref=" search "><button b-on-click="$ref.search.focus()"></button>
             <b b-ref="__proto__"></b><i b-ref="constructor"></i><em b-ref="toString"></em>
             <u b-ref="a-b"></u><s b-ref="$data.literal"></s>`, '({})', bundle);
         app.mount(root);
@@ -104,7 +104,7 @@ test('keyed concrete and wrapperless rows have private registries retained throu
         <template b-for="item in $data.items" b-key="$for.item" b-template>
             <input b-ref="field">
             <script b-script>() => { $data.capture($for.item, $ref); }</script>
-            <button on-click="$ref.field.value = String($for.item)"></button>
+            <button b-on-click="$ref.field.value = String($for.item)"></button>
         </template>`, '({state:()=>({items:[1,2]})})');
     const rows = new Map();
     app.state.capture = (key, refs) => rows.set(key, refs);

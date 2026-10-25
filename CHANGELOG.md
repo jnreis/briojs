@@ -1,5 +1,104 @@
 # Changelog
 
+## [5.0.0] — 2026-10-24
+
+Brio 5 adds a public plugin API, and uses it to move directives that most pages
+never need out of the core bundle. Upgrading from 4.x takes a script tag or a
+plugin per app; see
+[Migrating from Brio 4](https://briojs.com/reference/package-entry-points/#migrating-from-brio-4).
+
+### Breaking changes
+
+- `b-mask`, `moneyMask`, `validate`, and `b-form` now live in the **inputs
+  add-on**: `brio.inputs.min.js`, or `inputsPlugin` from `@jnreis/briojs/inputs`.
+  It replaces `brio.forms.min.js`, `brio.money-mask.min.js`,
+  `@jnreis/briojs/forms`, and `@jnreis/briojs/money-mask`.
+- `b-on-enter`, `b-on-exit`, `b-on-resize`, `b-on-addednodes`,
+  `b-on-removednodes`, `b-on-attrs`, and `b-on-text` now live in the
+  **observers add-on**: `brio.observers.min.js`, or `observersPlugin` from
+  `@jnreis/briojs/observers`.
+- `b-options` is replaced by a `.options` attribute per directive:
+  `b-on-enter.options="{ rootMargin: '200px' }"` instead of
+  `b-options="{ 'b-on-enter': { rootMargin: '200px' } }"`. Option values now win
+  over modifiers. Using `b-options` with an observer throws an error that shows
+  the new form.
+- Every directive needs the `b-` prefix. The short forms `on-*`, `bind-*`,
+  `text`, `html`, `model`, `mask`, `teleport`, `transition`, and `effect` are
+  gone: one spelling per directive, and no clashes with other libraries'
+  attributes when Brio runs inside someone else's page.
+- `b-router-outlet` comes with the router: `createApp({ router })` installs it
+  as before, so router apps need no changes.
+- `app.plugin()` is renamed `app.use()`.
+- Using a moved directive without its add-on throws an error that names the
+  script and the plugin to load, in production and development builds.
+
+### Directive options
+
+- Any directive that takes options accepts a `<directive>.options` attribute
+  with a literal object or a reference such as `$data.exitOptions`. Keys are
+  checked, and the value is read once at hydration.
+- `b-on-*` takes every event modifier as an option, and `debounce` and
+  `throttle` accept a delay in milliseconds:
+  `b-on-input.options="{ debounce: 400 }"`.
+
+### Add-ons
+
+- Add-on scripts with directives attach them to every app created after they
+  load, through the new browser global `brio.use(plugin)`. Third-party plugin
+  scripts can do the same.
+- With npm, install add-on directives per app with `plugins: [inputsPlugin]`
+  or `app.use(inputsPlugin)`. Installing the same plugin object twice does nothing.
+- The names of add-on directives are reserved for their official plugins.
+- Errors thrown inside add-on directives keep their own message and location
+  instead of being wrapped as plugin failures.
+
+### Plugin API
+
+- `app.directive(definition)` registers your own `b-` directives with `scope`,
+  `mount`, and `ready` hooks. Phases replace priorities: `scope` adds `$names`
+  for the element and its subtree, `mount` runs with the element's other
+  directives, and `ready` runs after its children hydrate.
+- Directive bindings provide `value()`, `evaluate()`, `run()`, `assign()`,
+  `effect()`, `on()`, `onCleanup()`, and `hydrate(node)`, which are released
+  with the element.
+- Directive definitions list their accepted `.options` keys in `options` and
+  read the checked values from `binding.options`. `options` is reserved as a
+  modifier name.
+- `app.helper(name, value)` adds `$`-prefixed helpers to every expression.
+- `app.use()` accepts plugin objects with `name`, `directives`, `helpers`,
+  `components`, `setup`, and `onMount`. Installation is all or nothing, and
+  name conflicts are errors that name both owners. Plugin functions still work.
+- `defineDirective` and `definePlugin` add editor types; both are also on
+  `window.brio`.
+- Plugins cannot override built-in directives or reserved prefixes, and their
+  directives are rejected on component hosts and `<template>` fragments.
+- Development bundles warn once about each unknown `b-` attribute.
+
+### Forms
+
+- `<form b-form="{ rules, submit }">` (inputs add-on) exposes `$form`:
+  typed `values`, `errors`, `error(name)`, `touched`, `valid`, `submitting`,
+  `submitted`, `submitError`, `reset()`, and `submit()`, plus `aria-invalid` and
+  focus on the first invalid control.
+
+### Tooling
+
+- `@jnreis/briojs/testing` exports `renderBrio()` for testing apps and plugins
+  in Node with jsdom or happy-dom.
+- A plugin starter template with a `b-copy` directive, a `$copy` helper,
+  tests, a demo page, and editor autocomplete.
+- The directive manifest and VS Code custom data include `b-form` and name the
+  add-on each moved directive needs.
+
+### Size
+
+- `brio.min.js` is 20.3 KB brotli, against 20.0 KB in 4.1.0, while adding the
+  plugin API and directive `.options` (it would be 22.4 KB with the add-on
+  directives still in core).
+- `brio.inputs.min.js` is 2.9 KB (masks, money, validation, `b-form`) and
+  `brio.observers.min.js` 1.8 KB. `brio.router.min.js` grows from 2.5 to 2.8 KB
+  because it now carries `b-router-outlet`.
+
 ## [4.1.0] — 2026-10-24
 
 ### Tooling and ecosystem

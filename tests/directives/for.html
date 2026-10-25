@@ -44,15 +44,15 @@
     <div class="card">
         <h3>1. Array Iteration (item, index in items)</h3>
         <input type="text" b-model="$data.newTodoText" placeholder="New todo item..." style="padding: 6px; width: 220px;">
-        <button on-click="if($data.newTodoText.trim()) { $data.todos.push({ id: Date.now(), text: $data.newTodoText.trim(), done: false }); $data.newTodoText = ''; }">Add Item</button>
-        <button on-click="$data.todos.pop()">Remove Last</button>
-        <button on-click="$data.todos.reverse()">Reverse Order</button>
+        <button b-on-click="if($data.newTodoText.trim()) { $data.todos.push({ id: Date.now(), text: $data.newTodoText.trim(), done: false }); $data.newTodoText = ''; }">Add Item</button>
+        <button b-on-click="$data.todos.pop()">Remove Last</button>
+        <button b-on-click="$data.todos.reverse()">Reverse Order</button>
 
         <ul>
             <li b-for="todo, idx in $data.todos">
                 <span>#${$for.idx + 1}: ${$for.todo.text}</span>
                 <span class="badge">${$for.todo.done ? 'Done' : 'Pending'}</span>
-                <button style="padding: 2px 8px; font-size: 0.75rem; margin-left: 8px;" on-click="$for.todo.done = !$for.todo.done">Toggle Done</button>
+                <button style="padding: 2px 8px; font-size: 0.75rem; margin-left: 8px;" b-on-click="$for.todo.done = !$for.todo.done">Toggle Done</button>
             </li>
         </ul>
         <p>Total items: <strong>${$data.todos.length}</strong></p>
@@ -61,8 +61,8 @@
     <!-- Test 2: Integer Range Rendering -->
     <div class="card">
         <h3>2. Numeric Range Loop (n in count)</h3>
-        <button on-click="$data.repeatCount++">+1 Repeat</button>
-        <button on-click="if($data.repeatCount > 0) $data.repeatCount--">-1 Repeat</button>
+        <button b-on-click="$data.repeatCount++">+1 Repeat</button>
+        <button b-on-click="if($data.repeatCount > 0) $data.repeatCount--">-1 Repeat</button>
         <div style="display: flex; gap: 8px; margin-top: 10px;">
             <div b-for="num in $data.repeatCount" style="padding: 12px 18px; background: #6366f1; color: white; border-radius: 6px; font-weight: bold;">
                 Tile ${$for.num}
@@ -80,8 +80,8 @@
     <!-- Test 3: Object Key-Value Loop -->
     <div class="card">
         <h3>3. Object Properties Iteration</h3>
-        <button on-click="$data.userMap.role = $data.userMap.role === 'Engineer' ? 'Principal Architect' : 'Engineer'">Toggle Role</button>
-        <button on-click="$data.toggleCountryKey()">Toggle Key</button>
+        <button b-on-click="$data.userMap.role = $data.userMap.role === 'Engineer' ? 'Principal Architect' : 'Engineer'">Toggle Role</button>
+        <button b-on-click="$data.toggleCountryKey()">Toggle Key</button>
         <ul>
             <li b-for="val, key in $data.userMap">
                 <strong>${$for.key}:</strong> <span>${$for.val}</span>

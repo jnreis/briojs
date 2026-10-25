@@ -6,6 +6,7 @@ export const templates = [
     { id: 'multi-page', title: 'Multi-page site', description: 'Real pages and links, with Brio enhancing only the interactive parts.', file: 'index.html' },
     { id: 'spa', title: 'Single-page app', description: 'Components, the router, route parameters, and shared state.', file: 'src/main.js' },
     { id: 'astro', title: 'Astro islands', description: 'Astro renders the pages; Brio brings the islands to life.', file: 'src/pages/index.astro' },
+    { id: 'plugin', title: 'Plugin', description: 'A publishable plugin with a directive, a helper, tests, and editor autocomplete.', file: 'src/index.js' },
 ].map(template => ({
     ...template,
     source: repo + template.id,

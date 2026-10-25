@@ -1,0 +1,12 @@
+{
+  "version": 1.1,
+  "globalAttributes": [
+    {
+      "name": "b-copy",
+      "description": {
+        "kind": "markdown",
+        "value": "Copy the value of an expression to the clipboard on click. Sets `data-copied` for 1.5 seconds afterward.\n\n```html\n<button b-copy=\"$data.link\">Copy link</button>\n```"
+      }
+    }
+  ]
+}

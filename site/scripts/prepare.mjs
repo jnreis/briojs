@@ -21,7 +21,7 @@ await write(resolve(site, 'public/llms.txt'), llmsTxt({ guides, pages, examples 
 await write(resolve(site, 'public/llms-full.txt'), llmsFullTxt({ guides, documentation }));
 await write(resolve(site, 'src/content/docs/releases.md'), releasePage(await readFile(resolve(root, 'CHANGELOG.md'), 'utf8')));
 
-const bundles = ['', '.router', '.http', '.persistence', '.forms', '.step', '.money-mask'];
+const bundles = ['', '.router', '.http', '.persistence', '.inputs', '.observers', '.step'];
 for (const suffix of bundles) {
     const file = `brio${suffix}.min.js`;
     const content = (await readFile(resolve(root, 'dist', file), 'utf8')).replace(/\/\/# sourceMappingURL=.*$/gm, '');

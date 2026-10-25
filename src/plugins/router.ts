@@ -7,6 +7,10 @@ import { addEventListener, removeEventListener } from '../dom/native';
 import { signal, state } from '../reactivity/state';
 import { batch, effect, untrack } from '../reactivity/effect';
 import type { Signal } from '../reactivity/types';
+import { createScope } from '../core/scope';
+import type { Scope } from '../core/scope';
+import { defineDirective } from '../core/define';
+import type { BrioApp, BrioPluginObject } from '../core/types';
 
 export type RouteMatch = {
     /** Matched application pathname, without the base (still percent-encoded). */
@@ -49,9 +53,49 @@ export type Router = {
     match(path: string): RouteMatch | null;
     navigate(path: string, options?: { replace?: boolean }): boolean;
     start(root: Element): () => void;
+    /** Adds `b-router-outlet`; `createApp({ router })` installs it for you. */
+    readonly plugin: BrioPluginObject;
 };
 
 export type RouterOptions = { base?: string; mode?: 'history' | 'hash'; guard?: RouteGuard };
+
+const outletDirective = defineDirective({
+    name: 'b-router-outlet',
+    children: false,
+    mount(element, binding) {
+        const app = binding.app as BrioApp;
+        const router = app.router;
+        if (!router) throw createError('b-router-outlet requires a router on the Brio app.');
+        let childScope: Scope | undefined;
+        let child: Element | undefined;
+        let mountedKey: string | undefined;
+        const clear = () => {
+            try {
+                childScope?.dispose();
+            } finally {
+                child?.remove();
+                childScope = child = mountedKey = undefined;
+            }
+        };
+        binding.onCleanup(clear);
+        binding.effect(() => {
+            const route = router.current.value;
+            // Only the query or hash changed: keep the page and its state; it reads them through $route.
+            const key = route && `${route.component} ${route.path}`;
+            if (key === mountedKey) return;
+            clear();
+            if (!route?.component) return;
+            if (!app.components.has(route.component))
+                throw createError(`No component registered for route "${route.component}".`);
+            const page = child = element.ownerDocument.createElement(route.component);
+            const scope = childScope = createScope();
+            mountedKey = key!;
+            element.append(page);
+            untrack(() => scope.run(() => binding.hydrate(page)));
+        });
+    },
+});
+const routerPlugin: BrioPluginObject = { name: 'brio-router', directives: [outletDirective] };
 
 type Segment = { value: string; parameter: boolean };
 type Compiled = { route: RouteDefinition; segments: Segment[] };
@@ -321,5 +365,5 @@ export function createRouter(routes: RouteDefinition[], options: RouterOptions =
         };
     };
 
-    return { base, mode: hashMode ? 'hash' : 'history', current, route, href, match, navigate, start };
+    return { base, mode: hashMode ? 'hash' : 'history', current, route, href, match, navigate, start, plugin: routerPlugin };
 }

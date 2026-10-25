@@ -1,9 +1,7 @@
-import { isInstanceOf, getLength, isString, isObjectType, ReflectApi, isNumber, isFunction, createSyntaxError, createTypeError, objectKeys } from '../../core/native';
+import { isInstanceOf, getLength, isString, isObjectType, ReflectApi, isNumber, isFunction, createSyntaxError, createTypeError } from '../../core/native';
 
-import { getOwnerDocument, addEventListener, removeEventListener } from '../native';
-import { onCleanup } from '../../core/scope';
-import { evaluate } from '../../core/expression';
-import { effect } from '../../reactivity/effect';
+import { getOwnerDocument } from '../native';
+import type { DirectiveDefinition } from './registry';
 
 export type MaskContext = {
     value: string;
@@ -84,61 +82,53 @@ function validateResult(result: unknown): asserts result is MaskResult {
     }
 }
 
-export function handleMask(
-    element: Element,
-    expression: string,
-    modifiers: Record<string, boolean>,
-    context: Record<PropertyKey, any>,
-): void {
-    if (!(isInstanceOf(element, HTMLInputElement) || isInstanceOf(element, HTMLTextAreaElement)))
-        throw createTypeError('b-mask can only be used on input and textarea elements.');
-    if (getLength(objectKeys(modifiers))) throw createTypeError('b-mask does not support modifiers; use a pattern or formatter function.');
+export const maskDirective: DirectiveDefinition = {
+    name: 'b-mask',
+    modifiers: [],
+    mount(element, binding) {
+        if (!(isInstanceOf(element, HTMLInputElement) || isInstanceOf(element, HTMLTextAreaElement)))
+            throw createTypeError('b-mask can only be used on input and textarea elements.');
 
-    let formatter: MaskFormatter;
-    let applying = false;
-    let composing = false;
-    const applyMask = (event?: Event) => {
-        if (applying || composing || (isInstanceOf(event, InputEvent) && event.isComposing)) return;
-        const current = element.value;
-        const start = element.selectionStart;
-        const end = element.selectionEnd;
-        const direction = element.selectionDirection;
-        const result = formatter({
-            value: current, selectionStart: start, selectionEnd: end, selectionDirection: direction,
-            inputType: isInstanceOf(event, InputEvent) ? event.inputType : undefined,
-        });
-        validateResult(result);
-        const value = isString(result) ? result : result.value;
-        const clamp = (position: number) => Math.min(position, getLength(value));
-        const mappedStart = isString(result) ? start : result.selectionStart ?? start;
-        const mappedEnd = isString(result) ? end : result.selectionEnd ?? end;
-        applying = true;
-        try {
-            if (current !== value) {
-                element.value = value;
-                element.dispatchEvent(new Event('input', { bubbles: true }));
+        let formatter: MaskFormatter;
+        let applying = false;
+        let composing = false;
+        const applyMask = (event?: Event) => {
+            if (applying || composing || (isInstanceOf(event, InputEvent) && event.isComposing)) return;
+            const current = element.value;
+            const start = element.selectionStart;
+            const end = element.selectionEnd;
+            const direction = element.selectionDirection;
+            const result = formatter({
+                value: current, selectionStart: start, selectionEnd: end, selectionDirection: direction,
+                inputType: isInstanceOf(event, InputEvent) ? event.inputType : undefined,
+            });
+            validateResult(result);
+            const value = isString(result) ? result : result.value;
+            const clamp = (position: number) => Math.min(position, getLength(value));
+            const mappedStart = isString(result) ? start : result.selectionStart ?? start;
+            const mappedEnd = isString(result) ? end : result.selectionEnd ?? end;
+            applying = true;
+            try {
+                if (current !== value) {
+                    element.value = value;
+                    element.dispatchEvent(new Event('input', { bubbles: true }));
+                }
+                if (getOwnerDocument(element).activeElement === element && mappedStart !== null && mappedEnd !== null)
+                    element.setSelectionRange(clamp(mappedStart), clamp(mappedEnd), direction ?? 'none');
+            } finally {
+                applying = false;
             }
-            if (getOwnerDocument(element).activeElement === element && mappedStart !== null && mappedEnd !== null)
-                element.setSelectionRange(clamp(mappedStart), clamp(mappedEnd), direction ?? 'none');
-        } finally {
-            applying = false;
-        }
-    };
-    const compositionStart = () => { composing = true; };
-    const compositionEnd = () => { composing = false; applyMask(); };
-    addEventListener(element, 'input', applyMask, true);
-    addEventListener(element, 'compositionstart', compositionStart);
-    addEventListener(element, 'compositionend', compositionEnd);
-    onCleanup(() => {
-        removeEventListener(element, 'input', applyMask, true);
-        removeEventListener(element, 'compositionstart', compositionStart);
-        removeEventListener(element, 'compositionend', compositionEnd);
-    });
-    effect(() => {
-        const value = evaluate(expression, context, 'b-mask', element);
-        if (isString(value)) formatter = patternFormatter(value);
-        else if (isFunction(value)) formatter = value;
-        else throw createTypeError('b-mask must evaluate to a pattern string or formatter function.');
-        applyMask();
-    });
-}
+        };
+        // Capture phase: the mask formats before b-model or b-on-input listeners on the same element read the value.
+        binding.on(element, 'input', applyMask as EventListener, true);
+        binding.on(element, 'compositionstart', () => { composing = true; });
+        binding.on(element, 'compositionend', () => { composing = false; applyMask(); });
+        binding.effect(() => {
+            const value = binding.value();
+            if (isString(value)) formatter = patternFormatter(value);
+            else if (isFunction(value)) formatter = value;
+            else throw createTypeError('b-mask must evaluate to a pattern string or formatter function.');
+            applyMask();
+        });
+    },
+};

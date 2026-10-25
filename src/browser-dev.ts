@@ -2,7 +2,13 @@ import { ObjectConstructor } from './core/native';
 import api from './browser-api';
 import { devtools, inspectDevtools, devtoolsPanel, enableDevtools } from './devtools-entry';
 
-const brio = { ...api, devtools, inspectDevtools, devtoolsPanel, enableDevtools };
+const brio: typeof api & Record<string, unknown> = {
+    ...api, devtools, inspectDevtools, devtoolsPanel, enableDevtools,
+    use(plugin) {
+        api.use(plugin);
+        return brio;
+    },
+};
 enableDevtools();
 
 if (typeof window !== 'undefined') {

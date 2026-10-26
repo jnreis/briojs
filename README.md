@@ -16,9 +16,16 @@ standalone browser API remains `brio`.
 [API reference](https://briojs.com/reference/install/) ·
 [Live examples](https://briojs.com/examples/)
 
-The next site deployment also includes a [shareable playground](https://briojs.com/play/):
+The [shareable playground](https://briojs.com/play/) lets you
 edit HTML, CSS, and JavaScript, run an isolated preview, and share the code in a
 URL fragment. Shared projects do not execute until the recipient clicks Run.
+
+[Brio Parts](https://briojs.com/parts/) offers copy-paste disclosure,
+tabs, native dialog, and action-menu components. Copy their templates with
+embedded scoped CSS and definitions, register on your existing app, and reuse
+them without creating an app per instance. Detail pages include live previews,
+playground links, and keyboard notes. [Integration guides](https://briojs.com/integrations/overview/)
+cover plain HTML/Express, Rails, Laravel, Django, and WordPress.
 
 ## When Brio fits
 
@@ -183,7 +190,7 @@ sensitive information.
 
 - [Documentation](./DOCUMENTATION.md): directives, components, reactivity,
   routing, lifecycle, and every optional tool.
-- [Changelog](./CHANGELOG.md): release notes, starting with the consolidated 4.0 release.
+- [Changelog](./CHANGELOG.md): v5 changes and release history since the consolidated 4.0 release.
 - [AI developer kit](./ai/README.md): a portable application guide, optional
   assistant skills, and tested widget, multi-page, and SPA recipes.
 - [Contributing and release guide](https://github.com/jnreis/briojs/blob/main/CONTRIBUTING.md):

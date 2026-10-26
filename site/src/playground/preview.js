@@ -21,7 +21,7 @@ console.error = (...args) => { originalError(...args); send('error', args.map(St
 addEventListener('DOMContentLoaded', () => send('ready', 'Preview running.'));
 `;
     // An opaque origin and a restrictive CSP isolate the preview from the website,
-    // cookies, storage, forms, popups, and network APIs. It is not a CPU sandbox.
+    // cookies, storage, form navigation, popups, and network APIs. It is not a CPU sandbox.
     const policy = `default-src 'none'; script-src 'unsafe-inline' 'unsafe-eval' data: ${origin}/dist/; style-src 'unsafe-inline'; img-src data:; font-src data:; connect-src 'none'; form-action 'none'; base-uri 'none'`;
     return `<!doctype html><html lang="en" data-theme="${theme}"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">

@@ -76,11 +76,11 @@
                 <article class="kpi">
                     <header class="kpi-head">
                         <h3 class="kpi-label" b-text="$props.label"></h3>
-                        <trend-badge b-bind-delta="$props.delta"></trend-badge>
+                        <trend-badge b-prop-delta="$props.delta"></trend-badge>
                     </header>
                     <strong class="kpi-value" data-part="value" b-text="$props.value"></strong>
                     <p class="kpi-hint" data-part="hint" b-text="$props.hint"></p>
-                    <spark-line class="kpi-spark" b-bind-values="$props.trend"></spark-line>
+                    <spark-line class="kpi-spark" b-prop-values="$props.trend"></spark-line>
                 </article>`,
         },
 

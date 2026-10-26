@@ -1,3 +1,5 @@
+/* Monaco owns its internal controls, including classes shared with the site. */
+@scope (:root) to (.play-monaco, .monaco-component) {
 .workspace-page {
   --code-keyword: #8040a1;
   --code-string: #28672b;
@@ -10,7 +12,7 @@
   height: 100dvh;
   overflow: hidden;
 }
-[data-theme="dark"] .workspace-page {
+:scope[data-theme="dark"] .workspace-page {
   --code-keyword: #c5a0ed;
   --code-string: #a6cf91;
   --code-number: #edbb8a;
@@ -73,3 +75,17 @@
   .play-file-hint { display: none; }
   .play-statusbar > span { display: none; }
 }
+}
+
+/* Monaco standalone does not supply the workbench's shadow and radius tokens. */
+:where(.play-monaco, .monaco-component) {
+  --vscode-shadow-md: 0 2px 8px rgb(0 0 0 / .16);
+  --vscode-shadow-lg: 0 4px 12px rgb(0 0 0 / .18);
+  --vscode-shadow-xl: 0 8px 24px rgb(0 0 0 / .22);
+  --vscode-cornerRadius-small: 2px;
+  --vscode-cornerRadius-medium: 4px;
+  --vscode-cornerRadius-large: 6px;
+  --vscode-cornerRadius-xLarge: 8px;
+  --vscode-cornerRadius-circle: 50%;
+}
+.play-monaco { height: 100%; width: 100%; }

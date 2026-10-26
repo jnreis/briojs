@@ -44,7 +44,7 @@
     app.component('recipe-home', {
       template: `
         <h1>Home</h1>
-        <recipe-counter b-bind-label="$data.$parent.label" b-on-change="$data.$parent.selected = $event.detail">
+        <recipe-counter b-prop-label="$data.$parent.label" b-on-change="$data.$parent.selected = $event.detail">
           <p id="projected" b-text="$data.$parent.label"></p>
         </recipe-counter>
         <p id="selected" b-text="$data.$parent.selected"></p>

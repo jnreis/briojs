@@ -1,0 +1,112 @@
+---
+import { Code } from '@astrojs/starlight/components';
+import Site from '../../layouts/Site.astro';
+import { parts } from '../../parts/catalog.js';
+import { encodeProject } from '../../playground/share.js';
+import '../../styles/parts.css';
+export function getStaticPaths() {
+  return parts.map(part => ({ params: { part: part.id }, props: { part } }));
+}
+const { part } = Astro.props;
+const fragment = await encodeProject(part.project);
+const sources = [
+  { key: 'html', title: 'Template + scoped CSS', lang: 'html', code: part.html.trim() },
+  { key: 'js', title: 'Component definition', lang: 'js', code: part.js.trim() },
+  { key: 'registration', title: 'Register on your app', lang: 'js', code: part.registration },
+  { key: 'data', title: 'Example parent data', lang: 'js', code: part.data },
+  { key: 'usage', title: 'Use in your app', lang: 'html', code: part.usage },
+  ...(part.demoCss ? [{ key: 'demo-css', title: 'Example parent styles', lang: 'css', code: part.demoCss }] : []),
+  ...(part.slotUsage ? [{ key: 'slots', title: 'Custom markup with slots', lang: 'html', code: part.slotUsage }] : []),
+];
+---
+<Site title={`${part.title} · Parts`} description={part.description}>
+  <section class="wrap parts-heading part-detail-heading">
+    <a href="/parts/" class="text-link">← All parts</a>
+    <p class="overline">{part.number} / {part.category}</p>
+    <h1>{part.title}</h1><p class="hero-description">{part.description}</p>
+    <div class="part-links"><a class="button primary" href={`/play/${fragment}`}>Open in Playground →</a><a class="button" href="#source">View source</a></div>
+  </section>
+  <div class="wrap part-view-tabs" role="tablist" aria-label="Part view" hidden>
+    <button id="part-view-preview" type="button" role="tab" aria-selected="true" aria-controls="part-preview-panel">Preview</button>
+    <button id="part-view-source" type="button" role="tab" aria-selected="false" aria-controls="source" tabindex="-1">Source</button>
+  </div>
+  <div class="wrap part-detail-grid" id="part-preview-panel" role="tabpanel" aria-labelledby="part-view-preview" tabindex="0">
+    <section aria-labelledby="preview-title">
+      <h2 id="preview-title">Try it.</h2>
+      <div class="part-preview part-preview-large">
+        <iframe data-part={part.id} title={`${part.title} preview`} sandbox="allow-scripts allow-forms" referrerpolicy="no-referrer"></iframe>
+        <p class="part-preview-error" role="status"></p>
+      </div>
+      <p class="part-caption">Isolated preview using the source below. In the playground, click Run to start.</p>
+    </section>
+    <aside class="part-notes" aria-labelledby="keyboard-title">
+      <p class="overline">Interaction contract</p><h2 id="keyboard-title">Keyboard &amp; focus</h2>
+      <ul>{part.keyboard.map(note => <li>{note}</li>)}</ul>
+    </aside>
+  </div>
+  <section class="wrap part-sources" id="source" role="tabpanel" aria-labelledby="part-view-source" tabindex="0">
+    <h2 id="source-title">Copy. Register. Use.</h2>
+    <p>Keep the template outside your mount region and register the definition on your existing
+      <code>app</code> before mounting. Pass props for data and slots for custom markup.
+      Adapt the example parent state to your app, or create one with
+      <code>{'brio.createApp({ state: exampleState })'}</code>. Register once; use multiple instances.</p>
+    {sources.map(source => <section class="part-source" aria-labelledby={`heading-${source.key}`}>
+      <div class="part-source-bar"><h3 id={`heading-${source.key}`}>{source.title}</h3><button type="button" class="button" data-copy-source={source.code}>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2" /><path d="M16 8V4a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h4" /></svg>
+        <span data-copy-label>Copy</span>
+      </button><span role="status"></span></div>
+      <div id={`code-${source.key}`}><Code code={source.code} lang={source.lang} /></div>
+    </section>)}
+    <noscript><p>Select and copy the source manually. Live previews and copy buttons require JavaScript.</p></noscript>
+  </section>
+  <section class="wrap part-guidance" aria-labelledby="use-title">
+    <h2 id="use-title">Make it yours.</h2>
+    <p>{part.customize}</p>
+    <ul>{part.notes.map(note => <li>{note}</li>)}</ul>
+    <h3>Content, props &amp; slots</h3>
+    {part.id !== 'dialog' && <p>Replace the example data, not the template. Data-driven text renders as plain text.
+      Use <code>b-prop-content</code> to pass the object; a static <code>content="..."</code> attribute is not parsed as JSON.
+      Optional <code>title</code> overrides <code>content.title</code>.
+      {part.id === 'tabs' && <> Optional <code>label</code> overrides the tablist name.</>}</p>}
+    {part.id !== 'dialog' && <p>Items need unique, nonempty string <code>id</code> values that stay stable across updates.
+      Empty lists are supported.</p>}
+    <p>{part.slots}</p>
+    <p>Slotted markup uses the parent's state, refs, and handlers.
+      {(part.id === 'disclosure' || part.id === 'tabs') && <> Scoped outlets expose item data through
+        <code>$slot.item</code>, without changing <code>$data</code> or <code>$for</code>.</>}
+      Keep slot templates trusted. Default content is used when no matching slot is supplied.</p>
+    {part.id === 'dialog' && <p>Bind <code>b-prop-open</code> to parent state. Handle <code>b-on-request-close</code>
+      by setting that state to false; the component emits <code>closed</code> after the native dialog closes.
+      Keep an opener outside the component. Put your own form in the default slot and handle its
+      <code>b-on-submit.prevent</code>; Enter then submits normally. The component never saves or edits your data.</p>}
+    {part.id === 'menu' && <p>Handle <code>b-on-action</code> using <code>$event.detail.id</code> and
+      <code>$event.detail.label</code>. Choosing an item emits the event and closes the menu;
+      the parent owns <code>content.message</code> and any data changes.</p>}
+    <p><code>b-prop-*</code> supplies component inputs; <code>b-bind-*</code> updates the host DOM.
+      To spread inputs, use <code>b-props</code>: its keys override named props regardless of attribute order.</p>
+    <h3>Styling &amp; requirements</h3>
+    <p>Requires Brio 5 core, JavaScript, and native CSS <code>@scope</code> and <code>light-dark()</code> support.
+      CSS is included in the template; no add-ons or global stylesheet is required. No CSS polyfill is supplied.
+      Colors follow the document's <code>color-scheme</code>; set it to <code>light dark</code> to follow system preference.</p>
+    {part.demoCss && <p>The example heading, opener, and status belong to the parent page.
+      Example parent styles are provided separately; the dialog's scoped CSS does not style outside content.</p>}
+    <p>Set the <code>accent</code> prop with <code>b-prop-accent="$data.accent"</code>, or bind
+      <code>--part-accent</code> on the host or a wrapper. The accent prop takes precedence over an inherited
+      custom property. Native scoped CSS does not block global selectors or inherited styles;
+      check your app's resets and theme. Each instance has local state and unique generated IDs.</p>
+    {(part.id === 'dialog' || part.id === 'menu') && <p>For npm, import <code>onCleanup</code> from
+      <code>@jnreis/briojs</code> and replace <code>brio.onCleanup</code> in the definition.
+      {part.id === 'dialog' && <> Also import <code>effect</code> and replace <code>brio.effect</code>.</>}</p>}
+    <h3>Integration &amp; accessibility</h3>
+    <p>Components render on mount; provide fallback markup if content must be available without JavaScript.
+      Keep templates trusted. Use Brio structural directives for component removal and
+      <code>app.dispose()</code> before removing the app. Expressions require CSP <code>unsafe-eval</code>.
+      See the <a href="/integrations/overview/">integration guide</a> for lifecycle and server boundaries.</p>
+    <p>Test your final labels, contrast, zoom, touch, and screen-reader behavior.
+      These recipes are not an accessibility certification.</p>
+  </section>
+  <script>
+    import { installParts } from '../../parts/main.js';
+    installParts();
+  </script>
+</Site>

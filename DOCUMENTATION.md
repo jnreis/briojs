@@ -2,7 +2,7 @@
 
 Brio is a petite, HTML-first framework for reactive widgets and web apps. It enhances real DOM nodes in place; there is no virtual DOM, JSX transform, or required compiler. Use it for one small island on a server-rendered page, several independent widgets, or a client-side application.
 
-Version 4.0.0 was the first npm release of this reimagined framework; the current release is 5.0.0.
+Version 4.0.0 was the first npm release of this reimagined framework; this reference targets 5.0.0.
 Upgrading from 4.x? See [Migrating from Brio 4](#migrating-from-brio-4).
 Earlier versions in the repository were private development
 iterations, not npm releases.
@@ -79,8 +79,7 @@ createApp({ plugins: [inputsPlugin, observersPlugin] }).mount('#app');
 
 ### Try the playground
 
-The [playground](https://briojs.com/play/) is included in the next site
-deployment. It starts with the homepage creature in a full-height workspace:
+The [playground](https://briojs.com/play/) starts with the homepage creature in a full-height workspace:
 tabbed, syntax-highlighted HTML, CSS, and JavaScript editors on the left and an
 isolated preview on the right (stacked on small screens). Editors include line
 numbers, completion, search, and undo; switching tabs preserves edits and history.
@@ -97,8 +96,25 @@ database. Names and meaningful HTML text whitespace are preserved during minific
 Loaded code is formatted for readable editing. Opening a shared link fills the editors but does not execute code
 until the recipient clicks Run.
 
+The Monaco editor provides theme-aware HTML/CSS/JavaScript syntax colors, completion
+(Ctrl + Space), search (Ctrl/Command + F), undo, folding, bracket matching, and
+two-space indentation. Tab indents; Shift + Tab outdents. To move focus out,
+toggle Tab Moves Focus with Ctrl + M (Ctrl + Shift + M on Mac). F1 opens the
+command palette. **Format Document** (Shift + Alt/Option + F, or the editor context menu/command palette) formats the active
+document with Prettier. Formatting is undoable, does not run code, and leaves
+the source unchanged if parsing fails. Each language keeps its own undo history,
+cursor, and scroll position. Language workers are self-hosted, and JavaScript
+completion includes Brio's browser API declarations. Monaco is not full VS Code:
+there is no extension host or project filesystem. Monaco's JavaScript/TypeScript
+language service powers JavaScript suggestions and syntax diagnostics; the
+preview still executes plain JavaScript only. Monaco does not officially support
+mobile browsers; touch editing may have limitations.
+Site styles use CSS scope boundaries to exclude the Monaco editor and its popup
+components, keeping the site's button, hover, and focus rules out of editor UI.
+
 The preview has an opaque origin. It cannot read the site's DOM, cookies, or
-storage; forms, popups, external resources, and network APIs are blocked. It
+storage; form navigation, popups, external resources, and network APIs are blocked.
+Local form submit handlers work, but CSP `form-action 'none'` prevents actual submissions. It
 does not isolate CPU usage: infinite loops can still hang a browser tab. Review
 shared code before running it. Runtime errors appear below the preview.
 
@@ -127,6 +143,32 @@ your project and point the setting at that copy.
 Building tooling of your own? `dist/directives.json` is the machine-readable
 directive manifest the custom data is generated from: names, values,
 modifiers, examples, and docs links.
+
+### Copy a part or enhance your existing stack
+
+[Brio Parts](https://briojs.com/parts/) is a
+dedicated gallery of disclosure/accordion, tabs, native dialog, and action-menu
+components. Each has a copyable template with embedded native `@scope` CSS,
+a `setup()` definition, registration and usage examples, a live detail-page
+preview, and a playground link. Register once with `app.component(name, definition)`
+before mounting, then use multiple instances inside that app. State and ARIA IDs
+are instance-local; no separate app per component is needed. The three-column
+gallery is a compact directory, without live demos on its landing page.
+Disclosure, Tabs, and Menu take `b-prop-content`: labels, text, and keyed
+items live in parent state, not in the reusable template or definition.
+The source view includes example parent data. Tabs retain selection by item ID
+when reordered; disclosure counts follow the current items. Disclosure bodies
+and tab panels accept scoped slots with `$slot.item`; the menu supports custom trigger markup.
+Dialog is a controlled modal shell with body, title, and footer slots, an `open`
+prop, and `request-close`/`closed` events. The parent owns its form, persistence,
+and closing. Menu commands emit `action` with `{ id, label }`.
+Keyboard behavior and accessibility limitations are documented. They use
+core only, with no required component package or styling framework.
+
+[Integration guides](https://briojs.com/integrations/overview/) cover plain
+HTML/Express, Rails, Laravel, Django, and WordPress. A runnable counter and
+shared lifecycle helper demonstrate mounting independent widgets and disposing
+them before a host replaces their DOM. No Brio Vite plugin is required.
 
 ### Add development tools when you need them
 
@@ -221,7 +263,7 @@ then review and test its output just as you would any other application code.
 ### Use the application kit
 
 The [portable AI developer kit](./ai/README.md) includes a tool-neutral
-[Brio v4 application guide](./ai/brio-apps/references/guide.md), an on-demand
+[Brio v5 application guide](./ai/brio-apps/references/guide.md), an on-demand
 skill, and runnable widget, multi-page enhancement, and SPA recipes. It ships
 in the npm package under `ai/`. Read the kit's installation instructions before
 copying the entire skill folder to a supported assistant location; npm
@@ -242,7 +284,7 @@ format for assistants and agents that read the web:
 
 Applications running 1.1.5 should use the separate
 [migration skill](./ai/brio-migrate-1-1-5/SKILL.md) and
-[migration guide](./ai/brio-migrate-1-1-5/references/migration.md). V4 is not a
+[migration guide](./ai/brio-migrate-1-1-5/references/migration.md). V5 is not a
 drop-in replacement; the kit documents legacy contracts, unsupported surfaces,
 behavioral decisions, and verification before production rollout.
 
@@ -314,6 +356,7 @@ The expression context is also available as `$context`.
 | Where | Available bindings |
 | --- | --- |
 | Every expression | `$data`, `$el`, `$id`, `$ref`, `$for`, `$props`, `$emit`, `$insert`, `$stores`, `$provided`, `trustedHTML`, `flush` |
+| Scoped slot content | `$slot`: reactive values exposed by the receiving outlet's `b-slot` expression; other context stays parent-owned. |
 | Event handlers | `$event` |
 | Observers | `$mutations`, `$size`, or `$entry` |
 | Contextual scripts | `onCleanup` |
@@ -498,6 +541,8 @@ Directive arguments use hyphens (`b-on-click`, `b-bind-href`); options use chain
 | `b-ref` | Register a concrete element under a literal name in the local, read-only `$ref` registry. |
 | `b-text` | Reactively set an element's text content. |
 | `b-bind-name` | Reactively bind an attribute or DOM property, e.g. `b-bind-href="$data.url"`. |
+| `b-prop-name` | Supply a named reactive input to a registered component. |
+| `b-props` | Spread reactive object keys into a registered component's inputs, overriding named and static props. |
 | `b-on-event` | Listen for a DOM event, e.g. `b-on-submit="$data.save($event)"`. |
 | `b-model` | Two-way bind a text-like input, checkbox, radio, or select. |
 | `b-if`, `b-else-if`, `b-else` | Select the first matching branch. Default: remove/dehydrate inactive branches. `.hide`: preserve in the DOM; `.detach`: preserve outside the DOM. |
@@ -507,6 +552,7 @@ Directive arguments use hyphens (`b-on-click`, `b-bind-href`); options use chain
 | `b-for` | Render an array, iterable, object, or integer. |
 | `b-key` | Give a repeated item a stable string or number identity. Used with `b-for`. |
 | `b-template` | Unwrap an element or instantiate a `<template>`'s contents in place, hydrating them without a rendered wrapper. Implied on a `<template>` that carries any `b-` directive. |
+| `b-slot` | Expose an object's values as `$slot` to supplied content in a default or named component slot. See [Setup, events, and slots](#setup-events-and-slots). |
 | `b-html` | Insert markup without activating Brio; `.hydrate` activates templates explicitly marked with `trustedHTML()`. |
 | `b-ignore` | Skip hydration for this element and its descendants. |
 | `b-cloak` | Removed when Brio hydrates the element; pair with `[b-cloak] { display: none; }` to hide raw templates until mount. |
@@ -1011,8 +1057,8 @@ overwrite each other. Do not rely on attribute order to resolve competing owners
 
 #### How combinations are tested
 
-`tests/directive-interactions.test.js` generates **465 pairwise co-mount tests**
-for all 30 directive forms in the reference table plus registered component
+`tests/directive-interactions.test.js` generates **561 pairwise co-mount tests**
+for all 33 directive forms in the reference table plus registered component
 hosts. Each pair is mounted in one app and root using a behavior probe for each
 directive; tests assert output, shared reactive updates, event/model behavior,
 observer cleanup, and disposal. Failure output names the pair and expected and
@@ -1462,7 +1508,7 @@ app.mount('#widgets');
 
 ```html
 <main id="widgets">
-  <click-counter b-bind-label="$data.label" b-on-change="console.log($event.detail)">
+  <click-counter b-prop-label="$data.label" b-on-change="console.log($event.detail)">
     Tap to increment
   </click-counter>
 </main>
@@ -1481,7 +1527,10 @@ mounts.
 
 ### Pass values through props
 
-Static host attributes become string props; `b-bind-name` supplies a reactive prop through `$props`. Declare `props` to coerce static attributes:
+Static host attributes become string props; `b-prop-name` supplies a named reactive prop through `$props`.
+`b-props="object"` spreads an object's own enumerable string keys into `$props`.
+Both prop directives require a registered component and do not support modifiers.
+Declare `props` to coerce static attributes:
 
 ```js
 app.component('favorite-button', {
@@ -1500,11 +1549,33 @@ app.component('favorite-button', {
 | `Number` | Passed through `Number()`. |
 | `String` (default) | Kept as a string. |
 
-Only these three types are accepted. Bound props (`b-bind-*`) are **never
+Only these three types are accepted. Bound props (`b-prop-*` and `b-props`) are **never
 coerced**.
 
-HTML lowercases attribute names: `b-bind-userName` arrives as `$props.username`.
-Use lowercase or dashed names (`$props['user-name']`).
+HTML lowercases attribute names: `b-prop-userName` arrives as `$props.username`.
+Use lowercase or dashed names (`$props['user-name']`). Object keys passed through
+`b-props` retain their exact spelling.
+
+```html
+<trip-tabs accent="gray"
+           b-prop-content="$data.tripTabs"
+           b-prop-accent="'blue'"
+           b-props="$data.tabOverrides"></trip-tabs>
+```
+
+Props compose shallowly in this order, regardless of attribute order:
+**static attributes → named `b-prop-*` → object `b-props`**.
+The object wins, just as `.options` values override boolean modifiers.
+A present key overrides even when its value is `false`, `null`, or `undefined`;
+object-valued props are replaced, not deep-merged.
+Removing a spread key reveals the named/static value again, or removes the prop
+if no lower-priority value exists. Declared Boolean props fall back to `false`.
+`b-props` must evaluate to a non-null, non-array object; invalid values throw.
+Use `{}` when there are no overrides. Updates, replacements, additions, and key
+removals are reactive when their sources are reactive.
+
+Props are parent-owned inputs, not cloned or deep-frozen. Emit an event to request
+an update rather than mutating an object passed by the parent.
 
 ### Setup, events, and slots
 
@@ -1517,33 +1588,83 @@ Use lowercase or dashed names (`$props['user-name']`).
 | `route` | The router's reactive route, when a router is installed. |
 
 - Emit bubbling `CustomEvent`s with `$emit(name, detail)`.
-- Project named slots with `slot="name"` on content and
-  `<slot name="name">` in the template.
-- Setup runs in an owned scope. Effects, persistence, and listeners registered
-  during setup are disposed when the component is removed.
+- Use `<slot>Fallback</slot>` for default content: supplied markup needs no
+  `slot` attribute. For named regions, pair `slot="name"` on supplied content
+  with `<slot name="name">` in the component template.
+- Expose per-outlet context with `<slot b-slot="{ item: $for.item }">`
+  inside a component loop. The parent supplies default-slot markup and reads
+  `$slot.item`. Each outlet clones that markup with its own reactive `$slot`;
+  keyed rows preserve output through reordering and item replacement.
+  `b-slot` requires a non-null, non-array object and is valid only on `<slot>`
+  outlets inside component templates, without modifiers. Use `{}` for no values.
+  Object replacement and key addition/removal update `$slot` without recreating
+  the markup. Slot names are literal; dynamic `b-bind-name` is not supported.
+  Projected `$data`, `$props`, `$for`, and refs retain the caller's scope.
+  Only `$slot` exposes receiving-component values. Fallback children use the
+  component's scope, not `$slot`. Use `b-if` on `$slot.item` for custom item layouts.
+  Treat slot values as inputs; objects are not cloned or deep-frozen.
+  Structural removal disposes slot bindings and handlers.
+  Avoid duplicate literal IDs when content may be cloned into multiple outlets;
+  use `b-id` to generate IDs.
+- Setup runs in an owned scope. Effects, resources, and scoped persistence
+  created synchronously during setup are disposed when the component is removed.
+  Native listeners and timers need explicit `onCleanup()` registration; creating
+  them during setup alone does not make them owned. After an `await`, there is
+  no implicit active setup scope.
+
+For example, a component template can repeat a default scoped outlet:
+
+```html
+<!-- Inside a registered answer-list component's template -->
+<section b-for="item in $props.items" b-key="$for.item.id">
+  <slot b-slot="{ item: $for.item }"><p b-text="$for.item.body"></p></slot>
+</section>
+```
+
+The caller provides one layout for all items, with conditional differences:
+
+```html
+<answer-list b-prop-items="$data.items">
+  <div>
+    <strong b-if="$slot.item.important" b-text="$slot.item.body"></strong>
+    <p b-else b-text="$slot.item.body"></p>
+  </div>
+</answer-list>
+```
+
+This also works with a named outlet; add the same literal `name` and `slot`
+attributes to the outlet and supplied markup. Try the
+[b-slot / $slot Lab experiment source](https://github.com/jnreis/briojs/blob/main/tests/directives/slot.html)
+for default and named slots, parent context, fallbacks, keyed updates, and cleanup.
+From a repository checkout, build Brio and run
+`npm run dev -- --open /tests/directives/slot.html` to try it.
 
 ### Directives on component hosts
 
 Registered component tags do not use the ordinary-element directive pass.
-`b-bind-*` supplies props, not native host attribute/property bindings (so
-`b-bind-class` supplies a `class` prop; it does not style the host).
-Use `b-attr-*` to bind the host element itself, with the same behavior as
+`b-prop-*` and `b-props` supply component props. Use `b-bind-*` to bind the
+host element itself, with the same behavior as
 `b-bind-*` on an ordinary element (class objects merge with static classes,
 style objects and custom properties, `aria-*`, `data-*`, booleans, and `.prop`).
-`b-attr-*` values are not passed as props:
+`b-bind-*` values are not passed as props:
 
 ```html
-<kpi-card class="card" b-bind-value="$for.kpi.value"
-          b-attr-class="{ rising: $for.kpi.delta > 0 }"
-          b-attr-data-testid="'kpi-' + $for.kpi.key"></kpi-card>
+<kpi-card class="card" b-prop-value="$for.kpi.value"
+          b-bind-class="{ rising: $for.kpi.delta > 0 }"
+          b-bind-data-testid="'kpi-' + $for.kpi.key"></kpi-card>
 ```
 
 #### Prop evaluation and host events
 
-Each bound prop is evaluated once at mount, before setup, and again only when
-its dependencies change. Component template markup is parsed once per
-definition and cloned for each instance in the host's own document.
-`b-on-*`/`on-*` installs host event listeners with the same event modifiers
+Each named prop expression is evaluated once at mount, before setup, and again only when
+its dependencies change. On first use, Brio resolves the component template and
+caches a private snapshot for that definition and document. Each instance clones
+the snapshot and hydrates it with its own state. Authored `<template>` elements
+stay untouched in the DOM; editing, removing, or replacing the source after first
+use does not affect existing or future instances from that cached definition.
+Changes made before first use are included. This provides predictable rendering,
+not a security boundary against scripts with access to the page.
+`b-on-*` installs host event listeners with the same event modifiers
 as ordinary elements (`<row-actions b-on-remove.stop.once="…">`,
 `b-on-keydown.enter`). Observer-style names are host event names, not
 observer installation; put observers on a concrete wrapper or inside the
@@ -1555,7 +1676,7 @@ Earlier structural/context steps still apply: `b-if`, `b-for` with `b-key`,
 `b-data`, `b-id`, `b-provide`, and `b-ref` can be handled before component setup, subject
 to the combination rules above. `b-ignore` skips setup altogether, while
 `b-template` unwraps the tag instead of setting it up.
-`b-transition` animates the host itself, and `b-attr-*` binds the host's own
+`b-transition` animates the host itself, and `b-bind-*` binds the host's own
 attributes. Other `b-*` host directives (such as `b-model`, `b-html`, and
 `b-teleport`) are rejected.
 Use a surviving wrapper or put the directive inside the component.
@@ -2832,7 +2953,7 @@ Install the adapter once from a shared layout's processed client script:
 Declare roots by registered name; sibling instances may use the same name:
 
 ```html
-<section b-app="counter" b-props="{ initial: 5 }">
+<section b-app="counter" b-app-props="{ initial: 5 }">
   <button b-on-click="$data.count++" b-text="$data.count">5</button>
 </section>
 ```
@@ -2878,11 +2999,11 @@ desired. A module failure is cached without automatic retries.
 
 #### Island metadata and props
 
-`b-app` and `b-props` are adapter metadata, not core directives:
+`b-app` and `b-app-props` are adapter metadata, not core directives:
 
 - Names are exact registered keys. Unknown names and nested `b-app` roots are
   errors; use components for nested behavior. Independent siblings are supported.
-- `b-props` is an optional trusted JavaScript expression, evaluated once per new
+- `b-app-props` is an optional trusted JavaScript expression, evaluated once per new
   root before code loading, with `$el` available and no app `$data`.
 - It must return a synchronous plain object with data properties, not accessors,
   arrays, promises, or null. Absent props default to an empty object. Top-level
@@ -2902,7 +3023,7 @@ attribute serialization and generate the expression as data, for example:
 ---
 const initial = 5;
 ---
-<section b-app="counter" b-props={JSON.stringify({ initial })}>
+<section b-app="counter" b-app-props={JSON.stringify({ initial })}>
   <button b-on-click="$data.count++" b-text="$data.count">5</button>
 </section>
 ```
@@ -2949,7 +3070,8 @@ when upgrading Astro or customizing its swap algorithm. The runnable
 apps and persistent ancestors. Pulse events in the fixture are test diagnostics
 for leaked listeners, not part of the adapter API.
 
-Run `npm run dev:astro` to explore the fixture. Run `npx playwright install chromium`
+Run `npm run dev:astro` to explore the fixture, or `npm run lab` to see it framed
+in the Brio Lab. Run `npx playwright install chromium`
 once, then `npm run test:astro` for production-build browser tests of repeated
 navigation, actual DOM/state persistence, resource cancellation, cleanup counts,
 and browser back/forward restoration.
@@ -2998,7 +3120,7 @@ createApp({ state: () => ({ name: 'Ada' }) })
 
 | Field | Meaning |
 | --- | --- |
-| `name` | `b-` followed by lowercase kebab-case. Built-in names and prefixes (`b-on-*`, `b-bind-*`, `b-attr-*`, `b-ref-*`, `b-router-*`) are reserved. |
+| `name` | `b-` followed by lowercase kebab-case. Built-in names and prefixes (`b-on-*`, `b-bind-*`, `b-prop-*`, `b-ref-*`, `b-router-*`) are reserved. |
 | `arg` | `true` to also match `name-<anything>`, available as `binding.arg`. |
 | `modifiers` | Allowed `.modifier` names. Omit to accept any, `[]` for none. `options` is reserved. |
 | `options` | Allowed keys for a [`.options`](#directive-options) attribute, read as `binding.options`. Omit to reject `.options`. |
@@ -3158,7 +3280,7 @@ and the reactivity entry works without a DOM.
 
 | Entry | Includes |
 | --- | --- |
-| `@jnreis/briojs` | App, components, DOM enhancement, trusted HTML, and core types. |
+| `@jnreis/briojs` | App, components, DOM enhancement, reactivity, trusted HTML, core types, and tree-shakable tool/plugin exports; no implicit add-on or devtools activation. |
 | `@jnreis/briojs/reactivity` | DOM-independent state, signals, effects, computed values, batching, async resources, and scopes. |
 | `@jnreis/briojs/persistence` | Local/session/custom storage, with scope cleanup where owned. |
 | `@jnreis/briojs/router` | Optional history or hash router; the router brings `b-router-outlet`. |
@@ -3181,24 +3303,28 @@ observer directives and native CSS features depend on browser support.
 
 ### Migrating from Brio 4
 
-Brio 5 moves directives that most pages never use out of the core bundle, which
-makes `brio.min.js` about 2 KB smaller (brotli), and requires the `b-` prefix
-on every directive.
+Brio 5 keeps masks, forms, and observers out of the core bundle and requires
+the `b-` prefix on every directive. It also separates component inputs from
+host DOM bindings and snapshots component templates on first use.
 
 | In Brio 4 | In Brio 5 |
 | --- | --- |
 | `b-mask`, `moneyMask` in the core / `brio.money-mask.min.js` | Load `brio.inputs.min.js`, or install `inputsPlugin` from `@jnreis/briojs/inputs`. |
 | `validate` from `brio.forms.min.js` / `@jnreis/briojs/forms` | `brio.inputs.min.js` / `@jnreis/briojs/inputs`. |
 | `@jnreis/briojs/money-mask` | `@jnreis/briojs/inputs`. |
-| `b-on-enter`, `b-on-exit`, `b-on-resize`, `b-on-addednodes`, `b-on-removednodes`, `b-on-attrs`, `b-on-text`, and their `.options` | Load `brio.observers.min.js`, or install `observersPlugin` from `@jnreis/briojs/observers`. |
+| `b-on-enter`, `b-on-exit`, `b-on-resize`, `b-on-addednodes`, `b-on-removednodes`, `b-on-attrs`, `b-on-text` | Load `brio.observers.min.js`, or install `observersPlugin` from `@jnreis/briojs/observers`; migrate observer `b-options` as shown below. |
 | `b-router-outlet` | Unchanged with `createApp({ router })`: the router installs it. |
 | `app.plugin(plugin)` | `app.use(plugin)`. |
 | `b-options="{ 'b-on-enter': { threshold: 0.5 } }"` | One `.options` attribute per directive: `b-on-enter.options="{ threshold: 0.5 }"`. Option values now win over modifiers. |
+| Component `b-bind-name="expr"` | Use `b-prop-name="expr"` for a named component input. Use `b-props="object"` to spread multiple inputs; spread keys override named and static props. `b-bind-*` now always targets the DOM. |
+| Component-host `b-attr-*` | Use `b-bind-*` for the host's DOM attributes/properties, classes, and styles. |
+| Astro island `b-props="expr"` | Rename to `b-app-props="expr"`. This remains a read-once app-factory input; core `b-props` is now a reactive component-only directive. |
+| Editing or replacing a component's source `<template>` after use | The definition keeps its first-use snapshot per document. Make source changes before first use, or register a new definition for different markup. |
 | Short forms without `b-`: `on-*`, `bind-*`, `text`, `html`, `model`, `mask`, `teleport`, `transition`, `effect` | Add the prefix: `b-on-click`, `b-bind-href`, `b-text`, and so on. Brio now leaves unprefixed attributes alone. |
 
-With script tags, add the add-on script after `brio.min.js` and nothing else
-changes: add-ons attach to every app created afterwards. With npm, add the
-plugin to each app:
+With script tags, load each needed add-on after `brio.min.js`: its directives
+attach to every app created afterwards. With npm, add the plugin to each app.
+In both cases, update affected markup and API calls using the table above:
 
 ```js
 import { inputsPlugin } from '@jnreis/briojs/inputs';

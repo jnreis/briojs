@@ -1,5 +1,5 @@
 import { m as createSyntaxError, O as ObjectConstructor, t as isBoolean, c as createTypeError, f as isNumber, j as isString, h as isInstanceOf, k as isArray, A as ATTRIBUTES, g as getLength, b as createError } from "./native-C6Z9zuZA.js";
-import { g as getAttribute, d as getOwnerDocument } from "./native-BP66_Ihq.js";
+import { g as getAttribute, d as getOwnerDocument } from "./native-D9adRJpp.js";
 function observerOptions(element, { directive, modifiers, options }) {
   if (getAttribute(element, "b-options") !== null)
     throw createSyntaxError(`b-options was removed in Brio 5. Configure each observer with ${directive}.options="{ … }".`);

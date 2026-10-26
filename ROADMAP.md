@@ -21,7 +21,7 @@ treat this as a direction, not a promise. Ideas and feedback are welcome in
   ([docs](https://briojs.com/reference/plugins/)).
 - ✅ **Proof that it works:** Brio 5's own add-ons (inputs with `b-mask` and
   `b-form`, observers, and the router outlet) are plugins built on the public
-  API, which made the core bundle about 2 KB smaller.
+  API, keeping their directives out of the core bundle.
 - ✅ **A plugin starter template**, the `brio-plugin-*` naming convention, and a
   testing helper ([templates/plugin](./templates/plugin/)).
 
@@ -31,18 +31,23 @@ treat this as a direction, not a promise. Ideas and feedback are welcome in
   TypeScript, with prompts, automation flags, and non-destructive generation.
   The separate [`create-brio` package](./packages/create-brio/) is prepared
   locally; `npm create brio@latest` becomes available after publication.
-- ✅ **A playground with shareable links** at `/play/`, prepared for the next
-  site deployment: HTML/CSS/JavaScript editors, an isolated preview, the
+- ✅ **A playground with shareable links** at `/play/`:
+  Monaco HTML/CSS/JavaScript editors, an isolated preview, the
   homepage creature, and compressed URL-fragment sharing. Shared code waits
   for an explicit Run.
-- **Brio Parts:** copy-paste accessible widgets (dialog, tabs, disclosure,
-  combobox, toast, menu) with live demos.
-- **Integration guides** for Rails, Laravel, Django, WordPress, and plain
-  server-rendered HTML.
-- **A "Built with Brio" showcase.**
+- ✅ **Brio Parts:** a dedicated
+  three-column `/parts/` directory of copy-paste components, starting
+  with disclosure/accordion, tabs, native dialog, and an action menu. Each gets
+  a detail-page live demo, a template with embedded scoped CSS, an app-registerable
+  definition, a playground link, and documented accessibility and keyboard behavior.
+- ✅ **Integration guides:** Rails,
+  Laravel, Django, WordPress, and plain HTML/Express, with a runnable baseline
+  and a shared lifecycle helper. No Brio Vite plugin.
 
 ## When there is demand
 
+- A "Built with Brio" showcase and `awesome-brio`, once there are real projects
+  and community resources to feature.
 - A full VS Code extension: highlighting and completion inside `b-`
   expressions.
 - JetBrains web-types generated from the directive manifest.

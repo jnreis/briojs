@@ -1,5 +1,5 @@
 import { c as createTypeError, e as isObjectType, b as createError, i as isFunction, k as isArray, O as ObjectConstructor, g as getLength, p as objectKeys } from "./native-C6Z9zuZA.js";
-import { a as addEventListener, r as removeEventListener } from "./native-BP66_Ihq.js";
+import { a as addEventListener, r as removeEventListener } from "./native-D9adRJpp.js";
 import { e as effect, h as getCurrentScope, g as onCleanup, l as causedError, b as batch } from "./effect-alBOOBUf.js";
 import { s as state, a as signal } from "./state-D6RTXn8X.js";
 const isPlainContainer = (value) => {

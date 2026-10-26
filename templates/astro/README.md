@@ -12,7 +12,7 @@ npm run dev
   `lazyApp()` loads an island's code only when it appears on a page.
 - `src/apps/`: one factory per island. Each returns a fresh Brio app.
 - `src/pages/`: mark island roots with `b-app="name"` and pass server data
-  with `b-props={JSON.stringify(data)}`.
+  with `b-app-props={JSON.stringify(data)}`.
 
 ClientRouter navigation is supported: outgoing islands are disposed and
 incoming ones mounted on every page swap.

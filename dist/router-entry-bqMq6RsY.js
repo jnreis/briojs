@@ -1,5 +1,5 @@
 import { c as createTypeError, j as isString, b as createError, s as startsWith, n as includesItem, g as getLength, d as deleteItem, h as isInstanceOf, p as objectKeys, O as ObjectConstructor } from "./native-C6Z9zuZA.js";
-import { a as addEventListener, r as removeEventListener } from "./native-BP66_Ihq.js";
+import { a as addEventListener, r as removeEventListener } from "./native-D9adRJpp.js";
 import { s as state, a as signal } from "./state-D6RTXn8X.js";
 import { e as effect, u as untrack, c as createScope, b as batch } from "./effect-alBOOBUf.js";
 const defineDirective = (definition) => definition;
@@ -288,4 +288,4 @@ export {
   createRouter as c,
   defineDirective as d
 };
-//# sourceMappingURL=router-entry-DPctdRM6.js.map
+//# sourceMappingURL=router-entry-bqMq6RsY.js.map

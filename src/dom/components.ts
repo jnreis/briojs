@@ -11,6 +11,8 @@ import {
     ATTRIBUTES,
     isString,
     objectEntries,
+    isObjectType,
+    isArray,
 } from '../core/native';
 import {
     getChildNodes, getAttribute, removeChild, getParent, removeAttribute,
@@ -19,7 +21,7 @@ import {
 import { evaluate, createExpressionScope } from '../core/expression';
 import { state } from '../reactivity/state';
 import { createScopedState } from '../core/scoped-state';
-import { effect } from '../reactivity/effect';
+import { batch, effect, untrack } from '../reactivity/effect';
 import { createScope, onCleanup } from '../core/scope';
 import type { ComponentDefinition, DomRuntime } from './types';
 import { getNodeOwner, ownNode, withHydration } from './ownership';
@@ -30,8 +32,11 @@ import { extractModifiers } from './directives/modifier';
 import { handleOn, eventModifiers } from './directives/on';
 import { checkOptionsUsed, collectOptions, readOptions } from './directives/registry';
 import { handleTransition } from './directives/transition';
+import { ownElementRange } from './range';
 
 const projectedContexts = new WeakMap<Node, Record<PropertyKey, any>>();
+const slotSources = Symbol('brio.slots');
+type SlotSources = { nodes: Map<string, Node[]>; context: Record<PropertyKey, any> };
 
 export function takeProjectedContext(node: Node): Record<PropertyKey, any> | undefined {
     const context = projectedContexts.get(node);
@@ -82,6 +87,8 @@ export function fillSlots(
         slots.set(name, content);
     }
     for (const outlet of findSlots(template)) {
+        if (arrayFrom(outlet[ATTRIBUTES]).some(attribute =>
+            ['b-slot', 'b-bind-name'].includes(extractModifiers(attribute.name).baseName))) continue;
         const name = getAttribute(outlet, 'name') ?? '';
         const content = slots.get(name);
         if (!content?.length) {
@@ -96,8 +103,41 @@ export function fillSlots(
         for (const node of remaining) removeChild(getParent(node), node);
 }
 
-// Each definition's markup is parsed once per document and cloned for every instance.
-const parsedTemplates = new WeakMap<ComponentDefinition, { document: Document; template: HTMLTemplateElement }>();
+export function hydrateScopedSlot(
+    element: Element,
+    context: Record<PropertyKey, any>,
+    runtime: DomRuntime,
+    hydrate: (node: Node, context: Record<PropertyKey, any>, runtime: DomRuntime) => void,
+): void {
+    const sources = context[slotSources] as SlotSources | undefined;
+    if (!sources) throw createError('b-slot requires a component template.');
+    const values = state<Record<string, unknown>>({});
+    effect(() => {
+        const value: unknown = evaluate(getAttribute(element, 'b-slot')!, context, 'b-slot', element);
+        if (!value || !isObjectType(value) || isArray(value))
+            throw createTypeError('b-slot must evaluate to a non-null, non-array object.');
+        const next = Object.fromEntries(objectEntries(value));
+        untrack(() => batch(() => {
+            for (const key of Object.keys(values)) if (!Object.hasOwn(next, key)) delete values[key];
+            for (const [key, entry] of objectEntries(next))
+                Object.defineProperty(values, key, { value: entry, enumerable: true, configurable: true, writable: true });
+        }));
+    });
+    const range = ownElementRange(element, context, runtime);
+    const supplied = sources.nodes.get(getAttribute(element, 'name') ?? '');
+    const nodes = (supplied ?? arrayFrom(getChildNodes(element))).map(node => cloneProjectedNode(node));
+    const projected = supplied ? createExpressionScope({ $slot: values }, sources.context) : context;
+    const parent = range.end.parentNode!;
+    element.remove();
+    withHydration(parent, () => {
+        for (const node of nodes) parent.insertBefore(node, range.end);
+        for (const node of nodes)
+            if (node.parentNode === parent) hydrate(node, projected, runtime);
+    });
+}
+
+// Snapshot on first use; authored templates stay untouched and later edits cannot change new instances.
+const parsedTemplates = new WeakMap<ComponentDefinition, { document: Document; content: DocumentFragment }>();
 const templateSelector = /^#[A-Za-z][\w-]*$/;
 
 const instantiateTemplate = (definition: ComponentDefinition, host: Element): DocumentFragment => {
@@ -116,9 +156,10 @@ const instantiateTemplate = (definition: ComponentDefinition, host: Element): Do
                 template.innerHTML = source;
             }
         }
-        parsedTemplates.set(definition, parsed = { document: ownerDocument, template });
+        const content = template.content.cloneNode(true) as DocumentFragment;
+        parsedTemplates.set(definition, parsed = { document: ownerDocument, content });
     }
-    return parsed.template.content.cloneNode(true) as DocumentFragment;
+    return parsed.content.cloneNode(true) as DocumentFragment;
 };
 
 export function mountComponent(
@@ -128,7 +169,7 @@ export function mountComponent(
     runtime: DomRuntime,
     hydrateNodeFn: (node: Node, context: Record<PropertyKey, any>, runtime: DomRuntime) => void,
 ): void {
-    const propsObject: Record<string, unknown> = {};
+    const propsObject: Record<string, unknown> = Object.create(null);
     const declared = definition.props ?? {};
     for (const [name, type] of objectEntries(declared)) if (type === Boolean) propsObject[name] = false;
     for (const attribute of arrayFrom(element[ATTRIBUTES])) {
@@ -137,18 +178,21 @@ export function mountComponent(
         const type = declared[name];
         propsObject[name] = type === Boolean ? value !== 'false' : type === Number ? Number(value) : value;
     }
-    const propBindings = arrayFrom(element[ATTRIBUTES])
-        .filter(attribute => startsWith(attribute.name, 'b-bind-') && !extractModifiers(attribute.name).modifiers.options)
+    const attributes = arrayFrom(element[ATTRIBUTES]);
+    const propBindings = attributes
+        .filter(attribute => startsWith(attribute.name, 'b-prop-'))
         .map(attribute => {
-            const raw = attribute.name.slice(getLength('b-bind-'));
+            const raw = attribute.name.slice(getLength('b-prop-'));
+            if (!/^[a-z][a-z0-9-]*$/.test(raw))
+                throw createSyntaxError(`Invalid component prop directive "${attribute.name}". Props do not support modifiers.`);
             return {
-                name: raw.split('.')[0],
+                name: raw,
                 directive: attribute.name,
                 expression: attribute.value,
             };
         });
 
-    const $props = state(propsObject);
+    const $props = state({ ...propsObject });
     const $ref = createRefs();
     const componentScope = createScope();
     onCleanup(() => componentScope.dispose());
@@ -171,23 +215,43 @@ export function mountComponent(
                     throw createSyntaxError(`Invalid component event directive "${attribute.name}".`);
                 handleOn(element, baseName, attribute.value, modifiers, context,
                     readOptions(options, baseName, eventModifiers, context, element));
+            } else if (startsWith(attribute.name, 'b-bind-')) {
+                handleBind(element, baseName, attribute.value, modifiers, context);
             } else if (startsWith(attribute.name, 'b-attr-')) {
-                handleBind(element, extractModifiers(attribute.name).baseName, attribute.value,
-                    extractModifiers(attribute.name).modifiers, context);
+                throw createSyntaxError(`${attribute.name} has been removed. Use b-bind-* for DOM bindings.`);
             } else if (extractModifiers(attribute.name).baseName === 'b-transition') {
                 handleTransition(element, attribute.value, {}, context);
-            } else if (startsWith(attribute.name, 'b-') && !startsWith(attribute.name, 'b-bind-')) {
+            } else if (startsWith(attribute.name, 'b-') && baseName !== 'b-props' && !startsWith(attribute.name, 'b-prop-')) {
                 throw createError(`Directive "${attribute.name}" is not supported on component hosts.`);
+            } else if (baseName === 'b-props' && attribute.name !== 'b-props') {
+                throw createSyntaxError('b-props does not support modifiers.');
             }
         }
         checkOptionsUsed(options, names);
 
-        // Each bound prop is evaluated once here and re-evaluated only when its dependencies change.
+        // Evaluate inputs separately, then compose once so attribute/effect order cannot change precedence.
+        const named = state<Record<string, unknown>>(Object.fromEntries(propBindings.map(binding => [binding.name, undefined])));
         for (const binding of propBindings) {
             effect(() => {
-                $props[binding.name] = evaluate(binding.expression, context, binding.directive, element);
+                named[binding.name] = evaluate(binding.expression, context, binding.directive, element);
             });
         }
+        const spreadSource = getAttribute(element, 'b-props');
+        effect(() => {
+            const next = { ...propsObject, ...named };
+            if (spreadSource !== null) {
+                const spread: unknown = evaluate(spreadSource, context, 'b-props', element);
+                if (!spread || !isObjectType(spread) || isArray(spread))
+                    throw createTypeError('b-props must evaluate to a non-null, non-array object.');
+                for (const [key, value] of objectEntries(spread))
+                    Object.defineProperty(next, key, { value, enumerable: true, configurable: true, writable: true });
+            }
+            untrack(() => batch(() => {
+                for (const key of Object.keys($props)) if (!Object.hasOwn(next, key)) delete $props[key];
+                for (const [key, value] of objectEntries(next))
+                    Object.defineProperty($props, key, { value, enumerable: true, configurable: true, writable: true });
+            }));
+        });
         const setupResult = definition.setup?.({
             el: element, $props, $emit, app: runtime.app,
             $stores: context.$stores ?? emptyContextValues,
@@ -196,8 +260,16 @@ export function mountComponent(
             route: runtime.router?.route,
         }) ?? {};
         const local = createScopedState(setupResult, context.$data);
+        const slotNodes = new Map<string, Node[]>();
+        for (const node of arrayFrom(getChildNodes(element))) {
+            const name = isInstanceOf(node, Element) ? getAttribute(node, 'slot') ?? '' : '';
+            const nodes = slotNodes.get(name) ?? [];
+            nodes.push(cloneProjectedNode(node));
+            slotNodes.set(name, nodes);
+        }
         const componentContext = createExpressionScope(
-            { $data: local, $el: element, $props, $emit, $ref },
+            { $data: local, $el: element, $props, $emit, $ref,
+                [slotSources]: { nodes: slotNodes, context } satisfies SlotSources },
             context,
         );
         const owner = getNodeOwner(element);

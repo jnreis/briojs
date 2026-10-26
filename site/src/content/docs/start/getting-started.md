@@ -7,7 +7,7 @@ editUrl: https://github.com/jnreis/briojs/blob/main/site/src/content/docs/start/
 Brio adds reactive behavior to HTML you already own. Start with one element,
 one piece of state, and one event.
 
-Want to experiment without setup? The next site deployment includes the
+Want to experiment without setup? Open the
 [playground](/play/): edit HTML/CSS/JavaScript, run an isolated preview, and
 share your code with a link. Shared code waits for you to click Run.
 
@@ -120,3 +120,7 @@ does not sanitize HTML.
 
 Read [installation](/reference/install/), explore
 [directives](/reference/html-directives/), or try the [example gallery](/examples/).
+
+Want a ready-made interaction? Browse [Brio Parts](/parts/) for copy-paste
+disclosure, tabs, dialog, and action-menu recipes. Adding Brio to an existing
+backend? Start with the [integration guides](/integrations/overview/).

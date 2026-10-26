@@ -52,12 +52,13 @@ import { observersPlugin } from '@jnreis/briojs/observers';
 import { devtoolsPanel } from '@jnreis/briojs/devtools';
 ```
 
-Keep devtools imports out of production application entry points. Native browser
-The npm main entry exports all these plugins and devtools too. Main-entry
+Keep devtools imports out of production application entry points. The npm main
+entry also exports these plugins and devtools. Main-entry
 devtools exports are inert until `enableDevtools()` is called before app creation;
-the devtools subpath and development browser bundle activate automatically. Native browser
-ESM needs resolvable module URLs/import maps; npm bare imports do not resolve on
-their own. Do not mix a standalone runtime and ESM runtime on the same root.
+the devtools subpath and development browser bundle activate automatically.
+Native browser ESM needs resolvable module URLs/import maps; npm bare imports do
+not resolve on their own. Do not mix a standalone runtime and ESM runtime on the
+same root.
 
 ## App ownership
 
@@ -100,6 +101,7 @@ There is no `with`, implicit state-name resolution, or sandbox.
 | `$id.name` | Generated ID from a surrounding `b-id`. |
 | `$ref.name` | Raw DOM element in the current local ref registry, or undefined. Names are read-only. |
 | `$props`, `$emit` | Component props and event emitter. |
+| `$slot` | In scoped slot content: reactive values explicitly exposed by the receiving outlet's `b-slot` object. Other context remains parent-owned. |
 | `$event` | DOM/component event in event handlers. |
 | `$mutations`, `$size`, `$entry` | Observer-specific payloads. |
 | `$insert` | Mount-bound dynamic insertion helper. |
@@ -195,7 +197,7 @@ inside component-internal providers. Teleports retain original providers.
 Inserted children inherit the destination's providers; inserted siblings
 inherit the container's. Normal owned cleanup stops provider effects.
 
-Named stores and providers are available since 4.0.0.
+Named stores and providers were introduced in 4.0.0 and remain available in v5.
 
 ## Directive contracts
 
@@ -330,8 +332,8 @@ object literal or reference. It applies to every same-base attribute on the
 element, cannot be combined with other modifiers (`b-on-enter.once.options` is
 an error), and its values win over modifiers. Unknown keys throw. Only `b-on-*`
 (any event modifier; `debounce`/`throttle` also take milliseconds), observer
-directives, and plugin directives that declare `options` accept it. Brio 4's
-`b-options` was removed.
+directives, and plugin directives that declare `options` accept it. The legacy
+`b-options` processor is not supported in v5.
 
 ```html
 <div b-on-enter.debounce="console.log($entry)"
@@ -408,15 +410,42 @@ app.component('counter-card', {
 Use hyphenated component names. Setup returns plain state, exposed as `$data`.
 `template` is markup, a `<template>` element, or an `#id` selector for a
 `<template>` in the page (`template: '#tpl-counter-card'`).
-Static host attributes become string props; `b-bind-label` gives a reactive prop.
+Brio snapshots template contents on first use and clones that private snapshot
+for subsequent instances. The authored template stays untouched in the DOM;
+later edits, removal, or replacement do not change the cached definition.
+Static host attributes become string props; `b-prop-label` gives a reactive prop.
+`b-props="object"` spreads own enumerable string keys, overriding named props,
+which override static values. Order of attributes does not matter. Overrides
+include explicit `false`, `null`, and `undefined`; composition is shallow.
+Removing a spread key reveals its named/static value or removes the prop.
+Use a non-null, non-array object (`{}` for no overrides); invalid values throw.
+Both prop directives are component-only and accept no modifiers. Object keys
+keep their spelling; objects/arrays are passed by reference, without coercion.
 Declare `props: { compact: Boolean, count: Number }` to coerce static attributes
 (a declared Boolean is false when absent, true when present unless `"false"`).
 Setup also receives `route` (the router's reactive route) when a router exists.
-`b-attr-*` binds the host element itself like `b-bind-*` on ordinary elements
-(`b-attr-class="{ active: $data.on }"`, `b-attr-data-testid="'card-' + $for.item.id"`) and is not a prop. Prop names arrive lowercase (`b-bind-userName` → `$props.username`); use lowercase or dashed names.
+`b-bind-*` binds the component host element itself, not a prop
+(`b-bind-class="{ active: $data.on }"`,
+`b-bind-data-testid="'card-' + $for.item.id"`). HTML lowercases attribute
+names: `b-prop-username` supplies `$props.username`, while
+`b-prop-user-name` supplies `$props['user-name']`; use lowercase names.
 Emits are bubbling CustomEvents; consume `$event.detail` in host handlers.
-Named slots use `slot="name"` and `<slot name="name">`. Projected content retains
-the caller's data context. Use ordinary `<style>@scope { ... }</style>` inside
+Default slots use `<slot>fallback</slot>` and supplied markup without a `slot`
+attribute. Named slots pair `slot="name"` with `<slot name="name">`.
+Projected content retains the caller's data context. For scoped slots, use
+`<slot b-slot="{ item: $for.item }">fallback</slot>` in the component
+template; supplied default-slot expressions read
+`$slot.item`; `$data`, `$props`, and `$for` still belong to the caller.
+`b-slot` is outlet-only, accepts a non-null, non-array object and no modifiers.
+Its values update reactively without recreating markup; keyed rows preserve
+content through reordering. Fallback uses component scope, not `$slot`.
+Scoped slots work with default or named outlets. The repository fixture
+`tests/directives/slot.html` demonstrates repeated default content and named
+summaries; it is not included in the portable skill.
+Names are literal; dynamic slot names are not supported. Use `b-if` for
+item-specific layouts. Use `b-id`
+instead of duplicate literal IDs in repeatable projected content.
+Use ordinary `<style>@scope { ... }</style>` inside
 the component template for native parent-rooted CSS.
 Do not mutate props as an alternative to emitting a parent update.
 Setup runs in an owned scope; `brio.onCleanup(...)` can register listeners,
@@ -611,7 +640,7 @@ Astro: import enhanceAstro/lazyApp from optional `@jnreis/briojs/astro` in a sha
 layout's processed client script, installed once:
 `enhanceAstro({ apps: { counter: lazyApp(() => import('./counter')) }, onError(error, root) { console.error(error, root); } })`.
 Modules default-export synchronous `(root, props) => createApp(...)` factories.
-Use `b-app="counter"` with optional `b-props="{ initial: 5 }"`. Props are trusted
+Use `b-app="counter"` with optional `b-app-props="{ initial: 5 }"`. Props are trusted
 JS, read once before loading with $el/no $data, and must be a plain data-property
 object. Validate values in the factory; no automatic state merge or reactive
 server props. Astro frontmatter is server-only; serialize server data through

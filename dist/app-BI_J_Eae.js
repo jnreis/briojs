@@ -1,10 +1,10 @@
 var __defProp = Object.defineProperty;
 var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
 var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "symbol" ? key + "" : key, value);
-import { R as ReflectApi, $ as $PARENT, c as createTypeError, n as includesItem, d as deleteItem, b as createError, g as getLength, T as TELEPORT, a as arrayFrom, l as ownKeys, G as GET_OWN_PROPERTY_DESCRIPTOR, O as ObjectConstructor, m as createSyntaxError, h as isInstanceOf, s as startsWith, e as isObjectType, o as objectEntries, k as isArray, p as objectKeys, t as isBoolean, f as isNumber, A as ATTRIBUTES, q as isBrioError, i as isFunction, j as isString, u as TEMPLATE, B as B_TELEPORT, r as removeElement, v as snapshotList } from "./native-C6Z9zuZA.js";
-import { b as getChildNodes, g as getAttribute, c as removeAttribute, a as addEventListener, r as removeEventListener, d as getOwnerDocument, e as getParent, f as removeChild, h as getNodeType, i as getNextSibling, j as insertBefore } from "./native-BP66_Ihq.js";
-import { a as evaluate, b as execute, d as assign, c as createExpressionScope, g as emptyContextValues, h as createProvidedValues, e as evaluateFunction, f as copyContextValues } from "./context-values-BM3_VNwk.js";
-import { h as getCurrentScope, v as combinedError, g as onCleanup, b as batch, e as effect, l as causedError, j as errorText, n as directiveError, c as createScope, o as onDispose, q as setScopeNode, p as locate, B as devtoolsEnabled, C as notifyUnknownDirective, D as notifyRootMounted, f as flush, E as notifyAppDisposed, F as notifyAppCreated, G as notifyRootUnmounted } from "./effect-alBOOBUf.js";
+import { R as ReflectApi, $ as $PARENT, c as createTypeError, n as includesItem, d as deleteItem, b as createError, g as getLength, T as TELEPORT, a as arrayFrom, l as ownKeys, G as GET_OWN_PROPERTY_DESCRIPTOR, O as ObjectConstructor, m as createSyntaxError, h as isInstanceOf, e as isObjectType, o as objectEntries, s as startsWith, k as isArray, p as objectKeys, t as isBoolean, f as isNumber, A as ATTRIBUTES, q as isBrioError, i as isFunction, j as isString, B as B_TELEPORT, r as removeElement, u as TEMPLATE, v as snapshotList } from "./native-C6Z9zuZA.js";
+import { b as getChildNodes, g as getAttribute, c as removeAttribute, a as addEventListener, r as removeEventListener, d as getOwnerDocument, e as getParent, f as getNodeType, h as getNextSibling, i as removeChild, j as insertBefore } from "./native-D9adRJpp.js";
+import { a as evaluate, b as execute, d as assign, c as createExpressionScope, g as emptyContextValues, h as createProvidedValues, e as evaluateFunction, f as copyContextValues } from "./context-values-CwL8HLy9.js";
+import { h as getCurrentScope, v as combinedError, g as onCleanup, b as batch, e as effect, l as causedError, j as errorText, n as directiveError, u as untrack, c as createScope, o as onDispose, q as setScopeNode, p as locate, B as devtoolsEnabled, C as notifyUnknownDirective, D as notifyRootMounted, f as flush, E as notifyAppDisposed, F as notifyAppCreated, G as notifyRootUnmounted } from "./effect-alBOOBUf.js";
 import { s as state, b as track, t as trigger } from "./state-D6RTXn8X.js";
 const sources = /* @__PURE__ */ new WeakMap();
 function createScopedState(source, parent) {
@@ -297,7 +297,7 @@ const setBoundValue = (element, name, value, forceProp = false) => {
   else element.setAttribute(name, value === true ? "" : String(value));
 };
 function handleBind(element, attrName, expression, modifiers, context) {
-  const rawTarget = attrName.slice(getLength(startsWith(attrName, "b-attr-") ? "b-attr-" : "b-bind-"));
+  const rawTarget = attrName.slice(getLength("b-bind-"));
   if (!rawTarget) throw createSyntaxError(`Brio binding directive "${attrName}" has no target.`);
   const forceProp = Boolean(modifiers.prop);
   const target = resolveBindTarget(element, rawTarget, forceProp);
@@ -449,8 +449,8 @@ function addonError(attrName, addon) {
   return createError(addon === "router" ? "b-router-outlet requires a router on the Brio app." : `${attrName} needs the Brio ${addon} add-on. Load brio.${addon}.min.js after brio.min.js, or call app.use(${addon}Plugin) with ${addon}Plugin from @jnreis/briojs/${addon}.`);
 }
 const namePattern = /^b-[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/;
-const reservedDirectives = "b-data b-provide b-id b-text b-html b-model b-if b-else-if b-else b-for b-key b-template b-teleport b-transition b-effect b-script b-ignore b-cloak b-app b-props".split(" ");
-const reservedPrefixes = ["b-on", "b-bind", "b-attr", "b-ref", "b-router"];
+const reservedDirectives = "b-data b-provide b-id b-text b-html b-model b-if b-else-if b-else b-for b-key b-template b-teleport b-transition b-effect b-script b-ignore b-cloak b-app b-app-props b-props b-slot".split(" ");
+const reservedPrefixes = ["b-on", "b-bind", "b-prop", "b-attr", "b-ref", "b-router"];
 const hooks = ["scope", "mount", "ready"];
 const createRegistry = () => ({ exact: /* @__PURE__ */ new Map(), withArg: [], scoped: false });
 function registerDirective(registry, definition, owner) {
@@ -726,186 +726,6 @@ function handleTransition(element, expression, _modifiers, _context) {
     enterTransition(element, getTransitionName(element));
   }
 }
-const projectedContexts = /* @__PURE__ */ new WeakMap();
-function takeProjectedContext(node) {
-  const context = projectedContexts.get(node);
-  deleteItem(projectedContexts, node);
-  return context;
-}
-const projectionFree = /* @__PURE__ */ new WeakSet();
-const copyProjected = (source, target) => {
-  const context = projectedContexts.get(source);
-  let found = !!context;
-  if (context) projectedContexts.set(target, context);
-  for (let child = source.firstChild, copy = target.firstChild; child && copy; child = child.nextSibling, copy = copy.nextSibling)
-    found = copyProjected(child, copy) || found;
-  if (isInstanceOf(source, HTMLTemplateElement) && isInstanceOf(target, HTMLTemplateElement))
-    found = copyProjected(source.content, target.content) || found;
-  return found;
-};
-function cloneProjectedNode(node) {
-  const clone = node.cloneNode(true);
-  if (!projectionFree.has(node) && !copyProjected(node, clone)) projectionFree.add(node);
-  return clone;
-}
-const isFragmentTemplate = (element) => element.localName === TEMPLATE && !element.hasAttribute("b-ignore") && arrayFrom(element[ATTRIBUTES]).some(({ name }) => startsWith(name, "b-") && name !== "b-cloak");
-function findSlots(root) {
-  return arrayFrom(root.querySelectorAll("slot, template")).flatMap((node) => isInstanceOf(node, HTMLTemplateElement) ? isFragmentTemplate(node) ? findSlots(node.content) : [] : [node]);
-}
-function fillSlots(host, template, context) {
-  const slots = /* @__PURE__ */ new Map();
-  for (const child of arrayFrom(getChildNodes(host))) {
-    const name = isInstanceOf(child, Element) ? getAttribute(child, "slot") ?? "" : "";
-    const content = slots.get(name) ?? [];
-    content.push(child);
-    slots.set(name, content);
-  }
-  for (const outlet of findSlots(template)) {
-    const name = getAttribute(outlet, "name") ?? "";
-    const content = slots.get(name);
-    if (!(content == null ? void 0 : content.length)) {
-      outlet.replaceWith(...arrayFrom(getChildNodes(outlet)));
-      continue;
-    }
-    for (const node of content) projectedContexts.set(node, context);
-    outlet.replaceWith(...content);
-    deleteItem(slots, name);
-  }
-  for (const remaining of slots.values())
-    for (const node of remaining) removeChild(getParent(node), node);
-}
-const parsedTemplates$1 = /* @__PURE__ */ new WeakMap();
-const templateSelector = /^#[A-Za-z][\w-]*$/;
-const instantiateTemplate = (definition, host) => {
-  const ownerDocument = getOwnerDocument(host);
-  const source = definition.template;
-  let parsed = parsedTemplates$1.get(definition);
-  if (!parsed || parsed.document !== ownerDocument) {
-    let template = source;
-    if (isString(source)) {
-      if (templateSelector.test(source)) {
-        template = ownerDocument.getElementById(source.slice(1));
-        if ((template == null ? void 0 : template.localName) !== TEMPLATE)
-          throw createError(`Component <${host.localName}> template "${source}" does not match a <template> element.`);
-      } else {
-        template = ownerDocument.createElement(TEMPLATE);
-        template.innerHTML = source;
-      }
-    }
-    parsedTemplates$1.set(definition, parsed = { document: ownerDocument, template });
-  }
-  return parsed.template.content.cloneNode(true);
-};
-function mountComponent(element, definition, context, runtime, hydrateNodeFn) {
-  const propsObject = {};
-  const declared = definition.props ?? {};
-  for (const [name, type] of objectEntries(declared)) if (type === Boolean) propsObject[name] = false;
-  for (const attribute of arrayFrom(element[ATTRIBUTES])) {
-    const { name, value } = attribute;
-    if (startsWith(name, "b-")) continue;
-    const type = declared[name];
-    propsObject[name] = type === Boolean ? value !== "false" : type === Number ? Number(value) : value;
-  }
-  const propBindings = arrayFrom(element[ATTRIBUTES]).filter((attribute) => startsWith(attribute.name, "b-bind-") && !extractModifiers(attribute.name).modifiers.options).map((attribute) => {
-    const raw = attribute.name.slice(getLength("b-bind-"));
-    return {
-      name: raw.split(".")[0],
-      directive: attribute.name,
-      expression: attribute.value
-    };
-  });
-  const $props = state(propsObject);
-  const $ref = createRefs();
-  const componentScope = createScope();
-  onCleanup(() => componentScope.dispose());
-  const $emit = (name, detail) => {
-    if (!/^[a-z][a-z0-9-]*$/.test(name))
-      throw createTypeError(`Invalid component event name "${name}".`);
-    element.dispatchEvent(new CustomEvent(name, { detail, bubbles: true }));
-  };
-  componentScope.run(() => {
-    var _a, _b;
-    const options = collectOptions(element);
-    const names2 = [];
-    for (const attribute of arrayFrom(element[ATTRIBUTES])) {
-      const { baseName, modifiers } = extractModifiers(attribute.name);
-      if (modifiers.options) continue;
-      names2.push(baseName);
-      if (startsWith(attribute.name, "b-on-")) {
-        if (!/^b-on-[a-z-]+$/.test(baseName))
-          throw createSyntaxError(`Invalid component event directive "${attribute.name}".`);
-        handleOn(
-          element,
-          baseName,
-          attribute.value,
-          modifiers,
-          context,
-          readOptions(options, baseName, eventModifiers, context, element)
-        );
-      } else if (startsWith(attribute.name, "b-attr-")) {
-        handleBind(
-          element,
-          extractModifiers(attribute.name).baseName,
-          attribute.value,
-          extractModifiers(attribute.name).modifiers,
-          context
-        );
-      } else if (extractModifiers(attribute.name).baseName === "b-transition") {
-        handleTransition(element, attribute.value);
-      } else if (startsWith(attribute.name, "b-") && !startsWith(attribute.name, "b-bind-")) {
-        throw createError(`Directive "${attribute.name}" is not supported on component hosts.`);
-      }
-    }
-    checkOptionsUsed(options, names2);
-    for (const binding of propBindings) {
-      effect(() => {
-        $props[binding.name] = evaluate(binding.expression, context, binding.directive, element);
-      });
-    }
-    const setupResult = ((_b = definition.setup) == null ? void 0 : _b.call(definition, {
-      el: element,
-      $props,
-      $emit,
-      app: runtime.app,
-      $stores: context.$stores ?? emptyContextValues,
-      $provided: context.$provided ?? emptyContextValues,
-      $ref,
-      route: (_a = runtime.router) == null ? void 0 : _a.route
-    })) ?? {};
-    const local = createScopedState(setupResult, context.$data);
-    const componentContext = createExpressionScope(
-      { $data: local, $el: element, $props, $emit, $ref },
-      context
-    );
-    const owner = getNodeOwner(element);
-    if (owner) {
-      owner.context = componentContext;
-    } else {
-      ownNode(element, componentContext, runtime);
-    }
-    const content = instantiateTemplate(definition, element);
-    fillSlots(element, content, context);
-    element.replaceChildren(content);
-    withHydration(element, () => {
-      for (const child of arrayFrom(getChildNodes(element))) {
-        if (getParent(child) === element && !getNodeOwner(child)) hydrateNodeFn(child, componentContext, runtime);
-      }
-    });
-    for (const attribute of arrayFrom(element[ATTRIBUTES])) {
-      if (startsWith(attribute.name, "b-")) removeAttribute(element, attribute.name);
-    }
-  });
-}
-const trustedMarkup = Symbol("brio.trustedMarkup");
-function trustedHTML(markup) {
-  return { [trustedMarkup]: markup };
-}
-function isTrustedHTML(value) {
-  return value !== null && isObjectType(value) && trustedMarkup in value;
-}
-function getTrustedHTMLString(value) {
-  return value[trustedMarkup];
-}
 function moveNode(parent, node, reference) {
   const move = parent.moveBefore;
   if (move && node.isConnected && parent.isConnected) {
@@ -1090,6 +910,248 @@ function ownElementRange(element, context, runtime) {
     removeElement(range);
   });
   return range;
+}
+const projectedContexts = /* @__PURE__ */ new WeakMap();
+const slotSources = Symbol("brio.slots");
+function takeProjectedContext(node) {
+  const context = projectedContexts.get(node);
+  deleteItem(projectedContexts, node);
+  return context;
+}
+const projectionFree = /* @__PURE__ */ new WeakSet();
+const copyProjected = (source, target) => {
+  const context = projectedContexts.get(source);
+  let found = !!context;
+  if (context) projectedContexts.set(target, context);
+  for (let child = source.firstChild, copy = target.firstChild; child && copy; child = child.nextSibling, copy = copy.nextSibling)
+    found = copyProjected(child, copy) || found;
+  if (isInstanceOf(source, HTMLTemplateElement) && isInstanceOf(target, HTMLTemplateElement))
+    found = copyProjected(source.content, target.content) || found;
+  return found;
+};
+function cloneProjectedNode(node) {
+  const clone = node.cloneNode(true);
+  if (!projectionFree.has(node) && !copyProjected(node, clone)) projectionFree.add(node);
+  return clone;
+}
+const isFragmentTemplate = (element) => element.localName === TEMPLATE && !element.hasAttribute("b-ignore") && arrayFrom(element[ATTRIBUTES]).some(({ name }) => startsWith(name, "b-") && name !== "b-cloak");
+function findSlots(root) {
+  return arrayFrom(root.querySelectorAll("slot, template")).flatMap((node) => isInstanceOf(node, HTMLTemplateElement) ? isFragmentTemplate(node) ? findSlots(node.content) : [] : [node]);
+}
+function fillSlots(host, template, context) {
+  const slots = /* @__PURE__ */ new Map();
+  for (const child of arrayFrom(getChildNodes(host))) {
+    const name = isInstanceOf(child, Element) ? getAttribute(child, "slot") ?? "" : "";
+    const content = slots.get(name) ?? [];
+    content.push(child);
+    slots.set(name, content);
+  }
+  for (const outlet of findSlots(template)) {
+    if (arrayFrom(outlet[ATTRIBUTES]).some((attribute) => ["b-slot", "b-bind-name"].includes(extractModifiers(attribute.name).baseName))) continue;
+    const name = getAttribute(outlet, "name") ?? "";
+    const content = slots.get(name);
+    if (!(content == null ? void 0 : content.length)) {
+      outlet.replaceWith(...arrayFrom(getChildNodes(outlet)));
+      continue;
+    }
+    for (const node of content) projectedContexts.set(node, context);
+    outlet.replaceWith(...content);
+    deleteItem(slots, name);
+  }
+  for (const remaining of slots.values())
+    for (const node of remaining) removeChild(getParent(node), node);
+}
+function hydrateScopedSlot(element, context, runtime, hydrate) {
+  const sources2 = context[slotSources];
+  if (!sources2) throw createError("b-slot requires a component template.");
+  const values = state({});
+  effect(() => {
+    const value = evaluate(getAttribute(element, "b-slot"), context, "b-slot", element);
+    if (!value || !isObjectType(value) || isArray(value))
+      throw createTypeError("b-slot must evaluate to a non-null, non-array object.");
+    const next = Object.fromEntries(objectEntries(value));
+    untrack(() => batch(() => {
+      for (const key of Object.keys(values)) if (!Object.hasOwn(next, key)) delete values[key];
+      for (const [key, entry] of objectEntries(next))
+        Object.defineProperty(values, key, { value: entry, enumerable: true, configurable: true, writable: true });
+    }));
+  });
+  const range = ownElementRange(element, context, runtime);
+  const supplied = sources2.nodes.get(getAttribute(element, "name") ?? "");
+  const nodes = (supplied ?? arrayFrom(getChildNodes(element))).map((node) => cloneProjectedNode(node));
+  const projected = supplied ? createExpressionScope({ $slot: values }, sources2.context) : context;
+  const parent = range.end.parentNode;
+  element.remove();
+  withHydration(parent, () => {
+    for (const node of nodes) parent.insertBefore(node, range.end);
+    for (const node of nodes)
+      if (node.parentNode === parent) hydrate(node, projected, runtime);
+  });
+}
+const parsedTemplates$1 = /* @__PURE__ */ new WeakMap();
+const templateSelector = /^#[A-Za-z][\w-]*$/;
+const instantiateTemplate = (definition, host) => {
+  const ownerDocument = getOwnerDocument(host);
+  const source = definition.template;
+  let parsed = parsedTemplates$1.get(definition);
+  if (!parsed || parsed.document !== ownerDocument) {
+    let template = source;
+    if (isString(source)) {
+      if (templateSelector.test(source)) {
+        template = ownerDocument.getElementById(source.slice(1));
+        if ((template == null ? void 0 : template.localName) !== TEMPLATE)
+          throw createError(`Component <${host.localName}> template "${source}" does not match a <template> element.`);
+      } else {
+        template = ownerDocument.createElement(TEMPLATE);
+        template.innerHTML = source;
+      }
+    }
+    const content = template.content.cloneNode(true);
+    parsedTemplates$1.set(definition, parsed = { document: ownerDocument, content });
+  }
+  return parsed.content.cloneNode(true);
+};
+function mountComponent(element, definition, context, runtime, hydrateNodeFn) {
+  const propsObject = /* @__PURE__ */ Object.create(null);
+  const declared = definition.props ?? {};
+  for (const [name, type] of objectEntries(declared)) if (type === Boolean) propsObject[name] = false;
+  for (const attribute of arrayFrom(element[ATTRIBUTES])) {
+    const { name, value } = attribute;
+    if (startsWith(name, "b-")) continue;
+    const type = declared[name];
+    propsObject[name] = type === Boolean ? value !== "false" : type === Number ? Number(value) : value;
+  }
+  const attributes = arrayFrom(element[ATTRIBUTES]);
+  const propBindings = attributes.filter((attribute) => startsWith(attribute.name, "b-prop-")).map((attribute) => {
+    const raw = attribute.name.slice(getLength("b-prop-"));
+    if (!/^[a-z][a-z0-9-]*$/.test(raw))
+      throw createSyntaxError(`Invalid component prop directive "${attribute.name}". Props do not support modifiers.`);
+    return {
+      name: raw,
+      directive: attribute.name,
+      expression: attribute.value
+    };
+  });
+  const $props = state({ ...propsObject });
+  const $ref = createRefs();
+  const componentScope = createScope();
+  onCleanup(() => componentScope.dispose());
+  const $emit = (name, detail) => {
+    if (!/^[a-z][a-z0-9-]*$/.test(name))
+      throw createTypeError(`Invalid component event name "${name}".`);
+    element.dispatchEvent(new CustomEvent(name, { detail, bubbles: true }));
+  };
+  componentScope.run(() => {
+    var _a, _b;
+    const options = collectOptions(element);
+    const names2 = [];
+    for (const attribute of arrayFrom(element[ATTRIBUTES])) {
+      const { baseName, modifiers } = extractModifiers(attribute.name);
+      if (modifiers.options) continue;
+      names2.push(baseName);
+      if (startsWith(attribute.name, "b-on-")) {
+        if (!/^b-on-[a-z-]+$/.test(baseName))
+          throw createSyntaxError(`Invalid component event directive "${attribute.name}".`);
+        handleOn(
+          element,
+          baseName,
+          attribute.value,
+          modifiers,
+          context,
+          readOptions(options, baseName, eventModifiers, context, element)
+        );
+      } else if (startsWith(attribute.name, "b-bind-")) {
+        handleBind(element, baseName, attribute.value, modifiers, context);
+      } else if (startsWith(attribute.name, "b-attr-")) {
+        throw createSyntaxError(`${attribute.name} has been removed. Use b-bind-* for DOM bindings.`);
+      } else if (extractModifiers(attribute.name).baseName === "b-transition") {
+        handleTransition(element, attribute.value);
+      } else if (startsWith(attribute.name, "b-") && baseName !== "b-props" && !startsWith(attribute.name, "b-prop-")) {
+        throw createError(`Directive "${attribute.name}" is not supported on component hosts.`);
+      } else if (baseName === "b-props" && attribute.name !== "b-props") {
+        throw createSyntaxError("b-props does not support modifiers.");
+      }
+    }
+    checkOptionsUsed(options, names2);
+    const named = state(Object.fromEntries(propBindings.map((binding) => [binding.name, void 0])));
+    for (const binding of propBindings) {
+      effect(() => {
+        named[binding.name] = evaluate(binding.expression, context, binding.directive, element);
+      });
+    }
+    const spreadSource = getAttribute(element, "b-props");
+    effect(() => {
+      const next = { ...propsObject, ...named };
+      if (spreadSource !== null) {
+        const spread = evaluate(spreadSource, context, "b-props", element);
+        if (!spread || !isObjectType(spread) || isArray(spread))
+          throw createTypeError("b-props must evaluate to a non-null, non-array object.");
+        for (const [key, value] of objectEntries(spread))
+          Object.defineProperty(next, key, { value, enumerable: true, configurable: true, writable: true });
+      }
+      untrack(() => batch(() => {
+        for (const key of Object.keys($props)) if (!Object.hasOwn(next, key)) delete $props[key];
+        for (const [key, value] of objectEntries(next))
+          Object.defineProperty($props, key, { value, enumerable: true, configurable: true, writable: true });
+      }));
+    });
+    const setupResult = ((_b = definition.setup) == null ? void 0 : _b.call(definition, {
+      el: element,
+      $props,
+      $emit,
+      app: runtime.app,
+      $stores: context.$stores ?? emptyContextValues,
+      $provided: context.$provided ?? emptyContextValues,
+      $ref,
+      route: (_a = runtime.router) == null ? void 0 : _a.route
+    })) ?? {};
+    const local = createScopedState(setupResult, context.$data);
+    const slotNodes = /* @__PURE__ */ new Map();
+    for (const node of arrayFrom(getChildNodes(element))) {
+      const name = isInstanceOf(node, Element) ? getAttribute(node, "slot") ?? "" : "";
+      const nodes = slotNodes.get(name) ?? [];
+      nodes.push(cloneProjectedNode(node));
+      slotNodes.set(name, nodes);
+    }
+    const componentContext = createExpressionScope(
+      {
+        $data: local,
+        $el: element,
+        $props,
+        $emit,
+        $ref,
+        [slotSources]: { nodes: slotNodes, context }
+      },
+      context
+    );
+    const owner = getNodeOwner(element);
+    if (owner) {
+      owner.context = componentContext;
+    } else {
+      ownNode(element, componentContext, runtime);
+    }
+    const content = instantiateTemplate(definition, element);
+    fillSlots(element, content, context);
+    element.replaceChildren(content);
+    withHydration(element, () => {
+      for (const child of arrayFrom(getChildNodes(element))) {
+        if (getParent(child) === element && !getNodeOwner(child)) hydrateNodeFn(child, componentContext, runtime);
+      }
+    });
+    for (const attribute of arrayFrom(element[ATTRIBUTES])) {
+      if (startsWith(attribute.name, "b-")) removeAttribute(element, attribute.name);
+    }
+  });
+}
+const trustedMarkup = Symbol("brio.trustedMarkup");
+function trustedHTML(markup) {
+  return { [trustedMarkup]: markup };
+}
+function isTrustedHTML(value) {
+  return value !== null && isObjectType(value) && trustedMarkup in value;
+}
+function getTrustedHTMLString(value) {
+  return value[trustedMarkup];
 }
 const placements = /* @__PURE__ */ new Set(["before", "after", "prepend", "append", "replaceWith", "replaceChildren", "textContent"]);
 function createInsert(runtime) {
@@ -1882,7 +1944,7 @@ const componentNamePattern$1 = /^[a-z][a-z0-9]*-[a-z0-9-]+$/;
 const conditionalNames = /* @__PURE__ */ new Set(["b-if", "b-else-if", "b-else"]);
 const childControllingNames = /* @__PURE__ */ new Set(["b-text", "b-html", "b-router-outlet"]);
 const fragmentNames = /* @__PURE__ */ new Set(["b-template", "b-teleport", "b-effect"]);
-const passiveNames = /* @__PURE__ */ new Set(["b-key", "b-app", "b-props"]);
+const passiveNames = /* @__PURE__ */ new Set(["b-key", "b-app", "b-app-props"]);
 function hydrateChildren(element, context, runtime) {
   withHydration(element, () => {
     for (const child of snapshotList(getChildNodes(element))) {
@@ -1985,6 +2047,17 @@ function hydrateOwnedNode(node, parentContext, runtime) {
     getNodeOwner(element).context = context;
   }
   const templateAttr = getAttribute(element, "b-template");
+  for (const attribute of attributes) {
+    const { baseName } = extractModifiers(attribute.name);
+    if (baseName === "b-slot" && (element.localName !== "slot" || attribute.name !== "b-slot"))
+      throw createSyntaxError("b-slot requires a <slot> outlet and does not support modifiers.");
+  }
+  if (element.localName === "slot" && attributes.some((attribute) => extractModifiers(attribute.name).baseName === "b-bind-name"))
+    throw createSyntaxError("Dynamic slot names are not supported. Use a literal name and b-slot to expose values through $slot.");
+  if (element.localName === "slot" && element.hasAttribute("b-slot")) {
+    hydrateScopedSlot(element, context, runtime, hydrateNode);
+    return;
+  }
   if (parsed.some(({ baseName }) => childControllingNames.has(baseName)))
     getNodeOwner(element).controlsChildren = true;
   const refAttributes = attributes.filter((attribute, index) => parsed[index].baseName === "b-ref" || startsWith(attribute.name, "b-ref-"));
@@ -2038,6 +2111,13 @@ function hydrateOwnedNode(node, parentContext, runtime) {
         throw createSyntaxError(`${attributes[index].name} cannot be used on a component host. Put it on an element inside the component.`);
     mountComponent(element, definition, context, runtime, hydrateNode);
     return;
+  }
+  for (const attribute of attributes) {
+    const { baseName } = extractModifiers(attribute.name);
+    if (baseName === "b-props" || startsWith(baseName, "b-prop-"))
+      throw createSyntaxError(`${attribute.name} requires a registered Brio component.`);
+    if (startsWith(baseName, "b-attr-"))
+      throw createSyntaxError(`${attribute.name} has been removed. Use b-bind-* for DOM bindings.`);
   }
   const bindings = [];
   if (registry == null ? void 0 : registry.scoped) {
@@ -2391,4 +2471,4 @@ export {
   hydrateRoot as h,
   trustedHTML as t
 };
-//# sourceMappingURL=app-DKV4lJoF.js.map
+//# sourceMappingURL=app-BI_J_Eae.js.map

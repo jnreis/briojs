@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Brio in server HTML</title>
+  <meta name="description" content="A runnable Brio counter in plain server HTML, using the shared integration lifecycle helper.">
+  <link rel="canonical" href="https://briojs.com/integrations/counter.html">
+  <style>
+    body { max-width: 40rem; margin: 3rem auto; padding: 1rem; font: 1rem/1.6 system-ui, sans-serif; }
+    button { padding: .6rem 1rem; font: inherit; }
+  </style>
+  <script defer src="/dist/brio.min.js"></script>
+  <script type="module">
+    import { createWidgetManager } from './widgets.js';
+    const widgets = createWidgetManager(brio.createApp);
+    widgets.mountWithin();
+    // Before replacing this region: widgets.disposeWithin(region).
+    // After inserting new HTML: widgets.mountWithin(region).
+  </script>
+</head>
+<body>
+  <h1>Your server owns the page.</h1>
+  <p>Brio owns only the counter below. Reloading resets this local state.</p>
+  <section data-brio-counter data-start="3" aria-label="Counter">
+    <p>Count: <output b-text="$data.count" aria-live="polite">3</output></p>
+    <button type="button" b-on-click="$data.count++">Add one</button>
+  </section>
+  <p><a href="/integrations/overview/">Read the integration guide</a></p>
+</body>
+</html>

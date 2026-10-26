@@ -2,6 +2,7 @@ import { readFile, readdir } from 'node:fs/promises';
 import { resolve, relative, extname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { JSDOM } from 'jsdom';
+import { decodeProject } from '../src/playground/share.js';
 
 const root = fileURLToPath(new URL('../dist/', import.meta.url));
 const documents = new Map();
@@ -44,6 +45,14 @@ for (const [path, { dom }] of documents) {
             else { errors.push(`${route}: missing ${value}`); continue; }
         }
         if (url.hash && !url.hash.startsWith('#/')) {
+            if (url.pathname === '/play/' && url.hash.startsWith('#v1=')) {
+                try {
+                    await decodeProject(url.hash);
+                } catch (error) {
+                    errors.push(`${route}: invalid playground project: ${error.message}`);
+                }
+                continue;
+            }
             const destination = documents.get(target)?.dom.window.document;
             if (destination && !destination.getElementById(decodeURIComponent(url.hash.slice(1))))
                 errors.push(`${route}: missing anchor ${value}`);

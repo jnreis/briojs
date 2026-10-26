@@ -1,14 +1,26 @@
 # Changelog
 
-## [5.0.0] — 2026-10-24
+## [5.0.0] — Unreleased
 
 Brio 5 adds a public plugin API, and uses it to move directives that most pages
-never need out of the core bundle. Upgrading from 4.x takes a script tag or a
-plugin per app; see
+never need out of the core bundle. Upgrading from 4.x requires the needed
+add-ons and updates to component inputs, directive options, and removed API
+spellings; see
 [Migrating from Brio 4](https://briojs.com/reference/package-entry-points/#migrating-from-brio-4).
 
 ### Breaking changes
 
+- Component templates are snapshotted on first use. Authored `<template>`
+  elements remain untouched; subsequent source edits, removal, or replacement
+  no longer affect new instances of the cached definition.
+- Component inputs use `b-prop-*` for named props and `b-props="object"` for
+  reactive object spreading. Static attributes are overridden by named props,
+  then spread keys, independent of attribute order. Removed spread keys reveal
+  lower-priority values. `b-bind-*` always targets the DOM, including component
+  hosts; replace former host `b-attr-*` bindings with `b-bind-*`.
+  Both prop directives require a registered component.
+- Astro app-factory metadata is renamed from `b-props` to `b-app-props`, leaving
+  `b-props` exclusively for component inputs.
 - `b-mask`, `moneyMask`, `validate`, and `b-form` now live in the **inputs
   add-on**: `brio.inputs.min.js`, or `inputsPlugin` from `@jnreis/briojs/inputs`.
   It replaces `brio.forms.min.js`, `brio.money-mask.min.js`,
@@ -54,9 +66,25 @@ plugin per app; see
 
 - Added `/play/` for HTML, CSS, and plain JavaScript, starting with the
   homepage creature. Run/Stop/Reset controls and runtime error reporting are
-  included in a full-height, branded workspace with tabbed CodeMirror editors,
+  included in a full-height, branded workspace with a tabbed Monaco editor,
   syntax highlighting, completion, search, undo, and a side-by-side preview.
   The layout stacks on mobile and follows the site theme.
+- Editors use explicit, theme-aware token styles for HTML, CSS, and JavaScript.
+  Tab/Shift+Tab indent and outdent in two-space steps; Tab Moves Focus is available
+  through Ctrl+M (Ctrl+Shift+M on Mac).
+  Format (Shift+Alt/Option+F) formats the active document with Prettier, retains
+  undo and selection ranges, never runs code, and preserves source on errors.
+- Replaced CodeMirror with one Monaco instance and separate document models,
+  preserving per-file undo, cursor, and scroll position. Language workers are
+  bundled locally for HTML, CSS, and JavaScript. JavaScript completions include
+  Brio's browser API declarations. F1 opens the command palette; Format Document
+  is available through the context menu and Shift+Alt/Option+F (no separate toolbar
+  button). Menu and search surfaces follow the site theme. Monaco loads only on the
+  playground and does not increase Brio's runtime bundle.
+- Scoped site, docs, and playground styles away from Monaco and its popup
+  components. Search buttons retain Monaco's borders, spacing, focus, and hover
+  behavior; standalone shadow and corner-radius tokens support search, menus,
+  suggestions, and the command palette.
 - Copy link writes a shareable URL directly to the clipboard, with an explicit
   manual-copy fallback if clipboard access fails. Source is conservatively
   minified before compression and formatted when loaded into the editors.
@@ -64,9 +92,40 @@ plugin per app; see
   Shared code loads without executing until Run is clicked.
 - Reset restores the initially loaded project, including shared code, rather
   than always returning to the creature example.
-- Preview isolation blocks parent-page access, storage, forms, popups, external
+- Preview isolation blocks parent-page access, storage, form navigation, popups, external
   resources, and network APIs. CPU usage is not isolated. Sharing enforces
   source and URL-size limits, with explicit errors for invalid links.
+  Native form submit handlers are supported; CSP `form-action 'none'` blocks submissions.
+
+### Brio Parts and integrations
+
+- Added a dedicated `/parts/` gallery with disclosure/accordion, tabs, native
+  dialog, and action-menu components. The three-column directory has no live
+  demos; detail pages include isolated previews, preview/source switching,
+  exact source copying, prebuilt playground links, keyboard contracts, and
+  accessibility and customization notes. Copy templates with embedded native
+  `@scope` CSS and `setup()` definitions, then register on an existing app.
+  Source-copy buttons retain their copy icon and show "Copied!" for two seconds
+  after a successful write; failures provide explicit manual-copy guidance.
+  Instances have independent state, generated ARIA IDs, reactive accent props,
+  and lifecycle cleanup. Dialog and menu actions emit events to the parent.
+  Content comes from props or parent-scoped slots. Disclosure answers and tab
+  panels support scoped slots with data-driven fallbacks; menus accept custom
+  trigger markup. Dialog is a controlled modal shell with `open`, title/body/footer
+  slots, and `request-close`/`closed` events. Its example uses a parent-owned native
+  form, including Enter submission. Tabs preserve selection by item ID across reordering.
+- Added integration guides for plain HTML/Express, Rails, Laravel, Django, and
+  WordPress, with a runnable counter and shared mount/dispose helper. Guides
+  describe ownership, partial-page navigation, server-data escaping, CSP, and
+  backend validation boundaries. Integration guides are included in llms files.
+- Added scoped slot outlets (`<slot b-slot="{ item: $for.item }">`), with optional names.
+  Supplied markup reads reactive `$slot.item` while retaining parent context.
+  Fixed slot names replace the experimental dynamic slot naming API.
+- Added a `b-slot` / `$slot` Lab experiment covering default and named outlets,
+  parent context, conditional layouts, fallbacks, keyed updates, and cleanup.
+  Disclosure uses its default scoped slot; Tabs keeps a named `panel` region.
+- No component package or Vite plugin. The showcase and
+  `awesome-brio` remain deferred until real community projects exist.
 
 ### Add-ons
 
@@ -119,12 +178,12 @@ plugin per app; see
 
 ### Size
 
-- `brio.min.js` is 20.3 KB brotli, against 20.0 KB in 4.1.0, while adding the
-  plugin API and directive `.options` (it would be 22.4 KB with the add-on
-  directives still in core).
-- `brio.inputs.min.js` is 2.9 KB (masks, money, validation, `b-form`) and
-  `brio.observers.min.js` 1.8 KB. `brio.router.min.js` grows from 2.5 to 2.8 KB
-  because it now carries `b-router-outlet`.
+- `brio.min.js` is 20,895 bytes (20.4 KiB) with Brotli quality 11, including
+  the plugin API, directive `.options`, component inputs, and scoped slots.
+- At the same compression level, `brio.inputs.min.js` is 2,895 bytes (masks,
+  money, validation, `b-form`), `brio.observers.min.js` is 1,811 bytes, and
+  `brio.router.min.js` is 2,837 bytes including `b-router-outlet`.
+  Reproduce the complete raw/gzip/Brotli matrix with `npm run size`.
 
 ## [4.1.0] — 2026-10-24
 

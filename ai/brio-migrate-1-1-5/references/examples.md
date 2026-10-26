@@ -6,10 +6,10 @@
 Copy the HTML files into a static server's document root. Provide your preserved
 1.1.5 bundle at `/briojs.1.1.5.min.js` for the old page, and the v5 production
 bundle at `/brio.min.js` for the new page. Paths are deployment paths, not
-automatically exposed npm files. Open the pages separately, never combine their
-Serve `brio.inputs.min.js` and `brio.http.min.js`
-beside the v5 core as referenced by the after page. Open the pages separately, never combine their
-runtime scripts. The portable kit does not redistribute the old bundle.
+automatically exposed npm files. Serve `brio.inputs.min.js` and
+`brio.http.min.js` beside the v5 core as referenced by the after page. Open the
+pages separately; never combine their runtime scripts. The portable kit does
+not redistribute the old bundle.
 
 The two pages cover app bootstrap, factory state, explicit method calls,
 interpolation, numeric input, display preservation, conditional state reset,
@@ -28,7 +28,7 @@ They intentionally do not pretend to demonstrate every production integration.
 | Content-first `$dom.insert` | Destination-first `$insert`, with an owned removal handle |
 
 The old example gives its insertion destination a harmless title binding so it
-retains a registered legacy BNode and therefore its inherited context. V4
+retains a registered legacy BNode and therefore its inherited context. Brio 5
 tracks ordinary destination nodes without that workaround. Legacy rendered
 updates are awaited in the tests; v5 bindings update synchronously.
 

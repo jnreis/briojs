@@ -1,4 +1,4 @@
-import { c as createApp } from "./app-DKV4lJoF.js";
+import { c as createApp } from "./app-BI_J_Eae.js";
 import { b as createError, j as isString } from "./native-C6Z9zuZA.js";
 import { f as flush } from "./effect-alBOOBUf.js";
 function renderBrio(html, options = {}) {

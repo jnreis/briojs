@@ -6,7 +6,7 @@ import Layout from '../layouts/Layout.astro';
   <p>Navigate back and forth: Astro's ClientRouter swaps pages, and the adapter
     disposes outgoing islands and mounts incoming ones.</p>
 
-  <section class="island" b-app="counter" b-props="{ initial: 100 }">
+  <section class="island" b-app="counter" b-app-props="{ initial: 100 }">
     <button b-on-click="$data.count++">Clicked <span b-text="$data.count">100</span> times</button>
   </section>
 </Layout>

@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script src="/site/public/theme.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual Test: b-slot and $slot</title>
+    <link rel="stylesheet" href="/tests/shared/showcase.css">
+    <link rel="icon" type="image/svg+xml" href="/site/public/favicon.svg">
+    <style>
+        body { font-family: system-ui, sans-serif; margin: 24px; color: var(--ink); }
+        section { border: 1px solid var(--line); padding: 16px; margin-block: 16px; }
+        button, input { margin: 4px; }
+        .important { font-weight: 700; color: var(--blue); }
+    </style>
+</head>
+<body>
+    <h1>Scoped slots: b-slot and $slot</h1>
+    <p>The outlet exposes values with b-slot. Supplied markup reads $slot while $data, $props,
+        $for, and refs keep the supplying parent's context. Names are optional and literal.</p>
+    <main id="slot-lab">
+        <section>
+            <h2>Default slot: one template, different items</h2>
+            <label>Parent prefix <input id="prefix" b-model="$data.prefix"></label>
+            <button id="reverse" b-on-click="$data.items.reverse()">Reverse items</button>
+            <button id="replace" b-on-click="$data.replace()">Replace first item, same ID</button>
+            <button id="toggle" b-on-click="$data.visible = !$data.visible">Toggle component</button>
+            <div b-if="$data.visible">
+                <slot-list id="custom" b-prop-items="$data.items">
+                    <template b-template b-id="['field']">
+                        <label b-bind-for="$id.field">
+                            <strong b-if="$slot.item.important" class="important" b-text="$slot.item.body"></strong>
+                            <span b-else b-text="$slot.item.body"></span>
+                        </label>
+                        <input class="item-input" b-bind-id="$id.field" b-bind-data-item="$slot.item.id"
+                            b-bind-value="$slot.item.body" b-on-input="$data.rename($slot.item.id, $event.target.value)">
+                        <button class="choose" b-on-click="$data.choose($slot.item.id)"
+                            b-text="$data.prefix + ': ' + $slot.item.id"></button>
+                    </template>
+                    <p slot="summary" id="summary" b-text="$data.prefix + ': ' + $slot.count + ' items'"></p>
+                </slot-list>
+            </div>
+            <p>Selected: <b id="selected" b-text="$data.selected"></b>.
+                Actions: <b id="actions" b-text="$data.actions"></b>.</p>
+            <p>Reverse preserves each row and input. Replacing an item updates $slot without recreating its markup.
+                Each repeated input gets a unique ID through b-id. Parent handlers own edits.</p>
+        </section>
+        <section>
+            <h2>Fallback: no content supplied</h2>
+            <slot-list id="fallback" b-prop-items="$data.items"></slot-list>
+            <p>Unfilled outlets render their fallback in component scope ($for.item and $props),
+                not the supplying parent's $slot.</p>
+        </section>
+        <section>
+            <h2>Contract</h2>
+            <p>b-slot accepts a non-null, non-array object on a slot outlet in a component template.
+                Modifiers and dynamic slot names are not supported. Values update reactively; removal
+                disposes the output. Supplied objects are not deep-frozen: treat them as inputs.</p>
+            <p>Read the <a href="https://briojs.com/reference/components/#setup-events-and-slots">slot reference</a>.
+                Inspect Page setup below for the component template and registration.</p>
+        </section>
+    </main>
+    <template id="slot-list-template">
+        <div>
+            <slot name="summary" b-slot="{ count: $props.items.length }">
+                <p class="fallback-count" b-text="$props.items.length + ' items'"></p>
+            </slot>
+            <section b-for="item in $props.items" b-key="$for.item.id" b-bind-data-row="$for.item.id">
+                <slot b-slot="{ item: $for.item }"><p class="fallback-body" b-text="$for.item.body"></p></slot>
+            </section>
+        </div>
+    </template>
+    <script src="/tests/source-viewer.js"></script>
+    <script src="/dist/brio.min.js"></script>
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            const app = brio.createApp({ state: () => ({
+                prefix: 'Parent', visible: true, selected: 'None', actions: 0,
+                items: [
+                    { id: 'a', body: 'Important answer', important: true },
+                    { id: 'b', body: 'Ordinary answer', important: false },
+                ],
+                rename(id, body) { this.items.find(item => item.id === id).body = body; },
+                choose(id) { this.selected = id; this.actions++; },
+                replace() {
+                    const item = this.items[0];
+                    this.items[0] = { ...item, body: 'Replaced answer', important: !item.important };
+                },
+            }) });
+            app.component('slot-list', { template: '#slot-list-template' });
+            app.mount('#slot-lab');
+            window.addEventListener('pagehide', () => app.dispose(), { once: true });
+        }, { once: true });
+    </script>
+    <nav class="brio-demo-nav" b-ignore aria-label="Brio lab"><a href="/">Lab</a><a href="/tests/index.html">Experiments</a><button id="theme-toggle" type="button" aria-label="Switch color theme">&#9680;</button></nav>
+</body>
+</html>

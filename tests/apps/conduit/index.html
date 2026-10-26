@@ -248,14 +248,14 @@
 
     <template id="tpl-article-actions">
         <div class="meta-row">
-            <article-meta b-bind-article="$props.article"></article-meta>
+            <article-meta b-prop-article="$props.article"></article-meta>
             <div class="controls" b-if="$stores.actions.isMine($props.article.author)">
                 <a class="btn btn-sm btn-outline-secondary" b-bind-href="$stores.to.editor($props.article.slug)" data-testid="edit-article">✎ Edit Article</a>
                 <button type="button" class="btn btn-sm btn-outline-danger" b-bind-disabled="$props.busy" b-on-click="$emit('delete')" data-testid="delete-article">🗑 Delete Article</button>
             </div>
             <div class="controls" b-else>
-                <follow-button b-bind-profile="$props.article.author"></follow-button>
-                <favorite-button b-bind-article="$props.article"></favorite-button>
+                <follow-button b-prop-profile="$props.article.author"></follow-button>
+                <favorite-button b-prop-article="$props.article"></favorite-button>
             </div>
         </div>
     </template>
@@ -271,8 +271,8 @@
             <template b-else>
                 <article class="article-preview" b-for="article in $data.articles" b-key="$for.article.slug" data-testid="preview">
                     <div class="preview-head">
-                        <article-meta b-bind-article="$for.article"></article-meta>
-                        <favorite-button compact b-bind-article="$for.article"></favorite-button>
+                        <article-meta b-prop-article="$for.article"></article-meta>
+                        <favorite-button compact b-prop-article="$for.article"></favorite-button>
                     </div>
                     <a class="preview-link" b-bind-href="$stores.to.article($for.article.slug)" data-testid="preview-link">
                         <h2 b-text="$for.article.title"></h2>
@@ -313,7 +313,7 @@
                                 <li b-if="$data.tag"><a class="active" b-bind-href="$stores.link('/', { tag: $data.tag })" data-testid="tab-tag"># ${$data.tag}</a></li>
                             </ul>
                         </div>
-                        <article-list b-bind-source="$data.source" b-bind-page="$data.page"></article-list>
+                        <article-list b-prop-source="$data.source" b-prop-page="$data.page"></article-list>
                     </div>
                     <aside>
                         <div class="sidebar">
@@ -335,7 +335,7 @@
             <div class="auth-col">
                 <h1 class="text-center" b-text="$data.title"></h1>
                 <p class="text-center"><a b-bind-href="$data.switchHref" b-text="$data.switchText" data-testid="auth-switch"></a></p>
-                <error-list b-bind-errors="$data.form.errors"></error-list>
+                <error-list b-prop-errors="$data.form.errors"></error-list>
                 <form novalidate b-on-submit.prevent="$data.submit()" data-testid="auth-form">
                     <fieldset class="form" b-bind-disabled="$data.form.submitting">
                         <input class="control" b-if="$data.register" b-model="$data.form.username" placeholder="Username" aria-label="Username" autocomplete="username" data-testid="username">
@@ -355,7 +355,7 @@
         <div class="container page">
             <div class="settings-col">
                 <h1 class="text-center">Your Settings</h1>
-                <error-list b-bind-errors="$data.form.errors"></error-list>
+                <error-list b-prop-errors="$data.form.errors"></error-list>
                 <form novalidate b-on-submit.prevent="$data.submit()" data-testid="settings-form">
                     <fieldset class="form" b-bind-disabled="$data.form.submitting || !$stores.session.user">
                         <input class="control control-sm" type="url" b-model="$data.form.image" placeholder="URL of profile picture" aria-label="Profile picture URL" data-testid="image">
@@ -381,7 +381,7 @@
                 <p role="alert" b-else-if="$data.loadError" b-text="$data.loadError" data-testid="editor-error"></p>
                 <p role="alert" b-else-if="$data.forbidden" data-testid="editor-forbidden">You can only edit your own articles.</p>
                 <template b-else>
-                    <error-list b-bind-errors="$data.form.errors"></error-list>
+                    <error-list b-prop-errors="$data.form.errors"></error-list>
                     <form novalidate b-on-submit.prevent="$data.submit()" data-testid="editor-form">
                         <fieldset class="form" b-bind-disabled="$data.form.submitting">
                             <input class="control" b-model="$data.form.title" placeholder="Article Title" aria-label="Title" data-testid="title">
@@ -417,7 +417,7 @@
                 <div class="banner">
                     <div class="container">
                         <h1 b-text="$data.article.title" data-testid="article-title"></h1>
-                        <article-actions b-bind-article="$data.article" b-bind-busy="$data.deleting" b-on-delete="$data.remove()"></article-actions>
+                        <article-actions b-prop-article="$data.article" b-prop-busy="$data.deleting" b-on-delete="$data.remove()"></article-actions>
                     </div>
                 </div>
                 <div class="container page">
@@ -428,12 +428,12 @@
                     </ul>
                     <hr>
                     <div class="article-actions">
-                        <article-actions b-bind-article="$data.article" b-bind-busy="$data.deleting" b-on-delete="$data.remove()"></article-actions>
+                        <article-actions b-prop-article="$data.article" b-prop-busy="$data.deleting" b-on-delete="$data.remove()"></article-actions>
                     </div>
                     <section class="comments" aria-label="Comments" style="margin-top: 32px">
                         <form class="card" b-if="$stores.session.user" novalidate b-on-submit.prevent="$data.post()" data-testid="comment-form">
                             <div class="card-block">
-                                <error-list b-bind-errors="$data.comments.errors"></error-list>
+                                <error-list b-prop-errors="$data.comments.errors"></error-list>
                                 <textarea rows="3" b-model="$data.comments.draft" placeholder="Write a comment..." aria-label="Comment" data-testid="comment-input"></textarea>
                             </div>
                             <div class="card-footer">
@@ -479,7 +479,7 @@
                             <p b-text="$data.profile.bio" data-testid="profile-bio"></p>
                             <div class="actions">
                                 <a class="btn btn-sm btn-outline-secondary" b-if="$data.mine" b-bind-href="$stores.link('/settings')" data-testid="edit-profile">⚙ Edit Profile Settings</a>
-                                <follow-button b-else b-bind-profile="$data.profile"></follow-button>
+                                <follow-button b-else b-prop-profile="$data.profile"></follow-button>
                             </div>
                         </template>
                         <p class="muted" b-else-if="$data.loading">Loading profile…</p>
@@ -493,7 +493,7 @@
                             <li><a b-bind-href="$data.favoritesHref" b-bind-class="{ active: $data.favorites }" data-testid="tab-favorites">Favorited Articles</a></li>
                         </ul>
                     </div>
-                    <article-list b-bind-source="$data.source" b-bind-page="$data.page"></article-list>
+                    <article-list b-prop-source="$data.source" b-prop-page="$data.page"></article-list>
                 </div>
             </template>
         </div>

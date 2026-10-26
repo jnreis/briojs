@@ -118,9 +118,9 @@ export function enhanceAstro(options: AstroEnhanceOptions): AstroEnhancement {
                 const name = getAttribute(root, 'b-app')!;
                 if (!ObjectConstructor.prototype.hasOwnProperty.call(apps, name))
                     throw createError(`Unknown Brio Astro app "${name}".`);
-                const source = getAttribute(root, 'b-props');
+                const source = getAttribute(root, 'b-app-props');
                 const props = ObjectConstructor.freeze(copyContextValues(
-                    source === null ? {} : evaluate(source, { $el: root }), 'b-props',
+                    source === null ? {} : evaluate(source, { $el: root }), 'b-app-props',
                 ));
                 const entry = apps[name];
                 if (typeof entry === 'function') {

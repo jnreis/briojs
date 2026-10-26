@@ -17,8 +17,13 @@ import '../styles/play.css';
             <p>Write body HTML, CSS, and plain JavaScript. Brio is available as <code>brio</code>. No imports or build step.</p>
             <p>Click Run (Ctrl/Command + Enter) to replace the preview and clear its state.
               Reset restores the code initially loaded on this page, including shared projects.
-              The editor supports completion, search, undo, and automatic indentation. Tab moves focus out of the editor.</p>
-            <p>The preview is isolated: storage, forms, popups, external resources, and network APIs are blocked.
+              Format Document (Shift + Alt/Option + F, or the editor context menu) formats without running and can be undone.
+              Editors support syntax colors, completion (Ctrl + Space), search (Ctrl/Command + F),
+              undo, bracket matching, folding, and automatic indentation.
+              Tab indents; Shift + Tab outdents. Toggle Tab Moves Focus with Ctrl + M
+              (Ctrl + Shift + M on Mac) to leave the editor with the keyboard.
+              F1 opens Monaco's command palette, including Format Document.</p>
+            <p>The preview is isolated: storage, form navigation, popups, external resources, and network APIs are blocked.
               Infinite loops can still hang this tab. Only run code you trust; shared links never run automatically.</p>
             <p>Copy link copies a URL with minified, compressed code. Loaded code is formatted for editing.
               Share links contain your code, not a database ID. Don't include secrets.

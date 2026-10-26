@@ -1,0 +1,30 @@
+---
+import Site from '../../layouts/Site.astro';
+import { parts } from '../../parts/catalog.js';
+import '../../styles/parts.css';
+---
+<Site title="Parts" description="Copy-paste Brio widgets with live previews, editable source, and documented keyboard and accessibility behavior.">
+  <section class="wrap parts-heading">
+    <p class="overline">A little HTML. A useful interaction.</p>
+    <h1>Good parts.<br /><span class="blue">Entirely yours.</span></h1>
+    <p class="hero-description">Accessible building blocks. Copy, customize, make them yours.</p>
+    <p class="muted">Copy a component. Register it on your app.
+      Scoped CSS inside the template, independent state per instance. No dependencies, just Brio.</p>
+  </section>
+  <div class="wrap parts-grid">
+    {parts.map(part => <article class="part-card">
+      <div class="part-card-heading"><span class="overline">{part.number} / {part.category}</span><h2><a href={`/parts/${part.id}/`}>{part.title}</a></h2><p>{part.description}</p></div>
+      <code class="part-card-tag">&lt;{part.name}&gt;</code>
+      <a class="part-card-link" href={`/parts/${part.id}/`}>Explore the part &amp; source →</a>
+    </article>)}
+  </div>
+  <section class="wrap parts-bottom">
+    <h2>Foundations, not a black box.</h2>
+    <p>Each component has a live demo on its own page, plus its source, keyboard contract, requirements, and limits.
+      Review accessibility in your application after changing markup, styles, or behavior.</p>
+    <p>All four use Brio core only. Copy the template with its native CSS <code>@scope</code>
+      and its component definition, then register on your existing app before mounting.
+      Code is available under Brio's <a href="https://github.com/jnreis/briojs/blob/main/LICENSE">MIT license</a>.</p>
+    <p>Adding Brio to an existing stack? Read the <a href="/integrations/overview/">integration guides</a>.</p>
+  </section>
+</Site>

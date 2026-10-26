@@ -1,11 +1,14 @@
 import { effect } from '@jnreis/briojs/reactivity';
 import { createSpecimen } from './workbench.js';
 import specimenSource from './workbench.js?raw';
-import './astro-launch.js';
+import './astro-frame.js';
+import { highlightSource } from '../tests/source-highlight.js';
 
 const template = document.querySelector('#specimen-template');
 document.querySelector('#specimen-html').textContent = template.innerHTML.trim();
 document.querySelector('#specimen-js').textContent = specimenSource.trim();
+highlightSource(document.querySelector('#specimen-html'), 'markup');
+highlightSource(document.querySelector('#specimen-js'), 'javascript');
 document.querySelector('#specimen').append(template.content.cloneNode(true));
 
 const app = createSpecimen();

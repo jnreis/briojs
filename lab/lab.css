@@ -53,6 +53,17 @@ html .trace-heading button { margin-left: auto; font-size: .65rem; padding: 4px 
 .source-grid > div { min-width: 0; }
 .source-grid h3 { font: .7rem ui-monospace, monospace; color: #a1b2cb; }
 .source-grid pre { font-size: .7rem; }
+.astro-bench { margin-top: 48px; scroll-margin-top: 24px; }
+.astro-frame-bar { display: flex; align-items: center; gap: 12px; margin-top: 18px; padding: 10px 28px; border-block: 1px solid var(--line); background: color-mix(in srgb, var(--soft) 30%, var(--surface)); font-size: .78rem; }
+.astro-frame-bar code { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 5px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); font-size: .74rem; }
+html .astro-frame-bar button { padding: 5px 10px; font-size: .74rem; font-weight: 500; }
+.astro-frame-bar a { white-space: nowrap; text-decoration: none; }
+.astro-bench:not([data-state="live"]) .live-dot { background: var(--muted); box-shadow: none; }
+.astro-frame-offline { padding: 28px; color: var(--muted); font-size: .88rem; }
+.astro-frame-offline p { max-width: 720px; margin: 0; }
+.astro-frame-offline strong { color: var(--ink); }
+#astro-frame { display: block; width: 100%; height: 720px; border: 0; background: var(--canvas); }
+#astro-frame[hidden] { display: none; }
 .lab-skip:not(:focus) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
 .lab-skip:focus { position: fixed; z-index: 10000; background: var(--surface); padding: 12px; }
 @media (max-width: 900px) {
@@ -61,7 +72,7 @@ html .trace-heading button { margin-left: auto; font-size: .65rem; padding: 4px 
 }
 @media (max-width: 650px) {
     html body.lab { padding: 20px 16px 28px; }
-    .lab-intro, .bench-grid, .source-grid, .astro-launch { grid-template-columns: 1fr; gap: 20px; }
+    .lab-intro, .bench-grid, .source-grid { grid-template-columns: 1fr; gap: 20px; }
     .bench-grid { gap: 0; }
     .bench-heading { align-items: start; flex-direction: column; gap: 8px; }
     .bench-heading, .bench-live, .bench-inspector { padding: 20px; }
@@ -71,4 +82,7 @@ html .trace-heading button { margin-left: auto; font-size: .65rem; padding: 4px 
     .trace-heading { flex-wrap: wrap; padding-inline: 20px; gap: 8px; }
     #dom-trace { padding-inline: 20px; }
     .pane-label { flex-wrap: wrap; }
+    .astro-frame-bar { flex-wrap: wrap; padding-inline: 20px; }
+    .astro-frame-bar code { flex-basis: calc(100% - 18px); }
+    .astro-frame-offline { padding: 20px; }
 }

@@ -66,7 +66,7 @@ accepts authored strings/nodes/promises and registered template names, and can
 replace document-level content. It has no managed removal-handle result.
 `$dom.listen(target, name, callback, options?)` returns a disposer.
 `$dom.emit(target, name, detail?)` normalizes the event name to lowercase
-alphanumerics and dispatches a bubbling, cancelable CustomEvent. V4 component
+alphanumerics and dispatches a bubbling, cancelable CustomEvent. Brio 5 component
 emits retain valid hyphenated names and are not cancelable by default; check
 listeners that depended on legacy normalization/cancellation.
 
@@ -210,7 +210,7 @@ the helper reads response text and attempts JSON parsing even without a JSON
 content-type header. With a parser, it invokes that response method directly.
 
 On non-OK responses it throws an Error carrying native `error.response` and
-parsed/raw `error.content`. V4 also rejects, but does not populate legacy
+parsed/raw `error.content`. Brio 5 also rejects, but does not populate legacy
 `error.content`; review UI error-message extraction and empty responses.
 
 ### Reactivity and storage
@@ -252,7 +252,7 @@ Do not infer its usage from the unregistered `b-boost` attribute.
 `validate()` returns a boolean and refreshes that object's errors.
 Built-ins are required/min/max/email/same/in/matches/type.
 Legacy `required` accepts zero and otherwise uses truthiness (including
-whitespace and empty containers). V4 required semantics are stricter.
+whitespace and empty containers). Brio 5 required semantics are stricter.
 
 ### Extensions and cleanup
 

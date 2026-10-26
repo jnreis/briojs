@@ -3,7 +3,7 @@
 ## Feasibility and limits
 
 Migration is feasible by rewriting the application's integration and templates.
-**Replacing the script URL is not sufficient.** V4 is not backward compatible
+**Replacing the script URL is not sufficient.** Brio 5 is not backward compatible
 with the 1.1.5 app object, context registries, or automatic expression resolution.
 No compatibility build is provided.
 
@@ -24,7 +24,7 @@ these needs an explicit compatibility decision and tests.
 
 Legacy startup publishes `window.brio.newApp` and emits `brio`. Applications
 configure an app's registries and call `app.gc.$dom.hydrate(...)`.
-V4 also emits `brio`, but publishes `createApp`; it does not automatically mount
+Brio 5 also emits `brio`, but publishes `createApp`; it does not automatically mount
 your application's markup.
 
 ```js
@@ -50,7 +50,7 @@ import `createApp` from `@jnreis/briojs`; do not mix browser and ESM runtimes on
 For side-by-side migration testing, use separate pages/builds, not competing
 `window.brio` globals.
 
-V4 mount roots cannot overlap. Wrap root-level `b-if` / `b-for` / `b-template` in a stable
+Brio 5 mount roots cannot overlap. Wrap root-level `b-if` / `b-for` / `b-template` in a stable
 container. One app can mount multiple disjoint roots sharing `app.state`, or
 use separate apps for isolated widgets. `unmount()` restores original markup;
 `dispose()` also stops app plugins and permanently closes the app.
@@ -60,7 +60,7 @@ Raw DOM removal does not dispose an owner.
 
 Legacy expressions could resolve bare names through `$each`, `$data`, `$props`,
 `$store`, and `$tools`, and invoke some function-valued results automatically.
-V4 compiles strict JavaScript with explicit context bindings and no `with`.
+Brio 5 compiles strict JavaScript with explicit context bindings and no `with`.
 
 | Legacy usage | Target after resolving its actual owner |
 | --- | --- |
@@ -109,7 +109,7 @@ create local data. Components do create a data boundary. `$parent` metadata is
 reserved/read-only; standalone `$parent` is not supplied.
 
 Explicit calls matter: `b-on-click="$data.save"` does not call `save` in v5.
-Use `$data.save($event)` when the method needs the event. V4 `b-effect` evaluates
+Use `$data.save($event)` when the method needs the event. Brio 5 `b-effect` evaluates
 a value expression; use a named method, not a statement block.
 
 Imported ESM bindings are not lexical bindings in compiled HTML. Expose them
@@ -122,11 +122,11 @@ forbids runtime `new Function` remains a deployment blocker.
 | 1.1.5 surface | v5 action / semantic check |
 | --- | --- |
 | `b-ignore` | Keep canonical name; it still stops hydration of the entire subtree. |
-| `b-props` | Removed as a general data directive. Use app/local state or a registered component, not a rename to component `$props`. |
+| `b-props` | The legacy data directive is removed. V5 reuses the name only for spreading an object into a registered component's `$props`, with `b-prop-*` for named props. It does not establish a data scope or declare a schema. Use app/local state for legacy data contexts; do not blindly keep the old directive. |
 | `b-data` | Evaluate an object synchronously, e.g. `b-data="{ count: 0 }"` or an explicit factory call returning an object. Registered asset names and promises are not automatically resolved/awaited. |
 | `b-each` | Rewrite into `b-for="item, index in $data.items"`; rewrite row bindings to `$for`. Add a stable `b-key="$for.item.id"` where identity matters. |
 | `b-if` | Keep name but condition runs before branch-local data. False disposes after leave completes (immediately without a transition); reversal reuses the live branch, while activation after completed removal creates fresh local data. Wrap root structural directives. |
-| `b-show` | Use **`b-if.hide`** for legacy display toggling. Conditions now run before branch-local data. `b-if.detach` instead detaches/reinserts the same live node; these differ for layout, queries, focus, observers, and form submission. V4 no longer supports `b-show`. |
+| `b-show` | Use **`b-if.hide`** for legacy display toggling. Conditions now run before branch-local data. `b-if.detach` instead detaches/reinserts the same live node; these differ for layout, queries, focus, observers, and form submission. Brio 5 no longer supports `b-show`. |
 | `b-html` | Supply actual HTML, not a legacy template registry name. Default output is inert; use `b-html.hydrate` with `trustedHTML()` for executable templates and owned cleanup. |
 | `b-text` | Use an explicit value expression. Returned strings remain literal, including `${...}`. Never depend on combined `b-html` / `b-text` precedence. |
 | `b-bind-*`, `bind-*` | Prefer `b-bind-*`; give an explicit expression. No empty-value inference. `.prop` forces property assignment; property/attribute and falsy-value semantics require tests. |
@@ -134,7 +134,7 @@ forbids runtime `new Function` remains a deployment blocker.
 | `b-mask` | Pattern string or synchronous formatter function; Unicode tokens `*`/`A`/`a`/`#`, literal 9, backslash escaping. Requires the inputs add-on (`brio.inputs.min.js` / `inputsPlugin` from `@jnreis/briojs/inputs`), which also provides `brio.moneyMask(options)`; no injected helper or `.money`. Legacy registries and callbacks are not drop-in compatible. |
 | `b-uid` | `b-id="['input']"` then explicit `b-bind-id="$id.input"` / label `b-bind-for="$id.input"`. |
 | `b-ref` | Static literal registration in local `$ref` (not `$refs`). Data boundaries, components and rows isolate names; duplicates throw. No inherited lookup or automatic collection. |
-| `b-slot` | Removed as a registry. Use named component slots and `slot="name"` on caller content. |
+| `b-slot` | Legacy `$slots` registration is removed; use component slot projection (`<slot>` and `slot="name"` on caller content). For values exposed by the receiving outlet, use `<slot b-slot="{ item: $for.item }">` and read `$slot.item` in projected content. This is a scoped-slot contract, not a direct rename of the legacy registry; preserve the caller's context and test keyed updates. |
 | `b-template` | Unwraps its authored children into an owned multi-node range; its value does not select a registered template. Supports keyed loops, plain conditionals, `.detach`, teleport, IDs, providers and effects. `.hide`/group transitions require a concrete wrapper. |
 | `b-teleport` | Reactive Element/ref or selector expression; use `$ref.panel`, not a bare ref name. Default `after`; use `[$ref.panel, 'append']` for children. Supports `before`/`after`/`prepend`/`append`. Missing targets restore source output; ref registration/removal retries, but selectors have no DOM observer. Dispose/switch source before removing selector-only targets. |
 | `b-script` | Inline function expression on a script element only; no registry name/array/src loader. Async script completion no longer delays the rest of mounting. |
@@ -175,7 +175,7 @@ or mutate the item's actual fields.
 
 ### Models and values
 
-Legacy model typecasting is not the v5 default. V4 ordinary inputs store strings;
+Legacy model typecasting is not the v5 default. Brio 5 ordinary inputs store strings;
 single checkboxes store booleans; checkbox-array membership follows the model's
 array, not merely the number of same-name controls.
 
@@ -198,7 +198,7 @@ array, not merely the number of same-name controls.
 
 ### Bindings, events, and observers
 
-V4 binds an available DOM property by default (except `aria-*` / `data-*`);
+Brio 5 binds an available DOM property by default (except `aria-*` / `data-*`);
 otherwise null/undefined/false remove the attribute, while zero and empty text
 are actual values. Classes accept strings, arrays, or boolean maps, preserving
 static classes. Style objects clear removed dynamic properties.
@@ -207,8 +207,7 @@ Normal DOM events support `.prevent`, `.stop`, `.self`, `.once`, `.capture`,
 `.passive`, `.window`, `.document`, `.outside`, `.debounce`, `.throttle`.
 Dot `.debounce`/`.throttle` use 150ms; for another delay use
 `b-on-input.options="{ debounce: 500 }"`. Do not invent `.debounce.500`.
-Component-host event handling does not implement these DOM modifier behaviors;
-handle prevention/filtering explicitly or attach to an ordinary element.
+Component hosts support the same event modifiers as ordinary DOM elements.
 
 Translate `b-on-click-prevent` to `b-on-click.prevent`, not a new event named
 `click-prevent`. Old `b-options` objects are keyed by the complete directive
@@ -247,7 +246,12 @@ app.component('counter-card', {
 });
 ```
 
-Use `<counter-card b-bind-label="$data.label">...</counter-card>`. Setup is
+Component template contents are snapshotted on first use for each document.
+Finish defining or editing a source `<template>` before the first instance is
+mounted; later source edits, removal, or replacement do not update the cached
+component template or subsequent instances.
+
+Use `<counter-card b-prop-label="$data.label">...</counter-card>`. Setup is
 synchronous and scope-owned. Static props are strings; bound props are reactive.
 Emit parent updates rather than mutating props. Projected content retains the
 parent context; named slots use `<slot name="actions">` and `slot="actions"`.
@@ -299,13 +303,14 @@ const handle = app.insert('#items', 'append',
 handle.remove();
 ```
 
-In expressions/scripts use `$insert(...)` / `$context.$insert(...)`, not app `$insert`.
+In expressions/scripts use `$insert(...)` / `$context.$insert(...)`, not
+`app.$insert`.
 Targets must belong to a mounted app root. Child placements inherit the target;
 sibling placements inherit its parent. `options.data` supplies an explicit local
 data scope. Strings are trusted/hydrated internally; nodes/fragments are cloned.
 `textContent` is literal text, with no interpolation.
 
-| Old placement | V4 placement |
+| Old placement | v5 placement |
 | --- | --- |
 | `outer` | `replaceWith` |
 | `inner` | `replaceChildren` |
@@ -316,7 +321,7 @@ data scope. Strings are trusted/hydrated internally; nodes/fragments are cloned.
 
 Do not carry over template-name resolution, promised content, script loading,
 document/head/body replacement, selection, or hydrate/then options. Resolve
-authored content yourself; use normal deployment for scripts/styles. V4 insertion
+authored content yourself; use normal deployment for scripts/styles. Brio 5 insertion
 returns a synchronous owned handle, not the legacy async completion contract.
 
 No sibling replacement of mount roots, direct replacement of generated
@@ -328,7 +333,7 @@ are not on `window.brio`; application migrations should use mount/insert.
 
 ## 6. Reactivity, shared state, and extensions
 
-V4 `state` supports plain objects/arrays, not a generic reactive class instance
+Brio 5 `state` supports plain objects/arrays, not a generic reactive class instance
 or a legacy parent/options argument. Signals and computed values expose `.value`.
 Effects run synchronously by default, recollect dependencies, and return a stop
 function. `batch` groups synchronous writes. There is no public legacy `watch`
@@ -347,7 +352,7 @@ pipeline. Reimplement necessary custom directives/hooks as scoped component or
 application code with explicit event/lifetime semantics. Flag unsupported
 extensions instead of fabricating `$set` or mutating internal maps.
 
-V4 steps use `createStepEngine({ initial, steps })` with fixed definitions
+Brio 5 steps use `createStepEngine({ initial, steps })` with fixed definitions
 containing only optional `next` links. The engine owns one reactive `current`
 and private history; keep it in `$data` or share via `$stores`, without caller
 `state()` wrapping. Use `isActive(name)`, `go(name)`, `next()`, `back()`, `reset()`
@@ -360,7 +365,7 @@ helper: do not treat it as an automatic replacement for application navigation.
 
 ### HTTP and forms
 
-| Legacy method / registration | V4 replacement |
+| Legacy method / registration | v5 replacement |
 | --- | --- |
 | `$set.data`, `$set.props` | Explicit app state/factory methods, local `b-data`, or component setup |
 | `$set.template`, `$set.script`, `$set.style` | Component definitions, application imports, static/scoped CSS |
@@ -382,7 +387,7 @@ throw. Choose copying versus in-place updates based on actual consumers.
 Likewise, native event names and cancellation differ from legacy `$dom.emit`;
 preserve the production event contract deliberately.
 
-Expose `brio.http` through app methods, not `$http` in markup. V4 provides
+Expose `brio.http` through app methods, not `$http` in markup. Brio 5 provides
 get/post/put/patch/delete (not head). Fetch options and parsers are supported;
 non-OK responses reject. GET/DELETE plain objects use recursive bracket queries:
 scalar arrays use `[]`, structured entries use indices, null becomes empty,
@@ -406,7 +411,7 @@ failure visibly.
 
 Legacy `$tools.validate(data)` creates an object whose `prop()` / `rule()`
 methods register rules and whose `validate()` updates `.errors`.
-V4 `validate(data, schema, customRules)` returns `true` or
+Brio 5 `validate(data, schema, customRules)` returns `true` or
 `Record<string, string[]>`, and schema entries are arrays of
 `{ name, value?, message? }`. Built-ins: required/min/max/email/same/in.
 Convert legacy schemas and provide custom rules for missing validators.
@@ -418,7 +423,7 @@ accept data. Test exact boundaries, messages, and server-side validation.
 const oldValidator = oldApp.gc.$tools.validate(data);
 oldValidator.prop('email', ['required', 'email']);
 const oldValid = oldValidator.validate();
-// V4:
+// v5:
 const result = brio.validate(data, {
   email: [{ name: 'required' }, { name: 'email' }],
 });
@@ -426,7 +431,7 @@ const valid = result === true;
 const errors = valid ? {} : result;
 ```
 
-V4 does not supply the old validator object's mutable `.errors` field or
+Brio 5 does not supply the old validator object's mutable `.errors` field or
 automatic old messages. `matches` / `type` need custom rules; required/email
 acceptance differs (including whitespace and empty containers).
 
@@ -435,7 +440,7 @@ acceptance differs (including whitespace and empty containers).
 Do not infer persistence from legacy `$store`: it starts as `state({})`, not an
 automatically serialized store. Inventory actual storage accesses/helpers first.
 
-V4 `persist(key, initial, { storage })` requires component/plugin/explicit scope.
+Brio 5 `persist(key, initial, { storage })` requires component/plugin/explicit scope.
 It returns reactive objects/arrays directly and signals for primitives. Default
 storage is local; select `'session'` or a getItem/setItem adapter explicitly.
 It writes JSON and can throw on malformed data/unavailable storage.
@@ -447,7 +452,7 @@ Do not claim same-tab or cross-tab behavior from a rename alone.
 
 ### Routing
 
-Preserve normal links for a multi-page project. V4 routing is component-based:
+Preserve normal links for a multi-page project. Brio 5 routing is component-based:
 `createRouter([{ path: '/', component: 'home-page' }])`, passed into `createApp`,
 with registered components and a `b-router-outlet`.
 It does not fetch and transplant server HTML, assets, or head metadata.
@@ -461,13 +466,13 @@ focus, authenticated errors, and modified/external/download links.
 
 ### Transitions and masks
 
-V4 transitions use six classes for a chosen name: `fade-enter`,
+Brio 5 transitions use six classes for a chosen name: `fade-enter`,
 `fade-enter-active`, `fade-enter-to`, `fade-leave`, `fade-leave-active`,
 `fade-leave-to`, activated by `b-transition="'fade'"`.
 Use CSS transitions, not keyframe animations. Old play/reverse logic and timing
 options need application-specific redesign; test reversal in a real browser.
 
-V4 patterns use `#` for Unicode decimal digits, `a` for Unicode letters, `A`
+Brio 5 patterns use `#` for Unicode decimal digits, `a` for Unicode letters, `A`
 for either, and `*` for any code point. Other characters, including `9`, are
 literals; backslash escapes the next code point. Translate legacy `&` to `a`
 and legacy alphanumeric `*` to `A`. Convert fixed counts such as `#2/#2/#4`

@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import { unified } from 'unified';
 import remarkParse from 'remark-parse';
-import { referencePages } from '../site/scripts/content.mjs';
+import { referencePages, guideInfo, llmsTxt, llmsFullTxt } from '../site/scripts/content.mjs';
 
 test('site reference splits actual headings, not fenced code, and preserves Brio expressions', () => {
     const pages = referencePages('# Docs\n\n## First\n\n```html\n## Not a heading\n<p>${$data.name}</p>\n```\n\n[Next](#second)\n\n## Second\n\n### Details\n\n[Back](#first) [Source](./ai/README.md)\n');
@@ -27,4 +27,23 @@ test('site reference includes every canonical major section exactly once', () =>
     assert.equal(pages.length, sections.length - 1, 'Only the canonical contents section is omitted');
     assert.equal(new Set(pages.map(page => page.slug)).size, pages.length);
     assert.ok(pages.every(page => page.content.includes('editUrl: https://github.com/jnreis/briojs/blob/main/DOCUMENTATION.md')));
+});
+
+test('integration guides appear under their own routes in both llms outputs', () => {
+    const guide = guideInfo('rails', '---\ntitle: Rails\ndescription: Brio in Rails.\n---\n\nRead [Parts](/parts/).\n', 'integrations');
+    const guides = [guide];
+    const index = llmsTxt({ guides, pages: [], examples: [] });
+    assert.ok(index.includes('[Rails](https://briojs.com/integrations/rails/)'));
+    assert.ok(index.includes('[Brio Parts](https://briojs.com/parts/)'));
+    const full = llmsFullTxt({ guides, documentation: '## Reference' });
+    assert.ok(full.includes('Source: https://briojs.com/integrations/rails/'));
+    assert.ok(full.includes('[Parts](https://briojs.com/parts/)'));
+});
+
+test('assistant documentation index targets v5 bindings and scoped slots', () => {
+    const index = llmsTxt({ guides: [], pages: [], examples: [] });
+    assert.ok(index.includes('[Brio v5 application guide]'));
+    assert.ok(!index.includes('Brio v4 application guide'));
+    for (const contract of ['b-prop-*', 'b-props', 'b-slot', '$slot.item', 'Slot names are literal'])
+        assert.ok(index.includes(contract), contract);
 });

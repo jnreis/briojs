@@ -16,6 +16,10 @@ const pages = referencePages(await readFile(resolve(root, 'DOCUMENTATION.md'), '
 for (const page of pages) await write(resolve(reference, `${page.slug}.md`), page.content);
 const guides = await Promise.all(['getting-started', 'how-brio-fits'].map(async slug =>
     guideInfo(slug, await readFile(resolve(site, `src/content/docs/start/${slug}.md`), 'utf8'))));
+for (const file of (await readdir(resolve(site, 'src/content/docs/integrations'))).filter(file => file.endsWith('.md')).sort()) {
+    const slug = file.slice(0, -3);
+    guides.push(guideInfo(slug, await readFile(resolve(site, `src/content/docs/integrations/${file}`), 'utf8'), 'integrations'));
+}
 const documentation = await readFile(resolve(root, 'DOCUMENTATION.md'), 'utf8');
 await write(resolve(site, 'public/llms.txt'), llmsTxt({ guides, pages, examples }));
 await write(resolve(site, 'public/llms-full.txt'), llmsFullTxt({ guides, documentation }));

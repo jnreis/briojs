@@ -2,9 +2,10 @@
 import '../../../../shared/showcase.css';
 import themeScript from '../../../../../site/public/theme.js?url';
 import favicon from '../../../../../site/public/favicon.svg?url';
+import labEmbed from '../lab-embed.js?url';
 ---
 <!doctype html>
 <html lang="en">
-  <head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><title>Another document</title><link rel="icon" type="image/svg+xml" href={favicon} /><script is:inline src={themeScript}></script></head>
+  <head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><title>Another document</title><link rel="icon" type="image/svg+xml" href={favicon} /><script is:inline src={themeScript}></script><script is:inline src={labEmbed}></script></head>
   <body><header class="playground-header"><span class="wordmark">brio / lab</span><button id="theme-toggle" type="button" aria-label="Switch color theme">&#9680;</button></header><p class="overline">Integration bench / Full document navigation</p><h1>A different document.</h1><p>This page deliberately leaves Astro's client router behind. Go back to test whether the browser restores the previous document from its back/forward cache.</p><a href="/">Return to Astro lab</a></body>
 </html>

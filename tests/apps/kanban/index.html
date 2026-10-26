@@ -218,9 +218,9 @@
             </div>
             <div class="board" b-else data-testid="board"
                  b-on-dragover.prevent="$stores.drag.active" b-on-drop.prevent="$stores.drag.drop()" b-on-dragend="$stores.drag.end()">
-                <kanban-list b-for="list in $stores.board.lists" b-key="$for.list.id" b-bind-list="$for.list" b-transition="'slide-list'"
-                             b-attr-class="{ 'drop-before': $stores.drag.isListBefore($for.list), 'is-dragged': $stores.drag.isDragged($for.list.id) }"
-                             b-attr-data-list="$for.list.id"
+                <kanban-list b-for="list in $stores.board.lists" b-key="$for.list.id" b-prop-list="$for.list" b-transition="'slide-list'"
+                             b-bind-class="{ 'drop-before': $stores.drag.isListBefore($for.list), 'is-dragged': $stores.drag.isDragged($for.list.id) }"
+                             b-bind-data-list="$for.list.id"
                              b-on-dragover.prevent="$stores.drag.overList($event, $for.list)"></kanban-list>
                 <section class="add-list" b-bind-class="{ 'drop-before': $stores.drag.listAtEnd }">
                     <form b-if="$data.addingList" b-on-submit.prevent="$data.submitList()" data-testid="list-composer">
@@ -299,8 +299,8 @@
                 </div>
             </header>
             <div class="cards" role="list" b-bind-class="{ 'drop-end': $stores.drag.isEnd($props.list) }" data-testid="cards">
-                <kanban-card b-for="card in $data.cards" b-key="$for.card.id" b-bind-card="$for.card" role="listitem" b-transition="'slide-card'"
-                             b-attr-class="{ 'drop-before': $stores.drag.isBefore($for.card) }"
+                <kanban-card b-for="card in $data.cards" b-key="$for.card.id" b-prop-card="$for.card" role="listitem" b-transition="'slide-card'"
+                             b-bind-class="{ 'drop-before': $stores.drag.isBefore($for.card) }"
                              b-on-dragover.prevent.stop="$stores.drag.overCard($event, $for.card, $props.list)"></kanban-card>
             </div>
             <p class="empty" b-if="!$data.cards.length && !$data.composing"

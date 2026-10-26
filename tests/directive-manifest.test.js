@@ -16,13 +16,13 @@ const source = readdirSync(new URL('src/', root), { recursive: true })
 
 test('every b- attribute the runtime reads is in the directive manifest', () => {
     const literals = new Set([...source.matchAll(/['"`](b-[a-z-]+)['"`]/g)].map(match => match[1]));
-    const prefixes = ['b-on-', 'b-bind-', 'b-attr-', 'b-ref-'];
+    const prefixes = ['b-on-', 'b-bind-', 'b-prop-', 'b-ref-', 'b-attr-'];
     // Removed directives the runtime still detects only to throw a migration error.
     const removed = new Set(['b-options']);
     const missing = [...literals].filter(name =>
         !prefixes.some(prefix => name.startsWith(prefix)) && !names.has(name) && !removed.has(name));
     assert.deepEqual(missing, []);
-    for (const prefix of ['b-on-', 'b-bind-', 'b-attr-']) assert.ok(names.has(`${prefix}*`), prefix);
+    for (const prefix of ['b-on-', 'b-bind-', 'b-prop-']) assert.ok(names.has(`${prefix}*`), prefix);
 });
 
 test('plugins cannot claim any built-in directive name', () => {
@@ -33,7 +33,7 @@ test('plugins cannot claim any built-in directive name', () => {
     // Directives shipped as official plugins register through the public API, so they must stay claimable.
     const official = new Set(directives.filter(directive => directive.plugin).map(directive => directive.name));
     assert.deepEqual([...reserved].sort(), [...names].filter(name => !covered(name) && !name.endsWith('*') && !official.has(name)).sort());
-    for (const prefix of ['b-on-', 'b-bind-', 'b-attr-', 'b-router-']) assert.ok(covered(prefix + 'x'), prefix);
+    for (const prefix of ['b-on-', 'b-bind-', 'b-prop-', 'b-router-']) assert.ok(covered(prefix + 'x'), prefix);
 });
 
 test('event modifiers match the runtime list exactly', () => {

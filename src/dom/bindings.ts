@@ -10,7 +10,7 @@ import { createScope } from '../core/scope';
 import { locate, setScopeNode } from '../core/errors';
 import { effect } from '../reactivity/effect';
 import type { DomRuntime } from './types';
-import { isFragmentTemplate, mountComponent, takeProjectedContext } from './components';
+import { hydrateScopedSlot, isFragmentTemplate, mountComponent, takeProjectedContext } from './components';
 import { prepareTransition } from './directives/transition';
 import { createInsert } from './insert';
 import { getNodeOwner, ownNode, withHydration } from './ownership';
@@ -58,7 +58,7 @@ import type { DirectiveBinding } from './directives/registry';
 import { devtoolsEnabled, notifyUnknownDirective } from '../plugins/devtools-bridge';
 
 // b-* attributes that stay on an element after hydration without being directives of their own.
-const passiveNames = new Set(['b-key', 'b-app', 'b-props']);
+const passiveNames = new Set(['b-key', 'b-app', 'b-app-props']);
 
 export function hydrateChildren(
     element: Element,
@@ -196,6 +196,17 @@ function hydrateOwnedNode(
     }
 
     const templateAttr = getAttribute(element, 'b-template');
+    for (const attribute of attributes) {
+        const { baseName } = extractModifiers(attribute.name);
+        if (baseName === 'b-slot' && (element.localName !== 'slot' || attribute.name !== 'b-slot'))
+            throw createSyntaxError('b-slot requires a <slot> outlet and does not support modifiers.');
+    }
+    if (element.localName === 'slot' && attributes.some(attribute => extractModifiers(attribute.name).baseName === 'b-bind-name'))
+        throw createSyntaxError('Dynamic slot names are not supported. Use a literal name and b-slot to expose values through $slot.');
+    if (element.localName === 'slot' && element.hasAttribute('b-slot')) {
+        hydrateScopedSlot(element, context, runtime, hydrateNode);
+        return;
+    }
     if (parsed.some(({ baseName }) => childControllingNames.has(baseName)))
         getNodeOwner(element)!.controlsChildren = true;
     const refAttributes = attributes.filter((attribute, index) =>
@@ -244,6 +255,13 @@ function hydrateOwnedNode(
                 throw createSyntaxError(`${attributes[index].name} cannot be used on a component host. Put it on an element inside the component.`);
         mountComponent(element, definition, context, runtime, hydrateNode);
         return;
+    }
+    for (const attribute of attributes) {
+        const { baseName } = extractModifiers(attribute.name);
+        if (baseName === 'b-props' || startsWith(baseName, 'b-prop-'))
+            throw createSyntaxError(`${attribute.name} requires a registered Brio component.`);
+        if (startsWith(baseName, 'b-attr-'))
+            throw createSyntaxError(`${attribute.name} has been removed. Use b-bind-* for DOM bindings.`);
     }
 
     // Plugin scope hooks run before any other directive on the element, so all of them see the added names.

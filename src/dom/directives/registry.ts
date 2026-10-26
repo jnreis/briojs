@@ -90,9 +90,9 @@ const namePattern = /^b-[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/;
 // Checked against the directive manifest by tests/plugin-api.test.js.
 export const reservedDirectives = (
     'b-data b-provide b-id b-text b-html b-model b-if b-else-if b-else b-for b-key b-template b-teleport ' +
-    'b-transition b-effect b-script b-ignore b-cloak b-app b-props'
+    'b-transition b-effect b-script b-ignore b-cloak b-app b-app-props b-props b-slot'
 ).split(' ');
-export const reservedPrefixes = ['b-on', 'b-bind', 'b-attr', 'b-ref', 'b-router'];
+export const reservedPrefixes = ['b-on', 'b-bind', 'b-prop', 'b-attr', 'b-ref', 'b-router'];
 const hooks = ['scope', 'mount', 'ready'] as const;
 
 export const createRegistry = (): DirectiveRegistry => ({ exact: new Map(), withArg: [], scoped: false });

@@ -1,4 +1,4 @@
-import { htmlLanguage } from '@codemirror/lang-html';
+import { parser as htmlParser } from '@lezer/html';
 import parse from 'css-tree/parser';
 import generate from 'css-tree/generator';
 import { minify } from 'terser';
@@ -10,7 +10,7 @@ import * as estreePlugin from 'prettier/plugins/estree';
 
 function minifyHtml(source) {
     const replacements = [];
-    htmlLanguage.parser.parse(source).iterate({
+    htmlParser.parse(source).iterate({
         enter(node) {
             if (!['OpenTag', 'CloseTag', 'SelfClosingTag'].includes(node.name)) return;
             // Only compact tag syntax. Text, comments, raw scripts, and attribute values stay intact.
@@ -47,12 +47,22 @@ export async function minifyProject(project) {
     return { version: 1, html: minifyHtml(project.html), css, js: js.code };
 }
 
-export async function formatProject(project) {
+export async function formatCode(language, source) {
     const options = { tabWidth: 2, printWidth: 100, embeddedLanguageFormatting: 'off' };
+    const languages = {
+        html: { parser: 'html', plugins: [htmlPlugin], htmlWhitespaceSensitivity: 'strict' },
+        css: { parser: 'css', plugins: [cssPlugin] },
+        js: { parser: 'babel', plugins: [babelPlugin, estreePlugin] },
+    };
+    if (!Object.hasOwn(languages, language)) throw new Error(`Unknown editor language: ${language}`);
+    return format(source, { ...options, ...languages[language] });
+}
+
+export async function formatProject(project) {
     const [html, css, js] = await Promise.all([
-        format(project.html, { ...options, parser: 'html', plugins: [htmlPlugin], htmlWhitespaceSensitivity: 'strict' }),
-        format(project.css, { ...options, parser: 'css', plugins: [cssPlugin] }),
-        format(project.js, { ...options, parser: 'babel', plugins: [babelPlugin, estreePlugin] }),
+        formatCode('html', project.html),
+        formatCode('css', project.css),
+        formatCode('js', project.js),
     ]);
     return { version: 1, html, css, js };
 }

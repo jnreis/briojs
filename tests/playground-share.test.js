@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { encodeProject, decodeProject, validateProject } from '../site/src/playground/share.js';
-import { minifyProject, formatProject } from '../site/src/playground/code.js';
+import { minifyProject, formatCode, formatProject } from '../site/src/playground/code.js';
 import { JSDOM } from 'jsdom';
 
 test('playground links round-trip Unicode and arbitrary closing tags', async () => {
@@ -39,6 +39,16 @@ test('invalid JavaScript cannot produce a success-shaped share and formatting er
     const project = { version: 1, html: '', css: '', js: 'const = ;' };
     await assert.rejects(() => encodeProject(project));
     await assert.rejects(() => formatProject(project));
+});
+
+test('active-document formatting uses the project formatter without requiring valid inactive documents', async () => {
+    const project = { version: 1, html: '<div> Hello </div>', css: 'p{color:red}', js: 'const value={hello:"world"};' };
+    const formatted = await formatProject(project);
+    for (const language of ['html', 'css', 'js'])
+        assert.equal(await formatCode(language, project[language]), formatted[language]);
+    assert.equal(await formatCode('js', project.js), 'const value = { hello: "world" };\n');
+    await assert.rejects(() => formatCode('js', 'const = ;'));
+    await assert.rejects(() => formatCode('unknown', ''), /Unknown editor language/);
 });
 
 test('playground links reject invalid formats, unsupported versions and malformed data', async () => {

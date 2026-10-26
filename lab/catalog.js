@@ -1,5 +1,3 @@
-import './astro-launch.js';
-
 const search = document.querySelector('#experiment-search');
 const filters = [...document.querySelectorAll('[data-category]')];
 const sections = [...document.querySelectorAll('.directory .section')];

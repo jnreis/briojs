@@ -2,13 +2,14 @@ import { defaultProject } from './default.js';
 import { decodeProject, encodeProject, validateProject } from './share.js';
 import { previewDocument } from './preview.js';
 import { createEditors } from './editors.js';
-import { formatProject } from './code.js';
+import { formatCode, formatProject } from './code.js';
 
 const status = document.querySelector('#play-status');
 const errors = document.querySelector('#play-errors');
 const preview = document.querySelector('#play-preview');
 const shareButton = document.querySelector('#play-share');
 const shareLink = document.querySelector('#play-link');
+let formatting = false;
 let frame;
 let token;
 let generation = 0;
@@ -22,7 +23,7 @@ const editors = createEditors(() => {
     dirty = true;
     hideShareLink();
     status.textContent = 'Code changed. Click Run to update the preview.';
-});
+}, formatActiveEditor);
 
 function hideShareLink() {
     shareLink.hidden = true;
@@ -31,13 +32,13 @@ function hideShareLink() {
 
 const currentTheme = () => document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light';
 
-function report(message) {
+function report(message, statusMessage = 'The preview reported an error. See details below.') {
     hadErrors = true;
     const item = document.createElement('li');
     item.textContent = message;
     if (errors.children.length < 20) errors.append(item);
     errors.hidden = false;
-    status.textContent = 'The preview reported an error. See details below.';
+    status.textContent = statusMessage;
 }
 
 function project() {
@@ -68,7 +69,7 @@ function run() {
         token = crypto.randomUUID();
         frame = document.createElement('iframe');
         frame.title = 'Brio playground preview';
-        frame.setAttribute('sandbox', 'allow-scripts');
+        frame.setAttribute('sandbox', 'allow-scripts allow-forms');
         frame.referrerPolicy = 'no-referrer';
         frame.srcdoc = previewDocument(value, { token, origin: location.origin, theme: currentTheme() });
         preview.replaceChildren(frame);
@@ -76,6 +77,31 @@ function run() {
         status.textContent = 'Starting preview...';
     } catch (error) {
         report(`Unable to run: ${error.message}`);
+    }
+}
+
+async function formatActiveEditor() {
+    if (formatting) return;
+    const language = document.querySelector('.play-tabs [aria-selected="true"]').id.slice(4);
+    const editor = editors[language];
+    const sourceRevision = revision;
+    const sourceGeneration = generation;
+    formatting = true;
+    try {
+        const formatted = await formatCode(language, editor.value);
+        if (sourceGeneration !== generation) return;
+        if (sourceRevision !== revision) {
+            status.textContent = 'Code changed while formatting. Format again to apply it.';
+            return;
+        }
+        editor.replace(formatted);
+        status.textContent = 'Document formatted. Click Run to update the preview.';
+    } catch (error) {
+        if (sourceRevision !== revision || sourceGeneration !== generation) return;
+        report(`Unable to format ${language === 'js' ? 'JavaScript' : language.toUpperCase()}: ${error.message}`,
+            'Formatting failed. Your code has not changed.');
+    } finally {
+        formatting = false;
     }
 }
 
@@ -123,6 +149,11 @@ addEventListener('message', event => {
     if (event.data.type === 'ready' && !dirty && !hadErrors) status.textContent = 'Preview running.';
 });
 document.querySelector('.play-workspace').addEventListener('keydown', event => {
+    if (event.code === 'KeyF' && event.shiftKey && event.altKey && !event.ctrlKey && !event.metaKey) {
+        event.preventDefault();
+        void formatActiveEditor();
+        return;
+    }
     if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
         event.preventDefault();
         run();

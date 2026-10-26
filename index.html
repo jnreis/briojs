@@ -46,9 +46,19 @@
       <details class="bench-source"><summary>Open the specimen source <span>Actual HTML + JavaScript used above</span></summary><div class="source-grid"><div><h3>HTML</h3><pre><code id="specimen-html"></code></pre></div><div><h3>JavaScript</h3><pre><code id="specimen-js"></code></pre></div></div></details>
     </section>
 
-    <section id="astro-lab" class="astro-launch" aria-labelledby="astro-title">
-      <div><p class="overline">Separate runtime / Same bench</p><h2 id="astro-title">What survives a page swap?</h2><p>The Astro lab makes island lifetimes tangible: local state resets, persistent state stays, and diagnostics reveal what mounted and disposed.</p></div>
-      <div><code>npm run dev:astro</code><a id="astro-launch-link" href="http://localhost:4321/">Open Astro lab &nearr;</a><p>Start its server first. Runs on port 4321, separate from Vite. Theme preferences are saved per origin.</p></div>
+    <section id="astro-lab" class="bench astro-bench" aria-labelledby="astro-title" data-state="connecting">
+      <header class="bench-heading"><div><span class="overline">Specimen 002 / Astro page swaps</span><h2 id="astro-title">What survives a page swap?</h2></div><span class="lab-tag">Separate server</span></header>
+      <p class="bench-instructions">The Astro fixture runs inside this frame from its own dev server. Increment both islands, then navigate inside the frame. Local state resets, the persistent island keeps its DOM, and the readout shows what mounted and disposed.</p>
+      <div class="astro-frame-bar">
+        <span class="live-dot" aria-hidden="true"></span>
+        <code id="astro-frame-address" aria-label="Current Astro page">localhost:4323/</code>
+        <button id="astro-frame-restart" type="button">Restart frame</button>
+        <a id="astro-launch-link" href="http://localhost:4323/">Go to Astro integration &nearr;</a>
+      </div>
+      <div id="astro-frame-offline" class="astro-frame-offline" role="status" hidden>
+        <p><strong>Waiting for the Astro server.</strong> Run <code>npm run lab</code> to start both servers together, or <code>npm run dev:astro</code> next to this one. The frame connects on its own.</p>
+      </div>
+      <iframe id="astro-frame" title="Astro integration lab" hidden></iframe>
     </section>
   </main>
   <footer class="lab-footer"><span>Brio Lab / Local only. Intentionally hands-on.</span><a href="https://briojs.com/">Back to the showroom &nearr;</a></footer>

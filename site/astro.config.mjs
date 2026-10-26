@@ -21,6 +21,8 @@ export default defineConfig({
                 { label: 'How Brio fits', slug: 'start/how-brio-fits' },
             ] },
             { label: 'Reference', autogenerate: { directory: 'reference' } },
+            { label: 'Integrations', autogenerate: { directory: 'integrations' } },
+            { label: 'Parts', link: '/parts/' },
             { label: 'Examples', link: '/examples/' },
             { label: 'Playground', link: '/play/' },
             { label: 'Releases', slug: 'releases' },

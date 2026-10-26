@@ -96,7 +96,7 @@
       "name": "b-bind-class",
       "description": {
         "kind": "markdown",
-        "value": "Reactively bind an attribute or DOM property, e.g. `b-bind-href=\"$data.url\"`. `class` and `style` accept strings, arrays, or objects.\n\n**class**: Classes from a string, array, or `{ name: condition }` object.\n\nValue: a JavaScript expression.\n\nModifiers: `.prop`.\n\n```html\n<a b-bind-href=\"$data.url\" b-bind-class=\"{ active: $data.current }\">Link</a>\n```"
+        "value": "Reactively bind a DOM attribute or property, including on component hosts. Use b-prop-* or b-props for component inputs. `class` accepts strings, arrays, or objects; `style` accepts strings or objects.\n\n**class**: Classes from a string, array, or `{ name: condition }` object.\n\nValue: a JavaScript expression.\n\nModifiers: `.prop`.\n\n```html\n<a b-bind-href=\"$data.url\" b-bind-class=\"{ active: $data.current }\">Link</a>\n```"
       },
       "references": [
         {
@@ -109,7 +109,7 @@
       "name": "b-bind-style",
       "description": {
         "kind": "markdown",
-        "value": "Reactively bind an attribute or DOM property, e.g. `b-bind-href=\"$data.url\"`. `class` and `style` accept strings, arrays, or objects.\n\n**style**: Styles from a string or `{ property: value }` object.\n\nValue: a JavaScript expression.\n\nModifiers: `.prop`.\n\n```html\n<a b-bind-href=\"$data.url\" b-bind-class=\"{ active: $data.current }\">Link</a>\n```"
+        "value": "Reactively bind a DOM attribute or property, including on component hosts. Use b-prop-* or b-props for component inputs. `class` accepts strings, arrays, or objects; `style` accepts strings or objects.\n\n**style**: Styles from a string or `{ property: value }` object.\n\nValue: a JavaScript expression.\n\nModifiers: `.prop`.\n\n```html\n<a b-bind-href=\"$data.url\" b-bind-class=\"{ active: $data.current }\">Link</a>\n```"
       },
       "references": [
         {
@@ -122,7 +122,7 @@
       "name": "b-bind-href",
       "description": {
         "kind": "markdown",
-        "value": "Reactively bind an attribute or DOM property, e.g. `b-bind-href=\"$data.url\"`. `class` and `style` accept strings, arrays, or objects.\n\n**href**: Link target.\n\nValue: a JavaScript expression.\n\nModifiers: `.prop`.\n\n```html\n<a b-bind-href=\"$data.url\" b-bind-class=\"{ active: $data.current }\">Link</a>\n```"
+        "value": "Reactively bind a DOM attribute or property, including on component hosts. Use b-prop-* or b-props for component inputs. `class` accepts strings, arrays, or objects; `style` accepts strings or objects.\n\n**href**: Link target.\n\nValue: a JavaScript expression.\n\nModifiers: `.prop`.\n\n```html\n<a b-bind-href=\"$data.url\" b-bind-class=\"{ active: $data.current }\">Link</a>\n```"
       },
       "references": [
         {
@@ -135,7 +135,7 @@
       "name": "b-bind-src",
       "description": {
         "kind": "markdown",
-        "value": "Reactively bind an attribute or DOM property, e.g. `b-bind-href=\"$data.url\"`. `class` and `style` accept strings, arrays, or objects.\n\n**src**: Image or media source.\n\nValue: a JavaScript expression.\n\nModifiers: `.prop`.\n\n```html\n<a b-bind-href=\"$data.url\" b-bind-class=\"{ active: $data.current }\">Link</a>\n```"
+        "value": "Reactively bind a DOM attribute or property, including on component hosts. Use b-prop-* or b-props for component inputs. `class` accepts strings, arrays, or objects; `style` accepts strings or objects.\n\n**src**: Image or media source.\n\nValue: a JavaScript expression.\n\nModifiers: `.prop`.\n\n```html\n<a b-bind-href=\"$data.url\" b-bind-class=\"{ active: $data.current }\">Link</a>\n```"
       },
       "references": [
         {
@@ -148,7 +148,7 @@
       "name": "b-bind-alt",
       "description": {
         "kind": "markdown",
-        "value": "Reactively bind an attribute or DOM property, e.g. `b-bind-href=\"$data.url\"`. `class` and `style` accept strings, arrays, or objects.\n\n**alt**: Alternative text.\n\nValue: a JavaScript expression.\n\nModifiers: `.prop`.\n\n```html\n<a b-bind-href=\"$data.url\" b-bind-class=\"{ active: $data.current }\">Link</a>\n```"
+        "value": "Reactively bind a DOM attribute or property, including on component hosts. Use b-prop-* or b-props for component inputs. `class` accepts strings, arrays, or objects; `style` accepts strings or objects.\n\n**alt**: Alternative text.\n\nValue: a JavaScript expression.\n\nModifiers: `.prop`.\n\n```html\n<a b-bind-href=\"$data.url\" b-bind-class=\"{ active: $data.current }\">Link</a>\n```"
       },
       "references": [
         {
@@ -161,7 +161,7 @@
       "name": "b-bind-title",
       "description": {
         "kind": "markdown",
-        "value": "Reactively bind an attribute or DOM property, e.g. `b-bind-href=\"$data.url\"`. `class` and `style` accept strings, arrays, or objects.\n\n**title**: Advisory title.\n\nValue: a JavaScript expression.\n\nModifiers: `.prop`.\n\n```html\n<a b-bind-href=\"$data.url\" b-bind-class=\"{ active: $data.current }\">Link</a>\n```"
+        "value": "Reactively bind a DOM attribute or property, including on component hosts. Use b-prop-* or b-props for component inputs. `class` accepts strings, arrays, or objects; `style` accepts strings or objects.\n\n**title**: Advisory title.\n\nValue: a JavaScript expression.\n\nModifiers: `.prop`.\n\n```html\n<a b-bind-href=\"$data.url\" b-bind-class=\"{ active: $data.current }\">Link</a>\n```"
       },
       "references": [
         {
@@ -174,7 +174,7 @@
       "name": "b-bind-id",
       "description": {
         "kind": "markdown",
-        "value": "Reactively bind an attribute or DOM property, e.g. `b-bind-href=\"$data.url\"`. `class` and `style` accept strings, arrays, or objects.\n\n**id**: Element id (pair with `$id` for unique ids).\n\nValue: a JavaScript expression.\n\nModifiers: `.prop`.\n\n```html\n<a b-bind-href=\"$data.url\" b-bind-class=\"{ active: $data.current }\">Link</a>\n```"
+        "value": "Reactively bind a DOM attribute or property, including on component hosts. Use b-prop-* or b-props for component inputs. `class` accepts strings, arrays, or objects; `style` accepts strings or objects.\n\n**id**: Element id (pair with `$id` for unique ids).\n\nValue: a JavaScript expression.\n\nModifiers: `.prop`.\n\n```html\n<a b-bind-href=\"$data.url\" b-bind-class=\"{ active: $data.current }\">Link</a>\n```"
       },
       "references": [
         {
@@ -187,7 +187,7 @@
       "name": "b-bind-for",
       "description": {
         "kind": "markdown",
-        "value": "Reactively bind an attribute or DOM property, e.g. `b-bind-href=\"$data.url\"`. `class` and `style` accept strings, arrays, or objects.\n\n**for**: Associated control id (pair with `$id`).\n\nValue: a JavaScript expression.\n\nModifiers: `.prop`.\n\n```html\n<a b-bind-href=\"$data.url\" b-bind-class=\"{ active: $data.current }\">Link</a>\n```"
+        "value": "Reactively bind a DOM attribute or property, including on component hosts. Use b-prop-* or b-props for component inputs. `class` accepts strings, arrays, or objects; `style` accepts strings or objects.\n\n**for**: Associated control id (pair with `$id`).\n\nValue: a JavaScript expression.\n\nModifiers: `.prop`.\n\n```html\n<a b-bind-href=\"$data.url\" b-bind-class=\"{ active: $data.current }\">Link</a>\n```"
       },
       "references": [
         {
@@ -200,7 +200,7 @@
       "name": "b-bind-value",
       "description": {
         "kind": "markdown",
-        "value": "Reactively bind an attribute or DOM property, e.g. `b-bind-href=\"$data.url\"`. `class` and `style` accept strings, arrays, or objects.\n\n**value**: Control value.\n\nValue: a JavaScript expression.\n\nModifiers: `.prop`.\n\n```html\n<a b-bind-href=\"$data.url\" b-bind-class=\"{ active: $data.current }\">Link</a>\n```"
+        "value": "Reactively bind a DOM attribute or property, including on component hosts. Use b-prop-* or b-props for component inputs. `class` accepts strings, arrays, or objects; `style` accepts strings or objects.\n\n**value**: Control value.\n\nValue: a JavaScript expression.\n\nModifiers: `.prop`.\n\n```html\n<a b-bind-href=\"$data.url\" b-bind-class=\"{ active: $data.current }\">Link</a>\n```"
       },
       "references": [
         {
@@ -213,7 +213,7 @@
       "name": "b-bind-checked",
       "description": {
         "kind": "markdown",
-        "value": "Reactively bind an attribute or DOM property, e.g. `b-bind-href=\"$data.url\"`. `class` and `style` accept strings, arrays, or objects.\n\n**checked**: Checked state.\n\nValue: a JavaScript expression.\n\nModifiers: `.prop`.\n\n```html\n<a b-bind-href=\"$data.url\" b-bind-class=\"{ active: $data.current }\">Link</a>\n```"
+        "value": "Reactively bind a DOM attribute or property, including on component hosts. Use b-prop-* or b-props for component inputs. `class` accepts strings, arrays, or objects; `style` accepts strings or objects.\n\n**checked**: Checked state.\n\nValue: a JavaScript expression.\n\nModifiers: `.prop`.\n\n```html\n<a b-bind-href=\"$data.url\" b-bind-class=\"{ active: $data.current }\">Link</a>\n```"
       },
       "references": [
         {
@@ -226,7 +226,7 @@
       "name": "b-bind-disabled",
       "description": {
         "kind": "markdown",
-        "value": "Reactively bind an attribute or DOM property, e.g. `b-bind-href=\"$data.url\"`. `class` and `style` accept strings, arrays, or objects.\n\n**disabled**: Disabled state; `false`, `null`, and `undefined` remove it.\n\nValue: a JavaScript expression.\n\nModifiers: `.prop`.\n\n```html\n<a b-bind-href=\"$data.url\" b-bind-class=\"{ active: $data.current }\">Link</a>\n```"
+        "value": "Reactively bind a DOM attribute or property, including on component hosts. Use b-prop-* or b-props for component inputs. `class` accepts strings, arrays, or objects; `style` accepts strings or objects.\n\n**disabled**: Disabled state; `false`, `null`, and `undefined` remove it.\n\nValue: a JavaScript expression.\n\nModifiers: `.prop`.\n\n```html\n<a b-bind-href=\"$data.url\" b-bind-class=\"{ active: $data.current }\">Link</a>\n```"
       },
       "references": [
         {
@@ -239,7 +239,7 @@
       "name": "b-bind-hidden",
       "description": {
         "kind": "markdown",
-        "value": "Reactively bind an attribute or DOM property, e.g. `b-bind-href=\"$data.url\"`. `class` and `style` accept strings, arrays, or objects.\n\n**hidden**: Hide while truthy.\n\nValue: a JavaScript expression.\n\nModifiers: `.prop`.\n\n```html\n<a b-bind-href=\"$data.url\" b-bind-class=\"{ active: $data.current }\">Link</a>\n```"
+        "value": "Reactively bind a DOM attribute or property, including on component hosts. Use b-prop-* or b-props for component inputs. `class` accepts strings, arrays, or objects; `style` accepts strings or objects.\n\n**hidden**: Hide while truthy.\n\nValue: a JavaScript expression.\n\nModifiers: `.prop`.\n\n```html\n<a b-bind-href=\"$data.url\" b-bind-class=\"{ active: $data.current }\">Link</a>\n```"
       },
       "references": [
         {
@@ -252,7 +252,7 @@
       "name": "b-bind-placeholder",
       "description": {
         "kind": "markdown",
-        "value": "Reactively bind an attribute or DOM property, e.g. `b-bind-href=\"$data.url\"`. `class` and `style` accept strings, arrays, or objects.\n\n**placeholder**: Input placeholder.\n\nValue: a JavaScript expression.\n\nModifiers: `.prop`.\n\n```html\n<a b-bind-href=\"$data.url\" b-bind-class=\"{ active: $data.current }\">Link</a>\n```"
+        "value": "Reactively bind a DOM attribute or property, including on component hosts. Use b-prop-* or b-props for component inputs. `class` accepts strings, arrays, or objects; `style` accepts strings or objects.\n\n**placeholder**: Input placeholder.\n\nValue: a JavaScript expression.\n\nModifiers: `.prop`.\n\n```html\n<a b-bind-href=\"$data.url\" b-bind-class=\"{ active: $data.current }\">Link</a>\n```"
       },
       "references": [
         {
@@ -265,7 +265,7 @@
       "name": "b-bind-aria-expanded",
       "description": {
         "kind": "markdown",
-        "value": "Reactively bind an attribute or DOM property, e.g. `b-bind-href=\"$data.url\"`. `class` and `style` accept strings, arrays, or objects.\n\n**aria-expanded**: Expanded state for assistive technology.\n\nValue: a JavaScript expression.\n\nModifiers: `.prop`.\n\n```html\n<a b-bind-href=\"$data.url\" b-bind-class=\"{ active: $data.current }\">Link</a>\n```"
+        "value": "Reactively bind a DOM attribute or property, including on component hosts. Use b-prop-* or b-props for component inputs. `class` accepts strings, arrays, or objects; `style` accepts strings or objects.\n\n**aria-expanded**: Expanded state for assistive technology.\n\nValue: a JavaScript expression.\n\nModifiers: `.prop`.\n\n```html\n<a b-bind-href=\"$data.url\" b-bind-class=\"{ active: $data.current }\">Link</a>\n```"
       },
       "references": [
         {
@@ -278,7 +278,7 @@
       "name": "b-bind-aria-pressed",
       "description": {
         "kind": "markdown",
-        "value": "Reactively bind an attribute or DOM property, e.g. `b-bind-href=\"$data.url\"`. `class` and `style` accept strings, arrays, or objects.\n\n**aria-pressed**: Pressed state for toggle buttons.\n\nValue: a JavaScript expression.\n\nModifiers: `.prop`.\n\n```html\n<a b-bind-href=\"$data.url\" b-bind-class=\"{ active: $data.current }\">Link</a>\n```"
+        "value": "Reactively bind a DOM attribute or property, including on component hosts. Use b-prop-* or b-props for component inputs. `class` accepts strings, arrays, or objects; `style` accepts strings or objects.\n\n**aria-pressed**: Pressed state for toggle buttons.\n\nValue: a JavaScript expression.\n\nModifiers: `.prop`.\n\n```html\n<a b-bind-href=\"$data.url\" b-bind-class=\"{ active: $data.current }\">Link</a>\n```"
       },
       "references": [
         {
@@ -291,7 +291,7 @@
       "name": "b-bind-aria-label",
       "description": {
         "kind": "markdown",
-        "value": "Reactively bind an attribute or DOM property, e.g. `b-bind-href=\"$data.url\"`. `class` and `style` accept strings, arrays, or objects.\n\n**aria-label**: Accessible name.\n\nValue: a JavaScript expression.\n\nModifiers: `.prop`.\n\n```html\n<a b-bind-href=\"$data.url\" b-bind-class=\"{ active: $data.current }\">Link</a>\n```"
+        "value": "Reactively bind a DOM attribute or property, including on component hosts. Use b-prop-* or b-props for component inputs. `class` accepts strings, arrays, or objects; `style` accepts strings or objects.\n\n**aria-label**: Accessible name.\n\nValue: a JavaScript expression.\n\nModifiers: `.prop`.\n\n```html\n<a b-bind-href=\"$data.url\" b-bind-class=\"{ active: $data.current }\">Link</a>\n```"
       },
       "references": [
         {
@@ -304,7 +304,7 @@
       "name": "b-bind-aria-describedby",
       "description": {
         "kind": "markdown",
-        "value": "Reactively bind an attribute or DOM property, e.g. `b-bind-href=\"$data.url\"`. `class` and `style` accept strings, arrays, or objects.\n\n**aria-describedby**: Ids of describing elements.\n\nValue: a JavaScript expression.\n\nModifiers: `.prop`.\n\n```html\n<a b-bind-href=\"$data.url\" b-bind-class=\"{ active: $data.current }\">Link</a>\n```"
+        "value": "Reactively bind a DOM attribute or property, including on component hosts. Use b-prop-* or b-props for component inputs. `class` accepts strings, arrays, or objects; `style` accepts strings or objects.\n\n**aria-describedby**: Ids of describing elements.\n\nValue: a JavaScript expression.\n\nModifiers: `.prop`.\n\n```html\n<a b-bind-href=\"$data.url\" b-bind-class=\"{ active: $data.current }\">Link</a>\n```"
       },
       "references": [
         {
@@ -317,7 +317,7 @@
       "name": "b-bind-aria-invalid",
       "description": {
         "kind": "markdown",
-        "value": "Reactively bind an attribute or DOM property, e.g. `b-bind-href=\"$data.url\"`. `class` and `style` accept strings, arrays, or objects.\n\n**aria-invalid**: Validation state for assistive technology.\n\nValue: a JavaScript expression.\n\nModifiers: `.prop`.\n\n```html\n<a b-bind-href=\"$data.url\" b-bind-class=\"{ active: $data.current }\">Link</a>\n```"
+        "value": "Reactively bind a DOM attribute or property, including on component hosts. Use b-prop-* or b-props for component inputs. `class` accepts strings, arrays, or objects; `style` accepts strings or objects.\n\n**aria-invalid**: Validation state for assistive technology.\n\nValue: a JavaScript expression.\n\nModifiers: `.prop`.\n\n```html\n<a b-bind-href=\"$data.url\" b-bind-class=\"{ active: $data.current }\">Link</a>\n```"
       },
       "references": [
         {
@@ -1191,10 +1191,10 @@
       ]
     },
     {
-      "name": "b-attr-class",
+      "name": "b-prop-label",
       "description": {
         "kind": "markdown",
-        "value": "On a component host: bind the host element itself instead of passing a prop.\n\n**class**: Host classes.\n\nValue: a JavaScript expression.\n\n```html\n<kpi-card b-attr-class=\"{ rising: $data.up }\"></kpi-card>\n```"
+        "value": "Pass a named reactive component prop through `$props`. Does not bind the host DOM.\n\n**label**: Component label prop.\n\nValue: a JavaScript expression.\n\n```html\n<kpi-card b-prop-value=\"$data.total\"></kpi-card>\n```"
       },
       "references": [
         {
@@ -1204,10 +1204,10 @@
       ]
     },
     {
-      "name": "b-attr-style",
+      "name": "b-prop-value",
       "description": {
         "kind": "markdown",
-        "value": "On a component host: bind the host element itself instead of passing a prop.\n\n**style**: Host styles.\n\nValue: a JavaScript expression.\n\n```html\n<kpi-card b-attr-class=\"{ rising: $data.up }\"></kpi-card>\n```"
+        "value": "Pass a named reactive component prop through `$props`. Does not bind the host DOM.\n\n**value**: Component value prop.\n\nValue: a JavaScript expression.\n\n```html\n<kpi-card b-prop-value=\"$data.total\"></kpi-card>\n```"
       },
       "references": [
         {
@@ -1217,10 +1217,10 @@
       ]
     },
     {
-      "name": "b-attr-id",
+      "name": "b-prop-content",
       "description": {
         "kind": "markdown",
-        "value": "On a component host: bind the host element itself instead of passing a prop.\n\n**id**: Host id.\n\nValue: a JavaScript expression.\n\n```html\n<kpi-card b-attr-class=\"{ rising: $data.up }\"></kpi-card>\n```"
+        "value": "Pass a named reactive component prop through `$props`. Does not bind the host DOM.\n\n**content**: Component content prop.\n\nValue: a JavaScript expression.\n\n```html\n<kpi-card b-prop-value=\"$data.total\"></kpi-card>\n```"
       },
       "references": [
         {
@@ -1230,10 +1230,23 @@
       ]
     },
     {
-      "name": "b-attr-hidden",
+      "name": "b-slot",
       "description": {
         "kind": "markdown",
-        "value": "On a component host: bind the host element itself instead of passing a prop.\n\n**hidden**: Hide the host while truthy.\n\nValue: a JavaScript expression.\n\n```html\n<kpi-card b-attr-class=\"{ rising: $data.up }\"></kpi-card>\n```"
+        "value": "Expose a reactive object as $slot to parent-authored content in a component slot outlet. Slot names remain literal.\n\nValue: a JavaScript expression.\n\n```html\n<slot b-slot=\"{ item: $for.item }\">Fallback</slot>\n```"
+      },
+      "references": [
+        {
+          "name": "Brio docs",
+          "url": "https://briojs.com/reference/components/#setup-events-and-slots"
+        }
+      ]
+    },
+    {
+      "name": "b-props",
+      "description": {
+        "kind": "markdown",
+        "value": "Spread a reactive object into component props. Own enumerable keys override named and static props; removed keys reveal lower-priority values.\n\nValue: a JavaScript expression.\n\n```html\n<kpi-card b-prop-value=\"$data.total\" b-props=\"$data.overrides\"></kpi-card>\n```"
       },
       "references": [
         {
@@ -1256,10 +1269,10 @@
       ]
     },
     {
-      "name": "b-props",
+      "name": "b-app-props",
       "description": {
         "kind": "markdown",
-        "value": "Astro adapter: a trusted expression evaluated once and passed to the island's app factory.\n\nValue: a JavaScript expression.\n\n```html\n<section b-app=\"counter\" b-props=\"{ initial: 5 }\">…</section>\n```"
+        "value": "Astro adapter: a trusted expression evaluated once and passed to the island's app factory.\n\nValue: a JavaScript expression.\n\n```html\n<section b-app=\"counter\" b-app-props=\"{ initial: 5 }\">…</section>\n```"
       },
       "references": [
         {

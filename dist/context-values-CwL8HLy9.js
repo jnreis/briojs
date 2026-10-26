@@ -6,7 +6,7 @@ const statementExpressions = /* @__PURE__ */ new Map();
 const assignmentExpressions = /* @__PURE__ */ new Map();
 const functionExpressions = /* @__PURE__ */ new Map();
 const $CONTEXT = "$context";
-const contextNames = ["$data", "$el", "$event", "$id", "$ref", "$for", "$mutations", "$size", "$entry", "$props", "$emit", "$insert", "$stores", "$provided", "$route", "trustedHTML", "flush", "onCleanup"];
+const contextNames = ["$data", "$el", "$event", "$id", "$ref", "$for", "$mutations", "$size", "$entry", "$props", "$slot", "$emit", "$insert", "$stores", "$provided", "$route", "trustedHTML", "flush", "onCleanup"];
 const contextBindings = (expression, extras) => {
   const names = contextNames.filter((name) => new RegExp(`(?<![\\w$])${name.replace("$", "\\$")}(?![\\w$])`).test(expression)).concat(extras);
   return `"use strict";${getLength(names) ? ` const { ${names.join(", ")} } = ${$CONTEXT};` : ""}
@@ -186,4 +186,4 @@ export {
   emptyContextValues as g,
   createProvidedValues as h
 };
-//# sourceMappingURL=context-values-BM3_VNwk.js.map
+//# sourceMappingURL=context-values-CwL8HLy9.js.map

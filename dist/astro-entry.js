@@ -1,6 +1,6 @@
 import { i as isFunction, c as createTypeError, O as ObjectConstructor, b as createError, o as objectEntries, d as deleteItem, g as getLength, e as isObjectType, a as arrayFrom, f as isNumber, h as isInstanceOf } from "./native-C6Z9zuZA.js";
-import { a as addEventListener, r as removeEventListener, g as getAttribute } from "./native-BP66_Ihq.js";
-import { f as copyContextValues, a as evaluate } from "./context-values-BM3_VNwk.js";
+import { a as addEventListener, r as removeEventListener, g as getAttribute } from "./native-D9adRJpp.js";
+import { f as copyContextValues, a as evaluate } from "./context-values-CwL8HLy9.js";
 import { v as combinedError } from "./effect-alBOOBUf.js";
 const lazyMarker = Symbol("brio.astro.lazy");
 function lazyApp(load) {
@@ -94,10 +94,10 @@ function enhanceAstro(options) {
         const name = getAttribute(root, "b-app");
         if (!ObjectConstructor.prototype.hasOwnProperty.call(apps, name))
           throw createError(`Unknown Brio Astro app "${name}".`);
-        const source = getAttribute(root, "b-props");
+        const source = getAttribute(root, "b-app-props");
         const props = ObjectConstructor.freeze(copyContextValues(
           source === null ? {} : evaluate(source, { $el: root }),
-          "b-props"
+          "b-app-props"
         ));
         const entry = apps[name];
         if (typeof entry === "function") {

@@ -393,9 +393,9 @@ for (const bundle of ['brio.min.js', 'brio.dev.min.js']) {
     });
 
     test(`${bundle}: binding.hydrate brings inserted content into the directive's scope`, t => {
-        const { app, root } = environment(t, bundle, '<div b-slot="1"></div>', { label: 'one' });
+        const { app, root } = environment(t, bundle, '<div b-custom-content="1"></div>', { label: 'one' });
         app.directive({
-            name: 'b-slot', children: false,
+            name: 'b-custom-content', children: false,
             mount(element, binding) {
                 element.innerHTML = '<b b-text="$data.label"></b>';
                 binding.hydrate(element.firstChild);

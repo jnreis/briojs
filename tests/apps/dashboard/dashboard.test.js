@@ -140,7 +140,7 @@ test('renders a large component tree: KPI cards, charts, and per-row sparklines 
     assert.equal($$('kpi-card spark-line').length, 4, 'components nest inside components');
     assert.deepEqual($$('kpi-card').map(card => [card.dataset.testid, card.className]), [
         ['kpi-revenue', 'rising'], ['kpi-orders', 'rising'], ['kpi-average', 'falling'], ['kpi-units', 'rising'],
-    ], 'b-attr-* binds native host attributes and classes');
+    ], 'b-bind-* binds native host attributes and classes');
     assert.deepEqual(productRows($$, text), [
         ['Aria Earbuds Audio', '3', '$300', '42.9%', '', '▲200%'],
         ['Orbit Watch Wearables', '1', '$300', '42.9%', '', '▼25%'],

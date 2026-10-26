@@ -19,11 +19,11 @@ export {
   removeAttribute as c,
   getOwnerDocument as d,
   getParent as e,
-  removeChild as f,
+  getNodeType as f,
   getAttribute as g,
-  getNodeType as h,
-  getNextSibling as i,
+  getNextSibling as h,
+  removeChild as i,
   insertBefore as j,
   removeEventListener as r
 };
-//# sourceMappingURL=native-BP66_Ihq.js.map
+//# sourceMappingURL=native-D9adRJpp.js.map

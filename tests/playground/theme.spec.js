@@ -41,6 +41,11 @@ for (const path of pages) {
         } else if (manual.includes(path)) {
             await expect(page.locator('.example-source').first()).toBeVisible();
             await expect(page.locator('.example-source').first()).toHaveCSS('background-color', 'rgb(19, 44, 80)');
+            const code = page.locator('.example-source code').first();
+            await expect(code).toHaveClass('lab-source-code');
+            await expect(code.locator('.token.tag').first()).toHaveCSS('color', 'rgb(196, 181, 253)');
+            expect(await page.locator('.example-source code').evaluateAll(blocks =>
+                blocks.every(block => block.classList.contains('lab-source-code') && block.querySelector('.token')))).toBe(true);
         }
         expect(errors).toEqual([]);
     });
@@ -87,6 +92,8 @@ test('lab preserves keyed node identity and exposes real mutations, state, and s
     await page.locator('.bench-source > summary').click();
     await expect(page.locator('#specimen-html')).toContainText('b-key="$for.task.id"');
     await expect(page.locator('#specimen-js')).toContainText('batch(');
+    await expect(page.locator('#specimen-html .token.tag').first()).toHaveCSS('color', 'rgb(196, 181, 253)');
+    await expect(page.locator('#specimen-js .token.keyword').first()).toHaveCSS('color', 'rgb(196, 181, 253)');
 });
 
 test('empty workbench remains usable and lab navigation works without JavaScript', async ({ page, browser }) => {
@@ -141,7 +148,7 @@ test('lab catalog search, categories, shortcuts, and navigation work', async ({ 
     await expect(page).toHaveURL(/\/tests\/directives\/teleport.html$/);
     await page.getByRole('link', { name: 'Lab', exact: true }).click();
     await expect(page).toHaveURL('/');
-    await expect(page.locator('#astro-launch-link')).toHaveAttribute('href', /:4321\/\?lab=http/);
+    await expect(page.locator('#astro-launch-link')).toHaveAttribute('href', /:4336\/\?lab=http/);
     await page.getByRole('link', { name: 'Experiments', exact: true }).click();
     const broken = await page.locator('a.test-link').evaluateAll(links =>
         Promise.all(links.map(async link => {

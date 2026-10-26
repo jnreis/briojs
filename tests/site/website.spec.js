@@ -35,6 +35,13 @@ test('homepage creature builder, color theme, and mobile layout work', async ({ 
 
 test('homepage reveals its actual creature source and requested featured demos', async ({ page }) => {
     await page.goto('/');
+    const remix = page.locator('.workshop-remix');
+    await expect(remix.getByRole('link', { name: 'Remix this creature in the playground →' })).toHaveAttribute('href', '/play/');
+    const remixStyle = await remix.evaluate(element => {
+        const style = getComputedStyle(element);
+        return { padding: style.paddingLeft, border: style.borderTopStyle, decoration: getComputedStyle(element.querySelector('a')).textDecorationLine };
+    });
+    expect(remixStyle).toEqual({ padding: '24px', border: 'solid', decoration: 'none' });
     await page.locator('.mixer-source > summary').click();
     const snippet = await page.locator('.code-panels pre').first().innerText();
     const normalize = source => source.split('\n').map(line => line.trimEnd()).filter(line => line.length).join('\n');

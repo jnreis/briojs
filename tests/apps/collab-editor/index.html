@@ -288,13 +288,13 @@
                 <button type="button" class="button" b-bind-aria-pressed="$data.history" b-on-click="$data.toggleHistory()" data-testid="toggle-history">History</button>
             </div>
             <article class="page" b-bind-aria-label="$data.state.title || 'Untitled'">
-                <doc-block b-bind-block="$data.state.titleBlock" b-bind-doc="$data.doc"></doc-block>
+                <doc-block b-prop-block="$data.state.titleBlock" b-prop-doc="$data.doc"></doc-block>
                 <div class="blocks">
-                    <doc-block b-for="block in $data.state.visible" b-key="$for.block.id" b-bind-block="$for.block" b-bind-doc="$data.doc" b-transition="'block'"></doc-block>
+                    <doc-block b-for="block in $data.state.visible" b-key="$for.block.id" b-prop-block="$for.block" b-prop-doc="$data.doc" b-transition="'block'"></doc-block>
                 </div>
                 <button type="button" class="add-block" b-on-click="$data.addBlock()" data-testid="add-block">+ Add a block</button>
             </article>
-            <doc-history b-if="$data.history" b-bind-doc="$data.doc"></doc-history>
+            <doc-history b-if="$data.history" b-prop-doc="$data.doc"></doc-history>
         </div>
     </template>
 

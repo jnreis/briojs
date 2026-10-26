@@ -59,7 +59,7 @@ test('Astro entry imports without a DOM and public declarations compile', () => 
 });
 
 test('eager siblings read props once, own independent apps, and restore on shutdown/reinstall', t => {
-    const env = environment(t, `<main b-app="counter" b-props="{count:Number($el.dataset.initial)}" data-initial="5"><button b-on-click="$data.count++" b-text="$data.count"></button></main>
+    const env = environment(t, `<main b-app="counter" b-app-props="{count:Number($el.dataset.initial)}" data-initial="5"><button b-on-click="$data.count++" b-text="$data.count"></button></main>
         <aside b-app="counter"><b b-text="$data.count"></b></aside>`);
     let calls = 0;
     const apps = { counter: (root, props) => { calls++; return counter(root, props); } };
@@ -85,11 +85,11 @@ test('eager siblings read props once, own independent apps, and restore on shutd
 });
 
 test('invalid names, props, nesting and factories fail explicitly without blocking siblings or retrying', t => {
-    const env = environment(t, `<main b-app="absent"></main><div b-app="ok" b-props="null"></div>
-        <div b-app="ok" b-props="Promise.resolve({})"></div>
-        <div b-app="ok" b-props="({get value(){return 1}})"></div>
-        <div b-app="ok" b-props="$data.value"></div>
-        <div b-app="ok" b-props=""></div>
+    const env = environment(t, `<main b-app="absent"></main><div b-app="ok" b-app-props="null"></div>
+        <div b-app="ok" b-app-props="Promise.resolve({})"></div>
+        <div b-app="ok" b-app-props="({get value(){return 1}})"></div>
+        <div b-app="ok" b-app-props="$data.value"></div>
+        <div b-app="ok" b-app-props=""></div>
         <div b-app="ok"><span b-app="ok"></span></div>
         <div b-app="bad"></div><aside b-app="ok"><b b-text="$data.count"></b></aside>`);
     let calls = 0;
@@ -112,7 +112,7 @@ test('own registry names work and validation rejects invalid installation config
 });
 
 test('lazy loaders deduplicate but create independent apps and read props before loading', async t => {
-    const env = environment(t, '<main b-app="lazy" b-props="{count:Number($el.dataset.n)}" data-n="3"><b b-text="$data.count"></b></main><aside b-app="lazy"><b b-text="$data.count"></b></aside>');
+    const env = environment(t, '<main b-app="lazy" b-app-props="{count:Number($el.dataset.n)}" data-n="3"><b b-text="$data.count"></b></main><aside b-app="lazy"><b b-text="$data.count"></b></aside>');
     let resolve;
     let loads = 0;
     let calls = 0;
@@ -130,13 +130,13 @@ test('lazy loaders deduplicate but create independent apps and read props before
 });
 
 test('outgoing pending islands are abandoned; retained ancestor islands finish with original props', async t => {
-    const env = environment(t, '<section data-astro-transition-persist="keep"><main b-app="lazy" b-props="{count:7}"><b b-text="$data.count"></b></main></section><aside b-app="lazy"></aside>');
+    const env = environment(t, '<section data-astro-transition-persist="keep"><main b-app="lazy" b-app-props="{count:7}"><b b-text="$data.count"></b></main></section><aside b-app="lazy"></aside>');
     let resolve;
     const seen = [];
     env.install({ lazy: lazyApp(() => new Promise(done => { resolve = done; })) });
     await tick();
     const boundary = document.querySelector('section');
-    env.swap('<section data-astro-transition-persist="keep"><main b-app="lazy" b-props="{count:99}"></main></section>',
+    env.swap('<section data-astro-transition-persist="keep"><main b-app="lazy" b-app-props="{count:99}"></main></section>',
         incoming => incoming.querySelector('section').replaceWith(boundary));
     resolve({ default: (root, props) => { seen.push(root); return counter(root, props); } });
     await tick();
@@ -217,7 +217,7 @@ test('outgoing cleanup failures report per root and do not prevent other roots f
 });
 
 test('a persistent root keeps its app and props until its boundary disappears', t => {
-    const env = environment(t, '<main b-app="a" b-props="{count:4}" data-astro-transition-persist="a"><b b-text="$data.count"></b></main>');
+    const env = environment(t, '<main b-app="a" b-app-props="{count:4}" data-astro-transition-persist="a"><b b-text="$data.count"></b></main>');
     let calls = 0;
     let cleanups = 0;
     env.install({ a: (root, props) => {
@@ -227,7 +227,7 @@ test('a persistent root keeps its app and props until its boundary disappears', 
         return app;
     } });
     const original = document.querySelector('main');
-    env.swap('<main b-app="a" b-props="{count:9}" data-astro-transition-persist="a"></main>',
+    env.swap('<main b-app="a" b-app-props="{count:9}" data-astro-transition-persist="a"></main>',
         incoming => incoming.querySelector('main').replaceWith(original));
     assert.equal(document.querySelector('main'), original);
     assert.equal(original.textContent, '4');

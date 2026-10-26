@@ -14,8 +14,11 @@ is a suitable baseline). The browser runtime has no Node.js dependency.
 npm install
 npx playwright install chromium
 npm run build
-npm run dev -- --open /tests/index.html
+npm run lab
 ```
+
+`npm run lab` starts the Vite Lab and the Astro fixture together; open the URL
+Vite prints. Use `npm run dev` alone when you don't need the Astro frame.
 
 The repository contains a pnpm lockfile. If using pnpm, install with
 `pnpm install --frozen-lockfile`; avoid committing a second package-manager
@@ -29,18 +32,33 @@ Open `/` for **Brio Lab** (`index.html` + `lab/`): a keyed-list workbench with
 live state, real DOM-node identities, a bounded MutationObserver trace, and a
 searchable experiment rack. The catalog reads the links and descriptions from
 `tests/index.html`, so the full directory remains the source of truth. Specimen
-source is shown directly from its template and JavaScript module.
+source is shown directly from its template and JavaScript module. The Lab and
+manual test pages share a locally bundled Prism highlighter for HTML, embedded
+CSS/JavaScript, and standalone JavaScript. Source snapshots remain literal text;
+highlighting only adds presentation spans and never executes displayed code.
 
 Use `/tests/index.html` for the complete example directory. The standalone apps,
 manual pages, and Astro fixture share the website palette and a light/dark
 toggle. The preference uses `starlight-theme` in local storage (per origin);
-without a saved preference it follows your operating system. The Astro fixture
-runs separately with `npm run dev:astro`. The lab links to the same hostname on
-port 4321 and passes its origin for the return link; change the URL manually if
-you start Astro on another port. In the Astro lab, compare local and persistent
-islands across page swaps, send a window pulse, and release lazy modules using
-the diagnostic controls. Returning from Astro defaults to Vite's port 5173 when
-no lab origin was supplied.
+without a saved preference it follows your operating system. The Lab home
+embeds the Astro fixture in a frame (`lab/astro-frame.js`). The fixture runs on
+its own server at the same hostname on port 4323, not Astro's default 4321, so
+it never collides with the docs site's dev server (`npm run lab` starts both, or
+run `npm run dev:astro` beside `npm run dev`); the frame shows start
+instructions until that server answers, then connects on its own. Set
+`VITE_LAB_ASTRO_PORT` if you start Astro on another port. When framed, the
+fixture (`tests/fixtures/astro/src/lab-embed.js`) hides its own header and
+footer, follows the Lab's theme, and reports its height and current path to the
+Lab. It accepts messages only from its parent on the same hostname. Compare
+local and persistent islands across page swaps, send a window pulse, and
+release lazy modules using the diagnostic controls. "Open in new tab" opens the
+current fixture page standalone, with a return link to the Lab. Returning from
+Astro defaults to Vite's port 5173 when no Lab origin was supplied.
+
+Manual test pages keep only their page-specific `<style>` rules. Shared page,
+card, heading, and button styles live in `tests/shared/showcase.css`. The pages
+stay plain HTML that loads `/dist/*.min.js` with script tags, without
+build-time injection, so they show exactly what a user would write.
 
 ## Validation
 
@@ -74,9 +92,10 @@ runtime source or from `DOCUMENTATION.md` headings.
 
 ### Starter templates
 
-`templates/` holds runnable starters (widget, multi-page, SPA, Astro). They
-install the **published** `@jnreis/briojs` package, so they only use released
-APIs; StackBlitz opens them straight from `main`. The site lists them from
+`templates/` holds runnable starters (widget, multi-page, SPA, Astro, plugin). They
+install `@jnreis/briojs` from npm; StackBlitz opens them straight from `main`.
+During v5 release preparation their `^5.0.0` dependency needs a locally packed
+build until that version is published. The site lists them from
 `site/data/templates.mjs`, and `tests/starter-templates.test.js` checks their
 structure, links, and directives. Before changing one, run it for real:
 
@@ -107,8 +126,9 @@ canonical Markdown or example sources, rerun `pnpm run site:prepare` while the
 dev server is running. Source website pages and styles support Astro hot reload.
 After changing framework source, rebuild it before preparing the site again.
 
-The homepage and gallery are custom Astro pages. Only the homepage's creature builder
-uses Brio; documentation navigation and search use Starlight. Demos run in
+The homepage, example gallery, Parts, and playground are custom Astro pages.
+The creature builder and isolated Parts/playground previews use Brio;
+documentation navigation and search use Starlight. Example-gallery demos run in
 the same tab with a return link, not embedded frames. Staged demos share the
 website's light/dark preference and include a theme toggle. Shared demo
 palette overrides live in `site/public/demo-theme.css` and shared color tokens
@@ -247,13 +267,17 @@ consolidated entry for the whole unpublished v4 development cycle.
 
 Before publishing:
 
-1. Set `version` in `package.json`. Rename `## [Unreleased]` in `CHANGELOG.md`
-   to `## [x.y.z] — YYYY-MM-DD`.
+1. Set `version` in `package.json`. Finalize the pending changelog heading as
+   `## [x.y.z] — YYYY-MM-DD`, using the actual release date, not a preparation
+   date. Until then, keep the version marked `Unreleased`.
 2. Update pinned CDN URLs (`@jnreis/briojs@x.y.z`) in `README.md`,
    `DOCUMENTATION.md`, `site/src/content/docs/start/getting-started.md`, and
    `site/scripts/content.mjs`, plus the version notes at the top of the README
    and documentation. For minor and major releases, raise the starter
    templates' `@jnreis/briojs` range and the bug report version placeholder.
+   Review the AI kit's version guidance and regenerate website/llms copies.
+   `create-brio` is a separate package: validate its generated templates and
+   publish it separately before advertising `npm create brio@latest` as available.
 3. Run the validation commands above, plus size and performance checks.
 4. Run `npm pack --dry-run` to review the file list. `prepack` rebuilds `dist`
    for both packing and publishing; it does not run the full test suite.

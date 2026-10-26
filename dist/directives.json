@@ -51,7 +51,7 @@
     },
     {
       "name": "b-bind-*",
-      "description": "Reactively bind an attribute or DOM property, e.g. `b-bind-href=\"$data.url\"`. `class` and `style` accept strings, arrays, or objects.",
+      "description": "Reactively bind a DOM attribute or property, including on component hosts. Use b-prop-* or b-props for component inputs. `class` accepts strings, arrays, or objects; `style` accepts strings or objects.",
       "value": "expression",
       "example": "<a b-bind-href=\"$data.url\" b-bind-class=\"{ active: $data.current }\">Link</a>",
       "modifiers": [
@@ -717,29 +717,41 @@
       "docs": "https://briojs.com/reference/undefined"
     },
     {
-      "name": "b-attr-*",
-      "description": "On a component host: bind the host element itself instead of passing a prop.",
+      "name": "b-prop-*",
+      "description": "Pass a named reactive component prop through `$props`. Does not bind the host DOM.",
       "value": "expression",
-      "example": "<kpi-card b-attr-class=\"{ rising: $data.up }\"></kpi-card>",
+      "example": "<kpi-card b-prop-value=\"$data.total\"></kpi-card>",
       "origin": "component",
       "suggestions": [
         {
-          "name": "class",
-          "description": "Host classes."
+          "name": "label",
+          "description": "Component label prop."
         },
         {
-          "name": "style",
-          "description": "Host styles."
+          "name": "value",
+          "description": "Component value prop."
         },
         {
-          "name": "id",
-          "description": "Host id."
-        },
-        {
-          "name": "hidden",
-          "description": "Hide the host while truthy."
+          "name": "content",
+          "description": "Component content prop."
         }
       ],
+      "docs": "https://briojs.com/reference/undefined"
+    },
+    {
+      "name": "b-slot",
+      "description": "Expose a reactive object as $slot to parent-authored content in a component slot outlet. Slot names remain literal.",
+      "value": "expression",
+      "example": "<slot b-slot=\"{ item: $for.item }\">Fallback</slot>",
+      "origin": "component",
+      "docs": "https://briojs.com/reference/undefined"
+    },
+    {
+      "name": "b-props",
+      "description": "Spread a reactive object into component props. Own enumerable keys override named and static props; removed keys reveal lower-priority values.",
+      "value": "expression",
+      "example": "<kpi-card b-prop-value=\"$data.total\" b-props=\"$data.overrides\"></kpi-card>",
+      "origin": "component",
       "docs": "https://briojs.com/reference/undefined"
     },
     {
@@ -751,10 +763,10 @@
       "docs": "https://briojs.com/reference/undefined"
     },
     {
-      "name": "b-props",
+      "name": "b-app-props",
       "description": "Astro adapter: a trusted expression evaluated once and passed to the island's app factory.",
       "value": "expression",
-      "example": "<section b-app=\"counter\" b-props=\"{ initial: 5 }\">…</section>",
+      "example": "<section b-app=\"counter\" b-app-props=\"{ initial: 5 }\">…</section>",
       "origin": "astro",
       "docs": "https://briojs.com/reference/undefined"
     }

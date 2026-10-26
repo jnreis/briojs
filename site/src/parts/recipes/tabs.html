@@ -1,0 +1,35 @@
+<template id="brio-tabs-template">
+  <section class="part-root" b-id="['title', 'tabs']"
+    b-bind-aria-labelledby="$id.title" b-bind-style="{ '--part-accent': $props.accent || null }">
+    <style>
+      @scope {
+        :scope { display: block; font: 15px/1.65 system-ui, sans-serif; color: light-dark(#152139, #edf3ff); }
+        * { box-sizing: border-box; }
+        h2 { margin: 0 0 18px; font-size: 1.5rem; line-height: 1.3; letter-spacing: -.035em; }
+        h3 { margin-top: 0; }
+        p { margin-bottom: 0; }
+        [hidden] { display: none !important; }
+        [role="tablist"] { display: flex; gap: 6px; border-bottom: 1px solid light-dark(#d5e0ef, #344863); padding-bottom: 10px; }
+        button { cursor: pointer; font: inherit; color: inherit; background: transparent; border: 1px solid light-dark(#d5e0ef, #344863); border-radius: 7px; padding: 8px 14px; }
+        button.is-selected { background: light-dark(#eef5ff, #1b3251); border-color: var(--part-accent, light-dark(#245fe2, #9bc1ff)); }
+        :focus-visible { outline: 3px solid var(--part-accent, light-dark(#245fe2, #9bc1ff)); outline-offset: 3px; }
+        [role="tabpanel"] { padding: 24px 4px; }
+      }
+    </style>
+    <h2 b-bind-id="$id.title" b-text="$props.title || $data.content.title"></h2>
+    <div role="tablist" b-bind-aria-label="$props.label || $data.content.label" b-on-keydown="$data.onKey($event)">
+      <button type="button" role="tab" b-for="item in $data.content.items" b-key="$for.item.id"
+        b-bind-id="$data.tabId($id.tabs, $for.item.id)" b-bind-aria-controls="$data.panelId($id.tabs, $for.item.id)"
+        b-bind-class="{ 'is-selected': $data.isSelected($for.item.id) }"
+        b-bind-aria-selected="$data.isSelected($for.item.id)" b-bind-tabindex="$data.isSelected($for.item.id) ? 0 : -1"
+        b-on-click="$data.select($for.item.id)" b-text="$for.item.label"></button>
+    </div>
+    <section role="tabpanel" b-for="item in $data.content.items" b-key="$for.item.id"
+      b-bind-id="$data.panelId($id.tabs, $for.item.id)" b-bind-aria-labelledby="$data.tabId($id.tabs, $for.item.id)"
+      tabindex="0" b-bind-hidden="!$data.isSelected($for.item.id)">
+      <slot name="panel" b-slot="{ item: $for.item }">
+        <h3 b-text="$for.item.heading"></h3><p b-text="$for.item.body"></p>
+      </slot>
+    </section>
+  </section>
+</template>

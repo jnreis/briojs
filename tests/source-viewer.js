@@ -33,6 +33,7 @@
         summary.textContent = title;
         const pre = document.createElement('pre');
         const code = document.createElement('code');
+        code.dataset.language = 'markup';
         code.textContent = format(source);
         pre.append(code);
         details.append(summary, pre);
@@ -57,5 +58,9 @@
         if (scripts.length) setup.append(panel('JavaScript and script imports', scripts.join('\n\n')));
         if (styles.length) setup.append(panel('Page CSS', styles.join('\n\n')));
         document.body.append(setup);
+        const highlighter = document.createElement('script');
+        highlighter.type = 'module';
+        highlighter.src = new URL('source-highlight.js', script.src).href;
+        document.head.append(highlighter);
     }, { once: true });
 })();

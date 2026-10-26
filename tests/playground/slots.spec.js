@@ -1,0 +1,38 @@
+import { test, expect } from '@playwright/test';
+
+test('scoped-slot Lab demonstrates default and named outlets, parent scope, keyed identity, and cleanup', async ({ page }) => {
+    const errors = [];
+    page.on('pageerror', error => errors.push(error.message));
+    await page.goto('/tests/');
+    await page.locator('a[href="/tests/directives/slot.html"]').click();
+    const custom = page.locator('#custom');
+    await expect(custom.locator('[data-row]')).toHaveCount(2);
+    await expect(custom.locator('#summary')).toHaveText('Parent: 2 items');
+    await expect(custom.locator('.important')).toHaveText('Important answer');
+    await expect(page.locator('#fallback .fallback-body')).toHaveText(['Important answer', 'Ordinary answer']);
+    await page.locator('#prefix').fill('Caller');
+    await expect(custom.locator('.choose')).toHaveText(['Caller: a', 'Caller: b']);
+    const input = custom.locator('[data-item="b"]');
+    const original = await input.elementHandle();
+    await page.locator('#reverse').click();
+    await expect(custom.locator('.item-input').first()).toHaveAttribute('data-item', 'b');
+    await page.locator('#replace').click();
+    await expect(input).toHaveValue('Replaced answer');
+    expect(await input.evaluate((node, previous) => node === previous, original)).toBe(true);
+    await input.fill('Edited by parent');
+    await expect(page.locator('#fallback .fallback-body').first()).toHaveText('Edited by parent');
+    await custom.locator('.choose').first().click();
+    await expect(page.locator('#selected')).toHaveText('b');
+    const button = await custom.locator('.choose').first().elementHandle();
+    await page.locator('#toggle').click();
+    await expect(custom).toHaveCount(0);
+    await button.evaluate(node => node.click());
+    await expect(page.locator('#actions')).toHaveText('1');
+    await page.locator('#toggle').click();
+    await expect(custom.locator('.item-input')).toHaveCount(2);
+    await expect(custom.locator('#summary')).toHaveText('Caller: 2 items');
+    const ids = await custom.locator('[id]').evaluateAll(nodes => nodes.map(node => node.id));
+    expect(new Set(ids).size).toBe(ids.length);
+    await expect(page.locator('.example-source').first()).toBeVisible();
+    expect(errors).toEqual([]);
+});

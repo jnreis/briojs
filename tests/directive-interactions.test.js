@@ -95,6 +95,24 @@ const directives = [
     probe('component host', `<probe-card id="probe-component"></probe-card>`,
         ({ pair, root }) => equal(pair, 'component host', 'hydrates the registered component',
             root.querySelector('#probe-component [data-probe="component"]')?.textContent, 'component')),
+    probe('b-prop-name', `<probe-input data-probe="prop" b-prop-label="$data.value"></probe-input>`,
+        ({ pair, root }) => equal(pair, 'b-prop-name', 'supplies a named component input',
+            root.querySelector('[data-probe="prop"] span')?.textContent, 'ready'),
+        ({ pair, root }) => equal(pair, 'b-prop-name', 'updates a named component input',
+            root.querySelector('[data-probe="prop"] span')?.textContent, 'updated')),
+    probe('b-props', `<probe-input data-probe="props" b-props="{ label: $data.value }"></probe-input>`,
+        ({ pair, root }) => equal(pair, 'b-props', 'spreads component inputs',
+            root.querySelector('[data-probe="props"] span')?.textContent, 'ready'),
+        ({ pair, root }) => equal(pair, 'b-props', 'updates spread component inputs',
+            root.querySelector('[data-probe="props"] span')?.textContent, 'updated')),
+    probe('b-slot', `
+        <probe-outlet b-prop-label="$data.value">
+            <span data-probe="slot" b-text="$slot.label"></span>
+        </probe-outlet>`,
+        ({ pair, root }) => equal(pair, 'b-slot', 'exposes outlet context to parent markup',
+            root.querySelector('[data-probe="slot"]')?.textContent, 'ready'),
+        ({ pair, root }) => equal(pair, 'b-slot', 'updates scoped slot values',
+            root.querySelector('[data-probe="slot"]')?.textContent, 'updated')),
     probe('b-text', `<p data-probe="text" b-text="$data.value">original</p>`,
         ({ pair, root }) => equal(pair, 'b-text', 'owns and updates text content',
             root.querySelector('[data-probe="text"]')?.textContent, 'ready'),
@@ -285,6 +303,8 @@ function setup(t, left, right, caseId) {
         template: '<span data-probe="component" b-text="$data.label"></span>',
         setup: () => window.JSON.parse('{"label":"component"}'),
     });
+    app.component('probe-input', { template: '<span b-text="$props.label"></span>' });
+    app.component('probe-outlet', { template: '<slot b-slot="{ label: $props.label }"></slot>' });
     app.component('home-page', { template: '<p data-probe="route">home</p>' });
     const root = window.document.querySelector('#app');
     stopRouter = router.start(root);

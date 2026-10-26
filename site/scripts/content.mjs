@@ -84,8 +84,8 @@ const intro = `> Brio.js (npm: \`@jnreis/briojs\`) is an HTML-first JavaScript f
 
 Key facts for writing Brio code:
 
-- Directives are \`b-\` attributes: \`b-text\`, \`b-bind-*\`, \`b-on-*\`, \`b-model\`, \`b-if\`/\`b-else-if\`/\`b-else\`, \`b-for\` with \`b-key\`, and more.
-- State is explicit in expressions: \`$data.count\`, \`$props.label\`, \`$for.item\`, \`$ref.input\`. Brio never guesses which scope a bare name belongs to.
+- Directives are \`b-\` attributes: \`b-text\`, \`b-bind-*\` for DOM bindings, \`b-prop-*\` and \`b-props\` for component inputs, \`b-on-*\`, \`b-model\`, \`b-if\`/\`b-else-if\`/\`b-else\`, \`b-for\` with \`b-key\`, and more.
+- State is explicit in expressions: \`$data.count\`, \`$props.label\`, \`$for.item\`, \`$ref.input\`. Brio never guesses which scope a bare name belongs to. Component outlets expose context with \`<slot b-slot="{ item: $for.item }">\`; supplied markup reads \`$slot.item\` and keeps its parent scope. Slot names are literal.
 - Mount with \`createApp({ state: () => ({ … }) }).mount('#root')\`; Brio owns only the DOM you mount. Unmount before a host removes it.
 - Browser bundle: \`<script src="https://cdn.jsdelivr.net/npm/@jnreis/briojs@5.0.0/dist/brio.min.js">\` exposes \`window.brio\`. Add-on scripts load after it: \`brio.inputs.min.js\` (\`b-mask\`, \`b-form\`, \`validate\`), \`brio.observers.min.js\` (\`b-on-enter\`, \`b-on-resize\`, …), \`brio.router.min.js\`, and others. With npm, install add-on directives with \`plugins: [inputsPlugin]\`. ESM: \`import { createApp } from '@jnreis/briojs'\`.
 - Custom directives and \`$helpers\` come only from plugins registered before mount (\`app.directive()\`, \`app.helper()\`, \`app.use({ name, directives, helpers })\`). Never invent \`b-\` attributes that no installed plugin defines.
@@ -101,17 +101,22 @@ export function llmsTxt({ guides, pages, examples }) {
         '',
         '## Start here',
         '',
-        ...guides.map(guide => link(guide.title, `${site}/start/${guide.slug}/`, guide.description)),
+        ...guides.filter(guide => guide.section !== 'integrations').map(guide => link(guide.title, `${site}/start/${guide.slug}/`, guide.description)),
         link('Full documentation as one file', `${site}/llms-full.txt`, 'every guide and reference page in a single Markdown file.'),
         '',
         '## Reference',
         '',
         ...pages.map(page => link(page.title, `${site}/reference/${page.slug}/`, page.summary)),
         '',
+        '## Building blocks and integrations',
+        '',
+        link('Brio Parts', `${site}/parts/`, 'copy-paste interaction recipes with live demos, source, playground links, and keyboard notes.'),
+        ...guides.filter(guide => guide.section === 'integrations').map(guide => link(guide.title, `${site}/integrations/${guide.slug}/`, guide.description)),
+        '',
         '## AI developer kit',
         '',
         link('Kit overview and installation', `${repo}ai/README.md`, 'a portable, tool-neutral kit for building Brio apps with an assistant.'),
-        link('Brio v4 application guide', `${repo}ai/brio-apps/references/guide.md`, 'the rules and patterns an assistant should follow.'),
+        link('Brio v5 application guide', `${repo}ai/brio-apps/references/guide.md`, 'the rules and patterns an assistant should follow.'),
         link('Application recipes', `${repo}ai/brio-apps/references/recipes.md`, 'tested widget, multi-page, and SPA recipes.'),
         link('Brio apps skill', `${repo}ai/brio-apps/SKILL.md`, 'an on-demand skill for assistants that support skills.'),
         link('Directive manifest', `${site}/dist/directives.json`, 'every directive, its value, modifiers, example, and docs link as JSON.'),
@@ -137,7 +142,7 @@ export function llmsFullTxt({ guides, documentation }) {
         '',
         intro,
         '',
-        ...guides.flatMap(guide => [`# ${guide.title}`, '', `Source: ${site}/start/${guide.slug}/`, '', absolute(stripFrontmatter(guide.markdown)), '']),
+        ...guides.flatMap(guide => [`# ${guide.title}`, '', `Source: ${site}/${guide.section ?? 'start'}/${guide.slug}/`, '', absolute(stripFrontmatter(guide.markdown)), '']),
         `# Reference`,
         '',
         `Source: ${site}/reference/install/`,
@@ -147,8 +152,9 @@ export function llmsFullTxt({ guides, documentation }) {
     ].join('\n');
 }
 
-export const guideInfo = (slug, markdown) => ({
+export const guideInfo = (slug, markdown, section = 'start') => ({
     slug,
+    section,
     title: frontmatter(markdown, 'title'),
     description: frontmatter(markdown, 'description'),
     markdown,

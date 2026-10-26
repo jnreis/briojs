@@ -173,7 +173,7 @@
                     <span b-if="$data.request.status === 'loading'">Loading orders…</span>
                     <span b-else-if="$data.request.status === 'refreshing'">Refreshing…</span>
                     <span b-else-if="$data.request.status === 'error'">Last refresh failed</span>
-                    <span b-else>Updated <relative-time b-bind-time="$data.request.updatedAt"></relative-time></span>
+                    <span b-else>Updated <relative-time b-prop-time="$data.request.updatedAt"></relative-time></span>
                     <span b-if="$data.periodLabel" data-testid="period">· ${$data.periodLabel}</span>
                 </p>
             </header>
@@ -233,28 +233,28 @@
         <template b-else>
             <section class="grid kpis" aria-label="Key metrics" data-testid="kpis">
                 <kpi-card b-for="kpi in $data.kpis" b-key="$for.kpi.key"
-                          b-attr-data-testid="'kpi-' + $for.kpi.key" b-attr-class="{ rising: $for.kpi.delta > 0, falling: $for.kpi.delta < 0 }"
-                          b-bind-label="$for.kpi.label" b-bind-value="$for.kpi.value" b-bind-hint="$for.kpi.hint"
-                          b-bind-delta="$for.kpi.delta" b-bind-trend="$for.kpi.trend"></kpi-card>
+                          b-bind-data-testid="'kpi-' + $for.kpi.key" b-bind-class="{ rising: $for.kpi.delta > 0, falling: $for.kpi.delta < 0 }"
+                          b-prop-label="$for.kpi.label" b-prop-value="$for.kpi.value" b-prop-hint="$for.kpi.hint"
+                          b-prop-delta="$for.kpi.delta" b-prop-trend="$for.kpi.trend"></kpi-card>
             </section>
 
             <div class="grid" style="grid-template-columns: minmax(0, 1fr);">
                 <chart-card heading="Revenue over time" data-testid="revenue-card"
-                            b-bind-caption="$data.filters.compare ? 'Compared with the previous ' + $data.filters.days + ' days' : 'Daily revenue'">
+                            b-prop-caption="$data.filters.compare ? 'Compared with the previous ' + $data.filters.days + ' days' : 'Daily revenue'">
                     <label slot="actions" class="switch">
                         <input type="checkbox" data-testid="compare" b-model="$data.filters.compare"> Compare
                     </label>
-                    <line-chart label="Daily revenue chart" b-bind-points="$data.daily" b-bind-compare="$data.filters.compare"></line-chart>
+                    <line-chart label="Daily revenue chart" b-prop-points="$data.daily" b-prop-compare="$data.filters.compare"></line-chart>
                 </chart-card>
             </div>
 
             <div class="grid charts">
                 <chart-card heading="Revenue by region" caption="Select a region to filter the dashboard" data-testid="region-card">
-                    <bar-chart b-bind-items="$data.regions" b-bind-selected="$data.filters.region"
+                    <bar-chart b-prop-items="$data.regions" b-prop-selected="$data.filters.region"
                                b-on-drill="$data.drill($event.detail)"></bar-chart>
                 </chart-card>
                 <chart-card heading="Sales channels" caption="Click a channel to show or hide it" data-testid="channel-card">
-                    <donut-chart caption="revenue" b-bind-segments="$data.channels"
+                    <donut-chart caption="revenue" b-prop-segments="$data.channels"
                                  b-on-toggle="$data.toggleChannel($event.detail)"></donut-chart>
                 </chart-card>
                 <div class="side">
@@ -271,7 +271,7 @@
                             <li b-for="order in $data.live.feed" b-key="$for.order.id" class="feed-new">
                                 <span>${$for.order.name} <small>× ${$for.order.units} · ${$for.order.region}</small></span>
                                 <strong>${$stores.format.currency($for.order.revenue)}</strong>
-                                <small><relative-time b-bind-time="$for.order.at"></relative-time></small>
+                                <small><relative-time b-prop-time="$for.order.at"></relative-time></small>
                             </li>
                         </ul>
                         <p class="empty" b-if="!$data.live.feed.length">${$data.live.on ? 'Waiting for new orders…' : 'Turn on Live to stream new orders.'}</p>
@@ -303,8 +303,8 @@
                                 <td class="num">${$stores.format.number($for.row.units)}</td>
                                 <td class="num">${$stores.format.currency($for.row.revenue)}</td>
                                 <td><span class="share"><i b-bind-style="{ '--share': ($for.row.share * 100).toFixed(1) + '%' }"></i>${$stores.format.percent($for.row.share)}</span></td>
-                                <td><spark-line b-bind-values="$for.row.trend"></spark-line></td>
-                                <td><trend-badge b-bind-delta="$for.row.delta"></trend-badge></td>
+                                <td><spark-line b-prop-values="$for.row.trend"></spark-line></td>
+                                <td><trend-badge b-prop-delta="$for.row.delta"></trend-badge></td>
                             </tr>
                         </tbody>
                     </table>

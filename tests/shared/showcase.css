@@ -11,6 +11,7 @@ html h1, html h2, html h3 { line-height: 1.15; letter-spacing: -.035em; }
 html h1 { font-size: clamp(2rem, 5vw, 3.6rem); margin-bottom: 16px; }
 html h2 { font-size: 1.5rem; }
 html h3 { font-size: 1.15rem; border-color: var(--line); }
+html .card > h3 { margin-top: 0; padding-bottom: 8px; border-bottom: 1px solid var(--line); }
 html a { color: var(--blue); text-underline-offset: 4px; }
 html :is(.card, .section, .example-source-setup, [data-page], [data-player], .playground-panel) {
     background: var(--surface);
@@ -78,6 +79,9 @@ html #theme-toggle { display: inline-grid; place-items: center; width: 36px; hei
 .astro-diagnostics h2 { margin: 0; font-size: 1rem; }
 .astro-diagnostics pre { font: .75rem/1.6 ui-monospace, monospace; white-space: pre-wrap; overflow-wrap: anywhere; }
 .astro-diagnostics p { color: var(--muted); font-size: .8rem; }
+html[data-lab-embedded] body { max-width: none; padding: 28px 28px 32px; }
+html[data-lab-embedded] body > :is(.playground-header, .playground-footer) { display: none; }
+html[data-lab-embedded] h1 { font-size: clamp(1.8rem, 4vw, 2.4rem); }
 @media (max-width: 700px) {
     html body { padding: 24px 16px 110px; }
     html :is(.card, .section, .playground-panel) { padding: 20px; }

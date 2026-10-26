@@ -11,7 +11,7 @@ const functionExpressions = new Map<string, Function>();
 
 const $CONTEXT: '$context' = '$context';
 
-const contextNames = ['$data', '$el', '$event', '$id', '$ref', '$for', '$mutations', '$size', '$entry', '$props', '$emit', '$insert', '$stores', '$provided', '$route', 'trustedHTML', 'flush', 'onCleanup'];
+const contextNames = ['$data', '$el', '$event', '$id', '$ref', '$for', '$mutations', '$size', '$entry', '$props', '$slot', '$emit', '$insert', '$stores', '$provided', '$route', 'trustedHTML', 'flush', 'onCleanup'];
 
 // Only names that appear in the source are destructured, so each evaluation reads just what it uses.
 const contextBindings = (expression: string, extras: string[]): string => {

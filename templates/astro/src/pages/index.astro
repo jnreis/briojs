@@ -7,7 +7,7 @@ const initial = 5;
   <p>This text is static HTML from Astro. The boxes below are Brio islands,
     marked with <code>b-app</code> and registered in <code>src/layouts/Layout.astro</code>.</p>
 
-  <section class="island" b-app="counter" b-props={JSON.stringify({ initial })}>
+  <section class="island" b-app="counter" b-app-props={JSON.stringify({ initial })}>
     <button b-on-click="$data.count++">Clicked <span b-text="$data.count">{initial}</span> times</button>
   </section>
 

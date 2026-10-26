@@ -42,6 +42,26 @@ async function page(t, path) {
     return dom.window;
 }
 
+test('scoped-slot manual page renders repeated default content and named summaries in parent scope', async t => {
+    const { document, Event } = await page(t, './directives/slot.html');
+    assert.equal(document.querySelector('#custom #summary').textContent, 'Parent: 2 items');
+    assert.deepEqual([...document.querySelectorAll('#custom .choose')].map(node => node.textContent), ['Parent: a', 'Parent: b']);
+    document.querySelector('#reverse').click();
+    const input = document.querySelector('#custom .item-input');
+    document.querySelector('#replace').click();
+    assert.equal(document.querySelector('#custom .item-input'), input);
+    assert.equal(input.value, 'Replaced answer');
+    input.value = 'Edited';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    assert.equal(document.querySelector('#fallback .fallback-body').textContent, 'Edited');
+    const button = document.querySelector('#custom .choose');
+    button.click();
+    document.querySelector('#toggle').click();
+    button.click();
+    assert.equal(document.querySelector('#actions').textContent, '1');
+    assert.ok(document.querySelector('.example-source'));
+});
+
 test('mask manual page demonstrates Unicode tokens, escapes, custom functions and optional money', async t => {
     const window = await page(t, './directives/mask.html');
     const { document } = window;
@@ -293,7 +313,7 @@ test('every manual example page loads the source viewer before bootstrap', () =>
             pages++;
         }
     }
-    assert.equal(pages, 32);
+    assert.equal(pages, 33);
 });
 
 test('source panels preserve authored directives, literal interpolation and template content without hydrating it', async t => {
@@ -316,7 +336,7 @@ test('source panels preserve authored directives, literal interpolation and temp
     const setup = document.querySelector('.example-source-setup');
     assert.ok(setup.textContent.includes("message: 'Hello from parent context!'"));
     assert.ok(setup.textContent.includes('<script src="/dist/brio.min.js"></script>'));
-    assert.ok(setup.textContent.includes('.card {'));
+    assert.ok(setup.textContent.includes('.box {'));
     assert.ok(!setup.textContent.includes('<script src="/tests/source-viewer.js">'));
 });
 

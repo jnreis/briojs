@@ -721,7 +721,7 @@ test('keyed b-for reorders with the minimum number of row moves', t => {
 
 test('component setup exposes $data, $props and $emit while slots and events keep parent context', t => {
     const { window, app, root } = environment(t, `
-        <count-widget b-bind-label="$data.label" b-on-change="$data.last = $event.detail">
+        <count-widget b-prop-label="$data.label" b-on-change="$data.last = $event.detail">
             <span class="projected" b-text="$data.label"></span>
         </count-widget>`, { label: 'parent', last: 0 });
     app.component('count-widget', {
@@ -1833,7 +1833,7 @@ test('reference errors suggest $for, $data and $props paths for bare names', t =
             assert.match(error.message, message);
         }
     }
-    const { app, root } = environment(t, '<name-tag b-bind-label="\'Ada\'"></name-tag>');
+    const { app, root } = environment(t, '<name-tag b-prop-label="\'Ada\'"></name-tag>');
     app.component('name-tag', { template: '<b b-text="label"></b>' });
     assert.throws(() => app.mount(root), /label is not defined\. Use \$props\.label\./);
     assert.throws(() => execute('count++', { $data: { count: 0 } }, undefined, 'b-on-click'),
@@ -1842,12 +1842,165 @@ test('reference errors suggest $for, $data and $props paths for bare names', t =
         /total is not defined\. Use \$data\.total\./);
 });
 
-test('component hosts bind native attributes with b-attr-* and evaluate bound props once', t => {
+test('component props compose static, named and spread inputs reactively regardless of attribute order', t => {
+    for (const reversed of [false, true]) {
+        const named = 'b-prop-label="$data.read()" b-prop-count="$data.count"';
+        const spread = 'b-props="$data.overrides"';
+        const { app, root, window } = environment(t, `<value-card label="static" count="3"
+            ${reversed ? `${spread} ${named}` : `${named} ${spread}`}></value-card>`,
+        { label: 'named', count: 5, overrides: { label: 'spread', extra: 'spread only' } });
+        let reads = 0;
+        let props;
+        app.state.read = () => { reads++; return app.state.label; };
+        app.component('value-card', {
+            props: { count: window.Number, compact: window.Boolean },
+            setup({ $props }) {
+                props = $props;
+                assert.equal($props.label, 'spread', 'all inputs are composed before setup');
+            },
+            template: '<b b-text="$props.label"></b><i b-text="$props.count"></i>',
+        });
+        app.mount(root);
+        assert.equal(reads, 1);
+        assert.equal(props.count, 5);
+        assert.equal(props.compact, false);
+        assert.equal(props.extra, 'spread only');
+        app.state.label = 'new named';
+        assert.equal(root.querySelector('b').textContent, 'spread');
+        assert.equal(reads, 2);
+        app.state.overrides.label = undefined;
+        assert.ok(Object.hasOwn(props, 'label'), 'present undefined still shadows the named prop');
+        assert.equal(props.label, undefined);
+        delete app.state.overrides.label;
+        assert.equal(root.querySelector('b').textContent, 'new named');
+        app.state.overrides.count = null;
+        assert.equal(props.count, null);
+        app.state.overrides.compact = true;
+        assert.equal(props.compact, true);
+        app.state.overrides = { label: false, count: 'not coerced' };
+        assert.equal(props.label, false);
+        assert.equal(props.count, 'not coerced');
+        assert.equal(props.compact, false);
+        assert.ok(!Object.hasOwn(props, 'extra'));
+        app.state.overrides = {};
+        assert.equal(props.label, 'new named');
+        assert.equal(props.count, 5);
+        assert.equal(reads, 2, 'spread updates do not re-evaluate independent named inputs');
+        app.dispose();
+        app.state.label = 'disposed';
+        assert.equal(props.label, 'new named');
+    }
+});
+
+test('spread props fall back to static attributes and replace objects without cloning or deep merging', t => {
+    const { app, root } = environment(t, `<value-card label="static"
+        b-prop-content="$data.content" b-props="$data.overrides"></value-card>`,
+    { content: { a: 1 }, overrides: { label: 'override', content: { b: 2 }, camelCase: 4 } });
+    let props;
+    app.component('value-card', { template: '<b></b>', setup({ $props }) { props = $props; } });
+    app.mount(root);
+    assert.equal(props.content, app.state.overrides.content);
+    assert.equal(props.content.a, undefined);
+    assert.equal(props.content.b, 2);
+    assert.equal(props.camelCase, 4, 'spread keys are not lowercased');
+    delete app.state.overrides.label;
+    assert.equal(props.label, 'static');
+    delete app.state.overrides.content;
+    assert.equal(props.content, app.state.content);
+});
+
+test('undefined named and spread props preserve key presence, and spreads copy only own enumerable string keys', t => {
+    const { app, root, window } = environment(t, `<value-card label="static" b-prop-label="undefined"
+        b-props="$data.overrides"></value-card>`);
+    const overrides = window.Object.create({ inherited: 'not a prop' });
+    window.Object.defineProperty(overrides, 'hidden', { value: 1 });
+    window.Object.defineProperty(overrides, '__proto__', { value: { harmless: true }, enumerable: true });
+    overrides.extra = undefined;
+    overrides[window.Symbol('symbol')] = 'not a string key';
+    app.state.overrides = overrides;
+    let props;
+    app.component('value-card', { template: '<b></b>', setup({ $props }) { props = $props; } });
+    app.mount(root);
+    assert.ok(Object.hasOwn(props, 'label'));
+    assert.equal(props.label, undefined, 'named undefined shadows a static attribute');
+    assert.ok(Object.hasOwn(props, 'extra'), 'a new undefined spread key is still present');
+    assert.equal(props.extra, undefined);
+    assert.equal(props.inherited, undefined);
+    assert.equal(props.hidden, undefined);
+    assert.deepEqual(Object.getOwnPropertySymbols(props), []);
+    assert.ok(Object.hasOwn(props, '__proto__'));
+    assert.equal(props.__proto__.harmless, true);
+    assert.equal(props.harmless, undefined, 'a prop named __proto__ must not change the props prototype');
+    app.state.overrides = {};
+    assert.ok(!Object.hasOwn(props, 'extra'));
+    assert.ok(!Object.hasOwn(props, '__proto__'));
+});
+
+test('props accept empty objects but reject invalid spreads, modifiers, and non-component targets explicitly', t => {
+    for (const value of ['null', 'undefined', '[]', "'text'", '42', 'false']) {
+        const { app, root } = environment(t, `<value-card b-props="${value}"></value-card>`);
+        app.component('value-card', { template: '<b></b>' });
+        assert.throws(() => app.mount(root), /b-props must evaluate to a non-null, non-array object/);
+    }
+    for (const markup of [
+        '<div b-props="{}"></div>',
+        '<div b-prop-label="1"></div>',
+        '<unknown-card b-prop-label="1"></unknown-card>',
+        '<unknown-card b-props="{}"></unknown-card>',
+    ]) {
+        const { app, root } = environment(t, markup);
+        assert.throws(() => app.mount(root), /requires a registered Brio component/);
+    }
+    for (const directive of ['b-prop-label.once', 'b-props.once', 'b-prop-label.options', 'b-props.options']) {
+        const { app, root } = environment(t, `<value-card ${directive}="{}"></value-card>`);
+        app.component('value-card', { template: '<b></b>' });
+        assert.throws(() => app.mount(root), /modifiers|options/);
+    }
+    const { app, root } = environment(t, '<value-card b-props="$data.props"></value-card>', { props: {} });
+    app.component('value-card', { template: '<b></b>' });
+    app.mount(root);
+    assert.throws(() => { app.state.props = null; }, /b-props must evaluate/);
+});
+
+test('removed b-attr bindings report their DOM-binding replacement', t => {
+    for (const tag of ['div', 'value-card']) {
+        const { app, root } = environment(t, `<${tag} b-attr-title="'old'"></${tag}>`);
+        app.component('value-card', { template: '<b></b>' });
+        assert.throws(() => app.mount(root), /has been removed. Use b-bind-\* for DOM bindings/);
+    }
+});
+
+test('b-bind always targets host DOM while b-prop targets component props, including .prop DOM properties', t => {
+    const { app, root } = environment(t, `<value-card
+        b-bind-title="$data.title" b-bind-tabIndex.prop="$data.tab"
+        b-prop-title="'component title'" b-prop-class="'component class'"
+        b-bind-class="{ active: $data.active }"></value-card>`, { title: 'DOM title', tab: 2, active: true });
+    let props;
+    app.component('value-card', {
+        template: '<b b-text="$props.title"></b>',
+        setup({ $props }) { props = $props; },
+    });
+    app.mount(root);
+    const host = root.querySelector('value-card');
+    assert.equal(host.title, 'DOM title');
+    assert.equal(host.tabIndex, 2);
+    assert.equal(host.className, 'active');
+    assert.equal(host.textContent, 'component title');
+    assert.equal(props.class, 'component class');
+    assert.equal(props.tabindex, undefined);
+    app.state.title = 'updated DOM';
+    app.state.tab = 0;
+    assert.equal(host.title, 'updated DOM');
+    assert.equal(host.tabIndex, 0);
+    assert.equal(props.title, 'component title');
+});
+
+test('component hosts bind native attributes with b-bind-* and evaluate bound props once', t => {
     const { app, root, window } = environment(t, `
-        <status-pill class="pill" b-attr-class="{ busy: $data.busy }" b-attr-data-testid="'pill-' + $data.id"
-            b-attr-aria-busy="$data.busy" b-attr-style="{ '--hue': $data.hue }"
-            b-bind-label="$data.read()"></status-pill>
-        <status-pill b-bind-label="'second'"></status-pill>`, { busy: false, id: 'a', hue: 10 });
+        <status-pill class="pill" b-bind-class="{ busy: $data.busy }" b-bind-data-testid="'pill-' + $data.id"
+            b-bind-aria-busy="$data.busy" b-bind-style="{ '--hue': $data.hue }"
+            b-prop-label="$data.read()"></status-pill>
+        <status-pill b-prop-label="'second'"></status-pill>`, { busy: false, id: 'a', hue: 10 });
     let reads = 0;
     app.state.read = () => { reads++; return app.state.id; };
     let parses = 0;
@@ -1867,7 +2020,7 @@ test('component hosts bind native attributes with b-attr-* and evaluate bound pr
     assert.equal(first.getAttribute('data-testid'), 'pill-a');
     assert.equal(first.getAttribute('aria-busy'), 'false');
     assert.equal(first.style.getPropertyValue('--hue'), '10');
-    assert.ok(!first.hasAttribute('b-attr-class'));
+    assert.ok(!first.hasAttribute('b-bind-class'));
     app.state.busy = true;
     app.state.id = 'b';
     assert.equal(first.className, 'pill busy');
@@ -1899,6 +2052,149 @@ test('component templates resolve "#id" selectors and <template> elements; props
     assert.equal(root.querySelector('i').textContent, 'plain');
     assert.throws(() => app.component('bad-props', { template: '<b></b>', props: { x: window.Date } }), /Boolean, Number, or String/);
     assert.throws(() => app.component('bad-template', { template: window.document.createElement('div') }), /template/);
+});
+
+test('component template snapshots preserve authored DOM and isolate future instances from source changes', t => {
+    for (const selector of [true, false]) {
+        const { app, root, window } = environment(t, `<snapshot-card b-for="item in $data.items"
+            b-key="$for.item" b-prop-value="$for.item"></snapshot-card>`, { items: [1] });
+        const template = window.document.createElement('template');
+        template.id = 'snapshot-source';
+        template.innerHTML = '<b b-text="$props.value"></b>';
+        window.document.body.append(template);
+        app.component('snapshot-card', { template: selector ? '#snapshot-source' : template });
+        // Capture at first instantiation, not registration.
+        template.innerHTML = '<i b-text="$props.value"></i>';
+        app.mount(root);
+        assert.ok(template.isConnected, 'Brio leaves the authored template in the DOM');
+        assert.equal(template.innerHTML, '<i b-text="$props.value"></i>', 'source bindings remain inert and untouched');
+        template.innerHTML = '<strong>changed source</strong>';
+        app.state.items.push(2);
+        assert.equal(root.querySelectorAll('i').length, 2);
+        assert.equal(root.querySelectorAll('strong').length, 0);
+        assert.equal(root.querySelectorAll('i')[1].textContent, '2', 'each snapshot clone hydrates with its own props');
+        template.remove();
+        const replacement = window.document.createElement('template');
+        replacement.id = template.id;
+        replacement.innerHTML = '<em>replacement source</em>';
+        window.document.body.append(replacement);
+        app.state.items.push(3);
+        assert.equal(root.querySelectorAll('i').length, 3);
+        assert.equal(root.querySelectorAll('em').length, 0);
+        root.querySelector('i').textContent = 'instance changed';
+        app.state.items.push(4);
+        assert.equal(root.querySelectorAll('i')[3].textContent, '4', 'instances cannot mutate the private snapshot');
+    }
+});
+
+test('scoped slots retain parent scope, per-row values, keyed identity, and cleanup', t => {
+    const { app, root, window } = environment(t, `<slot-list b-prop-items="$data.items">
+        <template slot="body" b-template>
+          <button b-if="$slot.item.id === 'a'" b-on-click="$data.clicks++"
+            b-text="$data.label + ':' + $slot.item.body"></button>
+          <strong b-else b-text="$slot.item.body"></strong>
+        </template>
+      </slot-list>`, { items: [{ id: 'a', body: 'A' }, { id: 'b', body: 'B' }, { id: 'c', body: 'C' }], label: 'Parent', clicks: 0 });
+    app.component('slot-list', {
+        setup: () => window.JSON.parse('{"label":"Component"}'),
+        template: `<div b-for="item in $props.items" b-key="$for.item.id">
+          <slot name="body" b-slot="{ item: $for.item }"><p b-text="$for.item.body"></p></slot>
+        </div>`,
+    });
+    app.mount(root);
+    const button = root.querySelector('button');
+    assert.equal(button.textContent, 'Parent:A', 'parent $data and receiving $slot remain distinct');
+    assert.equal(root.querySelector('strong').textContent, 'B');
+    assert.equal(root.querySelectorAll('strong').length, 2);
+    app.state.items[0] = { id: 'a', body: 'Replaced' };
+    assert.equal(root.querySelector('button'), button, 'item replacement does not recreate slot content');
+    assert.equal(button.textContent, 'Parent:Replaced');
+    app.state.items.reverse();
+    assert.equal(root.querySelector('button'), button);
+    app.state.label = 'Updated';
+    assert.equal(button.textContent, 'Updated:Replaced');
+    button.click();
+    assert.equal(app.state.clicks, 1);
+    app.state.items.pop();
+    button.click();
+    assert.equal(app.state.clicks, 1, 'removed slot content releases event handlers');
+    app.state.label = 'Later';
+    assert.equal(button.textContent, 'Updated:Replaced');
+    assert.equal(root.querySelector('strong').textContent, 'C');
+});
+
+test('scoped slot object replacement, undefined keys, and removals update without recreating content', t => {
+    const { app, root } = environment(t, `<slot-view b-prop-values="$data.values">
+      <b slot="body" b-text="Object.keys($slot).join(',') + ':' + $slot.label"></b>
+    </slot-view>`, { values: { label: 'First', extra: true } });
+    app.component('slot-view', { template: `<slot name="body" b-slot="$props.values"></slot>` });
+    app.mount(root);
+    const node = root.querySelector('b');
+    assert.equal(node.textContent, 'label,extra:First');
+    app.state.values = { label: undefined };
+    assert.equal(root.querySelector('b'), node);
+    assert.equal(node.textContent, 'label:undefined');
+    app.state.values = { label: 'Second' };
+    assert.equal(node.textContent, 'label:Second');
+    app.dispose();
+    app.state.values.label = 'Disposed';
+    assert.equal(node.textContent, 'label:Second');
+});
+
+test('scoped slot fallbacks use component loop context', t => {
+    const { app, root } = environment(t, '<slot-list b-prop-items="$data.items"></slot-list>',
+        { items: [{ id: 'a', body: 'Fallback' }] });
+    app.component('slot-list', { template: `<section b-for="item in $props.items" b-key="$for.item.id">
+      <slot name="body" b-slot="{ item: $for.item }"><p b-text="$for.item.body"></p></slot>
+    </section>` });
+    app.mount(root);
+    assert.equal(root.querySelector('p').textContent, 'Fallback');
+    app.state.items[0].body = 'Updated fallback';
+    assert.equal(root.querySelector('p').textContent, 'Updated fallback');
+});
+
+test('scoped slot content retains parent loops, props, and nested slot contexts', t => {
+    const { app, root } = environment(t, `<parent-view></parent-view>`, { outer: 'Parent' });
+    app.component('parent-view', {
+        template: `<section b-for="entry in $data.$parent.rows" b-key="$for.entry">
+          <outer-view b-prop-value="$for.entry">
+            <inner-view b-prop-value="$slot.value">
+              <b b-text="$for.entry + ':' + $slot.value"></b>
+            </inner-view>
+          </outer-view>
+        </section>`,
+    });
+    app.component('outer-view', {
+        template: '<slot b-slot="{ value: $props.value }"></slot>',
+    });
+    app.component('inner-view', {
+        template: '<slot b-slot="{ value: $props.value + \'-inner\' }"></slot>',
+    });
+    app.state.rows = ['A', 'B'];
+    app.mount(root);
+    assert.deepEqual([...root.querySelectorAll('b')].map(node => node.textContent), ['A:A-inner', 'B:B-inner']);
+    app.state.rows.reverse();
+    assert.deepEqual([...root.querySelectorAll('b')].map(node => node.textContent), ['B:B-inner', 'A:A-inner']);
+});
+
+test('scoped slots validate objects and placement; dynamic names are rejected', t => {
+    for (const value of ['null', 'undefined', '[]', '42', "'text'"]) {
+        const invalid = environment(t, '<slot-view></slot-view>');
+        invalid.app.component('slot-view', { template: `<slot b-slot="${value}"></slot>` });
+        assert.throws(() => invalid.app.mount(invalid.root), /b-slot must evaluate to a non-null, non-array object/);
+    }
+    for (const markup of ['<div b-slot="{}"></div>', '<slot b-slot.once="{}"></slot>', '<template b-slot="{}"></template>']) {
+        const invalid = environment(t, markup);
+        assert.throws(() => invalid.app.mount(invalid.root), /b-slot requires a <slot> outlet/);
+    }
+    const outside = environment(t, '<slot b-slot="{}"></slot>');
+    assert.throws(() => outside.app.mount(outside.root), /b-slot requires a component template/);
+    const modifier = environment(t, '<slot-view></slot-view>');
+    modifier.app.component('slot-view', { template: '<slot b-slot.once="{}"></slot>' });
+    assert.throws(() => modifier.app.mount(modifier.root), /does not support modifiers/);
+    const dynamic = environment(t, '<slot-view></slot-view>');
+    dynamic.app.component('slot-view', { template: '<slot b-bind-name="\'body\'"></slot>' });
+    assert.throws(() => dynamic.app.mount(dynamic.root), /Dynamic slot names are not supported/);
 });
 
 test('a missing "#id" component template is a clear error', t => {
@@ -2109,7 +2405,7 @@ test('b-for without b-transition never reads layout', t => {
 
 test('component hosts accept b-transition and animate keyed moves', t => {
     const { window, app, root } = environment(t, `
-        <ul><item-row b-for="item in $data.items" b-key="$for.item" b-bind-label="$for.item"
+        <ul><item-row b-for="item in $data.items" b-key="$for.item" b-prop-label="$for.item"
             b-transition="'slide'" style="transition-property: transform; transition-duration: 0.2s"></item-row></ul>`, { items: ['a', 'b'] });
     app.component('item-row', { template: '<span b-text="$props.label"></span>' });
     const clock = transitionClock(window);

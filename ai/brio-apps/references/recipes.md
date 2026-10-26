@@ -39,7 +39,7 @@ track roots by Element identity to avoid duplicate enhancement.
 For Astro, use the optional `@jnreis/briojs/astro` entry rather than writing a
 counter-specific coordinator. Install one shared
 `enhanceAstro({ apps, onError })` registry from a layout; declare `b-app` roots
-and read-once trusted `b-props`. Eager factories and `lazyApp` module loaders
+and read-once trusted `b-app-props`. Eager factories and `lazyApp` module loaders
 share the same `(root, props)` factory contract. The adapter handles ClientRouter
 cleanup and persistent root/ancestor lifetimes. See the main documentation's
 Astro islands section for setup, errors, HMR and safe server-data transfer.

@@ -1,0 +1,21 @@
+.lab-source-code .token { background: transparent; font: inherit; text-shadow: none; }
+.lab-source-code .token.comment,
+.lab-source-code .token.prolog,
+.lab-source-code .token.doctype { color: #a1b2cb; }
+.lab-source-code .token.punctuation { color: #cbd5e1; }
+.lab-source-code .token.tag,
+.lab-source-code .token.keyword,
+.lab-source-code .token.atrule { color: #c4b5fd; }
+.lab-source-code .token.attr-name,
+.lab-source-code .token.property,
+.lab-source-code .token.selector { color: #93c5fd; }
+.lab-source-code .token.attr-value,
+.lab-source-code .token.string { color: #a7f3d0; }
+.lab-source-code .token.number,
+.lab-source-code .token.boolean,
+.lab-source-code .token.constant { color: #fdba74; }
+.lab-source-code .token.function,
+.lab-source-code .token.class-name { color: #fde68a; }
+.lab-source-code .token.operator,
+.lab-source-code .token.entity,
+.lab-source-code .token.url { color: #67e8f9; }

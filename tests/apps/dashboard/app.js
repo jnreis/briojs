@@ -5,7 +5,7 @@
     const FEED_LIMIT = 6;
 
     const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
-    const compact = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', notation: 'compact', maximumFractionDigits: 1 });
+    const compact = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', notation: 'compact', minimumFractionDigits: 0, maximumFractionDigits: 1 });
     const number = new Intl.NumberFormat('en-US');
     const percent = new Intl.NumberFormat('en-US', { style: 'percent', maximumFractionDigits: 1 });
     const shortDay = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });

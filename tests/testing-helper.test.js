@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import { JSDOM } from 'jsdom';
 
 test('renderBrio mounts markup with plugins and cleans up', async t => {
-    const dom = new JSDOM('<!doctype html><body></body>', { pretendToBeVisual: true });
+    const dom = new JSDOM('<!doctype html><body></body>', { pretendToBeVisual: true, url: 'http://localhost/' });
     // What "global-jsdom" does: expose the window's globals that Node lacks.
     const names = ['window', ...Object.getOwnPropertyNames(dom.window).filter(name => !(name in globalThis))];
     for (const name of names)

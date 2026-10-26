@@ -31,8 +31,7 @@ script tag for a quick start without a build step.
 
 ### Scaffold a project
 
-The separate `create-brio` CLI is implemented but not yet published. After its
-release alongside Brio 5, use:
+Generate a project with the separate `create-brio` CLI:
 
 ```sh
 npm create brio@latest

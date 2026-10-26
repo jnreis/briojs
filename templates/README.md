@@ -25,19 +25,15 @@ Every template includes `.vscode/settings.json` for Brio directive
 autocomplete. Templates install the published `@jnreis/briojs` package, not
 this repository's source.
 
-## Project scaffolder (prepared, not yet published)
+## Project scaffolder
 
 The [create-brio package](../packages/create-brio/) generates any of these five
 templates in JavaScript or TypeScript, including editor settings. It prompts
 for a project directory and package manager, never overwrites an existing
 project, and leaves installation and git initialization to you.
 
-After `create-brio` and Brio 5 are published:
-
 ```sh
 npm create brio@latest
 # Or supply all choices:
 npm create brio@latest my-app -- --template spa --language ts --package-manager npm
 ```
-
-Until then, use the local packing and validation commands in the package README.

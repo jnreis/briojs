@@ -24,7 +24,6 @@ public/
 
 Copy [widgets.js](/integrations/widgets.js) into that folder. Copy
 `dist/brio.min.js` from your Brio installation into `public/vendor/`.
-Before Brio 5 is published, use the repository's `npm run build` output.
 
 Save this as `index.html`:
 

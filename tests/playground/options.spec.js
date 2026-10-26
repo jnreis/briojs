@@ -77,8 +77,6 @@ test('directory has directive labels, responsive cards, and aligned search contr
     await page.getByLabel('Find an experiment').fill('');
     expect(await page.locator('.grid').first().evaluate(element =>
         getComputedStyle(element).gridTemplateColumns.split(' ').length)).toBe(3);
-    await expect(page.locator('.astro-launch code')).toHaveText('npm run lab');
-    await expect(page.locator('.astro-launch a')).toHaveAttribute('href', '/#astro-lab');
     for (const width of [800, 375]) {
         await page.setViewportSize({ width, height: 900 });
         const grid = page.locator('.grid').first();

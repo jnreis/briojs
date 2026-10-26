@@ -150,7 +150,9 @@ h3 { font-size: 1.35rem; letter-spacing: -.025em; }
   .creature, .creature *, .creature-zzz { animation: none !important; transition: none !important; }
   .swatch { transition: none; }
 }
-.starter-cards { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+.example-group .cards, .starter-cards { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+@media (max-width: 960px) { .example-group .cards, .starter-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 760px) { .example-group .cards, .starter-cards { grid-template-columns: 1fr; } }
 .starter-cards .card-number { text-transform: none; letter-spacing: 0; }
 .closing-extras { margin-top: 28px; }
 }

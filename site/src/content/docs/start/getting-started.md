@@ -81,11 +81,10 @@ or copy it locally with `npx degit jnreis/briojs/templates/<name> my-app`.
 Every template turns on [editor autocomplete](/reference/install/#editor-autocomplete)
 for `b-` directives.
 
-### Project scaffolder (coming with the next release)
+### Project scaffolder
 
-The `create-brio` CLI is implemented but not yet published. Once it and Brio 5
-are released, run `npm create brio@latest` to choose any of these five templates
-in JavaScript or TypeScript. You can also supply every choice:
+Run `npm create brio@latest` to choose any of these five templates in
+JavaScript or TypeScript. You can also supply every choice:
 
 ```sh
 npm create brio@latest my-app -- --template widget --language ts --package-manager npm
@@ -93,8 +92,9 @@ npm create brio@latest my-app -- --template widget --language ts --package-manag
 
 The command includes editor settings, refuses nonempty destinations, and prints
 the installation and development commands. It does not install dependencies or
-initialize git. For local use before publication, see the
-[scaffolder README](https://github.com/jnreis/briojs/tree/main/packages/create-brio).
+initialize git. See the
+[scaffolder README](https://github.com/jnreis/briojs/tree/main/packages/create-brio)
+for every option.
 
 ## The few ideas to learn first
 

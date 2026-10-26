@@ -94,8 +94,8 @@ runtime source or from `DOCUMENTATION.md` headings.
 
 `templates/` holds runnable starters (widget, multi-page, SPA, Astro, plugin). They
 install `@jnreis/briojs` from npm; StackBlitz opens them straight from `main`.
-During v5 release preparation their `^5.0.0` dependency needs a locally packed
-build until that version is published. The site lists them from
+To test a template against unreleased runtime changes, install a locally packed
+build (`npm pack`) instead of the registry version. The site lists them from
 `site/data/templates.mjs`, and `tests/starter-templates.test.js` checks their
 structure, links, and directives. Before changing one, run it for real:
 

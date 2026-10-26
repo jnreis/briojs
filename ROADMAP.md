@@ -27,10 +27,10 @@ treat this as a direction, not a promise. Ideas and feedback are welcome in
 
 ## Next: start faster, share more
 
-- ✅ **Project scaffolder implemented:** all five templates in JavaScript or
+- ✅ **Project scaffolder:** all five templates in JavaScript or
   TypeScript, with prompts, automation flags, and non-destructive generation.
-  The separate [`create-brio` package](./packages/create-brio/) is prepared
-  locally; `npm create brio@latest` becomes available after publication.
+  Run `npm create brio@latest` (the separate
+  [`create-brio` package](./packages/create-brio/)).
 - ✅ **A playground with shareable links** at `/play/`:
   Monaco HTML/CSS/JavaScript editors, an isolated preview, the
   homepage creature, and compressed URL-fragment sharing. Shared code waits

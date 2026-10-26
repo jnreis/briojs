@@ -1,6 +1,6 @@
 # Changelog
 
-## [5.0.0] — Unreleased
+## [5.0.0] — 2026-10-26
 
 Brio 5 adds a public plugin API, and uses it to move directives that most pages
 never need out of the core bundle. Upgrading from 4.x requires the needed
@@ -53,14 +53,14 @@ spellings; see
   `throttle` accept a delay in milliseconds:
   `b-on-input.options="{ debounce: 400 }"`.
 
-### Scaffolder (separate package, pending publication)
+### Scaffolder (new `create-brio` 1.0.0 package)
 
-- Prepared `create-brio`: generates widget, multi-page, SPA, Astro, and plugin
+- New `create-brio`: generates widget, multi-page, SPA, Astro, and plugin
   projects in JavaScript or TypeScript, with package-manager selection,
   non-interactive flags, and editor settings. It never overwrites a nonempty
   destination or automatically installs dependencies or initializes git.
-- The packed CLI and all ten generated variants are tested. The command
-  `npm create brio@latest` becomes available only after separate publication.
+- The packed CLI and all ten generated variants are tested. Start a project
+  with `npm create brio@latest`.
 
 ### Website playground
 

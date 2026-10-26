@@ -231,6 +231,15 @@ test('starter templates open in StackBlitz from the homepage, examples, and guid
     await page.goto('/examples/');
     const starters = page.locator('.starter-cards .card');
     await expect(starters).toHaveCount(templates.length);
+    const columnsAt = async width => {
+        await page.setViewportSize({ width, height: 900 });
+        return page.locator('.starter-cards, .example-group .cards').evaluateAll(grids =>
+            [...new Set(grids.map(grid => getComputedStyle(grid).gridTemplateColumns.split(' ').length))]);
+    };
+    expect(await columnsAt(1280)).toEqual([3]);
+    expect(await columnsAt(900)).toEqual([2]);
+    expect(await columnsAt(390)).toEqual([1]);
+    await page.setViewportSize({ width: 1280, height: 900 });
     for (const [index, template] of templates.entries()) {
         await expect(starters.nth(index).getByRole('link', { name: 'Open in StackBlitz ↗' })).toHaveAttribute('href', template.stackblitz);
         await expect(starters.nth(index).getByRole('link', { name: 'Source ↗' })).toHaveAttribute('href', template.source);

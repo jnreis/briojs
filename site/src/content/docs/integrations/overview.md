@@ -24,9 +24,6 @@ a small counter so that the host integration stays visible.
 It loads the same Brio browser build as this site. No client-side routing,
 forms interception, persistence, or simulated server is involved.
 
-Brio 5 examples are prepared for the next release. Until publication, use a
-local build of this repository rather than assuming the 5.0.0 CDN URL exists.
-
 ## A shared lifecycle helper
 
 Download [widgets.js](/integrations/widgets.js) into your application's JavaScript

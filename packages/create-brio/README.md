@@ -1,13 +1,10 @@
 # create-brio
 
 Scaffold a Brio app or plugin from this repository's starter templates.
-
-**Unpublished:** this package is prepared locally. The commands below using
-`@latest` become available only after `create-brio` and Brio 5 are published.
 Nothing in the scaffold command installs dependencies, initializes git, or
 publishes a package.
 
-## Usage after publication
+## Usage
 
 ```sh
 npm create brio@latest
@@ -55,10 +52,10 @@ are included; `_gitignore` is restored to `.gitignore` by the CLI because npm
 omits `.gitignore` files from tarballs. Generated copies are gitignored.
 The packed package is self-contained and does not fetch templates from GitHub.
 
-Generated projects depend on Brio `^5.0.0`. Before that release is published,
-validate with a locally packed Brio tarball rather than the public registry.
-The scaffolder has its own version and release lifecycle; packing does not
-publish either package.
+Generated projects depend on Brio `^5.0.0`. To validate templates against
+unreleased runtime changes, install a locally packed Brio tarball rather than
+the public registry version. The scaffolder has its own version and release
+lifecycle; packing does not publish either package.
 
 `verify:templates` packs the local Brio build and CLI, installs validation
 dependencies in a temporary directory, then builds all ten generated projects

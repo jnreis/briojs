@@ -1,5 +1,7 @@
 ---
 import '../styles/site.css';
+import logoLight from '../../../docs/assets/logo-light.svg';
+import logoDark from '../../../docs/assets/logo-dark.svg';
 import { version } from '../../../package.json';
 const { title, workspace = false, description = 'Powerfully simple, HTML-first web development. Add a widget, enhance a page, or build an app with Brio.js.' } = Astro.props;
 const canonical = new URL(Astro.url.pathname === '/404/' ? '/404.html' : Astro.url.pathname, Astro.site);
@@ -25,7 +27,7 @@ const canonical = new URL(Astro.url.pathname === '/404/' ? '/404.html' : Astro.u
   <body class:list={{ 'workspace-page': workspace }}>
     <a class="skip" href="#main">Skip to content</a>
     <header class="header wrap">
-      <a class="wordmark" href="/" aria-label="Brio.js home"><img class="brand-icon" src="/favicon.svg" alt="" width="29" height="29" /> Brio<span class="muted">.js</span></a>
+      <a class="wordmark" href="/" aria-label="Brio.js home"><img class="brand-logo light" src={logoLight.src} alt="" width="135" height="36" /><img class="brand-logo dark" src={logoDark.src} alt="" width="135" height="36" /></a>
       <nav aria-label="Main navigation">
         <a href="/start/getting-started/">Docs</a>
         <a href="/examples/">Examples</a>
@@ -38,7 +40,7 @@ const canonical = new URL(Astro.url.pathname === '/404/' ? '/404.html' : Astro.u
     </header>
     <main id="main"><slot /></main>
     {!workspace && <footer class="footer wrap">
-      <a class="wordmark" href="/"><img class="brand-icon" src="/favicon.svg" alt="" width="29" height="29" />Brio.js</a>
+      <a class="wordmark" href="/" aria-label="Brio.js home"><img class="brand-logo light" src={logoLight.src} alt="" width="105" height="28" /><img class="brand-logo dark" src={logoDark.src} alt="" width="105" height="28" /></a>
       <span>HTML first. Your app, your way.</span>
       <div><a href="https://www.npmjs.com/package/@jnreis/briojs">npm</a> · <a href="https://github.com/jnreis/briojs/blob/main/LICENSE">MIT license</a> · <a href="https://github.com/jnreis/briojs">Jonathan Reis</a></div>
     </footer>}

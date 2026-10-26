@@ -7,7 +7,7 @@ export default defineConfig({
     vite: { ssr: { noExternal: ['nanoid'] } },
     integrations: [starlight({
         title: 'Brio.js',
-        logo: { src: './public/favicon.svg', replacesTitle: false },
+        logo: { light: '../docs/assets/logo-light.svg', dark: '../docs/assets/logo-dark.svg', alt: 'Brio.js', replacesTitle: true },
         description: 'Powerfully simple, HTML-first web development.',
         social: [
             { icon: 'github', label: 'GitHub', href: 'https://github.com/jnreis/briojs' },

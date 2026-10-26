@@ -7,8 +7,9 @@ brainstorming, and the private v3 API. They are not current usage guidance.
 ## Presentation assets
 
 - [Light logo](./assets/logo-light.svg) and [dark logo](./assets/logo-dark.svg):
-  the README header, using the website favicon mark. GitHub picks one through
-  `prefers-color-scheme`.
+  the README header and the website header, footer, and docs, using the favicon
+  mark. GitHub picks one through `prefers-color-scheme`; the website follows its
+  `data-theme` toggle. Edit them here, since the site imports these files.
 - Creature builder, [light](./assets/creature-builder-light.webp) and
   [dark](./assets/creature-builder-dark.webp): looping animated WebPs of the real
   homepage demo, linked from the README. Regenerate both after the demo or its

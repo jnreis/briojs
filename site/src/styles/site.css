@@ -16,7 +16,8 @@ h3 { font-size: 1.35rem; letter-spacing: -.025em; }
 .wrap { width: min(1120px, calc(100% - 48px)); margin-inline: auto; }
 .header.wrap { display: flex; align-items: center; gap: 24px; min-height: 92px; border-bottom: 1px solid var(--line); }
 .wordmark { display: inline-flex; align-items: center; font-size: 1.5rem; font-weight: 800; letter-spacing: -.05em; color: var(--ink); text-decoration: none; white-space: nowrap; }
-.brand-icon { display: inline-block; margin-right: 9px; width: 29px; height: 29px; }
+.brand-logo { display: block; height: auto; }
+:scope[data-theme="dark"] .brand-logo.light, :scope:not([data-theme="dark"]) .brand-logo.dark { display: none; }
 .header nav { margin-left: auto; display: flex; align-items: center; gap: 26px; }
 .header nav a { font-size: .9rem; font-weight: 580; color: var(--muted); text-decoration: none; }
 .header nav a:hover { color: var(--blue); }

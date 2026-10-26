@@ -5,6 +5,13 @@ questions in [GitHub Discussions](https://github.com/jnreis/briojs/discussions),
 and see [ROADMAP.md](./ROADMAP.md) for where Brio is headed. Bug reports and
 feature requests use the forms in `.github/ISSUE_TEMPLATE/`.
 
+Using an AI coding assistant on this repo? [AGENTS.md](./AGENTS.md) holds the
+always-on rules, and `.github/skills/` holds workflows for adding directives,
+Lab pages, docs updates, and releases. They summarize this guide, so update them
+when you change a workflow here. `tests/agent-instructions.test.js` checks that
+every file and skill they mention exists. These are for working on Brio itself.
+The app-building kit for Brio users is in `ai/`.
+
 ## Local development
 
 Use a current Node.js LTS release supported by the build/test tools (Node 22.12+

@@ -28,19 +28,28 @@
         params.delete('lab');
         return location.pathname + (params.size ? `?${params}` : '');
     };
+    let sent = '';
+    const send = () => {
+        const message = { type: 'brio-lab:frame', path: currentPath(), height: Math.ceil(root.getBoundingClientRect().height) };
+        const key = `${message.path} ${message.height}`;
+        if (key === sent) return;
+        sent = key;
+        window.parent.postMessage(message, labOrigin);
+        // The timer can measure a transient layout that settles back before the next
+        // rendering step; re-observing makes the observer compare against what was sent.
+        resize.unobserve(root);
+        resize.observe(root);
+    };
     // Timers, unlike animation frames, keep running while the frame is scrolled out of view.
     const report = () => {
         clearTimeout(pending);
-        pending = setTimeout(() => window.parent.postMessage({
-            type: 'brio-lab:frame',
-            path: currentPath(),
-            height: Math.ceil(root.getBoundingClientRect().height),
-        }, labOrigin), 30);
+        pending = setTimeout(send, 30);
     };
-    new ResizeObserver(report).observe(root);
+    const resize = new ResizeObserver(report);
+    resize.observe(root);
     document.addEventListener('DOMContentLoaded', report);
     document.addEventListener('astro:page-load', report);
-    addEventListener('pageshow', report);
+    addEventListener('pageshow', () => { sent = ''; report(); });
 
     addEventListener('message', event => {
         if (event.source !== window.parent || event.origin !== labOrigin) return;

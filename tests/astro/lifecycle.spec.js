@@ -105,27 +105,34 @@ test('a real document navigation restores a live island from browser back/forwar
     await session.send('Page.enable');
     const misses = [];
     session.on('Page.backForwardCacheNotUsed', event => misses.push(event));
-    await page.goto('/');
     const player = page.locator('[data-player] button');
-    await expect(player).toHaveText('0');
-    await player.click();
-    await page.evaluate(() => {
-        window.savedPlayer = document.querySelector('[data-player]');
-        window.addEventListener('pageshow', event => {
-            window.restoredFromCache = event.persisted;
-            console.debug(`brio:pageshow:${event.persisted}`);
+    const roundTrip = async () => {
+        misses.length = 0;
+        await page.goto('/');
+        await expect(player).toHaveText('0');
+        await player.click();
+        await page.evaluate(() => {
+            window.savedPlayer = document.querySelector('[data-player]');
+            window.addEventListener('pageshow', event => { window.restoredFromCache = event.persisted; });
         });
-    });
-    await page.locator('a[href="/away"]').click();
-    await expect(page).toHaveURL('/away');
-    const restored = page.waitForEvent('console', {
-        predicate: message => message.text() === 'brio:pageshow:true',
-        timeout: 5000,
-    });
-    await page.goBack({ waitUntil: 'commit' });
-    await restored;
-    await expect(page).toHaveURL('/');
-    await expect.poll(() => page.evaluate(() => window.restoredFromCache), { message: JSON.stringify(misses) }).toBe(true);
+        await page.locator('a[href="/away"]').click();
+        await expect(page).toHaveURL('/away');
+        await page.waitForLoadState('load');
+        await page.goBack({ waitUntil: 'commit' });
+        await expect(page).toHaveURL('/');
+        await expect.poll(() => misses.length > 0 || page.evaluate(() => window.restoredFromCache).catch(() => false)).toBe(true);
+        return misses.length === 0;
+    };
+    // Chromium sometimes evicts for "Circumstantial" reasons that it attributes to the
+    // browser or automation, not the page. Only those earn another round trip.
+    let restored = false;
+    for (let attempt = 0; attempt < 3; attempt++) {
+        restored = await roundTrip();
+        if (restored) break;
+        const reasons = misses.flatMap(miss => miss.notRestoredExplanations);
+        expect(reasons.filter(reason => reason.type !== 'Circumstantial'), JSON.stringify(reasons)).toEqual([]);
+    }
+    expect(restored, JSON.stringify(misses)).toBe(true);
     expect(await page.evaluate(() => window.savedPlayer === document.querySelector('[data-player]'))).toBe(true);
     await expect(player).toHaveText('1');
     await player.click();

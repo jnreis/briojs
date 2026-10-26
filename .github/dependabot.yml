@@ -13,6 +13,12 @@ updates:
     schedule:
       interval: monthly
     open-pull-requests-limit: 3
+    # Starlight 0.x minors require new Astro majors. Upgrade those together, by hand.
+    ignore:
+      - dependency-name: astro
+        update-types: [version-update:semver-major]
+      - dependency-name: '@astrojs/*'
+        update-types: [version-update:semver-major, version-update:semver-minor]
     groups:
       development:
         dependency-type: development

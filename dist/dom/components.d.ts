@@ -1,5 +1,4 @@
 import { ComponentDefinition, DomRuntime } from './types.js';
-
 export declare function takeProjectedContext(node: Node): Record<PropertyKey, any> | undefined;
 export declare function cloneProjectedNode<T extends Node>(node: T): T;
 /** A `<template>` carrying any `b-` directive (other than b-cloak, and unless b-ignore) renders in place, like `b-template`. */

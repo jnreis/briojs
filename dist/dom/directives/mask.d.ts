@@ -1,5 +1,4 @@
 import { DirectiveDefinition } from './registry.js';
-
 export type MaskContext = {
     value: string;
     selectionStart: number | null;

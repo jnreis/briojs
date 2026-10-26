@@ -1,7 +1,6 @@
 import { ComponentDefinition } from '../dom/types.js';
 import { Router } from '../plugins/router.js';
 import { DirectiveDefinition } from '../dom/directives/registry.js';
-
 export type BrioPluginObject = {
     /** Unique per app; by convention the package name, such as `brio-plugin-tooltip`. */
     name: string;

@@ -1,6 +1,5 @@
 import { Signal } from '../reactivity/types.js';
 import { BrioPluginObject } from '../core/types.js';
-
 export type RouteMatch = {
     /** Matched application pathname, without the base (still percent-encoded). */
     path: string;

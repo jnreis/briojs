@@ -1,10 +1,6 @@
 <p align="center">
-  <a href="https://briojs.com">
-    <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="./docs/assets/logo-dark.svg">
-      <img alt="Brio.js" src="./docs/assets/logo-light.svg" width="300" height="80">
-    </picture>
-  </a>
+  <a href="https://briojs.com/#gh-light-mode-only"><img alt="Brio.js" src="./docs/assets/logo-light.svg" width="300" height="80"></a>
+  <a href="https://briojs.com/#gh-dark-mode-only"><img alt="Brio.js" src="./docs/assets/logo-dark.svg" width="300" height="80"></a>
 </p>
 
 <p align="center">
@@ -28,12 +24,8 @@
 </p>
 
 <p align="center">
-  <a href="https://briojs.com/#demo-heading">
-    <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="./docs/assets/creature-builder-dark.webp">
-      <img alt="Brio's creature builder: a creature changes from happy blue Blip to sleepy purple Bean to mischievous pink Mochi as its mood, color, size, and name controls change." src="./docs/assets/creature-builder-light.webp">
-    </picture>
-  </a>
+  <a href="https://briojs.com/try/#gh-light-mode-only"><img alt="Brio's creature builder: a creature changes from happy blue Blip to sleepy purple Bean to mischievous pink Mochi as its mood, color, size, and name controls change." src="./docs/assets/creature-builder-light.webp"></a>
+  <a href="https://briojs.com/try/#gh-dark-mode-only"><img alt="Brio's creature builder: a creature changes from happy blue Blip to sleepy purple Bean to mischievous pink Mochi as its mood, color, size, and name controls change." src="./docs/assets/creature-builder-dark.webp"></a>
 </p>
 
 ## What is Brio?

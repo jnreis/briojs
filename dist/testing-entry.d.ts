@@ -1,5 +1,4 @@
 import { AppOptions, BrioApp, MountHandle, StoreMap } from './core/types.js';
-
 export type RenderOptions<T extends Record<string, unknown> = Record<string, unknown>, S extends StoreMap = StoreMap> = AppOptions<T, S>;
 export type Rendered<T extends Record<string, unknown> = Record<string, unknown>, S extends StoreMap = StoreMap> = {
     /** The `<div>` the markup was rendered into, attached to `document.body`. */

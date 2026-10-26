@@ -1,5 +1,4 @@
 import { Stop } from '../../reactivity/types.js';
-
 /** How a directive reads its attribute value; `text` passes the raw string and `none` rejects a value. */
 export type DirectiveValue = 'expression' | 'statement' | 'text' | 'none';
 export type DirectiveCleanup = (() => void) | void;

@@ -1,6 +1,5 @@
 import { DirectiveDefinition } from '../dom/directives/registry.js';
 import { ValidationRule, ValidationSchema } from './forms.js';
-
 export type FormOptions = {
     rules?: ValidationSchema;
     customRules?: Record<string, ValidationRule>;

@@ -1,5 +1,4 @@
 import { DomRuntime } from './types.js';
-
 export type PortalDestination = {
     target: Element;
     placement: 'before' | 'after' | 'prepend' | 'append';

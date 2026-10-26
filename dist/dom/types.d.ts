@@ -3,7 +3,6 @@ import { StoreMap } from '../core/types.js';
 import { RefMap } from './refs.js';
 import { RouteState } from '../plugins/router.js';
 import { DirectiveRegistry } from './directives/registry.js';
-
 export type ComponentContext = {
     el: Element;
     $props: Record<string, unknown>;

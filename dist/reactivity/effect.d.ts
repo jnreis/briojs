@@ -1,6 +1,5 @@
 import { EffectOptions, Scope, Stop } from './types.js';
 import { EffectFrame } from '../core/scope.js';
-
 export type ReactiveEffect = {
     fn: () => unknown;
     scheduler?: () => void;

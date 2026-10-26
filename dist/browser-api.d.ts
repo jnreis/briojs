@@ -1,6 +1,5 @@
 import { createApp, state, signal, computed, effect, batch, untrack, resource, createScope, onCleanup, getCurrentScope, trustedHTML } from './index.js';
 import { BrioPlugin } from './core/types.js';
-
 declare const brio: {
     createApp: typeof createApp;
     state: typeof state;

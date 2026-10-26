@@ -4,7 +4,7 @@
     <script src="/site/public/theme.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Manual Test: intersection directive</title>
+    <title>Manual Test: b-on-enter / b-on-exit</title>
     <style>
         .scroll-container { height: 250px; overflow-y: auto; border: 2px solid var(--line); border-radius: 8px; padding: 16px; background: var(--surface); position: relative; }
         .spacer { height: 400px; background: linear-gradient(180deg, #f1f5f9 0%, #cbd5e1 100%); border-radius: 6px; padding: 10px; color: var(--muted); text-align: center; }
@@ -18,11 +18,11 @@
     intersectStatus: 'Not visible in viewport'
 }">
 
-    <h1>b-intersection (on-enter / on-exit) Directive Manual Tests</h1>
+    <h1>b-on-enter / b-on-exit Directive Manual Tests</h1>
     <p>Tests reactive IntersectionObserver triggers when elements enter or exit view.</p>
 
     <div class="card">
-        <h3>1. Scroll container testing on-enter and on-exit</h3>
+        <h3>1. Scroll container testing b-on-enter and b-on-exit</h3>
         <p>Scroll down inside the box to reveal the green target element:</p>
 
         <div class="scroll-container" id="intersection-root">

@@ -4,7 +4,7 @@
     <script src="/site/public/theme.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Manual Test: mutation directive</title>
+    <title>Manual Test: b-on-addednodes / b-on-removednodes / b-on-attrs / b-on-text</title>
     <style>
         button { background: #3b82f6; color: white; border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 0.9rem; margin-right: 6px; }
         button:hover { background: #2563eb; }
@@ -22,12 +22,12 @@
     editableText: 'Edit me directly in the browser...'
 }">
 
-    <h1>b-mutation Directive Manual Tests</h1>
-    <p>Tests reactive MutationObserver monitoring DOM changes: additions/removals (<code>on-addednodes</code>, <code>on-removednodes</code>), attribute changes (<code>on-attrs</code>), and text/characterData changes (<code>on-text</code>).</p>
+    <h1>b-on-addednodes / b-on-removednodes / b-on-attrs / b-on-text Manual Tests</h1>
+    <p>Tests reactive MutationObserver monitoring DOM changes: additions/removals (<code>b-on-addednodes</code>, <code>b-on-removednodes</code>), attribute changes (<code>b-on-attrs</code>), and text/characterData changes (<code>b-on-text</code>).</p>
 
     <!-- Test 1: DOM Node Additions & Removals -->
     <div class="card">
-        <h3>1. DOM Mutation Observer: on-addednodes & on-removednodes</h3>
+        <h3>1. DOM Mutation Observer: b-on-addednodes & b-on-removednodes</h3>
         <button b-on-click="$data.childItems.push('Item ' + ($data.childItems.length + 1))">Add Child Element</button>
         <button b-on-click="$data.childItems.pop()">Remove Child Element</button>
 
@@ -43,7 +43,7 @@
 
     <!-- Test 2: Attribute Changes -->
     <div class="card">
-        <h3>2. Attribute Mutation Observer: on-attrs</h3>
+        <h3>2. Attribute Mutation Observer: b-on-attrs</h3>
         <button b-on-click="$data.targetTheme = ($data.targetTheme === 'light' ? 'dark' : 'light')">
             Toggle Theme Attribute (Current: ${$data.targetTheme})
         </button>
@@ -57,12 +57,12 @@
 
     <!-- Test 3: Text / CharacterData Changes -->
     <div class="card">
-        <h3>3. Text Mutation Observer: on-text</h3>
+        <h3>3. Text Mutation Observer: b-on-text</h3>
         <p>Type directly into the contenteditable element below to trigger characterData mutations:</p>
         <div class="observed-box"
              contenteditable="true"
              b-on-text="$data.mutationLogs.push('Text content mutated at ' + new Date().toLocaleTimeString())">
-            Edit this text content directly to trigger on-text observer!
+            Edit this text content directly to trigger the b-on-text observer!
         </div>
     </div>
 

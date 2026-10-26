@@ -3339,5 +3339,5 @@ that names the script and the plugin to load.
 
 For a private application built with an older Brio runtime, use the
 [legacy migration kit](./ai/brio-migrate-1-1-5/references/migration.md).
-The [historical v3 reference](https://github.com/jnreis/briojs/blob/main/DOCUMENTATION-v3.md)
+The [historical v3 reference](https://github.com/jnreis/briojs/blob/main/docs/history/DOCUMENTATION-v3.md)
 is preserved in the repository, not shipped as current documentation.

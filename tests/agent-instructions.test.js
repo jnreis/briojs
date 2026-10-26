@@ -1,11 +1,14 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 // Repo-maintenance instructions for AI agents (AGENTS.md and .github/skills) must point at real files.
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+// Generated outputs (for example, site reference pages) are git-ignored and absent in a fresh checkout.
+const generated = file => spawnSync('git', ['check-ignore', '-q', file], { cwd: root }).status === 0;
 const skillsDir = resolve(root, '.github/skills');
 const skills = readdirSync(skillsDir, { withFileTypes: true }).filter(entry => entry.isDirectory()).map(entry => entry.name);
 const documents = [['AGENTS.md', resolve(root, 'AGENTS.md')],
@@ -29,7 +32,7 @@ for (const [label, path] of documents) test(`${label} refers only to existing fi
     for (const [, token] of content.matchAll(/`([^`\s]+)`/g)) {
         const file = token.replace(/[),.:]+$/, '');
         if (!roots.test(file) || /[<>*{}]|x\.y\.z/.test(file)) continue;
-        assert.ok(existsSync(resolve(root, file)), `${label} mentions missing ${file}`);
+        assert.ok(existsSync(resolve(root, file)) || generated(file), `${label} mentions missing ${file}`);
     }
     for (const [, target] of content.matchAll(/\]\(([^)#\s]+)(?:#[^)]*)?\)/g)) {
         if (/^[a-z]+:/.test(target)) continue;

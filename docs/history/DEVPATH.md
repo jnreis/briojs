@@ -1,7 +1,7 @@
 # Development Path
 
 > Historical brainstorming, not a list of shipped features or release promises.
-> See [README](./README.md) and [DOCUMENTATION](./DOCUMENTATION.md) for the current framework.
+> See [README](../../README.md) and [DOCUMENTATION](../../DOCUMENTATION.md) for the current framework.
 
 ## Purpose
 

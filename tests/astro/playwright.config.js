@@ -10,6 +10,7 @@ export default defineConfig({
         browserName: 'chromium',
         channel: 'chromium',
         launchOptions: { ignoreDefaultArgs: ['--disable-back-forward-cache'] },
+        trace: 'retain-on-failure',
     },
     webServer: {
         cwd: fileURLToPath(new URL('../..', import.meta.url)),

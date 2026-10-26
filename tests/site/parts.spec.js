@@ -488,6 +488,15 @@ for (const id of Object.keys(names).filter(id => id !== 'dialog')) {
             expect(await page.evaluate(() => window.partEvents)).toEqual([{ id: 'b', label: 'Beta' }]);
             await expect(first.getByRole('status')).toHaveText('Beta');
             await expect(second.getByRole('status')).toContainText('Choose an action.');
+            const focused = await first.evaluate(async host => {
+                host.querySelector('[data-trigger]').click();
+                await new Promise(resolve => queueMicrotask(resolve));
+                [...host.querySelectorAll('[role="menuitem"]')].at(-1).focus();
+                await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+                return document.activeElement.textContent;
+            });
+            expect(focused, 'opening focus must not override a later user move').toBe('Beta');
+            await page.keyboard.press('Escape');
         }
         if (id !== 'dialog') {
             await page.evaluate(() => { window.componentTestApp.state.first.items = []; });

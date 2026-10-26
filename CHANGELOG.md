@@ -295,6 +295,6 @@ not npm releases. They are not a sequence of public package upgrades.
 
 The [git history](https://github.com/jnreis/briojs/commits/main/) preserves the
 implementation chronology. The
-[historical v3 reference](https://github.com/jnreis/briojs/blob/main/DOCUMENTATION-v3.md)
+[historical v3 reference](https://github.com/jnreis/briojs/blob/main/docs/history/DOCUMENTATION-v3.md)
 is retained for archaeology, not current usage. For a private 1.1.5 application,
 see the [migration kit](./ai/brio-migrate-1-1-5/SKILL.md).

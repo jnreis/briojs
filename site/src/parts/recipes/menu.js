@@ -24,7 +24,7 @@ const menuComponent = {
         this.opened = true;
         cancelAnimationFrame(focusRequest);
         focusRequest = requestAnimationFrame(() => {
-          if (this.opened) (items()[index] || items()[0])?.focus();
+          if (this.opened && !menu().contains(document.activeElement)) (items()[index] || items()[0])?.focus();
         });
       },
       close(restoreFocus = true) {

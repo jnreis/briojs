@@ -43,6 +43,20 @@ test('repository preview PNGs have the intended dimensions and bounded file size
     }
 });
 
+test('README themed images use GitHub theme fragments in matched light and dark pairs', () => {
+    const readme = readFileSync(resolve(root, 'README.md'), 'utf8');
+    assert.doesNotMatch(readme, /prefers-color-scheme/, 'GitHub ignores the signed-in theme for <picture>; see docs/README.md');
+    const pairs = [...readme.matchAll(/<a href="([^"#]+)#gh-(light|dark)-mode-only"><img [^>]*src="([^"]+)"/g)]
+        .map(([, href, theme, src]) => ({ href, theme, src }));
+    assert.equal(pairs.length, 4);
+    for (let index = 0; index < pairs.length; index += 2) {
+        const [light, dark] = pairs.slice(index, index + 2);
+        assert.deepEqual([light.theme, dark.theme], ['light', 'dark']);
+        assert.equal(light.href, dark.href);
+        assert.equal(light.src.replace('-light.', '-dark.'), dark.src);
+    }
+});
+
 test('README creature builder animations loop in both themes at the same size', () => {
     for (const theme of ['light', 'dark']) {
         const name = `creature-builder-${theme}.webp`;

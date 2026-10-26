@@ -1,7 +1,7 @@
 Brainstorming Ideas for Brio.js
 
 > Archived implementation notes for an earlier runtime, not current API guidance.
-> See [DOCUMENTATION.md](./DOCUMENTATION.md).
+> See [DOCUMENTATION.md](../../DOCUMENTATION.md).
 
 Reactivity system:
 

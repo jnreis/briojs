@@ -1,60 +1,47 @@
-# Brio.js
+<p align="center">
+  <a href="https://briojs.com">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="./docs/assets/logo-dark.svg">
+      <img alt="Brio.js" src="./docs/assets/logo-light.svg" width="300" height="80">
+    </picture>
+  </a>
+</p>
 
-**Powerfully simple, HTML-first web development.**
+<p align="center">
+  <strong>Powerfully simple, HTML-first web development.</strong><br>
+  Reactive widgets, multi-page sites, and single-page apps on the DOM you already have.
+</p>
 
-Brio enhances the real DOM in place. Add a reactive widget to an existing app,
-enhance a server-rendered multi-page site, or build a single-page application.
-No virtual DOM, JSX, required compiler, or runtime dependencies.
+<p align="center">
+  <a href="https://www.npmjs.com/package/@jnreis/briojs"><img src="https://img.shields.io/npm/v/%40jnreis%2Fbriojs" alt="npm version"></a>
+  <a href="https://github.com/jnreis/briojs/actions/workflows/ci.yml"><img src="https://github.com/jnreis/briojs/actions/workflows/ci.yml/badge.svg" alt="Framework CI"></a>
+  <a href="./LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License: MIT"></a>
+</p>
 
-Version **5.0.0** adds a public plugin API for your own `b-` directives and `$` helpers, `b-form`, and a testing helper, and moves masks and observers into opt-in add-ons for a smaller core. Upgrading? See the [changelog](./CHANGELOG.md) and the [migration guide](./DOCUMENTATION.md#migrating-from-brio-4).
+<p align="center">
+  <a href="https://briojs.com">Website</a> ·
+  <a href="https://briojs.com/start/getting-started/">Getting started</a> ·
+  <a href="https://briojs.com/play/">Playground</a> ·
+  <a href="https://briojs.com/examples/">Examples</a> ·
+  <a href="./DOCUMENTATION.md">Docs</a> ·
+  <a href="https://github.com/jnreis/briojs/discussions">Discussions</a>
+</p>
 
-The npm package is **`@jnreis/briojs`**; the framework is Brio.js and the
-standalone browser API remains `brio`.
+<p align="center">
+  <a href="https://briojs.com/#demo-heading">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="./docs/assets/creature-builder-dark.webp">
+      <img alt="Brio's creature builder: a creature changes from happy blue Blip to sleepy purple Bean to mischievous pink Mochi as its mood, color, size, and name controls change." src="./docs/assets/creature-builder-light.webp">
+    </picture>
+  </a>
+</p>
 
-[Website](https://briojs.com) ·
-[Getting started](https://briojs.com/start/getting-started/) ·
-[API reference](https://briojs.com/reference/install/) ·
-[Live examples](https://briojs.com/examples/)
+## What is Brio?
 
-The [shareable playground](https://briojs.com/play/) lets you
-edit HTML, CSS, and JavaScript, run an isolated preview, and share the code in a
-URL fragment. Shared projects do not execute until the recipient clicks Run.
-
-[Brio Parts](https://briojs.com/parts/) offers copy-paste disclosure,
-tabs, native dialog, and action-menu components. Copy their templates with
-embedded scoped CSS and definitions, register on your existing app, and reuse
-them without creating an app per instance. Detail pages include live previews,
-playground links, and keyboard notes. [Integration guides](https://briojs.com/integrations/overview/)
-cover plain HTML/Express, Rails, Laravel, Django, and WordPress.
-
-## When Brio fits
-
-Brio is a good fit when:
-
-- You already render HTML on the server and want to add interactive regions.
-- You need a widget inside a larger app without taking over the whole page.
-- You prefer authored HTML and explicit JavaScript over a required template compiler.
-- You want room to add components, shared state, and routing as your app grows.
-
-Brio enhances the client-side DOM; it is not a server renderer or an application
-backend. Runtime expressions require a CSP that permits `unsafe-eval`. See
-[browser and security considerations](#browser-and-security-considerations)
-before choosing it for your project.
-
-## Quick start
-
-Start a project with the scaffolder. It offers all five starter templates in
-JavaScript or TypeScript ([`packages/create-brio`](./packages/create-brio/)):
-
-```sh
-npm create brio@latest
-```
-
-### With npm
-
-```sh
-npm install @jnreis/briojs
-```
+Brio adds reactivity to HTML through `b-*` directives. It enhances the real DOM
+in place, so you can mount it around one form or menu inside a larger page, or
+build a whole app with it. No virtual DOM, JSX, required compiler, or runtime
+dependencies.
 
 ```html
 <div id="counter">
@@ -67,14 +54,36 @@ npm install @jnreis/briojs
 ```js
 import { createApp } from '@jnreis/briojs';
 
-const app = createApp({ state: () => ({ count: 0 }) });
-app.mount('#counter');
+createApp({ state: () => ({ count: 0 }) }).mount('#counter');
 ```
 
-Run the JavaScript after the element exists. Brio only owns the DOM you mount;
-the rest of the page stays under its existing owner's control.
+Brio owns only the region you mount. State and props are explicit in
+expressions (`$data.count`, `$props.label`, `$for.item`), so you can always tell
+where a value comes from.
 
-### With a script tag
+## Quick start
+
+```sh
+npm create brio@latest
+```
+
+The scaffolder offers five [starter templates](./templates/) (widget,
+multi-page, SPA, Astro islands, and plugin) in JavaScript or TypeScript.
+
+<details>
+<summary><strong>Add to an existing project with npm</strong></summary>
+
+```sh
+npm install @jnreis/briojs
+```
+
+Then use the HTML and JavaScript above. The package is ESM-only, with
+TypeScript declarations and tree-shakable exports.
+
+</details>
+
+<details>
+<summary><strong>No build step: use a script tag</strong></summary>
 
 Save this as an HTML file and serve it from any static server:
 
@@ -102,143 +111,70 @@ Save this as an HTML file and serve it from any static server:
 </html>
 ```
 
-Use `brio.dev.min.js` instead during development for the live inspector.
-To self-host, copy scripts from `node_modules/@jnreis/briojs/dist/` to your public assets.
-Do not load both core builds on the same page.
+Use `brio.dev.min.js` during development for the live inspector. Load optional
+add-on scripts after core and before your own code, and keep their versions
+aligned.
 
-## What Brio provides
+</details>
 
-- **HTML directives:** text and attribute bindings, events and key modifiers,
-  two-way form models, keyed lists, conditional branches, transitions, refs,
-  wrapperless templates, and teleports.
-- **Fine-grained reactivity:** plain-object and array state, signals, computed
-  values, synchronous effects, explicit batching, and cancellable async resources.
-  Use these independently through `@jnreis/briojs/reactivity`, even without a DOM.
-- **Explicit ownership:** app and component scopes clean up effects, listeners,
-  observers, and resources when removed. Mount several independent apps on a page.
-- **Reusable HTML components:** setup functions, reactive props, emitted events,
-  slots, shared stores, and subtree-provided values.
-- **Optional add-ons:** routing, persistence, HTTP, input masks and form
-  validation, DOM observers, step navigation, devtools, and Astro island
-  lifecycle integration. Each is a separate script or import, so you load only
-  what a page uses.
-- **Useful diagnostics:** template errors identify the expression, directive,
-  element, enclosing component, and original cause.
+## Features
 
-State and props are explicit in expressions: `$data.count`, `$props.label`,
-`$for.item`, `$ref.input`. Brio does not guess which scope a bare name belongs to.
+- **HTML directives:** bindings, events with key modifiers, two-way forms, keyed
+  lists, conditionals, transitions, refs, templates, and teleports.
+- **Fine-grained reactivity:** plain-object state, signals, computed values,
+  effects, batching, and cancellable async resources. Also usable without a DOM.
+- **Components:** HTML templates with setup functions, reactive props, events,
+  slots, scoped slots, and shared stores.
+- **Explicit cleanup:** apps and components dispose their effects, listeners,
+  and resources when removed. Mount several independent apps on one page.
+- **Opt-in add-ons:** router, persistence, HTTP, input masks and validation, DOM
+  observers, step flows, devtools, and Astro islands. Load only what a page uses.
+- **Plugin API:** add your own directives and expression helpers.
+- **Helpful errors:** template errors name the expression, directive, element,
+  and component.
 
-## Add only what you need
+**New in 5.0:** the plugin API, form validation, and a testing helper. Masks
+and observers moved to opt-in add-ons. See the
+[release notes](https://github.com/jnreis/briojs/releases/tag/v5.0.0) and the
+[migration guide](./DOCUMENTATION.md#migrating-from-brio-4).
 
-The npm package is ESM with TypeScript declarations and tree-shakable exports.
-There is no CommonJS build.
+## Is Brio a good fit?
 
-```js
-import { createApp } from '@jnreis/briojs';
-import { computed, effect, signal } from '@jnreis/briojs/reactivity';
-import { createRouter } from '@jnreis/briojs/router';
-import { persist } from '@jnreis/briojs/persistence';
-import { http, HttpError } from '@jnreis/briojs/http';
-import { inputsPlugin, validate, moneyMask } from '@jnreis/briojs/inputs';
-import { observersPlugin } from '@jnreis/briojs/observers';
-import { createStepEngine } from '@jnreis/briojs/step';
+**Good fit:** server-rendered sites (Rails, Laravel, Django, WordPress, Express)
+that need interactive regions, widgets inside larger apps, and small-to-medium
+SPAs written as plain HTML and JavaScript.
 
-createApp({ plugins: [inputsPlugin, observersPlugin] }); // b-mask, b-form, b-on-enter, …
-```
+**Not a fit:** framework-provided server rendering, older browsers, or a strict
+CSP without `unsafe-eval`. Runtime expressions are trusted code compiled with
+`new Function`, not a sandbox. Use `b-text` for user content; `b-html` does not
+sanitize. See [expression security](./DOCUMENTATION.md#trusted-html-and-expression-security).
 
-Most tools are also named exports from `@jnreis/briojs`; subpaths make intent explicit.
-For standalone browser apps, load the matching optional scripts **after** core
-and **before** your bootstrap:
+## Learn more
 
-```html
-<script src="https://cdn.jsdelivr.net/npm/@jnreis/briojs@5.0.0/dist/brio.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@jnreis/briojs@5.0.0/dist/brio.router.min.js"></script>
-<script src="/app.js"></script>
-```
+| Resource | What you’ll find |
+| --- | --- |
+| [Documentation](./DOCUMENTATION.md) | Directives, components, reactivity, routing, add-ons, and the plugin API. |
+| [Playground](https://briojs.com/play/) | Edit HTML, CSS, and JavaScript in the browser and share a link. |
+| [Brio Parts](https://briojs.com/parts/) | Copy-paste tabs, disclosure, dialog, and menu components. |
+| [Examples](https://briojs.com/examples/) | Live demos, from a counter and TodoMVC to a Kanban board and collaborative editor. ([source](./tests/apps/)) |
+| [Integrations](https://briojs.com/integrations/overview/) | Express, Rails, Laravel, Django, and WordPress guides. |
+| [Editor autocomplete](https://briojs.com/reference/install/#editor-autocomplete) | `b-*` completions and hover docs in VS Code. |
+| [AI developer kit](./ai/README.md) | A guide, skill, and recipes for coding assistants, plus [llms.txt](https://briojs.com/llms.txt). |
+| [Changelog](./CHANGELOG.md) | Every release and its migration notes. |
 
-Keep core and add-on versions aligned. Add-on scripts reuse core's reactive
-engine rather than embedding another runtime, and those with directives
-(`brio.inputs.min.js`, `brio.observers.min.js`) attach them to every app you
-create afterwards.
+## Community
 
-## Learn and explore
+Brio started as a private project for fun and learning. I've used it in one
+small production project of my own and decided it was ready to share. It's
+independently maintained, and outside feedback is very welcome.
 
-### Try something real
+- **Questions, ideas, or something you built:** [Discussions](https://github.com/jnreis/briojs/discussions) ([say hello](https://github.com/jnreis/briojs/discussions/5))
+- **Bugs and feature requests:** [open an issue](https://github.com/jnreis/briojs/issues/new/choose)
+- **Security issues:** [report privately](./SECURITY.md)
+- **Contributing:** start with the [first-contribution guide](./CONTRIBUTING.md#your-first-contribution)
 
-| Example | What it demonstrates | Links |
-| --- | --- | --- |
-| Temperature Converter | Two-way inputs and derived values that stay in sync. | [Try demo](https://briojs.com/demos/temperature-converter/index.html) · [Source](https://github.com/jnreis/briojs/tree/main/tests/apps/temperature-converter) |
-| Kanban board | Drag and drop, nested state, and optimistic updates. | [Try demo](https://briojs.com/demos/kanban/index.html) · [Source](https://github.com/jnreis/briojs/tree/main/tests/apps/kanban) |
-| Collaborative Editor | Concurrent edits, offline merging, and lifecycle cleanup. | [Try demo](https://briojs.com/demos/collab-editor/index.html) · [Source](https://github.com/jnreis/briojs/tree/main/tests/apps/collab-editor) |
-
-Kanban and the editor use simulated backends and teammates, not a hosted
-collaboration service. Some demos save data in your browser; don't enter
-sensitive information.
-
-### Start faster
-
-- [Starter templates](./templates/): a widget, multi-page site, SPA, and Astro
-  islands project. Open any of them in StackBlitz, or copy one with
-  `npx degit jnreis/briojs/templates/widget my-app`.
-- **Editor autocomplete:** point VS Code's `html.customData` setting at
-  `./node_modules/@jnreis/briojs/dist/html-custom-data.json` for `b-`
-  directive completions and hover docs.
-  [Setup](https://briojs.com/reference/install/#editor-autocomplete).
-- **AI assistants:** [llms.txt](https://briojs.com/llms.txt) and
-  [llms-full.txt](https://briojs.com/llms-full.txt) give agents the whole
-  documentation; the [AI developer kit](./ai/README.md) adds a guide and skill.
-
-### Guides and development
-
-- [Documentation](./DOCUMENTATION.md): directives, components, reactivity,
-  routing, lifecycle, and every optional tool.
-- [Changelog](./CHANGELOG.md): v5 changes and release history since the consolidated 4.0 release.
-- [AI developer kit](./ai/README.md): a portable application guide, optional
-  assistant skills, and tested widget, multi-page, and SPA recipes.
-- [Contributing and release guide](https://github.com/jnreis/briojs/blob/main/CONTRIBUTING.md):
-  development, tests, benchmarks, package checks, and publishing.
-
-From a repository checkout:
-
-```sh
-npm install
-npm run build
-npm run dev -- --open /tests/index.html
-```
-
-The [example gallery](https://github.com/jnreis/briojs/tree/main/tests/apps)
-includes a counter, temperature converter, registration form, TodoMVC, 7GUIs,
-a 1,000-row table, analytics dashboard, Conduit blog, Kanban board, and
-collaborative editor. Backend-dependent examples use in-memory mock servers;
-they are demonstrations, not production backends.
-
-## Browser and security considerations
-
-Brio targets modern browsers. Optional observer directives and CSS features
-depend on native browser support. It enhances client-side DOM; it does not
-provide server rendering.
-
-Expressions are trusted application JavaScript compiled with `new Function`,
-not a sandbox. A CSP that forbids `unsafe-eval` is incompatible with runtime
-expressions. Use `b-text` for user content. `b-html` is not a sanitizer, and
-`trustedHTML()` is a trust assertion, not sanitization. See
-[HTML and expression security](./DOCUMENTATION.md#trusted-html-and-expression-security).
-
-## Questions and bugs
-
-Have a question, found a bug, or want to suggest an improvement?
-[Open a GitHub issue](https://github.com/jnreis/briojs/issues).
-For bugs, include:
-
-- The Brio version, browser/version, and operating system.
-- A minimal reproduction or runnable example, with no credentials or private data.
-- Steps to reproduce, what you expected, and what actually happened.
-- Relevant console errors and whether you're using npm imports or browser scripts.
-
-Brio is independently maintained. Clear, small reproductions make it easier
-to investigate; response times are not guaranteed. For development setup and
-validation, see the [contribution guide](https://github.com/jnreis/briojs/blob/main/CONTRIBUTING.md).
+Please follow the [code of conduct](./CODE_OF_CONDUCT.md).
 
 ## License
 
-[MIT](./LICENSE) — Jonathan Reis.
+[MIT](./LICENSE) © Jonathan Reis

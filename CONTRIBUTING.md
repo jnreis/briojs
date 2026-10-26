@@ -12,6 +12,24 @@ when you change a workflow here. `tests/agent-instructions.test.js` checks that
 every file and skill they mention exists. These are for working on Brio itself.
 The app-building kit for Brio users is in `ai/`.
 
+## Your first contribution
+
+You can help without changing the runtime: try a starter, report confusing docs,
+share a small example, or reduce a bug to a runnable reproduction.
+
+For code changes:
+
+1. Pick an issue labeled `good first issue` or `help wanted`, or discuss a larger
+   idea before spending time implementing it.
+2. Fork the repo, create a branch, and follow the setup below.
+3. Keep the change focused and add a regression test for a behavior change.
+4. Run the smallest relevant checks, then open a pull request describing the
+   change and how you tested it. Draft PRs and questions are welcome.
+
+Follow the [community conduct policy](./CODE_OF_CONDUCT.md). Report security
+vulnerabilities [privately](./SECURITY.md), not in issues or PRs.
+This is an independently maintained project; responses may take time.
+
 ## Local development
 
 Use a current Node.js LTS release supported by the build/test tools (Node 22.12+
@@ -83,6 +101,11 @@ The playground suite checks the shared theme on every manual page and app,
 plus keyed identity, workbench state and mutation traces, catalog navigation,
 preference persistence, and mobile layout.
 For a focused check, build once and run `node --test path/to/test.js`.
+
+The `Framework CI` workflow runs type checks and Node tests on Node 22 and 24,
+plus the Lab and Astro Chromium suites on Node 22, for pushes to `main` and pull
+requests. Website checks and deployment run separately in the `Website` workflow.
+Dependency update pull requests are grouped and scheduled monthly.
 
 Keep changes focused, preserve lifecycle cleanup and existing behavior, and
 add regression coverage for behavioral changes. Do not edit generated `dist/`

@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="640" viewBox="0 0 1280 640" role="img" aria-labelledby="title description">
+  <title id="title">Brio.js</title>
+  <desc id="description">Your HTML. More interactive. An HTML-first JavaScript framework for widgets, enhanced pages, and apps.</desc>
+  <rect width="1280" height="640" fill="#f6f8fd"/>
+  <rect x="48" y="48" width="1184" height="544" rx="28" fill="#fff" stroke="#dce3ef" stroke-width="2"/>
+  <rect x="96" y="96" width="72" height="72" rx="19" fill="#245fe2"/>
+  <g transform="translate(96 96) scale(1.125)">
+    <path d="M21 15v23a12 12 0 1 0 12-12h-3" fill="none" stroke="#fff" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="m43 14 7 7" fill="none" stroke="#91e8ff" stroke-width="5" stroke-linecap="round"/>
+  </g>
+  <g font-family="Arial, Helvetica, sans-serif">
+    <text x="190" y="148" font-size="48" font-weight="700" fill="#152238">Brio.js</text>
+    <text x="96" y="266" font-size="68" font-weight="700" fill="#152238">Your HTML.</text>
+    <text x="96" y="344" font-size="68" font-weight="700" fill="#245fe2">More interactive.</text>
+    <text x="98" y="409" font-size="25" fill="#4c5c73">An HTML-first JavaScript framework.</text>
+    <text x="98" y="451" font-size="25" fill="#4c5c73">Widgets. Enhanced pages. Apps.</text>
+    <text x="98" y="536" font-size="23" font-weight="700" fill="#245fe2">briojs.com</text>
+    <text x="1182" y="536" text-anchor="end" font-size="20" fill="#4c5c73">No required build step.</text>
+  </g>
+  <rect x="774" y="194" width="408" height="265" rx="18" fill="#edf3ff" stroke="#dce3ef"/>
+  <g font-family="monospace" font-size="25">
+    <text x="806" y="247" fill="#4c5c73">&lt;button</text>
+    <text x="824" y="295" fill="#245fe2">b-on-click=</text>
+    <text x="824" y="337" fill="#152238">"$data.count++"</text>
+    <text x="806" y="385" fill="#4c5c73">&gt;</text>
+    <text x="806" y="427" fill="#4c5c73">&lt;/button&gt;</text>
+  </g>
+</svg>

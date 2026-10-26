@@ -1,5 +1,11 @@
 import { test, expect } from '@playwright/test';
 
+// The readout shows placeholder text until the first diagnostics update.
+async function lifecycle(page) {
+    try { return JSON.parse(await page.locator('#lifecycle-readout').innerText()); }
+    catch { return null; }
+}
+
 test('shared theme survives Astro swaps, reloads, and full document navigation', async ({ page }) => {
     await page.emulateMedia({ colorScheme: 'light' });
     await page.goto('/');
@@ -25,16 +31,16 @@ test('shared theme survives Astro swaps, reloads, and full document navigation',
 test('Astro lab exposes real lifecycle data, lazy release, and a return address', async ({ page }) => {
     await page.goto('/?lab=http%3A%2F%2F127.0.0.1%3A4335');
     await expect(page.locator('#lab-return')).toHaveAttribute('href', 'http://127.0.0.1:4335/');
-    await expect.poll(async () => JSON.parse(await page.locator('#lifecycle-readout').innerText()).islands.live).toBe(2);
+    await expect.poll(async () => (await lifecycle(page))?.islands?.live).toBe(2);
     await page.getByRole('button', { name: 'Send window pulse' }).click();
-    await expect.poll(async () => JSON.parse(await page.locator('#lifecycle-readout').innerText()).islands.pulses).toBe(2);
+    await expect.poll(async () => (await lifecycle(page))?.islands?.pulses).toBe(2);
     await page.locator('a[href="/other"]').click();
-    await expect.poll(async () => JSON.parse(await page.locator('#lifecycle-readout').innerText()).islands.disposed).toBe(1);
+    await expect.poll(async () => (await lifecycle(page))?.islands?.disposed).toBe(1);
     await expect(page.locator('#lab-return')).toHaveAttribute('href', 'http://127.0.0.1:4335/');
     await page.locator('a[href="/lazy"]').click();
     await page.getByRole('button', { name: 'Release pending modules' }).click();
     await expect(page.locator('#retained b')).toHaveText('7');
-    await expect.poll(async () => JSON.parse(await page.locator('#lifecycle-readout').innerText()).lazy.calls.length).toBe(2);
+    await expect.poll(async () => (await lifecycle(page))?.lazy?.calls?.length).toBe(2);
     await expect(page.getByRole('button', { name: 'Release pending modules' })).toBeHidden();
 });
 

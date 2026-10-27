@@ -3,20 +3,22 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { test } from 'node:test';
 import { createServer } from 'node:http';
 import { once } from 'node:events';
-import { JSDOM, ResourceLoader, VirtualConsole } from 'jsdom';
+import { JSDOM, VirtualConsole, requestInterceptor } from 'jsdom';
 import { httpFixtures } from './http-fixtures.js';
 
-class LocalResources extends ResourceLoader {
-    fetch(url) {
-        const path = new URL(url).pathname;
-        if (path === '/tests/source-viewer.js' || path === '/tests/source-viewer.css' ||
-            path === '/site/public/theme.js' || path === '/tests/shared/showcase.css' ||
-            /^\/site\/public\/(?:demo-theme|theme-tokens)\.css$/.test(path) ||
-            /^\/dist\/brio(?:\.(?:http|inputs|observers|step))?\.min\.js$/.test(path))
-            return Promise.resolve(readFileSync(new URL(`..${path}`, import.meta.url)));
-        throw new Error(`Unexpected source-viewer test resource: ${url}`);
-    }
-}
+const types = { '.js': 'text/javascript', '.css': 'text/css' };
+const localResources = requestInterceptor(request => {
+    const path = new URL(request.url).pathname;
+    if (path === '/tests/source-viewer.js' || path === '/tests/source-viewer.css' ||
+        path === '/site/public/theme.js' || path === '/tests/shared/showcase.css' ||
+        /^\/site\/public\/(?:demo-theme|theme-tokens)\.css$/.test(path) ||
+        /^\/dist\/brio(?:\.(?:http|inputs|observers|step))?\.min\.js$/.test(path))
+        return new Response(readFileSync(new URL(`..${path}`, import.meta.url)), {
+            headers: { 'Content-Type': types[path.slice(path.lastIndexOf('.'))] },
+        });
+    // A failed load surfaces as a jsdomError, which page() reports.
+    return new Response(`Unexpected source-viewer test resource: ${request.url}`, { status: 404 });
+});
 
 async function page(t, path) {
     const failures = [];
@@ -26,7 +28,7 @@ async function page(t, path) {
     });
     const dom = new JSDOM(readFileSync(new URL(path, import.meta.url), 'utf8'), {
         runScripts: 'dangerously',
-        resources: new LocalResources(),
+        resources: { interceptors: [localResources] },
         url: `https://brio.test/tests/${path.replace('./', '')}`,
         virtualConsole: console,
         beforeParse(window) {

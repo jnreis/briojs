@@ -98,7 +98,7 @@ function encodeBody(body: HttpBody, headers: Headers): BodyInit {
         (typeof URLSearchParams !== 'undefined' && isInstanceOf(body, URLSearchParams)) ||
         (typeof Blob !== 'undefined' && isInstanceOf(body, Blob)) ||
         isInstanceOf(body, ArrayBuffer) || ArrayBuffer.isView(body) ||
-        (typeof ReadableStream !== 'undefined' && isInstanceOf(body, ReadableStream))) return body;
+        (typeof ReadableStream !== 'undefined' && isInstanceOf(body, ReadableStream))) return body as BodyInit;
     if (body !== null && !isNumber(body) && !isBoolean(body) &&
         !(isObjectType(body) && (isArray(body) || isPlainObject(body))))
         throw createTypeError('HTTP body must be JSON data or a native Fetch body.');

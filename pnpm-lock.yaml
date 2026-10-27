@@ -10,7 +10,7 @@ importers:
     devDependencies:
       '@astrojs/starlight':
         specifier: 0.37.7
-        version: 0.37.7(astro@5.18.2(@types/node@22.10.10)(rollup@4.64.7)(terser@5.51.2)(typescript@5.7.3))
+        version: 0.37.7(astro@5.18.2(@types/node@22.10.10)(rollup@4.64.7)(supports-color@8.1.1)(terser@5.51.2)(typescript@5.7.3))(supports-color@8.1.1)
       '@lezer/html':
         specifier: ^1.3.13
         version: 1.3.13
@@ -25,7 +25,7 @@ importers:
         version: 3.17.5
       astro:
         specifier: 5.18.2
-        version: 5.18.2(@types/node@22.10.10)(rollup@4.64.7)(terser@5.51.2)(typescript@5.7.3)
+        version: 5.18.2(@types/node@22.10.10)(rollup@4.64.7)(supports-color@8.1.1)(terser@5.51.2)(typescript@5.7.3)
       css-tree:
         specifier: ^3.2.1
         version: 3.2.1
@@ -36,8 +36,8 @@ importers:
         specifier: 2.0.0
         version: 2.0.0
       jsdom:
-        specifier: ^26.1.0
-        version: 26.1.0
+        specifier: ^30.1.3
+        version: 30.1.3
       monaco-editor:
         specifier: ^0.57.0
         version: 0.57.0
@@ -61,7 +61,7 @@ importers:
         version: 19.3.1(react@19.3.1)
       remark-parse:
         specifier: 11.0.0
-        version: 11.0.0
+        version: 11.0.0(supports-color@8.1.1)
       svelte:
         specifier: ^5.57.2
         version: 5.57.2
@@ -79,15 +79,20 @@ importers:
         version: 5.4.11(@types/node@22.10.10)(terser@5.51.2)
       vite-plugin-dts:
         specifier: ^5.1.2
-        version: 5.1.2(@microsoft/api-extractor@7.43.0(@types/node@22.10.10))(esbuild@0.28.2)(rollup@4.64.7)(typescript@5.7.3)(vite@5.4.11(@types/node@22.10.10)(terser@5.51.2))
+        version: 5.1.2(@microsoft/api-extractor@7.43.0(@types/node@22.10.10))(esbuild@0.28.2)(rollup@4.64.7)(supports-color@8.1.1)(typescript@5.7.3)(vite@5.4.11(@types/node@22.10.10)(terser@5.51.2))
       vue:
         specifier: ^3.5.44
         version: 3.5.44(typescript@5.7.3)
 
 packages:
 
-  '@asamuzakjp/css-color@3.2.0':
-    resolution: {integrity: sha512-K1A6z8tS3XsmCMM86xoWdn7Fkdn9m6RSVtocUrJYIwZnFVkng/PvkEoWtOWmP+Scc6saYWHWZYbndEEXxl24jw==}
+  '@asamuzakjp/css-color@7.1.7':
+    resolution: {integrity: sha512-Q7ioeear07HwixdIitIn9KS1LZi97CEDFCSjPNm9v+y8KNbsu9q4Lrd4zUQW4faED+E7qxvfeVnbNRW46wFKuw==}
+    engines: {node: ^22.22.2 || ^24.15.0 || >=26.0.0}
+
+  '@asamuzakjp/dom-selector@10.0.5':
+    resolution: {integrity: sha512-EgmJ7oEaGQECTn3H3wmnQpEy4hKY66VvM7VQndwPIQob3p877BgbyOUE3EX0LgXQCciF2H8KMdR+RznqjMNOLw==}
+    engines: {node: ^22.22.2 || ^24.15.0 || >=26.0.0}
 
   '@astrojs/compiler@2.13.1':
     resolution: {integrity: sha512-f3FN83d2G/v32ipNClRKgYv30onQlMZX1vCeZMjPsMMPl1mDpmbl0+N5BYo4S/ofzqJyS5hvwacEo0CCVDn/Qg==}
@@ -141,37 +146,49 @@ packages:
     resolution: {integrity: sha512-Vj1jF3cPfxg7OAfoI7QnVKLoILlm2JF9pnVHrX8qx7AHMiYWT+NDAA7jChlNgRS4WTLc/fD1lXLmPixluj+3Gg==}
     engines: {node: '>=6.9.0'}
 
+  '@bramus/specificity@2.4.3':
+    resolution: {integrity: sha512-0GEz8qJWokkUVYQYRukmkSHIFNoBH8QTreeHrAFbvz1XFYc3Y+puhMs8PQ5x8GNugiC2l5jvDBXKLbBIByeSBw==}
+    hasBin: true
+
   '@capsizecss/unpack@4.0.1':
     resolution: {integrity: sha512-CuNiSqg7+e1cO/GjffyMOm5Tt2jUF9CWHHnvQ/UkqvtkGfHdgwEC0wpmq7fkN3gxwpRnrAN0WzO3vREKmNolMQ==}
     engines: {node: '>=18'}
 
-  '@csstools/color-helpers@5.1.0':
-    resolution: {integrity: sha512-S11EXWJyy0Mz5SYvRmY8nJYTFFd1LCNV+7cXyAgQtOOuzb4EsgfqDufL+9esx72/eLhsRdGZwaldu/h+E4t4BA==}
-    engines: {node: '>=18'}
+  '@csstools/color-helpers@6.1.2':
+    resolution: {integrity: sha512-grhRy3OKmniaAEKXMjua5z/EODX0MSqBGjunw8+j/3HQjOnahs2AGhvEOIYVUWcU6ScApbhLhVrQTX8XqrMrow==}
+    engines: {node: '>=20.19.0'}
 
-  '@csstools/css-calc@2.1.4':
-    resolution: {integrity: sha512-3N8oaj+0juUw/1H3YwmDDJXCgTB1gKU6Hc/bB502u9zR0q2vd786XJH9QfrKIEgFlZmhZiq6epXl4rHqhzsIgQ==}
-    engines: {node: '>=18'}
+  '@csstools/css-calc@3.4.3':
+    resolution: {integrity: sha512-iex20d8CHVkyvg6B7UKV7uHnI2Bqo9g+EFfT9E0y+GvTvhZ/DwONJ+9aKb1dlqm0ZiGsL5RXjp0fCoJYnkeDjA==}
+    engines: {node: '>=20.19.0'}
     peerDependencies:
-      '@csstools/css-parser-algorithms': ^3.0.5
-      '@csstools/css-tokenizer': ^3.0.4
+      '@csstools/css-parser-algorithms': ^4.0.2
+      '@csstools/css-tokenizer': ^4.0.2
 
-  '@csstools/css-color-parser@3.1.0':
-    resolution: {integrity: sha512-nbtKwh3a6xNVIp/VRuXV64yTKnb1IjTAEEh3irzS+HkKjAOYLTGNb9pmVNntZ8iVBHcWDA2Dof0QtPgFI1BaTA==}
-    engines: {node: '>=18'}
+  '@csstools/css-color-parser@4.2.6':
+    resolution: {integrity: sha512-iiPQ3iRWwnJkeEn6RIu6SJPr7hYrLz6XZ9s/QZl+2/LI5KQVjpl2fdmDSZKuD4xP6GMmMPgHFFXg6k1Wkz0Trg==}
+    engines: {node: '>=20.19.0'}
     peerDependencies:
-      '@csstools/css-parser-algorithms': ^3.0.5
-      '@csstools/css-tokenizer': ^3.0.4
+      '@csstools/css-parser-algorithms': ^4.0.2
+      '@csstools/css-tokenizer': ^4.0.2
 
-  '@csstools/css-parser-algorithms@3.0.5':
-    resolution: {integrity: sha512-DaDeUkXZKjdGhgYaHNJTV9pV7Y9B3b644jCLs9Upc3VeNGg6LWARAT6O+Q+/COo+2gg/bM5rhpMAtf70WqfBdQ==}
-    engines: {node: '>=18'}
+  '@csstools/css-parser-algorithms@4.0.2':
+    resolution: {integrity: sha512-40cSKyMvK+tq4qz6Awrlye2WGuOKt3FwPgtGg6KTfbHOWNw+Rk1rzbAtZnZ6IBhsY491HLRnDXwoyBAijmmILA==}
+    engines: {node: '>=20.19.0'}
     peerDependencies:
-      '@csstools/css-tokenizer': ^3.0.4
+      '@csstools/css-tokenizer': ^4.0.2
 
-  '@csstools/css-tokenizer@3.0.4':
-    resolution: {integrity: sha512-Vd/9EVDiu6PPJt9yAh6roZP6El1xHrdvIVGjyBsHR0RYwNHgL7FJPyIIW4fANJNG6FtyZfvlRPpFI4ZM/lubvw==}
-    engines: {node: '>=18'}
+  '@csstools/css-syntax-patches-for-csstree@1.1.15':
+    resolution: {integrity: sha512-J0u7HkVl2nzSlhsiTOp4AmwcUQ3D+mGEEKfBy/7To5/y7F2OHwyLrXfrhR0SMgr4p5Lo+eaMVSeai24zUcBIxA==}
+    peerDependencies:
+      css-tree: ^3.2.1
+    peerDependenciesMeta:
+      css-tree:
+        optional: true
+
+  '@csstools/css-tokenizer@4.0.2':
+    resolution: {integrity: sha512-OoKoR0f76dCY666JlcbhmVTs2drYj1GUXZTYTcbUgJjh9Nv41aFfZ21bPQTERm5+L5cBDo466NltB2lplS5GBw==}
+    engines: {node: '>=20.19.0'}
 
   '@ctrl/tinycolor@4.2.1':
     resolution: {integrity: sha512-Vh5uy9Y1JBMId6J1f68TMXnZrTCvNdo9Fu2k0d1YnJngR+sM5kWTKl441c/3TFs+cG0NWOjRWgQ/iaWhbYx+7A==}
@@ -785,6 +802,15 @@ packages:
     engines: {node: '>=18'}
     cpu: [x64]
     os: [win32]
+
+  '@exodus/bytes@1.16.0':
+    resolution: {integrity: sha512-IcpW84uEn3N7ETtNZMlxKhfl6Pec8rUNGOTBtWbK1FKhJxIFAptZyVrvVRVBimAJxJCgc3PxepxkdWWG4DVzfA==}
+    engines: {node: ^20.19.0 || ^22.12.0 || >=24.0.0}
+    peerDependencies:
+      '@noble/hashes': ^1.8.0 || ^2.0.0
+    peerDependenciesMeta:
+      '@noble/hashes':
+        optional: true
 
   '@expressive-code/core@0.41.7':
     resolution: {integrity: sha512-ck92uZYZ9Wba2zxkiZLsZGi9N54pMSAVdrI9uW3Oo9AtLglD5RmrdTwbYPCT2S/jC36JGB2i+pnQtBm/Ib2+dg==}
@@ -1464,10 +1490,6 @@ packages:
     engines: {node: '>=0.4.0'}
     hasBin: true
 
-  agent-base@7.1.4:
-    resolution: {integrity: sha512-MnA+YT8fwfJPgBx3m60MNqakm30XOkyIoH1y6huTQvC0PwZG7ki8NacLBcrPbNoo8vEZy7Jpuk7+jMO+CUovTQ==}
-    engines: {node: '>= 14'}
-
   ajv@6.12.6:
     resolution: {integrity: sha512-j3fVLgvTo527anyYyJOGTYJbG+vnnQYvE0m5mmkc1TK+nxAppkCLMIL0aZ4dblVCNoGShhm+kzE4ZUykBoMg4g==}
 
@@ -1545,6 +1567,9 @@ packages:
 
   bcp-47@2.1.2:
     resolution: {integrity: sha512-wsv86UuNFuPnVieKLyECTT+CP1WSAHeoIg5P3xu2kA9Z+7fVPoKt7dxzSeEhtJel0AI+NW3fIW3KtTKQKUCngg==}
+
+  bidi-js@1.1.0:
+    resolution: {integrity: sha512-fX1Onk0tdVPC7obPWB5EbJ1z7NVhLq4m2xZLq2YXBkxzMXIGRpNMU88n0EPgWseKl12J7zXs7qrDxPK4sRs2fg==}
 
   boolbase@1.0.0:
     resolution: {integrity: sha512-JZOSA7Mo9sNGB8+UjSgzdLtokWAky1zbztM3WRLCbZ70/3cTANmQmOdR7y2g+J0e2WXywy1yS468tY+IruqEww==}
@@ -1667,25 +1692,12 @@ packages:
     resolution: {integrity: sha512-0LrrStPOdJj+SPCCrGhzryycLjwcgUSHBtxNA8aIDxf0GLsRh1cKYhB00Gd1lDOS4yGH69+SNn13+TWbVHETFQ==}
     engines: {node: ^10 || ^12.20.0 || ^14.13.0 || >=15.0.0, npm: '>=7.0.0'}
 
-  cssstyle@4.6.0:
-    resolution: {integrity: sha512-2z+rWdzbbSZv6/rhtvzvqeZQHrBaqgogqt85sqFNbabZOuFbCVFb8kPeEtZjiKkbrm395irpNKiYeFeLiQnFPg==}
-    engines: {node: '>=18'}
-
   csstype@3.2.3:
     resolution: {integrity: sha512-z1HGKcYy2xA8AGQfwrn0PAy+PB7X/GSj3UVJW9qKyn43xWa+gl5nXmU4qqLMRzWVLFC8KusUX8T/0kCiOYpAIQ==}
 
-  data-urls@5.0.0:
-    resolution: {integrity: sha512-ZYP5VBHshaDAiVZxjbRVcFJpc+4xGgT0bK3vzy1HLN8jTO975HEbuYzZJcHoQEY5K1a0z8YayJkyVETa08eNTg==}
-    engines: {node: '>=18'}
-
-  debug@4.4.0:
-    resolution: {integrity: sha512-6WTZ/IxCY/T6BALoZHaE4ctp9xm+Z5kY/pzYaCHRFeyVhojxlrm+46y68HA6hr0TcwEssoxNiDEUJQjfPZ/RYA==}
-    engines: {node: '>=6.0'}
-    peerDependencies:
-      supports-color: '*'
-    peerDependenciesMeta:
-      supports-color:
-        optional: true
+  data-urls@8.0.0:
+    resolution: {integrity: sha512-JQUCCK+/CAGbGGx618PlFZMXH81Jtj7t73CHv9dd/zVWvxgGT2zLFRjnKb+Ng46GIwcy+f7f88qd4duqllK+WQ==}
+    engines: {node: ^22.14.0 || >=24.0.0}
 
   debug@4.4.3:
     resolution: {integrity: sha512-RGwwWnwQvkVfavKVt22FGLw+xYSdzARwm0ru6DhTVA3umU5hZc28V3kO4stgYryrTlLpuvgI9GiijltAjNbcqA==}
@@ -1774,6 +1786,10 @@ packages:
   entities@7.0.1:
     resolution: {integrity: sha512-TWrgLOFUQTH994YUyl1yT4uyavY5nNB5muff+RtWaqNVCAK408b5ZnnbNAUEWLTCpum9w6arT70i1XdQ4UeOPA==}
     engines: {node: '>=0.12'}
+
+  entities@8.1.0:
+    resolution: {integrity: sha512-kxL7msIffSuh9aaFAMD7rxAIuTRMAHMeBtgHW2yUdWw732ZNh4MehkF2gdjvtdmikkaIP9bFDDJOPlsvm7avrA==}
+    engines: {node: '>=20.19.0'}
 
   es-module-lexer@1.7.0:
     resolution: {integrity: sha512-jEQoCwk8hyb2AZziIOLhDqpm5+2ww5uIE6lkO/6jcOCusfk6LhMHpXXfBLXTZ7Ydyt0j4VoUQv6uGNYbdW+kBA==}
@@ -1977,9 +1993,9 @@ packages:
   hastscript@9.0.1:
     resolution: {integrity: sha512-g7df9rMFX/SPi34tyGCyUBREQoKkapwdY/T04Qn9TDWfHhAYt4/I0gMVirzK5wEzeUqIjEB+LXC/ypb7Aqno5w==}
 
-  html-encoding-sniffer@4.0.0:
-    resolution: {integrity: sha512-Y22oTqIU4uuPgEemfz7NDJz6OeKf12Lsu+QC+s3BVpda64lTiMYCyGwg5ki4vFxkMwQdeZDl2adZoqUgdFuTgQ==}
-    engines: {node: '>=18'}
+  html-encoding-sniffer@7.0.0:
+    resolution: {integrity: sha512-UikN5yr7xsCDAq87Or5or0PAlD3HJJOKVzM05az588WnpDJ4Ux7a2A53Qi6gofGg2/EtvF/H4hCi/TXfCW4Y6w==}
+    engines: {node: ^22.13.0 || >=24.0.0}
 
   html-escaper@3.0.3:
     resolution: {integrity: sha512-RuMffC89BOWQoY0WKGpIhn5gX3iI54O6nRA0yC124NYVtzjmFWBIiFd8M0x+ZdX0P9R4lADg1mgP8C7PxGOWuQ==}
@@ -1993,20 +2009,8 @@ packages:
   http-cache-semantics@4.3.0:
     resolution: {integrity: sha512-M5t5LlJpS1UHMjvwRQVdFHvPISGeLAxNcrWuJkeGh0KxsqCHZ1O3NXZU/8x7cD0BDcGW8kapxMKTvwlqrNkHkA==}
 
-  http-proxy-agent@7.0.2:
-    resolution: {integrity: sha512-T1gkAiYYDWYx3V5Bmyu7HcfcvL7mUrTWiM6yOfa3PIphViJ/gFPbvidQ+veqSOHci/PxBcDabeUNCzpOODJZig==}
-    engines: {node: '>= 14'}
-
-  https-proxy-agent@7.0.6:
-    resolution: {integrity: sha512-vK9P5/iUfdl95AI+JVyUuIcVtd4ofvtrOr3HNtM2yxC9bnMbEdp3x01OhQNnjb8IJYi38VlTE3mBXwcfvywuSw==}
-    engines: {node: '>= 14'}
-
   i18next@23.16.8:
     resolution: {integrity: sha512-06r/TitrM88Mg5FdUXAKL96dJMzgqLE5dv3ryBAra4KCwD9mJ4ndOTS95ZuymIGoE+2hzfdaMak2X11/es7ZWg==}
-
-  iconv-lite@0.6.3:
-    resolution: {integrity: sha512-4fCk79wshMdzMp2rH06qWrJE4iolqLhCUH+OiuIgU++RB0+94NlDL81atO7GX55uUKueo0txHNtvEyI6D7WdMw==}
-    engines: {node: '>=0.10.0'}
 
   import-lazy@4.0.0:
     resolution: {integrity: sha512-rKtvo6a868b5Hu3heneU+L4yEQ4jYKLtjpnPeUdK7h0yzXGmyBTypknlkCvHFBqfX9YlorEiMM6Dnq/5atfHkw==}
@@ -2072,11 +2076,11 @@ packages:
     resolution: {integrity: sha512-SFNOvSJ+Dgf/9An904Yx+CgSlIPCkIpao4qo51lpee25TIRejdH3rhR4EZMGoNx3/TP3O+wzWuiTFl4sqbltzA==}
     hasBin: true
 
-  jsdom@26.1.0:
-    resolution: {integrity: sha512-Cvc9WUhxSMEo4McES3P7oK3QaXldCfNWp7pl2NNeiIFlCoLr3kfq9kb1fxftiwk1FLV7CvpvDfonxtzUDeSOPg==}
-    engines: {node: '>=18'}
+  jsdom@30.1.3:
+    resolution: {integrity: sha512-hQMUPvRgN7KxsfIytDQji7bimuJeRQa6Qo5+iuiZQk5CafeRxLIA10/cG5YCBFNpD9RO3oqIiN4CO1Y44kxqXg==}
+    engines: {node: ^22.22.2 || ^24.15.0 || >=26.0.0}
     peerDependencies:
-      canvas: ^3.0.0
+      canvas: ^3.2.3
     peerDependenciesMeta:
       canvas:
         optional: true
@@ -2118,9 +2122,6 @@ packages:
 
   longest-streak@3.1.0:
     resolution: {integrity: sha512-9Ri+o0JYgehTaVBBDoMqIl8GXtbWg711O3srftcHhZ0dqnETqLaoIK0x17fUw9rFSlK/0NlsKe0Ahhyl5pXE2g==}
-
-  lru-cache@10.4.3:
-    resolution: {integrity: sha512-JNAzZcXrCt42VGLuYz0zfAzDfAvJWW6AfYlDBQyDV5DClI2m5sAmK+OIO7s59XfsRsWHp02jAJrRadPRGTt6SQ==}
 
   lru-cache@11.5.3:
     resolution: {integrity: sha512-U4N8FgzmWxc8k1VH8Kr6lQg18U7Fjvby6wXHVRX/ZZ7IwWbRMgrRbP0Wrb5q5NVinryp4SQampHKdvtecItxUg==}
@@ -2365,9 +2366,6 @@ packages:
   nth-check@2.1.1:
     resolution: {integrity: sha512-lqjrjmaOoAnWfMmBPL+XNnynZh2+swxiX3WUE0s4yEHI6m+AwrK2UZOimIRl3X/4QctVqS8AiZjFqyOGrMXb/w==}
 
-  nwsapi@2.2.28:
-    resolution: {integrity: sha512-IlVB7OS7qrOsVYlpnFIkETjMwT9jwvmocJmmM+GZU/PAB3uGi9Ezd7vcWhWBUnSc0ya4ppmQITOyP1ez9gg8cg==}
-
   ofetch@1.5.1:
     resolution: {integrity: sha512-2W4oUZlVaqAPAil6FUg/difl6YhqhUR7x2eZY4bQCko22UXg3hptq9KLQdqFClV+Wu85UX7hNtdGTngi/1BxcA==}
 
@@ -2407,6 +2405,9 @@ packages:
 
   parse5@7.3.0:
     resolution: {integrity: sha512-IInvU7fabl34qmi9gY8XOVxhYyMyuH2xUNpb2q8/Y+7552KlejkRvqvD19nMoUW/uQGGbqNpA6Tufu5FL5BZgw==}
+
+  parse5@8.0.1:
+    resolution: {integrity: sha512-z1e/HMG90obSGeidlli3hj7cbocou0/wa5HacvI3ASx34PecNjNQeaHNo5WIZpWofN9kgkqV1q5YvXe3F0FoPw==}
 
   path-browserify@1.0.1:
     resolution: {integrity: sha512-b7uo2UCUOYZcnF/3ID0lulOJi/bafxa1xPe7ZPsammBSpjSWQkjNxlt635YGS2MiR9GjvuXCtz2emr3jbsz98g==}
@@ -2581,6 +2582,10 @@ packages:
   remark-stringify@11.0.0:
     resolution: {integrity: sha512-1OSmLd3awB/t8qdoEOMazZkNsfVTeY4fTsgzcQFdXNq8ToTN4ZGwrMnlda4K6smTFKD+GRV6O48i6Z4iKgPPpw==}
 
+  require-from-string@2.0.2:
+    resolution: {integrity: sha512-Xf0nWe6RseziFMu+Ap9biiUbmplq6S9/p+7w7YXP/JBHhrUDDUhwa+vANyubuqfZWTveU//DYVGsDG7RKL/vEw==}
+    engines: {node: '>=0.10.0'}
+
   resolve@1.19.0:
     resolution: {integrity: sha512-rArEXAgsBG4UgRGcynxWIWKFvh/XZCcS8UJdHhwy91zwAvCZIbcs+vAbflgBnNjYMs/i/i+/Ux6IZhML1yPvxg==}
 
@@ -2610,12 +2615,6 @@ packages:
     resolution: {integrity: sha512-aCiJONoZp0lNGJ6sYqspLkh6UXaWEey/7Ko2TZyXQ4kgzAhDUxAgbt/oulXKmD+zFHXw1k+RF6ZZWOrjp7DZnQ==}
     engines: {node: '>=18.0.0', npm: '>=8.0.0'}
     hasBin: true
-
-  rrweb-cssom@0.8.0:
-    resolution: {integrity: sha512-guoltQEx+9aMf2gDZ0s62EcV8lsXR+0w8915TC3ITdn2YueuNjdAYh/levpU9nFaoChh9RUS5ZdQMrKfVEN9tw==}
-
-  safer-buffer@2.1.2:
-    resolution: {integrity: sha512-YZo3K82SD7Riyi0E1EQPojLz7kpepnSQI9IyPbHHg1XXXevb5dJI7tpyN2ADxGcQbHG7vcyRHk0cbwqcQriUtg==}
 
   sax@1.6.1:
     resolution: {integrity: sha512-42tBVwLWnaQvW5zc4HbZrTuWccECCZfBi92FDuwtqxasH+JbPB3/FOKb1m222K42R4WxuxzzMsTswfzgtSu64Q==}
@@ -2732,9 +2731,6 @@ packages:
     engines: {node: '>=16'}
     hasBin: true
 
-  symbol-tree@3.2.4:
-    resolution: {integrity: sha512-9QNk5KwDF+Bvz+PyObkmSYjI5ksVUYtjW7AU22r2NKcfLJcXp96hkDWU3+XndOsUb+AQ9QhfzfCT2O+CNWT5Tw==}
-
   terser@5.51.2:
     resolution: {integrity: sha512-bWnjSNscmuI+GJze6ZupnHP8G/cTcsJF+bXCeQknk2SHQsgbNJnLrqiH9jZ2W4STPVXH2mDKKRX3iwPhc9Cn/Q==}
     engines: {node: '>=10'}
@@ -2751,20 +2747,20 @@ packages:
     resolution: {integrity: sha512-wXR/dYpcqKmfWpEdZjiKJOwCNFndD0DMnrW/cYjVGttEkBfVgcLFHoNrlj47mjOVic9yyNu65alsgF4NQyTa2g==}
     engines: {node: '>=12.0.0'}
 
-  tldts-core@6.1.86:
-    resolution: {integrity: sha512-Je6p7pkk+KMzMv2XXKmAE3McmolOQFdxkKw0R8EYNr7sELW46JqnNeTX8ybPiQgvg1ymCoF8LXs5fzFaZvJPTA==}
+  tldts-core@7.4.19:
+    resolution: {integrity: sha512-goNXV6Ho9TIOfpJZanTd6CKG5DyYgYAL+k+22T0SLh8l6+KHIfBUPFuePuSZv05UttIaaLmI9tb7TmGIdK5AkQ==}
 
-  tldts@6.1.86:
-    resolution: {integrity: sha512-WMi/OQ2axVTf/ykqCQgXiIct+mSQDFdH2fkwhPwgEwvJ1kSzZRiinb0zF2Xb8u4+OqPChmyI6MEu4EezNJz+FQ==}
+  tldts@7.4.19:
+    resolution: {integrity: sha512-48dH6aSpQnpbzDUc4vIQZ1VjB8tkK+e8c1yx05/SZK+rkssgjEOlxDd/yU8/a4vGYQ9vRgJr9dwMq9TJ0b3X2Q==}
     hasBin: true
 
-  tough-cookie@5.1.2:
-    resolution: {integrity: sha512-FVDYdxtnj0G6Qm/DhNPSb8Ju59ULcup3tuJxkFb5K8Bv2pUXILbf0xZWU8PX8Ov19OXljbUyveOFwRMwkXzO+A==}
+  tough-cookie@6.0.2:
+    resolution: {integrity: sha512-exgYmnmL/sJpR3upZfXG5PoatXQii55xAiXGXzY+sROLZ/Y+SLcp9PgJNI9Vz37HpQ74WvDcLT8eqm+kV3FzrA==}
     engines: {node: '>=16'}
 
-  tr46@5.1.1:
-    resolution: {integrity: sha512-hdF5ZgjTqgAntKkklYw0R03MG2x/bSzTtkxmIRw/sTNV8YXsCJ1tfLAX23lhxhHJlEf3CRCOCGGWw3vI3GaSPw==}
-    engines: {node: '>=18'}
+  tr46@7.0.0:
+    resolution: {integrity: sha512-BcDSDW+SIGWVOns1Zm6Yg91q9AEj7eaID0QDY9oIqJD1A8dscNwMcl9Sms2DeuWCNov1X0/oXanHGYQBSLwZsg==}
+    engines: {node: ^22.14.0 || >=24.0.0}
 
   trim-lines@3.0.1:
     resolution: {integrity: sha512-kRj8B+YHZCc9kQYdWfJB2/oUl9rA99qbowYYBtr4ui4mZyAQ2JpvVBd/6U2YloATfqBhBTSMhTpgBHtU0Mf3Rg==}
@@ -3091,32 +3087,27 @@ packages:
       typescript:
         optional: true
 
-  w3c-xmlserializer@5.0.0:
-    resolution: {integrity: sha512-o8qghlI8NZHU1lLPrpi2+Uq7abh4GGPpYANlalzWxyWteJOCsr/P+oPBA49TOLu5FTZO4d3F9MnWJfiMo4BkmA==}
-    engines: {node: '>=18'}
+  w3c-xmlserializer@6.0.0:
+    resolution: {integrity: sha512-4Nsy8K5Tr6SPDH9jhKJOHf7ChDrc1zufZTVSF7x72hwuEXBqxqk9G6cK+K2NRUtB3iELRJqjXb4JPDMBjMTl2Q==}
+    engines: {node: ^22.22.2 || ^24.15.0 || >=26.0.0}
 
   web-namespaces@2.0.1:
     resolution: {integrity: sha512-bKr1DkiNa2krS7qxNtdrtHAmzuYGFQLiQ13TsorsdT6ULTkPLKuu5+GsFpDlg6JFjUTwX2DyhMPG2be8uPrqsQ==}
 
-  webidl-conversions@7.0.0:
-    resolution: {integrity: sha512-VwddBukDzu71offAQR975unBIGqfKZpM+8ZX6ySk8nYhVoo5CYaZyzt3YBvYtRtO+aoGlqxPg/B87NGVZ/fu6g==}
-    engines: {node: '>=12'}
+  webidl-conversions@8.0.1:
+    resolution: {integrity: sha512-BMhLD/Sw+GbJC21C/UgyaZX41nPt8bUTg+jWyDeg7e7YN4xOM05YPSIXceACnXVtqyEw/LMClUQMtMZ+PGGpqQ==}
+    engines: {node: '>=20'}
 
   webpack-virtual-modules@0.6.2:
     resolution: {integrity: sha512-66/V2i5hQanC51vBQKPH4aI8NMAcBW59FVBs+rC7eGHupMyfn34q7rZIE+ETlJ+XTevqfUhVVBgSUNSW2flEUQ==}
 
-  whatwg-encoding@3.1.1:
-    resolution: {integrity: sha512-6qN4hJdMwfYBtE3YBTTHhoeuUrDBPZmbQaxWAqSALV/MeEnR5z1xd8UKud2RAkFoPkmB+hli1TZSnyi84xz1vQ==}
-    engines: {node: '>=18'}
-    deprecated: Use @exodus/bytes instead for a more spec-conformant and faster implementation
+  whatwg-mimetype@5.0.0:
+    resolution: {integrity: sha512-sXcNcHOC51uPGF0P/D4NVtrkjSU2fNsm9iog4ZvZJsL3rjoDAzXZhkm2MWt1y+PUdggKAYVoMAIYcs78wJ51Cw==}
+    engines: {node: '>=20'}
 
-  whatwg-mimetype@4.0.0:
-    resolution: {integrity: sha512-QaKxh0eNIi2mE9p2vEdzfagOKHCcj1pJ56EEHGQOVxp8r9/iszLUUV7v89x9O1p/T+NlTM5W7jW6+cz4Fq1YVg==}
-    engines: {node: '>=18'}
-
-  whatwg-url@14.2.0:
-    resolution: {integrity: sha512-De72GdQZzNTUBBChsXueQUnPKDkg/5A5zp7pFDuQAj5UFoENpiACU0wlCvzpAGnTkj++ihpKwKyYewn/XNUbKw==}
-    engines: {node: '>=18'}
+  whatwg-url@17.3.0:
+    resolution: {integrity: sha512-KwOAJrpf+GTgBvcBQJcP38sMF0DsQKdwtG+TxM2pW44P6E5k0hDbWrDmyuJDIF0Uef0aQq0ZoJs+5oI+k8ddhg==}
+    engines: {node: ^22.14.0 || >=24.0.0}
 
   which-pm-runs@1.1.0:
     resolution: {integrity: sha512-n1brCuqClxfFfq/Rb0ICg9giSZqCS+pLtccdag6C2HyufBrh3fBOiy9nb6ggRMvWOVH5GrdJskj5iGTZNxd7SA==}
@@ -3129,18 +3120,6 @@ packages:
   wrap-ansi@9.0.2:
     resolution: {integrity: sha512-42AtmgqjV+X1VpdOfyTGOYRi0/zsoLqtXQckTmqTeybT+BDIbM/Guxo7x3pE2vtpr1ok6xRqM9OpBe+Jyoqyww==}
     engines: {node: '>=18'}
-
-  ws@8.22.0:
-    resolution: {integrity: sha512-Ydggc987+RO0AnWtZ/7Wq9FtNvcrL1b/RO0ud9mWjUPgDrsAAwQSF51sm2hm1XofbU/4jkpGEsLFsZZxU+1DOg==}
-    engines: {node: '>=10.0.0'}
-    peerDependencies:
-      bufferutil: ^4.0.1
-      utf-8-validate: '>=5.0.2'
-    peerDependenciesMeta:
-      bufferutil:
-        optional: true
-      utf-8-validate:
-        optional: true
 
   xml-name-validator@5.0.0:
     resolution: {integrity: sha512-EvGK8EJ3DhaHfbRlETOWAS5pO9MZITeauHKJyb8wyajUfQUenkIg2MvLDTZ4T/TgIcm3HU0TFBgWWboAZ30UHg==}
@@ -3201,19 +3180,26 @@ packages:
 
 snapshots:
 
-  '@asamuzakjp/css-color@3.2.0':
+  '@asamuzakjp/css-color@7.1.7':
     dependencies:
-      '@csstools/css-calc': 2.1.4(@csstools/css-parser-algorithms@3.0.5(@csstools/css-tokenizer@3.0.4))(@csstools/css-tokenizer@3.0.4)
-      '@csstools/css-color-parser': 3.1.0(@csstools/css-parser-algorithms@3.0.5(@csstools/css-tokenizer@3.0.4))(@csstools/css-tokenizer@3.0.4)
-      '@csstools/css-parser-algorithms': 3.0.5(@csstools/css-tokenizer@3.0.4)
-      '@csstools/css-tokenizer': 3.0.4
-      lru-cache: 10.4.3
+      '@csstools/css-calc': 3.4.3(@csstools/css-parser-algorithms@4.0.2(@csstools/css-tokenizer@4.0.2))(@csstools/css-tokenizer@4.0.2)
+      '@csstools/css-color-parser': 4.2.6(@csstools/css-parser-algorithms@4.0.2(@csstools/css-tokenizer@4.0.2))(@csstools/css-tokenizer@4.0.2)
+      '@csstools/css-parser-algorithms': 4.0.2(@csstools/css-tokenizer@4.0.2)
+      '@csstools/css-tokenizer': 4.0.2
+      lru-cache: 11.5.3
+
+  '@asamuzakjp/dom-selector@10.0.5':
+    dependencies:
+      bidi-js: 1.1.0
+      css-tree: 3.2.1
+      is-potential-custom-element-name: 1.0.1
+      lru-cache: 11.5.3
 
   '@astrojs/compiler@2.13.1': {}
 
   '@astrojs/internal-helpers@0.7.6': {}
 
-  '@astrojs/markdown-remark@6.3.11':
+  '@astrojs/markdown-remark@6.3.11(supports-color@8.1.1)':
     dependencies:
       '@astrojs/internal-helpers': 0.7.6
       '@astrojs/prism': 3.3.0
@@ -3225,8 +3211,8 @@ snapshots:
       mdast-util-definitions: 6.0.0
       rehype-raw: 7.0.0
       rehype-stringify: 10.0.1
-      remark-gfm: 4.0.1
-      remark-parse: 11.0.0
+      remark-gfm: 4.0.1(supports-color@8.1.1)
+      remark-parse: 11.0.0(supports-color@8.1.1)
       remark-rehype: 11.1.2
       remark-smartypants: 3.0.3
       shiki: 3.23.0
@@ -3239,18 +3225,18 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@astrojs/mdx@4.3.14(astro@5.18.2(@types/node@22.10.10)(rollup@4.64.7)(terser@5.51.2)(typescript@5.7.3))':
+  '@astrojs/mdx@4.3.14(astro@5.18.2(@types/node@22.10.10)(rollup@4.64.7)(supports-color@8.1.1)(terser@5.51.2)(typescript@5.7.3))(supports-color@8.1.1)':
     dependencies:
-      '@astrojs/markdown-remark': 6.3.11
-      '@mdx-js/mdx': 3.1.1
+      '@astrojs/markdown-remark': 6.3.11(supports-color@8.1.1)
+      '@mdx-js/mdx': 3.1.1(supports-color@8.1.1)
       acorn: 8.19.0
-      astro: 5.18.2(@types/node@22.10.10)(rollup@4.64.7)(terser@5.51.2)(typescript@5.7.3)
+      astro: 5.18.2(@types/node@22.10.10)(rollup@4.64.7)(supports-color@8.1.1)(terser@5.51.2)(typescript@5.7.3)
       es-module-lexer: 1.7.0
       estree-util-visit: 2.0.0
       hast-util-to-html: 9.0.5
       piccolore: 0.1.3
       rehype-raw: 7.0.0
-      remark-gfm: 4.0.1
+      remark-gfm: 4.0.1(supports-color@8.1.1)
       remark-smartypants: 3.0.3
       source-map: 0.7.6
       unist-util-visit: 5.1.0
@@ -3267,17 +3253,17 @@ snapshots:
       sitemap: 9.0.1
       zod: 4.6.7
 
-  '@astrojs/starlight@0.37.7(astro@5.18.2(@types/node@22.10.10)(rollup@4.64.7)(terser@5.51.2)(typescript@5.7.3))':
+  '@astrojs/starlight@0.37.7(astro@5.18.2(@types/node@22.10.10)(rollup@4.64.7)(supports-color@8.1.1)(terser@5.51.2)(typescript@5.7.3))(supports-color@8.1.1)':
     dependencies:
-      '@astrojs/markdown-remark': 6.3.11
-      '@astrojs/mdx': 4.3.14(astro@5.18.2(@types/node@22.10.10)(rollup@4.64.7)(terser@5.51.2)(typescript@5.7.3))
+      '@astrojs/markdown-remark': 6.3.11(supports-color@8.1.1)
+      '@astrojs/mdx': 4.3.14(astro@5.18.2(@types/node@22.10.10)(rollup@4.64.7)(supports-color@8.1.1)(terser@5.51.2)(typescript@5.7.3))(supports-color@8.1.1)
       '@astrojs/sitemap': 3.7.4
       '@pagefind/default-ui': 1.5.2
       '@types/hast': 3.0.5
       '@types/js-yaml': 4.0.9
       '@types/mdast': 4.0.4
-      astro: 5.18.2(@types/node@22.10.10)(rollup@4.64.7)(terser@5.51.2)(typescript@5.7.3)
-      astro-expressive-code: 0.41.7(astro@5.18.2(@types/node@22.10.10)(rollup@4.64.7)(terser@5.51.2)(typescript@5.7.3))
+      astro: 5.18.2(@types/node@22.10.10)(rollup@4.64.7)(supports-color@8.1.1)(terser@5.51.2)(typescript@5.7.3)
+      astro-expressive-code: 0.41.7(astro@5.18.2(@types/node@22.10.10)(rollup@4.64.7)(supports-color@8.1.1)(terser@5.51.2)(typescript@5.7.3))
       bcp-47: 2.1.2
       hast-util-from-html: 2.0.3
       hast-util-select: 6.0.4
@@ -3287,13 +3273,13 @@ snapshots:
       js-yaml: 4.3.2
       klona: 2.0.6
       magic-string: 0.30.21
-      mdast-util-directive: 3.1.1
+      mdast-util-directive: 3.1.1(supports-color@8.1.1)
       mdast-util-to-markdown: 2.2.0
       mdast-util-to-string: 4.0.0
       pagefind: 1.5.2
       rehype: 13.0.2
       rehype-format: 5.0.1
-      remark-directive: 3.0.1
+      remark-directive: 3.0.1(supports-color@8.1.1)
       ultrahtml: 1.7.0
       unified: 11.0.5
       unist-util-visit: 5.1.0
@@ -3301,10 +3287,10 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@astrojs/telemetry@3.3.0':
+  '@astrojs/telemetry@3.3.0(supports-color@8.1.1)':
     dependencies:
       ci-info: 4.4.0
-      debug: 4.4.3
+      debug: 4.4.3(supports-color@8.1.1)
       dlv: 1.1.3
       dset: 3.1.4
       is-docker: 3.0.0
@@ -3328,29 +3314,37 @@ snapshots:
       '@babel/helper-string-parser': 7.29.7
       '@babel/helper-validator-identifier': 7.29.7
 
+  '@bramus/specificity@2.4.3':
+    dependencies:
+      css-tree: 3.2.1
+
   '@capsizecss/unpack@4.0.1':
     dependencies:
       fontkitten: 1.0.3
 
-  '@csstools/color-helpers@5.1.0': {}
+  '@csstools/color-helpers@6.1.2': {}
 
-  '@csstools/css-calc@2.1.4(@csstools/css-parser-algorithms@3.0.5(@csstools/css-tokenizer@3.0.4))(@csstools/css-tokenizer@3.0.4)':
+  '@csstools/css-calc@3.4.3(@csstools/css-parser-algorithms@4.0.2(@csstools/css-tokenizer@4.0.2))(@csstools/css-tokenizer@4.0.2)':
     dependencies:
-      '@csstools/css-parser-algorithms': 3.0.5(@csstools/css-tokenizer@3.0.4)
-      '@csstools/css-tokenizer': 3.0.4
+      '@csstools/css-parser-algorithms': 4.0.2(@csstools/css-tokenizer@4.0.2)
+      '@csstools/css-tokenizer': 4.0.2
 
-  '@csstools/css-color-parser@3.1.0(@csstools/css-parser-algorithms@3.0.5(@csstools/css-tokenizer@3.0.4))(@csstools/css-tokenizer@3.0.4)':
+  '@csstools/css-color-parser@4.2.6(@csstools/css-parser-algorithms@4.0.2(@csstools/css-tokenizer@4.0.2))(@csstools/css-tokenizer@4.0.2)':
     dependencies:
-      '@csstools/color-helpers': 5.1.0
-      '@csstools/css-calc': 2.1.4(@csstools/css-parser-algorithms@3.0.5(@csstools/css-tokenizer@3.0.4))(@csstools/css-tokenizer@3.0.4)
-      '@csstools/css-parser-algorithms': 3.0.5(@csstools/css-tokenizer@3.0.4)
-      '@csstools/css-tokenizer': 3.0.4
+      '@csstools/color-helpers': 6.1.2
+      '@csstools/css-calc': 3.4.3(@csstools/css-parser-algorithms@4.0.2(@csstools/css-tokenizer@4.0.2))(@csstools/css-tokenizer@4.0.2)
+      '@csstools/css-parser-algorithms': 4.0.2(@csstools/css-tokenizer@4.0.2)
+      '@csstools/css-tokenizer': 4.0.2
 
-  '@csstools/css-parser-algorithms@3.0.5(@csstools/css-tokenizer@3.0.4)':
+  '@csstools/css-parser-algorithms@4.0.2(@csstools/css-tokenizer@4.0.2)':
     dependencies:
-      '@csstools/css-tokenizer': 3.0.4
+      '@csstools/css-tokenizer': 4.0.2
 
-  '@csstools/css-tokenizer@3.0.4': {}
+  '@csstools/css-syntax-patches-for-csstree@1.1.15(css-tree@3.2.1)':
+    optionalDependencies:
+      css-tree: 3.2.1
+
+  '@csstools/css-tokenizer@4.0.2': {}
 
   '@ctrl/tinycolor@4.2.1': {}
 
@@ -3662,6 +3656,8 @@ snapshots:
   '@esbuild/win32-x64@0.28.2':
     optional: true
 
+  '@exodus/bytes@1.16.0': {}
+
   '@expressive-code/core@0.41.7':
     dependencies:
       '@ctrl/tinycolor': 4.2.1
@@ -3824,7 +3820,7 @@ snapshots:
     dependencies:
       '@lezer/common': 1.5.4
 
-  '@mdx-js/mdx@3.1.1':
+  '@mdx-js/mdx@3.1.1(supports-color@8.1.1)':
     dependencies:
       '@types/estree': 1.0.9
       '@types/estree-jsx': 1.0.5
@@ -3836,14 +3832,14 @@ snapshots:
       estree-util-is-identifier-name: 3.0.0
       estree-util-scope: 1.0.1
       estree-walker: 3.0.3
-      hast-util-to-jsx-runtime: 2.3.6
+      hast-util-to-jsx-runtime: 2.3.6(supports-color@8.1.1)
       markdown-extensions: 2.0.0
       recma-build-jsx: 1.0.0
       recma-jsx: 1.0.1(acorn@8.19.0)
       recma-stringify: 1.0.0
-      rehype-recma: 1.0.0
-      remark-mdx: 3.1.1
-      remark-parse: 11.0.0
+      rehype-recma: 1.0.0(supports-color@8.1.1)
+      remark-mdx: 3.1.1(supports-color@8.1.1)
+      remark-parse: 11.0.0(supports-color@8.1.1)
       remark-rehype: 11.1.2
       source-map: 0.7.6
       unified: 11.0.5
@@ -4276,8 +4272,6 @@ snapshots:
 
   acorn@8.19.0: {}
 
-  agent-base@7.1.4: {}
-
   ajv@6.12.6:
     dependencies:
       fast-deep-equal: 3.1.3
@@ -4322,17 +4316,17 @@ snapshots:
 
   astring@1.9.0: {}
 
-  astro-expressive-code@0.41.7(astro@5.18.2(@types/node@22.10.10)(rollup@4.64.7)(terser@5.51.2)(typescript@5.7.3)):
+  astro-expressive-code@0.41.7(astro@5.18.2(@types/node@22.10.10)(rollup@4.64.7)(supports-color@8.1.1)(terser@5.51.2)(typescript@5.7.3)):
     dependencies:
-      astro: 5.18.2(@types/node@22.10.10)(rollup@4.64.7)(terser@5.51.2)(typescript@5.7.3)
+      astro: 5.18.2(@types/node@22.10.10)(rollup@4.64.7)(supports-color@8.1.1)(terser@5.51.2)(typescript@5.7.3)
       rehype-expressive-code: 0.41.7
 
-  astro@5.18.2(@types/node@22.10.10)(rollup@4.64.7)(terser@5.51.2)(typescript@5.7.3):
+  astro@5.18.2(@types/node@22.10.10)(rollup@4.64.7)(supports-color@8.1.1)(terser@5.51.2)(typescript@5.7.3):
     dependencies:
       '@astrojs/compiler': 2.13.1
       '@astrojs/internal-helpers': 0.7.6
-      '@astrojs/markdown-remark': 6.3.11
-      '@astrojs/telemetry': 3.3.0
+      '@astrojs/markdown-remark': 6.3.11(supports-color@8.1.1)
+      '@astrojs/telemetry': 3.3.0(supports-color@8.1.1)
       '@capsizecss/unpack': 4.0.1
       '@oslojs/encoding': 1.1.0
       '@rollup/pluginutils': 5.4.0(rollup@4.64.7)
@@ -4345,7 +4339,7 @@ snapshots:
       common-ancestor-path: 1.0.1
       cookie: 1.1.1
       cssesc: 3.0.0
-      debug: 4.4.3
+      debug: 4.4.3(supports-color@8.1.1)
       deterministic-object-hash: 2.0.2
       devalue: 5.9.4
       diff: 8.0.4
@@ -4445,6 +4439,10 @@ snapshots:
       is-alphabetical: 2.0.1
       is-alphanumerical: 2.0.1
       is-decimal: 2.0.1
+
+  bidi-js@1.1.0:
+    dependencies:
+      require-from-string: 2.0.2
 
   boolbase@1.0.0: {}
 
@@ -4549,25 +4547,20 @@ snapshots:
     dependencies:
       css-tree: 2.2.1
 
-  cssstyle@4.6.0:
-    dependencies:
-      '@asamuzakjp/css-color': 3.2.0
-      rrweb-cssom: 0.8.0
-
   csstype@3.2.3: {}
 
-  data-urls@5.0.0:
+  data-urls@8.0.0:
     dependencies:
-      whatwg-mimetype: 4.0.0
-      whatwg-url: 14.2.0
+      whatwg-mimetype: 5.0.0
+      whatwg-url: 17.3.0
+    transitivePeerDependencies:
+      - '@noble/hashes'
 
-  debug@4.4.0:
+  debug@4.4.3(supports-color@8.1.1):
     dependencies:
       ms: 2.1.3
-
-  debug@4.4.3:
-    dependencies:
-      ms: 2.1.3
+    optionalDependencies:
+      supports-color: 8.1.1
 
   decimal.js@10.6.0: {}
 
@@ -4633,6 +4626,8 @@ snapshots:
   entities@6.0.1: {}
 
   entities@7.0.1: {}
+
+  entities@8.1.0: {}
 
   es-module-lexer@1.7.0: {}
 
@@ -4982,7 +4977,7 @@ snapshots:
       unist-util-visit: 5.1.0
       zwitch: 2.0.4
 
-  hast-util-to-estree@3.1.3:
+  hast-util-to-estree@3.1.3(supports-color@8.1.1):
     dependencies:
       '@types/estree': 1.0.9
       '@types/estree-jsx': 1.0.5
@@ -4992,9 +4987,9 @@ snapshots:
       estree-util-attach-comments: 3.0.0
       estree-util-is-identifier-name: 3.0.0
       hast-util-whitespace: 3.0.0
-      mdast-util-mdx-expression: 2.0.1
-      mdast-util-mdx-jsx: 3.2.0
-      mdast-util-mdxjs-esm: 2.0.1
+      mdast-util-mdx-expression: 2.0.1(supports-color@8.1.1)
+      mdast-util-mdx-jsx: 3.2.0(supports-color@8.1.1)
+      mdast-util-mdxjs-esm: 2.0.1(supports-color@8.1.1)
       property-information: 7.2.0
       space-separated-tokens: 2.0.2
       style-to-js: 1.1.21
@@ -5017,7 +5012,7 @@ snapshots:
       stringify-entities: 4.0.4
       zwitch: 2.0.4
 
-  hast-util-to-jsx-runtime@2.3.6:
+  hast-util-to-jsx-runtime@2.3.6(supports-color@8.1.1):
     dependencies:
       '@types/estree': 1.0.9
       '@types/hast': 3.0.5
@@ -5026,9 +5021,9 @@ snapshots:
       devlop: 1.1.0
       estree-util-is-identifier-name: 3.0.0
       hast-util-whitespace: 3.0.0
-      mdast-util-mdx-expression: 2.0.1
-      mdast-util-mdx-jsx: 3.2.0
-      mdast-util-mdxjs-esm: 2.0.1
+      mdast-util-mdx-expression: 2.0.1(supports-color@8.1.1)
+      mdast-util-mdx-jsx: 3.2.0(supports-color@8.1.1)
+      mdast-util-mdxjs-esm: 2.0.1(supports-color@8.1.1)
       property-information: 7.2.0
       space-separated-tokens: 2.0.2
       style-to-js: 1.1.21
@@ -5070,9 +5065,11 @@ snapshots:
       property-information: 7.2.0
       space-separated-tokens: 2.0.2
 
-  html-encoding-sniffer@4.0.0:
+  html-encoding-sniffer@7.0.0:
     dependencies:
-      whatwg-encoding: 3.1.1
+      '@exodus/bytes': 1.16.0
+    transitivePeerDependencies:
+      - '@noble/hashes'
 
   html-escaper@3.0.3: {}
 
@@ -5082,27 +5079,9 @@ snapshots:
 
   http-cache-semantics@4.3.0: {}
 
-  http-proxy-agent@7.0.2:
-    dependencies:
-      agent-base: 7.1.4
-      debug: 4.4.0
-    transitivePeerDependencies:
-      - supports-color
-
-  https-proxy-agent@7.0.6:
-    dependencies:
-      agent-base: 7.1.4
-      debug: 4.4.0
-    transitivePeerDependencies:
-      - supports-color
-
   i18next@23.16.8:
     dependencies:
       '@babel/runtime': 7.29.10
-
-  iconv-lite@0.6.3:
-    dependencies:
-      safer-buffer: 2.1.2
 
   import-lazy@4.0.0:
     optional: true
@@ -5156,32 +5135,30 @@ snapshots:
     dependencies:
       argparse: 2.0.1
 
-  jsdom@26.1.0:
+  jsdom@30.1.3:
     dependencies:
-      cssstyle: 4.6.0
-      data-urls: 5.0.0
+      '@asamuzakjp/css-color': 7.1.7
+      '@asamuzakjp/dom-selector': 10.0.5
+      '@bramus/specificity': 2.4.3
+      '@csstools/css-syntax-patches-for-csstree': 1.1.15(css-tree@3.2.1)
+      '@exodus/bytes': 1.16.0
+      css-tree: 3.2.1
+      data-urls: 8.0.0
       decimal.js: 10.6.0
-      html-encoding-sniffer: 4.0.0
-      http-proxy-agent: 7.0.2
-      https-proxy-agent: 7.0.6
+      html-encoding-sniffer: 7.0.0
       is-potential-custom-element-name: 1.0.1
-      nwsapi: 2.2.28
-      parse5: 7.3.0
-      rrweb-cssom: 0.8.0
+      lru-cache: 11.5.3
+      parse5: 8.0.1
       saxes: 6.0.0
-      symbol-tree: 3.2.4
-      tough-cookie: 5.1.2
-      w3c-xmlserializer: 5.0.0
-      webidl-conversions: 7.0.0
-      whatwg-encoding: 3.1.1
-      whatwg-mimetype: 4.0.0
-      whatwg-url: 14.2.0
-      ws: 8.22.0
+      tough-cookie: 6.0.2
+      undici: 8.12.2
+      w3c-xmlserializer: 6.0.0
+      webidl-conversions: 8.0.1
+      whatwg-mimetype: 5.0.0
+      whatwg-url: 17.3.0
       xml-name-validator: 5.0.0
     transitivePeerDependencies:
-      - bufferutil
-      - supports-color
-      - utf-8-validate
+      - '@noble/hashes'
 
   json-schema-traverse@0.4.1:
     optional: true
@@ -5216,8 +5193,6 @@ snapshots:
 
   longest-streak@3.1.0: {}
 
-  lru-cache@10.4.3: {}
-
   lru-cache@11.5.3: {}
 
   lru-cache@6.0.0:
@@ -5247,13 +5222,13 @@ snapshots:
       '@types/unist': 3.0.3
       unist-util-visit: 5.1.0
 
-  mdast-util-directive@3.1.1:
+  mdast-util-directive@3.1.1(supports-color@8.1.1):
     dependencies:
       '@types/mdast': 4.0.4
       '@types/unist': 3.0.3
       ccount: 2.0.1
       devlop: 1.1.0
-      mdast-util-from-markdown: 2.1.0
+      mdast-util-from-markdown: 2.1.0(supports-color@8.1.1)
       mdast-util-to-markdown: 2.2.0
       micromark-util-character: 2.1.1
       parse-entities: 4.0.2
@@ -5269,14 +5244,14 @@ snapshots:
       unist-util-is: 6.0.1
       unist-util-visit-parents: 6.0.2
 
-  mdast-util-from-markdown@2.1.0:
+  mdast-util-from-markdown@2.1.0(supports-color@8.1.1):
     dependencies:
       '@types/mdast': 4.0.4
       '@types/unist': 3.0.3
       decode-named-character-reference: 1.3.0
       devlop: 1.1.0
       mdast-util-to-string: 4.0.0
-      micromark: 4.0.3
+      micromark: 4.0.3(supports-color@8.1.1)
       micromark-util-decode-numeric-character-reference: 2.0.2
       micromark-util-decode-string: 2.0.1
       micromark-util-normalize-identifier: 2.0.1
@@ -5294,67 +5269,67 @@ snapshots:
       mdast-util-find-and-replace: 3.0.3
       micromark-util-character: 2.1.1
 
-  mdast-util-gfm-footnote@2.1.0:
+  mdast-util-gfm-footnote@2.1.0(supports-color@8.1.1):
     dependencies:
       '@types/mdast': 4.0.4
       devlop: 1.1.0
-      mdast-util-from-markdown: 2.1.0
+      mdast-util-from-markdown: 2.1.0(supports-color@8.1.1)
       mdast-util-to-markdown: 2.2.0
       micromark-util-normalize-identifier: 2.0.1
     transitivePeerDependencies:
       - supports-color
 
-  mdast-util-gfm-strikethrough@2.0.1:
+  mdast-util-gfm-strikethrough@2.0.1(supports-color@8.1.1):
     dependencies:
       '@types/mdast': 4.0.4
-      mdast-util-from-markdown: 2.1.0
+      mdast-util-from-markdown: 2.1.0(supports-color@8.1.1)
       mdast-util-to-markdown: 2.2.0
     transitivePeerDependencies:
       - supports-color
 
-  mdast-util-gfm-table@2.0.0:
+  mdast-util-gfm-table@2.0.0(supports-color@8.1.1):
     dependencies:
       '@types/mdast': 4.0.4
       devlop: 1.1.0
       markdown-table: 3.0.4
-      mdast-util-from-markdown: 2.1.0
+      mdast-util-from-markdown: 2.1.0(supports-color@8.1.1)
       mdast-util-to-markdown: 2.2.0
     transitivePeerDependencies:
       - supports-color
 
-  mdast-util-gfm-task-list-item@2.0.0:
+  mdast-util-gfm-task-list-item@2.0.0(supports-color@8.1.1):
     dependencies:
       '@types/mdast': 4.0.4
       devlop: 1.1.0
-      mdast-util-from-markdown: 2.1.0
+      mdast-util-from-markdown: 2.1.0(supports-color@8.1.1)
       mdast-util-to-markdown: 2.2.0
     transitivePeerDependencies:
       - supports-color
 
-  mdast-util-gfm@3.1.0:
+  mdast-util-gfm@3.1.0(supports-color@8.1.1):
     dependencies:
-      mdast-util-from-markdown: 2.1.0
+      mdast-util-from-markdown: 2.1.0(supports-color@8.1.1)
       mdast-util-gfm-autolink-literal: 2.0.1
-      mdast-util-gfm-footnote: 2.1.0
-      mdast-util-gfm-strikethrough: 2.0.1
-      mdast-util-gfm-table: 2.0.0
-      mdast-util-gfm-task-list-item: 2.0.0
+      mdast-util-gfm-footnote: 2.1.0(supports-color@8.1.1)
+      mdast-util-gfm-strikethrough: 2.0.1(supports-color@8.1.1)
+      mdast-util-gfm-table: 2.0.0(supports-color@8.1.1)
+      mdast-util-gfm-task-list-item: 2.0.0(supports-color@8.1.1)
       mdast-util-to-markdown: 2.2.0
     transitivePeerDependencies:
       - supports-color
 
-  mdast-util-mdx-expression@2.0.1:
+  mdast-util-mdx-expression@2.0.1(supports-color@8.1.1):
     dependencies:
       '@types/estree-jsx': 1.0.5
       '@types/hast': 3.0.5
       '@types/mdast': 4.0.4
       devlop: 1.1.0
-      mdast-util-from-markdown: 2.1.0
+      mdast-util-from-markdown: 2.1.0(supports-color@8.1.1)
       mdast-util-to-markdown: 2.2.0
     transitivePeerDependencies:
       - supports-color
 
-  mdast-util-mdx-jsx@3.2.0:
+  mdast-util-mdx-jsx@3.2.0(supports-color@8.1.1):
     dependencies:
       '@types/estree-jsx': 1.0.5
       '@types/hast': 3.0.5
@@ -5362,7 +5337,7 @@ snapshots:
       '@types/unist': 3.0.3
       ccount: 2.0.1
       devlop: 1.1.0
-      mdast-util-from-markdown: 2.1.0
+      mdast-util-from-markdown: 2.1.0(supports-color@8.1.1)
       mdast-util-to-markdown: 2.2.0
       parse-entities: 4.0.2
       stringify-entities: 4.0.4
@@ -5371,23 +5346,23 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  mdast-util-mdx@3.0.0:
+  mdast-util-mdx@3.0.0(supports-color@8.1.1):
     dependencies:
-      mdast-util-from-markdown: 2.1.0
-      mdast-util-mdx-expression: 2.0.1
-      mdast-util-mdx-jsx: 3.2.0
-      mdast-util-mdxjs-esm: 2.0.1
+      mdast-util-from-markdown: 2.1.0(supports-color@8.1.1)
+      mdast-util-mdx-expression: 2.0.1(supports-color@8.1.1)
+      mdast-util-mdx-jsx: 3.2.0(supports-color@8.1.1)
+      mdast-util-mdxjs-esm: 2.0.1(supports-color@8.1.1)
       mdast-util-to-markdown: 2.2.0
     transitivePeerDependencies:
       - supports-color
 
-  mdast-util-mdxjs-esm@2.0.1:
+  mdast-util-mdxjs-esm@2.0.1(supports-color@8.1.1):
     dependencies:
       '@types/estree-jsx': 1.0.5
       '@types/hast': 3.0.5
       '@types/mdast': 4.0.4
       devlop: 1.1.0
-      mdast-util-from-markdown: 2.1.0
+      mdast-util-from-markdown: 2.1.0(supports-color@8.1.1)
       mdast-util-to-markdown: 2.2.0
     transitivePeerDependencies:
       - supports-color
@@ -5688,10 +5663,10 @@ snapshots:
 
   micromark-util-types@2.0.3: {}
 
-  micromark@4.0.3:
+  micromark@4.0.3(supports-color@8.1.1):
     dependencies:
       '@types/debug': 4.1.13
-      debug: 4.4.3
+      debug: 4.4.3(supports-color@8.1.1)
       decode-named-character-reference: 1.3.0
       devlop: 1.1.0
       micromark-core-commonmark: 2.0.4
@@ -5751,8 +5726,6 @@ snapshots:
   nth-check@2.1.1:
     dependencies:
       boolbase: 1.0.0
-
-  nwsapi@2.2.28: {}
 
   ofetch@1.5.1:
     dependencies:
@@ -5815,6 +5788,10 @@ snapshots:
   parse5@7.3.0:
     dependencies:
       entities: 6.0.1
+
+  parse5@8.0.1:
+    dependencies:
+      entities: 8.1.0
 
   path-browserify@1.0.1: {}
 
@@ -5961,11 +5938,11 @@ snapshots:
       hast-util-raw: 9.1.0
       vfile: 6.0.3
 
-  rehype-recma@1.0.0:
+  rehype-recma@1.0.0(supports-color@8.1.1):
     dependencies:
       '@types/estree': 1.0.9
       '@types/hast': 3.0.5
-      hast-util-to-estree: 3.1.3
+      hast-util-to-estree: 3.1.3(supports-color@8.1.1)
     transitivePeerDependencies:
       - supports-color
 
@@ -5982,37 +5959,37 @@ snapshots:
       rehype-stringify: 10.0.1
       unified: 11.0.5
 
-  remark-directive@3.0.1:
+  remark-directive@3.0.1(supports-color@8.1.1):
     dependencies:
       '@types/mdast': 4.0.4
-      mdast-util-directive: 3.1.1
+      mdast-util-directive: 3.1.1(supports-color@8.1.1)
       micromark-extension-directive: 3.0.2
       unified: 11.0.5
     transitivePeerDependencies:
       - supports-color
 
-  remark-gfm@4.0.1:
+  remark-gfm@4.0.1(supports-color@8.1.1):
     dependencies:
       '@types/mdast': 4.0.4
-      mdast-util-gfm: 3.1.0
+      mdast-util-gfm: 3.1.0(supports-color@8.1.1)
       micromark-extension-gfm: 3.0.0
-      remark-parse: 11.0.0
+      remark-parse: 11.0.0(supports-color@8.1.1)
       remark-stringify: 11.0.0
       unified: 11.0.5
     transitivePeerDependencies:
       - supports-color
 
-  remark-mdx@3.1.1:
+  remark-mdx@3.1.1(supports-color@8.1.1):
     dependencies:
-      mdast-util-mdx: 3.0.0
+      mdast-util-mdx: 3.0.0(supports-color@8.1.1)
       micromark-extension-mdxjs: 3.0.0
     transitivePeerDependencies:
       - supports-color
 
-  remark-parse@11.0.0:
+  remark-parse@11.0.0(supports-color@8.1.1):
     dependencies:
       '@types/mdast': 4.0.4
-      mdast-util-from-markdown: 2.1.0
+      mdast-util-from-markdown: 2.1.0(supports-color@8.1.1)
       micromark-util-types: 2.0.3
       unified: 11.0.5
     transitivePeerDependencies:
@@ -6038,6 +6015,8 @@ snapshots:
       '@types/mdast': 4.0.4
       mdast-util-to-markdown: 2.2.0
       unified: 11.0.5
+
+  require-from-string@2.0.2: {}
 
   resolve@1.19.0:
     dependencies:
@@ -6133,10 +6112,6 @@ snapshots:
       '@rollup/rollup-win32-x64-gnu': 4.64.7
       '@rollup/rollup-win32-x64-msvc': 4.64.7
       fsevents: 2.3.3
-
-  rrweb-cssom@0.8.0: {}
-
-  safer-buffer@2.1.2: {}
 
   sax@1.6.1: {}
 
@@ -6302,8 +6277,6 @@ snapshots:
       picocolors: 1.1.1
       sax: 1.6.1
 
-  symbol-tree@3.2.4: {}
-
   terser@5.51.2:
     dependencies:
       '@jridgewell/source-map': 0.3.11
@@ -6320,17 +6293,17 @@ snapshots:
       fdir: 6.5.0(picomatch@4.0.7)
       picomatch: 4.0.7
 
-  tldts-core@6.1.86: {}
+  tldts-core@7.4.19: {}
 
-  tldts@6.1.86:
+  tldts@7.4.19:
     dependencies:
-      tldts-core: 6.1.86
+      tldts-core: 7.4.19
 
-  tough-cookie@5.1.2:
+  tough-cookie@6.0.2:
     dependencies:
-      tldts: 6.1.86
+      tldts: 7.4.19
 
-  tr46@5.1.1:
+  tr46@7.0.0:
     dependencies:
       punycode: 2.3.1
 
@@ -6429,12 +6402,12 @@ snapshots:
   universalify@0.1.2:
     optional: true
 
-  unplugin-dts@1.1.2(@microsoft/api-extractor@7.43.0(@types/node@22.10.10))(esbuild@0.28.2)(rollup@4.64.7)(typescript@5.7.3)(vite@5.4.11(@types/node@22.10.10)(terser@5.51.2)):
+  unplugin-dts@1.1.2(@microsoft/api-extractor@7.43.0(@types/node@22.10.10))(esbuild@0.28.2)(rollup@4.64.7)(supports-color@8.1.1)(typescript@5.7.3)(vite@5.4.11(@types/node@22.10.10)(terser@5.51.2)):
     dependencies:
       '@rollup/pluginutils': 5.4.0(rollup@4.64.7)
       '@volar/typescript': 2.4.30(typescript@5.7.3)
       compare-versions: 6.1.1
-      debug: 4.4.3
+      debug: 4.4.3(supports-color@8.1.1)
       glob-to-regexp: 0.4.1
       kolorist: 1.8.0
       local-pkg: 1.2.1
@@ -6492,9 +6465,9 @@ snapshots:
       '@types/unist': 3.0.3
       vfile-message: 4.0.3
 
-  vite-plugin-dts@5.1.2(@microsoft/api-extractor@7.43.0(@types/node@22.10.10))(esbuild@0.28.2)(rollup@4.64.7)(typescript@5.7.3)(vite@5.4.11(@types/node@22.10.10)(terser@5.51.2)):
+  vite-plugin-dts@5.1.2(@microsoft/api-extractor@7.43.0(@types/node@22.10.10))(esbuild@0.28.2)(rollup@4.64.7)(supports-color@8.1.1)(typescript@5.7.3)(vite@5.4.11(@types/node@22.10.10)(terser@5.51.2)):
     dependencies:
-      unplugin-dts: 1.1.2(@microsoft/api-extractor@7.43.0(@types/node@22.10.10))(esbuild@0.28.2)(rollup@4.64.7)(typescript@5.7.3)(vite@5.4.11(@types/node@22.10.10)(terser@5.51.2))
+      unplugin-dts: 1.1.2(@microsoft/api-extractor@7.43.0(@types/node@22.10.10))(esbuild@0.28.2)(rollup@4.64.7)(supports-color@8.1.1)(typescript@5.7.3)(vite@5.4.11(@types/node@22.10.10)(terser@5.51.2))
     optionalDependencies:
       '@microsoft/api-extractor': 7.43.0(@types/node@22.10.10)
       rollup: 4.64.7
@@ -6558,26 +6531,25 @@ snapshots:
     optionalDependencies:
       typescript: 5.7.3
 
-  w3c-xmlserializer@5.0.0:
+  w3c-xmlserializer@6.0.0:
     dependencies:
       xml-name-validator: 5.0.0
 
   web-namespaces@2.0.1: {}
 
-  webidl-conversions@7.0.0: {}
+  webidl-conversions@8.0.1: {}
 
   webpack-virtual-modules@0.6.2: {}
 
-  whatwg-encoding@3.1.1:
-    dependencies:
-      iconv-lite: 0.6.3
+  whatwg-mimetype@5.0.0: {}
 
-  whatwg-mimetype@4.0.0: {}
-
-  whatwg-url@14.2.0:
+  whatwg-url@17.3.0:
     dependencies:
-      tr46: 5.1.1
-      webidl-conversions: 7.0.0
+      '@exodus/bytes': 1.16.0
+      tr46: 7.0.0
+      webidl-conversions: 8.0.1
+    transitivePeerDependencies:
+      - '@noble/hashes'
 
   which-pm-runs@1.1.0: {}
 
@@ -6590,8 +6562,6 @@ snapshots:
       ansi-styles: 6.2.3
       string-width: 7.2.0
       strip-ansi: 7.2.0
-
-  ws@8.22.0: {}
 
   xml-name-validator@5.0.0: {}
 

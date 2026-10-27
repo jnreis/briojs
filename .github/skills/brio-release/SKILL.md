@@ -68,15 +68,19 @@ In a temp directory (never inside the repo):
 
 ## 4. Publish (with the maintainer)
 
-1. The maintainer commits and pushes the release files. Confirm with
-   `git status -sb` (clean, in sync with `origin/main`).
+1. `main` only accepts pull requests. The release files go on a branch
+   (`release/vx.y.z`) and a PR that is squash-merged once the four required
+   checks pass. Then check out `main`, pull, and confirm `git status -sb` is
+   clean and in sync with `origin/main`. Publish from that commit.
 2. `npm whoami` must print `jnreis`. If not, the maintainer runs `npm login`.
 3. Publish **`@jnreis/briojs` first** (`npm publish` at the root), then
    `create-brio` (`npm publish` in `packages/create-brio`), because generated
    projects depend on the new Brio. npm requires two-factor confirmation through
    a browser link that only the person at the terminal can open. If `EOTP`
    appears, hand the maintainer the commands instead of retrying.
-4. The maintainer tags and pushes: `git tag vx.y.z && git push origin vx.y.z`.
+4. The maintainer tags the merged commit and pushes:
+   `git tag vx.y.z && git push origin vx.y.z`. Release tags can't be moved or
+   deleted afterwards, so tag only after npm publish succeeds.
 
 ## 5. Verify and announce
 

@@ -49,7 +49,9 @@ jobs:
           node-version: '22'
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm exec playwright install --with-deps chromium
+      # ubuntu-latest already has Chromium's system libraries. Skipping
+      # --with-deps avoids the Ubuntu mirror, which sometimes takes 10+ minutes.
+      - run: pnpm exec playwright install chromium
       - run: pnpm run build
       - run: pnpm run test:playground
       - run: pnpm run test:astro

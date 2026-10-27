@@ -16,9 +16,12 @@ updates:
     # Starlight 0.x minors require new Astro majors. Upgrade those together, by hand.
     ignore:
       - dependency-name: astro
-        update-types: [version-update:semver-major]
+        update-types: ['version-update:semver-major']
       - dependency-name: '@astrojs/*'
-        update-types: [version-update:semver-major, version-update:semver-minor]
+        update-types: ['version-update:semver-major', 'version-update:semver-minor']
+      # Match the oldest supported Node (22), so newer-only APIs fail typecheck.
+      - dependency-name: '@types/node'
+        update-types: ['version-update:semver-major']
     groups:
       development:
         dependency-type: development

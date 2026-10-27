@@ -104,7 +104,13 @@ For a focused check, build once and run `node --test path/to/test.js`.
 
 The `Framework CI` workflow runs type checks and Node tests on Node 22 and 24,
 plus the Lab and Astro Chromium suites on Node 22, for pushes to `main` and pull
-requests. Website checks and deployment run separately in the `Website` workflow.
+requests. Website checks run in the `Website` workflow on every pull request,
+and on pushes to `main` that change the site, which also deploy it.
+
+`main` only accepts pull requests. Rulesets require `Runtime (Node 22)`,
+`Runtime (Node 24)`, `Lab and Astro (Chromium)`, and `Website build` to pass,
+and block force pushes and deletion. Pull requests are squash-merged. Release
+tags (`v*`) can be created but never moved or deleted.
 Dependency update pull requests are grouped and scheduled monthly.
 
 Keep changes focused, preserve lifecycle cleanup and existing behavior, and
@@ -228,7 +234,7 @@ One-time setup (requires repository/domain owner access):
    records pointing elsewhere even if you choose IPv4 only. Do not add a
    wildcard record. The `www` CNAME targets the account hostname, not the
    repository path or `briojs.com`; Pages redirects it to the configured apex.
-5. Push the reviewed changes or manually run **Actions → Website** on `main`.
+5. Merge the reviewed changes or manually run **Actions → Website** on `main`.
    Wait for Pages' DNS check and certificate provisioning, then enable
    **Enforce HTTPS**. DNS propagation can take up to 24 hours.
 6. Verify `https://briojs.com`, the `https://www.briojs.com` redirect, search,
@@ -314,8 +320,8 @@ Before publishing:
 5. Run `npm pack`, install the resulting tarball in a clean project, and verify
    the documented imports and standalone scripts. Remove the local tarball
    after checking it; never commit it.
-6. Commit the intended release files and push to
-   `https://github.com/jnreis/briojs`.
+6. Commit the intended release files on a branch, open a pull request, and
+   squash-merge it once its checks pass. Publish from the merged `main`.
 7. Authenticate with npm as `jnreis` and verify with `npm whoami`.
 8. Run `npm publish`. `publishConfig` selects the public npm registry and
    public access for the scoped `@jnreis/briojs` package. Never put npm

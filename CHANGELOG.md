@@ -1,5 +1,13 @@
 # Changelog
 
+## [5.1.1] — 2026-10-28
+
+### Package
+
+- The npm README shows only the light logo and creature images. npm ignored
+  GitHub's theme-only links and showed both themes. The repository README is
+  unchanged. No runtime changes.
+
 ## [5.1.0] — 2026-10-28
 
 ### Core and reactivity

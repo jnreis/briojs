@@ -1,6 +1,6 @@
 {
   "name": "@jnreis/briojs",
-  "version": "5.1.0",
+  "version": "5.1.1",
   "description": "A petite, HTML-first framework for reactive widgets and web apps.",
   "author": {
     "name": "Jonathan Reis",
@@ -109,7 +109,8 @@
     "test:site": "playwright test --config tests/site/playwright.config.js",
     "test:playground": "playwright test --config tests/playground/playwright.config.js",
     "test:csp": "playwright test --config tests/csp/playwright.config.js",
-    "prepack": "npm run build",
+    "prepack": "npm run build && node scripts/npm-readme.mjs strip",
+    "postpack": "node scripts/npm-readme.mjs restore",
     "size": "node scripts/size.js",
     "test": "npm run build && node --test \"tests/**/*.test.js\"",
     "typecheck": "tsc --noEmit",

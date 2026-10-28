@@ -32,3 +32,4 @@ site/public/llms-full.txt
 *.njsproj
 *.sln
 *.sw?
+.README.github.md

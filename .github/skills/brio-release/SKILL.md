@@ -53,7 +53,9 @@ Size and bench differences are reported, not "fixed" by saving baselines.
 In a temp directory (never inside the repo):
 
 1. `npm pack --pack-destination "$T"` at the root and in `packages/create-brio`.
-   Review the file lists.
+   Review the file lists. The packed `README.md` must show one logo and one
+   creature image with no `#gh-*-mode-only` fragments (`prepack` strips the dark
+   copies for npm), and the repo `README.md` must be unchanged afterwards.
 2. In a fresh consumer project, install the Brio tarball. Import every
    `exports` subpath in Node, type-check them with strict TypeScript, and check
    the expected `dist/` files and `ai/` are present.

@@ -16,7 +16,8 @@ test('release metadata identifies the public package and builds before packing',
     assert.equal(manifest.bugs.url, 'https://github.com/jnreis/briojs/issues');
     assert.equal(manifest.publishConfig.registry, 'https://registry.npmjs.org/');
     assert.equal(manifest.publishConfig.access, 'public');
-    assert.equal(manifest.scripts.prepack, 'npm run build');
+    assert.equal(manifest.scripts.prepack, 'npm run build && node scripts/npm-readme.mjs strip');
+    assert.equal(manifest.scripts.postpack, 'node scripts/npm-readme.mjs restore');
     for (const file of ['README.md', 'DOCUMENTATION.md', 'CHANGELOG.md', 'LICENSE'])
         assert.ok(manifest.files.includes(file), file);
 });

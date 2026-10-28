@@ -94,7 +94,7 @@ Save this as an HTML file and serve it from any static server:
       Count: <span b-text="$data.count"></span>
     </button>
   </div>
-  <script src="https://cdn.jsdelivr.net/npm/@jnreis/briojs@5.1.0/dist/brio.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@jnreis/briojs@5.1.1/dist/brio.min.js"></script>
   <script>
     const app = brio.createApp({ state: () => ({ count: 0 }) });
     app.mount('#counter');

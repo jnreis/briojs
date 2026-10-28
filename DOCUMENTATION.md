@@ -2,7 +2,7 @@
 
 Brio is a petite, HTML-first framework for reactive widgets and web apps. It enhances real DOM nodes in place; there is no virtual DOM, JSX transform, or required compiler. Use it for one small island on a server-rendered page, several independent widgets, or a client-side application.
 
-Version 4.0.0 was the first npm release of this reimagined framework; this reference targets 5.1.0.
+Version 4.0.0 was the first npm release of this reimagined framework; this reference targets 5.1.x.
 Upgrading from 4.x? See [Migrating from Brio 4](#migrating-from-brio-4).
 Earlier versions in the repository were private development
 iterations, not npm releases.
@@ -194,9 +194,9 @@ Load one of the standalone bundles, not both:
 
 ```html
 <!-- Production: runtime without development tools or tracking hooks -->
-<script src="https://cdn.jsdelivr.net/npm/@jnreis/briojs@5.1.0/dist/brio.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@jnreis/briojs@5.1.1/dist/brio.min.js"></script>
 <!-- During development, use this instead: -->
-<!-- <script src="https://cdn.jsdelivr.net/npm/@jnreis/briojs@5.1.0/dist/brio.dev.min.js"></script> -->
+<!-- <script src="https://cdn.jsdelivr.net/npm/@jnreis/briojs@5.1.1/dist/brio.dev.min.js"></script> -->
 ```
 
 For pages with a strict Content Security Policy, load `brio.csp.min.js` (or

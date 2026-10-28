@@ -22,7 +22,10 @@ brainstorming, and the private v3 API. They are not current usage guidance.
   doesn't match the viewer's GitHub theme. Don't switch back to
   `<picture>` with `prefers-color-scheme`: when a signed-in viewer's GitHub
   theme differs from their OS theme, GitHub shows the image for the OS theme.
-  Other Markdown renderers, such as npm, show both images.
+  Other Markdown renderers, such as npm, show both images, so `npm pack` and
+  `npm publish` run `scripts/npm-readme.mjs`: the packed README keeps only the
+  light image of each pair and drops the fragments, and `postpack` restores
+  the original. If a pack fails midway, run `node scripts/npm-readme.mjs restore`.
 - [Social preview source](./assets/social-preview.svg): editable, original SVG
   using the website's logo and palette.
 - [Social preview PNG](./assets/social-preview.png): a 1280 by 640 export for

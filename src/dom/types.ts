@@ -34,6 +34,7 @@ export type DomRuntime = {
     router?: any;
     root?: Element;
     directives?: DirectiveRegistry;
+    textInterpolation?: boolean;
 };
 
 const trustedMarkup = Symbol('brio.trustedMarkup');

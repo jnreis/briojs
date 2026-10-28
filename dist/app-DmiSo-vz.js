@@ -1964,7 +1964,7 @@ function hydrateTextNode(node, context) {
 function hydrateNode(node, parentContext, runtime) {
   if (getNodeOwner(node)) throw createError("Cannot hydrate an already hydrated Brio node.");
   const type = getNodeType(node);
-  if (type !== Node.ELEMENT_NODE && (type !== Node.TEXT_NODE || !(node.nodeValue ?? "").includes("${"))) return;
+  if (type !== Node.ELEMENT_NODE && (type !== Node.TEXT_NODE || runtime.textInterpolation === false || !(node.nodeValue ?? "").includes("${"))) return;
   parentContext = takeProjectedContext(node) ?? parentContext;
   if (!("$ref" in parentContext)) parentContext = createExpressionScope({ $ref: createRefs() }, parentContext);
   const scope = createScope();
@@ -2224,6 +2224,9 @@ const helperPattern = /^\$[A-Za-z_][\w]*$/;
 const reservedHelpers = "$data $el $emit $event $index $props $provided $ref $route $stores $value".split(" ");
 function createApp(options = {}) {
   var _a, _b;
+  const { textInterpolation = true } = options;
+  if (!isBoolean(textInterpolation))
+    throw createTypeError("createApp textInterpolation must be true or false.");
   const appState = state(((_a = options.state) == null ? void 0 : _a.call(options)) ?? {});
   const stores = ObjectConstructor.freeze(copyContextValues(
     options.stores === void 0 ? {} : options.stores,
@@ -2279,7 +2282,8 @@ function createApp(options = {}) {
     app: void 0,
     state: appState,
     components,
-    router: options.router
+    router: options.router,
+    textInterpolation
   };
   const app = {
     state: appState,
@@ -2471,4 +2475,4 @@ export {
   hydrateRoot as h,
   trustedHTML as t
 };
-//# sourceMappingURL=app-BI_J_Eae.js.map
+//# sourceMappingURL=app-DmiSo-vz.js.map

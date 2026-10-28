@@ -1795,7 +1795,9 @@ structural CSS when needed; prefer simple references such as `${$id.style}` or
 escape/sanitize interpolated CSS. Do not insert untrusted values into CSS or
 executable templates. To keep `${...}` literal, put `b-ignore` on the style
 element. `b-text` is also available when explicitly binding complete CSS
-text without secondary interpolation.
+text without secondary interpolation. Apps created with
+`textInterpolation: false` leave style text literal, so bind dynamic CSS with
+`b-text` there.
 
 ### Native behavior and lifetime
 
@@ -2675,6 +2677,56 @@ HTML attributes and other browser behavior can still be dangerous.
 | `b-html` | Parses HTML, but leaves Brio directives, interpolation, and contextual scripts inactive. Not sanitization. |
 | `b-html.hydrate` | Activates a Brio template only when explicitly marked with `trustedHTML()`. |
 
+### Server-rendered user content
+
+Everything inside a mounted root is a template, including plain text. When the
+server writes user content into that markup, `${...}` in that content runs
+when Brio mounts the root. HTML escaping does not prevent this: `${` contains no
+characters that escaping changes, and the browser decodes entities such as
+`&#39;` before Brio reads a directive attribute.
+
+```html
+<!-- Unsafe: a comment body of "${$data.deleteAll()}" runs on mount. -->
+<li>{{ comment.body }}</li>
+
+<!-- Safe: Brio skips everything inside b-ignore. -->
+<li><span b-ignore>{{ comment.body }}</span></li>
+```
+
+Put `b-ignore` around the user content only. On the interactive element itself
+it would also disable that element's directives.
+
+Never place server values inside a directive expression. Pass them as data
+instead:
+
+```html
+<!-- Unsafe: a name of "'); $data.deleteAll(); ('" breaks out of the string. -->
+<button b-on-click="$data.greet('{{ user.name }}')">Greet</button>
+
+<!-- Safe: the value stays an attribute, never code. -->
+<button data-name="{{ user.name }}" b-on-click="$data.greet($el.dataset.name)">Greet</button>
+```
+
+The same applies to `app.insert()` HTML strings: build them only from trusted
+templates, and pass user values through `options.data` and `b-text`.
+
+When a page renders a lot of user text, Brio 5.1+ can turn off text
+interpolation for an app:
+
+```js
+createApp({ state: () => ({ count: 0 }), textInterpolation: false }).mount('#app');
+```
+
+```html
+<button b-on-click="$data.count++" b-text="`Count ${$data.count}`"></button>
+```
+
+With `textInterpolation: false`, `${...}` stays literal in every text node the
+app hydrates: mounted markup, `<style>` text, components, slots, `b-for` and
+`b-if` content, `b-html.hydrate`, and `app.insert()` HTML. Directive attributes
+still run, so use `b-text` for dynamic text. The option does not protect
+directive attributes, so keep server values out of expressions either way.
+
 ### Activate only trusted dynamic templates
 
 To activate a dynamic Brio template, explicitly use `b-html.hydrate` with a
@@ -2849,8 +2901,14 @@ createApp({
   components?: Record<string, ComponentDefinition>,
   router?: Router,
   plugins?: BrioPlugin[],
+  textInterpolation?: boolean, // Brio 5.1+; defaults to true
 })
 ```
+
+`textInterpolation: false` (Brio 5.1+) leaves `${...}` in text nodes literal,
+including `<style>` text, components, `b-for` rows, and inserted HTML. Directive
+attributes keep working. See
+[Server-rendered user content](#server-rendered-user-content).
 
 | API | Purpose |
 | --- | --- |

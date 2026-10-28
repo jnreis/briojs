@@ -8,6 +8,7 @@ import {
     objectEntries,
     isInstanceOf,
     isFunction,
+    isBoolean,
     deleteItem,
     includesItem,
     ATTRIBUTES,
@@ -55,6 +56,9 @@ export function createApp<
 >(
     options: AppOptions<T, S> = {},
 ): BrioApp<T, S> {
+    const { textInterpolation = true } = options;
+    if (!isBoolean(textInterpolation))
+        throw createTypeError('createApp textInterpolation must be true or false.');
     const appState = state((options.state?.() ?? {}) as T);
     const stores = ObjectConstructor.freeze(copyContextValues(
         options.stores === undefined ? {} : options.stores, 'Brio stores',
@@ -106,6 +110,7 @@ export function createApp<
         state: appState,
         components,
         router: options.router,
+        textInterpolation,
     };
 
     const app: BrioApp<T, S> = {

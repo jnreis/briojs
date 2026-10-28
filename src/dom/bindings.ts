@@ -94,7 +94,8 @@ export function hydrateNode(
     if (getNodeOwner(node)) throw createError('Cannot hydrate an already hydrated Brio node.');
     // Static text, comments and other non-element nodes need no scope, owner or context.
     const type = getNodeType(node);
-    if (type !== Node.ELEMENT_NODE && (type !== Node.TEXT_NODE || !(node.nodeValue ?? '').includes('${'))) return;
+    if (type !== Node.ELEMENT_NODE && (type !== Node.TEXT_NODE || runtime.textInterpolation === false
+        || !(node.nodeValue ?? '').includes('${'))) return;
     parentContext = takeProjectedContext(node) ?? parentContext;
     if (!('$ref' in parentContext)) parentContext = createExpressionScope({ $ref: createRefs() }, parentContext);
     const scope = createScope();

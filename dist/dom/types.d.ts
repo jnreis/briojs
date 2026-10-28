@@ -29,6 +29,7 @@ export type DomRuntime = {
     router?: any;
     root?: Element;
     directives?: DirectiveRegistry;
+    textInterpolation?: boolean;
 };
 declare const trustedMarkup: unique symbol;
 export type TrustedMarkup = {

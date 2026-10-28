@@ -29,7 +29,7 @@ Save this as `index.html`, then serve it with a local static server:
     <label>Your name <input b-model="$data.name"></label>
     <p>Hello, <span b-text="$data.name || 'friend'"></span>!</p>
   </main>
-  <script src="https://cdn.jsdelivr.net/npm/@jnreis/briojs@5.0.0/dist/brio.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@jnreis/briojs@5.1.0/dist/brio.min.js"></script>
   <script>
     const app = brio.createApp({ state: () => ({ name: '' }) });
     app.mount('#hello');

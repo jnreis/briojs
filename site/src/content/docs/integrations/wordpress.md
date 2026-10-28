@@ -36,7 +36,7 @@ defined('ABSPATH') || exit;
 
 add_action('wp_enqueue_scripts', function () {
     $base = plugin_dir_url(__FILE__);
-    wp_enqueue_script('brio-core', $base . 'vendor/brio.min.js', array(), '5.0.0', true);
+    wp_enqueue_script('brio-core', $base . 'vendor/brio.min.js', array(), '5.1.0', true);
     wp_enqueue_script('brio-counter', $base . 'counter.js', array('brio-core'), '1.0.0', true);
 });
 

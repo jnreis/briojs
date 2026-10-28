@@ -52,7 +52,7 @@ are included; `_gitignore` is restored to `.gitignore` by the CLI because npm
 omits `.gitignore` files from tarballs. Generated copies are gitignored.
 The packed package is self-contained and does not fetch templates from GitHub.
 
-Generated projects depend on Brio `^5.0.0`. To validate templates against
+Generated projects depend on Brio `^5.1.0`. To validate templates against
 unreleased runtime changes, install a locally packed Brio tarball rather than
 the public registry version. The scaffolder has its own version and release
 lifecycle; packing does not publish either package.

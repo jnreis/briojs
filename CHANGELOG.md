@@ -1,6 +1,6 @@
 # Changelog
 
-## [5.1.0] — Unreleased
+## [5.1.0] — 2026-10-28
 
 ### Core and reactivity
 

@@ -94,7 +94,7 @@ Save this as an HTML file and serve it from any static server:
       Count: <span b-text="$data.count"></span>
     </button>
   </div>
-  <script src="https://cdn.jsdelivr.net/npm/@jnreis/briojs@5.0.0/dist/brio.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@jnreis/briojs@5.1.0/dist/brio.min.js"></script>
   <script>
     const app = brio.createApp({ state: () => ({ count: 0 }) });
     app.mount('#counter');
@@ -125,6 +125,11 @@ after core and before your own code, and keep their versions aligned.
 - **Plugin API:** add your own directives and expression helpers.
 - **Helpful errors:** template errors name the expression, directive, element,
   and component.
+
+**New in 5.1:** a [strict CSP build](./DOCUMENTATION.md#strict-csp-build)
+that runs without `eval`, and a `textInterpolation` option for pages that render
+user text. See the
+[release notes](https://github.com/jnreis/briojs/releases/tag/v5.1.0).
 
 **New in 5.0:** the plugin API, form validation, and a testing helper. Masks
 and observers moved to opt-in add-ons. See the

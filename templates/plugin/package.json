@@ -13,10 +13,10 @@
     "test": "node --test"
   },
   "peerDependencies": {
-    "@jnreis/briojs": "^5.0.0"
+    "@jnreis/briojs": "^5.1.0"
   },
   "devDependencies": {
-    "@jnreis/briojs": "^5.0.0",
+    "@jnreis/briojs": "^5.1.0",
     "global-jsdom": "^30.0.0",
     "jsdom": "^30.0.0",
     "vite": "^7.0.0"

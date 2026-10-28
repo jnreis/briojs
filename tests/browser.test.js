@@ -214,7 +214,7 @@ test('optional scripts report missing core explicitly and contain no separate re
     t.after(() => dom.window.close());
     for (const plugin of Object.keys(pluginAPI)) {
         const source = readFileSync(new URL(`../dist/brio.${plugin}.min.js`, import.meta.url), 'utf8');
-        assert.throws(() => dom.window.eval(source), /Load the Brio 5 core bundle \(brio\.min\.js\) before Brio add-on scripts/);
+        assert.throws(() => dom.window.eval(source), /Load the Brio 5 core bundle \(brio\.min\.js or brio\.csp\.min\.js\) before Brio add-on scripts/);
         assert.equal(source.includes('Brio state() requires a plain object or array.'), false);
         assert.equal(source.includes('Cannot run a disposed Brio scope'), false);
     }

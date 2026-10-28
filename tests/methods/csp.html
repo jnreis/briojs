@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- A real policy: inline scripts and eval are blocked. It must come before any script. -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' ws: wss:; object-src 'none'; base-uri 'none'">
+    <script src="/site/public/theme.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual Test: strict CSP build</title>
+    <style>
+        .facts { display: grid; grid-template-columns: max-content 1fr; gap: 6px 16px; margin: 0; }
+        .facts dt { color: var(--muted); }
+        .facts dd { margin: 0; }
+        .ok { color: #15803d; font-weight: 600; }
+        .bad { color: #dc2626; font-weight: 600; }
+        html[data-theme="dark"] .ok { color: #4ade80; }
+        html[data-theme="dark"] .bad { color: #f87171; }
+        .box { padding: 12px; background: var(--soft); border: 1px solid var(--line); border-radius: 6px; margin-block: 8px; }
+        .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+        .done { text-decoration: line-through; color: var(--muted); }
+        .log { font-family: ui-monospace, monospace; font-size: .85rem; margin: 0; padding-left: 18px; }
+        .result { font-family: ui-monospace, monospace; white-space: pre-wrap; word-break: break-word; }
+        .script-source { max-height: 420px; overflow: auto; font-size: .8rem; }
+        input[type="text"] { min-width: 0; flex: 1 1 220px; }
+    </style>
+    <link rel="stylesheet" href="/tests/shared/showcase.css">
+    <link rel="icon" type="image/svg+xml" href="/site/public/favicon.svg">
+</head>
+<body>
+    <h1>Strict CSP build</h1>
+    <p>This page sends <code>script-src 'self'</code>, so the browser blocks inline scripts and <code>eval</code>. It loads <code>brio.csp.min.js</code>, and its setup lives in <code>csp.js</code>. Only component templates from that file are hydrated; the page markup itself stays inert.</p>
+
+    <div class="card">
+        <h3>1. The policy is active</h3>
+        <p>The page tries <code>new Function()</code> once to prove the policy works. That probe should be the only <code>eval</code> violation; Brio adds none.</p>
+        <csp-status></csp-status>
+    </div>
+
+    <div class="card">
+        <h3>2. Components defined in JavaScript work as usual</h3>
+        <p>Static attributes become props (<code>start</code> is declared as a <code>Number</code>). The templates use template literals, events, <code>b-model</code>, <code>b-for</code>, <code>b-if</code>, and <code>b-bind-class</code>.</p>
+        <div class="row">
+            <click-counter label="Likes" start="3"></click-counter>
+            <click-counter label="Stars"></click-counter>
+        </div>
+        <task-list></task-list>
+    </div>
+
+    <div class="card">
+        <h3>3. Page markup stays inert</h3>
+        <p>None of this runs: not the text, the directives, nor the <code>b-*</code> attributes on a component host. The host still mounts, with only its static <code>label</code>.</p>
+        <div class="box">
+            <p>Text interpolation: ${1 + 1}</p>
+            <p b-text="'b-text ran'">b-text did not run.</p>
+            <button type="button" b-on-click="$el.textContent = 'b-on-click ran'">b-on-click is ignored</button>
+            <p b-if="false">b-if did not remove this.</p>
+            <click-counter label="Static label" b-prop-label="'Bound label'" b-on-change="$el.remove()"></click-counter>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>4. Listen to page components from JavaScript</h3>
+        <p>Because <code>b-on-*</code> is ignored on page hosts, <code>csp.js</code> listens to the counters' <code>change</code> events with <code>addEventListener</code>. Click a counter above.</p>
+        <event-log></event-log>
+    </div>
+
+    <div class="card">
+        <h3>5. Inserted markup is untrusted too</h3>
+        <p><code>app.insert()</code> treats its HTML like page markup: the registered counter mounts, and everything else stays raw.</p>
+        <insert-demo></insert-demo>
+        <div id="inject-target" class="box">Nothing inserted yet.</div>
+    </div>
+
+    <div class="card">
+        <h3>6. Templates must come from JavaScript</h3>
+        <p>An <code>#id</code> selector or a <code>&lt;template&gt;</code> element would read page markup, so <code>app.component()</code> rejects them.</p>
+        <template id="csp-page-template"><p b-text="'from the page'"></p></template>
+        <registration-guards></registration-guards>
+    </div>
+
+    <div class="card">
+        <h3>7. Try an expression</h3>
+        <p>Runs your expression through the CSP interpreter, with <code>$data</code> set to <code>{ name: 'Ada', items: [3, 1, 2], user: { profile: null } }</code>. The result is shown as text. Click a preset or type your own.</p>
+        <expression-lab></expression-lab>
+    </div>
+
+    <div class="card">
+        <h3>8. The JavaScript</h3>
+        <p>The full contents of <code>csp.js</code>, which defines every template on this page.</p>
+        <script-source></script-source>
+    </div>
+
+    <script src="/tests/source-viewer.js"></script>
+    <script src="/dist/brio.csp.min.js"></script>
+    <script src="/tests/methods/csp.js"></script>
+    <nav class="brio-demo-nav" b-ignore aria-label="Brio lab"><a href="/">Lab</a><a href="/tests/index.html">Experiments</a><button id="theme-toggle" type="button" aria-label="Switch color theme">&#9680;</button></nav>
+</body>
+</html>

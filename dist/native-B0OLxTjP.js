@@ -15,15 +15,15 @@ function removeEventListener(target, ...args) {
 }
 export {
   addEventListener as a,
-  getChildNodes as b,
-  removeAttribute as c,
+  removeAttribute as b,
+  getChildNodes as c,
   getOwnerDocument as d,
   getParent as e,
   getNodeType as f,
   getAttribute as g,
   getNextSibling as h,
-  removeChild as i,
-  insertBefore as j,
+  insertBefore as i,
+  removeChild as j,
   removeEventListener as r
 };
-//# sourceMappingURL=native-D9adRJpp.js.map
+//# sourceMappingURL=native-B0OLxTjP.js.map

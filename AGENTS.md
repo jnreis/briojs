@@ -42,6 +42,7 @@ Never add a second lockfile.
 | Lab browser tests | `npm run test:playground` |
 | Website | `npm run site:build && node site/scripts/check.mjs && npm run test:site` |
 | Astro integration | `npm run test:astro` |
+| Strict-CSP bundles in Chromium | `npm run test:csp` |
 | Bundle size / performance | `npm run size -- --check`, `npm run bench:check` |
 
 Start with the smallest relevant check, then widen. Run Playwright suites one at

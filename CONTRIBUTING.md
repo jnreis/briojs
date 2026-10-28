@@ -92,6 +92,7 @@ npm run typecheck
 npm test
 npm run test:astro
 npm run test:playground
+npm run test:csp
 ```
 
 `npm test` builds first and runs the Node test suite, including jsdom user
@@ -100,10 +101,12 @@ builds its fixture and exercises real browser navigation with Playwright.
 The playground suite checks the shared theme on every manual page and app,
 plus keyed identity, workbench state and mutation traces, catalog navigation,
 preference persistence, and mobile layout.
+The CSP suite loads the CSP bundles in Chromium under a strict
+`script-src 'self'` policy and fails on any violation.
 For a focused check, build once and run `node --test path/to/test.js`.
 
 The `Framework CI` workflow runs type checks and Node tests on Node 22 and 24,
-plus the Lab and Astro Chromium suites on Node 22, for pushes to `main` and pull
+plus the Lab, Astro, and strict-CSP Chromium suites on Node 22, for pushes to `main` and pull
 requests. Website checks run in the `Website` workflow on every pull request,
 and on pushes to `main` that change the site, which also deploy it.
 

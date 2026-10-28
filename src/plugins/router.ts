@@ -61,6 +61,7 @@ export type RouterOptions = { base?: string; mode?: 'history' | 'hash'; guard?: 
 
 const outletDirective = defineDirective({
     name: 'b-router-outlet',
+    value: 'none',
     children: false,
     mount(element, binding) {
         const app = binding.app as BrioApp;

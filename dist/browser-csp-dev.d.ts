@@ -1,0 +1,20 @@
+declare const api: {
+    createApp: typeof import('./index.js').createApp;
+    state: typeof import('./exports.js').state;
+    signal: typeof import('./exports.js').signal;
+    computed: typeof import('./exports.js').computed;
+    effect: typeof import('./exports.js').effect;
+    batch: typeof import('./exports.js').batch;
+    flush: () => void;
+    untrack: typeof import('./exports.js').untrack;
+    resource: typeof import('./exports.js').resource;
+    createScope: typeof import('./exports.js').createScope;
+    onCleanup: typeof import('./exports.js').onCleanup;
+    getCurrentScope: typeof import('./exports.js').getCurrentScope;
+    trustedHTML: typeof import('./exports.js').trustedHTML;
+    defineDirective: <D extends import('./exports.js').DirectiveDefinition>(definition: D) => D;
+    definePlugin: <P extends import('./exports.js').BrioPluginObject>(plugin: P) => P;
+    use(plugin: import('./exports.js').BrioPlugin): /*elided*/ any;
+};
+declare const brio: typeof api & Record<string, unknown>;
+export default brio;

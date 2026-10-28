@@ -36,6 +36,9 @@ Bootstrap after all needed scripts load, not at the core's ready event alone.
 The development bundle also contains
 `devtools`, `inspectDevtools`, `devtoolsPanel`, and `enableDevtools`; production omits the inspector,
 snapshotting, and development tracking hooks. Do not load both bundles.
+For a strict Content Security Policy without `unsafe-eval`, serve
+`brio.csp.min.js` or `brio.csp.dev.min.js` instead (Brio 5.1+). They publish the
+same global and work with the same add-on scripts; see Trust and verification.
 
 ESM with a bundler:
 
@@ -51,6 +54,10 @@ import { observersPlugin } from '@jnreis/briojs/observers';
 // Development only; import before creating apps:
 import { devtoolsPanel } from '@jnreis/briojs/devtools';
 ```
+
+For a strict CSP, import `createApp` and the rest of the main API from
+`@jnreis/briojs/csp` instead of `@jnreis/briojs` (Brio 5.1+). Use one of the
+two in an app, never both.
 
 Keep devtools imports out of production application entry points. The npm main
 entry also exports these plugins and devtools. Main-entry
@@ -658,8 +665,37 @@ it is required by `b-html.hydrate`. Never bind untrusted HTML as executable
 templates. Use `b-text` for user content; returned values are always literal,
 including values returned by authored interpolation. Default `b-html` accepts
 strings or trusted values but does not activate Brio; it is not sanitized.
-Use trustedHTML('') to clear hydrated content. Strict CSP disallowing
-`unsafe-eval` is incompatible with runtime expression compilation.
+Use trustedHTML('') to clear hydrated content.
+
+Everything inside a mounted root is a template, including plain text. Server
+HTML escaping does not neutralize `${...}`, and browsers decode entities in
+directive attributes before Brio reads them. Wrap server-rendered user text in
+`<span b-ignore>`, never put server values inside directive expressions (pass
+them through `data-*` attributes and read `$el.dataset`), and pass values to
+`app.insert` through `options.data`. For pages that render lots of user text,
+`createApp({ textInterpolation: false })` (Brio 5.1+) leaves `${...}` literal in
+every text node the app hydrates; directive attributes still run, so use
+`b-text` for dynamic text.
+
+The standard runtime compiles expressions with `new Function`, so a policy
+without `unsafe-eval` needs the CSP build (Brio 5.1+: `@jnreis/briojs/csp`,
+`brio.csp.min.js`). In that build:
+- Only component templates registered from JavaScript activate. Page markup and
+  HTML from `app.insert`, `$insert`, and `b-html.hydrate` stay inert, except that
+  registered component tags mount with their static attributes as props
+  (coerced by declared `props`). Directives on those hosts are ignored; listen to
+  `$emit` events with `addEventListener`.
+- Component templates must be strings; `#id` selectors and `<template>` elements
+  throw. `b-script` throws; move that code into component `setup`.
+- Expressions support literals, template literals, `...` spread, property
+  access, calls, `?.`, operators, ternaries, property assignment, and `;`
+  statements in handlers. Arrow functions, `function`, `new`, `this`, `delete`,
+  the comma operator, and tagged templates are rejected; move that logic into
+  `setup` methods. Expressions read `$` names plus `Math`, `JSON`, `Number`,
+  `String`, `Boolean`, `Array`, `Date`, `parseInt`, `parseFloat`, `isNaN`,
+  `isFinite`, the URI encoding functions, `console`, `NaN`, and `Infinity`.
+- `constructor`, `prototype`, `__proto__`, and the legacy `__define*`/`__lookup*`
+  keys are blocked.
 
 Before shipping: test the actual rendered app and console errors, form value
 types, keyed updates and nested contexts, conditional reset versus preservation,

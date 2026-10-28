@@ -1,5 +1,5 @@
-import { e as enableDevtools } from "./devtools-CGDy_lc4.js";
-import { d, a, i } from "./devtools-CGDy_lc4.js";
+import { e as enableDevtools } from "./devtools-CzVQ0v4f.js";
+import { d, a, i } from "./devtools-CzVQ0v4f.js";
 enableDevtools();
 export {
   d as devtools,

@@ -100,7 +100,9 @@ const sources = [
     <h3>Integration &amp; accessibility</h3>
     <p>Components render on mount; provide fallback markup if content must be available without JavaScript.
       Keep templates trusted. Use Brio structural directives for component removal and
-      <code>app.dispose()</code> before removing the app. Expressions require CSP <code>unsafe-eval</code>.
+      <code>app.dispose()</code> before removing the app. With the standard bundle, expressions require CSP
+      <code>unsafe-eval</code>. The <a href="/reference/trusted-html-and-expression-security/#strict-csp-build">CSP build</a>
+      rejects <code>#id</code> templates, so pass the template markup as a string in the definition before using a Part there.
       See the <a href="/integrations/overview/">integration guide</a> for lifecycle and server boundaries.</p>
     <p>Test your final labels, contrast, zoom, touch, and screen-reader behavior.
       These recipes are not an accessibility certification.</p>

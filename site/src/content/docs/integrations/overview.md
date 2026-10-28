@@ -97,10 +97,13 @@ embed example content or application-specific persistence.
   [Server-rendered user content](/reference/trusted-html-and-expression-security/#server-rendered-user-content).
 - Preserve server authorization, validation, CSRF protection, and error responses.
   Brio does not replace any of them. The counter never sends data to the server.
-- Brio's runtime expressions require CSP `script-src` permission for `unsafe-eval`.
-  Externalizing bootstrap scripts avoids inline-script requirements, but does
-  **not** remove this expression requirement. If your policy prohibits it,
-  this runtime is not an appropriate fit without changing that policy.
+- The standard build's runtime expressions require CSP `script-src` permission
+  for `unsafe-eval`. Externalizing bootstrap scripts avoids inline-script
+  requirements, but does **not** remove this expression requirement. If your
+  policy prohibits it, use the
+  [CSP build](/reference/trusted-html-and-expression-security/#strict-csp-build)
+  (Brio 5.1+): it needs no `unsafe-eval`, and only component templates defined
+  in JavaScript activate.
 - Use an exact release or self-hosted build. Load core before add-ons; install
   npm plugins before mounting. None of these examples requires an add-on.
 

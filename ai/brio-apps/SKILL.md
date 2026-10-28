@@ -32,7 +32,9 @@ assistant's supported skill directory.
    in directives/scripts. Raw DOM removal does not dispose bindings.
 6. Handle async/loading/error states visibly. Treat authored templates as code;
    never interpolate untrusted HTML or directive expressions. Use `b-text` for
-   user content, and respect the runtime's CSP limitations.
+   user content and `b-ignore` around server-rendered user text. Under a
+   strict CSP without `unsafe-eval`, use the CSP build and register every
+   template from JavaScript.
 7. Run the consuming app's smallest relevant tests/build. Exercise actual DOM
    interactions, conditional reset/preservation, nested scopes, removal and
    unmount, plus direct URLs for an SPA. Report what was verified and any

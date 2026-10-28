@@ -14,11 +14,12 @@ import {
     ATTRIBUTES,
 } from './native';
 import { getChildNodes, removeAttribute } from '../dom/native';
-import { createExpressionScope } from './expression';
+import { createExpressionScope, ENGINE } from './expression';
+import type { ExpressionEngine } from './expression';
 import { hydrateRoot } from '../dom/mount';
 import { createInsert } from '../dom/insert';
 import { getNodeOwner } from '../dom/ownership';
-import { trustedHTML } from '../dom/types';
+import { trustedHTML, UNTRUSTED } from '../dom/types';
 import type { ComponentDefinition, DomRuntime } from '../dom/types';
 import { createScope, onCleanup } from './scope';
 import { state } from '../reactivity/state';
@@ -50,12 +51,23 @@ const activeMountRoots = new Set<Element>();
 const helperPattern = /^\$[A-Za-z_][\w]*$/;
 const reservedHelpers = '$data $el $emit $event $index $props $provided $ref $route $stores $value'.split(' ');
 
-export function createApp<
+/** How an app evaluates expressions, and whether it hydrates only templates defined in JavaScript. */
+export type AppMode = {
+    engine: ExpressionEngine;
+    untrusted?: DomRuntime['untrusted'];
+    /** Extra rules for component templates, run on every registration path. */
+    checkComponent?: (name: string, template: unknown) => void;
+};
+
+/** Builds an app in the given mode. The public `createApp` functions supply the mode for their build. */
+export function buildApp<
     T extends Record<string, unknown> = Record<string, unknown>,
     S extends StoreMap = StoreMap,
 >(
+    mode: AppMode,
     options: AppOptions<T, S> = {},
 ): BrioApp<T, S> {
+    const { engine, untrusted, checkComponent } = mode;
     const { textInterpolation = true } = options;
     if (!isBoolean(textInterpolation))
         throw createTypeError('createApp textInterpolation must be true or false.');
@@ -111,6 +123,7 @@ export function createApp<
         components,
         router: options.router,
         textInterpolation,
+        untrusted,
     };
 
     const app: BrioApp<T, S> = {
@@ -131,6 +144,7 @@ export function createApp<
             const template = definition.template;
             if (isString(template) ? !template.trim() : (template as Element)?.localName !== 'template')
                 throw createTypeError(`Component "${normalized}" requires a non-empty template string, "#id" selector, or <template> element.`);
+            checkComponent?.(normalized, template);
             for (const [prop, type] of objectEntries(definition.props ?? {}))
                 if (!includesItem([Boolean, Number, String], type))
                     throw createTypeError(`Component "${normalized}" prop "${prop}" must be declared as Boolean, Number, or String.`);
@@ -227,7 +241,8 @@ export function createApp<
             notifyRootMounted(app, root);
 
             const context = createExpressionScope(
-                { ...helpers, $data: createScopedState(appState), $stores: stores, $provided: emptyContextValues, $ref: createRefs(), $route: options.router?.route, trustedHTML, flush },
+                { ...helpers, $data: createScopedState(appState), $stores: stores, $provided: emptyContextValues, $ref: createRefs(), $route: options.router?.route, trustedHTML, flush,
+                    [ENGINE]: engine, ...untrusted ? { [UNTRUSTED]: true } : {} },
             );
             try {
                 scope.run(() => {

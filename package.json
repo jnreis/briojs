@@ -48,6 +48,10 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
+    "./csp": {
+      "types": "./dist/csp-entry.d.ts",
+      "import": "./dist/csp-entry.js"
+    },
     "./reactivity": {
       "types": "./dist/reactivity-entry.d.ts",
       "import": "./dist/reactivity.js"
@@ -104,6 +108,7 @@
     "site:preview": "astro preview --root site",
     "test:site": "playwright test --config tests/site/playwright.config.js",
     "test:playground": "playwright test --config tests/playground/playwright.config.js",
+    "test:csp": "playwright test --config tests/csp/playwright.config.js",
     "prepack": "npm run build",
     "size": "node scripts/size.js",
     "test": "npm run build && node --test \"tests/**/*.test.js\"",

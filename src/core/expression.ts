@@ -1,42 +1,38 @@
-import { isFunction, ObjectConstructor, createTypeError, createSyntaxError, deleteItem, getLength, includesItem } from './native';
+import { isFunction, ObjectConstructor, createError, createTypeError, createSyntaxError, getLength } from './native';
 import { directiveError, describeNode, mark } from './errors';
 import { untrack } from '../reactivity/effect';
 
 export type ExpressionScope = Record<PropertyKey, any>;
 
-const valueExpressions = new Map<string, Function>();
-const statementExpressions = new Map<string, Function>();
-const assignmentExpressions = new Map<string, Function>();
-const functionExpressions = new Map<string, Function>();
+export const $CONTEXT: '$context' = '$context';
 
-const $CONTEXT: '$context' = '$context';
+export const contextNames = ['$data', '$el', '$event', '$id', '$ref', '$for', '$mutations', '$size', '$entry', '$props', '$slot', '$emit', '$insert', '$stores', '$provided', '$route', 'trustedHTML', 'flush', 'onCleanup'];
 
-const contextNames = ['$data', '$el', '$event', '$id', '$ref', '$for', '$mutations', '$size', '$entry', '$props', '$slot', '$emit', '$insert', '$stores', '$provided', '$route', 'trustedHTML', 'flush', 'onCleanup'];
-
-// Only names that appear in the source are destructured, so each evaluation reads just what it uses.
-const contextBindings = (expression: string, extras: string[]): string => {
-    const names = contextNames.filter(name => new RegExp(`(?<![\\w$])${name.replace('$', '\\$')}(?![\\w$])`).test(expression)).concat(extras);
-    return `"use strict";${getLength(names) ? ` const { ${names.join(', ')} } = ${$CONTEXT};` : ''}\n`;
+export type CompiledExpression = ($context: ExpressionScope, $value?: unknown) => any;
+/**
+ * Turns expression source into callable functions. Each method may cache by source; `scope` is the context the
+ * expression will run in. `function` is optional: without it, `b-script` is unavailable.
+ */
+export type ExpressionEngine = {
+    value(source: string, scope: ExpressionScope): CompiledExpression;
+    statement(source: string, scope: ExpressionScope): CompiledExpression;
+    assign(source: string, scope: ExpressionScope): CompiledExpression;
+    function?(source: string, scope: ExpressionScope): CompiledExpression;
+    /** Set by the CSP build's interpreter, which treats page markup as untrusted. */
+    csp?: boolean;
 };
 
-const customNames = new Map<string, string[]>();
-// Other `$names` (app helpers, names added by plugin scope hooks) are bound only when the context has them,
-// so a misspelled name still throws a ReferenceError.
-const presentNames = (source: string, scope: ExpressionScope): string[] => {
-    let names = customNames.get(source);
-    if (!names) {
-        names = [...new Set(source.match(/(?<![\w$])\$[\w$]+/g))]
-            .filter(name => !includesItem(contextNames, name) && name !== $CONTEXT && name !== '$value');
-        if (customNames.size > 500) customNames.clear();
-        customNames.set(source, names);
-    }
-    return getLength(names) ? names.filter(name => name in scope) : names;
+/** The engine an app's contexts use; apps set it on their base context so every derived context inherits it. */
+export const ENGINE = Symbol('brio.engine');
+let defaultEngine: ExpressionEngine | undefined;
+/** Sets the engine for contexts that carry none, such as plain objects passed to `evaluate`. */
+export const setDefaultEngine = (engine: ExpressionEngine): void => {
+    defaultEngine = engine;
 };
+export const getDefaultEngine = (): ExpressionEngine | undefined => defaultEngine;
 
 export function evaluateFunction(source: string, context: ExpressionScope, node?: Node): ($context: ExpressionScope) => unknown {
-    const fn = compile(functionExpressions, source, (expression, bindings) =>
-        new Function($CONTEXT, `${bindings} return (${expression.replace(/;\s*$/, '')});`), context, 'b-script', node,
-    );
+    const fn = compile('function', source, context, 'b-script', node);
     const result = fn(context);
     if (!isFunction(result))
         throw createTypeError(`b-script must contain a function expression, such as (${$CONTEXT}) => { ... }.`);
@@ -58,29 +54,25 @@ export function createExpressionScope(...sources: ExpressionScope[]): Expression
 }
 
 const compile = (
-    cache: Map<string, Function>,
+    kind: Exclude<keyof ExpressionEngine, 'csp'>,
     source: string,
-    make: (source: string, bindings: string) => Function,
     scope: ExpressionScope,
     directive?: string,
     node?: Node,
-): Function => {
-    const extras = presentNames(source, scope);
-    const key = getLength(extras) ? `${source}\0${extras}` : source;
-    let fn = cache.get(key);
-    if (!fn) {
-        try {
-            fn = make(source, contextBindings(source, extras));
-        } catch (error) {
-            throw mark(createSyntaxError(
-                `Invalid Brio expression "${source}"${directive ? ` in ${directive}` : ''}${node ? ` on ${describeNode(node)}` : ''}: ${String(error)}`,
-            ), node, directive);
-        }
-        cache.set(key, fn);
-        if (cache.size > 500)
-            deleteItem(cache, cache.keys().next().value!);
+): CompiledExpression => {
+    const engine: ExpressionEngine | undefined = scope[ENGINE] ?? defaultEngine;
+    if (!engine) throw createError('No Brio expression engine is installed. Import createApp from @jnreis/briojs or @jnreis/briojs/csp.');
+    const make = engine[kind];
+    if (!make) throw mark(createError(
+        `${directive ?? 'This expression'} is not available in the Brio CSP build. Move the code into component setup.`,
+    ), node, directive);
+    try {
+        return make(source, scope);
+    } catch (error) {
+        throw mark(createSyntaxError(
+            `Invalid Brio expression "${source}"${directive ? ` in ${directive}` : ''}${node ? ` on ${describeNode(node)}` : ''}: ${String(error)}`,
+        ), node, directive);
     }
-    return fn;
 };
 
 const holds = (value: unknown, name: string): boolean =>
@@ -97,7 +89,9 @@ const referenceHint = (error: unknown, scope: ExpressionScope): string => {
             for (const owner of ['$props', '$data'])
                 if (holds(scope[owner], name)) return `. Use ${owner}.${name}.`;
         } catch {}
-        return '';
+        // An engine may explain which names exist (the CSP build lists its globals).
+        const hint = (error as { hint?: string }).hint;
+        return hint ? `. ${hint}` : '';
     });
 };
 
@@ -106,9 +100,7 @@ const referenceHint = (error: unknown, scope: ExpressionScope): string => {
  * `Brio expression failed: "…" in b-bind-href on <a.nav>: TypeError: …`. The node defaults to `$el`.
  */
 export function evaluate(source: string, scope: ExpressionScope, directive?: string, node: Node = scope.$el): any {
-    const fn = compile(valueExpressions, source, (expression, bindings) =>
-        new Function($CONTEXT, `${bindings} return (${expression});`), scope, directive, node,
-    );
+    const fn = compile('value', source, scope, directive, node);
     try {
         return fn(scope);
     } catch (error) {
@@ -117,9 +109,7 @@ export function evaluate(source: string, scope: ExpressionScope, directive?: str
 }
 
 export function execute(source: string, scope: ExpressionScope, event?: Event, directive?: string, node: Node = scope.$el): void {
-    const fn = compile(statementExpressions, source, (expression, bindings) =>
-        new Function($CONTEXT, `${bindings} ${expression}`), scope, directive, node,
-    );
+    const fn = compile('statement', source, scope, directive, node);
     try {
         fn(event === undefined ? scope : createExpressionScope({ $event: event }, scope));
     } catch (error) {
@@ -128,9 +118,7 @@ export function execute(source: string, scope: ExpressionScope, event?: Event, d
 }
 
 export function assign(source: string, scope: ExpressionScope, value: unknown, directive?: string, node: Node = scope.$el): void {
-    const fn = compile(assignmentExpressions, source, (expression, bindings) =>
-        new Function($CONTEXT, '$value', `${bindings} return (${expression} = $value);`), scope, directive, node,
-    );
+    const fn = compile('assign', source, scope, directive, node);
     try {
         fn(scope, value);
     } catch (error) {

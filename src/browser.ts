@@ -1,5 +1,8 @@
 import { ObjectConstructor } from './core/native';
-import brio from './browser-api';
+import { createApp } from './core/create-app';
+import { createBrowserApi } from './browser-api';
+
+const brio = createBrowserApi(createApp);
 
 if (typeof window !== 'undefined') {
     ObjectConstructor.assign(window, { brio });

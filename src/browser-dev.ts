@@ -1,7 +1,9 @@
 import { ObjectConstructor } from './core/native';
-import api from './browser-api';
+import { createApp } from './core/create-app';
+import { createBrowserApi } from './browser-api';
 import { devtools, inspectDevtools, devtoolsPanel, enableDevtools } from './devtools-entry';
 
+const api = createBrowserApi(createApp);
 const brio: typeof api & Record<string, unknown> = {
     ...api, devtools, inspectDevtools, devtoolsPanel, enableDevtools,
     use(plugin) {

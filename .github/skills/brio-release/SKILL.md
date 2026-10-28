@@ -41,6 +41,7 @@ npm run build && npm run typecheck && node --test 'tests/**/*.test.js'
 npm run site:build && node site/scripts/check.mjs && npm run test:site
 npm run test:playground
 npm run test:astro
+npm run test:csp
 npm run size -- --check
 npm run bench:check
 ```

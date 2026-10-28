@@ -56,15 +56,15 @@ export {
   isString as j,
   isArray as k,
   ownKeys as l,
-  createSyntaxError as m,
-  includesItem as n,
+  includesItem as m,
+  createSyntaxError as n,
   objectEntries as o,
   objectKeys as p,
   isBrioError as q,
   removeElement as r,
-  startsWith as s,
-  isBoolean as t,
-  TEMPLATE as u,
-  snapshotList as v
+  snapshotList as s,
+  startsWith as t,
+  isBoolean as u,
+  TEMPLATE as v
 };
-//# sourceMappingURL=native-C6Z9zuZA.js.map
+//# sourceMappingURL=native-BneND9DN.js.map

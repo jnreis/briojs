@@ -115,8 +115,10 @@ app.dispose();  // Clean up all mounts and permanently close this app.
 ## Know the boundaries
 
 Templates are trusted application code, not a sandbox. Runtime expressions need
-a CSP that permits `unsafe-eval`. Use `b-text` for user-provided text; `b-html`
-does not sanitize HTML.
+a CSP that permits `unsafe-eval`, unless you use the
+[CSP build](/reference/trusted-html-and-expression-security/#strict-csp-build)
+(Brio 5.1+). Use `b-text` for user-provided text; `b-html` does not sanitize
+HTML.
 
 Read [installation](/reference/install/), explore
 [directives](/reference/html-directives/), or try the [example gallery](/examples/).

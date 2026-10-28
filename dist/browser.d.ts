@@ -1,2 +1,20 @@
-import { default as brio } from './browser-api.js';
+import { createApp } from './core/create-app.js';
+declare const brio: {
+    createApp: typeof createApp;
+    state: typeof import('./exports.js').state;
+    signal: typeof import('./exports.js').signal;
+    computed: typeof import('./exports.js').computed;
+    effect: typeof import('./exports.js').effect;
+    batch: typeof import('./exports.js').batch;
+    flush: () => void;
+    untrack: typeof import('./exports.js').untrack;
+    resource: typeof import('./exports.js').resource;
+    createScope: typeof import('./exports.js').createScope;
+    onCleanup: typeof import('./exports.js').onCleanup;
+    getCurrentScope: typeof import('./exports.js').getCurrentScope;
+    trustedHTML: typeof import('./exports.js').trustedHTML;
+    defineDirective: <D extends import('./exports.js').DirectiveDefinition>(definition: D) => D;
+    definePlugin: <P extends import('./exports.js').BrioPluginObject>(plugin: P) => P;
+    use(plugin: import('./exports.js').BrioPlugin): /*elided*/ any;
+};
 export default brio;

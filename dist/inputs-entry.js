@@ -1,6 +1,6 @@
-import { h as isInstanceOf, c as createTypeError, j as isString, i as isFunction, g as getLength, m as createSyntaxError, e as isObjectType, R as ReflectApi, f as isNumber, k as isArray, n as includesItem, o as objectEntries, p as objectKeys, a as arrayFrom, s as startsWith } from "./native-C6Z9zuZA.js";
-import { d as getOwnerDocument } from "./native-D9adRJpp.js";
-import { s as state } from "./state-D6RTXn8X.js";
+import { h as isInstanceOf, c as createTypeError, j as isString, i as isFunction, g as getLength, n as createSyntaxError, e as isObjectType, R as ReflectApi, f as isNumber, k as isArray, m as includesItem, o as objectEntries, p as objectKeys, a as arrayFrom, t as startsWith } from "./native-BneND9DN.js";
+import { d as getOwnerDocument } from "./native-B0OLxTjP.js";
+import { s as state } from "./state-1Xtmucgt.js";
 function compilePattern(pattern) {
   const parts = [];
   const characters = [...pattern];

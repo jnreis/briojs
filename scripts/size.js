@@ -11,7 +11,7 @@ const dist = resolve(root, 'dist');
 const require = createRequire(import.meta.url);
 const viteRequire = createRequire(require.resolve('vite'));
 const entries = {
-    main: 'index.js', reactivity: 'reactivity.js', router: 'router-entry.js',
+    main: 'index.js', csp: 'csp-entry.js', reactivity: 'reactivity.js', router: 'router-entry.js',
     persistence: 'persistence-entry.js', http: 'http-entry.js',
     inputs: 'inputs-entry.js', observers: 'observers-entry.js', step: 'step-entry.js',
     astro: 'astro-entry.js', devtools: 'devtools-entry.js',
@@ -90,7 +90,7 @@ export async function consumerSize(imports) {
 }
 
 export async function measure() {
-    const browserNames = ['brio.min.js', 'brio.dev.min.js',
+    const browserNames = ['brio.min.js', 'brio.dev.min.js', 'brio.csp.min.js', 'brio.csp.dev.min.js',
         ...['router', 'persistence', 'http', 'inputs', 'observers', 'step']
             .map(plugin => `brio.${plugin}.min.js`)];
     const browser = Object.fromEntries(browserNames.map(name => [name, bytes(readFileSync(resolve(dist, name)))]));
@@ -104,6 +104,7 @@ export async function measure() {
 
     const scenarios = {
         'app-main': [['main', ['createApp']]],
+        'app-csp': [['csp', ['createApp']]],
         'signal-main': [['main', ['signal', 'effect']]],
         'signal-subpath': [['reactivity', ['signal', 'effect']]],
         'resource-main': [['main', ['resource']]],

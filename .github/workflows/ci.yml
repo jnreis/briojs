@@ -54,6 +54,7 @@ jobs:
       - run: pnpm exec playwright install chromium
       - run: pnpm run build
       - run: pnpm run test:playground
+      - run: pnpm run test:csp
       - run: pnpm run test:astro
       - uses: actions/upload-artifact@v7
         if: failure()

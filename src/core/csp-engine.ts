@@ -44,7 +44,7 @@ const globals = table<unknown>({
 const statement = 'statements are not supported';
 const unsupported = table<string>({
     '=>': 'Arrow functions are not supported', new: '"new" is not supported', function: 'Functions are not supported',
-    class: 'Classes are not supported', this: '"this" is not supported', '...': 'Spread syntax is not supported',
+    class: 'Classes are not supported', this: '"this" is not supported',
     delete: '"delete" is not supported', await: '"await" is not supported', yield: '"yield" is not supported',
     import: '"import" is not supported', var: `Declarations are not supported`, let: 'Declarations are not supported',
     const: 'Declarations are not supported', if: `"if" ${statement}`, for: 'Loops are not supported',
@@ -73,7 +73,9 @@ const lookup = (scope: ExpressionScope, name: string): unknown => {
     } else if (name in globals) {
         return globals[name];
     }
-    throw new ReferenceError(`${name} is not defined`);
+    throw ObjectConstructor.assign(new ReferenceError(`${name} is not defined`), {
+        hint: `Brio CSP expressions only read $ names (such as $data and $props) and these globals: ${ObjectConstructor.keys(globals).join(', ')}.`,
+    });
 };
 
 const call = (fn: unknown, self: unknown, args: unknown[], label: string): unknown => {
@@ -109,8 +111,8 @@ function parse(source: string, mode: 'value' | 'statement' | 'assign'): Compiled
     let position = 0;
     let token = { type: 'end', value: '', start: 0 } as Token;
 
-    const fail = (message: string, at = token?.start ?? position): never => {
-        throw new SyntaxError(`${message} at position ${at}`);
+    const fail = (message: string, at = token?.start ?? position, advice = ''): never => {
+        throw new SyntaxError(`${message} (at position ${at})${advice}`);
     };
     const space = () => {
         while (position < source.length) {
@@ -191,7 +193,7 @@ function parse(source: string, mode: 'value' | 'statement' | 'assign'): Compiled
     const unexpected = (): never => {
         const reason = unsupported[token.value];
         if (reason && (token.type === 'name' || token.type === 'punct'))
-            fail(`${reason} in the Brio CSP build; move this logic into component setup`);
+            fail(`${reason} in the Brio CSP build`, undefined, '; move this logic into component setup.');
         return fail(token.type === 'end' ? 'Unexpected end of expression' : `Unexpected token "${token.value}"`);
     };
 
@@ -222,15 +224,26 @@ function parse(source: string, mode: 'value' | 'statement' | 'assign'): Compiled
         };
     };
 
-    const args = (): Get[] => {
-        const list: Get[] = [];
-        while (!is(')')) {
-            list.push(assign().get);
-            if (!is(')')) expect(',');
+    // Array items and call arguments; `...` spreads any iterable in place.
+    const items = (close: string): ((scope: ExpressionScope) => unknown[]) => {
+        const parts: [Get, boolean][] = [];
+        while (!is(close)) {
+            const spread = is('...');
+            if (spread) next();
+            parts.push([assign().get, spread]);
+            if (!is(close)) expect(',');
         }
         next();
-        return list;
+        return scope => {
+            const list: unknown[] = [];
+            for (const [get, spread] of parts) {
+                if (!spread) list.push(get(scope));
+                else for (const item of get(scope) as Iterable<unknown>) list.push(item);
+            }
+            return list;
+        };
     };
+    const args = () => items(')');
 
     const primary = (): Ref => {
         const current = token;
@@ -253,18 +266,19 @@ function parse(source: string, mode: 'value' | 'statement' | 'assign'): Compiled
         }
         if (is('[')) {
             next();
-            const items: Get[] = [];
-            while (!is(']')) {
-                items.push(assign().get);
-                if (!is(']')) expect(',');
-            }
-            next();
-            return { get: scope => items.map(item => item(scope)) };
+            return { get: items(']') };
         }
         if (is('{')) {
             next();
-            const entries: [Get, Get][] = [];
+            // A null key marks a spread entry.
+            const entries: [Get | null, Get][] = [];
             while (!is('}')) {
+                if (is('...')) {
+                    next();
+                    entries.push([null, assign().get]);
+                    if (!is('}')) expect(',');
+                    continue;
+                }
                 let key: Get;
                 let value: Get | undefined;
                 const keyToken = token;
@@ -291,9 +305,16 @@ function parse(source: string, mode: 'value' | 'statement' | 'assign'): Compiled
                 get: scope => {
                     const object: Record<PropertyKey, unknown> = {};
                     // defineProperty, so a "__proto__" key is an own property rather than the prototype.
-                    for (const [key, value] of entries)
-                        ObjectConstructor.defineProperty(object, keyOf(key(scope)),
-                            { value: value(scope), enumerable: true, configurable: true, writable: true });
+                    const define = (name: PropertyKey, value: unknown) => ObjectConstructor.defineProperty(object, name,
+                        { value, enumerable: true, configurable: true, writable: true });
+                    for (const [key, value] of entries) {
+                        if (key) define(keyOf(key(scope)), value(scope));
+                        else {
+                            // Native spread copies own enumerable data, never the prototype.
+                            const copy = { ...value(scope) as object };
+                            for (const name of Reflect.ownKeys(copy)) define(name, copy[name as keyof typeof copy]);
+                        }
+                    }
                     return object;
                 },
             };
@@ -312,7 +333,7 @@ function parse(source: string, mode: 'value' | 'statement' | 'assign'): Compiled
     };
 
     // Calls read the base once: it is both the function's owner and `this`.
-    const invoke = (callee: Ref, list: Get[], optionalCall: boolean): Ref => ({
+    const invoke = (callee: Ref, list: (scope: ExpressionScope) => unknown[], optionalCall: boolean): Ref => ({
         get: scope => {
             let fn: unknown;
             let self: unknown;
@@ -328,7 +349,7 @@ function parse(source: string, mode: 'value' | 'statement' | 'assign'): Compiled
                 if (fn === SHORT) return SHORT;
             }
             if (optionalCall && (fn === null || fn === undefined)) return SHORT;
-            return call(fn, self, list.map(arg => arg(scope)), label);
+            return call(fn, self, list(scope), label);
         },
     });
 

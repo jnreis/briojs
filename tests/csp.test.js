@@ -59,6 +59,15 @@ test('CSP expressions cover the practical grammar', () => {
     for (const [source, expected] of cases) assert.equal(evaluate(source, scope), expected, source);
     assert.deepEqual(evaluate('{ a: 1, [`k${1}`]: 2, count: $data.count }', scope), { a: 1, k1: 2, count: 2 });
     assert.deepEqual(evaluate('[1, [2], $data.count]', scope), [1, [2], 2]);
+    assert.deepEqual(evaluate('[0, ...$data.items, ..."ab", ...[]]', scope), [0, 1, 2, 3, 'a', 'b']);
+    assert.equal(evaluate('Math.max(...$data.items, 0)', scope), 3);
+    assert.equal(evaluate('$data.greet(...["Di"])', scope), 'Ann greets Di');
+    assert.deepEqual(evaluate('{ a: 1, ...$data.user, ...null, a: 2 }', scope), { a: 2, name: 'Ann' });
+    const copied = evaluate('{ ...JSON.parse(\'{"__proto__": {"polluted": true}}\') }', scope);
+    assert.equal(Object.getPrototypeOf(copied), Object.prototype, 'spread copies "__proto__" as an own key');
+    assert.equal(copied.polluted, undefined);
+    assert.equal(({}).polluted, undefined);
+    assert.throws(() => evaluate('[...$data.count]', scope), /not iterable|iterator/);
     assert.equal(evaluate('$data.missing', scope), undefined);
     assert.equal(evaluate('$event', scope), undefined, 'context names are optional');
 
@@ -80,20 +89,23 @@ test('CSP expressions refuse eval gadgets, globals, and unsupported syntax with 
         ['$data["__proto__"]', /cannot access "__proto__"/],
         ['$data.items["const" + "ructor"]', /cannot access "constructor"/],
         ['$data.fn.prototype', /cannot access "prototype"/],
-        ['window', /window is not defined/],
+        ['window', /window is not defined\. Brio CSP expressions only read \$ names \(such as \$data and \$props\) and these globals: Math, JSON, /],
         ['globalThis', /globalThis is not defined/],
         ['Function', /Function is not defined/],
         ['fetch("/x")', /fetch is not defined/],
-        ['x => x', /Arrow functions are not supported in the Brio CSP build/],
+        ['x => x', /Arrow functions are not supported in the Brio CSP build \(at position 2\); move this logic into component setup\.$/],
         ['new Date()', /"new" is not supported/],
         ['this', /"this" is not supported/],
-        ['[...$data.items]', /Spread syntax is not supported/],
         ['$data.a, $data.b', /comma operator is not supported/],
         ['$data.fn`x`', /Tagged templates are not supported/],
     ]) assert.throws(() => evaluate(source, scope), message, source);
     assert.throws(() => execute('count = 1', scope), /Cannot assign to "count"/);
     assert.throws(() => execute('if ($data.x) $data.y = 1', scope), /"if" statements are not supported/);
     assert.throws(() => evaluate('$data.fn.bind.constructor', scope), /cannot access "constructor"/);
+    assert.throws(() => evaluate('$data.items.map(item => item)', scope), /Arrow functions .* \(at position 21\)/);
+    assert.throws(() => evaluate('[...$data.items', scope), /Unexpected end of expression \(at position 15\)$/);
+    assert.throws(() => evaluate('$data ...$data', scope), /Unexpected token "\.\.\."/);
+    assert.throws(() => evaluate('items', scope), /items is not defined\. Use \$data\.items\.$/, 'a specific hint wins');
 });
 
 function cspWindow(t, html, { bundle = cspBundle, addons = [] } = {}) {

@@ -315,7 +315,7 @@ test('every manual example page loads the source viewer before bootstrap', () =>
             pages++;
         }
     }
-    assert.equal(pages, 33);
+    assert.equal(pages, 34);
 });
 
 test('source panels preserve authored directives, literal interpolation and template content without hydrating it', async t => {

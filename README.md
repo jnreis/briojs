@@ -103,9 +103,10 @@ Save this as an HTML file and serve it from any static server:
 </html>
 ```
 
-Use `brio.dev.min.js` during development for the live inspector. Load optional
-add-on scripts after core and before your own code, and keep their versions
-aligned.
+Use `brio.dev.min.js` during development for the live inspector. Pages with a
+strict Content Security Policy load `brio.csp.min.js` instead; see the
+[CSP build](./DOCUMENTATION.md#strict-csp-build). Load optional add-on scripts
+after core and before your own code, and keep their versions aligned.
 
 </details>
 

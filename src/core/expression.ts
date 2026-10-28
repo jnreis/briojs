@@ -89,7 +89,9 @@ const referenceHint = (error: unknown, scope: ExpressionScope): string => {
             for (const owner of ['$props', '$data'])
                 if (holds(scope[owner], name)) return `. Use ${owner}.${name}.`;
         } catch {}
-        return '';
+        // An engine may explain which names exist (the CSP build lists its globals).
+        const hint = (error as { hint?: string }).hint;
+        return hint ? `. ${hint}` : '';
     });
 };
 

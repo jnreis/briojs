@@ -51,7 +51,8 @@ const referenceHint = (error, scope) => {
         if (holds(scope[owner], name)) return `. Use ${owner}.${name}.`;
     } catch {
     }
-    return "";
+    const hint = error.hint;
+    return hint ? `. ${hint}` : "";
   });
 };
 function evaluate(source, scope, directive, node = scope.$el) {
@@ -147,4 +148,4 @@ export {
   createProvidedValues as j,
   setDefaultEngine as s
 };
-//# sourceMappingURL=context-values-Burp5FXv.js.map
+//# sourceMappingURL=context-values-CoRP6uMm.js.map

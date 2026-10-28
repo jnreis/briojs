@@ -1,8 +1,8 @@
-import { g as getNodeOwner, e as elementContext, c as componentNamePattern, m as mountComponent, a as hydrateNode, d as extractModifiers, f as findPluginDirective, i as createBinding, k as keepCleanup, r as runHook, j as hydrateChildren, b as buildApp } from "./app-BJAG0TST.js";
-import { h, t } from "./app-BJAG0TST.js";
+import { g as getNodeOwner, e as elementContext, c as componentNamePattern, m as mountComponent, a as hydrateNode, d as extractModifiers, f as findPluginDirective, i as createBinding, k as keepCleanup, r as runHook, j as hydrateChildren, b as buildApp } from "./app-BldFX_hn.js";
+import { h, t } from "./app-BldFX_hn.js";
 import { O as ObjectConstructor, d as deleteItem, m as includesItem, i as isFunction, s as snapshotList, A as ATTRIBUTES, g as getLength, j as isString, c as createTypeError } from "./native-BneND9DN.js";
-import { $ as $CONTEXT, h as contextNames, s as setDefaultEngine } from "./context-values-Burp5FXv.js";
-import { d, c, a, e, b } from "./context-values-Burp5FXv.js";
+import { $ as $CONTEXT, h as contextNames, s as setDefaultEngine } from "./context-values-CoRP6uMm.js";
+import { d, c, a, e, b } from "./context-values-CoRP6uMm.js";
 import { b as removeAttribute } from "./native-B0OLxTjP.js";
 import { c as c2, d as d2, a as a2 } from "./router-entry-DxvtTMsd.js";
 import { a as a3, b as b2, l, v, c as c3, k, n, e as e2, j, f, h as h2, t as t2, p, m, g, o, r, d as d3, i, s, q, u } from "./effect-BL1g_AaG.js";
@@ -57,7 +57,6 @@ const unsupported = table({
   function: "Functions are not supported",
   class: "Classes are not supported",
   this: '"this" is not supported',
-  "...": "Spread syntax is not supported",
   delete: '"delete" is not supported',
   await: '"await" is not supported',
   yield: '"yield" is not supported',
@@ -93,7 +92,9 @@ const lookup = (scope, name) => {
   } else if (name in globals) {
     return globals[name];
   }
-  throw new ReferenceError(`${name} is not defined`);
+  throw ObjectConstructor.assign(new ReferenceError(`${name} is not defined`), {
+    hint: `Brio CSP expressions only read $ names (such as $data and $props) and these globals: ${ObjectConstructor.keys(globals).join(", ")}.`
+  });
 };
 const call = (fn, self, args, label) => {
   if (!isFunction(fn)) throw new TypeError(`${label} is not a function`);
@@ -212,8 +213,8 @@ const escapes = table({ n: "\n", r: "\r", t: "	", b: "\b", f: "\f", v: "\v", 0: 
 function parse(source, mode) {
   let position = 0;
   let token = { type: "end", value: "", start: 0 };
-  const fail = (message, at = (token == null ? void 0 : token.start) ?? position) => {
-    throw new SyntaxError(`${message} at position ${at}`);
+  const fail = (message, at = (token == null ? void 0 : token.start) ?? position, advice = "") => {
+    throw new SyntaxError(`${message} (at position ${at})${advice}`);
   };
   const space = () => {
     while (position < source.length) {
@@ -292,7 +293,7 @@ function parse(source, mode) {
   const unexpected = () => {
     const reason = unsupported[token.value];
     if (reason && (token.type === "name" || token.type === "punct"))
-      fail(`${reason} in the Brio CSP build; move this logic into component setup`);
+      fail(`${reason} in the Brio CSP build`, void 0, "; move this logic into component setup.");
     return fail(token.type === "end" ? "Unexpected end of expression" : `Unexpected token "${token.value}"`);
   };
   const template = () => {
@@ -320,15 +321,25 @@ function parse(source, mode) {
       return result;
     };
   };
-  const args = () => {
-    const list = [];
-    while (!is(")")) {
-      list.push(assign().get);
-      if (!is(")")) expect(",");
+  const items = (close) => {
+    const parts = [];
+    while (!is(close)) {
+      const spread = is("...");
+      if (spread) next();
+      parts.push([assign().get, spread]);
+      if (!is(close)) expect(",");
     }
     next();
-    return list;
+    return (scope) => {
+      const list = [];
+      for (const [get, spread] of parts) {
+        if (!spread) list.push(get(scope));
+        else for (const item of get(scope)) list.push(item);
+      }
+      return list;
+    };
   };
+  const args = () => items(")");
   const primary = () => {
     const current = token;
     if (current.type === "number") {
@@ -350,18 +361,18 @@ function parse(source, mode) {
     }
     if (is("[")) {
       next();
-      const items = [];
-      while (!is("]")) {
-        items.push(assign().get);
-        if (!is("]")) expect(",");
-      }
-      next();
-      return { get: (scope) => items.map((item) => item(scope)) };
+      return { get: items("]") };
     }
     if (is("{")) {
       next();
       const entries = [];
       while (!is("}")) {
+        if (is("...")) {
+          next();
+          entries.push([null, assign().get]);
+          if (!is("}")) expect(",");
+          continue;
+        }
         let key;
         let value;
         const keyToken = token;
@@ -387,12 +398,18 @@ function parse(source, mode) {
       return {
         get: (scope) => {
           const object = {};
-          for (const [key, value] of entries)
-            ObjectConstructor.defineProperty(
-              object,
-              keyOf(key(scope)),
-              { value: value(scope), enumerable: true, configurable: true, writable: true }
-            );
+          const define = (name, value) => ObjectConstructor.defineProperty(
+            object,
+            name,
+            { value, enumerable: true, configurable: true, writable: true }
+          );
+          for (const [key, value] of entries) {
+            if (key) define(keyOf(key(scope)), value(scope));
+            else {
+              const copy = { ...value(scope) };
+              for (const name of Reflect.ownKeys(copy)) define(name, copy[name]);
+            }
+          }
           return object;
         }
       };
@@ -425,7 +442,7 @@ function parse(source, mode) {
         if (fn === SHORT) return SHORT;
       }
       if (optionalCall && (fn === null || fn === void 0)) return SHORT;
-      return call(fn, self, list.map((arg) => arg(scope)), label);
+      return call(fn, self, list(scope), label);
     }
   });
   const member = (object, key, optional) => ({

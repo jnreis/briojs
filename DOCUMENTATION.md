@@ -207,10 +207,10 @@ to your public assets.
 The `/dist/` URLs below assume you serve them at that path. Pin core and plugins
 to the same version; load the scripts before mounting your app.
 
-Both expose `window.brio` with `createApp`, `state`, `signal`, `computed`,
+Every bundle exposes `window.brio` with `createApp`, `state`, `signal`, `computed`,
 `effect`, `batch`, `flush`, `untrack`, `resource`, `createScope`, `onCleanup`,
-`getCurrentScope`, `trustedHTML`, `defineDirective`, `definePlugin`, and `use`. Both dispatch the
-`brio` ready event after publishing the core API.
+`getCurrentScope`, `trustedHTML`, `defineDirective`, `definePlugin`, and `use`, and
+dispatches the `brio` ready event after publishing the core API.
 
 #### Add only the add-ons you use
 
@@ -2831,8 +2831,8 @@ The interpreter covers the expressions templates normally need:
 
 | Supported | Not supported |
 | --- | --- |
-| Literals: numbers, strings, template literals, arrays, objects (with computed keys and shorthand) | Arrow functions and `function` |
-| Property access, calls, optional chaining (`?.`) | `new`, `this`, `delete`, spread (`...`) |
+| Literals: numbers, strings, template literals, arrays, objects (with computed keys, shorthand, and `...` spread) | Arrow functions and `function` |
+| Property access, calls (with `...` spread arguments), optional chaining (`?.`) | `new`, `this`, `delete` |
 | Arithmetic, comparison, logical, `??`, `typeof`, `in`, `instanceof`, ternary | Comma operator and tagged templates |
 | Assignment to properties: `=`, `+=`, `??=`, `++`, and the rest | Declarations, `if`, loops, `return`, `try` |
 | Several statements separated by `;` in event handlers | Plain variables other than the names below |

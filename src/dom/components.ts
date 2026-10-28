@@ -24,6 +24,7 @@ import { createScopedState } from '../core/scoped-state';
 import { batch, effect, untrack } from '../reactivity/effect';
 import { createScope, onCleanup } from '../core/scope';
 import type { ComponentDefinition, DomRuntime } from './types';
+import { UNTRUSTED } from './types';
 import { getNodeOwner, ownNode, withHydration } from './ownership';
 import { emptyContextValues } from '../core/context-values';
 import { createRefs } from './refs';
@@ -168,6 +169,8 @@ export function mountComponent(
     context: Record<PropertyKey, any>,
     runtime: DomRuntime,
     hydrateNodeFn: (node: Node, context: Record<PropertyKey, any>, runtime: DomRuntime) => void,
+    /** CSP build page markup: `b-*` host attributes are ignored and only static attributes become props. */
+    pageHost = false,
 ): void {
     const propsObject: Record<string, unknown> = Object.create(null);
     const declared = definition.props ?? {};
@@ -179,7 +182,7 @@ export function mountComponent(
         propsObject[name] = type === Boolean ? value !== 'false' : type === Number ? Number(value) : value;
     }
     const attributes = arrayFrom(element[ATTRIBUTES]);
-    const propBindings = attributes
+    const propBindings = pageHost ? [] : attributes
         .filter(attribute => startsWith(attribute.name, 'b-prop-'))
         .map(attribute => {
             const raw = attribute.name.slice(getLength('b-prop-'));
@@ -204,9 +207,9 @@ export function mountComponent(
     };
 
     componentScope.run(() => {
-        const options = collectOptions(element);
+        const options = pageHost ? new Map() as ReturnType<typeof collectOptions> : collectOptions(element);
         const names: string[] = [];
-        for (const attribute of arrayFrom(element[ATTRIBUTES])) {
+        if (!pageHost) for (const attribute of arrayFrom(element[ATTRIBUTES])) {
             const { baseName, modifiers } = extractModifiers(attribute.name);
             if (modifiers.options) continue;
             names.push(baseName);
@@ -227,7 +230,7 @@ export function mountComponent(
                 throw createSyntaxError('b-props does not support modifiers.');
             }
         }
-        checkOptionsUsed(options, names);
+        if (!pageHost) checkOptionsUsed(options, names);
 
         // Evaluate inputs separately, then compose once so attribute/effect order cannot change precedence.
         const named = state<Record<string, unknown>>(Object.fromEntries(propBindings.map(binding => [binding.name, undefined])));
@@ -236,7 +239,7 @@ export function mountComponent(
                 named[binding.name] = evaluate(binding.expression, context, binding.directive, element);
             });
         }
-        const spreadSource = getAttribute(element, 'b-props');
+        const spreadSource = pageHost ? null : getAttribute(element, 'b-props');
         effect(() => {
             const next = { ...propsObject, ...named };
             if (spreadSource !== null) {
@@ -268,7 +271,7 @@ export function mountComponent(
             slotNodes.set(name, nodes);
         }
         const componentContext = createExpressionScope(
-            { $data: local, $el: element, $props, $emit, $ref,
+            { $data: local, $el: element, $props, $emit, $ref, [UNTRUSTED]: false,
                 [slotSources]: { nodes: slotNodes, context } satisfies SlotSources },
             context,
         );

@@ -136,10 +136,13 @@ and observers moved to opt-in add-ons. See the
 that need interactive regions, widgets inside larger apps, and small-to-medium
 SPAs written as plain HTML and JavaScript.
 
-**Not a fit:** framework-provided server rendering, older browsers, or a strict
-CSP without `unsafe-eval`. Runtime expressions are trusted code compiled with
-`new Function`, not a sandbox. Use `b-text` for user content; `b-html` does not
-sanitize. See [expression security](./DOCUMENTATION.md#trusted-html-and-expression-security).
+**Not a fit:** framework-provided server rendering or older browsers.
+Runtime expressions are trusted code compiled with `new Function`, not a
+sandbox. For a strict CSP without `unsafe-eval`, Brio 5.1+ ships a separate
+[CSP build](./DOCUMENTATION.md#strict-csp-build) that interprets expressions
+and activates only templates defined in JavaScript. Use `b-text` for user
+content; `b-html` does not sanitize. See
+[expression security](./DOCUMENTATION.md#trusted-html-and-expression-security).
 
 ## Learn more
 

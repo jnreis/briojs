@@ -1,7 +1,7 @@
-import { i as isFunction, c as createTypeError, O as ObjectConstructor, b as createError, o as objectEntries, d as deleteItem, g as getLength, e as isObjectType, a as arrayFrom, f as isNumber, h as isInstanceOf } from "./native-C6Z9zuZA.js";
-import { a as addEventListener, r as removeEventListener, g as getAttribute } from "./native-D9adRJpp.js";
-import { f as copyContextValues, a as evaluate } from "./context-values-CwL8HLy9.js";
-import { v as combinedError } from "./effect-alBOOBUf.js";
+import { i as isFunction, c as createTypeError, O as ObjectConstructor, b as createError, o as objectEntries, d as deleteItem, g as getLength, e as isObjectType, a as arrayFrom, f as isNumber, h as isInstanceOf } from "./native-BneND9DN.js";
+import { a as addEventListener, r as removeEventListener, g as getAttribute } from "./native-B0OLxTjP.js";
+import { f as copyContextValues, a as evaluate, g as getDefaultEngine } from "./context-values-Burp5FXv.js";
+import { v as combinedError } from "./effect-BL1g_AaG.js";
 const lazyMarker = Symbol("brio.astro.lazy");
 function lazyApp(load) {
   if (!isFunction(load)) throw createTypeError("lazyApp requires a module loader.");
@@ -72,7 +72,7 @@ function enhanceAstro(options) {
     if (!disposed && island.active) report(error, island.root);
   };
   const discover = () => {
-    var _a;
+    var _a, _b;
     if (disposed) return;
     for (const island of islands.values()) {
       if (!doc.contains(island.root)) {
@@ -96,7 +96,8 @@ function enhanceAstro(options) {
           throw createError(`Unknown Brio Astro app "${name}".`);
         const source = getAttribute(root, "b-app-props");
         const props = ObjectConstructor.freeze(copyContextValues(
-          source === null ? {} : evaluate(source, { $el: root }),
+          // The CSP build reads these page-markup props without $el, so they can only build values.
+          source === null ? {} : evaluate(source, ((_b = getDefaultEngine()) == null ? void 0 : _b.csp) ? {} : { $el: root }),
           "b-app-props"
         ));
         const entry = apps[name];

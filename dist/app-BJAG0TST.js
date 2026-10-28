@@ -1,11 +1,22 @@
 var __defProp = Object.defineProperty;
 var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
 var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "symbol" ? key + "" : key, value);
-import { R as ReflectApi, $ as $PARENT, c as createTypeError, n as includesItem, d as deleteItem, b as createError, g as getLength, T as TELEPORT, a as arrayFrom, l as ownKeys, G as GET_OWN_PROPERTY_DESCRIPTOR, O as ObjectConstructor, m as createSyntaxError, h as isInstanceOf, e as isObjectType, o as objectEntries, s as startsWith, k as isArray, p as objectKeys, t as isBoolean, f as isNumber, A as ATTRIBUTES, q as isBrioError, i as isFunction, j as isString, B as B_TELEPORT, r as removeElement, u as TEMPLATE, v as snapshotList } from "./native-C6Z9zuZA.js";
-import { b as getChildNodes, g as getAttribute, c as removeAttribute, a as addEventListener, r as removeEventListener, d as getOwnerDocument, e as getParent, f as getNodeType, h as getNextSibling, i as removeChild, j as insertBefore } from "./native-D9adRJpp.js";
-import { a as evaluate, b as execute, d as assign, c as createExpressionScope, g as emptyContextValues, h as createProvidedValues, e as evaluateFunction, f as copyContextValues } from "./context-values-CwL8HLy9.js";
-import { h as getCurrentScope, v as combinedError, g as onCleanup, b as batch, e as effect, l as causedError, j as errorText, n as directiveError, u as untrack, c as createScope, o as onDispose, q as setScopeNode, p as locate, B as devtoolsEnabled, C as notifyUnknownDirective, D as notifyRootMounted, f as flush, E as notifyAppDisposed, F as notifyAppCreated, G as notifyRootUnmounted } from "./effect-alBOOBUf.js";
-import { s as state, b as track, t as trigger } from "./state-D6RTXn8X.js";
+import { e as isObjectType, R as ReflectApi, $ as $PARENT, c as createTypeError, m as includesItem, d as deleteItem, b as createError, g as getLength, T as TELEPORT, a as arrayFrom, l as ownKeys, G as GET_OWN_PROPERTY_DESCRIPTOR, O as ObjectConstructor, n as createSyntaxError, h as isInstanceOf, o as objectEntries, t as startsWith, k as isArray, p as objectKeys, u as isBoolean, f as isNumber, A as ATTRIBUTES, q as isBrioError, i as isFunction, j as isString, B as B_TELEPORT, r as removeElement, v as TEMPLATE, s as snapshotList } from "./native-BneND9DN.js";
+import { c as getChildNodes, g as getAttribute, b as removeAttribute, a as addEventListener, r as removeEventListener, d as getOwnerDocument, e as getParent, f as getNodeType, h as getNextSibling, i as insertBefore, j as removeChild } from "./native-B0OLxTjP.js";
+import { a as evaluate, b as execute, d as assign, c as createExpressionScope, i as emptyContextValues, j as createProvidedValues, e as evaluateFunction, f as copyContextValues, E as ENGINE } from "./context-values-Burp5FXv.js";
+import { h as getCurrentScope, v as combinedError, g as onCleanup, b as batch, e as effect, l as causedError, j as errorText, n as directiveError, u as untrack, c as createScope, o as onDispose, q as setScopeNode, p as locate, B as devtoolsEnabled, C as notifyUnknownDirective, D as notifyRootMounted, f as flush, E as notifyAppDisposed, F as notifyAppCreated, G as notifyRootUnmounted } from "./effect-BL1g_AaG.js";
+import { s as state, b as track, t as trigger } from "./state-1Xtmucgt.js";
+const UNTRUSTED = Symbol("brio.untrusted");
+const trustedMarkup = Symbol("brio.trustedMarkup");
+function trustedHTML(markup) {
+  return { [trustedMarkup]: markup };
+}
+function isTrustedHTML(value) {
+  return value !== null && isObjectType(value) && trustedMarkup in value;
+}
+function getTrustedHTMLString(value) {
+  return value[trustedMarkup];
+}
 const sources = /* @__PURE__ */ new WeakMap();
 function createScopedState(source, parent) {
   const observed = state(sources.get(source) ?? source);
@@ -1011,7 +1022,7 @@ const instantiateTemplate = (definition, host) => {
   }
   return parsed.content.cloneNode(true);
 };
-function mountComponent(element, definition, context, runtime, hydrateNodeFn) {
+function mountComponent(element, definition, context, runtime, hydrateNodeFn, pageHost = false) {
   const propsObject = /* @__PURE__ */ Object.create(null);
   const declared = definition.props ?? {};
   for (const [name, type] of objectEntries(declared)) if (type === Boolean) propsObject[name] = false;
@@ -1022,7 +1033,7 @@ function mountComponent(element, definition, context, runtime, hydrateNodeFn) {
     propsObject[name] = type === Boolean ? value !== "false" : type === Number ? Number(value) : value;
   }
   const attributes = arrayFrom(element[ATTRIBUTES]);
-  const propBindings = attributes.filter((attribute) => startsWith(attribute.name, "b-prop-")).map((attribute) => {
+  const propBindings = pageHost ? [] : attributes.filter((attribute) => startsWith(attribute.name, "b-prop-")).map((attribute) => {
     const raw = attribute.name.slice(getLength("b-prop-"));
     if (!/^[a-z][a-z0-9-]*$/.test(raw))
       throw createSyntaxError(`Invalid component prop directive "${attribute.name}". Props do not support modifiers.`);
@@ -1043,9 +1054,9 @@ function mountComponent(element, definition, context, runtime, hydrateNodeFn) {
   };
   componentScope.run(() => {
     var _a, _b;
-    const options = collectOptions(element);
+    const options = pageHost ? /* @__PURE__ */ new Map() : collectOptions(element);
     const names2 = [];
-    for (const attribute of arrayFrom(element[ATTRIBUTES])) {
+    if (!pageHost) for (const attribute of arrayFrom(element[ATTRIBUTES])) {
       const { baseName, modifiers } = extractModifiers(attribute.name);
       if (modifiers.options) continue;
       names2.push(baseName);
@@ -1072,14 +1083,14 @@ function mountComponent(element, definition, context, runtime, hydrateNodeFn) {
         throw createSyntaxError("b-props does not support modifiers.");
       }
     }
-    checkOptionsUsed(options, names2);
+    if (!pageHost) checkOptionsUsed(options, names2);
     const named = state(Object.fromEntries(propBindings.map((binding) => [binding.name, void 0])));
     for (const binding of propBindings) {
       effect(() => {
         named[binding.name] = evaluate(binding.expression, context, binding.directive, element);
       });
     }
-    const spreadSource = getAttribute(element, "b-props");
+    const spreadSource = pageHost ? null : getAttribute(element, "b-props");
     effect(() => {
       const next = { ...propsObject, ...named };
       if (spreadSource !== null) {
@@ -1120,6 +1131,7 @@ function mountComponent(element, definition, context, runtime, hydrateNodeFn) {
         $props,
         $emit,
         $ref,
+        [UNTRUSTED]: false,
         [slotSources]: { nodes: slotNodes, context }
       },
       context
@@ -1142,16 +1154,6 @@ function mountComponent(element, definition, context, runtime, hydrateNodeFn) {
       if (startsWith(attribute.name, "b-")) removeAttribute(element, attribute.name);
     }
   });
-}
-const trustedMarkup = Symbol("brio.trustedMarkup");
-function trustedHTML(markup) {
-  return { [trustedMarkup]: markup };
-}
-function isTrustedHTML(value) {
-  return value !== null && isObjectType(value) && trustedMarkup in value;
-}
-function getTrustedHTMLString(value) {
-  return value[trustedMarkup];
 }
 const placements = /* @__PURE__ */ new Set(["before", "after", "prepend", "append", "replaceWith", "replaceChildren", "textContent"]);
 function createInsert(runtime) {
@@ -1201,9 +1203,10 @@ function createInsert(runtime) {
         throw createTypeError("$insert can clone elements, text, comments, or document fragments.");
       fragment.append(document2.importNode(content, true));
     }
-    const context = options.data === void 0 ? containerOwner.context : createExpressionScope({
+    let context = options.data === void 0 ? containerOwner.context : createExpressionScope({
       $data: createScopedState(options.data, containerOwner.context.$data)
     }, containerOwner.context);
+    if (containerOwner.runtime.untrusted) context = createExpressionScope({ [UNTRUSTED]: true }, context);
     const previous = placement === "replaceWith" ? [node] : placement === "replaceChildren" || placement === "textContent" ? arrayFrom(getChildNodes(container)) : [];
     const reference = placement === "before" ? node : placement === "after" || placement === "replaceWith" ? getNextSibling(node) : placement === "prepend" ? container.firstChild : null;
     disposeNodes(previous);
@@ -1768,7 +1771,8 @@ function handleHtml(element, expression, modifiers, context, runtime, hydrateChi
     element.replaceChildren(template.content);
     if (modifiers.hydrate) {
       contentScope = createScope();
-      contentScope.run(() => hydrateChildrenFn(element, context, runtime));
+      const content = runtime.untrusted ? createExpressionScope({ [UNTRUSTED]: true }, context) : context;
+      contentScope.run(() => hydrateChildrenFn(element, content, runtime));
     }
   });
 }
@@ -1966,6 +1970,7 @@ function hydrateNode(node, parentContext, runtime) {
   const type = getNodeType(node);
   if (type !== Node.ELEMENT_NODE && (type !== Node.TEXT_NODE || runtime.textInterpolation === false || !(node.nodeValue ?? "").includes("${"))) return;
   parentContext = takeProjectedContext(node) ?? parentContext;
+  if (type === Node.TEXT_NODE && parentContext[UNTRUSTED]) return;
   if (!("$ref" in parentContext)) parentContext = createExpressionScope({ $ref: createRefs() }, parentContext);
   const scope = createScope();
   setScopeNode(scope, node);
@@ -1996,6 +2001,10 @@ function hydrateOwnedNode(node, parentContext, runtime) {
   }
   if (getNodeType(node) !== Node.ELEMENT_NODE) return;
   const element = node;
+  if (parentContext[UNTRUSTED]) {
+    runtime.untrusted(element, parentContext, runtime);
+    return;
+  }
   if (!getLength(element[ATTRIBUTES]) && !element.localName.includes("-") && element.localName !== "script") {
     const context2 = elementContext(element, parentContext, runtime);
     getNodeOwner(element).context = context2;
@@ -2198,6 +2207,7 @@ function hydrateOwnedNode(node, parentContext, runtime) {
       handleEffect(element, attrValue, modifiers, context);
       removeAttribute(element, attrName);
     } else if (baseName === "b-script") {
+      if (runtime.untrusted) throw createError("b-script is not available in the Brio CSP build. Move the code into component setup.");
       handleScript(element, attrValue, modifiers, context);
       removeAttribute(element, attrName);
     } else if (devtoolsEnabled && startsWith(baseName, "b-") && !passiveNames.has(baseName)) {
@@ -2222,8 +2232,9 @@ const componentNamePattern = /^[a-z][a-z0-9]*-[a-z0-9-]+$/;
 const activeMountRoots = /* @__PURE__ */ new Set();
 const helperPattern = /^\$[A-Za-z_][\w]*$/;
 const reservedHelpers = "$data $el $emit $event $index $props $provided $ref $route $stores $value".split(" ");
-function createApp(options = {}) {
+function buildApp(mode, options = {}) {
   var _a, _b;
+  const { engine, untrusted, checkComponent } = mode;
   const { textInterpolation = true } = options;
   if (!isBoolean(textInterpolation))
     throw createTypeError("createApp textInterpolation must be true or false.");
@@ -2283,7 +2294,8 @@ function createApp(options = {}) {
     state: appState,
     components,
     router: options.router,
-    textInterpolation
+    textInterpolation,
+    untrusted
   };
   const app = {
     state: appState,
@@ -2305,6 +2317,7 @@ function createApp(options = {}) {
       const template = definition.template;
       if (isString(template) ? !template.trim() : (template == null ? void 0 : template.localName) !== "template")
         throw createTypeError(`Component "${normalized}" requires a non-empty template string, "#id" selector, or <template> element.`);
+      checkComponent == null ? void 0 : checkComponent(normalized, template);
       for (const [prop, type] of objectEntries(definition.props ?? {}))
         if (!includesItem([Boolean, Number, String], type))
           throw createTypeError(`Component "${normalized}" prop "${prop}" must be declared as Boolean, Number, or String.`);
@@ -2398,7 +2411,18 @@ function createApp(options = {}) {
       activeMountRoots.add(root);
       notifyRootMounted(app, root);
       const context = createExpressionScope(
-        { ...helpers, $data: createScopedState(appState), $stores: stores, $provided: emptyContextValues, $ref: createRefs(), $route: (_a2 = options.router) == null ? void 0 : _a2.route, trustedHTML, flush }
+        {
+          ...helpers,
+          $data: createScopedState(appState),
+          $stores: stores,
+          $provided: emptyContextValues,
+          $ref: createRefs(),
+          $route: (_a2 = options.router) == null ? void 0 : _a2.route,
+          trustedHTML,
+          flush,
+          [ENGINE]: engine,
+          ...untrusted ? { [UNTRUSTED]: true } : {}
+        }
       );
       try {
         scope.run(() => {
@@ -2471,8 +2495,18 @@ function createApp(options = {}) {
 }
 export {
   hydrateNode as a,
-  createApp as c,
+  buildApp as b,
+  componentNamePattern$1 as c,
+  extractModifiers as d,
+  elementContext as e,
+  findPluginDirective as f,
+  getNodeOwner as g,
   hydrateRoot as h,
+  createBinding as i,
+  hydrateChildren as j,
+  keepCleanup as k,
+  mountComponent as m,
+  runHook as r,
   trustedHTML as t
 };
-//# sourceMappingURL=app-DmiSo-vz.js.map
+//# sourceMappingURL=app-BJAG0TST.js.map

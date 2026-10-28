@@ -19,8 +19,11 @@ Security fixes target the latest stable release. Older versions may not receive
 backports; upgrade to the latest version when possible.
 
 Brio evaluates trusted application expressions with `new Function`; they are
-not sandboxed. A CSP that forbids `unsafe-eval` is incompatible with runtime
-expressions. `b-html` does not sanitize input, and `trustedHTML()` asserts trust
+not sandboxed. A CSP that forbids `unsafe-eval` is incompatible with the
+standard build. The CSP build (Brio 5.1+, `brio.csp.min.js` and
+`@jnreis/briojs/csp`) interprets expressions without eval and never evaluates
+page markup; a way to run code from page markup in that build is a security
+issue. `b-html` does not sanitize input, and `trustedHTML()` asserts trust
 rather than establishing it. These are documented constraints, not security
 boundaries.
 

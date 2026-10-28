@@ -15,7 +15,7 @@ import {
 import { getAttribute, addEventListener, removeEventListener } from '../dom/native';
 import { copyContextValues } from '../core/context-values';
 import { combinedError } from '../core/errors';
-import { evaluate } from '../core/expression';
+import { evaluate, getDefaultEngine } from '../core/expression';
 import type { BrioApp } from '../core/types';
 
 export type AstroAppProps = Readonly<Record<string, unknown>>;
@@ -120,7 +120,8 @@ export function enhanceAstro(options: AstroEnhanceOptions): AstroEnhancement {
                     throw createError(`Unknown Brio Astro app "${name}".`);
                 const source = getAttribute(root, 'b-app-props');
                 const props = ObjectConstructor.freeze(copyContextValues(
-                    source === null ? {} : evaluate(source, { $el: root }), 'b-app-props',
+                    // The CSP build reads these page-markup props without $el, so they can only build values.
+                    source === null ? {} : evaluate(source, getDefaultEngine()?.csp ? {} : { $el: root }), 'b-app-props',
                 ));
                 const entry = apps[name];
                 if (typeof entry === 'function') {

@@ -1,11 +1,12 @@
-import { c as createTypeError, j as isString, b as createError, s as startsWith, n as includesItem, g as getLength, d as deleteItem, h as isInstanceOf, p as objectKeys, O as ObjectConstructor } from "./native-C6Z9zuZA.js";
-import { a as addEventListener, r as removeEventListener } from "./native-D9adRJpp.js";
-import { s as state, a as signal } from "./state-D6RTXn8X.js";
-import { e as effect, u as untrack, c as createScope, b as batch } from "./effect-alBOOBUf.js";
+import { c as createTypeError, j as isString, b as createError, t as startsWith, m as includesItem, g as getLength, d as deleteItem, h as isInstanceOf, p as objectKeys, O as ObjectConstructor } from "./native-BneND9DN.js";
+import { a as addEventListener, r as removeEventListener } from "./native-B0OLxTjP.js";
+import { s as state, a as signal } from "./state-1Xtmucgt.js";
+import { e as effect, u as untrack, c as createScope, b as batch } from "./effect-BL1g_AaG.js";
 const defineDirective = (definition) => definition;
 const definePlugin = (plugin) => plugin;
 const outletDirective = defineDirective({
   name: "b-router-outlet",
+  value: "none",
   children: false,
   mount(element, binding) {
     const app = binding.app;
@@ -288,4 +289,4 @@ export {
   createRouter as c,
   defineDirective as d
 };
-//# sourceMappingURL=router-entry-bqMq6RsY.js.map
+//# sourceMappingURL=router-entry-DxvtTMsd.js.map

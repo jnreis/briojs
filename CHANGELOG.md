@@ -10,6 +10,17 @@
   Directive attributes keep working. The default stays `true`. Non-boolean
   values throw a `TypeError`.
 
+### CSP build
+
+- New CSP build for pages whose Content Security Policy blocks `eval`:
+  `brio.csp.min.js`, `brio.csp.dev.min.js`, and `@jnreis/briojs/csp`.
+  Expressions run in an interpreter instead of `new Function`. Page markup,
+  and HTML from `app.insert()`, `$insert`, and `b-html.hydrate`, is never
+  evaluated: only registered components mount there, with static attributes as
+  props. Component templates must be strings, and `b-script` is unavailable.
+  The add-on scripts and entries work with it.
+- `b-router-outlet` now rejects a value, as documented.
+
 ### Documentation
 
 - New "Server-rendered user content" guidance: everything inside a mounted root

@@ -11,7 +11,7 @@ import { createScopedState } from '../core/scoped-state';
 import { combinedError } from '../core/errors';
 import type { Insert, InsertHandle } from '../core/types';
 import type { DomRuntime } from './types';
-import { getTrustedHTMLString, trustedHTML } from './types';
+import { getTrustedHTMLString, trustedHTML, UNTRUSTED } from './types';
 import { hydrateNode } from './bindings';
 import { disposeNodes, getNodeOwner, ownNode, withHydration } from './ownership';
 import { createDomRange } from './range';
@@ -68,9 +68,11 @@ export function createInsert(runtime: DomRuntime): Insert {
             fragment.append(document.importNode(content, true));
         }
 
-        const context = options.data === undefined ? containerOwner.context : createExpressionScope({
+        let context = options.data === undefined ? containerOwner.context : createExpressionScope({
             $data: createScopedState(options.data, containerOwner.context.$data),
         }, containerOwner.context);
+        // The CSP build treats inserted markup like page markup: only registered components activate.
+        if (containerOwner.runtime.untrusted) context = createExpressionScope({ [UNTRUSTED]: true }, context);
         const previous = placement === 'replaceWith' ? [node] :
             placement === 'replaceChildren' || placement === 'textContent' ? arrayFrom(getChildNodes(container)) : [];
         const reference = placement === 'before' ? node :

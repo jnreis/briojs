@@ -1,4 +1,24 @@
 export type ExpressionScope = Record<PropertyKey, any>;
+export declare const $CONTEXT: '$context';
+export declare const contextNames: string[];
+export type CompiledExpression = ($context: ExpressionScope, $value?: unknown) => any;
+/**
+ * Turns expression source into callable functions. Each method may cache by source; `scope` is the context the
+ * expression will run in. `function` is optional: without it, `b-script` is unavailable.
+ */
+export type ExpressionEngine = {
+    value(source: string, scope: ExpressionScope): CompiledExpression;
+    statement(source: string, scope: ExpressionScope): CompiledExpression;
+    assign(source: string, scope: ExpressionScope): CompiledExpression;
+    function?(source: string, scope: ExpressionScope): CompiledExpression;
+    /** Set by the CSP build's interpreter, which treats page markup as untrusted. */
+    csp?: boolean;
+};
+/** The engine an app's contexts use; apps set it on their base context so every derived context inherits it. */
+export declare const ENGINE: unique symbol;
+/** Sets the engine for contexts that carry none, such as plain objects passed to `evaluate`. */
+export declare const setDefaultEngine: (engine: ExpressionEngine) => void;
+export declare const getDefaultEngine: () => ExpressionEngine | undefined;
 export declare function evaluateFunction(source: string, context: ExpressionScope, node?: Node): ($context: ExpressionScope) => unknown;
 /**
  * Earlier sources win. The last source becomes the prototype instead of being copied, so a child context costs

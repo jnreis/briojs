@@ -37,8 +37,10 @@ optional tools. Browser plugins load after core; npm entries are tree-shakable.
 ## Is Brio the right fit?
 
 Brio is useful when you value authored HTML, explicit JavaScript, lightweight
-integration, and predictable ownership. It is not a framework server renderer,
-a CSP-without-eval solution, or a complete application backend.
+integration, and predictable ownership. It is not a framework server renderer
+or a complete application backend. Pages with a strict CSP can use the
+[CSP build](/reference/trusted-html-and-expression-security/#strict-csp-build)
+(Brio 5.1+).
 
 Choose the architecture that fits your project. You do not need client routing
 to add one useful widget.

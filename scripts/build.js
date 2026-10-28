@@ -13,6 +13,7 @@ await build({
         lib: {
             entry: {
                 index: 'src/index.ts',
+                'csp-entry': 'src/csp-entry.ts',
                 reactivity: 'src/reactivity-entry.ts',
                 'persistence-entry': 'src/persistence-entry.ts',
                 'router-entry': 'src/router-entry.ts',
@@ -62,18 +63,21 @@ await build({
     ],
 });
 
-// 2. Build standalone production and development browser bundles.
-for (const development of [false, true]) {
+// 2. Build standalone production and development browser bundles, standard and CSP.
+for (const [entry, file, development] of [
+    ['browser', 'brio', false], ['browser-dev', 'brio.dev', true],
+    ['browser-csp', 'brio.csp', false], ['browser-csp-dev', 'brio.csp.dev', true],
+]) {
     await build({
         publicDir: false,
         define: { __BRIO_DEVTOOLS__: JSON.stringify(development) },
         build: {
             emptyOutDir: false,
             lib: {
-                entry: development ? 'src/browser-dev.ts' : 'src/browser.ts',
+                entry: `src/${entry}.ts`,
                 name: 'brio',
                 formats: ['iife'],
-                fileName: () => development ? 'brio.dev.min.js' : 'brio.min.js',
+                fileName: () => `${file}.min.js`,
             },
             minify: 'esbuild',
             reportCompressedSize: true,

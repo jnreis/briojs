@@ -1,4 +1,4 @@
-import { createApp } from './core/app';
+import { createApp } from './core/create-app';
 import { createError, isString } from './core/native';
 import { flush } from './reactivity/effect';
 import type { AppOptions, BrioApp, MountHandle, StoreMap } from './core/types';

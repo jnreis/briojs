@@ -10,6 +10,7 @@ import { createScope } from '../core/scope';
 import { locate, setScopeNode } from '../core/errors';
 import { effect } from '../reactivity/effect';
 import type { DomRuntime } from './types';
+import { UNTRUSTED } from './types';
 import { hydrateScopedSlot, isFragmentTemplate, mountComponent, takeProjectedContext } from './components';
 import { prepareTransition } from './directives/transition';
 import { createInsert } from './insert';
@@ -25,7 +26,7 @@ const getInsert = (runtime: DomRuntime) => {
     return insert;
 };
 
-const componentNamePattern = /^[a-z][a-z0-9]*-[a-z0-9-]+$/;
+export const componentNamePattern = /^[a-z][a-z0-9]*-[a-z0-9-]+$/;
 const conditionalNames = new Set(['b-if', 'b-else-if', 'b-else']);
 const childControllingNames = new Set(['b-text', 'b-html', 'b-router-outlet']);
 // Directives a fragment wrapper (b-template or a directive-bearing <template>) applies; the rest need a concrete element.
@@ -97,6 +98,7 @@ export function hydrateNode(
     if (type !== Node.ELEMENT_NODE && (type !== Node.TEXT_NODE || runtime.textInterpolation === false
         || !(node.nodeValue ?? '').includes('${'))) return;
     parentContext = takeProjectedContext(node) ?? parentContext;
+    if (type === Node.TEXT_NODE && parentContext[UNTRUSTED]) return;
     if (!('$ref' in parentContext)) parentContext = createExpressionScope({ $ref: createRefs() }, parentContext);
     const scope = createScope();
     setScopeNode(scope, node);
@@ -111,7 +113,7 @@ export function hydrateNode(
 }
 
 // Inherited values are only redefined when they differ, keeping each element context to its own `$el`.
-function elementContext(element: Element, parentContext: Record<PropertyKey, any>, runtime: DomRuntime): Record<PropertyKey, any> {
+export function elementContext(element: Element, parentContext: Record<PropertyKey, any>, runtime: DomRuntime): Record<PropertyKey, any> {
     const own: Record<PropertyKey, any> = { $el: element };
     if (!parentContext.$stores) own.$stores = emptyContextValues;
     if (!parentContext.$provided) own.$provided = emptyContextValues;
@@ -133,6 +135,10 @@ function hydrateOwnedNode(
     }
     if (getNodeType(node) !== Node.ELEMENT_NODE) return;
     const element = node as Element;
+    if (parentContext[UNTRUSTED]) {
+        runtime.untrusted!(element, parentContext, runtime);
+        return;
+    }
     // Plain elements (no attributes, not a component or script) only need a context for their children.
     if (!getLength(element[ATTRIBUTES]) && !element.localName.includes('-') && element.localName !== 'script') {
         const context = elementContext(element, parentContext, runtime);
@@ -344,6 +350,7 @@ function hydrateOwnedNode(
             handleEffect(element, attrValue, modifiers, context);
             removeAttribute(element, attrName);
         } else if (baseName === 'b-script') {
+            if (runtime.untrusted) throw createError('b-script is not available in the Brio CSP build. Move the code into component setup.');
             handleScript(element, attrValue, modifiers, context);
             removeAttribute(element, attrName);
         } else if (devtoolsEnabled && startsWith(baseName, 'b-') && !passiveNames.has(baseName)) {

@@ -30,7 +30,17 @@ export type DomRuntime = {
     root?: Element;
     directives?: DirectiveRegistry;
     textInterpolation?: boolean;
+    /**
+     * CSP build only: hydrates untrusted page and runtime markup, where only registered components activate.
+     * Its presence marks the app as a CSP app.
+     */
+    untrusted?: (element: Element, context: Record<PropertyKey, any>, runtime: DomRuntime) => void;
 };
+/**
+ * Set on a context whose markup did not come from a component template. Descendant contexts inherit it;
+ * component contexts reset it. Hydration then only mounts registered components in that markup.
+ */
+export declare const UNTRUSTED: unique symbol;
 declare const trustedMarkup: unique symbol;
 export type TrustedMarkup = {
     readonly [trustedMarkup]: string;

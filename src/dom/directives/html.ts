@@ -1,9 +1,9 @@
 import { createTypeError, TEMPLATE } from '../../core/native';
-import { evaluate } from '../../core/expression';
 import { effect } from '../../reactivity/effect';
 import { createScope, onCleanup } from '../../core/scope';
 import type { Scope } from '../../core/scope';
-import { isTrustedHTML, getTrustedHTMLString } from '../types';
+import { createExpressionScope, evaluate } from '../../core/expression';
+import { isTrustedHTML, getTrustedHTMLString, UNTRUSTED } from '../types';
 import type { DomRuntime } from '../types';
 
 export function handleHtml(
@@ -30,7 +30,9 @@ export function handleHtml(
         element.replaceChildren(template.content);
         if (modifiers.hydrate) {
             contentScope = createScope();
-            contentScope.run(() => hydrateChildrenFn(element, context, runtime));
+            // The CSP build treats runtime HTML like page markup: only registered components activate.
+            const content = runtime.untrusted ? createExpressionScope({ [UNTRUSTED]: true }, context) : context;
+            contentScope.run(() => hydrateChildrenFn(element, content, runtime));
         }
     });
 }

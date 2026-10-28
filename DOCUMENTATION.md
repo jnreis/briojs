@@ -199,6 +199,9 @@ Load one of the standalone bundles, not both:
 <!-- <script src="https://cdn.jsdelivr.net/npm/@jnreis/briojs@5.0.0/dist/brio.dev.min.js"></script> -->
 ```
 
+For pages with a strict Content Security Policy, load `brio.csp.min.js` (or
+`brio.csp.dev.min.js`) instead. See [Strict CSP build](#strict-csp-build).
+
 For self-hosting, copy the desired scripts from `node_modules/@jnreis/briojs/dist/`
 to your public assets.
 The `/dist/` URLs below assume you serve them at that path. Pin core and plugins
@@ -2652,7 +2655,8 @@ at runtime with `new Function`, without `with`.
 
 > Expressions are **not a sandbox**. Never render untrusted content as a Brio
 > template or directive expression. Runtime compilation is incompatible with
-> a strict CSP that disallows `unsafe-eval`.
+> a strict CSP that disallows `unsafe-eval`; use the
+> [Strict CSP build](#strict-csp-build) on those pages.
 
 ### Choose text or markup deliberately
 
@@ -2754,6 +2758,117 @@ createApp({ state: () => ({ content: '<em>Trusted</em>' }) }).mount('#content');
 Only call `trustedHTML()` with templates you trust as application code. It is a
 trust assertion, not sanitization or a security boundary. Sanitizing ordinary
 HTML does not necessarily make it safe to execute as a Brio template.
+
+### Strict CSP build
+
+Brio 5.1+ ships a separate build for pages whose Content Security Policy
+blocks `eval`, such as `script-src 'self'`. It makes two changes:
+
+- **No eval.** Expressions run in a small interpreter instead of `new Function`.
+- **Only JavaScript templates activate.** Page markup is not trusted. Brio
+  mounts registered components in it, but never evaluates its directives or
+  `${...}` text. Component templates, which come from your JavaScript, work as
+  usual.
+
+So markup injected into the page cannot run code through Brio, even if the
+app mounts again later.
+
+```html
+<script src="/dist/brio.csp.min.js"></script>
+<script src="/app.js"></script>
+```
+
+```js
+// app.js, or `import { createApp } from '@jnreis/briojs/csp'` in a bundled app
+const app = brio.createApp();
+app.component('click-counter', {
+  props: { start: Number },
+  template: `
+    <button b-on-click="$data.count++; $emit('change', $data.count)">
+      \${$props.label}: \${$data.count}
+    </button>`,
+  setup: ({ $props }) => ({ count: $props.start }),
+});
+app.mount('#app');
+```
+
+```html
+<main id="app">
+  <click-counter label="Likes" start="3"></click-counter>
+  <p>${$data.count} stays literal text here.</p>
+</main>
+```
+
+#### Page markup
+
+Inside a mounted root, and inside HTML from `app.insert()`, `$insert`, and
+`b-html.hydrate`:
+
+| Markup | CSP build |
+| --- | --- |
+| A registered component tag | Mounts. Static attributes become props, coerced by the declared `props` types. |
+| `b-*` attributes on a component host (`b-prop-*`, `b-props`, `b-on-*`, `b-bind-*`) | Ignored. Listen to `$emit` events with `addEventListener`. |
+| Children of a component host | Fill its slots, and stay inert. |
+| Other directives and `${...}` text | Left as they are. Use a component instead. |
+| `b-ignore`, `b-cloak` | Work as usual. |
+| Add-on directives that take no value, such as `b-router-outlet` | Work as usual. |
+
+Listen to a page component from JavaScript:
+
+```js
+document.querySelector('click-counter')
+  .addEventListener('change', event => console.log(event.detail));
+```
+
+Component templates must be strings. `#id` selectors and `<template>` elements
+read page markup, so `app.component()` rejects them. `b-script` is not
+available: put that code in component `setup`. Astro `b-app-props` are
+evaluated without `$el`, so they can only build values.
+
+#### Expressions
+
+The interpreter covers the expressions templates normally need:
+
+| Supported | Not supported |
+| --- | --- |
+| Literals: numbers, strings, template literals, arrays, objects (with computed keys and shorthand) | Arrow functions and `function` |
+| Property access, calls, optional chaining (`?.`) | `new`, `this`, `delete`, spread (`...`) |
+| Arithmetic, comparison, logical, `??`, `typeof`, `in`, `instanceof`, ternary | Comma operator and tagged templates |
+| Assignment to properties: `=`, `+=`, `??=`, `++`, and the rest | Declarations, `if`, loops, `return`, `try` |
+| Several statements separated by `;` in event handlers | Plain variables other than the names below |
+
+Expressions read Brio's `$` names (`$data`, `$event`, `$props`, `$for`, your
+`$helpers`, …) and these globals: `Math`, `JSON`, `Number`, `String`,
+`Boolean`, `Array`, `Date`, `parseInt`, `parseFloat`, `isNaN`, `isFinite`,
+`encodeURIComponent`, `decodeURIComponent`, `encodeURI`, `decodeURI`,
+`console`, `NaN`, and `Infinity`. Other names, such as `window` or `fetch`,
+throw `is not defined`. `constructor`, `prototype`, and `__proto__` cannot be
+read. Move anything more complex into a method returned from `setup`:
+
+```js
+// Before: b-on-click="$data.items = $data.items.filter(item => !item.done)"
+setup: () => ({
+  items: [],
+  clearDone() { this.items = this.items.filter(item => !item.done); },
+}),
+// After: b-on-click="$data.clearDone()"
+```
+
+Unsupported syntax fails with a message such as `Arrow functions are not
+supported in the Brio CSP build; move this logic into component setup`.
+
+#### Imports and add-ons
+
+In a bundled app, import everything from `@jnreis/briojs/csp`, not the main
+entry, which includes the `new Function` engine. The add-on entries
+(`/router`, `/inputs`, `/observers`, `/http`, `/persistence`, `/step`,
+`/reactivity`, `/devtools`, `/astro`) contain no `eval` and work with either
+build. So do the add-on browser scripts: load them after `brio.csp.min.js`.
+
+The CSP build is about 3.5 KB larger (gzip) than `brio.min.js`, because it
+carries the interpreter. Static `style` attributes in templates fall under your
+`style-src` policy as usual. `b-bind-style` sets styles through the CSSOM,
+which `style-src` does not block.
 
 ## Errors
 
@@ -3343,6 +3458,7 @@ and the reactivity entry works without a DOM.
 | Entry | Includes |
 | --- | --- |
 | `@jnreis/briojs` | App, components, DOM enhancement, reactivity, trusted HTML, core types, and tree-shakable tool/plugin exports; no implicit add-on or devtools activation. |
+| `@jnreis/briojs/csp` | The same API for pages with a strict Content Security Policy: no `eval`, and only component templates defined in JavaScript activate. See [Strict CSP build](#strict-csp-build). Brio 5.1+. |
 | `@jnreis/briojs/reactivity` | DOM-independent state, signals, effects, computed values, batching, async resources, and scopes. |
 | `@jnreis/briojs/persistence` | Local/session/custom storage, with scope cleanup where owned. |
 | `@jnreis/briojs/router` | Optional history or hash router; the router brings `b-router-outlet`. |

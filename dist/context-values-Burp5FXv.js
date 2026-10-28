@@ -1,36 +1,16 @@
-import { i as isFunction, c as createTypeError, g as getLength, O as ObjectConstructor, m as createSyntaxError, d as deleteItem, n as includesItem, e as isObjectType, p as objectKeys, R as ReflectApi, G as GET_OWN_PROPERTY_DESCRIPTOR, l as ownKeys } from "./native-C6Z9zuZA.js";
-import { m as mark, k as describeNode, n as directiveError, u as untrack, e as effect } from "./effect-alBOOBUf.js";
-import { t as trigger, b as track } from "./state-D6RTXn8X.js";
-const valueExpressions = /* @__PURE__ */ new Map();
-const statementExpressions = /* @__PURE__ */ new Map();
-const assignmentExpressions = /* @__PURE__ */ new Map();
-const functionExpressions = /* @__PURE__ */ new Map();
+import { i as isFunction, c as createTypeError, g as getLength, O as ObjectConstructor, b as createError, n as createSyntaxError, e as isObjectType, m as includesItem, p as objectKeys, R as ReflectApi, G as GET_OWN_PROPERTY_DESCRIPTOR, l as ownKeys } from "./native-BneND9DN.js";
+import { m as mark, k as describeNode, n as directiveError, u as untrack, e as effect } from "./effect-BL1g_AaG.js";
+import { t as trigger, b as track } from "./state-1Xtmucgt.js";
 const $CONTEXT = "$context";
 const contextNames = ["$data", "$el", "$event", "$id", "$ref", "$for", "$mutations", "$size", "$entry", "$props", "$slot", "$emit", "$insert", "$stores", "$provided", "$route", "trustedHTML", "flush", "onCleanup"];
-const contextBindings = (expression, extras) => {
-  const names = contextNames.filter((name) => new RegExp(`(?<![\\w$])${name.replace("$", "\\$")}(?![\\w$])`).test(expression)).concat(extras);
-  return `"use strict";${getLength(names) ? ` const { ${names.join(", ")} } = ${$CONTEXT};` : ""}
-`;
+const ENGINE = Symbol("brio.engine");
+let defaultEngine;
+const setDefaultEngine = (engine) => {
+  defaultEngine = engine;
 };
-const customNames = /* @__PURE__ */ new Map();
-const presentNames = (source, scope) => {
-  let names = customNames.get(source);
-  if (!names) {
-    names = [...new Set(source.match(new RegExp("(?<![\\w$])\\$[\\w$]+", "g")))].filter((name) => !includesItem(contextNames, name) && name !== $CONTEXT && name !== "$value");
-    if (customNames.size > 500) customNames.clear();
-    customNames.set(source, names);
-  }
-  return getLength(names) ? names.filter((name) => name in scope) : names;
-};
+const getDefaultEngine = () => defaultEngine;
 function evaluateFunction(source, context, node) {
-  const fn = compile(
-    functionExpressions,
-    source,
-    (expression, bindings) => new Function($CONTEXT, `${bindings} return (${expression.replace(/;\s*$/, "")});`),
-    context,
-    "b-script",
-    node
-  );
+  const fn = compile("function", source, context, "b-script", node);
   const result = fn(context);
   if (!isFunction(result))
     throw createTypeError(`b-script must contain a function expression, such as (${$CONTEXT}) => { ... }.`);
@@ -43,23 +23,20 @@ function createExpressionScope(...sources) {
     scope = ObjectConstructor.assign(ObjectConstructor.create(scope), sources[index]);
   return scope;
 }
-const compile = (cache, source, make, scope, directive, node) => {
-  const extras = presentNames(source, scope);
-  const key = getLength(extras) ? `${source}\0${extras}` : source;
-  let fn = cache.get(key);
-  if (!fn) {
-    try {
-      fn = make(source, contextBindings(source, extras));
-    } catch (error) {
-      throw mark(createSyntaxError(
-        `Invalid Brio expression "${source}"${directive ? ` in ${directive}` : ""}${node ? ` on ${describeNode(node)}` : ""}: ${String(error)}`
-      ), node, directive);
-    }
-    cache.set(key, fn);
-    if (cache.size > 500)
-      deleteItem(cache, cache.keys().next().value);
+const compile = (kind, source, scope, directive, node) => {
+  const engine = scope[ENGINE] ?? defaultEngine;
+  if (!engine) throw createError("No Brio expression engine is installed. Import createApp from @jnreis/briojs or @jnreis/briojs/csp.");
+  const make = engine[kind];
+  if (!make) throw mark(createError(
+    `${directive ?? "This expression"} is not available in the Brio CSP build. Move the code into component setup.`
+  ), node, directive);
+  try {
+    return make(source, scope);
+  } catch (error) {
+    throw mark(createSyntaxError(
+      `Invalid Brio expression "${source}"${directive ? ` in ${directive}` : ""}${node ? ` on ${describeNode(node)}` : ""}: ${String(error)}`
+    ), node, directive);
   }
-  return fn;
 };
 const holds = (value, name) => value !== null && typeof value === "object" && name in value;
 const referenceHint = (error, scope) => {
@@ -78,14 +55,7 @@ const referenceHint = (error, scope) => {
   });
 };
 function evaluate(source, scope, directive, node = scope.$el) {
-  const fn = compile(
-    valueExpressions,
-    source,
-    (expression, bindings) => new Function($CONTEXT, `${bindings} return (${expression});`),
-    scope,
-    directive,
-    node
-  );
+  const fn = compile("value", source, scope, directive, node);
   try {
     return fn(scope);
   } catch (error) {
@@ -93,14 +63,7 @@ function evaluate(source, scope, directive, node = scope.$el) {
   }
 }
 function execute(source, scope, event, directive, node = scope.$el) {
-  const fn = compile(
-    statementExpressions,
-    source,
-    (expression, bindings) => new Function($CONTEXT, `${bindings} ${expression}`),
-    scope,
-    directive,
-    node
-  );
+  const fn = compile("statement", source, scope, directive, node);
   try {
     fn(event === void 0 ? scope : createExpressionScope({ $event: event }, scope));
   } catch (error) {
@@ -108,14 +71,7 @@ function execute(source, scope, event, directive, node = scope.$el) {
   }
 }
 function assign(source, scope, value, directive, node = scope.$el) {
-  const fn = compile(
-    assignmentExpressions,
-    source,
-    (expression, bindings) => new Function($CONTEXT, "$value", `${bindings} return (${expression} = $value);`),
-    scope,
-    directive,
-    node
-  );
+  const fn = compile("assign", source, scope, directive, node);
   try {
     fn(scope, value);
   } catch (error) {
@@ -177,13 +133,18 @@ function createProvidedValues(getValues, parent = emptyContextValues) {
   });
 }
 export {
+  $CONTEXT as $,
+  ENGINE as E,
   evaluate as a,
   execute as b,
   createExpressionScope as c,
   assign as d,
   evaluateFunction as e,
   copyContextValues as f,
-  emptyContextValues as g,
-  createProvidedValues as h
+  getDefaultEngine as g,
+  contextNames as h,
+  emptyContextValues as i,
+  createProvidedValues as j,
+  setDefaultEngine as s
 };
-//# sourceMappingURL=context-values-CwL8HLy9.js.map
+//# sourceMappingURL=context-values-Burp5FXv.js.map

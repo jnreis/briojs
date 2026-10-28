@@ -1,4 +1,4 @@
-import { c } from "./router-entry-bqMq6RsY.js";
+import { c } from "./router-entry-DxvtTMsd.js";
 export {
   c as createRouter
 };

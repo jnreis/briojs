@@ -27,6 +27,11 @@ export type AppOptions<
     components?: ComponentMap;
     router?: Router;
     plugins?: BrioPlugin[];
+    /**
+     * Evaluate `${...}` in text nodes, including `<style>` text. Defaults to `true`. Set `false` when mounted
+     * markup contains server-rendered user text; directive attributes such as `b-text` keep working.
+     */
+    textInterpolation?: boolean;
 };
 
 export type UnmountOptions = { restore?: boolean };

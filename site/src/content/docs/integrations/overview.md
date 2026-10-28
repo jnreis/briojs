@@ -91,6 +91,10 @@ embed example content or application-specific persistence.
   For this counter, the only input is a server-validated integer in an escaped attribute.
 - Keep `b-*` expressions developer-authored. Do not compile user-supplied templates.
   Display user text with `b-text`, not unsanitized `b-html`.
+- Everything inside a mounted root is a template, including text. Escaping does
+  not stop `${...}` in rendered user text from running. Wrap user content in
+  `<span b-ignore>`, never put server values inside a `b-*` expression, and see
+  [Server-rendered user content](/reference/trusted-html-and-expression-security/#server-rendered-user-content).
 - Preserve server authorization, validation, CSRF protection, and error responses.
   Brio does not replace any of them. The counter never sends data to the server.
 - Brio's runtime expressions require CSP `script-src` permission for `unsafe-eval`.

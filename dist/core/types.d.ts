@@ -22,6 +22,11 @@ export type AppOptions<T extends Record<string, unknown> = Record<string, unknow
     components?: ComponentMap;
     router?: Router;
     plugins?: BrioPlugin[];
+    /**
+     * Evaluate `${...}` in text nodes, including `<style>` text. Defaults to `true`. Set `false` when mounted
+     * markup contains server-rendered user text; directive attributes such as `b-text` keep working.
+     */
+    textInterpolation?: boolean;
 };
 export type UnmountOptions = {
     restore?: boolean;

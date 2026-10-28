@@ -1,5 +1,22 @@
 # Changelog
 
+## [5.1.0] — Unreleased
+
+### Core and reactivity
+
+- `createApp({ textInterpolation: false })` leaves `${...}` literal in every
+  text node the app hydrates, including `<style>` text, components, slots,
+  `b-for` and `b-if` content, `b-html.hydrate`, and `app.insert()` HTML.
+  Directive attributes keep working. The default stays `true`. Non-boolean
+  values throw a `TypeError`.
+
+### Documentation
+
+- New "Server-rendered user content" guidance: everything inside a mounted root
+  is a template, escaping does not stop `${...}` or quote breakout inside
+  directive attributes, and user content belongs in `b-ignore` or data
+  attributes.
+
 ## [5.0.0] — 2026-10-26
 
 Brio 5 adds a public plugin API, and uses it to move directives that most pages

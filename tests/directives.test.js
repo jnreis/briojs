@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { JSDOM } from 'jsdom';
-import { assign, evaluateFunction, execute, hydrateRoot, hydrateNode } from '@jnreis/briojs';
+import { assign, createApp, evaluateFunction, execute, hydrateRoot, hydrateNode } from '@jnreis/briojs';
 
 const bundle = readFileSync(new URL('../dist/brio.min.js', import.meta.url), 'utf8');
 const inputs = readFileSync(new URL('../dist/brio.inputs.min.js', import.meta.url), 'utf8');
@@ -98,6 +98,59 @@ test('text results never execute interpolation; authored failures remain explici
     assert.equal(root.querySelector('p').textContent, '${missingName}');
     const invalid = environment(t, '<p b-text="missingName"></p>');
     assert.throws(() => invalid.app.mount(invalid.root), /Brio expression failed/);
+});
+
+for (const distribution of ['brio.min.js', 'brio.dev.min.js']) {
+    test(`${distribution}: textInterpolation false leaves every text node literal while directives still run`, t => {
+        const source = readFileSync(new URL(`../dist/${distribution}`, import.meta.url), 'utf8');
+        const dom = new JSDOM(`<main id="app">
+            <p id="comment">Nice post! \${$data.calls++}</p>
+            <style>.x { color: \${$data.color}; }</style>
+            <button id="count" b-on-click="$data.count++" b-text="\`Count \${$data.count}\`"></button>
+            <ul><li b-for="item in $data.items">\${$data.calls++} <b b-text="$for.item"></b></li></ul>
+            <note-card></note-card>
+            <div id="html" b-html.hydrate="$data.markup"></div>
+            <div id="target"></div>
+        </main>`, { runScripts: 'outside-only', pretendToBeVisual: true });
+        const { window } = dom;
+        window.eval(source);
+        const app = window.brio.createApp(window.eval(`({
+            state: () => ({ calls: 0, count: 0, color: 'red', items: ['a', 'b'], markup: '' }),
+            textInterpolation: false,
+        })`));
+        app.component('note-card', { template: '<i>${$data.calls++}</i><b b-text="$props.label ?? \'card\'"></b>' });
+        app.state.markup = window.brio.trustedHTML('<span>${$data.calls++}</span><em b-text="$data.count"></em>');
+        t.after(() => { app.dispose(); window.close(); });
+        const root = window.document.querySelector('#app');
+        const original = root.innerHTML;
+        const handle = app.mount(root);
+        app.insert('#target', 'append', '<span>${$data.calls++}</span><em b-text="$data.color"></em>');
+
+        assert.equal(app.state.calls, 0);
+        assert.equal(root.querySelector('#comment').textContent, 'Nice post! ${$data.calls++}');
+        assert.equal(root.querySelector('style').textContent, '.x { color: ${$data.color}; }');
+        assert.deepEqual([...root.querySelectorAll('li')].map(li => li.textContent), ['${$data.calls++} a', '${$data.calls++} b']);
+        assert.equal(root.querySelector('note-card i').textContent, '${$data.calls++}');
+        assert.equal(root.querySelector('note-card b').textContent, 'card');
+        assert.equal(root.querySelector('#html span').textContent, '${$data.calls++}');
+        assert.equal(root.querySelector('#target span').textContent, '${$data.calls++}');
+        assert.equal(root.querySelector('#target em').textContent, 'red');
+
+        root.querySelector('#count').click();
+        window.brio.flush();
+        assert.equal(root.querySelector('#count').textContent, 'Count 1');
+        assert.equal(root.querySelector('#html em').textContent, '1');
+        assert.equal(app.state.calls, 0);
+
+        handle.unmount();
+        assert.equal(root.innerHTML, original);
+    });
+}
+
+test('textInterpolation accepts only booleans', () => {
+    for (const value of ['false', 0, null])
+        assert.throws(() => createApp({ textInterpolation: value }), /textInterpolation must be true or false/);
+    createApp({ textInterpolation: true }).dispose();
 });
 
 test('untrusted hydration fails before replacing content', t => {

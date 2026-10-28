@@ -2685,26 +2685,31 @@ when Brio mounts the root. HTML escaping does not prevent this: `${` contains no
 characters that escaping changes, and the browser decodes entities such as
 `&#39;` before Brio reads a directive attribute.
 
+These examples show the HTML the browser receives after the server has escaped
+a user's input. Here the comment body is `${$data.deleteAll()}`:
+
 ```html
-<!-- Unsafe: a comment body of "${$data.deleteAll()}" runs on mount. -->
-<li>{{ comment.body }}</li>
+<!-- Unsafe: escaping left the payload unchanged, so it runs on mount. -->
+<li>${$data.deleteAll()}</li>
 
 <!-- Safe: Brio skips everything inside b-ignore. -->
-<li><span b-ignore>{{ comment.body }}</span></li>
+<li><span b-ignore>${$data.deleteAll()}</span></li>
 ```
 
 Put `b-ignore` around the user content only. On the interactive element itself
 it would also disable that element's directives.
 
 Never place server values inside a directive expression. Pass them as data
-instead:
+instead. Here the user's name is `'); $data.deleteAll(); ('`:
 
 ```html
-<!-- Unsafe: a name of "'); $data.deleteAll(); ('" breaks out of the string. -->
-<button b-on-click="$data.greet('{{ user.name }}')">Greet</button>
+<!-- Unsafe: the browser decodes &#39; to ', so Brio runs
+     $data.greet(''); $data.deleteAll(); ('') -->
+<button b-on-click="$data.greet('&#39;); $data.deleteAll(); (&#39;')">Greet</button>
 
 <!-- Safe: the value stays an attribute, never code. -->
-<button data-name="{{ user.name }}" b-on-click="$data.greet($el.dataset.name)">Greet</button>
+<button data-name="&#39;); $data.deleteAll(); (&#39;"
+  b-on-click="$data.greet($el.dataset.name)">Greet</button>
 ```
 
 The same applies to `app.insert()` HTML strings: build them only from trusted

@@ -5,7 +5,7 @@ It describes the public v5 contracts. Check the consuming app's installed
 `@jnreis/briojs/package.json` version and integration before using it. For browser-only
 apps, check the selected bundle's source/version; `window.brio` has no version
 property. If APIs differ, inspect that version's documentation/types instead of
-guessing. The examples target v5.0.0.
+guessing. The examples target v5.1.0.
 
 ## Integration and public APIs
 

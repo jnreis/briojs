@@ -83,7 +83,7 @@ Brio framework internals.
 
 ## Updates and confidence
 
-The references target v5.0.0. Check version compatibility after framework
+The references target v5.1.0. Check version compatibility after framework
 upgrades and recopy the skill from the corresponding package version.
 If you customize the copy, merge future updates deliberately.
 

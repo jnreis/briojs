@@ -9,7 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@jnreis/briojs": "^5.0.0"
+    "@jnreis/briojs": "^5.1.0"
   },
   "devDependencies": {
     "vite": "^7.0.0"

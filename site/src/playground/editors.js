@@ -27,7 +27,7 @@ const declarations = import.meta.glob('../../../dist/**/*.d.ts', { query: '?raw'
 for (const [path, content] of Object.entries(declarations))
     javascriptDefaults.addExtraLib(content, `file:///node_modules/@jnreis/briojs/dist/${path.split('/dist/')[1]}`);
 javascriptDefaults.addExtraLib(`
-import api from './node_modules/@jnreis/briojs/dist/browser-api';
+import api from './node_modules/@jnreis/briojs/dist/browser';
 declare global { const brio: typeof api; }
 `, 'file:///brio-global.d.ts');
 

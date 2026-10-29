@@ -30,6 +30,25 @@ Follow the [community conduct policy](./CODE_OF_CONDUCT.md). Report security
 vulnerabilities [privately](./SECURITY.md), not in issues or PRs.
 This is an independently maintained project; responses may take time.
 
+### Git workflow for coding assistants
+
+Before new feature work, inspect `git status --short` and
+`git branch --show-current`. From a clean `main`, create `feat/<name>` before
+editing. Continue an existing branch for the same task instead of creating
+another one. If the branch contains unrelated work or there are uncommitted
+changes, ask before switching branches or carrying changes onto a new branch.
+Never automatically stash, discard, or move someone else's changes.
+
+Permission to implement a change is not permission to stage, commit, push,
+open or merge a PR, tag, publish, deploy, or create a release. Each action needs
+explicit authorization in the current request. An explicit request can cover
+several steps; ask for any step it does not cover. Never alter the Git index
+as a side effect of editing or validation.
+
+Release preparation means file changes and validation only, with the version
+and release date confirmed by the maintainer. It does not authorize Git or
+publication actions. Follow the release workflow below only within that scope.
+
 ## Local development
 
 Use a current Node.js LTS release supported by the build/test tools (Node 22.12+
@@ -299,10 +318,35 @@ node scripts/size.js --json > scripts/size-baseline.json
 
 ## Releasing
 
+### Assess release impact before finishing a change
+
+Report all applicable delivery targets, even when no release was requested:
+
+| Changed surface | Delivery needed |
+| --- | --- |
+| Runtime, add-ons, exported types, build outputs, or package contents (including `ai/`, README, and API docs shipped in npm) | A new `@jnreis/briojs` npm release to deliver the change to package consumers. |
+| Scaffolder CLI or its shipped templates | A separate `create-brio` npm release. Changes to shared `templates/` may also need a Brio release if they depend on a new runtime API. |
+| Website docs, examples, Parts, playground, or their sources | A website deployment. Canonical API docs and changelog changes also require regenerating their website copies. |
+| Repository-only instructions, tests, or contributor tooling with no shipped changes | No npm release or website deployment solely for these files. |
+
+Several targets can apply to one change. Recommend patch, minor, or major for
+each affected package, but leave versions, pinned URLs, and release dates
+unchanged until approved. A release recommendation does not authorize release
+preparation or publication. Record user-facing changes in the pending changelog;
+if there is no pending version and none has been approved, ask rather than
+inventing the next version.
+
+### Prepare and publish an approved release
+
 Follow [Semantic Versioning](https://semver.org/): patch for fixes, minor for
 backward-compatible features (including new files in `dist`), major for
 breaking changes. 4.0.0 was the first npm release; its changelog stays one
 consolidated entry for the whole unpublished v4 development cycle.
+
+For assistants, the authorization rules above apply to every step below.
+Use `release/vx.y.z` for approved release preparation; reuse an existing release
+branch for that version. Apply the same dirty-worktree safeguards before
+switching branches.
 
 Before publishing:
 
@@ -333,7 +377,8 @@ Before publishing:
    scripts. Create the `vx.y.z` tag and GitHub release against the published
    commit.
 
-Publishing, pushing, tagging, and making the repository public are explicit
+Committing, pushing, opening or merging PRs, tagging, publishing, deploying,
+creating releases, and making the repository public are explicit
 release actions, not automatic build steps. No npm token is stored by this
 project. If adding automated publishing later, prefer npm trusted publishing
 with GitHub Actions/OIDC over a long-lived token.

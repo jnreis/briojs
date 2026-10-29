@@ -10,15 +10,29 @@ This skill is the working order and the lessons from previous releases.
 
 ## Ground rules
 
-- The maintainer owns git and publishing. Ask before every irreversible step
-  (commit, push, tag, `npm publish`, GitHub release). Ask which steps the maintainer
-  wants to run themselves and which you should run.
+- Follow `AGENTS.md` and the Git workflow in `CONTRIBUTING.md`. The maintainer
+  owns staging, committing, pushing, opening or merging PRs, tagging, publishing,
+  deploying, and creating releases. Ask which steps they want to run themselves
+  and which you should run. Act only on explicit authorization in the current
+  request; ask for steps not already covered.
+- A request to prepare a release permits file changes and validation only.
+  It does not authorize Git or publication actions.
 - Ask for the release date and version. Never invent them.
 - Don't overwrite size or benchmark baselines to make checks pass. Report the
   differences instead.
 - Never write npm tokens or one-time codes to files or the repo.
 
-## 1. Prepare (files only)
+## 1. Confirm scope and prepare (files only)
+
+First use the release-impact table in `CONTRIBUTING.md` to identify all delivery
+targets: Brio npm, separate `create-brio` npm, website deployment, or none.
+Recommend patch/minor/major for affected packages and confirm the version and
+date before changing them. Do not release an unchanged package.
+
+Inspect `git status --short` and `git branch --show-current`. Use
+`release/vx.y.z` for the approved version, reusing an existing release branch.
+Ask before switching branches or carrying dirty or unrelated work onto it;
+never stash, discard, or move that work automatically.
 
 1. `version` in `package.json`, following semver (new `dist` files count as minor).
 2. `CHANGELOG.md`: change `## [x.y.z] — Unreleased` to `## [x.y.z] — YYYY-MM-DD`.
@@ -28,7 +42,7 @@ This skill is the working order and the lessons from previous releases.
 4. Minor or major: raise the `@jnreis/briojs` range in `templates/*/package.json`
    (`create-brio` regenerates its templates from these when packed) and the
    bug-report version placeholder in `.github/ISSUE_TEMPLATE/bug_report.yml`.
-5. Review `ai/brio-apps/` version guidance, and remove any "unreleased" or "not
+5. Review `ai/brio-apps/` and `ai/brio-migrate-1-1-5/` version guidance, and remove any "unreleased" or "not
    published yet" wording for features in this release.
 6. `create-brio` is its own package (`packages/create-brio/`, own version).
    Bump it only if its CLI or templates changed. Run `npm run verify:templates`
@@ -76,9 +90,10 @@ In a temp directory (never inside the repo):
    checks pass. Then check out `main`, pull, and confirm `git status -sb` is
    clean and in sync with `origin/main`. Publish from that commit.
 2. `npm whoami` must print `jnreis`. If not, the maintainer runs `npm login`.
-3. Publish **`@jnreis/briojs` first** (`npm publish` at the root), then
-   `create-brio` (`npm publish` in `packages/create-brio`), because generated
-   projects depend on the new Brio. npm requires two-factor confirmation through
+3. If both packages changed, publish **`@jnreis/briojs` first** (`npm publish`
+   at the root), then `create-brio` (`npm publish` in `packages/create-brio`),
+   because generated projects depend on the new Brio. Otherwise publish only
+   the affected package. npm requires two-factor confirmation through
    a browser link that only the person at the terminal can open. If `EOTP`
    appears, hand the maintainer the commands instead of retrying.
 4. The maintainer tags the merged commit and pushes:

@@ -399,7 +399,7 @@ test('preserved 1.1.5 bundle runs the before example and exposes important migra
 
 for (const [directory, name, keywords] of [
     [skill, 'brio-apps', [/Brio\.js v5/, /widgets/]],
-    [migrationSkill, 'brio-migrate-1-1-5', [/1\.1\.5/, /Migrate/, /v5\.0\.0/]],
+    [migrationSkill, 'brio-migrate-1-1-5', [/1\.1\.5/, /Migrate/, /Brio 5/]],
 ]) test(`${name} has valid discovery metadata and all Markdown links travel with the folder`, () => {
     const content = readFileSync(resolve(directory, 'SKILL.md'), 'utf8');
     const frontmatter = /^---\n([\s\S]*?)\n---\n/.exec(content);

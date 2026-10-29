@@ -1,4 +1,4 @@
-# Brio 1.1.5 to 5.0.0 migration
+# Brio 1.1.5 to Brio 5 (5.1) migration
 
 ## Feasibility and limits
 
@@ -65,7 +65,7 @@ Brio 5 compiles strict JavaScript with explicit context bindings and no `with`.
 | Legacy usage | Target after resolving its actual owner |
 | --- | --- |
 | `count`, bare method names | `$data.count`, `$data.increment()` |
-| `{{ count }}` | `${$data.count}` or `b-text="$data.count"` |
+| `{{ count }}` | `${$data.count}` or `b-text="$data.count"`. If server-rendered text can contain user content, `${...}` in it is evaluated too: use `b-text`, put the content in `b-ignore`, or create the app with `textInterpolation: false` (5.1+). |
 | `$each` collection fields | Explicit declared `$for.item` / `$for.index` |
 | Root shared `$store` | App state for small apps, or an explicit reactive store registered in `createApp({ stores })` and read through `$stores.name` |
 | Inherited general `$props` | Local/app state and explicit ancestry, or real component `$props` |
@@ -114,8 +114,13 @@ a value expression; use a named method, not a statement block.
 
 Imported ESM bindings are not lexical bindings in compiled HTML. Expose them
 through state methods or component setup. Globals such as `Math` resolve
-normally. Templates remain trusted executable code, not a sandbox. A CSP that
-forbids runtime `new Function` remains a deployment blocker.
+normally. Templates remain trusted executable code, not a sandbox. The standard
+build compiles expressions with `new Function`, so a CSP without `unsafe-eval`
+needs the CSP build (Brio 5.1+: `brio.csp.min.js` or `@jnreis/briojs/csp`).
+It runs expressions in an interpreter, but only components registered in
+JavaScript hydrate there: page markup stays inert, component templates must be
+strings, and `b-script` is unavailable. A page that relied on 1.1.5 hydrating
+server markup directly must move that markup into registered components first.
 
 ## 3. Directive conversion matrix
 

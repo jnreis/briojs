@@ -53,8 +53,22 @@ and 4323 (Astro fixture). Never stop processes you didn't start.
 ## Rules
 
 - **Git and publishing belong to the maintainer.** Never stage, commit, push,
-  tag, publish to npm, or create releases unless explicitly asked in the
-  current request. Never touch the git index as a side effect.
+  open or merge a PR, tag, publish to npm, deploy, or create releases unless
+  explicitly authorized in the current request. Permission to implement is
+  not permission for these actions. Never touch the git index as a side effect.
+- **Before new feature work:** inspect `git status --short` and
+  `git branch --show-current`. From a clean `main`, create `feat/<name>` before
+  editing; continue an existing task branch rather than branching again. If
+  the branch contains unrelated work or the worktree is dirty, ask before
+  switching branches or carrying changes onto a new branch. Never stash,
+  discard, or move someone else's changes automatically.
+- **Release impact:** before finishing, identify whether the change needs a
+  Brio npm release, a separate `create-brio` release, a website deployment, or
+  none (several may apply). Recommend patch/minor/major when relevant, but
+  don't bump versions without approval. See the release-impact guidance in
+  `CONTRIBUTING.md` and use `brio-release` for approved release preparation.
+  Preparing a release permits file changes and validation, not Git or
+  publication actions; get authorization for any steps not already approved.
 - **Generated files:** never hand-edit `dist/`, `site/src/content/docs/reference/`,
   `site/src/content/docs/releases.md`, `site/public/llms*.txt`, or staged
   website demos. Change the source and regenerate.
@@ -73,6 +87,10 @@ and 4323 (Astro fixture). Never stop processes you didn't start.
 - **Behavior changes** need regression tests, a `CHANGELOG.md` entry under the
   pending version, and docs updates (see the `brio-docs` skill). Changes to
   public app-facing APIs must also update `ai/brio-apps/` because it ships to users.
+- **Before finishing any change, run the `brio-change-checklist` skill.** It
+  lists every place a change can leave stale: Lab pages, CSP build parity,
+  types, docs, both AI kits, website examples and Parts, templates, benchmarks,
+  and size baselines.
 - **Dates and versions:** never invent a release date or bump a version unless
   asked.
 - **Lab pages stay plain HTML** that loads `/dist/*.min.js` with script tags, so
@@ -80,7 +98,8 @@ and 4323 (Astro fixture). Never stop processes you didn't start.
 
 ## Skills for common jobs
 
-`.github/skills/` has step-by-step workflows: `brio-directive` (add or change a
+`.github/skills/` has step-by-step workflows: `brio-change-checklist` (what to
+update after any change), `brio-directive` (add or change a
 directive or modifier), `brio-lab-page` (Lab test pages), `brio-docs` (keep
 documentation in sync), `brio-release` (npm and GitHub release), and `brio-apps`
 (writing Brio application code).

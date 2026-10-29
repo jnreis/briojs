@@ -28,6 +28,8 @@ enough.
   goes in the topic section it fits (Add-ons, Plugin API, Core and reactivity,
   HTML and components …). Write a pending heading as `## [x.y.z] — Unreleased`. Don't
   finalize version headings or dates. That happens at release.
+  If there is no pending version and none has been approved, ask rather than
+  inventing the next version.
 - **API or directive:** its `DOCUMENTATION.md` section, plus the directive quick
   reference and `## Contents` when headings change. Heading text becomes the
   site anchor used by `scripts/directives.mjs` `docs` links, so keep them in step
@@ -48,6 +50,10 @@ enough.
   `packages/create-brio/README.md`.
 - **Contributor workflow:** `CONTRIBUTING.md`. Agent-facing rules: `AGENTS.md`
   and `.github/skills/`.
+- **Delivery impact:** use the release-impact table in `CONTRIBUTING.md`.
+  Docs and AI files shipped in npm need a package release to reach consumers;
+  website sources need deployment. Repository-only instructions do not require
+  an npm release. Recommend delivery steps without executing them unless authorized.
 - **Pinned CDN URLs** (`@jnreis/briojs@x.y.z`) change only at release time. See
   the `brio-release` skill.
 

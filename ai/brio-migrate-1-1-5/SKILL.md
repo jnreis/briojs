@@ -1,12 +1,12 @@
 ---
 name: brio-migrate-1-1-5
-description: "Migrate applications from Brio.js 1.1.5 to v5.0.0. Use for legacy newApp, b-props/b-data, b-each, mustache templates, $set/$dom/$tools, scripts, routing/boost, persistence, masks, transitions, and hydration APIs. Inventory the actual legacy bundle and preserve production behavior; not a blind rename or compatibility shim."
+description: "Migrate applications from Brio.js 1.1.5 to the current Brio 5 release (5.1). Use for legacy newApp, b-props/b-data, b-each, mustache templates, $set/$dom/$tools, scripts, routing/boost, persistence, masks, transitions, and hydration APIs. Inventory the actual legacy bundle and preserve production behavior; not a blind rename or compatibility shim."
 ---
 
 # Migrating Brio 1.1.5 applications
 
 This is a portable application-migration skill, not a runtime plugin. It targets
-1.1.5 to 5.0.0 specifically. Do not treat the newer app-development skill as a
+1.1.5 to Brio 5 (5.1.x) specifically. Do not treat the newer app-development skill as a
 description of legacy behavior.
 
 ## Required workflow

@@ -83,7 +83,8 @@ its callers and generated markup.
   links, title/head/focus and server fallback. Do not assume v5 updates these.
 - **Transitions:** real browser CSS timing, reversal, multi-property completion,
   hidden/removed local state, no dependency on old animation objects.
-- **Deployment:** runtime compilation's CSP requirements, one production bundle,
+- **Deployment:** CSP requirements (standard build needs `unsafe-eval`; the 5.1 CSP build
+  hydrates only registered components), one production bundle,
   cache busting, removed legacy script references, reproducible rollback build.
 
 Use the production project's existing test tooling. Framework recipe tests do
@@ -96,7 +97,7 @@ Merge this pointer into the project's existing instructions; do not overwrite
 them. Adjust the path to the copied skill or npm package.
 
 ```md
-This project is migrating from Brio.js 1.1.5 to 5.0.0.
+This project is migrating from Brio.js 1.1.5 to Brio 5 (5.1.x).
 Use the brio-migrate-1-1-5 skill and read its migration/legacy references before
 editing Brio application code. Record the legacy behavior before replacing it.
 Never assume the v5 app-development guide describes the old runtime.
@@ -109,7 +110,7 @@ Run this project's existing behavior tests and report unresolved migration gaps.
 
 ```text
 Use brio-migrate-1-1-5 to migrate this application's Brio 1.1.5 integration to
-5.0.0. First identify the actual runtime and inventory all roots, registrations,
+Brio 5 (5.1.x). First identify the actual runtime and inventory all roots, registrations,
 directives/options, contexts, dynamic fragments, storage, and navigation.
 Capture baseline tests and present unsupported surfaces and behavioral decisions.
 Then migrate one complete vertical flow at a time, preserving host behavior.

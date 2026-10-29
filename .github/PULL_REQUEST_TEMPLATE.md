@@ -16,3 +16,14 @@
 - [ ] New or changed directives are reflected in `scripts/directives.mjs`
 - [ ] Bundle size checked with `npm run size` (if runtime code changed)
 - [ ] `CHANGELOG.md` updated for user-facing changes
+- [ ] Change checklist reviewed (`.github/skills/brio-change-checklist/SKILL.md`); non-applicable items identified
+
+## Release impact
+
+<!-- Select all that apply; recommend patch/minor/major per affected package.
+     See CONTRIBUTING.md. These selections do not authorize release actions. -->
+
+- [ ] `@jnreis/briojs` npm release
+- [ ] Separate `create-brio` npm release
+- [ ] Website deployment
+- [ ] None (repository-only changes)

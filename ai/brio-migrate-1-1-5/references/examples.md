@@ -1,7 +1,7 @@
 # Paired migration example
 
 - [before.html](./../assets/before.html) uses the actual 1.1.5 contracts.
-- [after.html](./../assets/after.html) uses v5.0.0.
+- [after.html](./../assets/after.html) uses Brio 5 (5.1.x).
 
 Copy the HTML files into a static server's document root. Provide your preserved
 1.1.5 bundle at `/briojs.1.1.5.min.js` for the old page, and the v5 production

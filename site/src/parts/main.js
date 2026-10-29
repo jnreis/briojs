@@ -1,5 +1,5 @@
 import { parts } from './catalog.js';
-import { previewDocument } from '../playground/preview.js';
+import { loadBrio, previewDocument } from '../playground/preview.js';
 
 export function installParts() {
     const tabs = [...document.querySelectorAll('.part-view-tabs [role="tab"]')];
@@ -33,19 +33,25 @@ export function installParts() {
     }
     const previews = [];
     const theme = () => document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light';
-    for (const frame of document.querySelectorAll('iframe[data-part]')) {
-        const part = parts.find(part => part.id === frame.dataset.part);
-        if (!part) throw new Error(`Unknown Brio Part: ${frame.dataset.part}`);
-        const token = crypto.randomUUID();
-        frame.srcdoc = previewDocument(part.project, { token, origin: location.origin, theme: theme() });
-        previews.push({ frame, token });
-    }
+    const frames = [...document.querySelectorAll('iframe[data-part]')];
+    const showError = (frame, message) => {
+        frame.parentElement.querySelector('[role="status"]').textContent = `Preview error: ${message.slice(0, 4000)}`;
+    };
+    if (frames.length) loadBrio().then(brio => {
+        for (const frame of frames) {
+            const part = parts.find(part => part.id === frame.dataset.part);
+            if (!part) throw new Error(`Unknown Brio Part: ${frame.dataset.part}`);
+            const token = crypto.randomUUID();
+            frame.srcdoc = previewDocument(part.project, { token, theme: theme(), brio });
+            previews.push({ frame, token });
+        }
+    }).catch(error => {
+        for (const frame of frames) showError(frame, error.message);
+    });
     addEventListener('message', event => {
         const match = previews.find(({ frame, token }) => frame.contentWindow === event.source && token === event.data?.token);
-        if (match && event.data.type === 'error' && typeof event.data.message === 'string') {
-            const status = match.frame.parentElement.querySelector('[role="status"]');
-            status.textContent = `Preview error: ${event.data.message.slice(0, 4000)}`;
-        }
+        if (match && event.data.type === 'console' && event.data.level === 'error' && typeof event.data.message === 'string')
+            showError(match.frame, event.data.message);
     });
     new MutationObserver(() => {
         for (const { frame, token } of previews)

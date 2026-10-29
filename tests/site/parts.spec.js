@@ -230,7 +230,7 @@ for (const [id, name] of Object.entries(names)) {
             await demo.getByRole('button', { name: 'Expand all' }).click();
             await expect(demo.locator('details[open]')).toHaveCount(3);
         }
-        await expect(page.locator('#play-errors')).toBeHidden();
+        await expect(page.locator('#play-console-errors')).toBeHidden();
     });
 }
 

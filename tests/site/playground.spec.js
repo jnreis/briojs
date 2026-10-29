@@ -44,7 +44,7 @@ test('playground runs the homepage creature and edits only run on request', asyn
     await page.getByRole('button', { name: 'Run', exact: true }).click();
     await expect(preview(page).locator('#result')).toHaveText('Hello 🌿');
     await expect(preview(page).locator('#result')).toHaveCSS('color', 'rgb(120, 30, 90)');
-    await expect(page.locator('#play-errors')).toBeHidden();
+    await expect(page.locator('#play-console-errors')).toBeHidden();
     expect(errors).toEqual([]);
 });
 
@@ -120,7 +120,7 @@ test('invalid source reports sharing and formatting failures without discarding 
     await expect(preview(page).locator('.creature-name')).toHaveText('Blip');
     await setCode(page, 'JavaScript', 'const = ;');
     await page.getByRole('button', { name: 'Copy link', exact: true }).click();
-    await expect(page.locator('#play-errors')).toContainText('Unable to copy link');
+    await expect(page.locator('#play-console-list')).toContainText('Unable to copy link');
     await expect(page.getByRole('textbox', { name: 'Shareable URL', exact: true })).toBeHidden();
     const fragment = await page.evaluate(async () => {
         const project = { version: 1, html: '<p>Keep original</p>', css: '', js: 'const = ;' };
@@ -130,7 +130,7 @@ test('invalid source reports sharing and formatting failures without discarding 
             .replaceAll('+', '-').replaceAll('/', '_').replace(/=+$/, '');
     });
     await page.goto('/play/' + fragment);
-    await expect(page.locator('#play-errors')).toContainText('Unable to format code');
+    await expect(page.locator('#play-console-list')).toContainText('Unable to format code');
     await expect(page.locator('iframe')).toHaveCount(0);
     await page.getByRole('tab', { name: 'JavaScript', exact: true }).click();
     await expectCode(page, 'JavaScript', 'const = ;');
@@ -150,12 +150,70 @@ test('preview reports syntax, runtime and asynchronous errors and cannot access 
     ]) {
         await edit(page, { html: '<p>Preview</p>', js });
         await page.getByRole('button', { name: 'Run', exact: true }).click();
-        await expect(page.locator('#play-errors')).toContainText(message);
+        await expect(page.locator('#play-console-list')).toContainText(message);
     }
     await edit(page, { js: 'document.body.textContent = "</script> still works 🌿";' });
     await page.getByRole('button', { name: 'Run', exact: true }).click();
     await expect(preview(page).locator('body')).toHaveText('</script> still works 🌿');
-    await expect(page.locator('#play-errors')).toBeHidden();
+    await expect(page.locator('#play-console-errors')).toBeHidden();
+});
+
+test('console shows every level, readable values and full Brio errors instead of "Script error."', async ({ page }) => {
+    await page.goto('/play/');
+    await expect(preview(page).locator('.creature-name')).toHaveText('Blip');
+    const toggle = page.getByRole('button', { name: /^Console/ });
+    const list = page.getByRole('log', { name: 'Console messages' });
+    await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    await edit(page, { html: '<p>Logs</p>', js: [
+        'const loop = { name: "loop", list: [1, "two", null], when: new Map([["a", 1]]) }; loop.self = loop;',
+        'console.log("plain", 42, loop);',
+        'console.info("%cstyled", "color: red", "info");',
+        'console.debug(document.querySelector("p"), () => {});',
+        'console.warn("careful");',
+        'for (let i = 0; i < 3; i++) console.log("again");',
+    ].join('\n') });
+    await page.getByRole('button', { name: 'Run', exact: true }).click();
+    await expect(page.locator('#play-console-warnings')).toHaveText('1');
+    await expect(page.locator('#play-console-errors')).toBeHidden();
+    await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    await toggle.press('Enter');
+    await expect(list).toBeVisible();
+    const entries = list.locator('.play-console-entry');
+    await expect(entries).toHaveCount(5);
+    await expect(entries.nth(0)).toHaveAttribute('data-level', 'log');
+    await expect(entries.nth(0)).toContainText('plain 42 {name: "loop", list: [1, "two", null], when: Map(1) {"a" => 1}, self: [Circular]}');
+    await expect(entries.nth(1)).toHaveAttribute('data-level', 'info');
+    await expect(entries.nth(1)).toContainText('styled info');
+    await expect(entries.nth(2)).toContainText('<p> ƒ anonymous()');
+    await expect(entries.nth(3)).toHaveAttribute('data-level', 'warn');
+    await expect(entries.nth(4).locator('.play-console-repeat')).toHaveText('3');
+    await page.getByRole('button', { name: 'Clear', exact: true }).press('Enter');
+    await expect(entries).toHaveCount(0);
+    await expect(page.locator('#play-console-warnings')).toBeHidden();
+    await toggle.press('Enter');
+    await expect(list).toBeHidden();
+
+    await edit(page, {
+        html: '<button id="fail" b-on-click="$data.fail()">Fail</button>',
+        js: 'brio.createApp({ state: () => ({ fail() { throw new Error("inside a handler"); } }) }).mount("body");',
+    });
+    await page.getByRole('button', { name: 'Run', exact: true }).click();
+    await preview(page).locator('#fail').click();
+    await expect(page.locator('#play-console-errors')).toHaveText('1');
+    await expect(list).toBeVisible();
+    await expect(page.getByRole('status')).toHaveText('The preview reported an error. See the console below.');
+    const error = list.locator('.play-console-entry[data-level="error"]');
+    await expect(error.locator('summary')).toContainText('Brio event expression failed');
+    await expect(error.locator('summary')).toContainText('inside a handler');
+    await expect(error).not.toContainText('Script error');
+    await expect(error).not.toContainText('data:text/javascript');
+    await error.locator('summary').click();
+    await expect(error.locator('pre')).toContainText('brio.min.js');
+
+    await edit(page, { html: '<p>Clear</p>', js: 'console.log("before"); console.clear(); console.log("after");' });
+    await page.getByRole('button', { name: 'Run', exact: true }).click();
+    await expect(entries).toHaveCount(1);
+    await expect(entries).toContainText('after');
 });
 
 test('preview supports native submit handlers but CSP blocks form navigation', async ({ page }) => {
@@ -183,7 +241,7 @@ test('preview supports native submit handlers but CSP blocks form navigation', a
 
 test('invalid shares do not execute and reset recovers; workspace fills the viewport responsively', async ({ page }) => {
     await page.goto('/play/#invalid');
-    await expect(page.locator('#play-errors')).toContainText('Unable to load shared code');
+    await expect(page.locator('#play-console-list')).toContainText('Unable to load shared code');
     await expect(page.locator('iframe')).toHaveCount(0);
     await page.getByRole('button', { name: 'Reset', exact: true }).click();
     await expect(preview(page).locator('.creature-name')).toHaveText('Blip');
@@ -316,7 +374,7 @@ test('Shift-Alt-F formats the active document only, preserves undo, and never ru
     await editor.press('Shift+Alt+f');
     await expect(page.getByRole('status')).toHaveText('Formatting failed. Your code has not changed.');
     await expectCode(page, 'JavaScript', 'const = ;');
-    await expect(page.locator('#play-errors')).toContainText('Unable to format JavaScript');
+    await expect(page.locator('#play-console-list')).toContainText('Unable to format JavaScript');
 });
 
 test('a pending format cannot overwrite a newer Run or edits', async ({ page }) => {

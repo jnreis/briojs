@@ -1,11 +1,12 @@
 import { defaultProject } from './default.js';
 import { decodeProject, encodeProject, validateProject } from './share.js';
-import { previewDocument } from './preview.js';
+import { loadBrio, previewDocument } from './preview.js';
 import { createEditors } from './editors.js';
 import { formatCode, formatProject } from './code.js';
+import { createConsole } from './console.js';
 
 const status = document.querySelector('#play-status');
-const errors = document.querySelector('#play-errors');
+const output = createConsole();
 const preview = document.querySelector('#play-preview');
 const shareButton = document.querySelector('#play-share');
 const shareLink = document.querySelector('#play-link');
@@ -32,12 +33,9 @@ function hideShareLink() {
 
 const currentTheme = () => document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light';
 
-function report(message, statusMessage = 'The preview reported an error. See details below.') {
+function report(message, statusMessage = 'The preview reported an error. See the console below.') {
     hadErrors = true;
-    const item = document.createElement('li');
-    item.textContent = message;
-    if (errors.children.length < 20) errors.append(item);
-    errors.hidden = false;
+    output.add('error', message);
     status.textContent = statusMessage;
 }
 
@@ -56,27 +54,28 @@ function clearPreview() {
     frame?.remove();
     frame = undefined;
     token = undefined;
-    errors.replaceChildren();
-    errors.hidden = true;
+    output.reset();
     hadErrors = false;
 }
 
-function run() {
-    ++generation;
+async function run() {
+    const current = ++generation;
     clearPreview();
     try {
         const value = project();
+        dirty = false;
+        status.textContent = 'Starting preview...';
+        const brio = await loadBrio();
+        if (current !== generation) return;
         token = crypto.randomUUID();
         frame = document.createElement('iframe');
         frame.title = 'Brio playground preview';
         frame.setAttribute('sandbox', 'allow-scripts allow-forms');
         frame.referrerPolicy = 'no-referrer';
-        frame.srcdoc = previewDocument(value, { token, origin: location.origin, theme: currentTheme() });
+        frame.srcdoc = previewDocument(value, { token, theme: currentTheme(), brio });
         preview.replaceChildren(frame);
-        dirty = false;
-        status.textContent = 'Starting preview...';
     } catch (error) {
-        report(`Unable to run: ${error.message}`);
+        if (current === generation) report(`Unable to run: ${error.message}`);
     }
 }
 
@@ -144,8 +143,12 @@ async function loadLocation() {
 
 addEventListener('message', event => {
     if (!frame || event.source !== frame.contentWindow || event.data?.token !== token) return;
-    if (event.data.type === 'error' && typeof event.data.message === 'string')
-        report(event.data.message.slice(0, 4000));
+    if (event.data.type === 'clear') output.clear();
+    if (event.data.type === 'console' && typeof event.data.message === 'string') {
+        const message = event.data.message.slice(0, 8000);
+        if (event.data.level === 'error') report(message);
+        else output.add(event.data.level, message);
+    }
     if (event.data.type === 'ready' && !dirty && !hadErrors) status.textContent = 'Preview running.';
 });
 document.querySelector('.play-workspace').addEventListener('keydown', event => {

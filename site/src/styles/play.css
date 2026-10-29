@@ -54,7 +54,33 @@
 #play-preview:empty { display: grid; place-items: center; }
 #play-preview:empty::before { content: "Ready when you are. Click Run to preview."; padding: 24px; color: var(--muted); font-size: .85rem; text-align: center; }
 #play-preview iframe { display: block; width: 100%; height: 100%; border: 0; }
-#play-errors { flex-shrink: 0; max-height: 35%; margin: 0; border-top: 1px solid var(--line); background: var(--soft); padding: 12px 16px 12px 32px; overflow: auto; overflow-wrap: anywhere; white-space: pre-wrap; font: .78rem/1.6 ui-monospace, monospace; }
+.play-console { display: flex; flex-direction: column; flex-shrink: 0; max-height: 40%; border-top: 1px solid var(--line); background: var(--surface); }
+.play-console-bar { display: flex; align-items: center; justify-content: space-between; height: 34px; flex-shrink: 0; padding-right: 8px; }
+.play-console-bar button { border: 0; background: transparent; color: var(--muted); font-size: .72rem; }
+.play-console-bar button:hover { color: var(--ink); }
+.play-console-bar button:focus-visible { outline: 2px solid var(--blue); outline-offset: -3px; }
+#play-console-toggle { display: flex; align-items: center; gap: 8px; align-self: stretch; padding: 0 12px 0 16px; font-weight: 600; letter-spacing: .02em; }
+#play-console-clear { padding: 4px 8px; border-radius: 5px; }
+.play-console:not(.open) #play-console-clear { visibility: hidden; }
+.play-console-caret { width: 6px; height: 6px; border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor; transform: rotate(-45deg); transition: transform .15s; }
+.play-console.open .play-console-caret { transform: rotate(45deg) translate(-2px, -1px); }
+.play-console-badge { min-width: 18px; padding: 0 6px; border-radius: 99px; font: 600 .65rem/18px ui-monospace, monospace; text-align: center; color: var(--console-color); background: var(--console-bg); }
+#play-console-list { flex: 1; min-height: 72px; margin: 0; padding: 0; overflow: auto; list-style: none; border-top: 1px solid var(--line); background: var(--bg); font: .76rem/1.55 ui-monospace, SFMono-Regular, Menlo, monospace; }
+#play-console-list:empty::before { content: "Nothing logged yet. console.log() output appears here."; display: block; padding: 10px 16px; color: var(--muted); font-family: system-ui, sans-serif; }
+.play-console-entry, .play-console-note { display: flex; align-items: flex-start; gap: 8px; padding: 5px 16px 5px 13px; border-bottom: 1px solid var(--line); border-left: 3px solid transparent; overflow-wrap: anywhere; white-space: pre-wrap; }
+.play-console-note { color: var(--muted); font-style: italic; }
+.play-console-entry[data-level="info"] { border-left-color: var(--blue); }
+.play-console-entry[data-level="debug"] { color: var(--muted); }
+.play-console-entry[data-level="warn"], .play-console-entry[data-level="error"] { border-left-color: var(--console-color); color: var(--console-color); background: var(--console-bg); }
+.play-console-text { flex: 1; min-width: 0; }
+.play-console-text summary { cursor: pointer; }
+.play-console-text summary::marker { font-size: .7em; }
+.play-console-text pre { margin: 4px 0 0 14px; font: inherit; white-space: pre-wrap; opacity: .85; }
+.play-console-repeat { flex-shrink: 0; min-width: 18px; padding: 0 5px; border-radius: 99px; font-size: .65rem; line-height: 18px; text-align: center; color: var(--bg); background: var(--muted); }
+:is(.play-console-entry, .play-console-badge)[data-level="error"] { --console-color: #b42318; --console-bg: #fdecea; }
+:is(.play-console-entry, .play-console-badge)[data-level="warn"] { --console-color: #8a5300; --console-bg: #fff6e0; }
+:scope[data-theme="dark"] :is(.play-console-entry, .play-console-badge)[data-level="error"] { --console-color: #ff9b94; --console-bg: #3a1518; }
+:scope[data-theme="dark"] :is(.play-console-entry, .play-console-badge)[data-level="warn"] { --console-color: #f5c46b; --console-bg: #33270e; }
 .play-statusbar { display: flex; justify-content: space-between; gap: 16px; padding: 7px 16px; border-top: 1px solid var(--line); background: var(--surface); color: var(--muted); font-size: .7rem; }
 #play-status { margin: 0; }
 .play-statusbar > span { flex-shrink: 0; }

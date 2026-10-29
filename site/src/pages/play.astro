@@ -25,6 +25,9 @@ import '../styles/play.css';
               F1 opens Monaco's command palette, including Format Document.</p>
             <p>The preview is isolated: storage, form navigation, popups, external resources, and network APIs are blocked.
               Infinite loops can still hang this tab. Only run code you trust; shared links never run automatically.</p>
+            <p>The Console under the preview shows <code>console.log</code>, <code>info</code>, <code>warn</code>, <code>error</code>,
+              and <code>debug</code> output, uncaught errors with their stack, and rejected promises. It opens on the first error.
+              Values are shown as text; use your browser's developer tools to inspect live objects.</p>
             <p>Copy link copies a URL with minified, compressed code. Loaded code is formatted for editing.
               Share links contain your code, not a database ID. Don't include secrets.
               Limits: 256 KB of source and a 64 KB URL fragment. No automatic saving.</p>
@@ -52,7 +55,17 @@ import '../styles/play.css';
       <section class="play-result" aria-label="Preview">
         <div class="play-preview-heading"><h2><span class="play-preview-dot" aria-hidden="true"></span>Live preview</h2><span>ISOLATED</span></div>
         <div id="play-preview"></div>
-        <ul id="play-errors" aria-label="Playground errors" role="alert" hidden></ul>
+        <section id="play-console" class="play-console" aria-label="Console">
+          <div class="play-console-bar">
+            <button id="play-console-toggle" type="button" aria-expanded="false" aria-controls="play-console-list">
+              <span class="play-console-caret" aria-hidden="true"></span>Console
+              <span id="play-console-errors" class="play-console-badge" data-level="error" hidden></span>
+              <span id="play-console-warnings" class="play-console-badge" data-level="warn" hidden></span>
+            </button>
+            <button id="play-console-clear" type="button">Clear</button>
+          </div>
+          <ol id="play-console-list" role="log" aria-label="Console messages" hidden></ol>
+        </section>
       </section>
     </div>
     <div class="play-statusbar"><p id="play-status" role="status">Loading playground...</p><span>HTML first. Your app, your way.</span></div>
